@@ -13,12 +13,7 @@ import {
   Modal, Dimensions, FlatList,
 } from 'react-native';
 
-// ===== 單色 Unicode 圖標系統 =====
-const ICONS = {
-  shuffle: '⇆', repeat: '↻', heart: '♥',
-  heartOutline: '♡', skipBack: '⏮', skipForward: '⏭',
-  play: '▶', pause: '❚❚', dismissDown: '▼', queueBars: '☰',
-};
+// ===== MaterialIcons 圖標名稱 =====
 
 // ===== 安全匯入 =====
 let SafeAreaProvider = null, useSafeAreaInsets = null;
@@ -697,18 +692,18 @@ function MiniPlayer({ onPress }) {
         <View style={miStyles.controlsRow}>
           <TouchableOpacity style={miStyles.ctrlBtn} onPress={(e) => { e.stopPropagation(); toggleShuffle(); }} activeOpacity={0.6}>
             <View style={{ alignItems: 'center' }}>
-              <Text style={[miStyles.ctrlIcon, isShuffled && miStyles.ctrlIconActive]}>{ICONS.shuffle}</Text>
+              <MaterialIcons name="shuffle" size={28} color={isShuffled ? ACCENT_COLOR : TEXT_SECONDARY} />
               {isShuffled && <View style={miStyles.ctrlActiveDot} />}
             </View>
           </TouchableOpacity>
           <TouchableOpacity style={miStyles.ctrlBtn} onPress={(e) => { e.stopPropagation(); handlePrevTrack(); }} activeOpacity={0.6}>
-            <Text style={miStyles.ctrlIconPrev}>{ICONS.skipBack}</Text>
+            <MaterialIcons name="skip-previous" size={24} color="#FFFFFF" />
           </TouchableOpacity>
           <TouchableOpacity style={miStyles.playBtn} onPress={(e) => { e.stopPropagation(); togglePlayPause(); }} activeOpacity={0.8}>
-            <Text style={miStyles.playBtnIcon}>{isPlaying ? ICONS.pause : ICONS.play}</Text>
+            <MaterialIcons name={isPlaying ? 'pause' : 'play-arrow'} size={20} color="#000000" />
           </TouchableOpacity>
           <TouchableOpacity style={miStyles.ctrlBtn} onPress={(e) => { e.stopPropagation(); handleNextTrack(); }} activeOpacity={0.6}>
-            <Text style={miStyles.ctrlIconNext}>{ICONS.skipForward}</Text>
+            <MaterialIcons name="skip-next" size={24} color="#FFFFFF" />
           </TouchableOpacity>
           <TouchableOpacity style={miStyles.ctrlBtn} onPress={(e) => { e.stopPropagation(); setRepeatMode?.((repeatMode + 1) % 3); }} activeOpacity={0.6}>
             <View style={{ alignItems: 'center' }}>
@@ -784,7 +779,7 @@ function TabBar({ bottomInset, onMiniPlayerPress }) {
           </TouchableOpacity>
         ))}
         <TouchableOpacity style={tbStyles.item} onPress={() => setActiveTab('Player')}>
-          <Text style={tbStyles.icon}>▶️</Text>
+          <MaterialIcons name="play-circle-outline" size={22} color={TEXT_SECONDARY} />
           <Text style={[tbStyles.label, activeTab === 'Player' && tbStyles.labelActive]}>播放</Text>
         </TouchableOpacity>
       </View>
@@ -852,7 +847,7 @@ function HomeScreen({ hymns, activeCategory, onCategoryChange, onPlayHymn }) {
             <Text style={hStyles.songTitle} numberOfLines={1}>{h.title}</Text>
             <Text style={hStyles.songArtist} numberOfLines={1}>{h.artist}</Text>
           </View>
-          <Text style={hStyles.songPlay}>{ICONS.play}</Text>
+          <MaterialIcons name="play-arrow" size={18} color={ACCENT_COLOR} />
         </TouchableOpacity>
       ))}
       <View style={{ height: 40 }} />
@@ -913,7 +908,7 @@ function FullScreenPlayerOverlay() {
       {/* Top Bar */}
       <View style={[fsStyles.topBar, { paddingTop: safeTop }]}>
         <TouchableOpacity style={fsStyles.dismissBtn} onPress={player.hidePlayer}>
-          <Text style={fsStyles.dismissIcon}>{ICONS.dismissDown}</Text>
+          <MaterialIcons name="keyboard-arrow-down" size={24} color="#FFFFFF" />
         </TouchableOpacity>
         <Text style={fsStyles.topBarTitle}>生命樹</Text>
         <View style={fsStyles.dismissBtn} />
@@ -972,18 +967,18 @@ function FullScreenPlayerOverlay() {
         <View style={fsStyles.controlsRow}>
           <TouchableOpacity style={fsStyles.controlBtn} onPress={player.toggleShuffle} activeOpacity={0.6}>
             <View style={{ alignItems: 'center' }}>
-              <Text style={[fsStyles.ctrlIconShuffle, player.isShuffled && fsStyles.ctrlIconActive]}>{ICONS.shuffle}</Text>
+              <MaterialIcons name="shuffle" size={32} color={player.isShuffled ? ACCENT_COLOR : TEXT_SECONDARY} />
               {player.isShuffled && <View style={fsStyles.ctrlActiveDot} />}
             </View>
           </TouchableOpacity>
           <TouchableOpacity style={fsStyles.controlBtn} onPress={player.handlePrevTrack} activeOpacity={0.6}>
-            <Text style={fsStyles.ctrlIconPrev}>{ICONS.skipBack}</Text>
+            <MaterialIcons name="skip-previous" size={32} color="#FFFFFF" />
           </TouchableOpacity>
           <TouchableOpacity style={fsStyles.playBtn} onPress={player.togglePlayPause} activeOpacity={0.8}>
-            <Text style={fsStyles.playBtnIcon}>{player.isPlaying ? ICONS.pause : ICONS.play}</Text>
+            <MaterialIcons name={player.isPlaying ? 'pause' : 'play-arrow'} size={24} color="#000000" />
           </TouchableOpacity>
           <TouchableOpacity style={fsStyles.controlBtn} onPress={player.handleNextTrack} activeOpacity={0.6}>
-            <Text style={fsStyles.ctrlIconNext}>{ICONS.skipForward}</Text>
+            <MaterialIcons name="skip-next" size={32} color="#FFFFFF" />
           </TouchableOpacity>
           <TouchableOpacity style={fsStyles.controlBtn} onPress={() => player.setRepeatMode?.((player.repeatMode + 1) % 3)} activeOpacity={0.6}>
             <View style={{ alignItems: 'center' }}>
@@ -1023,7 +1018,7 @@ function FullScreenPlayerOverlay() {
             paddingHorizontal: 16, paddingBottom: 12,
           }}>
             <TouchableOpacity onPress={() => setIsPlaylistVisible(false)} style={{ padding: 4 }}>
-              <Text style={{ fontSize: 16, color: '#FFFFFF' }}>{ICONS.dismissDown}</Text>
+              <MaterialIcons name="keyboard-arrow-down" size={24} color="#FFFFFF" />
             </TouchableOpacity>
             <Text style={{ fontSize: 16, fontWeight: '600', color: TEXT_PRIMARY }}>📋 播放清單</Text>
             <View style={{ width: 40 }} />
@@ -1044,9 +1039,9 @@ function FullScreenPlayerOverlay() {
                   <Text style={fsStyles.queueArtist} numberOfLines={1}>{item.artist}</Text>
                 </View>
                 {item.id === cur.id ? (
-                  <Text style={fsStyles.queuePlayingIcon}>▶</Text>
+                  <MaterialIcons name="play-arrow" size={16} color={ACCENT_COLOR} />
                 ) : (
-                  <Text style={fsStyles.queueDragIcon}>{ICONS.queueBars}</Text>
+                  <MaterialIcons name="queue-music" size={18} color={TEXT_SECONDARY} />
                 )}
               </TouchableOpacity>
             )}
