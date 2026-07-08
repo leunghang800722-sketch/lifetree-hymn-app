@@ -115,26 +115,33 @@ async function safeFetchAllHymns() {
 }
 
 // ============ Audio API ============
-async function fetchAudioUrl(youtubeId, showErrorAlert) {
+async function fetchAudioUrl(youtubeId, showErrorAlert, retryCount = 2) {
   if (!youtubeId) return null;
-  try {
-    // Promise.race timeout instead of AbortController
-    const data = await Promise.race([
-      (async () => {
-        const res = await fetch(`${API_BASE}/api/audio/${youtubeId}`);
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        return await res.json();
-      })(),
-      new Promise((_, reject) =>
-        setTimeout(() => reject(new Error('Timeout (10s)')), 10000)
-      ),
-    ]);
-    if (data && data.url && typeof data.url === 'string') return data.url;
-    if (showErrorAlert) Alert.alert('載入失敗', '無法取得音樂網址，請稍後再試');
-  } catch (e) {
-    const errMsg = `連線錯誤: ${e.message || e}`;
-    console.warn('fetchAudioUrl error:', errMsg);
-    if (showErrorAlert) Alert.alert('網路錯誤', errMsg);
+  for (let attempt = 0; attempt <= retryCount; attempt++) {
+    try {
+      // Promise.race timeout instead of AbortController
+      const data = await Promise.race([
+        (async () => {
+          const res = await fetch(`${API_BASE}/api/audio/${youtubeId}`);
+          if (!res.ok) throw new Error(`HTTP ${res.status}`);
+          return await res.json();
+        })(),
+        new Promise((_, reject) =>
+          setTimeout(() => reject(new Error('Timeout (10s)')), 10000)
+        ),
+      ]);
+      if (data && data.url && typeof data.url === 'string') return data.url;
+      if (showErrorAlert && attempt === retryCount) Alert.alert('載入失敗', '無法取得音樂網址，請稍後再試');
+    } catch (e) {
+      const errMsg = `連線錯誤: ${e.message || e}`;
+      console.warn(`fetchAudioUrl attempt ${attempt + 1}/${retryCount + 1}:`, errMsg);
+      if (attempt < retryCount) {
+        // Wait 1s before retry
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        continue;
+      }
+      if (showErrorAlert) Alert.alert('網路錯誤', errMsg);
+    }
   }
   return null;
 }
@@ -337,10 +344,40 @@ function PlayerProvider({ children }) {
       } catch (e) {}
     });
 
+    // PlaybackError: auto-skip when a track fails to play
+    const unsubscribeError = TrackPlayer.addEventListener(TPEvent.PlaybackError, async (event) => {
+      try {
+        const code = event?.code || '';
+        const message = event?.message || 'Unknown error';
+        console.error('[PlaybackError]', code, message);
+
+        // Try to skip to next track automatically
+        const q = queueSnapshotRef.current || [];
+        if (q.length === 0) return;
+
+        let nextIdx = currentQueueIndexRef.current + 1;
+        if (nextIdx >= q.length) {
+          if (repeatModeRef.current === 1) {
+            nextIdx = 0;
+          } else {
+            return; // No repeat and no next track — stop
+          }
+        }
+        const nextSong = q[nextIdx];
+        if (nextSong) {
+          console.log('[PlaybackError] auto-skipping to:', nextSong.title);
+          await changeToSong(nextSong, nextIdx);
+        }
+      } catch (e) {
+        console.warn('[PlaybackError] handler error:', e);
+      }
+    });
+
     return () => {
       unsubscribe.remove();
       unsubscribeTrack.remove();
       unsubscribeQueueEnd.remove();
+      unsubscribeError.remove();
     };
   }, [queueReady]);
 
