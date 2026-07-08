@@ -1,0 +1,1074 @@
+// 詩歌App v131 TrackPlayer — 背景播放 + 生命樹主題
+import React, { useState, useEffect, createContext, useContext, useRef, useCallback } from 'react';
+import MaterialIcons from '@expo/vector-icons/MaterialIcons';
+import TrackPlayer, {
+  State as TPState,
+  Event as TPEvent,
+  RepeatMode as TPRepeatMode,
+  Capability as TPCapability,
+} from 'react-native-track-player';
+import {
+  View, Text, ScrollView, TouchableOpacity, StyleSheet,
+  ActivityIndicator, StatusBar, Image, Platform,
+  Animated, Dimensions, FlatList, PanResponder,
+} from 'react-native';
+
+// ===== 單色 Unicode 圖標系統 =====
+const ICONS = {
+  shuffle: '⇆', repeat: '↻', heart: '♥',
+  heartOutline: '♡', skipBack: '⏮', skipForward: '⏭',
+  play: '▶', pause: '❚❚', dismissDown: '▼', queueBars: '☰',
+};
+
+// ===== 安全匯入 =====
+let SafeAreaProvider = null, useSafeAreaInsets = null;
+try {
+  const sac = require('react-native-safe-area-context');
+  SafeAreaProvider = sac.SafeAreaProvider;
+  useSafeAreaInsets = sac.useSafeAreaInsets;
+} catch (e) {}
+
+// ===== Config =====
+const API_BASE = 'http://192.168.30.45:3000';
+const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
+const VIDEO_HEIGHT = SCREEN_WIDTH * 9 / 16;
+
+// ===== 生命樹主題色系 =====
+const MAIN_BG_COLOR = '#131C16';
+const CARD_BG_COLOR = '#1E2B22';
+const ACCENT_COLOR = '#A8C765';
+const TEXT_PRIMARY = '#F0F4E8';
+const TEXT_SECONDARY = '#9AA696';
+
+function getAlbumCoverUrl(youtubeId) {
+  return youtubeId ? `https://img.youtube.com/vi/${youtubeId}/hqdefault.jpg` : null;
+}
+
+// ===== Fallback Hymns =====
+const FALLBACK_HYMNS = [
+  { id: 1, title: '恩典太美麗', artist: 'ACM', youtube_id: 'JlTb0Sf7xUg', lang: '粵語' },
+  { id: 2, title: '這一生最美的祝福', artist: '讚美之泉', youtube_id: 'tPf7Ig1ebL4', lang: '國語' },
+  { id: 3, title: '我要向高山舉目', artist: '玻璃海', youtube_id: 'HfE3WNcdDTk', lang: '粵語' },
+];
+const STATIC_PLAYLIST = FALLBACK_HYMNS.concat(
+  FALLBACK_HYMNS.map(h => ({...h, id: h.id + 1000})),
+  FALLBACK_HYMNS.map(h => ({...h, id: h.id + 2000})),
+  FALLBACK_HYMNS.map(h => ({...h, id: h.id + 3000, title: h.title + ' (copy)'}))
+);
+
+const DAILY_VERSE = { text: '應當一無掛慮，只要凡事藉著禱告、祈求和感謝，將你們所要的告訴神。', ref: '腓立比書 4:6' };
+const CATEGORIES = ['全部', '平安', '讚美', '靈修', '醫治', '信心', '恩典', '復興'];
+
+function useBottomInset() {
+  const safe = typeof useSafeAreaInsets === 'function' ? useSafeAreaInsets() : null;
+  if (safe?.bottom) return safe.bottom;
+  if (Platform.OS === 'android') return 20;
+  return Platform.OS === 'ios' ? 34 : 0;
+}
+
+async function safeFetchHymnDetail(id) {
+  try { const r = await fetch(`${API_BASE}/api/hymns/${id}`); if (!r.ok) return null; return (await r.json())?.data || null; }
+  catch (e) { return null; }
+}
+async function safeFetchAllHymns() {
+  try { const r = await fetch(`${API_BASE}/api/hymns`); if (!r.ok) return []; const d = (await r.json())?.data || r; return Array.isArray(d) ? d : []; }
+  catch (e) { return []; }
+}
+
+// ============ Audio API ============
+async function fetchAudioUrl(youtubeId) {
+  if (!youtubeId) return null;
+  try {
+    const res = await fetch(`${API_BASE}/api/audio/${youtubeId}`);
+    if (!res.ok) return null;
+    const data = await res.json();
+    if (data.success && data.url) return data.url;
+  } catch (e) {
+    console.warn('fetchAudioUrl error:', e);
+  }
+  return null;
+}
+
+// ================================================================
+//  GLOBAL PLAYER CONTEXT
+// ================================================================
+const PlayerCtx = createContext();
+
+function getQueue(hymns) {
+  return Array.isArray(hymns) && hymns.length > 0 ? hymns : STATIC_PLAYLIST;
+}
+
+function PlayerProvider({ children }) {
+  const [currentHymn, setCurrentHymn] = useState(null);
+  const [hymn, setHymn] = useState(null);
+  const [hymns, setHymns] = useState(null);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [duration, setDuration] = useState(0);
+  const [isSeeking, setIsSeeking] = useState(false);
+  const [seekPercent, setSeekPercent] = useState(0);
+  const [repeatMode, setRepeatMode] = useState(0); // 0=off, 1=repeat-all, 2=repeat-one
+  const [isShuffled, setIsShuffled] = useState(false);
+  const [currentQueueIndex, setCurrentQueueIndex] = useState(0);
+  const [trackState, setTrackState] = useState(TPState.None);
+  const [queueReady, setQueueReady] = useState(false);
+
+  const progressRef = useRef(null);
+  const currentQueueIndexRef = useRef(0);
+  const repeatModeRef = useRef(0);
+  const isShuffledRef = useRef(false);
+  const queueSnapshotRef = useRef([]);
+
+  // 同步 ref 俾 event handler 用
+  repeatModeRef.current = repeatMode;
+  isShuffledRef.current = isShuffled;
+
+  // ===== 推拉門 =====
+  const overlayY = useRef(new Animated.Value(SCREEN_HEIGHT)).current;
+  const [overlayExpanded, setOverlayExpanded] = useState(false);
+
+  const showPlayer = useCallback(() => {
+    if (!overlayExpanded) {
+      setOverlayExpanded(true);
+      Animated.spring(overlayY, {
+        toValue: 0, useNativeDriver: true,
+        damping: 20, stiffness: 120, mass: 0.8,
+      }).start();
+    }
+  }, [overlayExpanded, overlayY]);
+
+  const hidePlayer = useCallback(() => {
+    if (overlayExpanded) {
+      setOverlayExpanded(false);
+      Animated.timing(overlayY, {
+        toValue: SCREEN_HEIGHT, duration: 250, useNativeDriver: true,
+      }).start();
+    }
+  }, [overlayExpanded, overlayY]);
+
+  function formatTime(seconds) {
+    if (!seconds || isNaN(seconds)) return '0:00';
+    const m = Math.floor(seconds / 60), s = Math.floor(seconds % 60);
+    return `${m}:${s < 10 ? '0' : ''}${s}`;
+  }
+
+  // Init TrackPlayer on mount
+  useEffect(() => {
+    let mounted = true;
+    let retryCount = 0;
+    const MAX_RETRIES = 3;
+    async function init() {
+      while (retryCount < MAX_RETRIES) {
+        try {
+          await TrackPlayer.setupPlayer({
+            waitForBuffer: true,
+          });
+          await TrackPlayer.updateOptions({
+            capabilities: [
+              TPCapability.Play,
+              TPCapability.Pause,
+              TPCapability.SkipToNext,
+              TPCapability.SkipToPrevious,
+              TPCapability.SeekTo,
+              TPCapability.Stop,
+            ],
+            compactCapabilities: [
+              TPCapability.Play,
+              TPCapability.Pause,
+              TPCapability.SkipToNext,
+            ],
+            notificationChannel: {
+              id: 'hymn-app',
+              name: '詩歌播放',
+              importance: 1,
+            },
+            icon: require('./assets/icon.png'),
+          });
+          if (mounted) setQueueReady(true);
+          return; // success
+        } catch (e) {
+          retryCount++;
+          if (retryCount >= MAX_RETRIES) {
+            console.warn('TrackPlayer init failed after retries:', e);
+            if (mounted) setQueueReady(true); // Proceed anyway
+          } else {
+            // Wait before retry
+            await new Promise(r => setTimeout(r, 500));
+          }
+        }
+      }
+    }
+    init();
+    return () => { mounted = false; };
+  }, []);
+
+  // Listen to TrackPlayer events — safe guard with try/catch
+  // We use a custom event listener approach instead of useTrackPlayerEvents
+  // to avoid crashes if native module isn't ready yet
+  useEffect(() => {
+    if (!queueReady) return;
+    
+    const unsubscribe = TrackPlayer.addEventListener(TPEvent.PlaybackState, (event) => {
+      try { setTrackState(event.state); } catch (e) {}
+    });
+    const unsubscribeTrack = TrackPlayer.addEventListener(TPEvent.PlaybackActiveTrackChanged, async (event) => {
+      try {
+        const trackIndex = await TrackPlayer.getActiveTrackIndex();
+        if (typeof trackIndex === 'number' && trackIndex >= 0) {
+          currentQueueIndexRef.current = trackIndex;
+          setCurrentQueueIndex(trackIndex);
+          const track = await TrackPlayer.getTrack(trackIndex);
+          if (track && track.title) {
+            const hymnData = {
+              id: track.id,
+              title: track.title,
+              artist: track.artist || '',
+              youtube_id: track.youtubeId || track.videoId || '',
+            };
+            setHymn(hymnData);
+            setCurrentHymn(hymnData);
+          }
+        }
+      } catch (e) {}
+    });
+    const unsubscribeQueueEnd = TrackPlayer.addEventListener(TPEvent.PlaybackQueueEnded, async () => {
+      try {
+        if (repeatModeRef.current === 2) {
+          await TrackPlayer.seekTo(0);
+          await TrackPlayer.play();
+        }
+      } catch (e) {}
+    });
+
+    return () => {
+      unsubscribe.remove();
+      unsubscribeTrack.remove();
+      unsubscribeQueueEnd.remove();
+    };
+  }, [queueReady]);
+
+  // Progress — poll TrackPlayer.getProgress() directly instead of useProgress hook
+  // This avoids the hook being mounted before TrackPlayer is ready
+  useEffect(() => {
+    if (!queueReady) return;
+    let mounted = true;
+    
+    async function poll() {
+      while (mounted) {
+        try {
+          const progress = await TrackPlayer.getProgress();
+          if (mounted) {
+            setCurrentTime(progress.position || 0);
+            setDuration(progress.duration || 0);
+          }
+        } catch (e) {
+          // TrackPlayer not ready yet, skip
+        }
+        await new Promise(r => setTimeout(r, 1000));
+      }
+    }
+    poll();
+    
+    return () => { mounted = false; };
+  }, [queueReady]);
+
+  // Poll player state as well
+  useEffect(() => {
+    if (!queueReady) return;
+    let mounted = true;
+    
+    async function pollState() {
+      while (mounted) {
+        try {
+          const state = await TrackPlayer.getPlaybackState();
+          if (mounted) {
+            setTrackState(state);
+          }
+        } catch (e) {}
+        await new Promise(r => setTimeout(r, 2000));
+      }
+    }
+    pollState();
+    
+    return () => { mounted = false; };
+  }, [queueReady]);
+
+  const isPlaying = trackState === TPState.Playing || trackState === TPState.Buffering;
+
+  // Build TrackPlayer queue from hymns array
+  async function buildQueue(songs, startIndex) {
+    if (!songs || songs.length === 0) return;
+    queueSnapshotRef.current = songs;
+    const tracks = [];
+    for (const song of songs) {
+      tracks.push({
+        id: song.id,
+        url: '', // Will resolve on play
+        title: song.title || 'Unknown',
+        artist: song.artist || '',
+        artwork: getAlbumCoverUrl(song.youtube_id),
+        youtubeId: song.youtube_id,
+        duration: undefined,
+      });
+    }
+    await TrackPlayer.reset();
+    await TrackPlayer.add(tracks);
+    if (typeof startIndex === 'number' && startIndex >= 0 && startIndex < tracks.length) {
+      await TrackPlayer.skip(startIndex);
+    }
+  }
+
+  // Resolve audio URL and update track
+  async function resolveAndPlay(youtubeId) {
+    if (!youtubeId) return;
+    try {
+      const audioUrl = await fetchAudioUrl(youtubeId);
+      if (audioUrl) {
+        const currentIndex = await TrackPlayer.getActiveTrackIndex();
+        if (typeof currentIndex === 'number' && currentIndex >= 0) {
+          await TrackPlayer.updateMetadataForTrack(currentIndex, {
+            url: audioUrl,
+          });
+        }
+        await TrackPlayer.play();
+      }
+    } catch (e) {
+      console.warn('resolveAndPlay error:', e);
+    }
+  }
+
+  // changeToSong: load hymns into TrackPlayer, fetch audio, play
+  async function changeToSong(song, queueIndex) {
+    if (!song) return;
+    const q = getQueue(hymns);
+    let idx = typeof queueIndex === 'number' ? queueIndex : q.findIndex(h => h.id === song.id);
+    if (idx < 0) idx = 0;
+
+    currentQueueIndexRef.current = idx;
+    setCurrentQueueIndex(idx);
+    setCurrentTime(0);
+    setDuration(0);
+    setHymn(song);
+    setCurrentHymn(song);
+
+    // Build TrackPlayer queue
+    await buildQueue(q, idx);
+    await resolveAndPlay(song.youtube_id);
+  }
+
+  async function cmd_play() {
+    await TrackPlayer.play();
+  }
+  async function cmd_pause() {
+    await TrackPlayer.pause();
+  }
+  function togglePlayPause() {
+    isPlaying ? cmd_pause() : cmd_play();
+  }
+
+  async function handlePlayFromQueue(item) {
+    if (!item) return;
+    const q = getQueue(hymns);
+    const idx = q.findIndex(h => h.id === item.id);
+    if (idx >= 0) {
+      await changeToSong(item, idx);
+    }
+  }
+
+  async function handleNextTrack() {
+    const q = getQueue(hymns);
+    if (!q.length) return;
+    let nextIdx;
+    if (isShuffledRef.current) {
+      nextIdx = Math.floor(Math.random() * q.length);
+    } else {
+      nextIdx = (currentQueueIndexRef.current + 1) % q.length;
+    }
+    await changeToSong(q[nextIdx], nextIdx);
+  }
+
+  async function handlePrevTrack() {
+    const q = getQueue(hymns);
+    if (!q.length) return;
+    const prev = currentQueueIndexRef.current > 0
+      ? currentQueueIndexRef.current - 1 : q.length - 1;
+    await changeToSong(q[prev], prev);
+  }
+
+  function handleSeekRelease() {
+    if (!isSeeking || !duration) { setIsSeeking(false); return; }
+    const target = seekPercent * duration;
+    setCurrentTime(target);
+    TrackPlayer.seekTo(target).catch(() => {});
+    setIsSeeking(false);
+  }
+
+  function handleProgressBarPress(evt) {
+    if (!duration) return;
+    const x = evt.nativeEvent.locationX;
+    if (typeof x !== 'number') return;
+    const target = (x / (SCREEN_WIDTH - 40)) * duration;
+    setCurrentTime(target);
+    TrackPlayer.seekTo(target).catch(() => {});
+  }
+
+  // Sync repeat mode to TrackPlayer
+  useEffect(() => {
+    async function syncRepeat() {
+      try {
+        const tpMode = repeatMode === 0 ? TPRepeatMode.Off
+          : repeatMode === 1 ? TPRepeatMode.Queue
+          : TPRepeatMode.Track;
+        await TrackPlayer.setRepeatMode(tpMode);
+      } catch (e) {}
+    }
+    syncRepeat();
+  }, [repeatMode]);
+
+  const activeHymn = hymn || currentHymn || { title: '', artist: '', youtube_id: '', id: null };
+
+  return (
+    <PlayerCtx.Provider value={{
+      currentHymn: activeHymn, hymn, hymns, setHymns,
+      isPlaying, currentTime, duration,
+      repeatMode, isShuffled, setIsShuffled,
+      currentQueueIndex, setCurrentQueueIndex, queue: getQueue(hymns),
+      overlayExpanded, queueReady,
+      changeToSong, cmd_play, cmd_pause, togglePlayPause,
+      handlePlayFromQueue, handleNextTrack, handlePrevTrack,
+      setCurrentTime, setDuration,
+      setSeekPercent, setIsSeeking, setRepeatMode,
+      handleSeekRelease, handleProgressBarPress,
+      formatTime, currentQueueIndexRef,
+      showPlayer, hidePlayer,
+      resolveAndPlay,
+    }}>
+      {children}
+
+      <Animated.View style={[olStyles.overlay, { transform: [{ translateY: overlayY }] }]}>
+        <FullScreenPlayerOverlay />
+      </Animated.View>
+    </PlayerCtx.Provider>
+  );
+}
+function usePlayer() {
+  return useContext(PlayerCtx) || {};
+}
+
+const olStyles = StyleSheet.create({
+  overlay: {
+    position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
+    backgroundColor: MAIN_BG_COLOR, zIndex: 999,
+  },
+});
+
+// ================================================================
+//  MINI PLAYER
+// ================================================================
+function MiniPlayer({ onPress }) {
+  const player = usePlayer();
+  const { currentHymn, isPlaying, currentTime, duration, formatTime,
+    togglePlayPause, handleNextTrack, handlePrevTrack,
+    repeatMode, setRepeatMode, isShuffled, setIsShuffled } = player;
+  if (!currentHymn?.id) return null;
+  const progressPct = duration > 0 ? Math.min((currentTime/duration)*100, 100) : 0;
+
+  return (
+    <View style={miStyles.wrapper}>
+      <TouchableOpacity style={miStyles.container} onPress={onPress} activeOpacity={0.9}>
+        <View style={miStyles.topRow}>
+          <Image source={{ uri: getAlbumCoverUrl(currentHymn.youtube_id) }} style={miStyles.cover} />
+          <View style={miStyles.info}>
+            <Text style={miStyles.title} numberOfLines={1}>{currentHymn.title}</Text>
+            <Text style={miStyles.artist} numberOfLines={1}>{currentHymn.artist}</Text>
+          </View>
+        </View>
+
+        <View style={miStyles.progressSection}>
+          <View style={miStyles.progressBarTouchArea}>
+            <View style={miStyles.progressBarBg}>
+              <View style={[miStyles.progressBarFill, { width: `${progressPct}%` }]}>
+                <View style={miStyles.progressBarThumb} />
+              </View>
+            </View>
+          </View>
+          <View style={miStyles.timeRow}>
+            <Text style={miStyles.timeText}>{formatTime(currentTime)}</Text>
+            <Text style={miStyles.timeText}>{formatTime(duration)}</Text>
+          </View>
+        </View>
+
+        <View style={miStyles.controlsRow}>
+          <TouchableOpacity style={miStyles.ctrlBtn} onPress={(e) => { e.stopPropagation(); setIsShuffled?.(s => !s); }} activeOpacity={0.6}>
+            <View style={{ alignItems: 'center' }}>
+              <Text style={[miStyles.ctrlIcon, isShuffled && miStyles.ctrlIconActive]}>{ICONS.shuffle}</Text>
+              {isShuffled && <View style={miStyles.ctrlActiveDot} />}
+            </View>
+          </TouchableOpacity>
+          <TouchableOpacity style={miStyles.ctrlBtn} onPress={(e) => { e.stopPropagation(); handlePrevTrack(); }} activeOpacity={0.6}>
+            <Text style={miStyles.ctrlIconPrev}>{ICONS.skipBack}</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={miStyles.playBtn} onPress={(e) => { e.stopPropagation(); togglePlayPause(); }} activeOpacity={0.8}>
+            <Text style={miStyles.playBtnIcon}>{isPlaying ? ICONS.pause : ICONS.play}</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={miStyles.ctrlBtn} onPress={(e) => { e.stopPropagation(); handleNextTrack(); }} activeOpacity={0.6}>
+            <Text style={miStyles.ctrlIconNext}>{ICONS.skipForward}</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={miStyles.ctrlBtn} onPress={(e) => { e.stopPropagation(); setRepeatMode?.((repeatMode + 1) % 3); }} activeOpacity={0.6}>
+            <View style={{ alignItems: 'center' }}>
+              <MaterialIcons
+                name={repeatMode === 2 ? 'repeat-one' : 'repeat'}
+                size={28}
+                style={{ color: repeatMode > 0 ? ACCENT_COLOR : 'rgba(255,255,255,0.6)' }}
+              />
+              {repeatMode > 0 && <View style={miStyles.ctrlActiveDot} />}
+            </View>
+          </TouchableOpacity>
+        </View>
+      </TouchableOpacity>
+    </View>
+  );
+}
+const miStyles = StyleSheet.create({
+  wrapper: {
+    marginHorizontal: 10, marginBottom: 0,
+    ...Platform.select({
+      ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.4, shadowRadius: 8 },
+      android: { elevation: 8 },
+    }),
+  },
+  container: { backgroundColor: CARD_BG_COLOR, borderRadius: 16, paddingHorizontal: 14, paddingTop: 12, paddingBottom: 10 },
+  topRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 8 },
+  cover: { width: 50, height: 50, borderRadius: 10, backgroundColor: '#161F19' },
+  info: { flex: 1, marginLeft: 12 },
+  title: { fontSize: 15, fontWeight: '700', color: TEXT_PRIMARY },
+  artist: { fontSize: 12, color: TEXT_SECONDARY, marginTop: 2 },
+  progressSection: { marginBottom: 8 },
+  progressBarTouchArea: { height: 24, justifyContent: 'center' },
+  progressBarBg: { height: 4, backgroundColor: 'rgba(255,255,255,0.15)', borderRadius: 2 },
+  progressBarFill: { height: 4, backgroundColor: ACCENT_COLOR, borderRadius: 2 },
+  progressBarThumb: { width: 10, height: 10, borderRadius: 5, backgroundColor: ACCENT_COLOR, position: 'absolute', right: -5, top: '50%', marginTop: -5 },
+  timeRow: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 4 },
+  timeText: { fontSize: 10, color: TEXT_SECONDARY },
+  controlsRow: { flexDirection: 'row', justifyContent: 'space-evenly', alignItems: 'center' },
+  ctrlBtn: { width: 44, height: 44, justifyContent: 'center', alignItems: 'center' },
+  ctrlIcon: { fontSize: 28, color: TEXT_SECONDARY },
+  ctrlIconPrev: { fontSize: 24, color: '#FFFFFF' },
+  ctrlIconNext: { fontSize: 24, color: '#FFFFFF' },
+  ctrlIconActive: { color: ACCENT_COLOR },
+  ctrlActiveDot: { width: 4, height: 4, borderRadius: 2, backgroundColor: ACCENT_COLOR, marginTop: 2 },
+  playBtn: { width: 56, height: 56, borderRadius: 28, backgroundColor: '#FFFFFF', justifyContent: 'center', alignItems: 'center' },
+  playBtnIcon: { fontSize: 20, color: '#000000', marginLeft: 2 },
+});
+
+// ================================================================
+//  TAB BAR
+// ================================================================
+const TAB_CONFIG = [
+  { key: 'Home', label: '首頁', emoji: '🏠' },
+  { key: 'Categories', label: '詩歌', emoji: '🎵' },
+  { key: 'Playlist', label: '清單', emoji: '📋' },
+  { key: 'Favorites', label: '最愛', emoji: '❤️' },
+];
+function TabBar({ bottomInset, onMiniPlayerPress }) {
+  const [activeTab, setActiveTab] = useState('Home');
+  const { currentHymn } = usePlayer();
+  const safePad = Math.max(bottomInset || 0, 4);
+  return (
+    <View style={[tbStyles.wrapper, { paddingBottom: safePad }]}>
+      <View style={tbStyles.miniWrap}>
+        <MiniPlayer onPress={onMiniPlayerPress} />
+      </View>
+      <View style={tbStyles.bar}>
+        {TAB_CONFIG.map(tab => (
+          <TouchableOpacity key={tab.key} style={tbStyles.item} onPress={() => setActiveTab(tab.key)}>
+            <Text style={tbStyles.icon}>{tab.emoji}</Text>
+            <Text style={[tbStyles.label, activeTab === tab.key && tbStyles.labelActive]}>{tab.label}</Text>
+          </TouchableOpacity>
+        ))}
+        <TouchableOpacity style={tbStyles.item} onPress={() => setActiveTab('Player')}>
+          <Text style={tbStyles.icon}>▶️</Text>
+          <Text style={[tbStyles.label, activeTab === 'Player' && tbStyles.labelActive]}>播放</Text>
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
+}
+const tbStyles = StyleSheet.create({
+  wrapper: { backgroundColor: MAIN_BG_COLOR },
+  miniWrap: { marginBottom: 6 },
+  bar: { flexDirection: 'row', backgroundColor: MAIN_BG_COLOR, paddingTop: 4 },
+  item: { flex: 1, alignItems: 'center', paddingVertical: 6 },
+  icon: { fontSize: 18 },
+  label: { fontSize: 10, color: TEXT_SECONDARY, marginTop: 2, fontWeight: '500' },
+  labelActive: { color: TEXT_PRIMARY, fontWeight: '700' },
+});
+
+// ================================================================
+//  HOME SCREEN
+// ================================================================
+function HomeScreen({ hymns, activeCategory, onCategoryChange, onPlayHymn }) {
+  const safeHymns = hymns || [];
+  const featured = safeHymns.slice(0, 6);
+  const filtered = activeCategory === '全部'
+    ? safeHymns
+    : safeHymns.filter(h => (h.lang || h.category || '').toLowerCase().includes(activeCategory));
+  return (
+    <ScrollView style={hStyles.scroll} contentContainerStyle={hStyles.scrollContent}>
+      <View style={[hStyles.appBar, { paddingTop: (StatusBar.currentHeight || 24) + 12 }]}>
+        <View><Text style={hStyles.appBarTitle}>生命樹</Text><Text style={hStyles.appBarSub}>Etz Chayim</Text></View>
+      </View>
+      <TouchableOpacity style={hStyles.verseCard} activeOpacity={0.9}>
+        <Text style={hStyles.verseLabel}>✝️ DAILY VERSE 每日金句</Text>
+        <Text style={hStyles.verseText}>{DAILY_VERSE.text}</Text>
+        <Text style={hStyles.verseRef}>— {DAILY_VERSE.ref}</Text>
+      </TouchableOpacity>
+      <View style={hStyles.sectionHeader}><Text style={hStyles.sectionTitle}>情境分類</Text></View>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={hStyles.chipContainer}>
+        {CATEGORIES.map(cat => (
+          <TouchableOpacity key={cat} style={[hStyles.chip, activeCategory === cat && hStyles.chipActive]}
+            onPress={() => onCategoryChange(cat)}>
+            <Text style={[hStyles.chipText, activeCategory === cat && hStyles.chipTextActive]}>{cat}</Text>
+          </TouchableOpacity>
+        ))}
+      </ScrollView>
+      <View style={hStyles.sectionHeader}><Text style={hStyles.sectionTitle}>🔥 推薦精選</Text></View>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={hStyles.featuredContainer}>
+        {featured.map(h => (
+          <TouchableOpacity key={h.id} style={hStyles.featuredCard} onPress={() => onPlayHymn(h)}>
+            <Image source={{ uri: getAlbumCoverUrl(h.youtube_id) }} style={hStyles.featuredCover} />
+            <View style={hStyles.featuredInfo}>
+              <Text style={hStyles.featuredTitle} numberOfLines={1}>{h.title}</Text>
+              <Text style={hStyles.featuredArtist} numberOfLines={1}>{h.artist}</Text>
+            </View>
+          </TouchableOpacity>
+        ))}
+      </ScrollView>
+      <View style={[hStyles.sectionHeader, { marginTop: 24 }]}>
+        <Text style={hStyles.sectionTitle}>全部詩歌</Text>
+        <Text style={{ color: TEXT_SECONDARY, fontSize: 12 }}>{safeHymns.length} 首</Text>
+      </View>
+      {filtered.map(h => (
+        <TouchableOpacity key={h.id} style={hStyles.songItem} onPress={() => onPlayHymn(h)}>
+          <Image source={{ uri: getAlbumCoverUrl(h.youtube_id) }} style={hStyles.songCover} />
+          <View style={hStyles.songInfo}>
+            <Text style={hStyles.songTitle} numberOfLines={1}>{h.title}</Text>
+            <Text style={hStyles.songArtist} numberOfLines={1}>{h.artist}</Text>
+          </View>
+          <Text style={hStyles.songPlay}>{ICONS.play}</Text>
+        </TouchableOpacity>
+      ))}
+      <View style={{ height: 40 }} />
+    </ScrollView>
+  );
+}
+const hStyles = StyleSheet.create({
+  scroll: { flex: 1, backgroundColor: MAIN_BG_COLOR },
+  scrollContent: { paddingBottom: 20 },
+  appBar: { paddingHorizontal: 20, paddingBottom: 12 },
+  appBarTitle: { fontSize: 28, fontWeight: '800', color: TEXT_PRIMARY },
+  appBarSub: { fontSize: 14, color: TEXT_SECONDARY, fontWeight: '500', marginTop: 2 },
+  verseCard: { marginHorizontal: 16, padding: 16, backgroundColor: CARD_BG_COLOR, borderRadius: 16, marginBottom: 20 },
+  verseLabel: { fontSize: 11, color: ACCENT_COLOR, fontWeight: '600', marginBottom: 10, letterSpacing: 1 },
+  verseText: { fontSize: 17, color: TEXT_PRIMARY, lineHeight: 26, fontWeight: '500' },
+  verseRef: { fontSize: 13, color: TEXT_SECONDARY, marginTop: 10, fontStyle: 'italic' },
+  sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, marginBottom: 12, marginTop: 4 },
+  sectionTitle: { fontSize: 18, fontWeight: '700', color: TEXT_PRIMARY },
+  chipContainer: { paddingHorizontal: 16, gap: 8, marginBottom: 20 },
+  chip: { paddingHorizontal: 16, paddingVertical: 8, backgroundColor: CARD_BG_COLOR, borderRadius: 20, borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)' },
+  chipActive: { backgroundColor: 'rgba(168,199,101,0.15)', borderColor: ACCENT_COLOR },
+  chipText: { fontSize: 13, color: TEXT_SECONDARY, fontWeight: '500' },
+  chipTextActive: { color: ACCENT_COLOR },
+  featuredContainer: { paddingHorizontal: 16, gap: 12 },
+  featuredCard: { width: 160 },
+  featuredCover: { width: 160, height: 90, borderRadius: 12, backgroundColor: '#161F19' },
+  featuredInfo: { marginTop: 8 },
+  featuredTitle: { fontSize: 13, fontWeight: '600', color: TEXT_PRIMARY },
+  featuredArtist: { fontSize: 11, color: TEXT_SECONDARY, marginTop: 2 },
+  songItem: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 10 },
+  songCover: { width: 44, height: 44, borderRadius: 8, backgroundColor: '#161F19' },
+  songInfo: { flex: 1, marginLeft: 12 },
+  songTitle: { fontSize: 14, fontWeight: '600', color: TEXT_PRIMARY },
+  songArtist: { fontSize: 12, color: TEXT_SECONDARY, marginTop: 2 },
+  songPlay: { fontSize: 16, color: ACCENT_COLOR, paddingLeft: 8 },
+});
+
+// ================================================================
+//  FULL SCREEN PLAYER OVERLAY — TrackPlayer 版（無 YouTube Iframe）
+// ================================================================
+function FullScreenPlayerOverlay() {
+  const insets = typeof useSafeAreaInsets === 'function' ? useSafeAreaInsets() : { top: 0, bottom: 0 };
+  const player = usePlayer();
+
+  const [liked, setLiked] = useState(false);
+  const queue = player.queue || [];
+  const [sheetVisible, setSheetVisible] = useState(false);
+  const [lyricsVisible, setLyricsVisible] = useState(false);
+  const SHEET_HEIGHT = Math.floor(SCREEN_HEIGHT * 0.45);
+  const HANDLE_LIFT = SHEET_HEIGHT;
+  const CONTROLS_LIFT = 295;
+  const drawerAnim = useRef(new Animated.Value(0)).current;
+  const sheetAnim = useRef(new Animated.Value(0)).current;
+  const lyricsAnim = useRef(new Animated.Value(0)).current;
+  const sheetOpacity = useRef(new Animated.Value(0)).current;
+
+  const sheetVisibleRef = useRef(false);
+  sheetVisibleRef.current = sheetVisible;
+  const toggleSheetRef = useRef(() => {});
+  toggleSheetRef.current = toggleSheet;
+  const handlePanRef = useRef(null);
+  if (!handlePanRef.current) {
+    handlePanRef.current = PanResponder.create({
+      onStartShouldSetPanResponder: () => true,
+      onMoveShouldSetPanResponder: () => true,
+      onPanResponderTerminationRequest: () => false,
+      onPanResponderGrant: () => {},
+      onPanResponderMove: () => {},
+      onPanResponderRelease: (_, gs) => {
+        const fn = toggleSheetRef.current;
+        if (Math.abs(gs.dy) < 5) fn();
+        else if (gs.dy > 15 && sheetVisibleRef.current) fn();
+        else if (gs.dy < -15 && !sheetVisibleRef.current) fn();
+      },
+    });
+  }
+
+  function toggleSheet() {
+    if (sheetVisible) {
+      Animated.timing(sheetAnim, { toValue: 0, duration: 250, useNativeDriver: false }).start(() => setSheetVisible(false));
+      Animated.parallel([
+        Animated.timing(drawerAnim, { toValue: 0, duration: 250, useNativeDriver: true }),
+        Animated.timing(sheetOpacity, { toValue: 0, duration: 200, useNativeDriver: true }),
+      ]).start();
+    } else {
+      setLyricsVisible(false); setSheetVisible(true);
+      sheetOpacity.setValue(1);
+      requestAnimationFrame(() => {
+        Animated.timing(sheetAnim, { toValue: 1, duration: 300, useNativeDriver: false }).start();
+        Animated.timing(drawerAnim, { toValue: 1, duration: 300, useNativeDriver: true }).start();
+      });
+    }
+  }
+
+  function toggleLyrics() {
+    if (lyricsVisible) {
+      Animated.timing(lyricsAnim, { toValue: 0, duration: 250, useNativeDriver: true }).start(() => setLyricsVisible(false));
+    } else {
+      setSheetVisible(false); setLyricsVisible(true);
+      requestAnimationFrame(() => Animated.timing(lyricsAnim, { toValue: 1, duration: 300, useNativeDriver: true }).start());
+    }
+  }
+
+  const cur = player.currentHymn || { title: '', artist: '', youtube_id: '', id: null, lyrics: '' };
+  const progressPercent = player.duration > 0 ? Math.min((player.currentTime / player.duration) * 100, 100) : 0;
+  const bottomPad = (insets?.bottom || 20) + 8;
+
+  return (
+    <View style={[fsStyles.container, { paddingBottom: bottomPad }]}>
+      <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
+
+      {/* Top Bar */}
+      <View style={[fsStyles.topBar, { paddingTop: (insets?.top || StatusBar.currentHeight || 24) + 8 }]}>
+        <TouchableOpacity style={fsStyles.dismissBtn} onPress={player.hidePlayer}>
+          <Text style={fsStyles.dismissIcon}>{ICONS.dismissDown}</Text>
+        </TouchableOpacity>
+        <Text style={fsStyles.topBarTitle}>生命樹</Text>
+        <View style={fsStyles.dismissBtn} />
+      </View>
+
+      {/* Album Art — 取代舊嘅 YouTube Iframe */}
+      <View style={fsStyles.videoContainer}>
+        <View style={fsStyles.videoCover}>
+          {cur.youtube_id ? (
+            <Image source={{ uri: getAlbumCoverUrl(cur.youtube_id) }} style={fsStyles.videoCoverImg} />
+          ) : null}
+          {/* Animated equalizer bars when playing */}
+          {player.isPlaying && (
+            <View style={fsStyles.equalizerContainer}>
+              <View style={[fsStyles.equalizerBar, fsStyles.equalizerBar1]} />
+              <View style={[fsStyles.equalizerBar, fsStyles.equalizerBar2]} />
+              <View style={[fsStyles.equalizerBar, fsStyles.equalizerBar3]} />
+              <View style={[fsStyles.equalizerBar, fsStyles.equalizerBar4]} />
+            </View>
+          )}
+        </View>
+      </View>
+
+      {/* 上半彈簧 */}
+      <View style={{ flex: 1 }} />
+
+      {/* 電梯 1：控制區 */}
+      <Animated.View style={{
+        zIndex: 99,
+        transform: [{
+          translateY: drawerAnim.interpolate({
+            inputRange: [0, 1],
+            outputRange: [0, -CONTROLS_LIFT],
+          }),
+        }],
+      }}>
+        {/* Song info (展開時淡出) */}
+        <Animated.View style={{
+          opacity: sheetAnim.interpolate({ inputRange: [0, 1], outputRange: [1, 0] }),
+          overflow: 'hidden',
+        }}>
+          <View style={fsStyles.songInfo}>
+            <Text style={fsStyles.songTitle} numberOfLines={2}>{cur.title}</Text>
+            <Text style={fsStyles.songArtist}>{cur.artist}</Text>
+          </View>
+        </Animated.View>
+
+        {/* 進度條 + 控制按鈕 */}
+        <View>
+          <View style={fsStyles.progressSection}>
+            <TouchableOpacity style={fsStyles.progressBarTouchArea} onPress={(e) => { player.handleProgressBarPress(e); }}>
+              <View style={fsStyles.progressBarBg}>
+                <View style={[fsStyles.progressBarFill, { width: `${progressPercent}%` }]}>
+                  <View style={fsStyles.progressBarThumb} />
+                </View>
+              </View>
+            </TouchableOpacity>
+            <View style={fsStyles.timeRow}>
+              <Text style={fsStyles.timeText}>{player.formatTime(player.currentTime)}</Text>
+              <Text style={fsStyles.timeText}>{player.formatTime(player.duration)}</Text>
+            </View>
+          </View>
+          <View style={fsStyles.controlsRow}>
+            <TouchableOpacity style={fsStyles.controlBtn} onPress={() => player.setIsShuffled?.(s => !s)} activeOpacity={0.6}>
+              <View style={{ alignItems: 'center' }}>
+                <Text style={[fsStyles.ctrlIconShuffle, player.isShuffled && fsStyles.ctrlIconActive]}>{ICONS.shuffle}</Text>
+                {player.isShuffled && <View style={fsStyles.ctrlActiveDot} />}
+              </View>
+            </TouchableOpacity>
+            <TouchableOpacity style={fsStyles.controlBtn} onPress={player.handlePrevTrack} activeOpacity={0.6}>
+              <Text style={fsStyles.ctrlIconPrev}>{ICONS.skipBack}</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={fsStyles.playBtn} onPress={player.togglePlayPause} activeOpacity={0.8}>
+              <Text style={fsStyles.playBtnIcon}>{player.isPlaying ? ICONS.pause : ICONS.play}</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={fsStyles.controlBtn} onPress={player.handleNextTrack} activeOpacity={0.6}>
+              <Text style={fsStyles.ctrlIconNext}>{ICONS.skipForward}</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={fsStyles.controlBtn} onPress={() => player.setRepeatMode?.((player.repeatMode + 1) % 3)} activeOpacity={0.6}>
+              <View style={{ alignItems: 'center' }}>
+                <MaterialIcons
+                  name={player.repeatMode === 2 ? 'repeat-one' : 'repeat'}
+                  size={32}
+                  style={{ color: player.repeatMode > 0 ? ACCENT_COLOR : 'rgba(255,255,255,0.6)' }}
+                />
+                {player.repeatMode > 0 && <View style={fsStyles.ctrlActiveDot} />}
+              </View>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Animated.View>
+
+      {/* 下半彈簧 */}
+      <View style={{ flex: 1 }} />
+
+      {/* 電梯 2：Handle + Sheet */}
+      <Animated.View style={{
+        transform: [{
+          translateY: drawerAnim.interpolate({
+            inputRange: [0, 1],
+            outputRange: [0, -HANDLE_LIFT],
+          }),
+        }],
+      }}>
+        <View style={{
+          paddingVertical: 10, paddingHorizontal: 20,
+          backgroundColor: CARD_BG_COLOR, borderTopLeftRadius: 20, borderTopRightRadius: 20,
+        }}
+          {...handlePanRef.current?.panHandlers}
+        >
+          <View style={{ alignItems: 'center' }}>
+            <View style={fsStyles.handleBar} />
+            <View style={fsStyles.sheetHandleRow}>
+              <Text style={fsStyles.sheetTitle}>📋 播放清單</Text>
+              <Text style={fsStyles.sheetCount}>{queue.length} 首</Text>
+            </View>
+          </View>
+        </View>
+      </Animated.View>
+
+      {/* 獨立清單 */}
+      <Animated.View style={{
+        position: 'absolute',
+        left: 0, right: 0,
+        bottom: -SHEET_HEIGHT + 50,
+        height: SHEET_HEIGHT,
+        backgroundColor: CARD_BG_COLOR,
+        opacity: sheetOpacity,
+        transform: [{
+          translateY: drawerAnim.interpolate({
+            inputRange: [0, 1],
+            outputRange: [0, -HANDLE_LIFT],
+          }),
+        }],
+      }}>
+        <FlatList
+          data={queue}
+          keyExtractor={item => String(item.id)}
+          renderItem={({ item }) => (
+            <TouchableOpacity style={[fsStyles.queueItem, item.id === cur.id && fsStyles.queueItemActive]}
+              onPress={() => { player.handlePlayFromQueue(item); }} activeOpacity={0.7}>
+              <Image source={{ uri: getAlbumCoverUrl(item.youtube_id) }} style={fsStyles.queueCover} />
+              <View style={fsStyles.queueInfo}>
+                <Text style={fsStyles.queueTitle} numberOfLines={1}>{item.title}</Text>
+                <Text style={fsStyles.queueArtist} numberOfLines={1}>{item.artist}</Text>
+              </View>
+              {item.id === cur.id ? (
+                <Text style={fsStyles.queuePlayingIcon}>▶</Text>
+              ) : (
+                <Text style={fsStyles.queueDragIcon}>{ICONS.queueBars}</Text>
+              )}
+            </TouchableOpacity>
+          )}
+          scrollEnabled={true}
+          contentContainerStyle={{ paddingBottom: 12 }}
+        />
+      </Animated.View>
+
+      {/* Lyrics overlay */}
+      {lyricsVisible && (
+        <Animated.View style={[fsStyles.lyricsContainer, { transform: [{ translateY: lyricsAnim.interpolate({ inputRange: [0,1], outputRange: [400,0] }) }] }]}>
+          <View style={fsStyles.lyricsHeader}>
+            <Text style={fsStyles.lyricsTitle}>📄 歌詞</Text>
+            <TouchableOpacity onPress={toggleLyrics}><Text style={fsStyles.lyricsClose}>✕</Text></TouchableOpacity>
+          </View>
+          <ScrollView style={fsStyles.lyricsScroll}>
+            <Text style={fsStyles.lyricsBody}>{cur.lyrics || '暫無歌詞'}</Text>
+          </ScrollView>
+        </Animated.View>
+      )}
+
+    </View>
+  );
+}
+
+const fsStyles = StyleSheet.create({
+  container: { flex: 1, height: SCREEN_HEIGHT, backgroundColor: MAIN_BG_COLOR },
+  center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  topBar: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, paddingBottom: 8 },
+  dismissBtn: { width: 40, height: 40, justifyContent: 'center', alignItems: 'center' },
+  dismissIcon: { fontSize: 16, color: '#FFFFFF' },
+  topBarTitle: { fontSize: 16, fontWeight: '600', color: TEXT_PRIMARY },
+  videoContainer: { width: SCREEN_WIDTH, height: VIDEO_HEIGHT },
+  videoCover: { width: SCREEN_WIDTH, height: VIDEO_HEIGHT, justifyContent: 'center', alignItems: 'center', backgroundColor: CARD_BG_COLOR },
+  videoCoverImg: { width: SCREEN_WIDTH, height: VIDEO_HEIGHT, resizeMode: 'cover' },
+  videoPlaceholder: { backgroundColor: CARD_BG_COLOR },
+  videoPlaceholderText: { fontSize: 48, color: TEXT_SECONDARY },
+  equalizerContainer: { position: 'absolute', bottom: 16, flexDirection: 'row', alignItems: 'flex-end', gap: 4 },
+  equalizerBar: { width: 4, backgroundColor: ACCENT_COLOR, borderRadius: 2 },
+  equalizerBar1: { height: 16 },
+  equalizerBar2: { height: 24 },
+  equalizerBar3: { height: 12 },
+  equalizerBar4: { height: 20 },
+  songInfo: { paddingHorizontal: 20, paddingVertical: 8 },
+  songTitle: { fontSize: 20, fontWeight: '700', color: TEXT_PRIMARY },
+  songArtist: { fontSize: 14, color: TEXT_SECONDARY, marginTop: 4 },
+  progressSection: { paddingHorizontal: 20, paddingVertical: 8 },
+  progressBarTouchArea: { height: 32, justifyContent: 'center' },
+  progressBarBg: { height: 4, backgroundColor: 'rgba(255,255,255,0.15)', borderRadius: 2 },
+  progressBarFill: { height: 4, backgroundColor: ACCENT_COLOR, borderRadius: 2 },
+  progressBarThumb: { width: 12, height: 12, borderRadius: 6, backgroundColor: ACCENT_COLOR, position: 'absolute', right: -6, top: '50%', marginTop: -6 },
+  timeRow: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 4 },
+  timeText: { fontSize: 11, color: TEXT_SECONDARY },
+  controlsRow: { flexDirection: 'row', justifyContent: 'space-evenly', alignItems: 'center', paddingVertical: 8, paddingHorizontal: 16 },
+  controlBtn: { width: 48, height: 48, justifyContent: 'center', alignItems: 'center' },
+  ctrlIconShuffle: { fontSize: 32, color: TEXT_SECONDARY },
+  ctrlIconPrev: { fontSize: 28, color: '#FFFFFF' },
+  ctrlIconNext: { fontSize: 28, color: '#FFFFFF' },
+  ctrlIconActive: { color: ACCENT_COLOR },
+  ctrlActiveDot: { width: 4, height: 4, borderRadius: 2, backgroundColor: ACCENT_COLOR, marginTop: 3 },
+  playBtn: { width: 64, height: 64, borderRadius: 32, backgroundColor: '#FFFFFF', justifyContent: 'center', alignItems: 'center' },
+  playBtnIcon: { fontSize: 22, color: '#000000', marginLeft: 2 },
+  handleBar: { width: 36, height: 4, backgroundColor: 'rgba(255,255,255,0.2)', borderRadius: 2, marginBottom: 8 },
+  sheetHandleRow: { flexDirection: 'row', alignItems: 'center' },
+  sheetTitle: { fontSize: 14, fontWeight: '600', color: TEXT_PRIMARY, marginRight: 8 },
+  sheetCount: { fontSize: 12, color: TEXT_SECONDARY, fontWeight: '500' },
+  queueItem: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 10 },
+  queueItemActive: { backgroundColor: 'rgba(255,255,255,0.08)' },
+  queueCover: { width: 40, height: 40, borderRadius: 6, backgroundColor: '#161F19' },
+  queueInfo: { flex: 1, marginLeft: 10 },
+  queueTitle: { fontSize: 14, fontWeight: '600', color: TEXT_PRIMARY },
+  queueArtist: { fontSize: 12, color: TEXT_SECONDARY, marginTop: 2 },
+  queueDragIcon: { fontSize: 18, color: TEXT_SECONDARY, paddingLeft: 8 },
+  queuePlayingIcon: { fontSize: 14, color: ACCENT_COLOR, paddingLeft: 8, fontWeight: 'bold' },
+  lyricsContainer: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: MAIN_BG_COLOR, zIndex: 100 },
+  lyricsHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, paddingTop: (StatusBar.currentHeight || 44) + 12, paddingBottom: 12 },
+  lyricsTitle: { fontSize: 18, fontWeight: '700', color: TEXT_PRIMARY },
+  lyricsClose: { fontSize: 20, color: TEXT_SECONDARY, padding: 8 },
+  lyricsScroll: { flex: 1, paddingHorizontal: 20 },
+  lyricsBody: { fontSize: 16, color: TEXT_PRIMARY, lineHeight: 28, paddingBottom: 40 },
+});
+
+// ===== AppContent =====
+function AppContent() {
+  const { hymns, setHymns, changeToSong, showPlayer, queueReady } = usePlayer();
+  const bottomInset = useBottomInset();
+  const [loading, setLoading] = useState(true);
+  const [allSongs, setAllSongs] = useState([]);
+  const [activeCategory, setActiveCategory] = useState('全部');
+
+  useEffect(() => {
+    let cancelled = false;
+    async function load() {
+      const all = await safeFetchAllHymns();
+      const valid = Array.isArray(all) && all.length > 0 ? all : FALLBACK_HYMNS;
+      if (!cancelled) {
+        setAllSongs(valid);
+        setHymns(valid);
+        setLoading(false);
+      }
+    }
+    load();
+    return () => { cancelled = true; };
+  }, []);
+
+  function handlePlayHymn(h) { if (h) { changeToSong(h); showPlayer(); } }
+  function handleOpenFullScreen() { showPlayer(); }
+
+  if (loading || (!queueReady && Platform.OS === 'ios')) {
+    // On Android, queueReady may stay false due to headless service timing
+    // But we should still wait briefly, not crash
+    return (
+      <View style={pageStyles.container}>
+        <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
+        <View style={pageStyles.center}>
+          <ActivityIndicator size="large" color="#FFFFFF" />
+          <Text style={pageStyles.loadingText}>載入詩歌中...</Text>
+        </View>
+      </View>
+    );
+  }
+
+  return (
+    <View style={pageStyles.container}>
+      <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
+      <View style={pageStyles.content}>
+        <HomeScreen hymns={allSongs || []} activeCategory={activeCategory}
+          onCategoryChange={setActiveCategory} onPlayHymn={handlePlayHymn} />
+      </View>
+      <TabBar bottomInset={bottomInset} onMiniPlayerPress={handleOpenFullScreen} />
+    </View>
+  );
+}
+
+// ===== App Entry =====
+export default function App() {
+  if (SafeAreaProvider) {
+    return (
+      <SafeAreaProvider>
+        <PlayerProvider><AppContent /></PlayerProvider>
+      </SafeAreaProvider>
+    );
+  }
+  return <PlayerProvider><AppContent /></PlayerProvider>;
+}
+
+const pageStyles = StyleSheet.create({
+  container: { flex: 1, height: SCREEN_HEIGHT, backgroundColor: MAIN_BG_COLOR },
+  content: { flex: 1 },
+  center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  loadingText: { color: TEXT_SECONDARY, marginTop: 16, fontSize: 15 },
+});
