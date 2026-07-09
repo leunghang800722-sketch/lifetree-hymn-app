@@ -38,6 +38,18 @@ app.use('/api/category', categoryRoutes);
 // Serve static files (APK download)
 app.use('/downloads', express.static('public'));
 
+// APK download with Content-Disposition header to force download
+app.get('/downloads/hymn-app-v1.3.0-week2.apk', (req, res) => {
+  const filePath = path.join(__dirname, 'public', 'hymn-app-v1.3.0-week2.apk');
+  if (fs.existsSync(filePath)) {
+    res.setHeader('Content-Disposition', 'attachment; filename="hymn-app-v1.3.0-week2.apk"');
+    res.setHeader('Content-Type', 'application/vnd.android.package-archive');
+    res.sendFile(filePath);
+  } else {
+    res.status(404).json({ error: 'File not found' });
+  }
+});
+
 // Regular expression to validate YouTube video IDs
 const YT_ID_REGEX = /^[a-zA-Z0-9_-]{11}$/;
 
