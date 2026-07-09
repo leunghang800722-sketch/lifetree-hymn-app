@@ -1,124 +1,133 @@
-// 搜尋畫面
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   View,
-  Text,
   TextInput,
   FlatList,
   TouchableOpacity,
+  Text,
   StyleSheet,
   ActivityIndicator,
-  Image,
 } from 'react-native';
-import { useNavigation, useRoute } from '@react-navigation/native';
-import { fetchHymns } from '../api';
-import { getAlbumCoverUrl } from '../utils/albumCover';
+import { searchApi } from '../services/searchApi';
 
-export default function SearchScreen() {
-  const navigation = useNavigation();
-  const [search, setSearch] = useState('');
+export default function SearchScreen({ navigation }) {
+  const [query, setQuery] = useState('');
+  const [activeTab, setActiveTab] = useState('all'); // all, title, artist, lyrics, album
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [hasSearched, setHasSearched] = useState(false);
 
-  useEffect(() => {
-    if (search.trim().length > 0) {
-      doSearch();
-    } else {
+  const handleSearch = async (searchQuery, tab = activeTab) => {
+    if (!searchQuery.trim()) {
       setResults([]);
-      setHasSearched(false);
+      return;
     }
-  }, [search]);
 
-  async function doSearch() {
-    if (!search.trim()) return;
     setLoading(true);
-    setHasSearched(true);
     try {
-      const data = await fetchHymns(search);
-      setResults(data);
-    } catch (err) {
-      console.error(err);
+      let data;
+      switch (tab) {
+        case 'all':
+          data = await searchApi.searchAll(searchQuery);
+          break;
+        case 'title':
+          data = await searchApi.searchTitle(searchQuery);
+          break;
+        case 'artist':
+          data = await searchApi.searchArtist(searchQuery);
+          break;
+        case 'lyrics':
+          data = await searchApi.searchLyrics(searchQuery);
+          break;
+        case 'album':
+          data = await searchApi.searchAlbum(searchQuery);
+          break;
+      }
+      setResults(data || []);
+    } catch (error) {
+      console.error('Search error:', error);
+      setResults([]);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
-  }
+  };
 
-  function handleHymnPress(hymn) {
-    navigation.navigate('Player', { hymnId: hymn.id });
-  }
+  const handleTabChange = (tab) => {
+    setActiveTab(tab);
+    if (query.trim()) {
+      handleSearch(query, tab);
+    }
+  };
+
+  const handlePlayHymn = (hymn) => {
+    navigation.navigate('Player', { hymn });
+  };
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>🔍 搜尋詩歌</Text>
+      {/* 搜尋框 */}
+      <TextInput
+        style={styles.searchInput}
+        placeholder="搜尋歌名、歌手、歌詞..."
+        value={query}
+        onChangeText={(text) => {
+          setQuery(text);
+          handleSearch(text);
+        }}
+        autoFocus
+        returnKeyType="search"
+      />
+
+      {/* Tabs */}
+      <View style={styles.tabsContainer}>
+        {[
+          { key: 'all', label: '全部' },
+          { key: 'title', label: '歌名' },
+          { key: 'artist', label: '歌手' },
+          { key: 'lyrics', label: '歌詞' },
+        ].map((tab) => (
+          <TouchableOpacity
+            key={tab.key}
+            style={[
+              styles.tab,
+              activeTab === tab.key && styles.activeTab,
+            ]}
+            onPress={() => handleTabChange(tab.key)}
+          >
+            <Text
+              style={[
+                styles.tabText,
+                activeTab === tab.key && styles.activeTabText,
+              ]}
+            >
+              {tab.label}
+            </Text>
+          </TouchableOpacity>
+        ))}
       </View>
 
-      <View style={styles.searchContainer}>
-        <View style={styles.searchBar}>
-          <Text style={styles.searchIcon}>🔍</Text>
-          <TextInput
-            style={styles.searchInput}
-            placeholder="輸入詩歌名、歌手..."
-            placeholderTextColor="#6B7D65"
-            value={search}
-            onChangeText={setSearch}
-            autoFocus={true}
-            returnKeyType="search"
-          />
-          {search.length > 0 && (
-            <TouchableOpacity onPress={() => setSearch('')}>
-              <Text style={styles.clearBtn}>✕</Text>
-            </TouchableOpacity>
-          )}
-        </View>
-      </View>
+      {/* 載入中 */}
+      {loading && <ActivityIndicator size="large" color="#A8C765" style={styles.loader} />}
 
-      {loading ? (
-        <View style={styles.center}>
-          <ActivityIndicator size="large" color="#F5E6CA" />
-        </View>
-      ) : hasSearched && results.length === 0 ? (
-        <View style={styles.center}>
-          <Text style={styles.emptyEmoji}>😢</Text>
-          <Text style={styles.emptyText}>搵唔到詩歌</Text>
-          <Text style={styles.emptyHint}>試下其他關鍵字</Text>
-        </View>
-      ) : (
+      {/* 搜尋結果 */}
+      {!loading && (
         <FlatList
           data={results}
-          keyExtractor={(item) => String(item.id)}
-          contentContainerStyle={styles.listContent}
+          keyExtractor={(item) => item.id.toString()}
           renderItem={({ item }) => (
             <TouchableOpacity
-              style={styles.hymnItem}
-              onPress={() => handleHymnPress(item)}
+              style={styles.resultItem}
+              onPress={() => handlePlayHymn(item)}
             >
-              <Image
-                source={{ uri: getAlbumCoverUrl(item.youtube_id) }}
-                style={styles.hymnCover}
-              />
-              <View style={styles.hymnInfo}>
-                <Text style={styles.hymnTitle}>{item.title}</Text>
-                <View style={styles.hymnMetaRow}>
-                  <Text style={styles.hymnArtist}>{item.artist}</Text>
-                  {item.album ? <Text style={styles.hymnAlbum}> · {item.album}</Text> : null}
-                </View>
-              </View>
-              <View style={[
-                styles.hymnBadge,
-                { backgroundColor: (item.lang || item.category) === '粵語' ? '#065F46' : (item.lang || item.category) === '國語' ? '#1E40AF' : '#7C3AED' }
-              ]}>
-                <Text style={styles.hymnBadgeText}>{item.lang || item.category}</Text>
-              </View>
+              <Text style={styles.title}>{item.title}</Text>
+              <Text style={styles.artist}>{item.artist}</Text>
             </TouchableOpacity>
           )}
           ListEmptyComponent={
-            !hasSearched ? (
-              <View style={styles.center}>
-                <Text style={styles.emptyEmoji}>🎵</Text>
-                <Text style={styles.emptyHint}>輸入關鍵字搜尋詩歌</Text>
-              </View>
-            ) : null
+            query.trim() ? (
+              <Text style={styles.emptyText}>未找到結果</Text>
+            ) : (
+              <Text style={styles.emptyText}>輸入關鍵字搜尋詩歌</Text>
+            )
           }
         />
       )}
@@ -129,126 +138,60 @@ export default function SearchScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0F1A16',
-  },
-  center: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingTop: 60,
-  },
-  header: {
-    paddingTop: 50,
-    paddingHorizontal: 20,
-    paddingBottom: 10,
-  },
-  headerTitle: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    color: '#FFF',
-  },
-  searchContainer: {
-    paddingHorizontal: 20,
-    paddingBottom: 85,
-  },
-  searchBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#1A2E26',
-    borderRadius: 14,
-    paddingHorizontal: 14,
-    height: 46,
-  },
-  searchIcon: {
-    fontSize: 16,
-    marginRight: 10,
+    backgroundColor: '#fff',
   },
   searchInput: {
-    flex: 1,
-    fontSize: 15,
-    color: '#FFF',
-  },
-  clearBtn: {
-    fontSize: 16,
-    color: '#6B7D65',
-    paddingLeft: 8,
-  },
-  listContent: {
+    height: 50,
+    borderColor: '#ddd',
+    borderWidth: 1,
+    borderRadius: 25,
     paddingHorizontal: 20,
+    margin: 16,
+    fontSize: 16,
   },
-  hymnItem: {
+  tabsContainer: {
     flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#1A2E26',
-    borderRadius: 14,
-    padding: 10,
-    marginBottom: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: '#ddd',
   },
-  hymnCover: {
-    width: 48,
-    height: 48,
-    borderRadius: 10,
-    backgroundColor: '#0F1A16',
-    marginRight: 12,
-  },
-  hymnNumber: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: '#2D2A5E',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 12,
-  },
-  hymnNumberText: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: '#F5E6CA',
-  },
-  hymnInfo: {
+  tab: {
     flex: 1,
-  },
-  hymnTitle: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: '#FFF',
-  },
-  hymnArtist: {
-    fontSize: 12,
-    color: '#8B9D83',
-    marginTop: 2,
-  },
-  hymnMetaRow: {
-    flexDirection: 'row',
+    paddingVertical: 12,
     alignItems: 'center',
-    marginTop: 2,
   },
-  hymnAlbum: {
-    fontSize: 12,
-    color: '#6B7D65',
+  activeTab: {
+    borderBottomWidth: 2,
+    borderBottomColor: '#A8C765',
   },
-  hymnBadge: {
-    borderRadius: 8,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
+  tabText: {
+    fontSize: 14,
+    color: '#666',
   },
-  hymnBadgeText: {
-    fontSize: 11,
-    color: '#FFF',
-    fontWeight: '600',
+  activeTabText: {
+    color: '#A8C765',
+    fontWeight: 'bold',
   },
-  emptyEmoji: {
-    fontSize: 50,
-    marginBottom: 12,
+  loader: {
+    marginTop: 50,
+  },
+  resultItem: {
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
+  },
+  title: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginBottom: 4,
+  },
+  artist: {
+    fontSize: 14,
+    color: '#666',
   },
   emptyText: {
+    textAlign: 'center',
+    marginTop: 50,
     fontSize: 16,
-    color: '#FFF',
-    fontWeight: '600',
-  },
-  emptyHint: {
-    fontSize: 13,
-    color: '#6B7D65',
-    marginTop: 4,
+    color: '#999',
   },
 });

@@ -757,12 +757,12 @@ const miStyles = StyleSheet.create({
 // ================================================================
 const TAB_CONFIG = [
   { key: 'Home', label: '首頁', emoji: '🏠' },
-  { key: 'Categories', label: '詩歌', emoji: '🎵' },
+  { key: 'Search', label: '搜尋', emoji: '🔍' },
+  { key: 'Category', label: '分類', emoji: '📚' },
   { key: 'Playlist', label: '清單', emoji: '📋' },
   { key: 'Favorites', label: '最愛', emoji: '❤️' },
 ];
-function TabBar({ bottomInset, onMiniPlayerPress }) {
-  const [activeTab, setActiveTab] = useState('Home');
+function TabBar({ activeTab, onTabChange, bottomInset, onMiniPlayerPress }) {
   const { currentHymn } = usePlayer();
   const safePad = Math.max(bottomInset || 0, 4);
   return (
@@ -773,12 +773,12 @@ function TabBar({ bottomInset, onMiniPlayerPress }) {
       <View style={tbStyles.miniWrapSpacer} />
       <View style={tbStyles.bar}>
         {TAB_CONFIG.map(tab => (
-          <TouchableOpacity key={tab.key} style={tbStyles.item} onPress={() => setActiveTab(tab.key)}>
+          <TouchableOpacity key={tab.key} style={tbStyles.item} onPress={() => onTabChange(tab.key)}>
             <Text style={tbStyles.icon}>{tab.emoji}</Text>
             <Text style={[tbStyles.label, activeTab === tab.key && tbStyles.labelActive]}>{tab.label}</Text>
           </TouchableOpacity>
         ))}
-        <TouchableOpacity style={tbStyles.item} onPress={() => setActiveTab('Player')}>
+        <TouchableOpacity style={tbStyles.item} onPress={() => onTabChange('Player')}>
           <MaterialIcons name="play-circle-outline" size={22} color={TEXT_SECONDARY} />
           <Text style={[tbStyles.label, activeTab === 'Player' && tbStyles.labelActive]}>播放</Text>
         </TouchableOpacity>
@@ -797,6 +797,12 @@ const tbStyles = StyleSheet.create({
   labelActive: { color: TEXT_PRIMARY, fontWeight: '700' },
 });
 
+// ===== 引入新 Home 10 區塊元件 =====
+import HomeSections from './src/components/home/HomeScreen';
+import SearchScreen from './src/screens/SearchScreen';
+import CategoryScreen from './src/screens/CategoryScreen';
+import HymnListScreen from './src/screens/HymnListScreen';
+
 // ================================================================
 //  HOME SCREEN
 // ================================================================
@@ -807,6 +813,10 @@ function HomeScreen({ hymns, activeCategory, onCategoryChange, onPlayHymn }) {
   const filtered = safeHymns.filter(h => h.youtube_id).filter(h => activeCategory === '全部' || (h.lang || h.category || '').toLowerCase().includes(activeCategory));
   return (
     <ScrollView style={hStyles.scroll} contentContainerStyle={hStyles.scrollContent}>
+      {/* 🔥 10 區塊主頁 — API-driven sections */}
+      <HomeSections navigation={{ navigate: (route, params) => {
+        if (params?.hymn) onPlayHymn(params.hymn);
+      }}} onPlayHymn={onPlayHymn} />
       <View style={[hStyles.appBar, { paddingTop: (homeInsets.top || StatusBar.currentHeight || 24) + 12 }]}>
         <View><Text style={hStyles.appBarTitle}>生命樹</Text><Text style={hStyles.appBarSub}>Etz Chayim</Text></View>
       </View>
@@ -1180,6 +1190,18 @@ function AppContent() {
   const [loading, setLoading] = useState(true);
   const [allSongs, setAllSongs] = useState([]);
   const [activeCategory, setActiveCategory] = useState('全部');
+  const [activeTab, setActiveTab] = useState('Home');
+  const [hymnListVisible, setHymnListVisible] = useState(false);
+  const [hymnListData, setHymnListData] = useState({ hymns: [], title: '' });
+
+  const showHymnList = (hymns, title) => {
+    setHymnListData({ hymns, title });
+    setHymnListVisible(true);
+  };
+
+  const closeHymnList = () => {
+    setHymnListVisible(false);
+  };
 
   // Show fallback hymns IMMEDIATELY so UI is never stuck at 0 songs
   useEffect(() => {
@@ -1233,10 +1255,47 @@ function AppContent() {
 
 
       <View style={pageStyles.content}>
-        <HomeScreen hymns={allSongs || []} activeCategory={activeCategory}
-          onCategoryChange={setActiveCategory} onPlayHymn={handlePlayHymn} />
+        {activeTab === 'Home' ? (
+          <HomeScreen hymns={allSongs || []} activeCategory={activeCategory}
+            onCategoryChange={setActiveCategory} onPlayHymn={handlePlayHymn} />
+        ) : activeTab === 'Search' ? (
+          <SearchScreen navigation={{ navigate: (route, params) => {
+            if (route === 'Player' && params?.hymn) handlePlayHymn(params.hymn);
+          }}} />
+        ) : activeTab === 'Category' ? (
+          <CategoryScreen showHymnList={showHymnList} />
+        ) : (
+          <HomeScreen hymns={allSongs || []} activeCategory={activeCategory}
+            onCategoryChange={setActiveCategory} onPlayHymn={handlePlayHymn} />
+        )}
       </View>
-      <TabBar bottomInset={bottomInset} onMiniPlayerPress={handleOpenFullScreen} />
+      <TabBar activeTab={activeTab} onTabChange={setActiveTab}
+        bottomInset={bottomInset} onMiniPlayerPress={handleOpenFullScreen} />
+
+      {/* HymnList Modal */}
+      <Modal
+        visible={hymnListVisible}
+        animationType="slide"
+        onRequestClose={closeHymnList}
+      >
+        <View style={pageStyles.hymnListModal}>
+          <TouchableOpacity
+            style={pageStyles.hymnListClose}
+            onPress={closeHymnList}
+          >
+            <Text style={pageStyles.hymnListCloseText}>✕ 返回</Text>
+          </TouchableOpacity>
+          <HymnListScreen
+            hymns={hymnListData.hymns}
+            title={hymnListData.title}
+            onPlayHymn={(hymn) => {
+              changeToSong(hymn);
+              showPlayer();
+              closeHymnList();
+            }}
+          />
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -1257,5 +1316,8 @@ const pageStyles = StyleSheet.create({
   container: { flex: 1, height: SCREEN_HEIGHT, backgroundColor: MAIN_BG_COLOR },
   content: { flex: 1 },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  hymnListModal: { flex: 1, backgroundColor: '#fff' },
+  hymnListClose: { padding: 16, backgroundColor: '#f8f8f8', borderBottomWidth: 1, borderBottomColor: '#ddd' },
+  hymnListCloseText: { fontSize: 16, color: '#333' },
   loadingText: { color: TEXT_SECONDARY, marginTop: 16, fontSize: 15 },
 });
