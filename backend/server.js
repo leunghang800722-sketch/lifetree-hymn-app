@@ -8,6 +8,7 @@ import initSqlJs from 'sql.js';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import homeRoutes from './routes/home.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const DB_PATH = path.join(__dirname, 'hymns.db');
@@ -28,6 +29,7 @@ const PORT = process.env.PORT || 3001;
 
 app.use(cors());
 app.use(express.json());
+app.use('/api/home', homeRoutes);
 
 // Regular expression to validate YouTube video IDs
 const YT_ID_REGEX = /^[a-zA-Z0-9_-]{11}$/;
@@ -201,5 +203,8 @@ app.listen(PORT, async () => {
   console.log(`🎵 Hymn App Backend running on port ${PORT}`);
   console.log(`📡 Audio API: http://localhost:${PORT}/api/audio/:youtubeId`);
   // Start pre-caching in background (non-blocking, server stays responsive)
-  preCacheAllHymns();
+  // Disabled by default (Zeabur OOM issue). Enable with ENABLE_PRECACHE=true env var
+  if (process.env.ENABLE_PRECACHE === 'true') {
+    preCacheAllHymns();
+  }
 });
