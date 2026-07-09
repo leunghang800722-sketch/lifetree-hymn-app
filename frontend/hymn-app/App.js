@@ -24,7 +24,7 @@ try {
 } catch (e) {}
 
 // ===== Config =====
-const API_BASE = 'http://192.168.30.45:3001';
+const API_BASE = 'https://lifetree-hymn-api.zeabur.app';
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 const VIDEO_HEIGHT = SCREEN_WIDTH * 9 / 16;
 

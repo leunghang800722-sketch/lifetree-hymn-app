@@ -1,9 +1,18 @@
 // src/components/home/DailyQuoteCard.js
-// 每日精選一句 — 大卡片，150px 高
-import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, ImageBackground } from 'react-native';
+// 每日精選一句 — 大卡片，150px 高（深色主題版）
+import React, { useState } from 'react';
+import { View, Text, TouchableOpacity, StyleSheet, ImageBackground, Image } from 'react-native';
+
+const MAIN_BG_COLOR = '#131C16';
+const ACCENT_COLOR = '#A8C765';
+
+function getAlbumCoverUrl(youtubeId) {
+  return youtubeId ? `https://img.youtube.com/vi/${youtubeId}/hqdefault.jpg` : null;
+}
 
 export default function DailyQuoteCard({ data, onPress }) {
+  const [failed, setFailed] = useState(false);
+
   if (!data || data.message) {
     return (
       <View style={styles.container}>
@@ -12,6 +21,9 @@ export default function DailyQuoteCard({ data, onPress }) {
     );
   }
 
+  const uri = getAlbumCoverUrl(data.youtube_id);
+  const showCover = uri && !failed;
+
   return (
     <TouchableOpacity
       style={styles.container}
@@ -19,9 +31,10 @@ export default function DailyQuoteCard({ data, onPress }) {
       activeOpacity={0.8}
     >
       <ImageBackground
-        source={{ uri: data.thumbnail || 'https://via.placeholder.com/400x150' }}
+        source={{ uri: showCover ? uri : 'https://via.placeholder.com/400x150' }}
         style={styles.background}
         imageStyle={styles.backgroundImage}
+        onError={() => setFailed(true)}
       >
         <View style={styles.overlay}>
           <Text style={styles.label}>每日精選</Text>
@@ -45,7 +58,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     borderRadius: 12,
     overflow: 'hidden',
-    backgroundColor: '#f0f0f0',
+    backgroundColor: MAIN_BG_COLOR,
   },
   background: {
     flex: 1,
@@ -60,7 +73,7 @@ const styles = StyleSheet.create({
   },
   label: {
     fontSize: 12,
-    color: '#A8C765',
+    color: ACCENT_COLOR,
     fontWeight: '600',
     marginBottom: 4,
   },

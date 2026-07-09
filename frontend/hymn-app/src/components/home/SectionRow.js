@@ -1,7 +1,37 @@
 // src/components/home/SectionRow.js
-// 通用橫向滾動列（可重用）
+// 通用橫向滾動列（可重用）— 深色主題版
 import React from 'react';
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Image } from 'react-native';
+
+// 深色主題色系（與 App.js 一致）
+const MAIN_BG_COLOR = '#131C16';
+const CARD_BG_COLOR = '#1E2B22';
+const ACCENT_COLOR = '#A8C765';
+const TEXT_PRIMARY = '#F0F4E8';
+const TEXT_SECONDARY = '#9AA696';
+
+function getAlbumCoverUrl(youtubeId) {
+  return youtubeId ? `https://img.youtube.com/vi/${youtubeId}/hqdefault.jpg` : null;
+}
+
+function Thumbnail({ item }) {
+  const [failed, setFailed] = React.useState(false);
+  const uri = getAlbumCoverUrl(item.youtube_id);
+  if (!uri || failed) {
+    return (
+      <View style={styles.thumbnail}>
+        <Text style={styles.thumbnailText}>🎵</Text>
+      </View>
+    );
+  }
+  return (
+    <Image
+      source={{ uri }}
+      style={styles.thumbnail}
+      onError={() => setFailed(true)}
+    />
+  );
+}
 
 export default function SectionRow({ title, data, onPress }) {
   if (!data || data.length === 0) {
@@ -23,9 +53,7 @@ export default function SectionRow({ title, data, onPress }) {
             onPress={() => onPress(item)}
             activeOpacity={0.8}
           >
-            <View style={styles.thumbnail}>
-              <Text style={styles.thumbnailText}>🎵</Text>
-            </View>
+            <Thumbnail item={item} />
             <Text style={styles.cardTitle} numberOfLines={2}>
               {item.title}
             </Text>
@@ -46,7 +74,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#333',
+    color: TEXT_PRIMARY,
     marginLeft: 16,
     marginBottom: 12,
   },
@@ -59,24 +87,24 @@ const styles = StyleSheet.create({
   },
   thumbnail: {
     width: 120,
-    height: 120,
-    backgroundColor: '#A8C765',
+    height: 68,
+    backgroundColor: CARD_BG_COLOR,
     borderRadius: 8,
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 8,
   },
   thumbnailText: {
-    fontSize: 40,
+    fontSize: 24,
   },
   cardTitle: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#333',
+    color: TEXT_PRIMARY,
     marginBottom: 4,
   },
   cardArtist: {
     fontSize: 12,
-    color: '#666',
+    color: TEXT_SECONDARY,
   },
 });
