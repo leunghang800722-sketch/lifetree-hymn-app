@@ -1,8 +1,9 @@
 FROM node:18-alpine
 
 # Install yt-dlp and dependencies
-RUN apk add --no-cache python3 py3-pip ffmpeg curl unzip && \
-    pip3 install --break-system-packages --upgrade yt-dlp
+RUN apk add --no-cache python3 ffmpeg curl && \
+    curl -L https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp -o /usr/local/bin/yt-dlp && \
+    chmod a+rx /usr/local/bin/yt-dlp
 
 # Set working directory
 WORKDIR /app
