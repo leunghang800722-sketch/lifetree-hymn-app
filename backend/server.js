@@ -35,6 +35,9 @@ app.use('/api/home', homeRoutes);
 app.use('/api/search', searchRoutes);
 app.use('/api/category', categoryRoutes);
 
+// Serve static files (APK download)
+app.use('/downloads', express.static('public'));
+
 // Regular expression to validate YouTube video IDs
 const YT_ID_REGEX = /^[a-zA-Z0-9_-]{11}$/;
 
