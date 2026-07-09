@@ -2,9 +2,7 @@ FROM node:18-alpine
 
 # Install yt-dlp and dependencies
 RUN apk add --no-cache python3 py3-pip ffmpeg curl unzip && \
-    pip3 install --break-system-packages yt-dlp && \
-    # Install deno (JS runtime for yt-dlp YouTube extraction)
-    apk add --no-cache deno
+    pip3 install --break-system-packages --upgrade yt-dlp
 
 # Set working directory
 WORKDIR /app
