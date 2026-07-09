@@ -9,6 +9,8 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import homeRoutes from './routes/home.js';
+import searchRoutes from './routes/search.js';
+import categoryRoutes from './routes/category.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const DB_PATH = path.join(__dirname, 'hymns.db');
@@ -30,6 +32,8 @@ const PORT = process.env.PORT || 3001;
 app.use(cors());
 app.use(express.json());
 app.use('/api/home', homeRoutes);
+app.use('/api/search', searchRoutes);
+app.use('/api/category', categoryRoutes);
 
 // Regular expression to validate YouTube video IDs
 const YT_ID_REGEX = /^[a-zA-Z0-9_-]{11}$/;
