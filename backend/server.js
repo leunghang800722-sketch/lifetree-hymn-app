@@ -35,6 +35,19 @@ app.use('/api/home', homeRoutes);
 app.use('/api/search', searchRoutes);
 app.use('/api/category', categoryRoutes);
 
+// Super simple APK download at root level
+app.get('/app.apk', (req, res) => {
+  const filePath = path.join(__dirname, 'public', 'app.apk');
+  res.setHeader('Content-Type', 'application/vnd.android.package-archive');
+  res.setHeader('Content-Disposition', 'attachment; filename="hymn-app.apk"');
+  res.sendFile(filePath, (err) => {
+    if (err) {
+      console.error('Send file error:', err);
+      res.status(500).send('Download failed');
+    }
+  });
+});
+
 // APK download with attachment header (must be before static middleware)
 app.get('/downloads/app.apk', (req, res) => {
   const filePath = path.join(__dirname, 'public', 'app.apk');
