@@ -100,13 +100,13 @@ app.get('/api/audio/:youtubeId', async (req, res) => {
     // --get-url: get direct URL
     // -f bestaudio[ext=m4a]: best audio in M4A format
     const url = execSync(
-      `yt-dlp -f "bestaudio[ext=m4a]" --get-url --no-playlist --extractor-args "youtube:player_client=ios" --js-runtime "deno" "https://www.youtube.com/watch?v=${youtubeId}"`,
+      `yt-dlp -f "bestaudio[ext=m4a]" --cookies cookies.txt --get-url --no-playlist --extractor-args "youtube:player_client=ios" --js-runtime "deno" "https://www.youtube.com/watch?v=${youtubeId}"`,
       { encoding: 'utf8', timeout: 30000 }
     ).trim();
 
     // Get metadata (title + duration)
     const metadataJson = execSync(
-      `yt-dlp --print-json --no-playlist --extractor-args "youtube:player_client=ios" --js-runtime "deno" "https://www.youtube.com/watch?v=${youtubeId}"`,
+      `yt-dlp --cookies cookies.txt --print-json --no-playlist --extractor-args "youtube:player_client=ios" --js-runtime "deno" "https://www.youtube.com/watch?v=${youtubeId}"`,
       { encoding: 'utf8', timeout: 30000 }
     ).trim();
     
@@ -136,7 +136,7 @@ app.get('/api/audio/:youtubeId', async (req, res) => {
     // Fallback: try different audio format
     try {
       const urlFallback = execSync(
-        `yt-dlp -f "bestaudio/best" --get-url --no-playlist --extractor-args "youtube:player_client=ios" --js-runtime "deno" "https://www.youtube.com/watch?v=${youtubeId}"`,
+        `yt-dlp -f "bestaudio/best" --cookies cookies.txt --get-url --no-playlist --extractor-args "youtube:player_client=ios" --js-runtime "deno" "https://www.youtube.com/watch?v=${youtubeId}"`,
         { encoding: 'utf8', timeout: 30000 }
       ).trim();
       
