@@ -35,15 +35,16 @@ app.use('/api/home', homeRoutes);
 app.use('/api/search', searchRoutes);
 app.use('/api/category', categoryRoutes);
 
-// Serve static files (APK download) with correct headers
-app.use('/downloads', express.static('public', {
-  setHeaders: (res, filePath) => {
-    if (filePath.endsWith('.apk') || filePath.endsWith('.txt')) {
-      const filename = path.basename(filePath);
-      res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
-    }
-  }
-}));
+// APK download with attachment header (must be before static middleware)
+app.get('/downloads/app.apk', (req, res) => {
+  const filePath = path.join(__dirname, 'public', 'app.apk');
+  res.setHeader('Content-Disposition', 'attachment; filename="hymn-app-v1.3.0-week2.apk"');
+  res.setHeader('Content-Type', 'application/vnd.android.package-archive');
+  res.sendFile(filePath);
+});
+
+// Serve other static files
+app.use('/downloads', express.static('public'));
 
 // Regular expression to validate YouTube video IDs
 const YT_ID_REGEX = /^[a-zA-Z0-9_-]{11}$/;
