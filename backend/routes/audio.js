@@ -1,18 +1,22 @@
-// routes/audio.js — YouTube Audio Extraction via yt-dlp
-// Extracts audio URLs from YouTube for react-native-track-player
+// routes/audio.js — YouTube Audio Extraction
+// When AUDIO_PROXY_TARGET env is set, proxies to that URL (e.g. MacBook backend via tunnel)
+// Otherwise, uses yt-dlp directly (for local/free-cloud usage)
 
 import { Router } from 'express';
 import { execSync } from 'child_process';
-import path from 'path';
-import { fileURLToPath } from 'url';
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const router = Router();
+
+// Proxy target URL (local MacBook backend exposed via tunnel)
+const PROXY_TARGET = process.env.AUDIO_PROXY_TARGET || null;
+
+// If proxying, we don't need cache or yt-dlp on this server
+const useProxy = !!PROXY_TARGET;
 
 // Regular expression to validate YouTube video IDs
 const YT_ID_REGEX = /^[a-zA-Z0-9_-]{11}$/;
 
-// Simple in-memory cache (URLs are only valid for ~6 hours)
+// Simple in-memory cache
 const cache = new Map();
 const CACHE_TTL = 6 * 60 * 60 * 1000; // 6 hours
 
@@ -47,7 +51,7 @@ router.get('/:youtubeId', async (req, res) => {
     return res.status(400).json({ error: 'Invalid YouTube ID format' });
   }
 
-  // Check cache
+  // Check local cache first
   const cached = cache.get(cleanId);
   if (cached && cached.url && Date.now() - cached.timestamp < CACHE_TTL) {
     return res.json({
@@ -59,77 +63,76 @@ router.get('/:youtubeId', async (req, res) => {
     });
   }
 
+  // === PROXY MODE ===
+  // Forward the request to the MacBook backend via tunnel
+  if (useProxy) {
+    try {
+      console.log(`📻 Proxying audio request for: ${cleanId} → ${PROXY_TARGET}`);
+      const response = await fetch(`${PROXY_TARGET}/api/audio/${cleanId}`, {
+        signal: AbortSignal.timeout(35000),
+      });
+      if (!response.ok) {
+        throw new Error(`Proxy returned ${response.status}`);
+      }
+      const data = await response.json();
+
+      // Cache the result locally too
+      if (data.url) {
+        cache.set(cleanId, {
+          url: data.url,
+          title: data.title || cleanId,
+          duration: data.duration || 0,
+          thumbnail: data.thumbnail || null,
+          timestamp: Date.now(),
+        });
+      }
+
+      return res.json(data);
+    } catch (err) {
+      console.error(`❌ Proxy failed for ${cleanId}: ${err.message}`);
+      return res.status(502).json({ error: 'Audio extraction proxy failed', message: err.message });
+    }
+  }
+
+  // === DIRECT yt-dlp MODE ===
   // Multiple client strategies to bypass YouTube bot detection
   const strategies = [
-    // Strategy 1: TV HTML5 client (different signature than web)
-    {
-      name: 'youtube:player_client=tv',
-      fmt: 'bestaudio[ext=m4a]/bestaudio',
-      extra: '--extractor-args "youtube:player_client=tv"',
-    },
-    // Strategy 2: Default web client (fallback)
-    {
-      name: 'default',
-      fmt: 'bestaudio[ext=m4a]/bestaudio',
-      extra: '',
-    },
-    // Strategy 3: Any audio format fallback
-    {
-      name: 'default-any',
-      fmt: 'bestaudio',
-      extra: '',
-    },
+    { name: 'youtube:player_client=tv', fmt: 'bestaudio[ext=m4a]/bestaudio', extra: '--extractor-args "youtube:player_client=tv"' },
+    { name: 'default', fmt: 'bestaudio[ext=m4a]/bestaudio', extra: '' },
+    { name: 'default-any', fmt: 'bestaudio', extra: '' },
   ];
 
   for (const strat of strategies) {
     try {
       console.log(`📻 Extracting audio for: ${cleanId} (${strat.name})`);
-
       const url = execSync(
         `yt-dlp -f "${strat.fmt}" ${strat.extra} --get-url --no-playlist "https://www.youtube.com/watch?v=${cleanId}"`,
         { encoding: 'utf8', timeout: 30000 }
       ).trim();
 
-      if (!url) {
-        console.warn(`Empty URL from strategy ${strat.name}`);
-        continue;
-      }
+      if (!url) continue;
 
-      // Try to get metadata (may fail with some clients)
       let title = cleanId;
       let duration = 0;
       let thumbnail = null;
-
       try {
-        const metadataJson = execSync(
+        const metaJson = execSync(
           `yt-dlp ${strat.extra} --print-json --no-playlist "https://www.youtube.com/watch?v=${cleanId}"`,
           { encoding: 'utf8', timeout: 30000 }
         ).trim();
-        const metadata = JSON.parse(metadataJson);
-        title = metadata.title || cleanId;
-        duration = metadata.duration || 0;
-        thumbnail = metadata.thumbnail || `https://img.youtube.com/vi/${cleanId}/hqdefault.jpg`;
-      } catch (metaErr) {
-        // Metadata is optional; continue with partial data
-        console.warn(`Metadata fetch failed for ${cleanId} (${strat.name}): ${metaErr.message}`);
-      }
+        const meta = JSON.parse(metaJson);
+        title = meta.title || cleanId;
+        duration = meta.duration || 0;
+        thumbnail = meta.thumbnail || `https://img.youtube.com/vi/${cleanId}/hqdefault.jpg`;
+      } catch (_) {}
 
-      cache.set(cleanId, {
-        url,
-        title,
-        duration,
-        thumbnail,
-        timestamp: Date.now(),
-      });
-
+      cache.set(cleanId, { url, title, duration, thumbnail, timestamp: Date.now() });
       return res.json({ url, title, duration, thumbnail });
     } catch (err) {
-      console.warn(`❌ Strategy ${strat.name} failed for ${cleanId}: ${err.message}`);
-      // Continue to next strategy
+      console.warn(`❌ Strategy ${strat.name} failed: ${err.message}`);
     }
   }
 
-  // All strategies failed
   console.error(`❌ All extraction strategies failed for ${cleanId}`);
   res.status(502).json({ error: 'Failed to extract audio URL' });
 });
