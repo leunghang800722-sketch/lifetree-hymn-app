@@ -1210,6 +1210,9 @@ function AppContent() {
         <View style={[pageStyles.screenWrap, { display: activeTab === 'Category' ? 'flex' : 'none' }]}>
           <CategoryScreen showHymnList={showHymnList} />
         </View>
+        <View style={[pageStyles.screenWrap, { display: activeTab === 'Playlist' ? 'flex' : 'none' }]}>
+          <PlaylistScreen onPlayHymn={handlePlayHymn} />
+        </View>
       </View>
       <TabBar activeTab={activeTab} onTabChange={setActiveTab}
         bottomInset={bottomInset} onMiniPlayerPress={handleOpenFullScreen} />

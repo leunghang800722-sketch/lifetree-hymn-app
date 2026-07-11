@@ -1,5 +1,4 @@
-// 播放清單畫面
-
+// PlaylistScreen — 本地播放清單（最簡 MVP）
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
@@ -7,139 +6,91 @@ import {
   FlatList,
   TouchableOpacity,
   StyleSheet,
-  Alert,
-  TextInput,
-  Modal,
   ActivityIndicator,
-  Linking,
+  Image,
+  Alert,
 } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
-import { useAuth } from '../context/AuthContext';
-import {
-  fetchPlaylists,
-  createPlaylist,
-  deletePlaylist,
-  fetchPlaylistHymns,
-  addHymnToPlaylist,
-  removeHymnFromPlaylist,
-} from '../api';
+import TrackPlayer from 'react-native-track-player';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
-export default function PlaylistScreen() {
-  const navigation = useNavigation();
-  const { user } = useAuth();
-  const [playlists, setPlaylists] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [showCreate, setShowCreate] = useState(false);
-  const [newName, setNewName] = useState('');
-  const [selectedPlaylist, setSelectedPlaylist] = useState(null);
-  const [playlistHymns, setPlaylistHymns] = useState([]);
-  const [showHymns, setShowHymns] = useState(false);
+const STORAGE_KEY = '@hymn_playlist_queue';
 
-  const loadPlaylists = useCallback(async () => {
-    if (!user) return;
-    setLoading(true);
-    try {
-      const data = await fetchPlaylists();
-      setPlaylists(data);
-    } catch (err) {
-      console.log('Load playlists error:', err);
-    }
-    setLoading(false);
-  }, [user]);
+function getCoverUrl(youtubeId) {
+  return youtubeId ? `https://img.youtube.com/vi/${youtubeId}/hqdefault.jpg` : null;
+}
 
-  useEffect(() => {
-    const unsubscribe = navigation.addListener('focus', loadPlaylists);
-    return unsubscribe;
-  }, [navigation, loadPlaylists]);
-
-  useEffect(() => {
-    loadPlaylists();
-  }, [loadPlaylists]);
-
-  async function handleCreate() {
-    if (!newName.trim()) {
-      Alert.alert('錯誤', '請輸入播放清單名稱');
-      return;
-    }
-    try {
-      await createPlaylist(newName.trim());
-      setShowCreate(false);
-      setNewName('');
-      loadPlaylists();
-    } catch (err) {
-      Alert.alert('錯誤', err.message);
-    }
-  }
-
-  async function handleDelete(id) {
-    Alert.alert('刪除播放清單', '確定要刪除嗎？', [
-      { text: '取消', style: 'cancel' },
-      {
-        text: '刪除',
-        style: 'destructive',
-        onPress: async () => {
-          try {
-            await deletePlaylist(id);
-            loadPlaylists();
-          } catch (err) {
-            Alert.alert('錯誤', err.message);
-          }
-        },
-      },
-    ]);
-  }
-
-  async function openPlaylist(playlist) {
-    setSelectedPlaylist(playlist);
-    setShowHymns(true);
-    try {
-      const hymns = await fetchPlaylistHymns(playlist.id);
-      setPlaylistHymns(hymns);
-    } catch (err) {
-      Alert.alert('錯誤', err.message);
-    }
-  }
-
-  function openYouTube(hymn) {
-    if (!hymn || !hymn.youtube_id) return;
-    const url = `https://www.youtube.com/watch?v=${hymn.youtube_id}`;
-    const intent = `intent://watch?v=${hymn.youtube_id}#Intent;package=com.google.android.youtube;scheme=https;end`;
-    Linking.canOpenURL(intent).then(can => {
-      if (can) Linking.openURL(intent);
-      else Linking.openURL(url);
-    }).catch(() => Linking.openURL(url));
-  }
-
-  async function playAllPlaylist() {
-    if (!selectedPlaylist || playlistHymns.length === 0) return;
-    // Open first hymn in YouTube
-    openYouTube(playlistHymns[0]);
-  }
-
-  async function handleRemoveHymn(hymnId) {
-    if (!selectedPlaylist) return;
-    try {
-      await removeHymnFromPlaylist(selectedPlaylist.id, hymnId);
-      setPlaylistHymns(prev => prev.filter(h => h.id !== hymnId));
-    } catch (err) {
-      Alert.alert('錯誤', err.message);
-    }
-  }
-
-  if (!user) {
+function Thumbnail({ youtubeId, size = 48 }) {
+  const [failed, setFailed] = useState(false);
+  const uri = getCoverUrl(youtubeId);
+  if (!uri || failed) {
     return (
-      <View style={[styles.container, styles.center]}>
-        <Text style={styles.emptyIcon}>🔒</Text>
-        <Text style={styles.emptyTitle}>請先登入</Text>
-        <Text style={styles.emptySubtitle}>登入後可以使用播放清單功能</Text>
+      <View style={[styles.thumb, { width: size, height: size, borderRadius: 6 }]}>
+        <Text style={{ fontSize: 24 }}>🎵</Text>
       </View>
     );
   }
+  return (
+    <Image source={{ uri }} style={[styles.thumb, { width: size, height: size, borderRadius: 6 }]}
+      resizeMode="cover" onError={() => setFailed(true)} />
+  );
+}
+
+export default function PlaylistScreen({ onPlayHymn }) {
+  const [queue, setQueue] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  const loadQueue = useCallback(async () => {
+    setLoading(true);
+    try {
+      // Try loading from TrackPlayer first
+      const tpQueue = await TrackPlayer.getQueue?.();
+      if (tpQueue && tpQueue.length > 0) {
+        setQueue(tpQueue);
+      } else {
+        // Fallback to AsyncStorage
+        const raw = await AsyncStorage.getItem(STORAGE_KEY);
+        if (raw) setQueue(JSON.parse(raw));
+      }
+    } catch (_) {
+      // If TrackPlayer not ready, use stored
+      try {
+        const raw = await AsyncStorage.getItem(STORAGE_KEY);
+        if (raw) setQueue(JSON.parse(raw));
+      } catch (_) {}
+    }
+    setLoading(false);
+  }, []);
+
+  useEffect(() => {
+    loadQueue();
+  }, [loadQueue]);
+
+  const handlePlay = useCallback((item) => {
+    if (onPlayHymn) onPlayHymn(item);
+  }, [onPlayHymn]);
+
+  const handleClear = useCallback(async () => {
+    Alert.alert('清空清單', '確定要清空目前播放清單？', [
+      { text: '取消', style: 'cancel' },
+      { text: '清空', style: 'destructive', onPress: async () => {
+        try {
+          await TrackPlayer.reset?.();
+          await AsyncStorage.removeItem(STORAGE_KEY);
+          setQueue([]);
+        } catch (_) {}
+      }},
+    ]);
+  }, []);
 
   if (loading) {
     return (
-      <View style={[styles.container, styles.center]}>
-        <ActivityIndicator size="large" color="#F5E6CA" />
+      <View style={styles.container}>
+        <View style={styles.header}>
+          <Text style={styles.headerTitle}>播放清單</Text>
+        </View>
+        <View style={styles.center}>
+          <ActivityIndicator size="small" color="#1ED760" />
+        </View>
       </View>
     );
   }
@@ -147,326 +98,71 @@ export default function PlaylistScreen() {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>我的播放清單</Text>
-        <TouchableOpacity
-          style={styles.addBtn}
-          onPress={() => setShowCreate(true)}
-        >
-          <Text style={styles.addBtnText}>+ 新增</Text>
-        </TouchableOpacity>
+        <Text style={styles.headerTitle}>播放清單</Text>
+        {queue.length > 0 && (
+          <TouchableOpacity onPress={handleClear} style={styles.clearBtn}>
+            <Text style={styles.clearText}>清空</Text>
+          </TouchableOpacity>
+        )}
       </View>
 
-      {playlists.length === 0 ? (
-        <View style={[styles.container, styles.center]}>
+      {queue.length === 0 ? (
+        <View style={styles.emptyWrap}>
           <Text style={styles.emptyIcon}>📋</Text>
-          <Text style={styles.emptyTitle}>未有播放清單</Text>
-          <Text style={styles.emptySubtitle}>按「+ 新增」建立你的第一個播放清單</Text>
+          <Text style={styles.emptyTitle}>播放清單係空的</Text>
+          <Text style={styles.emptyHint}>點擊歌曲的「⋯」→「下一首播放」或「加入播放清單」</Text>
         </View>
       ) : (
         <FlatList
-          data={playlists}
-          keyExtractor={item => String(item.id)}
-          contentContainerStyle={styles.listContent}
-          renderItem={({ item }) => (
-            <TouchableOpacity
-              style={styles.playlistCard}
-              onPress={() => openPlaylist(item)}
-              onLongPress={() => handleDelete(item.id)}
-            >
-              <View style={styles.playlistIcon}>
-                <Text style={styles.playlistEmoji}>🎵</Text>
+          data={queue}
+          keyExtractor={(_, i) => `q-${i}`}
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={{ paddingBottom: 20 }}
+          renderItem={({ item, index }) => (
+            <TouchableOpacity style={styles.item} onPress={() => handlePlay(item)} activeOpacity={0.7}>
+              <Text style={styles.itemIdx}>{index + 1}</Text>
+              <Thumbnail youtubeId={item.youtube_id} size={44} />
+              <View style={styles.itemInfo}>
+                <Text style={styles.itemTitle} numberOfLines={1}>{item.title || item.name || item.filename}</Text>
+                <Text style={styles.itemArtist} numberOfLines={1}>{item.artist || '未知'}</Text>
               </View>
-              <View style={styles.playlistInfo}>
-                <Text style={styles.playlistName}>{item.name}</Text>
-                <Text style={styles.playlistCount}>
-                  {item.hymn_count} 首詩歌
-                </Text>
-              </View>
-              <Text style={styles.arrowIcon}>›</Text>
             </TouchableOpacity>
           )}
         />
       )}
-
-      {/* Create Modal */}
-      <Modal visible={showCreate} transparent animationType="fade">
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>新增播放清單</Text>
-            <TextInput
-              style={styles.modalInput}
-              placeholder="播放清單名稱"
-              placeholderTextColor="#6B7D65"
-              value={newName}
-              onChangeText={setNewName}
-              autoFocus
-            />
-            <View style={styles.modalBtns}>
-              <TouchableOpacity
-                style={styles.modalCancelBtn}
-                onPress={() => {
-                  setShowCreate(false);
-                  setNewName('');
-                }}
-              >
-                <Text style={styles.modalCancelText}>取消</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.modalConfirmBtn}
-                onPress={handleCreate}
-              >
-                <Text style={styles.modalConfirmText}>建立</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-      </Modal>
-
-      {/* Playlist Hymns Modal */}
-      <Modal visible={showHymns} animationType="slide" transparent={false}>
-        <View style={styles.container}>
-          <View style={styles.header}>
-            <TouchableOpacity onPress={() => setShowHymns(false)}>
-              <Text style={styles.backText}>← 返回</Text>
-            </TouchableOpacity>
-            <Text style={styles.headerTitle}>
-              {selectedPlaylist?.name || '播放清單'}
-            </Text>
-            {playlistHymns.length > 0 && (
-              <TouchableOpacity
-                style={styles.playAllBtn}
-                onPress={playAllPlaylist}
-              >
-                <Text style={styles.playAllText}>全部播放</Text>
-              </TouchableOpacity>
-            )}
-          </View>
-
-          {playlistHymns.length === 0 ? (
-            <View style={[styles.container, styles.center]}>
-              <Text style={styles.emptyIcon}>🎶</Text>
-              <Text style={styles.emptyTitle}>未有詩歌</Text>
-              <Text style={styles.emptySubtitle}>
-                喺詩歌頁面可以將詩歌加入播放清單
-              </Text>
-            </View>
-          ) : (
-            <FlatList
-              data={playlistHymns}
-              keyExtractor={item => String(item.id)}
-              contentContainerStyle={styles.listContent}
-              renderItem={({ item, index }) => (
-                <TouchableOpacity
-                  style={styles.hymnItem}
-                  onPress={() => openYouTube(item)}
-                  onLongPress={() => handleRemoveHymn(item.id)}
-                >
-                  <Text style={styles.hymnIndex}>{index + 1}</Text>
-                  <View style={styles.hymnInfo}>
-                    <Text style={styles.hymnTitle}>{item.title}</Text>
-                    <Text style={styles.hymnArtist}>{item.artist}</Text>
-                  </View>
-                  <Text style={styles.hymnPlayIcon}>▶</Text>
-                </TouchableOpacity>
-              )}
-            />
-          )}
-        </View>
-      </Modal>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#000000',
-  },
-  center: {
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 40,
-  },
+  container: { flex: 1, backgroundColor: '#000000' },
   header: {
-    paddingTop: 50,
-    paddingHorizontal: 20,
-    paddingBottom: 85,
     flexDirection: 'row',
-    alignItems: 'center',
     justifyContent: 'space-between',
-  },
-  headerTitle: {
-    color: '#FFF',
-    fontSize: 20,
-    fontWeight: 'bold',
-  },
-  backText: {
-    color: '#8B9D83',
-    fontSize: 16,
-  },
-  addBtn: {
-    backgroundColor: '#1A1A1A',
-    borderRadius: 20,
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-  },
-  addBtnText: {
-    color: '#F5E6CA',
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  listContent: {
+    alignItems: 'baseline',
     paddingHorizontal: 20,
-    paddingTop: 10,
+    paddingTop: 16,
+    paddingBottom: 8,
   },
-  playlistCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#1A1A1A',
-    borderRadius: 14,
-    padding: 16,
-    marginBottom: 10,
+  headerTitle: { fontSize: 28, fontWeight: '800', color: '#FFFFFF' },
+  clearBtn: { padding: 8 },
+  clearText: { fontSize: 14, color: '#1ED760', fontWeight: '600' },
+  center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+
+  // Empty
+  emptyWrap: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 40, paddingBottom: 60 },
+  emptyIcon: { fontSize: 48, marginBottom: 12 },
+  emptyTitle: { fontSize: 17, fontWeight: '700', color: '#FFFFFF', marginBottom: 6 },
+  emptyHint: { fontSize: 14, color: '#A0A0A0', textAlign: 'center', lineHeight: 20 },
+
+  // List items
+  item: {
+    flexDirection: 'row', alignItems: 'center',
+    paddingVertical: 10, paddingHorizontal: 20,
   },
-  playlistIcon: {
-    width: 50,
-    height: 50,
-    borderRadius: 12,
-    backgroundColor: '#000000',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 14,
-  },
-  playlistEmoji: {
-    fontSize: 26,
-  },
-  playlistInfo: {
-    flex: 1,
-  },
-  playlistName: {
-    color: '#FFF',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  playlistCount: {
-    color: '#8B9D83',
-    fontSize: 13,
-    marginTop: 4,
-  },
-  arrowIcon: {
-    color: '#6B7D65',
-    fontSize: 24,
-  },
-  // Empty state
-  emptyIcon: {
-    fontSize: 60,
-    marginBottom: 16,
-  },
-  emptyTitle: {
-    color: '#FFF',
-    fontSize: 18,
-    fontWeight: '600',
-  },
-  emptySubtitle: {
-    color: '#6B7D65',
-    fontSize: 14,
-    marginTop: 8,
-    textAlign: 'center',
-  },
-  // Modal
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.7)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  modalContent: {
-    backgroundColor: '#1A1A1A',
-    borderRadius: 18,
-    padding: 24,
-    width: '80%',
-  },
-  modalTitle: {
-    color: '#FFF',
-    fontSize: 18,
-    fontWeight: '600',
-    marginBottom: 16,
-  },
-  modalInput: {
-    backgroundColor: '#000000',
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    fontSize: 16,
-    color: '#FFF',
-    marginBottom: 20,
-  },
-  modalBtns: {
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
-    gap: 12,
-  },
-  modalCancelBtn: {
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-  },
-  modalCancelText: {
-    color: '#8B9D83',
-    fontSize: 16,
-  },
-  modalConfirmBtn: {
-    backgroundColor: '#F5E6CA',
-    borderRadius: 12,
-    paddingVertical: 10,
-    paddingHorizontal: 24,
-  },
-  modalConfirmText: {
-    color: '#000000',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  // Playlist hymns
-  playAllBtn: {
-    backgroundColor: '#1A1A1A',
-    borderRadius: 20,
-    paddingVertical: 8,
-    paddingHorizontal: 14,
-  },
-  playAllText: {
-    color: '#F5E6CA',
-    fontSize: 13,
-    fontWeight: '600',
-  },
-  hymnItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#1A1A1A',
-    borderRadius: 12,
-    padding: 14,
-    marginBottom: 8,
-  },
-  hymnIndex: {
-    width: 28,
-    color: '#6B7D65',
-    fontSize: 14,
-    fontWeight: '500',
-    textAlign: 'center',
-    marginRight: 12,
-  },
-  hymnInfo: {
-    flex: 1,
-  },
-  hymnTitle: {
-    color: '#FFF',
-    fontSize: 15,
-    fontWeight: '500',
-  },
-  hymnArtist: {
-    color: '#8B9D83',
-    fontSize: 12,
-    marginTop: 2,
-  },
-  hymnPlayIcon: {
-    color: '#F5E6CA',
-    fontSize: 18,
-  },
+  itemIdx: { width: 24, fontSize: 13, color: '#555', fontWeight: '500' },
+  thumb: { justifyContent: 'center', alignItems: 'center', backgroundColor: '#1A1A1A' },
+  itemInfo: { flex: 1, marginLeft: 12 },
+  itemTitle: { fontSize: 15, fontWeight: '600', color: '#FFFFFF' },
+  itemArtist: { fontSize: 12, color: '#A0A0A0', marginTop: 1 },
 });
