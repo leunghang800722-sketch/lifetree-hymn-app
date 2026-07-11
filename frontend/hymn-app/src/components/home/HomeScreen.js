@@ -123,7 +123,7 @@ export default function HomeScreen({ navigation, onPlayHymn }) {
         {/* 8. 純音樂 */}
         <SectionRow title="純音樂" data={data.genreRec.slice(0, 10)} onPress={playSong} />
 
-        <View style={{ height: 100 }} />
+        <View style={{ height: 20 }} />
       </ScrollView>
     </View>
   );
@@ -132,7 +132,7 @@ export default function HomeScreen({ navigation, onPlayHymn }) {
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: COLORS.bg },
   scroll: { flex: 1 },
-  scrollContent: { paddingTop: 8, paddingBottom: 100 },
-  loadingWrap: { flex: 1, backgroundColor: COLORS.bg, justifyContent: 'center', alignItems: 'center', paddingBottom: 100 },
+  scrollContent: { paddingTop: 8, paddingBottom: 20 },
+  loadingWrap: { flex: 1, backgroundColor: COLORS.bg, justifyContent: 'center', alignItems: 'center', paddingBottom: 20 },
   loadingText: { fontSize: 14, color: COLORS.secondary },
 });
