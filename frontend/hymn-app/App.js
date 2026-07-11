@@ -1237,11 +1237,11 @@ export default function App() {
   if (SafeAreaProvider) {
     return (
       <SafeAreaProvider>
-        <PlayerProvider><AppContent /></PlayerProvider>
+        <PlayerProvider><FavoritesProvider><AppContent /></FavoritesProvider></PlayerProvider>
       </SafeAreaProvider>
     );
   }
-  return <PlayerProvider><AppContent /></PlayerProvider>;
+  return <PlayerProvider><FavoritesProvider><AppContent /></FavoritesProvider></PlayerProvider>;
 }
 
 const pageStyles = StyleSheet.create({
