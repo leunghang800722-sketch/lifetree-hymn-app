@@ -674,7 +674,7 @@ function MiniPlayer({ onPress }) {
           </View>
         </TouchableOpacity>
         <TouchableOpacity style={miStyles.favBtn} onPress={(e) => { e.stopPropagation(); toggleFavorite(currentHymn); }} activeOpacity={0.7}>
-          <MaterialIcons name={fav ? 'favorite' : 'favorite-border'} size={20} color={fav ? '#1ED760' : TEXT_SECONDARY} />
+          <MaterialIcons name={fav ? 'favorite' : 'favorite-border'} size={24} color={fav ? '#1ED760' : '#FFFFFF'} />
         </TouchableOpacity>
         <TouchableOpacity style={miStyles.playBtn} onPress={(e) => { e.stopPropagation(); togglePlayPause(); }} activeOpacity={0.8}>
           <MaterialIcons name={isPlaying ? 'pause' : 'play-arrow'} size={20} color="#000000" />
@@ -700,7 +700,7 @@ const miStyles = StyleSheet.create({
   title: { fontSize: 14, fontWeight: '600', color: TEXT_PRIMARY },
   artist: { fontSize: 12, color: TEXT_SECONDARY, marginTop: 1 },
   mainTouch: { flex: 1, flexDirection: 'row', alignItems: 'center' },
-  favBtn: { width: 36, alignItems: 'center', justifyContent: 'center' },
+  favBtn: { width: 40, alignItems: 'center', justifyContent: 'center' },
   playBtn: { width: 36, height: 36, borderRadius: 18, backgroundColor: '#FFFFFF', justifyContent: 'center', alignItems: 'center' },
 });
 
