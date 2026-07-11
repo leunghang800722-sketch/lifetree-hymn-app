@@ -1,6 +1,7 @@
 // HomeScreen — Rolex Green · 9 區塊（mind map 名）· 無搜尋
 import React, { useState, useEffect, useMemo } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, Alert, StyleSheet, ActivityIndicator } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, Alert, StyleSheet, ActivityIndicator, Modal } from 'react-native';
+import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { COLORS } from '../../constants/theme';
 import DailyVerseCard from './DailyVerseCard';
 import PlaylistCardRow from './PlaylistCardRow';
@@ -9,6 +10,7 @@ import HotSongCarousel from './HotSongCarousel';
 import TestimonyCarousel from './TestimonyCarousel';
 import AlbumCardRow from './AlbumCardRow';
 import SectionRow from './SectionRow';
+import { usePlaylists } from '../../context/PlaylistContext';
 import { homeApi } from '../../services/homeApi';
 
 export default function HomeScreen({ navigation, onPlayHymn }) {
@@ -59,22 +61,54 @@ export default function HomeScreen({ navigation, onPlayHymn }) {
     return Object.entries(groups).sort((a, b) => b[1].length - a[1].length).slice(0, 6).map(([artist, hymns]) => ({ id: `album-${artist}`, title: `${artist} 精選`, artist, hymns }));
   }, [data]);
 
+  const { playlists, addToPlaylist } = usePlaylists();
+  const [showPlModal, setShowPlModal] = useState(false);
+  const [plTargetHymn, setPlTargetHymn] = useState(null);
+
   const playSong = (h) => { if (onPlayHymn) onPlayHymn(h); else if (navigation) navigation.navigate('Player', { hymn: h }); };
 
   const showMoreMenu = (hymn) => {
-    // Simple ⋯ menu: uses Alert for now
-    // In production this would open a proper bottom sheet
     Alert.alert(hymn.title, '請選擇', [
       { text: '播放', onPress: () => playSong(hymn) },
       { text: '下一首播放', onPress: () => playSong(hymn) },
-      { text: '加入播放清單', onPress: () => {} },
-      { text: '分享', onPress: () => {} },
+      { text: '加入播放清單', onPress: () => { setPlTargetHymn(hymn); setShowPlModal(true); } },
       { text: '取消', style: 'cancel' },
     ]);
   };
 
+  const handleAddToPlaylist = (playlistId) => {
+    if (plTargetHymn) {
+      addToPlaylist(playlistId, plTargetHymn);
+      Alert.alert('已加入', `已加入「${playlists.find(p => p.id === playlistId)?.name || ''}」`);
+    }
+    setShowPlModal(false);
+    setPlTargetHymn(null);
+  };
+
   return (
     <View style={styles.root}>
+      {/* Playlist selection modal */}
+      {showPlModal && (
+        <Modal visible transparent animationType="fade" onRequestClose={() => { setShowPlModal(false); setPlTargetHymn(null); }}>
+          <TouchableOpacity style={plModalStyles.overlay} activeOpacity={1} onPress={() => { setShowPlModal(false); setPlTargetHymn(null); }}>
+            <View style={plModalStyles.card}>
+              <Text style={plModalStyles.title}>加入播放清單</Text>
+              {playlists.length === 0 ? (
+                <Text style={plModalStyles.empty}>尚未建立任何清單，先去「清單」tab 建立</Text>
+              ) : (
+                playlists.map(pl => (
+                  <TouchableOpacity key={pl.id} style={plModalStyles.item} onPress={() => handleAddToPlaylist(pl.id)}>
+                    <MaterialIcons name={pl.type === 'video' ? 'videocam' : 'music-note'} size={18} color={pl.type === 'video' ? '#64B5F6' : '#A0A0A0'} />
+                    <Text style={plModalStyles.itemText}>{pl.name}</Text>
+                    <Text style={plModalStyles.itemCount}>{pl.hymns.length} 首</Text>
+                  </TouchableOpacity>
+                ))
+              )}
+            </View>
+          </TouchableOpacity>
+        </Modal>
+      )}
+
       <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         {loading && (
           <View style={styles.topLoading}>
@@ -138,6 +172,16 @@ export default function HomeScreen({ navigation, onPlayHymn }) {
     </View>
   );
 }
+
+const plModalStyles = StyleSheet.create({
+  overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.7)', justifyContent: 'center', alignItems: 'center', padding: 30 },
+  card: { backgroundColor: '#1A1A1A', borderRadius: 16, padding: 24, width: '100%', maxWidth: 360 },
+  title: { fontSize: 18, fontWeight: '800', color: '#FFFFFF', marginBottom: 14 },
+  empty: { fontSize: 14, color: '#A0A0A0', textAlign: 'center', paddingVertical: 20 },
+  item: { flexDirection: 'row', alignItems: 'center', paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#2A2A2A' },
+  itemText: { flex: 1, fontSize: 15, color: '#FFFFFF', marginLeft: 10 },
+  itemCount: { fontSize: 12, color: '#A0A0A0' },
+});
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: COLORS.bg },

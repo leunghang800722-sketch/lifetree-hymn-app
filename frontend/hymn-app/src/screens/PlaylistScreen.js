@@ -1,182 +1,232 @@
-// PlaylistScreen — 播放清單（有設計 MVP）
-import React, { useState, useEffect, useCallback } from 'react';
+// PlaylistScreen — 我的音樂庫 (A 音樂清單 / B 影音清單 / C 最愛)
+import React, { useState, useCallback } from 'react';
 import {
-  View,
-  Text,
-  FlatList,
-  TouchableOpacity,
-  StyleSheet,
-  ActivityIndicator,
-  Image,
-  Alert,
-  Dimensions,
+  View, Text, FlatList, TouchableOpacity, StyleSheet, Image,
+  Modal, TextInput, Alert, Dimensions,
 } from 'react-native';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
-import TrackPlayer from 'react-native-track-player';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { usePlaylists } from '../context/PlaylistContext';
+import { useFavorites } from '../context/FavoritesContext';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
-const STORAGE_KEY = '@hymn_…ueue';
 
-function getCoverUrl(youtubeId) {
-  return youtubeId ? `https://img.youtube.com/vi/${youtubeId}/hqdefault.jpg` : null;
-}
-
-function CoverThumb({ youtubeId, size = 48 }) {
+function CoverThumb({ youtubeId, size = 48, type }) {
   const [failed, setFailed] = useState(false);
-  const uri = getCoverUrl(youtubeId);
+  const uri = youtubeId ? `https://img.youtube.com/vi/${youtubeId}/hqdefault.jpg` : null;
   if (!uri || failed) {
     return (
-      <View style={[styles.thumb, { width: size, height: size, borderRadius: 8 }]}>
-        <Text style={{ fontSize: 20 }}>🎵</Text>
+      <View style={[styles.cover, { width: size, height: size, borderRadius: type === 'video' ? 6 : 8, backgroundColor: type === 'video' ? '#1A237E' : '#1A1A1A' }]}>
+        <MaterialIcons name={type === 'video' ? 'videocam' : 'music-note'} size={size * 0.4} color="#555" />
       </View>
     );
   }
-  return (
-    <Image source={{ uri }} style={[styles.thumb, { width: size, height: size, borderRadius: 8 }]}
-      resizeMode="cover" onError={() => setFailed(true)} />
-  );
+  return <Image source={{ uri }} style={[styles.cover, { width: size, height: size, borderRadius: type === 'video' ? 6 : 8 }]} resizeMode="cover" onError={() => setFailed(true)} />;
 }
 
 export default function PlaylistScreen({ onPlayHymn }) {
-  const [queue, setQueue] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const { playlists, createPlaylist, deletePlaylist, addToPlaylist, removeFromPlaylist } = usePlaylists();
+  const { favorites, isFavorite, toggleFavorite } = useFavorites();
+  const [showCreate, setShowCreate] = useState(false);
+  const [createName, setCreateName] = useState('');
+  const [createType, setCreateType] = useState('music');
+  const [showDetail, setShowDetail] = useState(null); // playlist object or null
+  const [showAddTo, setShowAddTo] = useState(null); // hymn object to add
 
-  const loadQueue = useCallback(async () => {
-    setLoading(true);
-    try {
-      const tpQueue = await TrackPlayer.getQueue?.();
-      if (tpQueue && tpQueue.length > 0) {
-        setQueue(tpQueue);
-      } else {
-        const raw = await AsyncStorage.getItem(STORAGE_KEY);
-        if (raw) setQueue(JSON.parse(raw));
-      }
-    } catch (_) {
-      try { const raw = await AsyncStorage.getItem(STORAGE_KEY); if (raw) setQueue(JSON.parse(raw)); } catch (_) {}
-    }
-    setLoading(false);
-  }, []);
+  const handleCreate = useCallback(async () => {
+    if (!createName.trim()) { Alert.alert('請輸入清單名稱'); return; }
+    await createPlaylist(createName.trim(), createType);
+    setCreateName('');
+    setShowCreate(false);
+  }, [createName, createType, createPlaylist]);
 
-  useEffect(() => { loadQueue(); }, [loadQueue]);
+  const handlePlayPlaylist = useCallback((pl) => {
+    if (pl.hymns.length === 0) return;
+    // Play first hymn using the same mechanism
+    if (onPlayHymn) onPlayHymn(pl.hymns[0]);
+  }, [onPlayHymn]);
 
-  const handlePlay = useCallback((item) => onPlayHymn && onPlayHymn(item), [onPlayHymn]);
-
-  const handleClear = useCallback(() => {
-    Alert.alert('清空清單', '確定要清空目前播放清單？', [
+  const handleDelete = useCallback((pl) => {
+    Alert.alert('刪除清單', `確定刪除「${pl.name}」？`, [
       { text: '取消', style: 'cancel' },
-      { text: '清空', style: 'destructive', onPress: async () => {
-        try { await TrackPlayer.reset?.(); await AsyncStorage.removeItem(STORAGE_KEY); setQueue([]); } catch (_) {}
-      }},
+      { text: '刪除', style: 'destructive', onPress: () => deletePlaylist(pl.id) },
     ]);
-  }, []);
+  }, [deletePlaylist]);
 
-  if (loading) {
-    return (
-      <View style={styles.container}>
-        <View style={styles.header}>
-          <Text style={styles.title}>播放清單</Text>
-        </View>
-        <View style={styles.centerWrap}>
-          <ActivityIndicator size="small" color="#1ED760" />
-        </View>
-      </View>
-    );
-  }
+  // Combined data: user playlists + system favorites item
+  const allItems = [
+    ...(favorites.length > 0 ? [{ id: '__favorites__', name: '我的最愛', type: 'system', hymns: favorites, count: favorites.length }] : []),
+    ...playlists,
+  ];
 
   return (
     <View style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.title}>播放清單</Text>
-        {queue.length > 0 && (
-          <View style={styles.headerRight}>
-            <Text style={styles.count}>{queue.length} 首</Text>
-            <TouchableOpacity onPress={handleClear} style={styles.clearBtn}>
-              <MaterialIcons name="delete-outline" size={20} color="#A0A0A0" />
-            </TouchableOpacity>
-          </View>
-        )}
+        <View>
+          <Text style={styles.title}>播放清單</Text>
+          <Text style={styles.subtitle}>共 {allItems.length} 個清單</Text>
+        </View>
+        <TouchableOpacity style={styles.addBtn} onPress={() => setShowCreate(true)}>
+          <MaterialIcons name="add" size={22} color="#000" />
+        </TouchableOpacity>
       </View>
 
-      {queue.length === 0 ? (
-        /* Empty state — with design */
+      {/* Empty state */}
+      {allItems.length === 0 ? (
         <View style={styles.emptyWrap}>
-          <View style={styles.emptyGraphic}>
-            <Text style={styles.emptyBgIcon}>📋</Text>
-            <View style={styles.emptyLine} />
-            <View style={[styles.emptyDot, styles.emptyDot1]} />
-            <View style={[styles.emptyDot, styles.emptyDot2]} />
+          <View style={styles.emptyIconBg}>
+            <MaterialIcons name="library-music" size={40} color="#2A2A2A" />
           </View>
-          <Text style={styles.emptyTitle}>播放清單係空的</Text>
-          <Text style={styles.emptyDesc}>聽歌嗰陣點歌曲旁邊嘅「⋯」</Text>
-          <Text style={styles.emptyDesc}>揀「下一首播放」或「加入播放清單」</Text>
+          <Text style={styles.emptyTitle}>尚未建立播放清單</Text>
+          <Text style={styles.emptyHint}>點右上 + 建立音樂清單或影音清單</Text>
+          <TouchableOpacity style={styles.emptyBtn} onPress={() => setShowCreate(true)}>
+            <MaterialIcons name="add" size={18} color="#000" />
+            <Text style={styles.emptyBtnText}>建立播放清單</Text>
+          </TouchableOpacity>
         </View>
       ) : (
-        /* Queue list */
         <FlatList
-          data={queue}
-          keyExtractor={(_, i) => `q-${i}`}
+          data={allItems}
+          keyExtractor={(item) => item.id}
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.listContent}
-          ItemSeparatorComponent={() => <View style={styles.separator} />}
-          renderItem={({ item, index }) => (
-            <TouchableOpacity style={styles.item} onPress={() => handlePlay(item)} activeOpacity={0.7}>
-              <Text style={styles.idx}>{index + 1}</Text>
-              <CoverThumb youtubeId={item.youtube_id} size={44} />
-              <View style={styles.itemInfo}>
-                <Text style={styles.itemTitle} numberOfLines={1}>{item.title || item.name || item.filename}</Text>
-                <Text style={styles.itemArtist} numberOfLines={1}>{item.artist || '未知'}</Text>
+          renderItem={({ item }) => (
+            <TouchableOpacity style={styles.plItem} onPress={() => {
+              if (item.id === '__favorites__') return; // handled by tab
+              setShowDetail(item);
+            }} activeOpacity={0.7}>
+              <CoverThumb youtubeId={item.hymns?.[0]?.youtube_id} size={52} type={item.type === 'video' ? 'video' : 'music'} />
+              <View style={styles.plInfo}>
+                <Text style={styles.plName} numberOfLines={1}>{item.name}</Text>
+                <View style={styles.plMeta}>
+                  <View style={styles.plTypeTag}>
+                    <MaterialIcons name={item.type === 'video' ? 'videocam' : item.type === 'system' ? 'favorite' : 'music-note'} size={12} color={item.type === 'video' ? '#64B5F6' : item.type === 'system' ? '#1ED760' : '#A0A0A0'} />
+                    <Text style={[styles.plTypeText, { color: item.type === 'video' ? '#64B5F6' : item.type === 'system' ? '#1ED760' : '#A0A0A0' }]}>
+                      {item.type === 'video' ? '影音' : item.type === 'system' ? '最愛' : '音樂'}
+                    </Text>
+                  </View>
+                  <Text style={styles.plCount}>{item.hymns?.length || 0} 首</Text>
+                </View>
               </View>
-              <MaterialIcons name="play-circle-outline" size={22} color="#555" />
+              {item.type !== 'system' && (
+                <TouchableOpacity onPress={() => handleDelete(item)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+                  <MaterialIcons name="more-vert" size={20} color="#555" />
+                </TouchableOpacity>
+              )}
             </TouchableOpacity>
           )}
         />
       )}
+
+      {/* Create Modal */}
+      <Modal visible={showCreate} transparent animationType="fade" onRequestClose={() => setShowCreate(false)}>
+        <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={() => setShowCreate(false)}>
+          <View style={styles.modalCard}>
+            <Text style={styles.modalTitle}>建立播放清單</Text>
+            <TextInput style={styles.modalInput} placeholder="清單名稱" placeholderTextColor="#666" value={createName} onChangeText={setCreateName} autoFocus />
+            <View style={styles.typeRow}>
+              <TouchableOpacity style={[styles.typeBtn, createType === 'music' && styles.typeBtnActive]} onPress={() => setCreateType('music')}>
+                <MaterialIcons name="music-note" size={20} color={createType === 'music' ? '#1ED760' : '#A0A0A0'} />
+                <Text style={[styles.typeBtnText, createType === 'music' && { color: '#1ED760' }]}>音樂（背景）</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={[styles.typeBtn, createType === 'video' && styles.typeBtnActive]} onPress={() => setCreateType('video')}>
+                <MaterialIcons name="videocam" size={20} color={createType === 'video' ? '#1ED760' : '#A0A0A0'} />
+                <Text style={[styles.typeBtnText, createType === 'video' && { color: '#1ED760' }]}>影音（前景）</Text>
+              </TouchableOpacity>
+            </View>
+            <TouchableOpacity style={styles.createSubmit} onPress={handleCreate}>
+              <Text style={styles.createSubmitText}>建立</Text>
+            </TouchableOpacity>
+          </View>
+        </TouchableOpacity>
+      </Modal>
+
+      {/* Detail Modal */}
+      <Modal visible={!!showDetail} transparent animationType="slide" onRequestClose={() => setShowDetail(null)}>
+        <View style={styles.detailContainer}>
+          <View style={styles.detailHeader}>
+            <TouchableOpacity onPress={() => setShowDetail(null)}>
+              <MaterialIcons name="arrow-back" size={24} color="#FFF" />
+            </TouchableOpacity>
+            <View style={styles.detailInfo}>
+              <Text style={styles.detailTitle} numberOfLines={1}>{showDetail?.name || ''}</Text>
+              <Text style={styles.detailMeta}>{showDetail?.hymns?.length || 0} 首</Text>
+            </View>
+            {showDetail?.hymns?.length > 0 && (
+              <TouchableOpacity onPress={() => handlePlayPlaylist(showDetail)}>
+                <MaterialIcons name="play-circle-filled" size={32} color="#1ED760" />
+              </TouchableOpacity>
+            )}
+          </View>
+          <FlatList
+            data={showDetail?.hymns || []}
+            keyExtractor={(item, i) => `${item.id}-${i}`}
+            renderItem={({ item }) => (
+              <TouchableOpacity style={styles.detailItem} onPress={() => { if (onPlayHymn) onPlayHymn(item); setShowDetail(null); }} activeOpacity={0.7}>
+                <CoverThumb youtubeId={item.youtube_id} size={40} type={showDetail?.type === 'video' ? 'video' : 'music'} />
+                <View style={{ flex: 1, marginLeft: 10 }}>
+                  <Text style={styles.detailSongTitle} numberOfLines={1}>{item.title}</Text>
+                  <Text style={styles.detailSongArtist} numberOfLines={1}>{item.artist || '未知'}</Text>
+                </View>
+                <TouchableOpacity onPress={() => removeFromPlaylist(showDetail?.id, item.id)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+                  <MaterialIcons name="remove-circle-outline" size={20} color="#A0A0A0" />
+                </TouchableOpacity>
+              </TouchableOpacity>
+            )}
+            ListEmptyComponent={<Text style={styles.emptyText}>清單係空嘅</Text>}
+          />
+        </View>
+      </Modal>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#000000' },
-
-  // Header
-  header: {
-    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
-    paddingHorizontal: 20, paddingTop: 16, paddingBottom: 12,
-  },
+  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, paddingTop: 16, paddingBottom: 12 },
   title: { fontSize: 28, fontWeight: '800', color: '#FFFFFF' },
-  headerRight: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  count: { fontSize: 13, color: '#A0A0A0' },
-  clearBtn: { padding: 6 },
-
-  // Loading
-  centerWrap: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  subtitle: { fontSize: 13, color: '#A0A0A0', marginTop: 2 },
+  addBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#1ED760', justifyContent: 'center', alignItems: 'center' },
 
   // Empty
-  emptyWrap: {
-    flex: 1, alignItems: 'center', justifyContent: 'center',
-    paddingHorizontal: 40, paddingBottom: 80,
-  },
-  emptyGraphic: { position: 'relative', marginBottom: 20, alignItems: 'center', height: 80 },
-  emptyBgIcon: { fontSize: 64, opacity: 0.15 },
-  emptyLine: { position: 'absolute', bottom: 10, width: 120, height: 2, backgroundColor: '#2A2A2A', borderRadius: 1 },
-  emptyDot: { position: 'absolute', width: 6, height: 6, borderRadius: 3, backgroundColor: '#1ED760' },
-  emptyDot1: { bottom: 6, left: -10 },
-  emptyDot2: { bottom: 6, right: -10 },
-  emptyTitle: { fontSize: 17, fontWeight: '700', color: '#FFFFFF', marginBottom: 8 },
-  emptyDesc: { fontSize: 13, color: '#A0A0A0', lineHeight: 19 },
+  emptyWrap: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingBottom: 80, paddingHorizontal: 40 },
+  emptyIconBg: { width: 80, height: 80, borderRadius: 40, backgroundColor: '#1A1A1A', justifyContent: 'center', alignItems: 'center', marginBottom: 16 },
+  emptyTitle: { fontSize: 17, fontWeight: '700', color: '#FFFFFF', marginBottom: 6 },
+  emptyHint: { fontSize: 13, color: '#A0A0A0', textAlign: 'center', marginBottom: 20, lineHeight: 20 },
+  emptyBtn: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#1ED760', paddingHorizontal: 20, paddingVertical: 12, borderRadius: 24, gap: 6 },
+  emptyBtnText: { fontSize: 15, fontWeight: '700', color: '#000000' },
 
   // List
   listContent: { paddingBottom: 20 },
-  separator: { height: 1, backgroundColor: '#1A1A1A', marginLeft: 78 },
-  item: {
-    flexDirection: 'row', alignItems: 'center',
-    paddingVertical: 10, paddingHorizontal: 20,
-  },
-  idx: { width: 24, fontSize: 13, color: '#555', fontWeight: '500', textAlign: 'center' },
-  thumb: { justifyContent: 'center', alignItems: 'center', backgroundColor: '#1A1A1A' },
-  itemInfo: { flex: 1, marginLeft: 12 },
-  itemTitle: { fontSize: 15, fontWeight: '600', color: '#FFFFFF' },
-  itemArtist: { fontSize: 12, color: '#A0A0A0', marginTop: 2 },
+  plItem: { flexDirection: 'row', alignItems: 'center', paddingVertical: 12, paddingHorizontal: 20 },
+  cover: { justifyContent: 'center', alignItems: 'center', backgroundColor: '#1A1A1A' },
+  plInfo: { flex: 1, marginLeft: 12 },
+  plName: { fontSize: 16, fontWeight: '600', color: '#FFFFFF' },
+  plMeta: { flexDirection: 'row', alignItems: 'center', marginTop: 4, gap: 10 },
+  plTypeTag: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  plTypeText: { fontSize: 11, fontWeight: '600' },
+  plCount: { fontSize: 12, color: '#A0A0A0' },
+
+  // Create modal
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.7)', justifyContent: 'center', alignItems: 'center', padding: 30 },
+  modalCard: { backgroundColor: '#1A1A1A', borderRadius: 16, padding: 24, width: '100%', maxWidth: 360 },
+  modalTitle: { fontSize: 20, fontWeight: '800', color: '#FFFFFF', marginBottom: 16 },
+  modalInput: { backgroundColor: '#2A2A2A', borderRadius: 10, paddingHorizontal: 14, height: 48, fontSize: 16, color: '#FFFFFF', marginBottom: 16 },
+  typeRow: { flexDirection: 'row', gap: 10, marginBottom: 16 },
+  typeBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: 12, borderRadius: 10, backgroundColor: '#2A2A2A' },
+  typeBtnActive: { borderWidth: 1.5, borderColor: '#1ED760' },
+  typeBtnText: { fontSize: 13, color: '#A0A0A0', fontWeight: '600' },
+  createSubmit: { backgroundColor: '#1ED760', borderRadius: 10, height: 48, justifyContent: 'center', alignItems: 'center' },
+  createSubmitText: { fontSize: 17, fontWeight: '700', color: '#000000' },
+
+  // Detail modal
+  detailContainer: { flex: 1, backgroundColor: '#000000', paddingTop: 50 },
+  detailHeader: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingBottom: 12, gap: 12 },
+  detailInfo: { flex: 1 },
+  detailTitle: { fontSize: 20, fontWeight: '700', color: '#FFFFFF' },
+  detailMeta: { fontSize: 12, color: '#A0A0A0', marginTop: 2 },
+  detailItem: { flexDirection: 'row', alignItems: 'center', paddingVertical: 10, paddingHorizontal: 20 },
+  detailSongTitle: { fontSize: 15, fontWeight: '600', color: '#FFFFFF' },
+  detailSongArtist: { fontSize: 12, color: '#A0A0A0', marginTop: 1 },
+  emptyText: { fontSize: 14, color: '#A0A0A0', textAlign: 'center', paddingVertical: 40 },
 });

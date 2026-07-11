@@ -16,6 +16,7 @@ import { COLORS } from './src/constants/theme';
 import { FavoritesProvider, useFavorites } from './src/context/FavoritesContext';
 import { AuthProvider, useAuth } from './src/context/AuthContext';
 import AuthScreen from './src/screens/AuthScreen';
+import { PlaylistProvider } from './src/context/PlaylistContext';
 
 // ===== MaterialIcons 圖標名稱 =====
 
@@ -1274,11 +1275,11 @@ export default function App() {
   if (SafeAreaProvider) {
     return (
       <SafeAreaProvider>
-        <AuthProvider><PlayerProvider><FavoritesProvider><AppContent /></FavoritesProvider></PlayerProvider></AuthProvider>
+        <AuthProvider><PlayerProvider><PlaylistProvider><FavoritesProvider><AppContent /></FavoritesProvider></PlaylistProvider></PlayerProvider></AuthProvider>
       </SafeAreaProvider>
     );
   }
-  return <AuthProvider><PlayerProvider><FavoritesProvider><AppContent /></FavoritesProvider></PlayerProvider></AuthProvider>;
+  return <AuthProvider><PlayerProvider><PlaylistProvider><FavoritesProvider><AppContent /></FavoritesProvider></PlaylistProvider></PlayerProvider></AuthProvider>;
 }
 
 const pageStyles = StyleSheet.create({
