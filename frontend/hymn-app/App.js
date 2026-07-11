@@ -181,6 +181,7 @@ function PlayerProvider({ children }) {
   const repeatModeRef = useRef(0);
   const isShuffledRef = useRef(false);
   const queueSnapshotRef = useRef([]);
+  const customQueueRef = useRef(null); // non-null when playing from a custom playlist
   const shuffleHistoryRef = useRef([]); // tracks played indices for shuffle fairness
 
   // 同步 ref 俾 event handler 用
@@ -436,7 +437,10 @@ function PlayerProvider({ children }) {
     try {
       if (!song || !song.youtube_id) return;
       setIsLoading(true);
-      const q = getQueue(hymns);
+      // If playing from a custom playlist (e.g., user-created music/video list),
+      // use customQueueRef as the source queue instead of full hymns list
+      const useQueue = customQueueRef.current || getQueue(hymns);
+      const q = useQueue;
       let idx = typeof queueIndex === 'number' ? queueIndex : q.findIndex(h => h.id === song.id);
       if (idx < 0) idx = 0;
 
@@ -553,7 +557,7 @@ function PlayerProvider({ children }) {
   }
 
   async function handleNextTrack() {
-    const q = getQueue(hymns);
+    const q = customQueueRef.current || getQueue(hymns);
     if (!q.length) return;
     let nextIdx;
     if (isShuffledRef.current) {
@@ -579,7 +583,7 @@ function PlayerProvider({ children }) {
   }
 
   async function handlePrevTrack() {
-    const q = getQueue(hymns);
+    const q = customQueueRef.current || getQueue(hymns);
     if (!q.length) return;
     const prev = currentQueueIndexRef.current > 0
       ? currentQueueIndexRef.current - 1 : q.length - 1;
@@ -1210,11 +1214,10 @@ function AppContent() {
       const ordered = startIdx >= 0
         ? [...q.slice(startIdx), ...q.slice(0, startIdx)]
         : [...q];
-      // changeToSong will overwrite queueSnapshotRef internally.
-      // Await it first so it completes, then override with playlist order.
-      await changeToSong(ordered[0]);
-      // Now override queueSnapshotRef with the playlist (replace the full-hymns list)
-      queueSnapshotRef.current = ordered;
+      // Set customQueueRef so changeToSong uses the playlist as source queue
+      // (not the full hymns list). changeToSong reads customQueueRef internally.
+      customQueueRef.current = ordered;
+      changeToSong(ordered[0]);
       showPlayer();
     } else {
       changeToSong(h);
