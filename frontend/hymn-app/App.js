@@ -1197,8 +1197,8 @@ function AppContent() {
 
       <View style={pageStyles.content}>
         {/* Keep all screens mounted; hide inactive ones to preserve state */}
-        {/* Home: visible when tab is Home, or any other tab (Playlist/Favorites/Player) fallback */}
-        <View style={[pageStyles.screenWrap, { display: (activeTab === 'Home' || (activeTab !== 'Search' && activeTab !== 'Category')) ? 'flex' : 'none' }]}>
+        {/* Home: visible when Home tab, or other tabs without dedicated screen (Favorites/Player) */}
+        <View style={[pageStyles.screenWrap, { display: (activeTab === 'Home' || (activeTab !== 'Search' && activeTab !== 'Category' && activeTab !== 'Playlist' && activeTab !== 'Favorites')) ? 'flex' : 'none' }]}>
           <HomeScreen hymns={allSongs || []} activeCategory={activeCategory}
             onCategoryChange={setActiveCategory} onPlayHymn={handlePlayHymn} />
         </View>
