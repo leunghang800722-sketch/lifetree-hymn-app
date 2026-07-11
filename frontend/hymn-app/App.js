@@ -754,6 +754,8 @@ import HomeSections from './src/components/home/HomeScreen';
 import SearchScreen from './src/screens/SearchScreen';
 import CategoryScreen from './src/screens/CategoryScreen';
 import HymnListScreen from './src/screens/HymnListScreen';
+import PlaylistScreen from './src/screens/PlaylistScreen';
+import FavoritesScreen from './src/screens/FavoritesScreen';
 
 // ================================================================
 //  HOME SCREEN
@@ -1212,6 +1214,9 @@ function AppContent() {
         </View>
         <View style={[pageStyles.screenWrap, { display: activeTab === 'Playlist' ? 'flex' : 'none' }]}>
           <PlaylistScreen onPlayHymn={handlePlayHymn} />
+        </View>
+        <View style={[pageStyles.screenWrap, { display: activeTab === 'Favorites' ? 'flex' : 'none' }]}>
+          <FavoritesScreen onPlayHymn={handlePlayHymn} />
         </View>
       </View>
       <TabBar activeTab={activeTab} onTabChange={setActiveTab}

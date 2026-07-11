@@ -1,65 +1,85 @@
-// 最愛畫面 - 收藏詩歌
-import React, { useState, useEffect } from 'react';
+// FavoritesScreen — 我的最愛（配合 FavoritesContext）
+import React, { useCallback } from 'react';
 import {
   View,
   Text,
   FlatList,
   TouchableOpacity,
   StyleSheet,
+  Image,
 } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { useFavorites } from '../context/FavoritesContext';
 
-const RECENT_KEY = '@hymn_app_recent';
+function getCoverUrl(youtubeId) {
+  return youtubeId ? `https://img.youtube.com/vi/${youtubeId}/hqdefault.jpg` : null;
+}
 
-export default function FavoritesScreen() {
-  const navigation = useNavigation();
-  const { favorites } = useFavorites();
-
-  function handleHymnPress(hymn) {
-    AsyncStorage.setItem(RECENT_KEY, String(hymn.id)).catch(() => {});
-    navigation.navigate('Player', { hymnId: hymn.id });
+function CoverThumb({ hymn }) {
+  const [failed, setFailed] = React.useState(false);
+  const uri = getCoverUrl(hymn.youtube_id);
+  if (!uri || failed) {
+    return (
+      <View style={styles.thumb}>
+        <Text style={styles.thumbIcon}>🎵</Text>
+      </View>
+    );
   }
+  return (
+    <Image source={{ uri }} style={styles.thumb} resizeMode="cover" onError={() => setFailed(true)} />
+  );
+}
+
+export default function FavoritesScreen({ onPlayHymn }) {
+  const { favorites, toggleFavorite } = useFavorites();
+
+  const handlePlay = useCallback((item) => {
+    if (onPlayHymn) onPlayHymn(item);
+  }, [onPlayHymn]);
 
   return (
     <View style={styles.container}>
+      {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>❤️ 我最喜愛</Text>
-        <Text style={styles.headerSubtitle}>
-          {favorites.length > 0 ? `共 ${favorites.length} 首` : '未有收藏詩歌'}
-        </Text>
+        <Text style={styles.title}>我的最愛</Text>
+        {favorites.length > 0 && (
+          <Text style={styles.count}>共 {favorites.length} 首</Text>
+        )}
       </View>
 
       {favorites.length === 0 ? (
-        <View style={styles.emptyContainer}>
-          <Text style={styles.emptyEmoji}>💖</Text>
-          <Text style={styles.emptyText}>未有收藏詩歌</Text>
-          <Text style={styles.emptyHint}>喺詩歌列表點擊 ♡ 加入收藏</Text>
+        <View style={styles.emptyWrap}>
+          <View style={styles.emptyIconWrap}>
+            <MaterialIcons name="favorite-border" size={48} color="#2A2A2A" />
+          </View>
+          <Text style={styles.emptyTitle}>未有收藏詩歌</Text>
+          <Text style={styles.emptyHint}>喺 Mini Player 點 ♥ 加入收藏</Text>
         </View>
       ) : (
         <FlatList
           data={favorites}
           keyExtractor={(item) => String(item.id)}
+          showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.listContent}
+          ItemSeparatorComponent={() => <View style={styles.separator} />}
           renderItem={({ item }) => (
             <TouchableOpacity
-              style={styles.hymnItem}
-              onPress={() => handleHymnPress(item)}
+              style={styles.item}
+              onPress={() => handlePlay(item)}
+              activeOpacity={0.7}
             >
-              <View style={styles.hymnNumber}>
-                <Text style={styles.hymnNumberText}>{item.id}</Text>
+              <CoverThumb hymn={item} />
+              <View style={styles.itemInfo}>
+                <Text style={styles.itemTitle} numberOfLines={1}>{item.title}</Text>
+                <Text style={styles.itemArtist} numberOfLines={1}>{item.artist || '未知'}</Text>
               </View>
-              <View style={styles.hymnInfo}>
-                <Text style={styles.hymnTitle}>{item.title}</Text>
-                <Text style={styles.hymnArtist}>{item.artist}</Text>
-              </View>
-              <View style={[
-                styles.hymnBadge,
-                { backgroundColor: item.category === '粵語' ? '#065F46' : '#1E40AF' }
-              ]}>
-                <Text style={styles.hymnBadgeText}>{item.category}</Text>
-              </View>
+              <TouchableOpacity
+                style={styles.favBtn}
+                onPress={() => toggleFavorite(item)}
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              >
+                <MaterialIcons name="favorite" size={22} color="#1ED760" />
+              </TouchableOpacity>
             </TouchableOpacity>
           )}
         />
@@ -69,91 +89,33 @@ export default function FavoritesScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#000000',
-  },
+  container: { flex: 1, backgroundColor: '#000000' },
+
+  // Header
   header: {
-    paddingTop: 50,
-    paddingHorizontal: 20,
-    paddingBottom: 16,
+    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline',
+    paddingHorizontal: 20, paddingTop: 16, paddingBottom: 12,
   },
-  headerTitle: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#FFF',
+  title: { fontSize: 28, fontWeight: '800', color: '#FFFFFF' },
+  count: { fontSize: 13, color: '#A0A0A0' },
+
+  // Empty
+  emptyWrap: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingBottom: 80 },
+  emptyIconWrap: { width: 80, height: 80, borderRadius: 40, backgroundColor: '#1A1A1A', justifyContent: 'center', alignItems: 'center', marginBottom: 16 },
+  emptyTitle: { fontSize: 17, fontWeight: '700', color: '#FFFFFF', marginBottom: 6 },
+  emptyHint: { fontSize: 13, color: '#A0A0A0' },
+
+  // List
+  listContent: { paddingBottom: 20 },
+  separator: { height: 1, backgroundColor: '#1A1A1A', marginLeft: 70 },
+  item: {
+    flexDirection: 'row', alignItems: 'center',
+    paddingVertical: 10, paddingHorizontal: 20,
   },
-  headerSubtitle: {
-    fontSize: 13,
-    color: '#6B7D65',
-    marginTop: 4,
-  },
-  emptyContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingBottom: 80,
-  },
-  emptyEmoji: {
-    fontSize: 64,
-    marginBottom: 16,
-  },
-  emptyText: {
-    fontSize: 16,
-    color: '#FFF',
-    fontWeight: '600',
-  },
-  emptyHint: {
-    fontSize: 13,
-    color: '#6B7D65',
-    marginTop: 6,
-  },
-  listContent: {
-    paddingHorizontal: 20,
-  },
-  hymnItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#000000',
-    borderRadius: 14,
-    padding: 14,
-    marginBottom: 8,
-  },
-  hymnNumber: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: '#2D2A5E',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 12,
-  },
-  hymnNumberText: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: '#F5E6CA',
-  },
-  hymnInfo: {
-    flex: 1,
-  },
-  hymnTitle: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: '#FFF',
-  },
-  hymnArtist: {
-    fontSize: 12,
-    color: '#6B7D65',
-    marginTop: 2,
-  },
-  hymnBadge: {
-    borderRadius: 8,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-  },
-  hymnBadgeText: {
-    fontSize: 11,
-    color: '#FFF',
-    fontWeight: '600',
-  },
+  thumb: { width: 44, height: 44, borderRadius: 8, backgroundColor: '#1A1A1A', justifyContent: 'center', alignItems: 'center' },
+  thumbIcon: { fontSize: 20 },
+  itemInfo: { flex: 1, marginLeft: 12 },
+  itemTitle: { fontSize: 15, fontWeight: '600', color: '#FFFFFF' },
+  itemArtist: { fontSize: 12, color: '#A0A0A0', marginTop: 2 },
+  favBtn: { padding: 6 },
 });

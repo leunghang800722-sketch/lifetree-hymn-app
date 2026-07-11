@@ -42,7 +42,7 @@ export function FavoritesProvider({ children }) {
       if (exists) {
         newList = prev.filter(h => h.id !== hymn.id);
       } else {
-        newList = [...prev, { id: hymn.id, title: hymn.title, artist: hymn.artist, category: hymn.category }];
+        newList = [...prev, { id: hymn.id, title: hymn.title, artist: hymn.artist, category: hymn.category, youtube_id: hymn.youtube_id }];
       }
       saveFavorites(newList);
       return newList;
