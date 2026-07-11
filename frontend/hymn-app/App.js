@@ -763,7 +763,7 @@ function HomeScreen({ hymns, activeCategory, onCategoryChange, onPlayHymn }) {
         </View>
         <View style={hs.iconWrap}>
           <TouchableOpacity style={hs.iconBtn}>
-            <Text style={hs.iconText}>🔔</Text>
+            <MaterialIcons name="notifications-none" size={24} color="#FFFFFF" />
           </TouchableOpacity>
           <TouchableOpacity style={hs.avatarBtn}>
             <Text style={hs.avatarText}>E</Text>
@@ -819,18 +819,14 @@ const hs = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: 'rgba(255,255,255,0.1)',
     justifyContent: 'center',
     alignItems: 'center',
-  },
-  iconText: {
-    fontSize: 16,
   },
   avatarBtn: {
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: '#C8A951',
+    backgroundColor: '#006039',
     justifyContent: 'center',
     alignItems: 'center',
   },
