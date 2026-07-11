@@ -1180,19 +1180,8 @@ function AppContent() {
   function handlePlayHymn(h) { if (h) { changeToSong(h); showPlayer(); } }
   function handleOpenFullScreen() { showPlayer(); }
 
-  if (loading || (!queueReady && Platform.OS === 'ios')) {
-    // On Android, queueReady may stay false due to headless service timing
-    // But we should still wait briefly, not crash
-    return (
-      <View style={pageStyles.container}>
-        <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
-        <View style={pageStyles.center}>
-          <ActivityIndicator size="large" color="#FFFFFF" />
-          <Text style={pageStyles.loadingText}>載入詩歌中...</Text>
-        </View>
-      </View>
-    );
-  }
+  // No loading screen — render immediately with fallback hymns
+  // TrackPlayer init happens in background; UI is not blocked by queueReady
 
   return (
     <View style={pageStyles.container}>
