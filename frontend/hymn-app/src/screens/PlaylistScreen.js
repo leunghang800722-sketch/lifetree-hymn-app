@@ -41,8 +41,10 @@ export default function PlaylistScreen({ onPlayHymn }) {
 
   const handlePlayPlaylist = useCallback((pl) => {
     if (pl.hymns.length === 0) return;
-    // Play first hymn using the same mechanism
-    if (onPlayHymn) onPlayHymn(pl.hymns[0]);
+    // Pass mode: 'audio' for music/fav, 'video' for video playlists
+    // Also pass the full playlist for queue support
+    const mode = pl.type === 'video' ? 'video' : 'audio';
+    if (onPlayHymn) onPlayHymn(pl.hymns[0], { mode, playlist: pl.hymns, playlistName: pl.name });
   }, [onPlayHymn]);
 
   const handleDelete = useCallback((pl) => {
@@ -162,7 +164,11 @@ export default function PlaylistScreen({ onPlayHymn }) {
             data={showDetail?.hymns || []}
             keyExtractor={(item, i) => `${item.id}-${i}`}
             renderItem={({ item }) => (
-              <TouchableOpacity style={styles.detailItem} onPress={() => { if (onPlayHymn) onPlayHymn(item); setShowDetail(null); }} activeOpacity={0.7}>
+              <TouchableOpacity style={styles.detailItem} onPress={() => { 
+                const mode = showDetail?.type === 'video' ? 'video' : 'audio';
+                if (onPlayHymn) onPlayHymn(item, { mode, playlist: showDetail?.hymns, playlistName: showDetail?.name }); 
+                setShowDetail(null); 
+              }} activeOpacity={0.7}>
                 <CoverThumb youtubeId={item.youtube_id} size={40} type={showDetail?.type === 'video' ? 'video' : 'music'} />
                 <View style={{ flex: 1, marginLeft: 10 }}>
                   <Text style={styles.detailSongTitle} numberOfLines={1}>{item.title}</Text>

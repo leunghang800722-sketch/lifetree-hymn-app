@@ -1197,7 +1197,57 @@ function AppContent() {
     }).catch(() => {});
   }, []);
 
-  function handlePlayHymn(h) { if (h) { changeToSong(h); showPlayer(); } }
+  function handlePlayHymn(h, opts = {}) {
+    if (!h) return;
+    if (opts.mode === 'video') {
+      // B: Video playlist — open YouTube app/browser for foreground viewing
+      const url = `https://www.youtube.com/watch?v=${h.youtube_id}`;
+      Linking.openURL(url).catch(() => Linking.openURL(url));
+      return;
+    }
+    // A: Audio playlist — queue all songs if playlist provided
+    if (opts.playlist && opts.playlist.length > 1) {
+      // Queue all songs in the playlist, starting with the selected one
+      const q = opts.playlist;
+      const startIdx = q.findIndex(s => s.id === h.id);
+      const ordered = startIdx >= 0
+        ? [...q.slice(startIdx), ...q.slice(0, startIdx)]
+        : [...q];
+      // Play through batch add — add all then play first
+      let addedCount = 0;
+      let lastError = null;
+      (async () => {
+        try {
+          const currentUrl = await fetchAudioUrl(h.youtube_id, true);
+          if (!currentUrl) { Alert.alert('播放失敗', '無法取得音訊'); return; }
+          await TrackPlayer.reset();
+          const tracks = [];
+          for (const song of ordered) {
+            if (song.id === h.id) {
+              tracks.push({
+                id: song.id, url: currentUrl, title: song.title || '',
+                artist: song.artist || '', artwork: getAlbumCoverUrl(song.youtube_id),
+                originalYoutubeId: song.youtube_id,
+              });
+            } else {
+              tracks.push({
+                id: song.id, url: '', title: song.title || '',
+                artist: song.artist || '', artwork: getAlbumCoverUrl(song.youtube_id),
+                originalYoutubeId: song.youtube_id,
+              });
+            }
+          }
+          await TrackPlayer.add(tracks);
+          await TrackPlayer.skip(0);
+          await TrackPlayer.play();
+          showPlayer();
+        } catch(e) { console.warn('playlist play error:', e); }
+      })();
+    } else {
+      changeToSong(h);
+      showPlayer();
+    }
+  }
   function handleOpenFullScreen() { showPlayer(); }
 
   // No loading screen — render immediately with fallback hymns
