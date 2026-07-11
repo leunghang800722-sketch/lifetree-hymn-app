@@ -78,11 +78,10 @@ export default function FavoritesScreen({ onPlayHymn }) {
         <View style={styles.emptyWrap}>
           <View style={styles.emptyGraphic}>
             <MaterialIcons name="favorite-border" size={64} color="#2A2A2A" />
-            <View style={styles.emptyLine} />
           </View>
           <Text style={styles.emptyTitle}>收藏你喜愛的詩歌</Text>
-          <Text style={styles.emptyHint}>喺 Mini Player 或者歌曲選單點 ♥</Text>
-          <Text style={styles.emptyHint2}>收藏的詩歌會出現在這裡</Text>
+          <Text style={styles.emptyHint}>喺 Mini Player 或歌曲選單點 ♥</Text>
+          <Text style={styles.emptyHint}>收藏會出現在這裡</Text>
         </View>
       ) : (
         <FlatList
@@ -147,28 +146,26 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#000000' },
 
   // Header
-  header: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 8 },
+  header: { paddingHorizontal: 16, paddingTop: 16, paddingBottom: 8 },
   title: { fontSize: 28, fontWeight: '800', color: '#FFFFFF' },
   subtitle: { fontSize: 13, color: '#A0A0A0', marginTop: 4 },
 
   // Action bar
-  actionBar: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 10, gap: 10 },
+  actionBar: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 10, gap: 10 },
   playAllBtn: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#1ED760', paddingHorizontal: 20, paddingVertical: 10, borderRadius: 24, gap: 4 },
   playAllText: { fontSize: 15, fontWeight: '700', color: '#000000' },
   shuffleBtn: { width: 40, height: 40, borderRadius: 20, borderWidth: 1, borderColor: '#2A2A2A', justifyContent: 'center', alignItems: 'center' },
 
   // Empty
-  emptyWrap: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingBottom: 80 },
-  emptyGraphic: { alignItems: 'center', marginBottom: 20 },
-  emptyLine: { width: 60, height: 2, backgroundColor: '#2A2A2A', borderRadius: 1, marginTop: 10 },
+  emptyWrap: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingBottom: 60 },
+  emptyGraphic: { alignItems: 'center', marginBottom: 16 },
   emptyTitle: { fontSize: 17, fontWeight: '700', color: '#FFFFFF', marginBottom: 6 },
   emptyHint: { fontSize: 13, color: '#A0A0A0' },
-  emptyHint2: { fontSize: 13, color: '#555', marginTop: 2 },
 
   // List
   listContent: { paddingBottom: 20 },
-  item: { flexDirection: 'row', alignItems: 'center', paddingVertical: 10, paddingHorizontal: 20 },
-  thumb: { width: 44, height: 44, borderRadius: 8, backgroundColor: '#1A1A1A', justifyContent: 'center', alignItems: 'center' },
+  item: { flexDirection: 'row', alignItems: 'center', paddingVertical: 8, paddingHorizontal: 16 },
+  thumb: { width: 56, height: 56, borderRadius: 8, backgroundColor: '#1A1A1A', justifyContent: 'center', alignItems: 'center' },
   thumbIcon: { fontSize: 20 },
   itemInfo: { flex: 1, marginLeft: 12 },
   itemTitle: { fontSize: 15, fontWeight: '600', color: '#FFFFFF' },
