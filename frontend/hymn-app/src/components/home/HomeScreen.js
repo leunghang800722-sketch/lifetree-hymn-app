@@ -6,6 +6,7 @@ import DailyVerseCard from './DailyVerseCard';
 import PlaylistCardRow from './PlaylistCardRow';
 import SongListSection from './SongListSection';
 import HotSongCarousel from './HotSongCarousel';
+import TestimonyCarousel from './TestimonyCarousel';
 import AlbumCardRow from './AlbumCardRow';
 import SectionRow from './SectionRow';
 import { homeApi } from '../../services/homeApi';
@@ -116,10 +117,8 @@ export default function HomeScreen({ navigation, onPlayHymn }) {
           <SongListSection title="排行榜" hymns={data.topVerses.slice(0, 8)} onPlay={playSong} onMore={showMoreMenu} />
         )}
 
-        {/* 7. 見證分享 */}
-        {data.folkSharing.length > 0 && (
-          <SectionRow title="見證分享" data={data.folkSharing.slice(0, 10)} onPress={playSong} />
-        )}
+        {/* 7. 見證分享 — 星火飛騰 + 恩雨之聲 */}
+        <TestimonyCarousel />
 
         {/* 8. 純音樂 */}
         <SectionRow title="純音樂" data={data.genreRec.slice(0, 10)} onPress={playSong} />
