@@ -1,39 +1,56 @@
-// Favorites Context - 收藏詩歌
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+// Favorites Context - 收藏詩歌（綁會員 / Guest fallback）
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useAuth } from './AuthContext';
 
-const FAVORITES_KEY = '@hymn_app_favorites';
+const GUEST_KEY = '@favorites';
+
+function getKey(user) {
+  if (user && user.id) return `@favorites_user_${user.id}`;
+  return GUEST_KEY;
+}
 
 const FavoritesContext = createContext(null);
 
 export function FavoritesProvider({ children }) {
+  const { user } = useAuth();
   const [favorites, setFavorites] = useState([]);
   const [loaded, setLoaded] = useState(false);
+  const prevUserId = useRef(null);
 
-  // Load on mount
-  useEffect(() => {
-    loadFavorites();
-  }, []);
-
-  async function loadFavorites() {
+  const loadFavorites = useCallback(async (key) => {
     try {
-      const stored = await AsyncStorage.getItem(FAVORITES_KEY);
+      const stored = await AsyncStorage.getItem(key);
       if (stored) {
         setFavorites(JSON.parse(stored));
+      } else {
+        setFavorites([]);
       }
     } catch (e) {
       console.log('Load favorites error:', e);
+      setFavorites([]);
     }
     setLoaded(true);
-  }
+  }, []);
 
-  async function saveFavorites(list) {
+  // Reload when user changes (login/logout)
+  useEffect(() => {
+    const uid = user?.id || null;
+    if (prevUserId.current !== uid) {
+      prevUserId.current = uid;
+      const key = getKey(user);
+      loadFavorites(key);
+    }
+  }, [user, loadFavorites]);
+
+  const saveFavorites = useCallback(async (list) => {
+    const key = getKey(user);
     try {
-      await AsyncStorage.setItem(FAVORITES_KEY, JSON.stringify(list));
+      await AsyncStorage.setItem(key, JSON.stringify(list));
     } catch (e) {
       console.log('Save favorites error:', e);
     }
-  }
+  }, [user]);
 
   const toggleFavorite = useCallback(async (hymn) => {
     setFavorites(prev => {
@@ -47,21 +64,14 @@ export function FavoritesProvider({ children }) {
       saveFavorites(newList);
       return newList;
     });
-  }, []);
+  }, [saveFavorites]);
 
   const isFavorite = useCallback((hymnId) => {
     return favorites.some(h => h.id === hymnId);
   }, [favorites]);
 
   return (
-    <FavoritesContext.Provider
-      value={{
-        favorites,
-        loaded,
-        toggleFavorite,
-        isFavorite,
-      }}
-    >
+    <FavoritesContext.Provider value={{ favorites, loaded, toggleFavorite, isFavorite }}>
       {children}
     </FavoritesContext.Provider>
   );
