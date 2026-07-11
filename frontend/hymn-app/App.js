@@ -1036,7 +1036,7 @@ function FullScreenPlayerOverlay() {
         style={{
           position: 'absolute', bottom: bottomPad + 50, right: 20,
           paddingVertical: 8, paddingHorizontal: 16,
-          backgroundColor: 'rgba(168,199,101,0.2)', borderRadius: 20,
+          backgroundColor: 'rgba(30,215,96,0.15)', borderRadius: 20,
           borderWidth: 1, borderColor: ACCENT_COLOR,
         }}
       >
@@ -1262,8 +1262,8 @@ const pageStyles = StyleSheet.create({
   container: { flex: 1, height: SCREEN_HEIGHT, backgroundColor: MAIN_BG_COLOR },
   content: { flex: 1 },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  hymnListModal: { flex: 1, backgroundColor: '#fff' },
-  hymnListClose: { padding: 16, backgroundColor: '#f8f8f8', borderBottomWidth: 1, borderBottomColor: '#ddd' },
-  hymnListCloseText: { fontSize: 16, color: '#333' },
+  hymnListModal: { flex: 1, backgroundColor: MAIN_BG_COLOR },
+  hymnListClose: { padding: 16, backgroundColor: CARD_BG_COLOR, borderBottomWidth: 1, borderBottomColor: '#2A2A2A' },
+  hymnListCloseText: { fontSize: 16, color: TEXT_PRIMARY },
   loadingText: { color: TEXT_SECONDARY, marginTop: 16, fontSize: 15 },
 });

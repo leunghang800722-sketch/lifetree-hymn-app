@@ -150,12 +150,12 @@ function CategoryButton({ title, subtitle, onPress }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: '#000000',
   },
   sectionTabs: {
     flexDirection: 'row',
     borderBottomWidth: 1,
-    borderBottomColor: '#ddd',
+    borderBottomColor: '#2A2A2A',
   },
   sectionTab: {
     flex: 1,
@@ -168,7 +168,7 @@ const styles = StyleSheet.create({
   },
   sectionTabText: {
     fontSize: 16,
-    color: '#666',
+    color: '#A0A0A0',
   },
   activeSectionTabText: {
     color: '#1ED760',
@@ -181,21 +181,22 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   categoryButton: {
-    backgroundColor: '#f8f8f8',
+    backgroundColor: '#1A1A1A',
     padding: 20,
     borderRadius: 12,
     marginBottom: 12,
     borderWidth: 1,
-    borderColor: '#ddd',
+    borderColor: '#2A2A2A',
   },
   categoryTitle: {
     fontSize: 18,
     fontWeight: 'bold',
+    color: '#FFFFFF',
     marginBottom: 4,
   },
   categorySubtitle: {
     fontSize: 14,
-    color: '#666',
+    color: '#A0A0A0',
   },
   artistList: {
     padding: 16,
@@ -206,14 +207,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#eee',
+    borderBottomColor: '#2A2A2A',
   },
   artistName: {
     fontSize: 16,
     fontWeight: '500',
+    color: '#FFFFFF',
   },
   artistCount: {
     fontSize: 14,
-    color: '#666',
+    color: '#A0A0A0',
   },
 });

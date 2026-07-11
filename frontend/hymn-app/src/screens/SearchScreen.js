@@ -138,21 +138,23 @@ export default function SearchScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: '#000000',
   },
   searchInput: {
     height: 50,
-    borderColor: '#ddd',
+    borderColor: '#2A2A2A',
     borderWidth: 1,
     borderRadius: 25,
     paddingHorizontal: 20,
     margin: 16,
     fontSize: 16,
+    color: '#FFFFFF',
+    backgroundColor: '#1A1A1A',
   },
   tabsContainer: {
     flexDirection: 'row',
     borderBottomWidth: 1,
-    borderBottomColor: '#ddd',
+    borderBottomColor: '#2A2A2A',
   },
   tab: {
     flex: 1,
@@ -165,7 +167,7 @@ const styles = StyleSheet.create({
   },
   tabText: {
     fontSize: 14,
-    color: '#666',
+    color: '#A0A0A0',
   },
   activeTabText: {
     color: '#1ED760',
@@ -177,21 +179,22 @@ const styles = StyleSheet.create({
   resultItem: {
     padding: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#eee',
+    borderBottomColor: '#2A2A2A',
   },
   title: {
     fontSize: 16,
     fontWeight: 'bold',
+    color: '#FFFFFF',
     marginBottom: 4,
   },
   artist: {
     fontSize: 14,
-    color: '#666',
+    color: '#A0A0A0',
   },
   emptyText: {
     textAlign: 'center',
     marginTop: 50,
     fontSize: 16,
-    color: '#999',
+    color: '#666',
   },
 });

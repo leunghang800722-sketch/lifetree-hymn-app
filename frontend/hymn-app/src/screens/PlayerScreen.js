@@ -202,7 +202,7 @@ export default function PlayerScreen({ navigation, route }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0F1A16',
+    backgroundColor: '#000000',
   },
   header: {
     paddingTop: 50,
@@ -227,7 +227,7 @@ const styles = StyleSheet.create({
   },
   // Now Playing
   nowPlayingCard: {
-    backgroundColor: '#1A2E26',
+    backgroundColor: '#1A1A1A',
     borderRadius: 16,
     padding: 24,
     alignItems: 'center',
@@ -237,7 +237,7 @@ const styles = StyleSheet.create({
     width: 180,
     height: 180,
     borderRadius: 16,
-    backgroundColor: '#1A2E26',
+    backgroundColor: '#1A1A1A',
     marginBottom: 20,
   },
   songTitle: {
@@ -302,7 +302,7 @@ const styles = StyleSheet.create({
     width: '100%',
     marginTop: 24,
     padding: 16,
-    backgroundColor: '#1A2E26',
+    backgroundColor: '#1A1A1A',
     borderRadius: 12,
   },
   lyricsLabel: {
