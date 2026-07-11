@@ -762,7 +762,7 @@ import FavoritesScreen from './src/screens/FavoritesScreen';
 // ================================================================
 //  HOME SCREEN
 // ================================================================
-function HomeScreen({ hymns, activeCategory, onCategoryChange, onPlayHymn }) {
+function HomeScreen({ hymns, activeCategory, onCategoryChange, onPlayHymn, onOpenAuth }) {
   const homeInsets = typeof useSafeAreaInsets === 'function' ? useSafeAreaInsets() : { top: 0 };
   const { user } = useAuth();
   return (
@@ -780,8 +780,12 @@ function HomeScreen({ hymns, activeCategory, onCategoryChange, onPlayHymn }) {
           <TouchableOpacity style={hs.iconBtn}>
             <MaterialIcons name="notifications-none" size={24} color="#FFFFFF" />
           </TouchableOpacity>
-          <TouchableOpacity style={hs.avatarBtn} onPress={openAuth}>
-            <Text style={hs.avatarText}>{user ? user.username.charAt(0).toUpperCase() : 'E'}</Text>
+          <TouchableOpacity style={hs.avatarBtn} onPress={onOpenAuth}>
+            {user ? (
+              <Text style={hs.avatarText}>{(user.username || '?').charAt(0).toUpperCase()}</Text>
+            ) : (
+              <MaterialIcons name="person-outline" size={20} color="#FFFFFF" />
+            )}
           </TouchableOpacity>
         </View>
       </View>
