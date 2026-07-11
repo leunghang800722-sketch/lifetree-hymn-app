@@ -12,6 +12,7 @@ import {
   ActivityIndicator, StatusBar, Image, Platform, Alert,
   Modal, Dimensions, FlatList,
 } from 'react-native';
+import { COLORS } from './src/constants/theme';
 
 // ===== MaterialIcons 圖標名稱 =====
 
@@ -24,7 +25,7 @@ try {
 } catch (e) {}
 
 // ===== Config =====
-const API_BASE = 'https://lifetree-hymn-api.zeabur.app';
+const API_BASE = 'https://4e152f1ef2394bdb-94-190-228-145.serveousercontent.com';
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 const VIDEO_HEIGHT = SCREEN_WIDTH * 9 / 16;
 
@@ -80,8 +81,6 @@ const STATIC_PLAYLIST = FALLBACK_HYMNS.concat(
   FALLBACK_HYMNS.map(h => ({...h, id: h.id + 3000, title: h.title + ' (copy)'}))
 );
 
-const DAILY_VERSE = { text: '應當一無掛慮，只要凡事藉著禱告、祈求和感謝，將你們所要的告訴神。', ref: '腓立比書 4:6' };
-const CATEGORIES = ['全部', '平安', '讚美', '靈修', '醫治', '信心', '恩典', '復興'];
 
 function useBottomInset() {
   const safe = typeof useSafeAreaInsets === 'function' ? useSafeAreaInsets() : null;
@@ -122,7 +121,7 @@ async function fetchAudioUrl(youtubeId, showErrorAlert, retryCount = 2) {
           return await res.json();
         })(),
         new Promise((_, reject) =>
-          setTimeout(() => reject(new Error('Timeout (10s)')), 10000)
+          setTimeout(() => reject(new Error('Timeout (45s)')), 45000)
         ),
       ]);
       if (data && data.url && typeof data.url === 'string') return data.url;
@@ -654,102 +653,45 @@ const olStyles = StyleSheet.create({
 });
 
 // ================================================================
-//  MINI PLAYER
+//  MINI PLAYER — YT Music 扁條風格
 // ================================================================
 function MiniPlayer({ onPress }) {
   const player = usePlayer();
-  const { currentHymn, isPlaying, currentTime, duration, formatTime,
-    togglePlayPause, handleNextTrack, handlePrevTrack,
-    repeatMode, setRepeatMode, isShuffled, toggleShuffle } = player;
+  const { currentHymn, isPlaying, togglePlayPause } = player;
   if (!currentHymn?.id) return null;
-  const progressPct = duration > 0 ? Math.min((currentTime/duration)*100, 100) : 0;
 
   return (
     <View style={miStyles.wrapper}>
-      <TouchableOpacity style={miStyles.container} onPress={onPress} activeOpacity={0.9}>
-        <View style={miStyles.topRow}>
-          <CoverImage youtubeId={currentHymn.youtube_id} style={miStyles.cover} fallbackIcon="🎵" />
-          <View style={miStyles.info}>
-            <Text style={miStyles.title} numberOfLines={1}>{currentHymn.title}</Text>
-            <Text style={miStyles.artist} numberOfLines={1}>{currentHymn.artist}</Text>
-          </View>
+      <TouchableOpacity style={miStyles.container} onPress={onPress} activeOpacity={0.85}>
+        <CoverImage youtubeId={currentHymn.youtube_id} style={miStyles.cover} fallbackIcon="🎵" />
+        <View style={miStyles.info}>
+          <Text style={miStyles.title} numberOfLines={1}>{currentHymn.title}</Text>
+          <Text style={miStyles.artist} numberOfLines={1}>{currentHymn.artist}</Text>
         </View>
-
-        <View style={miStyles.progressSection}>
-          <View style={miStyles.progressBarTouchArea}>
-            <View style={miStyles.progressBarBg}>
-              <View style={[miStyles.progressBarFill, { width: `${progressPct}%` }]}>
-                <View style={miStyles.progressBarThumb} />
-              </View>
-            </View>
-          </View>
-          <View style={miStyles.timeRow}>
-            <Text style={miStyles.timeText}>{formatTime(currentTime)}</Text>
-            <Text style={miStyles.timeText}>{formatTime(duration)}</Text>
-          </View>
-        </View>
-
-        <View style={miStyles.controlsRow}>
-          <TouchableOpacity style={miStyles.ctrlBtn} onPress={(e) => { e.stopPropagation(); toggleShuffle(); }} activeOpacity={0.6}>
-            <View style={{ alignItems: 'center' }}>
-              <MaterialIcons name="shuffle" size={28} color={isShuffled ? ACCENT_COLOR : TEXT_SECONDARY} />
-              {isShuffled && <View style={miStyles.ctrlActiveDot} />}
-            </View>
-          </TouchableOpacity>
-          <TouchableOpacity style={miStyles.ctrlBtn} onPress={(e) => { e.stopPropagation(); handlePrevTrack(); }} activeOpacity={0.6}>
-            <MaterialIcons name="skip-previous" size={24} color="#FFFFFF" />
-          </TouchableOpacity>
-          <TouchableOpacity style={miStyles.playBtn} onPress={(e) => { e.stopPropagation(); togglePlayPause(); }} activeOpacity={0.8}>
-            <MaterialIcons name={isPlaying ? 'pause' : 'play-arrow'} size={20} color="#000000" />
-          </TouchableOpacity>
-          <TouchableOpacity style={miStyles.ctrlBtn} onPress={(e) => { e.stopPropagation(); handleNextTrack(); }} activeOpacity={0.6}>
-            <MaterialIcons name="skip-next" size={24} color="#FFFFFF" />
-          </TouchableOpacity>
-          <TouchableOpacity style={miStyles.ctrlBtn} onPress={(e) => { e.stopPropagation(); setRepeatMode?.((repeatMode + 1) % 3); }} activeOpacity={0.6}>
-            <View style={{ alignItems: 'center' }}>
-              <MaterialIcons
-                name={repeatMode === 2 ? 'repeat-one' : 'repeat'}
-                size={28}
-                style={{ color: repeatMode > 0 ? ACCENT_COLOR : 'rgba(255,255,255,0.6)' }}
-              />
-              {repeatMode > 0 && <View style={miStyles.ctrlActiveDot} />}
-            </View>
-          </TouchableOpacity>
-        </View>
+        <TouchableOpacity style={miStyles.playBtn} onPress={(e) => { e.stopPropagation(); togglePlayPause(); }} activeOpacity={0.8}>
+          <MaterialIcons name={isPlaying ? 'pause' : 'play-arrow'} size={20} color="#000000" />
+        </TouchableOpacity>
       </TouchableOpacity>
     </View>
   );
 }
 const miStyles = StyleSheet.create({
   wrapper: {
-    marginHorizontal: 10, marginBottom: 0,
-    ...Platform.select({
-      ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.4, shadowRadius: 8 },
-      android: { elevation: 8 },
-    }),
+    borderTopWidth: 0.5,
+    borderTopColor: 'rgba(255,255,255,0.08)',
+    backgroundColor: CARD_BG_COLOR,
   },
-  container: { backgroundColor: CARD_BG_COLOR, borderRadius: 16, paddingHorizontal: 14, paddingTop: 12, paddingBottom: 10 },
-  topRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 8 },
-  cover: { width: 50, height: 50, borderRadius: 10, backgroundColor: '#161F19' },
+  container: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+  },
+  cover: { width: 44, height: 44, borderRadius: 6, backgroundColor: '#161F19' },
   info: { flex: 1, marginLeft: 12 },
-  title: { fontSize: 15, fontWeight: '700', color: TEXT_PRIMARY },
-  artist: { fontSize: 12, color: TEXT_SECONDARY, marginTop: 2 },
-  progressSection: { marginBottom: 8 },
-  progressBarTouchArea: { height: 24, justifyContent: 'center' },
-  progressBarBg: { height: 4, backgroundColor: 'rgba(255,255,255,0.15)', borderRadius: 2 },
-  progressBarFill: { height: 4, backgroundColor: ACCENT_COLOR, borderRadius: 2 },
-  progressBarThumb: { width: 10, height: 10, borderRadius: 5, backgroundColor: ACCENT_COLOR, position: 'absolute', right: -5, top: '50%', marginTop: -5 },
-  timeRow: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 4 },
-  timeText: { fontSize: 10, color: TEXT_SECONDARY },
-  controlsRow: { flexDirection: 'row', justifyContent: 'space-evenly', alignItems: 'center' },
-  ctrlBtn: { width: 44, height: 44, justifyContent: 'center', alignItems: 'center' },
-  ctrlIcon: { fontSize: 28, color: TEXT_SECONDARY },
-  ctrlIconPrev: { fontSize: 24, color: '#FFFFFF' },
-  ctrlIconNext: { fontSize: 24, color: '#FFFFFF' },
-  ctrlIconActive: { color: ACCENT_COLOR },
-  ctrlActiveDot: { width: 4, height: 4, borderRadius: 2, backgroundColor: ACCENT_COLOR, marginTop: 2 },
-  playBtn: { width: 56, height: 56, borderRadius: 28, backgroundColor: '#FFFFFF', justifyContent: 'center', alignItems: 'center' },
-  playBtnIcon: { fontSize: 20, color: '#000000', marginLeft: 2 },
+  title: { fontSize: 14, fontWeight: '600', color: TEXT_PRIMARY },
+  artist: { fontSize: 12, color: TEXT_SECONDARY, marginTop: 1 },
+  playBtn: { width: 36, height: 36, borderRadius: 18, backgroundColor: '#FFFFFF', justifyContent: 'center', alignItems: 'center' },
 });
 
 // ================================================================
@@ -788,8 +730,8 @@ function TabBar({ activeTab, onTabChange, bottomInset, onMiniPlayerPress }) {
 }
 const tbStyles = StyleSheet.create({
   wrapper: { backgroundColor: MAIN_BG_COLOR },
-  miniWrap: { marginBottom: 6 },
-  miniWrapSpacer: { height: 8 },
+  miniWrap: { },
+  miniWrapSpacer: { height: 4 },
   bar: { flexDirection: 'row', backgroundColor: MAIN_BG_COLOR, paddingTop: 4, paddingBottom: 4 },
   item: { flex: 1, alignItems: 'center', paddingVertical: 6 },
   icon: { fontSize: 18 },
@@ -808,91 +750,95 @@ import HymnListScreen from './src/screens/HymnListScreen';
 // ================================================================
 function HomeScreen({ hymns, activeCategory, onCategoryChange, onPlayHymn }) {
   const homeInsets = typeof useSafeAreaInsets === 'function' ? useSafeAreaInsets() : { top: 0 };
-  const safeHymns = hymns || [];
-  const featured = safeHymns.filter(h => h.youtube_id).slice(0, 6);
-  const filtered = safeHymns.filter(h => h.youtube_id).filter(h => activeCategory === '全部' || (h.lang || h.category || '').toLowerCase().includes(activeCategory));
   return (
-    <ScrollView style={hStyles.scroll} contentContainerStyle={hStyles.scrollContent}>
-      {/* 🔥 10 區塊主頁 — API-driven sections */}
-      <HomeSections navigation={{ navigate: (route, params) => {
-        if (params?.hymn) onPlayHymn(params.hymn);
-      }}} onPlayHymn={onPlayHymn} />
-      <View style={[hStyles.appBar, { paddingTop: (homeInsets.top || StatusBar.currentHeight || 24) + 12 }]}>
-        <View><Text style={hStyles.appBarTitle}>生命樹</Text><Text style={hStyles.appBarSub}>Etz Chayim</Text></View>
-      </View>
-      <TouchableOpacity style={hStyles.verseCard} activeOpacity={0.9}>
-        <Text style={hStyles.verseLabel}>✝️ DAILY VERSE 每日金句</Text>
-        <Text style={hStyles.verseText}>{DAILY_VERSE.text}</Text>
-        <Text style={hStyles.verseRef}>— {DAILY_VERSE.ref}</Text>
-      </TouchableOpacity>
-      <View style={hStyles.sectionHeader}><Text style={hStyles.sectionTitle}>情境分類</Text></View>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={hStyles.chipContainer}>
-        {CATEGORIES.map(cat => (
-          <TouchableOpacity key={cat} style={[hStyles.chip, activeCategory === cat && hStyles.chipActive]}
-            onPress={() => onCategoryChange(cat)}>
-            <Text style={[hStyles.chipText, activeCategory === cat && hStyles.chipTextActive]}>{cat}</Text>
-          </TouchableOpacity>
-        ))}
-      </ScrollView>
-      <View style={hStyles.sectionHeader}><Text style={hStyles.sectionTitle}>🔥 推薦精選</Text></View>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={hStyles.featuredContainer}>
-        {featured.map(h => (
-          <TouchableOpacity key={h.id} style={hStyles.featuredCard} onPress={() => onPlayHymn(h)}>
-            <CoverImage youtubeId={h.youtube_id} style={hStyles.featuredCover} fallbackIcon="🎵" />
-            <View style={hStyles.featuredInfo}>
-              <Text style={hStyles.featuredTitle} numberOfLines={1}>{h.title}</Text>
-              <Text style={hStyles.featuredArtist} numberOfLines={1}>{h.artist}</Text>
-            </View>
-          </TouchableOpacity>
-        ))}
-      </ScrollView>
-      <View style={[hStyles.sectionHeader, { marginTop: 24 }]}>
-        <Text style={hStyles.sectionTitle}>全部詩歌</Text>
-        <Text style={{ color: TEXT_SECONDARY, fontSize: 12 }}>{safeHymns.length} 首</Text>
-      </View>
-      {filtered.map(h => (
-        <TouchableOpacity key={h.id} style={hStyles.songItem} onPress={() => onPlayHymn(h)}>
-          <CoverImage youtubeId={h.youtube_id} style={hStyles.songCover} fallbackIcon="🎵" />
-          <View style={hStyles.songInfo}>
-            <Text style={hStyles.songTitle} numberOfLines={1}>{h.title}</Text>
-            <Text style={hStyles.songArtist} numberOfLines={1}>{h.artist}</Text>
+    <View style={{ flex: 1, backgroundColor: COLORS.bg }}>
+      {/* Header — 生命樹品牌 + 通知 + 頭像 */}
+      <View style={[hs.header, { paddingTop: (homeInsets.top || StatusBar.currentHeight || 24) + 8 }]}>
+        <View style={hs.brandWrap}>
+          <Text style={hs.brandIcon}>🌳</Text>
+          <View>
+            <Text style={hs.brandTitle}>生命樹</Text>
+            <Text style={hs.brandSub}>Etz Chayim</Text>
           </View>
-          <MaterialIcons name="play-arrow" size={18} color={ACCENT_COLOR} />
-        </TouchableOpacity>
-      ))}
-      <View style={{ height: 40 }} />
-    </ScrollView>
+        </View>
+        <View style={hs.iconWrap}>
+          <TouchableOpacity style={hs.iconBtn}>
+            <Text style={hs.iconText}>🔔</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={hs.avatarBtn}>
+            <Text style={hs.avatarText}>E</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+      <HomeSections
+        navigation={{
+          navigate: (route, params) => {
+            if (route === 'Category') onCategoryChange(params?.category);
+            if (params?.hymn) onPlayHymn(params.hymn);
+          },
+        }}
+        onPlayHymn={onPlayHymn}
+      />
+    </View>
   );
 }
-const hStyles = StyleSheet.create({
-  scroll: { flex: 1, backgroundColor: MAIN_BG_COLOR },
-  scrollContent: { paddingBottom: 20 },
-  appBar: { paddingHorizontal: 20, paddingBottom: 12 },
-  appBarTitle: { fontSize: 28, fontWeight: '800', color: TEXT_PRIMARY },
-  appBarSub: { fontSize: 14, color: TEXT_SECONDARY, fontWeight: '500', marginTop: 2 },
-  verseCard: { marginHorizontal: 16, padding: 16, backgroundColor: CARD_BG_COLOR, borderRadius: 16, marginBottom: 20 },
-  verseLabel: { fontSize: 11, color: ACCENT_COLOR, fontWeight: '600', marginBottom: 10, letterSpacing: 1 },
-  verseText: { fontSize: 17, color: TEXT_PRIMARY, lineHeight: 26, fontWeight: '500' },
-  verseRef: { fontSize: 13, color: TEXT_SECONDARY, marginTop: 10, fontStyle: 'italic' },
-  sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, marginBottom: 12, marginTop: 4 },
-  sectionTitle: { fontSize: 18, fontWeight: '700', color: TEXT_PRIMARY },
-  chipContainer: { paddingHorizontal: 16, gap: 8, marginBottom: 20 },
-  chip: { paddingHorizontal: 16, paddingVertical: 8, backgroundColor: CARD_BG_COLOR, borderRadius: 20, borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)' },
-  chipActive: { backgroundColor: 'rgba(168,199,101,0.15)', borderColor: ACCENT_COLOR },
-  chipText: { fontSize: 13, color: TEXT_SECONDARY, fontWeight: '500' },
-  chipTextActive: { color: ACCENT_COLOR },
-  featuredContainer: { paddingHorizontal: 16, gap: 12 },
-  featuredCard: { width: 160 },
-  featuredCover: { width: 160, height: 90, borderRadius: 12, backgroundColor: '#161F19' },
-  featuredInfo: { marginTop: 8 },
-  featuredTitle: { fontSize: 13, fontWeight: '600', color: TEXT_PRIMARY },
-  featuredArtist: { fontSize: 11, color: TEXT_SECONDARY, marginTop: 2 },
-  songItem: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 10 },
-  songCover: { width: 44, height: 44, borderRadius: 8, backgroundColor: '#161F19' },
-  songInfo: { flex: 1, marginLeft: 12 },
-  songTitle: { fontSize: 14, fontWeight: '600', color: TEXT_PRIMARY },
-  songArtist: { fontSize: 12, color: TEXT_SECONDARY, marginTop: 2 },
-  songPlay: { fontSize: 16, color: ACCENT_COLOR, paddingLeft: 8 },
+// ===== HomeScreen Header Styles =====
+const hs = StyleSheet.create({
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingBottom: 12,
+    backgroundColor: COLORS.cardBg,
+  },
+  brandWrap: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  brandIcon: {
+    fontSize: 24,
+    marginRight: 10,
+  },
+  brandTitle: {
+    fontSize: 20,
+    fontWeight: '800',
+    color: COLORS.primary,
+  },
+  brandSub: {
+    fontSize: 11,
+    color: COLORS.secondary,
+    marginTop: 1,
+  },
+  iconWrap: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  iconBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  iconText: {
+    fontSize: 16,
+  },
+  avatarBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#C8A951',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  avatarText: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#004D2E',
+  },
 });
 
 // ================================================================
