@@ -1190,19 +1190,19 @@ function AppContent() {
 
 
       <View style={pageStyles.content}>
-        {activeTab === 'Home' ? (
+        {/* Keep all screens mounted; hide inactive ones to preserve state */}
+        <View style={[pageStyles.screenWrap, { display: activeTab === 'Home' ? 'flex' : 'none' }]}>
           <HomeScreen hymns={allSongs || []} activeCategory={activeCategory}
             onCategoryChange={setActiveCategory} onPlayHymn={handlePlayHymn} />
-        ) : activeTab === 'Search' ? (
+        </View>
+        <View style={[pageStyles.screenWrap, { display: activeTab === 'Search' ? 'flex' : 'none' }]}>
           <SearchScreen navigation={{ navigate: (route, params) => {
             if (route === 'Player' && params?.hymn) handlePlayHymn(params.hymn);
           }}} />
-        ) : activeTab === 'Category' ? (
+        </View>
+        <View style={[pageStyles.screenWrap, { display: activeTab === 'Category' ? 'flex' : 'none' }]}>
           <CategoryScreen showHymnList={showHymnList} />
-        ) : (
-          <HomeScreen hymns={allSongs || []} activeCategory={activeCategory}
-            onCategoryChange={setActiveCategory} onPlayHymn={handlePlayHymn} />
-        )}
+        </View>
       </View>
       <TabBar activeTab={activeTab} onTabChange={setActiveTab}
         bottomInset={bottomInset} onMiniPlayerPress={handleOpenFullScreen} />
@@ -1250,6 +1250,7 @@ export default function App() {
 const pageStyles = StyleSheet.create({
   container: { flex: 1, height: SCREEN_HEIGHT, backgroundColor: MAIN_BG_COLOR },
   content: { flex: 1 },
+  screenWrap: { flex: 1 },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   hymnListModal: { flex: 1, backgroundColor: MAIN_BG_COLOR },
   hymnListClose: { padding: 16, backgroundColor: CARD_BG_COLOR, borderBottomWidth: 1, borderBottomColor: '#2A2A2A' },
