@@ -1191,7 +1191,8 @@ function AppContent() {
 
       <View style={pageStyles.content}>
         {/* Keep all screens mounted; hide inactive ones to preserve state */}
-        <View style={[pageStyles.screenWrap, { display: activeTab === 'Home' ? 'flex' : 'none' }]}>
+        {/* Home: visible when tab is Home, or any other tab (Playlist/Favorites/Player) fallback */}
+        <View style={[pageStyles.screenWrap, { display: (activeTab === 'Home' || (activeTab !== 'Search' && activeTab !== 'Category')) ? 'flex' : 'none' }]}>
           <HomeScreen hymns={allSongs || []} activeCategory={activeCategory}
             onCategoryChange={setActiveCategory} onPlayHymn={handlePlayHymn} />
         </View>
