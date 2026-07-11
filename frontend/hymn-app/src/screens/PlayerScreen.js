@@ -90,7 +90,7 @@ export default function PlayerScreen({ navigation, route }) {
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="#0F1A16" />
+      <StatusBar barStyle="light-content" backgroundColor="#000000" />
       
       {/* Header */}
       <View style={styles.header}>
@@ -256,7 +256,7 @@ const styles = StyleSheet.create({
   },
   progressBar: {
     height: 3,
-    backgroundColor: '#1A2E26',
+    backgroundColor: '#1A1A1A',
     borderRadius: 2,
   },
   progressFill: {
@@ -385,7 +385,7 @@ const styles = StyleSheet.create({
     width: 120,
     height: 120,
     borderRadius: 12,
-    backgroundColor: '#1A2E26',
+    backgroundColor: '#1A1A1A',
   },
   quickTitle: {
     color: '#FFF',

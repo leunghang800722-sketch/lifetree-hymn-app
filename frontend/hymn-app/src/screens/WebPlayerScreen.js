@@ -274,13 +274,13 @@ export default function WebPlayerScreen({ route, navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0F1A16',
+    backgroundColor: '#000000',
   },
   center: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#0F1A16',
+    backgroundColor: '#000000',
   },
   header: {
     paddingTop: 50,
@@ -311,7 +311,7 @@ const styles = StyleSheet.create({
     marginHorizontal: 16,
     borderRadius: 12,
     overflow: 'hidden',
-    backgroundColor: '#1A2E26',
+    backgroundColor: '#1A1A1A',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -319,7 +319,7 @@ const styles = StyleSheet.create({
     width: 130,
     height: 130,
     borderRadius: 65,
-    backgroundColor: '#0F1A16',
+    backgroundColor: '#000000',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -363,7 +363,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   playBtnText: {
-    color: '#0F1A16',
+    color: '#000000',
     fontSize: 18,
     fontWeight: '600',
   },
@@ -388,7 +388,7 @@ const styles = StyleSheet.create({
   },
   lyricsBtn: {
     borderWidth: 1,
-    borderColor: '#1A2E26',
+    borderColor: '#1A1A1A',
     borderRadius: 28,
     paddingVertical: 10,
     paddingHorizontal: 24,
@@ -404,7 +404,7 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   modalContent: {
-    backgroundColor: '#1A2E26',
+    backgroundColor: '#1A1A1A',
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     padding: 24,
@@ -432,14 +432,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
   },
   modalCreateText: {
-    color: '#0F1A16',
+    color: '#000000',
     fontSize: 14,
     fontWeight: '600',
   },
   modalPlaylistItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#0F1A16',
+    backgroundColor: '#000000',
     borderRadius: 12,
     padding: 14,
     marginBottom: 8,
@@ -478,7 +478,7 @@ const styles = StyleSheet.create({
   // Lyrics
   lyricsModal: {
     flex: 1,
-    backgroundColor: '#0F1A16',
+    backgroundColor: '#000000',
   },
   lyricsHeader: {
     paddingTop: 50,
@@ -519,7 +519,7 @@ const styles = StyleSheet.create({
   },
   divider: {
     height: 1,
-    backgroundColor: '#1A2E26',
+    backgroundColor: '#1A1A1A',
     marginVertical: 20,
   },
   lyricLine: {

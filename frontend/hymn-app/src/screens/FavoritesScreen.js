@@ -71,7 +71,7 @@ export default function FavoritesScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0F1A16',
+    backgroundColor: '#000000',
   },
   header: {
     paddingTop: 50,
@@ -114,7 +114,7 @@ const styles = StyleSheet.create({
   hymnItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#0F1A16',
+    backgroundColor: '#000000',
     borderRadius: 14,
     padding: 14,
     marginBottom: 8,

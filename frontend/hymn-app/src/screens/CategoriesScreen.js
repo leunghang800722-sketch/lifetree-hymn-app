@@ -194,7 +194,7 @@ export default function CategoriesScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0F1A16' },
+  container: { flex: 1, backgroundColor: '#000000' },
   center: { justifyContent: 'center', alignItems: 'center' },
   header: { paddingTop: Platform.OS === 'ios' ? 50 : 40, paddingHorizontal: 20, paddingBottom: 12 },
   headerTitle: { fontSize: 24, fontWeight: 'bold', color: '#FFF' },
@@ -207,11 +207,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     borderRadius: 20,
     marginRight: 8,
-    backgroundColor: '#1A2E26',
+    backgroundColor: '#1A1A1A',
   },
   langTabActive: { backgroundColor: '#F5E6CA' },
   langTabText: { color: '#8B9D83', fontSize: 14 },
-  langTabTextActive: { color: '#0F1A16', fontWeight: '600' },
+  langTabTextActive: { color: '#000000', fontWeight: '600' },
 
   listContent: { paddingHorizontal: 20, paddingBottom: 85 },
 
@@ -228,7 +228,7 @@ const styles = StyleSheet.create({
   hymnItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#1A2E26',
+    backgroundColor: '#1A1A1A',
     borderRadius: 12,
     padding: 8,
     marginLeft: 52,
@@ -238,7 +238,7 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 8,
-    backgroundColor: '#0F1A16',
+    backgroundColor: '#000000',
     marginRight: 10,
   },
   hymnContent: { flex: 1 },

@@ -88,7 +88,7 @@ export default function LoginScreen() {
           disabled={loading}
         >
           {loading ? (
-            <ActivityIndicator color="#0F1A16" />
+            <ActivityIndicator color="#000000" />
           ) : (
             <Text style={styles.submitBtnText}>
               {isRegister ? '註冊' : '登入'}
@@ -113,7 +113,7 @@ export default function LoginScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0F1A16',
+    backgroundColor: '#000000',
   },
   content: {
     flex: 1,
@@ -145,7 +145,7 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   input: {
-    backgroundColor: '#1A2E26',
+    backgroundColor: '#1A1A1A',
     borderRadius: 14,
     paddingHorizontal: 18,
     paddingVertical: 16,
@@ -161,7 +161,7 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   submitBtnText: {
-    color: '#0F1A16',
+    color: '#000000',
     fontSize: 18,
     fontWeight: '600',
   },

@@ -61,7 +61,7 @@ export default function SettingsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0F1A16',
+    backgroundColor: '#000000',
   },
   header: {
     paddingTop: 50,
@@ -92,7 +92,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    backgroundColor: '#1A2E26',
+    backgroundColor: '#1A1A1A',
     borderRadius: 14,
     paddingVertical: 14,
     paddingHorizontal: 16,

@@ -280,7 +280,7 @@ export default function PlaylistScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0F1A16',
+    backgroundColor: '#000000',
   },
   center: {
     justifyContent: 'center',
@@ -305,7 +305,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   addBtn: {
-    backgroundColor: '#1A2E26',
+    backgroundColor: '#1A1A1A',
     borderRadius: 20,
     paddingVertical: 8,
     paddingHorizontal: 16,
@@ -322,7 +322,7 @@ const styles = StyleSheet.create({
   playlistCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#1A2E26',
+    backgroundColor: '#1A1A1A',
     borderRadius: 14,
     padding: 16,
     marginBottom: 10,
@@ -331,7 +331,7 @@ const styles = StyleSheet.create({
     width: 50,
     height: 50,
     borderRadius: 12,
-    backgroundColor: '#0F1A16',
+    backgroundColor: '#000000',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 14,
@@ -380,7 +380,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   modalContent: {
-    backgroundColor: '#1A2E26',
+    backgroundColor: '#1A1A1A',
     borderRadius: 18,
     padding: 24,
     width: '80%',
@@ -392,7 +392,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   modalInput: {
-    backgroundColor: '#0F1A16',
+    backgroundColor: '#000000',
     borderRadius: 12,
     paddingHorizontal: 16,
     paddingVertical: 14,
@@ -420,13 +420,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
   },
   modalConfirmText: {
-    color: '#0F1A16',
+    color: '#000000',
     fontSize: 16,
     fontWeight: '600',
   },
   // Playlist hymns
   playAllBtn: {
-    backgroundColor: '#1A2E26',
+    backgroundColor: '#1A1A1A',
     borderRadius: 20,
     paddingVertical: 8,
     paddingHorizontal: 14,
@@ -439,7 +439,7 @@ const styles = StyleSheet.create({
   hymnItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#1A2E26',
+    backgroundColor: '#1A1A1A',
     borderRadius: 12,
     padding: 14,
     marginBottom: 8,
