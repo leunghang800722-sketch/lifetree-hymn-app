@@ -1,13 +1,22 @@
-import React, { useState, useEffect } from 'react';
+// CategoryScreen — 分類頁 redesign（Spotify 風格）
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   View,
   Text,
   TouchableOpacity,
   FlatList,
+  ScrollView,
   StyleSheet,
   ActivityIndicator,
 } from 'react-native';
 import { categoryApi } from '../services/categoryApi';
+
+const LANG_CATS = [
+  { key: 'mandarin', label: '國語詩歌', emoji: '🇨🇳', color: '#B71C1C', api: 'getMandarin' },
+  { key: 'cantonese', label: '粵語詩歌', emoji: '🇭🇰', color: '#1B5E20', api: 'getCantonese' },
+  { key: 'english', label: '英文詩歌', emoji: '🇺🇸', color: '#0D47A1', api: 'getEnglish' },
+  { key: 'chinese', label: '所有中文', emoji: '🇨🇳', color: '#E65100', api: 'getChinese' },
+];
 
 export default function CategoryScreen({ navigation, showHymnList }) {
   const [activeSection, setActiveSection] = useState('language');
@@ -27,11 +36,13 @@ export default function CategoryScreen({ navigation, showHymnList }) {
     }
   };
 
-  const handleLanguageCategory = async (categoryFn, title) => {
+  const handleLanguageCategory = async (langKey) => {
+    const cat = LANG_CATS.find(c => c.key === langKey);
+    if (!cat) return;
     setLoading(true);
     try {
-      const hymns = await categoryFn();
-      showHymnList(hymns, title);
+      const hymns = await categoryApi[cat.api]();
+      showHymnList(hymns || [], cat.label);
     } catch (error) {
       console.error('Load category error:', error);
     } finally {
@@ -43,7 +54,7 @@ export default function CategoryScreen({ navigation, showHymnList }) {
     setLoading(true);
     try {
       const hymns = await categoryApi.getArtistHymns(artistName);
-      showHymnList(hymns, artistName);
+      showHymnList(hymns || [], artistName);
     } catch (error) {
       console.error('Load artist hymns error:', error);
     } finally {
@@ -51,171 +62,161 @@ export default function CategoryScreen({ navigation, showHymnList }) {
     }
   };
 
+  // Group artists by first character (拼音/英文首字母)
+  const artistGroups = useMemo(() => {
+    const groups = {};
+    for (const item of artists) {
+      const first = (item.artist || '?').charAt(0).toUpperCase();
+      if (!groups[first]) groups[first] = [];
+      groups[first].push(item);
+    }
+    const sorted = Object.entries(groups).sort(([a], [b]) => a.localeCompare(b));
+    return sorted;
+  }, [artists]);
+
   return (
     <View style={styles.container}>
+      {/* Header */}
+      <View style={styles.header}>
+        <Text style={styles.headerTitle}>分類</Text>
+      </View>
+
       {/* Section Tabs */}
       <View style={styles.sectionTabs}>
         <TouchableOpacity
-          style={[
-            styles.sectionTab,
-            activeSection === 'language' && styles.activeSectionTab,
-          ]}
+          style={[styles.sectionTab, activeSection === 'language' && styles.sectionTabActive]}
           onPress={() => setActiveSection('language')}
         >
-          <Text
-            style={[
-              styles.sectionTabText,
-              activeSection === 'language' && styles.activeSectionTabText,
-            ]}
-          >
+          <Text style={[styles.sectionTabText, activeSection === 'language' && styles.sectionTabTextActive]}>
             語言分類
           </Text>
         </TouchableOpacity>
         <TouchableOpacity
-          style={[
-            styles.sectionTab,
-            activeSection === 'artist' && styles.activeSectionTab,
-          ]}
+          style={[styles.sectionTab, activeSection === 'artist' && styles.sectionTabActive]}
           onPress={() => setActiveSection('artist')}
         >
-          <Text
-            style={[
-              styles.sectionTabText,
-              activeSection === 'artist' && styles.activeSectionTabText,
-            ]}
-          >
+          <Text style={[styles.sectionTabText, activeSection === 'artist' && styles.sectionTabTextActive]}>
             歌手分類
           </Text>
         </TouchableOpacity>
       </View>
 
-      {loading && <ActivityIndicator size="large" color="#1ED760" style={styles.loader} />}
-
-      {/* Language Categories */}
-      {activeSection === 'language' && !loading && (
-        <View style={styles.content}>
-          <CategoryButton
-            title="🇨🇳 國語詩歌"
-            subtitle="241 首"
-            onPress={() => handleLanguageCategory(categoryApi.getMandarin, '國語詩歌')}
-          />
-          <CategoryButton
-            title="🇭🇰 粵語詩歌"
-            subtitle="170 首"
-            onPress={() => handleLanguageCategory(categoryApi.getCantonese, '粵語詩歌')}
-          />
-          <CategoryButton
-            title="🇺🇸 英文詩歌"
-            subtitle="254 首"
-            onPress={() => handleLanguageCategory(categoryApi.getEnglish, '英文詩歌')}
-          />
-          <CategoryButton
-            title="🇨🇳 所有中文"
-            subtitle="411 首（國語+粵語）"
-            onPress={() => handleLanguageCategory(categoryApi.getChinese, '所有中文')}
-          />
+      {loading && (
+        <View style={styles.topLoading}>
+          <ActivityIndicator size="small" color="#1ED760" />
+          <Text style={styles.topLoadingText}>載入中...</Text>
         </View>
       )}
 
+      {/* Language Categories */}
+      {activeSection === 'language' && (
+        <ScrollView contentContainerStyle={styles.langContent} showsVerticalScrollIndicator={false}>
+          <View style={styles.langGrid}>
+            {LANG_CATS.map(cat => (
+              <TouchableOpacity
+                key={cat.key}
+                style={[styles.langCard, { backgroundColor: cat.color + '20', borderColor: cat.color + '40' }]}
+                onPress={() => handleLanguageCategory(cat.key)}
+                activeOpacity={0.8}
+              >
+                <Text style={styles.langEmoji}>{cat.emoji}</Text>
+                <View style={styles.langInfo}>
+                  <Text style={styles.langLabel}>{cat.label}</Text>
+                  <Text style={styles.langHint}>點擊瀏覽</Text>
+                </View>
+                <Text style={[styles.langArrow, { color: cat.color }]}>›</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </ScrollView>
+      )}
+
       {/* Artist Categories */}
-      {activeSection === 'artist' && !loading && (
+      {activeSection === 'artist' && (
         <FlatList
-          data={artists}
-          keyExtractor={(item) => item.artist}
-          renderItem={({ item }) => (
-            <TouchableOpacity
-              style={styles.artistItem}
-              onPress={() => handleArtistCategory(item.artist)}
-            >
-              <Text style={styles.artistName}>{item.artist}</Text>
-              <Text style={styles.artistCount}>{item.count} 首</Text>
-            </TouchableOpacity>
+          data={Object.entries(artistGroups)}
+          keyExtractor={([letter]) => letter}
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.artistContent}
+          renderItem={({ item: [letter, group] }) => (
+            <View style={styles.letterGroup}>
+              <Text style={styles.letterHeader}>{letter}</Text>
+              {group.map((item) => (
+                <TouchableOpacity
+                  key={item.artist}
+                  style={styles.artistItem}
+                  onPress={() => handleArtistCategory(item.artist)}
+                  activeOpacity={0.7}
+                >
+                  <View style={styles.artistAvatar}>
+                    <Text style={styles.artistInitial}>{item.artist.charAt(0).toUpperCase()}</Text>
+                  </View>
+                  <View style={styles.artistInfo}>
+                    <Text style={styles.artistName} numberOfLines={1}>{item.artist}</Text>
+                    <Text style={styles.artistCount}>{item.count} 首詩歌</Text>
+                  </View>
+                  <Text style={styles.artistArrow}>›</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
           )}
-          contentContainerStyle={styles.artistList}
         />
       )}
     </View>
   );
 }
 
-function CategoryButton({ title, subtitle, onPress }) {
-  return (
-    <TouchableOpacity style={styles.categoryButton} onPress={onPress}>
-      <Text style={styles.categoryTitle}>{title}</Text>
-      <Text style={styles.categorySubtitle}>{subtitle}</Text>
-    </TouchableOpacity>
-  );
-}
-
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#000000',
-  },
-  sectionTabs: {
-    flexDirection: 'row',
-    borderBottomWidth: 1,
-    borderBottomColor: '#2A2A2A',
-  },
-  sectionTab: {
-    flex: 1,
-    paddingVertical: 16,
-    alignItems: 'center',
-  },
-  activeSectionTab: {
-    borderBottomWidth: 2,
-    borderBottomColor: '#1ED760',
-  },
-  sectionTabText: {
-    fontSize: 16,
-    color: '#A0A0A0',
-  },
-  activeSectionTabText: {
-    color: '#1ED760',
-    fontWeight: 'bold',
-  },
-  loader: {
-    marginTop: 50,
-  },
-  content: {
-    padding: 16,
-  },
-  categoryButton: {
-    backgroundColor: '#1A1A1A',
-    padding: 20,
-    borderRadius: 12,
-    marginBottom: 12,
+  container: { flex: 1, backgroundColor: '#000000' },
+
+  // Header
+  header: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 8 },
+  headerTitle: { fontSize: 28, fontWeight: '800', color: '#FFFFFF' },
+
+  // Section tabs
+  sectionTabs: { flexDirection: 'row', marginHorizontal: 16, marginBottom: 12, backgroundColor: '#1A1A1A', borderRadius: 10, padding: 3 },
+  sectionTab: { flex: 1, paddingVertical: 10, alignItems: 'center', borderRadius: 8 },
+  sectionTabActive: { backgroundColor: '#2A2A2A' },
+  sectionTabText: { fontSize: 14, color: '#A0A0A0', fontWeight: '500' },
+  sectionTabTextActive: { color: '#FFFFFF', fontWeight: '700' },
+
+  // Loading
+  topLoading: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: 12, gap: 6 },
+  topLoadingText: { fontSize: 13, color: '#A0A0A0' },
+
+  // Language section
+  langContent: { padding: 16, paddingBottom: 40 },
+  langGrid: { gap: 12 },
+  langCard: {
+    flexDirection: 'row', alignItems: 'center',
+    padding: 18, borderRadius: 14,
     borderWidth: 1,
-    borderColor: '#2A2A2A',
   },
-  categoryTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#FFFFFF',
-    marginBottom: 4,
-  },
-  categorySubtitle: {
-    fontSize: 14,
-    color: '#A0A0A0',
-  },
-  artistList: {
-    padding: 16,
+  langEmoji: { fontSize: 28, marginRight: 14 },
+  langInfo: { flex: 1 },
+  langLabel: { fontSize: 17, fontWeight: '700', color: '#FFFFFF' },
+  langHint: { fontSize: 12, color: '#A0A0A0', marginTop: 2 },
+  langArrow: { fontSize: 22, fontWeight: '300' },
+
+  // Artist section
+  artistContent: { paddingBottom: 40 },
+  letterGroup: { marginBottom: 8 },
+  letterHeader: {
+    fontSize: 16, fontWeight: '800', color: '#FFFFFF',
+    paddingHorizontal: 20, paddingVertical: 10, paddingTop: 16,
   },
   artistItem: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#2A2A2A',
+    flexDirection: 'row', alignItems: 'center',
+    paddingVertical: 12, paddingHorizontal: 20,
   },
-  artistName: {
-    fontSize: 16,
-    fontWeight: '500',
-    color: '#FFFFFF',
+  artistAvatar: {
+    width: 40, height: 40, borderRadius: 20,
+    backgroundColor: '#2A2A2A', justifyContent: 'center', alignItems: 'center',
+    marginRight: 14,
   },
-  artistCount: {
-    fontSize: 14,
-    color: '#A0A0A0',
-  },
+  artistInitial: { fontSize: 16, fontWeight: '700', color: '#FFFFFF' },
+  artistInfo: { flex: 1 },
+  artistName: { fontSize: 15, fontWeight: '600', color: '#FFFFFF' },
+  artistCount: { fontSize: 12, color: '#A0A0A0', marginTop: 2 },
+  artistArrow: { fontSize: 18, color: '#555' },
 });
