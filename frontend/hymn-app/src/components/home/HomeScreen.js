@@ -1,6 +1,6 @@
 // HomeScreen — Rolex Green · 9 區塊（mind map 名）· 無搜尋
 import React, { useState, useEffect, useMemo } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, Alert, StyleSheet } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, Alert, StyleSheet, ActivityIndicator } from 'react-native';
 import { COLORS } from '../../constants/theme';
 import DailyVerseCard from './DailyVerseCard';
 import PlaylistCardRow from './PlaylistCardRow';
@@ -73,17 +73,15 @@ export default function HomeScreen({ navigation, onPlayHymn }) {
     ]);
   };
 
-  if (loading) {
-    return (
-      <View style={styles.loadingWrap}>
-        <Text style={styles.loadingText}>載入中...</Text>
-      </View>
-    );
-  }
-
   return (
     <View style={styles.root}>
       <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+        {loading && (
+          <View style={styles.topLoading}>
+            <ActivityIndicator size="small" color={COLORS.accent} />
+            <Text style={styles.topLoadingText}>載入中...</Text>
+          </View>
+        )}
         {/* 0. 每日金句 */}
         <DailyVerseCard verse={data.dailyVerse} />
 
@@ -145,6 +143,6 @@ const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: COLORS.bg },
   scroll: { flex: 1 },
   scrollContent: { paddingTop: 8, paddingBottom: 20 },
-  loadingWrap: { flex: 1, backgroundColor: COLORS.bg, justifyContent: 'center', alignItems: 'center', paddingBottom: 20 },
-  loadingText: { fontSize: 14, color: COLORS.secondary },
+  topLoading: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: 8, gap: 6 },
+  topLoadingText: { fontSize: 13, color: COLORS.secondary },
 });
