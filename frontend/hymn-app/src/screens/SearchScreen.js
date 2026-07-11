@@ -1,22 +1,95 @@
-import React, { useState } from 'react';
+// SearchScreen — 搜尋頁 redesign（Spotify × YT Music 風格）
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   TextInput,
   FlatList,
+  ScrollView,
   TouchableOpacity,
   Text,
   StyleSheet,
   ActivityIndicator,
+  Image,
+  Dimensions,
 } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { searchApi } from '../services/searchApi';
+
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
+const RECENT_KEY = 'search_recent_v2';
+const MAX_RECENT = 10;
+
+function getCoverUrl(youtubeId) {
+  return youtubeId ? `https://img.youtube.com/vi/${youtubeId}/hqdefault.jpg` : null;
+}
+
+// Fallback cover for thumbnail
+function Thumbnail({ youtubeId, size = 48 }) {
+  const [failed, setFailed] = useState(false);
+  const uri = getCoverUrl(youtubeId);
+  if (!uri || failed) {
+    return (
+      <View style={[styles.thumb, { width: size, height: size, borderRadius: 6 }]}>
+        <Text style={{ fontSize: size / 2.5 }}>🎵</Text>
+      </View>
+    );
+  }
+  return (
+    <Image
+      source={{ uri }}
+      style={[styles.thumb, { width: size, height: size, borderRadius: 6 }]}
+      resizeMode="cover"
+      onError={() => setFailed(true)}
+    />
+  );
+}
+
+// "發掘詩歌" discovery cards
+const DISCOVER_POOL = [
+  { id: 'disc-1', title: '#讚美', youtube_id: 'JlTb0Sf7xUg', tag: '讚美' },
+  { id: 'disc-2', title: '#敬拜', youtube_id: 'HfE3WNcdDTk', tag: '敬拜' },
+  { id: 'disc-3', title: '#國語', youtube_id: 'tPf7Ig1ebL4', tag: '國語' },
+  { id: 'disc-4', title: '#粵語', youtube_id: '7auHGSs5f4o', tag: '粵語' },
+  { id: 'disc-5', title: '#英文', youtube_id: '4GthZbt1lPo', tag: '英文' },
+  { id: 'disc-6', title: '#兒童詩歌', youtube_id: 'raA84tzs4rw', tag: '兒童' },
+];
+
+// "你可能會喜歡" suggestions
+const SUGGESTIONS = [
+  { text: '恩典太美麗', type: '歌曲' },
+  { text: '這一生最美的祝福', type: '歌曲' },
+  { text: '我要向高山舉目', type: '歌曲' },
+  { text: 'ACM', type: '歌手' },
+  { text: '讚美之泉', type: '歌手' },
+  { text: '生命河靈糧堂', type: '歌手' },
+];
 
 export default function SearchScreen({ navigation }) {
   const [query, setQuery] = useState('');
-  const [activeTab, setActiveTab] = useState('all'); // all, title, artist, lyrics, album
+  const [activeTab, setActiveTab] = useState('all');
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [recentSearches, setRecentSearches] = useState([]);
+  const [focused, setFocused] = useState(false);
 
-  const handleSearch = async (searchQuery, tab = activeTab) => {
+  // Load recent searches on mount
+  useEffect(() => {
+    (async () => {
+      try {
+        const raw = await AsyncStorage.getItem(RECENT_KEY);
+        if (raw) setRecentSearches(JSON.parse(raw));
+      } catch (_) {}
+    })();
+  }, []);
+
+  const saveRecent = useCallback(async (keyword) => {
+    if (!keyword.trim()) return;
+    const updated = [keyword, ...recentSearches.filter(s => s !== keyword)].slice(0, MAX_RECENT);
+    setRecentSearches(updated);
+    try { await AsyncStorage.setItem(RECENT_KEY, JSON.stringify(updated)); } catch (_) {}
+  }, [recentSearches]);
+
+  const handleSearch = useCallback(async (searchQuery, tab = activeTab) => {
     if (!searchQuery.trim()) {
       setResults([]);
       return;
@@ -26,21 +99,11 @@ export default function SearchScreen({ navigation }) {
     try {
       let data;
       switch (tab) {
-        case 'all':
-          data = await searchApi.searchAll(searchQuery);
-          break;
-        case 'title':
-          data = await searchApi.searchTitle(searchQuery);
-          break;
-        case 'artist':
-          data = await searchApi.searchArtist(searchQuery);
-          break;
-        case 'lyrics':
-          data = await searchApi.searchLyrics(searchQuery);
-          break;
-        case 'album':
-          data = await searchApi.searchAlbum(searchQuery);
-          break;
+        case 'all': data = await searchApi.searchAll(searchQuery); break;
+        case 'title': data = await searchApi.searchTitle(searchQuery); break;
+        case 'artist': data = await searchApi.searchArtist(searchQuery); break;
+        case 'lyrics': data = await searchApi.searchLyrics(searchQuery); break;
+        case 'album': data = await searchApi.searchAlbum(searchQuery); break;
       }
       setResults(data || []);
     } catch (error) {
@@ -49,152 +112,279 @@ export default function SearchScreen({ navigation }) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [activeTab]);
 
-  const handleTabChange = (tab) => {
-    setActiveTab(tab);
+  const handleSubmit = useCallback(() => {
     if (query.trim()) {
-      handleSearch(query, tab);
+      saveRecent(query);
+      handleSearch(query);
     }
-  };
+  }, [query, saveRecent, handleSearch]);
 
-  const handlePlayHymn = (hymn) => {
+  const handleTabChange = useCallback((tab) => {
+    setActiveTab(tab);
+    if (query.trim()) handleSearch(query, tab);
+  }, [query, handleSearch]);
+
+  const handleRecentTap = useCallback((keyword) => {
+    setQuery(keyword);
+    setFocused(true);
+    saveRecent(keyword);
+    handleSearch(keyword);
+  }, [saveRecent, handleSearch]);
+
+  const handlePlayHymn = useCallback((hymn) => {
     navigation.navigate('Player', { hymn });
-  };
+  }, [navigation]);
+
+  const hasInput = query.trim().length > 0;
+  const showDefaultView = !hasInput && !loading;
 
   return (
     <View style={styles.container}>
-      {/* 搜尋框 */}
-      <TextInput
-        style={styles.searchInput}
-        placeholder="搜尋歌名、歌手、歌詞..."
-        value={query}
-        onChangeText={(text) => {
-          setQuery(text);
-          handleSearch(text);
-        }}
-        autoFocus
-        returnKeyType="search"
-      />
-
-      {/* Tabs */}
-      <View style={styles.tabsContainer}>
-        {[
-          { key: 'all', label: '全部' },
-          { key: 'title', label: '歌名' },
-          { key: 'artist', label: '歌手' },
-          { key: 'lyrics', label: '歌詞' },
-        ].map((tab) => (
-          <TouchableOpacity
-            key={tab.key}
-            style={[
-              styles.tab,
-              activeTab === tab.key && styles.activeTab,
-            ]}
-            onPress={() => handleTabChange(tab.key)}
-          >
-            <Text
-              style={[
-                styles.tabText,
-                activeTab === tab.key && styles.activeTabText,
-              ]}
-            >
-              {tab.label}
-            </Text>
-          </TouchableOpacity>
-        ))}
+      {/* Header */}
+      <View style={styles.header}>
+        <Text style={styles.headerTitle}>搜尋</Text>
       </View>
 
-      {/* 載入中 */}
-      {loading && <ActivityIndicator size="large" color="#1ED760" style={styles.loader} />}
-
-      {/* 搜尋結果 */}
-      {!loading && (
-        <FlatList
-          data={results}
-          keyExtractor={(item) => item.id.toString()}
-          renderItem={({ item }) => (
-            <TouchableOpacity
-              style={styles.resultItem}
-              onPress={() => handlePlayHymn(item)}
-            >
-              <Text style={styles.title}>{item.title}</Text>
-              <Text style={styles.artist}>{item.artist}</Text>
-            </TouchableOpacity>
-          )}
-          ListEmptyComponent={
-            query.trim() ? (
-              <Text style={styles.emptyText}>未找到結果</Text>
-            ) : (
-              <Text style={styles.emptyText}>輸入關鍵字搜尋詩歌</Text>
-            )
-          }
+      {/* Search bar — near white pill */}
+      <View style={[styles.searchWrap, focused && styles.searchWrapFocused]}>
+        <Text style={styles.searchIcon}>🔍</Text>
+        <TextInput
+          style={styles.searchInput}
+          placeholder="搜尋歌名、歌手、歌詞、專輯"
+          placeholderTextColor="#888"
+          value={query}
+          onChangeText={(text) => {
+            setQuery(text);
+            if (text.trim()) handleSearch(text);
+            else setResults([]);
+          }}
+          onSubmitEditing={handleSubmit}
+          onFocus={() => setFocused(true)}
+          onBlur={() => setFocused(false)}
+          returnKeyType="search"
         />
+        {hasInput && (
+          <TouchableOpacity style={styles.clearBtn} onPress={() => { setQuery(''); setResults([]); }}>
+            <Text style={styles.clearIcon}>✕</Text>
+          </TouchableOpacity>
+        )}
+      </View>
+
+      {/* Chips — search dimensions */}
+      {hasInput && (
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipsScroll} contentContainerStyle={styles.chipsContent}>
+          {[
+            { key: 'all', label: '全部' },
+            { key: 'title', label: '歌名' },
+            { key: 'artist', label: '歌手' },
+            { key: 'lyrics', label: '歌詞' },
+            { key: 'album', label: '專輯' },
+          ].map(chip => (
+            <TouchableOpacity
+              key={chip.key}
+              style={[styles.chip, activeTab === chip.key && styles.chipActive]}
+              onPress={() => handleTabChange(chip.key)}
+            >
+              <Text style={[styles.chipText, activeTab === chip.key && styles.chipTextActive]}>
+                {chip.label}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+      )}
+
+      {/* ===== Default view (no search) ===== */}
+      {showDefaultView && (
+        <ScrollView style={styles.defaultScroll} showsVerticalScrollIndicator={false} contentContainerStyle={styles.defaultContent}>
+          {/* Recent searches */}
+          {recentSearches.length > 0 && (
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>最近搜尋</Text>
+              {recentSearches.map((kw, i) => (
+                <TouchableOpacity key={i} style={styles.recentRow} onPress={() => handleRecentTap(kw)} activeOpacity={0.7}>
+                  <Text style={styles.recentIcon}>🕒</Text>
+                  <Text style={styles.recentText} numberOfLines={1}>{kw}</Text>
+                  <Text style={styles.recentArrow}>↗</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          )}
+
+          {/* 發掘詩歌 */}
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>發掘詩歌</Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.discoverScroll}>
+              {DISCOVER_POOL.map(item => (
+                <TouchableOpacity key={item.id} style={styles.discoverCard} activeOpacity={0.7}
+                  onPress={() => { setQuery(item.tag); handleSearch(item.tag); }}>
+                  <Thumbnail youtubeId={item.youtube_id} size={DISCOVER_CARD_SIZE} />
+                  <View style={styles.discoverTag}>
+                    <Text style={styles.discoverTagText}>{item.tag}</Text>
+                  </View>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          </View>
+
+          {/* 你可能會喜歡 */}
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>你可能會喜歡</Text>
+            {SUGGESTIONS.map((item, i) => (
+              <TouchableOpacity key={i} style={styles.suggestRow} onPress={() => { setQuery(item.text); handleSearch(item.text); }} activeOpacity={0.7}>
+                <Text style={styles.suggestIcon}>🔍</Text>
+                <View style={styles.suggestInfo}>
+                  <Text style={styles.suggestText}>{item.text}</Text>
+                  <Text style={styles.suggestType}>{item.type}</Text>
+                </View>
+                <Text style={styles.recentArrow}>↗</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </ScrollView>
+      )}
+
+      {/* ===== Results view (search active) ===== */}
+      {hasInput && !showDefaultView && (
+        <>
+          {loading && (
+            <View style={styles.topLoading}>
+              <ActivityIndicator size="small" color="#1ED760" />
+              <Text style={styles.topLoadingText}>搜尋中...</Text>
+            </View>
+          )}
+          {!loading && (
+            <FlatList
+              data={results}
+              keyExtractor={(item) => String(item.id)}
+              style={styles.resultList}
+              showsVerticalScrollIndicator={false}
+              renderItem={({ item }) => (
+                <TouchableOpacity style={styles.resultRow} onPress={() => handlePlayHymn(item)} activeOpacity={0.7}>
+                  <Thumbnail youtubeId={item.youtube_id} size={48} />
+                  <View style={styles.resultInfo}>
+                    <Text style={styles.resultTitle} numberOfLines={1}>{item.title}</Text>
+                    <Text style={styles.resultArtist} numberOfLines={1}>{item.artist || '未知'}</Text>
+                  </View>
+                  <Text style={styles.resultMore}>⋯</Text>
+                </TouchableOpacity>
+              )}
+              ListEmptyComponent={
+                <View style={styles.emptyWrap}>
+                  <Text style={styles.emptyText}>搵唔到相關詩歌</Text>
+                  <Text style={styles.emptyHint}>試下其他關鍵字</Text>
+                </View>
+              }
+            />
+          )}
+        </>
       )}
     </View>
   );
 }
 
+const DISCOVER_CARD_SIZE = Math.floor((SCREEN_WIDTH - 64) / 2.5);
+
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#000000',
-  },
-  searchInput: {
-    height: 50,
-    borderColor: '#2A2A2A',
-    borderWidth: 1,
-    borderRadius: 25,
-    paddingHorizontal: 20,
-    margin: 16,
-    fontSize: 16,
-    color: '#FFFFFF',
-    backgroundColor: '#1A1A1A',
-  },
-  tabsContainer: {
+  container: { flex: 1, backgroundColor: '#000000' },
+
+  // Header
+  header: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 8 },
+  headerTitle: { fontSize: 28, fontWeight: '800', color: '#FFFFFF' },
+
+  // Search bar
+  searchWrap: {
     flexDirection: 'row',
-    borderBottomWidth: 1,
-    borderBottomColor: '#2A2A2A',
+    alignItems: 'center',
+    backgroundColor: '#E8E8E8',
+    borderRadius: 24,
+    marginHorizontal: 16,
+    paddingHorizontal: 16,
+    height: 48,
+    marginBottom: 8,
   },
-  tab: {
-    flex: 1,
-    paddingVertical: 12,
+  searchWrapFocused: {
+    borderWidth: 2,
+    borderColor: '#1ED760',
+  },
+  searchIcon: { fontSize: 16, marginRight: 8 },
+  searchInput: { flex: 1, fontSize: 16, color: '#111111', height: 48 },
+  clearBtn: { padding: 4 },
+  clearIcon: { fontSize: 16, color: '#666' },
+
+  // Chips
+  chipsScroll: { marginBottom: 4 },
+  chipsContent: { paddingHorizontal: 16, gap: 8, paddingVertical: 6 },
+  chip: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    backgroundColor: '#2A2A2A',
+  },
+  chipActive: {
+    backgroundColor: '#1ED760',
+  },
+  chipText: { fontSize: 14, color: '#A0A0A0', fontWeight: '500' },
+  chipTextActive: { color: '#000000', fontWeight: '700' },
+
+  // Default view
+  defaultScroll: { flex: 1 },
+  defaultContent: { paddingBottom: 20 },
+
+  // Sections
+  section: { marginBottom: 20 },
+  sectionTitle: { fontSize: 18, fontWeight: '700', color: '#FFFFFF', marginBottom: 10, paddingHorizontal: 16 },
+
+  // Recent
+  recentRow: {
+    flexDirection: 'row', alignItems: 'center',
+    paddingVertical: 10, paddingHorizontal: 16,
+  },
+  recentIcon: { fontSize: 16, marginRight: 12, width: 20, textAlign: 'center' },
+  recentText: { flex: 1, fontSize: 15, color: '#FFFFFF' },
+  recentArrow: { fontSize: 14, color: '#A0A0A0' },
+
+  // Discover
+  discoverScroll: { paddingHorizontal: 12, gap: 10 },
+  discoverCard: { width: DISCOVER_CARD_SIZE },
+  discoverTag: {
+    position: 'absolute', bottom: 10, left: 0, right: 0,
     alignItems: 'center',
   },
-  activeTab: {
-    borderBottomWidth: 2,
-    borderBottomColor: '#1ED760',
+  discoverTagText: {
+    fontSize: 13, fontWeight: '700', color: '#FFFFFF',
+    backgroundColor: 'rgba(0,0,0,0.6)', paddingHorizontal: 10, paddingVertical: 3, borderRadius: 10,
+    overflow: 'hidden',
   },
-  tabText: {
-    fontSize: 14,
-    color: '#A0A0A0',
+
+  // Suggestions
+  suggestRow: {
+    flexDirection: 'row', alignItems: 'center',
+    paddingVertical: 10, paddingHorizontal: 16,
   },
-  activeTabText: {
-    color: '#1ED760',
-    fontWeight: 'bold',
+  suggestIcon: { fontSize: 16, marginRight: 12, width: 20, textAlign: 'center' },
+  suggestInfo: { flex: 1 },
+  suggestText: { fontSize: 15, color: '#FFFFFF' },
+  suggestType: { fontSize: 12, color: '#A0A0A0', marginTop: 1 },
+  suggestArrow: { fontSize: 14, color: '#A0A0A0' },
+
+  // Results
+  topLoading: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: 12, gap: 6 },
+  topLoadingText: { fontSize: 13, color: '#A0A0A0' },
+  resultList: { flex: 1 },
+  resultRow: {
+    flexDirection: 'row', alignItems: 'center',
+    paddingVertical: 10, paddingHorizontal: 16,
   },
-  loader: {
-    marginTop: 50,
-  },
-  resultItem: {
-    padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#2A2A2A',
-  },
-  title: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#FFFFFF',
-    marginBottom: 4,
-  },
-  artist: {
-    fontSize: 14,
-    color: '#A0A0A0',
-  },
-  emptyText: {
-    textAlign: 'center',
-    marginTop: 50,
-    fontSize: 16,
-    color: '#666',
-  },
+  thumb: { justifyContent: 'center', alignItems: 'center', backgroundColor: '#1A1A1A' },
+  resultInfo: { flex: 1, marginLeft: 12 },
+  resultTitle: { fontSize: 15, fontWeight: '600', color: '#FFFFFF' },
+  resultArtist: { fontSize: 12, color: '#A0A0A0', marginTop: 2 },
+  resultMore: { fontSize: 16, color: '#A0A0A0', paddingHorizontal: 8, paddingVertical: 4 },
+
+  // Empty
+  emptyWrap: { alignItems: 'center', paddingVertical: 60 },
+  emptyText: { fontSize: 16, color: '#A0A0A0' },
+  emptyHint: { fontSize: 13, color: '#666', marginTop: 6 },
 });
