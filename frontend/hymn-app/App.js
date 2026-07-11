@@ -13,6 +13,7 @@ import {
   Modal, Dimensions, FlatList,
 } from 'react-native';
 import { COLORS } from './src/constants/theme';
+import { FavoritesProvider, useFavorites } from './src/context/FavoritesContext';
 
 // ===== MaterialIcons 圖標名稱 =====
 
@@ -658,20 +659,27 @@ const olStyles = StyleSheet.create({
 function MiniPlayer({ onPress }) {
   const player = usePlayer();
   const { currentHymn, isPlaying, togglePlayPause } = player;
+  const { isFavorite, toggleFavorite } = useFavorites();
   if (!currentHymn?.id) return null;
+  const fav = isFavorite(currentHymn.id);
 
   return (
     <View style={miStyles.wrapper}>
-      <TouchableOpacity style={miStyles.container} onPress={onPress} activeOpacity={0.85}>
-        <CoverImage youtubeId={currentHymn.youtube_id} style={miStyles.cover} fallbackIcon="🎵" />
-        <View style={miStyles.info}>
-          <Text style={miStyles.title} numberOfLines={1}>{currentHymn.title}</Text>
-          <Text style={miStyles.artist} numberOfLines={1}>{currentHymn.artist}</Text>
-        </View>
+      <View style={miStyles.container}>
+        <TouchableOpacity style={miStyles.mainTouch} onPress={onPress} activeOpacity={0.85}>
+          <CoverImage youtubeId={currentHymn.youtube_id} style={miStyles.cover} fallbackIcon="🎵" />
+          <View style={miStyles.info}>
+            <Text style={miStyles.title} numberOfLines={1}>{currentHymn.title}</Text>
+            <Text style={miStyles.artist} numberOfLines={1}>{currentHymn.artist}</Text>
+          </View>
+        </TouchableOpacity>
+        <TouchableOpacity style={miStyles.favBtn} onPress={(e) => { e.stopPropagation(); toggleFavorite(currentHymn); }} activeOpacity={0.7}>
+          <MaterialIcons name={fav ? 'favorite' : 'favorite-border'} size={20} color={fav ? '#1ED760' : TEXT_SECONDARY} />
+        </TouchableOpacity>
         <TouchableOpacity style={miStyles.playBtn} onPress={(e) => { e.stopPropagation(); togglePlayPause(); }} activeOpacity={0.8}>
           <MaterialIcons name={isPlaying ? 'pause' : 'play-arrow'} size={20} color="#000000" />
         </TouchableOpacity>
-      </TouchableOpacity>
+      </View>
     </View>
   );
 }
@@ -691,6 +699,8 @@ const miStyles = StyleSheet.create({
   info: { flex: 1, marginLeft: 12 },
   title: { fontSize: 14, fontWeight: '600', color: TEXT_PRIMARY },
   artist: { fontSize: 12, color: TEXT_SECONDARY, marginTop: 1 },
+  mainTouch: { flex: 1, flexDirection: 'row', alignItems: 'center' },
+  favBtn: { width: 36, alignItems: 'center', justifyContent: 'center' },
   playBtn: { width: 36, height: 36, borderRadius: 18, backgroundColor: '#FFFFFF', justifyContent: 'center', alignItems: 'center' },
 });
 
