@@ -730,9 +730,9 @@ function TabBar({ activeTab, onTabChange, bottomInset, onMiniPlayerPress }) {
             <Text style={[tbStyles.label, activeTab === tab.key && tbStyles.labelActive]}>{tab.label}</Text>
           </TouchableOpacity>
         ))}
-        <TouchableOpacity style={tbStyles.item} onPress={() => onTabChange('Player')}>
+        <TouchableOpacity style={tbStyles.item} onPress={() => onMiniPlayerPress()}>
           <MaterialIcons name="play-circle-outline" size={22} color={TEXT_SECONDARY} />
-          <Text style={[tbStyles.label, activeTab === 'Player' && tbStyles.labelActive]}>播放</Text>
+          <Text style={tbStyles.label}>播放</Text>
         </TouchableOpacity>
       </View>
     </View>
