@@ -14,6 +14,8 @@ import {
 } from 'react-native';
 import { COLORS } from './src/constants/theme';
 import { FavoritesProvider, useFavorites } from './src/context/FavoritesContext';
+import { AuthProvider, useAuth } from './src/context/AuthContext';
+import AuthScreen from './src/screens/AuthScreen';
 
 // ===== MaterialIcons 圖標名稱 =====
 
@@ -762,6 +764,7 @@ import FavoritesScreen from './src/screens/FavoritesScreen';
 // ================================================================
 function HomeScreen({ hymns, activeCategory, onCategoryChange, onPlayHymn }) {
   const homeInsets = typeof useSafeAreaInsets === 'function' ? useSafeAreaInsets() : { top: 0 };
+  const { user } = useAuth();
   return (
     <View style={{ flex: 1, backgroundColor: COLORS.bg }}>
       {/* Header — 生命樹品牌 + 通知 + 頭像 */}
@@ -777,8 +780,8 @@ function HomeScreen({ hymns, activeCategory, onCategoryChange, onPlayHymn }) {
           <TouchableOpacity style={hs.iconBtn}>
             <MaterialIcons name="notifications-none" size={24} color="#FFFFFF" />
           </TouchableOpacity>
-          <TouchableOpacity style={hs.avatarBtn}>
-            <Text style={hs.avatarText}>E</Text>
+          <TouchableOpacity style={hs.avatarBtn} onPress={openAuth}>
+            <Text style={hs.avatarText}>{user ? user.username.charAt(0).toUpperCase() : 'E'}</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -1145,7 +1148,11 @@ function AppContent() {
   const [allSongs, setAllSongs] = useState([]);
   const [activeCategory, setActiveCategory] = useState('全部');
   const [activeTab, setActiveTab] = useState('Home');
+  const [authVisible, setAuthVisible] = useState(false);
   const [hymnListVisible, setHymnListVisible] = useState(false);
+
+  const openAuth = useCallback(() => setAuthVisible(true), []);
+  const closeAuth = useCallback(() => setAuthVisible(false), []);
   const [hymnListData, setHymnListData] = useState({ hymns: [], title: '' });
 
   const showHymnList = (hymns, title) => {
@@ -1202,7 +1209,7 @@ function AppContent() {
         {/* Home: visible when Home tab, or other tabs without dedicated screen (Favorites/Player) */}
         <View style={[pageStyles.screenWrap, { display: (activeTab === 'Home' || (activeTab !== 'Search' && activeTab !== 'Category' && activeTab !== 'Playlist' && activeTab !== 'Favorites')) ? 'flex' : 'none' }]}>
           <HomeScreen hymns={allSongs || []} activeCategory={activeCategory}
-            onCategoryChange={setActiveCategory} onPlayHymn={handlePlayHymn} />
+            onCategoryChange={setActiveCategory} onPlayHymn={handlePlayHymn} onOpenAuth={openAuth} />
         </View>
         <View style={[pageStyles.screenWrap, { display: activeTab === 'Search' ? 'flex' : 'none' }]}>
           <SearchScreen navigation={{ navigate: (route, params) => {
@@ -1219,6 +1226,14 @@ function AppContent() {
           <FavoritesScreen onPlayHymn={handlePlayHymn} />
         </View>
       </View>
+
+      {/* Auth Modal */}
+      {authVisible && (
+        <Modal visible animationType="slide" onRequestClose={closeAuth}>
+          <AuthScreen onClose={closeAuth} />
+        </Modal>
+      )}
+
       <TabBar activeTab={activeTab} onTabChange={setActiveTab}
         bottomInset={bottomInset} onMiniPlayerPress={handleOpenFullScreen} />
 
@@ -1255,11 +1270,11 @@ export default function App() {
   if (SafeAreaProvider) {
     return (
       <SafeAreaProvider>
-        <PlayerProvider><FavoritesProvider><AppContent /></FavoritesProvider></PlayerProvider>
+        <AuthProvider><PlayerProvider><FavoritesProvider><AppContent /></FavoritesProvider></PlayerProvider></AuthProvider>
       </SafeAreaProvider>
     );
   }
-  return <PlayerProvider><FavoritesProvider><AppContent /></FavoritesProvider></PlayerProvider>;
+  return <AuthProvider><PlayerProvider><FavoritesProvider><AppContent /></FavoritesProvider></PlayerProvider></AuthProvider>;
 }
 
 const pageStyles = StyleSheet.create({
