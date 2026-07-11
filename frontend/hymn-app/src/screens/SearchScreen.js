@@ -106,7 +106,7 @@ export default function SearchScreen({ navigation }) {
       </View>
 
       {/* 載入中 */}
-      {loading && <ActivityIndicator size="large" color="#A8C765" style={styles.loader} />}
+      {loading && <ActivityIndicator size="large" color="#1ED760" style={styles.loader} />}
 
       {/* 搜尋結果 */}
       {!loading && (
@@ -161,14 +161,14 @@ const styles = StyleSheet.create({
   },
   activeTab: {
     borderBottomWidth: 2,
-    borderBottomColor: '#A8C765',
+    borderBottomColor: '#1ED760',
   },
   tabText: {
     fontSize: 14,
     color: '#666',
   },
   activeTabText: {
-    color: '#A8C765',
+    color: '#1ED760',
     fontWeight: 'bold',
   },
   loader: {

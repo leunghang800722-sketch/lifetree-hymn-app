@@ -29,12 +29,12 @@ const API_BASE = 'https://4e152f1ef2394bdb-94-190-228-145.serveousercontent.com'
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 const VIDEO_HEIGHT = SCREEN_WIDTH * 9 / 16;
 
-// ===== 生命樹主題色系 =====
-const MAIN_BG_COLOR = '#131C16';
-const CARD_BG_COLOR = '#1E2B22';
-const ACCENT_COLOR = '#A8C765';
-const TEXT_PRIMARY = '#F0F4E8';
-const TEXT_SECONDARY = '#9AA696';
+// ===== 黑色主調（Rolex 綠只做 accent） =====
+const MAIN_BG_COLOR = '#000000';
+const CARD_BG_COLOR = '#1A1A1A';
+const ACCENT_COLOR = '#1ED760';
+const TEXT_PRIMARY = '#FFFFFF';
+const TEXT_SECONDARY = '#A0A0A0';
 
 function getAlbumCoverUrl(youtubeId) {
   return youtubeId ? `https://img.youtube.com/vi/${youtubeId}/hqdefault.jpg` : null;
@@ -837,7 +837,7 @@ const hs = StyleSheet.create({
   avatarText: {
     fontSize: 16,
     fontWeight: '700',
-    color: '#004D2E',
+    color: '#000000',
   },
 });
 

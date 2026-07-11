@@ -89,7 +89,7 @@ export default function CategoryScreen({ navigation, showHymnList }) {
         </TouchableOpacity>
       </View>
 
-      {loading && <ActivityIndicator size="large" color="#A8C765" style={styles.loader} />}
+      {loading && <ActivityIndicator size="large" color="#1ED760" style={styles.loader} />}
 
       {/* Language Categories */}
       {activeSection === 'language' && !loading && (
@@ -164,14 +164,14 @@ const styles = StyleSheet.create({
   },
   activeSectionTab: {
     borderBottomWidth: 2,
-    borderBottomColor: '#A8C765',
+    borderBottomColor: '#1ED760',
   },
   sectionTabText: {
     fontSize: 16,
     color: '#666',
   },
   activeSectionTabText: {
-    color: '#A8C765',
+    color: '#1ED760',
     fontWeight: 'bold',
   },
   loader: {

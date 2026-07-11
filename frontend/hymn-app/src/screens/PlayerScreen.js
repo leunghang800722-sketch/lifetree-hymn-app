@@ -317,7 +317,7 @@ const styles = StyleSheet.create({
     lineHeight: 22,
   },
   lyricLine: {
-    color: '#C8D6C0',
+    color: .#A0A0A0.,
     fontSize: 14,
     marginBottom: 8,
     lineHeight: 22,
