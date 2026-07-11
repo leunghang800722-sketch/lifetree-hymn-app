@@ -134,7 +134,7 @@ export default function CategoryScreen({ navigation, showHymnList }) {
       {/* Artist Categories */}
       {activeSection === 'artist' && (
         <FlatList
-          data={Object.entries(artistGroups)}
+          data={artistGroups}
           keyExtractor={([letter]) => letter}
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.artistContent}
