@@ -4,13 +4,14 @@ import { View, Text, FlatList, TouchableOpacity, StyleSheet, Image, Dimensions }
 import { COLORS } from '../../constants/theme';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
-const PAGE_H_PADDING = 16;
-const PAGE_WIDTH = SCREEN_WIDTH - PAGE_H_PADDING * 2;
+const PAGE_PADDING = 16;
+const PAGE_WIDTH = SCREEN_WIDTH; // each page = full screen width
+const CONTENT_WIDTH = SCREEN_WIDTH - PAGE_PADDING * 2;
 const ITEM_GAP = 8;
 const ITEMS_PER_COL = 2;
 const ITEMS_PER_PAGE = 4;
 const MAX_PAGES = 4;
-const CARD_SIZE = Math.floor((PAGE_WIDTH - ITEM_GAP) / ITEMS_PER_COL);
+const CARD_SIZE = Math.floor((CONTENT_WIDTH - ITEM_GAP) / ITEMS_PER_COL);
 
 function getCoverUrl(youtubeId) {
   return youtubeId ? `https://img.youtube.com/vi/${youtubeId}/hqdefault.jpg` : null;
@@ -49,7 +50,7 @@ export default function HotSongCarousel({ hymns, onPlay, onMore }) {
 
   const handleScrollEnd = useCallback((e) => {
     const x = e.nativeEvent.contentOffset.x;
-    const page = Math.round(x / PAGE_WIDTH);
+    const page = Math.round(x / SCREEN_WIDTH);
     setCurrentPage(Math.min(page, pages.length - 1));
   }, [pages.length]);
 
@@ -75,7 +76,7 @@ export default function HotSongCarousel({ hymns, onPlay, onMore }) {
         pagingEnabled
         showsHorizontalScrollIndicator={false}
         decelerationRate="fast"
-        snapToInterval={PAGE_WIDTH}
+        snapToInterval={SCREEN_WIDTH}
         snapToAlignment="start"
         onMomentumScrollEnd={handleScrollEnd}
         keyExtractor={(_, i) => `page-${i}`}
@@ -103,7 +104,6 @@ export default function HotSongCarousel({ hymns, onPlay, onMore }) {
             </View>
           </View>
         )}
-        contentContainerStyle={{ paddingHorizontal: PAGE_H_PADDING }}
       />
 
       {/* Page indicator dots */}
@@ -152,7 +152,8 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   page: {
-    width: PAGE_WIDTH,
+    width: SCREEN_WIDTH,
+    paddingHorizontal: PAGE_PADDING,
   },
   grid: {
     gap: ITEM_GAP,
