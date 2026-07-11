@@ -28,7 +28,7 @@ function Thumbnail({ youtubeId }) {
     );
   }
   return (
-    <Image source={{ uri }} style={styles.thumb} onError={() => setFailed(true)} />
+    <Image source={{ uri }} style={styles.thumb} resizeMode="cover" onError={() => setFailed(true)} />
   );
 }
 

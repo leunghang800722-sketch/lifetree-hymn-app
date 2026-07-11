@@ -108,9 +108,21 @@ export default function HomeScreen({ navigation, onPlayHymn }) {
         )}
 
         {/* 5. 推薦大熱歌曲 — 橫滑 4 頁 × 每頁 4 首 */}
-        {data.combinedCharts.length > 0 && (
-          <HotSongCarousel hymns={data.combinedCharts} onPlay={playSong} onMore={showMoreMenu} />
-        )}
+        {data.combinedCharts.length > 0 && (() => {
+          // Backfill to 16 songs for 4 full pages using other data sources
+          const pool = data.combinedCharts.slice(0, 16);
+          const seen = new Set(pool.map(h => h.id || h.youtube_id));
+          const fillers = [...(data.newReleases || []), ...(data.topVerses || []), ...(data.genreRec || [])];
+          for (const h of fillers) {
+            if (pool.length >= 16) break;
+            const key = h.id || h.youtube_id;
+            if (!seen.has(key)) {
+              seen.add(key);
+              pool.push(h);
+            }
+          }
+          return <HotSongCarousel hymns={pool} onPlay={playSong} onMore={showMoreMenu} />;
+        })()}
 
         {/* 6. 排行榜 */}
         {data.topVerses.length > 0 && (
