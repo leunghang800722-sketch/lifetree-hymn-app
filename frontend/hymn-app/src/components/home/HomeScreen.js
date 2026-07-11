@@ -61,7 +61,7 @@ export default function HomeScreen({ navigation, onPlayHymn }) {
     return Object.entries(groups).sort((a, b) => b[1].length - a[1].length).slice(0, 6).map(([artist, hymns]) => ({ id: `album-${artist}`, title: `${artist} 精選`, artist, hymns }));
   }, [data]);
 
-  const { playlists, addToPlaylist } = usePlaylists();
+  const { playlists: userPlaylists, addToPlaylist } = usePlaylists();
   const [showPlModal, setShowPlModal] = useState(false);
   const [plTargetHymn, setPlTargetHymn] = useState(null);
 
@@ -79,7 +79,7 @@ export default function HomeScreen({ navigation, onPlayHymn }) {
   const handleAddToPlaylist = (playlistId) => {
     if (plTargetHymn) {
       addToPlaylist(playlistId, plTargetHymn);
-      Alert.alert('已加入', `已加入「${playlists.find(p => p.id === playlistId)?.name || ''}」`);
+      Alert.alert('已加入', `已加入「${userPlaylists.find(p => p.id === playlistId)?.name || ''}」`);
     }
     setShowPlModal(false);
     setPlTargetHymn(null);
@@ -93,10 +93,10 @@ export default function HomeScreen({ navigation, onPlayHymn }) {
           <TouchableOpacity style={plModalStyles.overlay} activeOpacity={1} onPress={() => { setShowPlModal(false); setPlTargetHymn(null); }}>
             <View style={plModalStyles.card}>
               <Text style={plModalStyles.title}>加入播放清單</Text>
-              {playlists.length === 0 ? (
+              {userPlaylists.length === 0 ? (
                 <Text style={plModalStyles.empty}>尚未建立任何清單，先去「清單」tab 建立</Text>
               ) : (
-                playlists.map(pl => (
+                userPlaylists.map(pl => (
                   <TouchableOpacity key={pl.id} style={plModalStyles.item} onPress={() => handleAddToPlaylist(pl.id)}>
                     <MaterialIcons name={pl.type === 'video' ? 'videocam' : 'music-note'} size={18} color={pl.type === 'video' ? '#64B5F6' : '#A0A0A0'} />
                     <Text style={plModalStyles.itemText}>{pl.name}</Text>
