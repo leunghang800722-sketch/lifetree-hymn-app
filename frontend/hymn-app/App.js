@@ -452,12 +452,30 @@ function PlayerProvider({ children }) {
 
   const isPlaying = trackState === TPState.Playing || trackState === TPState.Buffering;
 
+  // Determine playback mode: 'audio' (TrackPlayer background) or 'video' (YouTube foreground)
+  // Currently all hymns are audio-only; video mode is reserved for future YouTube-based playback
+  function getPlayMode(s) {
+    // Video mode: song has mode='video' flag (not yet implemented in data model)
+    if (s && s.mode === 'video') return 'video';
+    return 'audio';
+  }
+
   // changeToSong: load hymns into TrackPlayer, play
   // Only the active song is added to the queue with its real URL
   // Sequential play is handled by the PlaybackQueueEnded event handler
   async function changeToSong(song, queueIndex) {
     try {
       if (!song || !song.youtube_id) return;
+      const mode = getPlayMode(song);
+      if (mode === 'video') {
+        // Video mode — open YouTube app directly (future: inline player)
+        try {
+          const { Linking } = require('react-native');
+          await Linking.openURL(`https://www.youtube.com/watch?v=${song.youtube_id}`);
+        } catch (_) {}
+        setIsLoading(false);
+        return;
+      }
       setIsLoading(true);
       // If playing from a custom playlist (e.g., user-created music/video list),
       // use customQueueRef as the source queue instead of full hymns list
@@ -544,6 +562,8 @@ function PlayerProvider({ children }) {
 
       const nextSong = q[nextIdx];
       if (!nextSong || !nextSong.youtube_id || nextSong.id === (currentHymn?.id)) return;
+      // Only prefetch audio-mode songs; skip video-mode songs
+      if (getPlayMode(nextSong) !== 'audio') return;
 
       const nextUrl = await fetchAudioUrl(nextSong.youtube_id, false);
       if (!nextUrl || typeof nextUrl !== 'string' || !nextUrl.startsWith('http')) return;
