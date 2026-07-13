@@ -922,7 +922,7 @@ function FullScreenPlayerOverlay() {
   const bottomPad = (insets?.bottom || 20) + 8;
   const safeTop = (insets?.top || StatusBar.currentHeight || 24) + 8;
 
-  const { toggleFavorite, isFavorite } = useFavorites();
+  const { favorites, toggleFavorite, isFavorite } = useFavorites();
   const { addToPlaylist } = usePlaylists();
 
   return (
@@ -1120,18 +1120,28 @@ function FullScreenPlayerOverlay() {
       </TouchableOpacity>
 
       {/* Bottom Sheet for adding to playlists */}
-      <Modal visible={showPlaylistSheet} animationType="slide" transparent>
-        <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.8)', justifyContent: 'flex-end' }}>
-          <View style={{ backgroundColor: '#121A17', borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 20 }}>
-            <Text style={{ color: '#FFFFFF', fontSize: 18, fontWeight: '600', marginBottom: 16 }}>加入到清單</Text>
+      <Modal visible={showPlaylistSheet} animationType="slide" transparent onRequestClose={() => setShowPlaylistSheet(false)}>
+        <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.85)', justifyContent: 'flex-end' }}>
+          <View style={{ backgroundColor: '#121A17', borderTopLeftRadius: 20, borderTopRightRadius: 20, maxHeight: '70%' }}>
+            <Text style={{ color: '#FFFFFF', fontSize: 18, fontWeight: '600', padding: 20 }}>加入到清單</Text>
 
-            <TouchableOpacity onPress={() => { toggleFavorite(cur); setShowPlaylistSheet(false); }}>
-              <Text style={{ color: '#E8B86D', padding: 12 }}>❤️ 最愛</Text>
+            {/* 最愛 */}
+            <TouchableOpacity onPress={() => { toggleFavorite(cur); setShowPlaylistSheet(false); }} style={{ padding: 16, borderBottomWidth: 1, borderBottomColor: '#1F2925' }}>
+              <Text style={{ color: '#E8B86D' }}>❤️ 最愛清單</Text>
             </TouchableOpacity>
 
-            {/* 之後會列出自訂清單 */}
+            {/* 其他清單 */}
+            <FlatList
+              data={favorites}
+              keyExtractor={item => String(item.id)}
+              renderItem={({ item }) => (
+                <TouchableOpacity onPress={() => { addToPlaylist(item.id, cur); setShowPlaylistSheet(false); }} style={{ padding: 16 }}>
+                  <Text style={{ color: '#FFFFFF' }}>{item.title}</Text>
+                </TouchableOpacity>
+              )}
+            />
 
-            <TouchableOpacity onPress={() => setShowPlaylistSheet(false)} style={{ marginTop: 20 }}>
+            <TouchableOpacity onPress={() => setShowPlaylistSheet(false)} style={{ padding: 20, alignItems: 'center' }}>
               <Text style={{ color: '#9AA696' }}>取消</Text>
             </TouchableOpacity>
           </View>
