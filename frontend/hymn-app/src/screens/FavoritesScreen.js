@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, FlatList, TouchableOpacity } from 'react-native';
 import { useFavorites } from '../context/FavoritesContext';
-import { usePlayer } from '../../App';
+import { usePlayer } from '../hooks/usePlayer';
 
 const FavoritesScreen = () => {
  const { favorites, toggleFavorite } = useFavorites();
