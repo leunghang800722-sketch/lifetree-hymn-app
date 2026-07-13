@@ -188,6 +188,44 @@ function PlayerProvider({ children }) {
   const customQueueRef = useRef(null); // non-null when playing from a custom playlist
   const shuffleHistoryRef = useRef([]); // tracks played indices for shuffle fairness
 
+  // Lazy TrackPlayer initialization — runs on first play, not on mount
+  const playerReadyRef = useRef(false);
+  const lazyEnsurePlayer = useCallback(async () => {
+    if (playerReadyRef.current) return;
+    playerReadyRef.current = true;
+    try {
+      await TrackPlayer.setupPlayer({ waitForBuffer: true });
+    } catch (e) {
+      console.warn('setupPlayer (ignored):', e?.message);
+    }
+    try {
+      await TrackPlayer.updateOptions({
+        capabilities: [
+          TPCapability.Play,
+          TPCapability.Pause,
+          TPCapability.SkipToNext,
+          TPCapability.SkipToPrevious,
+          TPCapability.SeekTo,
+          TPCapability.Stop,
+        ],
+        compactCapabilities: [
+          TPCapability.Play,
+          TPCapability.Pause,
+          TPCapability.SkipToNext,
+        ],
+        notificationChannel: {
+          id: 'hymn-app',
+          name: '詩歌播放',
+          importance: 1,
+        },
+        icon: require('./assets/icon.png'),
+      });
+    } catch (e) {
+      console.warn('updateOptions (ignored):', e?.message);
+    }
+    setQueueReady(true);
+  }, []);
+
   // 同步 ref 俾 event handler 用
   repeatModeRef.current = repeatMode;
   isShuffledRef.current = isShuffled;
@@ -218,49 +256,12 @@ function PlayerProvider({ children }) {
     return `${m}:${s < 10 ? '0' : ''}${s}`;
   }
 
-  // Init TrackPlayer — exactly once, no retry loop
+  // TrackPlayer init is now lazy — no eager setupPlayer on mount
   const playerInitRef = useRef(false);
+  // setQueueReady is handled by lazyEnsurePlayer at first play
   useEffect(() => {
-    if (playerInitRef.current) return;
-    playerInitRef.current = true;
-    let mounted = true;
-    (async () => {
-      try {
-        await TrackPlayer.setupPlayer({ waitForBuffer: true });
-      } catch (e) {
-        // Player may already be initialized via registerPlaybackService — that's OK
-        console.warn('setupPlayer (ignored):', e?.message);
-      }
-      try {
-        await TrackPlayer.updateOptions({
-          capabilities: [
-            TPCapability.Play,
-            TPCapability.Pause,
-            TPCapability.SkipToNext,
-            TPCapability.SkipToPrevious,
-            TPCapability.SeekTo,
-            TPCapability.Stop,
-          ],
-          compactCapabilities: [
-            TPCapability.Play,
-            TPCapability.Pause,
-            TPCapability.SkipToNext,
-          ],
-          notificationChannel: {
-            id: 'hymn-app',
-            name: '詩歌播放',
-            importance: 1,
-          },
-          icon: require('./assets/icon.png'),
-        });
-      } catch (e) {
-        console.warn('updateOptions (ignored):', e?.message);
-      }
-      if (mounted) {
-        setQueueReady(true);
-      }
-    })();
-    return () => { mounted = false; };
+    // queueReady starts as false; lazy init sets it when player is ready
+    return () => {};
   }, []);
 
   // Listen to TrackPlayer events — safe guard with try/catch
@@ -475,6 +476,8 @@ function PlayerProvider({ children }) {
       // Other songs are stored in queueSnapshotRef for FlatList display
       // and PlaybackQueueEnded/handleNextTrack handles sequential play
       queueSnapshotRef.current = q;
+      // Lazy init TrackPlayer on first play (not on mount, for faster launch)
+      await lazyEnsurePlayer();
       await TrackPlayer.reset();
       await TrackPlayer.add([{
         id: song.id,
