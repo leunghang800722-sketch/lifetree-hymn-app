@@ -988,23 +988,23 @@ function FullScreenPlayerOverlay() {
           <Text style={[{ ...TYPOGRAPHY.artist, textAlign: 'center', marginTop: 4 }]}>{cur.artist}</Text>
         </View>
 
-        {/* Action Bar — 4 exact pill buttons */}
+        {/* Action Bar — closer to reference image */}
         <View style={{ flexDirection: 'row', backgroundColor: '#1F2925', marginHorizontal: 16, borderRadius: 30, padding: 4, marginBottom: 16 }}>
           <TouchableOpacity style={fsStyles.pillButton} onPress={() => toggleFavorite(cur)}>
-            <Text style={{ fontSize: 20, color: isFavorite(cur.id) ? '#E8B86D' : '#9AA696' }}>❤️</Text>
-            <Text style={{ fontSize: 11, color: '#9AA696', marginTop: 2 }}>最愛</Text>
+            <Text style={{ fontSize: 20 }}>❤️</Text>
+            <Text style={{ fontSize: 11, color: '#9AA696' }}>最愛</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={fsStyles.pillButton} onPress={() => alert('歌詞功能開發中')}>
-            <Text style={{ fontSize: 20, color: '#9AA696' }}>📝</Text>
-            <Text style={{ fontSize: 11, color: '#9AA696', marginTop: 2 }}>歌詞</Text>
+          <TouchableOpacity style={fsStyles.pillButton} onPress={() => alert('歌詞')}>
+            <Text style={{ fontSize: 20 }}>📝</Text>
+            <Text style={{ fontSize: 11, color: '#9AA696' }}>歌詞</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={fsStyles.pillButton} onPress={() => alert('分享功能開發中')}>
-            <Text style={{ fontSize: 20, color: '#9AA696' }}>🔗</Text>
-            <Text style={{ fontSize: 11, color: '#9AA696', marginTop: 2 }}>分享</Text>
+          <TouchableOpacity style={fsStyles.pillButton} onPress={() => alert('分享')}>
+            <Text style={{ fontSize: 20 }}>🔗</Text>
+            <Text style={{ fontSize: 11, color: '#9AA696' }}>分享</Text>
           </TouchableOpacity>
           <TouchableOpacity style={fsStyles.pillButton} onPress={() => setShowPlaylistSheet(true)}>
-            <Text style={{ fontSize: 20, color: '#9AA696' }}>📋</Text>
-            <Text style={{ fontSize: 11, color: '#9AA696', marginTop: 2 }}>清單</Text>
+            <Text style={{ fontSize: 20 }}>📋</Text>
+            <Text style={{ fontSize: 11, color: '#9AA696' }}>清單</Text>
           </TouchableOpacity>
         </View>
         <View style={fsStyles.progressSection}>
