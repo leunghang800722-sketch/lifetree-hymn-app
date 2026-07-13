@@ -13,7 +13,7 @@ import TrackPlayer, {
 import {
   View, Text, ScrollView, TouchableOpacity, StyleSheet,
   ActivityIndicator, StatusBar, Image, Platform, Alert,
-  Modal, Dimensions, FlatList,
+  Modal, Dimensions, FlatList, Animated, PanResponder,
 } from 'react-native';
 import { COLORS } from './src/constants/theme';
 import { FavoritesProvider, useFavorites } from './src/context/FavoritesContext';
@@ -230,25 +230,42 @@ function PlayerProvider({ children }) {
   repeatModeRef.current = repeatMode;
   isShuffledRef.current = isShuffled;
 
-  // ===== 推拉門 (simple conditional, no animated transforms) =====
+  // ===== 物理抽屜動畫 (slide-up/slide-down) =====
   const [overlayExpanded, setOverlayExpanded] = useState(false);
+  const drawerAnim = useRef(new Animated.Value(SCREEN_HEIGHT)).current;
+  const isAnimatingRef = useRef(false);
 
   const showPlayer = useCallback(() => {
-    if (!overlayExpanded) {
-      setOverlayExpanded(true);
-      // Sync track state immediately so overlay shows correct icon
-      TrackPlayer.getPlaybackState().then(s => {
-        const val = typeof s === 'object' && s != null ? s.state : s;
-        if (val != null) setTrackState(val);
-      }).catch(() => {});
-    }
-  }, [overlayExpanded]);
+    if (overlayExpanded || isAnimatingRef.current) return;
+    isAnimatingRef.current = true;
+    setOverlayExpanded(true);
+    drawerAnim.setValue(SCREEN_HEIGHT);
+    Animated.timing(drawerAnim, {
+      toValue: 0,
+      duration: 300,
+      useNativeDriver: true,
+    }).start(() => {
+      isAnimatingRef.current = false;
+    });
+    // Sync track state immediately so overlay shows correct icon
+    TrackPlayer.getPlaybackState().then(s => {
+      const val = typeof s === 'object' && s != null ? s.state : s;
+      if (val != null) setTrackState(val);
+    }).catch(() => {});
+  }, [overlayExpanded, drawerAnim]);
 
   const hidePlayer = useCallback(() => {
-    if (overlayExpanded) {
+    if (!overlayExpanded || isAnimatingRef.current) return;
+    isAnimatingRef.current = true;
+    Animated.timing(drawerAnim, {
+      toValue: SCREEN_HEIGHT,
+      duration: 250,
+      useNativeDriver: true,
+    }).start(() => {
       setOverlayExpanded(false);
-    }
-  }, [overlayExpanded]);
+      isAnimatingRef.current = false;
+    });
+  }, [overlayExpanded, drawerAnim]);
 
   function formatTime(seconds) {
     if (!seconds || isNaN(seconds)) return '0:00';
@@ -646,12 +663,10 @@ function PlayerProvider({ children }) {
     }}>
       {children}
 
-      {/* Fullscreen player overlay */}
-      {overlayExpanded ? (
-        <View style={olStyles.overlay}>
-          <FullScreenPlayerOverlay />
-        </View>
-      ) : null}
+      {/* Fullscreen player overlay — always mounted, animated slide-up */}
+      <Animated.View style={[olStyles.overlay, { transform: [{ translateY: drawerAnim }] }]}>
+        {(overlayExpanded) && <FullScreenPlayerOverlay />}
+      </Animated.View>
     </PlayerCtx.Provider>
   );
 }
@@ -663,7 +678,7 @@ const olStyles = StyleSheet.create({
   overlay: {
     position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
     backgroundColor: MAIN_BG_COLOR, zIndex: 999,
-    overflow: 'visible', // Don't clip absolute-positioned drawer below screen
+    overflow: 'hidden'
   },
 });
 
