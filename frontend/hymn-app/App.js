@@ -1259,6 +1259,14 @@ function AppContent() {
   const closeAuth = useCallback(() => setAuthVisible(false), []);
   const [hymnListData, setHymnListData] = useState({ hymns: [], title: '' });
 
+  // Pre-warm cache for first song when hymns load (reduces first-play latency)
+  useEffect(() => {
+    if (allSongs && allSongs.length > 0 && allSongs[0].youtube_id) {
+      // Background fetch to warm the cache — no await, fire-and-forget
+      fetchAudioUrl(allSongs[0].youtube_id, false);
+    }
+  }, [allSongs]);
+
   const showHymnList = (hymns, title) => {
     setHymnListData({ hymns, title });
     setHymnListVisible(true);
