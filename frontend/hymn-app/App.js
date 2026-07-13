@@ -385,9 +385,11 @@ function PlayerProvider({ children }) {
           }
         }
         const nextSong = q[nextIdx];
-        if (nextSong) {
+        if (nextSong && getPlayMode(nextSong) === 'audio') {
           console.log('[PlaybackError] auto-skipping to:', nextSong.title);
           await changeToSong(nextSong, nextIdx);
+        } else if (nextSong && getPlayMode(nextSong) !== 'audio') {
+          console.log('[PlaybackError] skipping video-mode song:', nextSong.title);
         }
       } catch (e) {
         console.warn('[PlaybackError] handler error:', e);
@@ -672,7 +674,7 @@ function PlayerProvider({ children }) {
       isPlaying, currentTime, duration,
       repeatMode, isShuffled, setIsShuffled,
       currentQueueIndex, setCurrentQueueIndex, queue: getQueue(hymns),
-      overlayExpanded, queueReady, isLoading,
+      overlayExpanded, queueReady, isLoading, getPlayMode,
       changeToSong, cmd_play, cmd_pause, togglePlayPause,
       handlePlayFromQueue, handleNextTrack, handlePrevTrack,
       setCurrentTime, setDuration,
