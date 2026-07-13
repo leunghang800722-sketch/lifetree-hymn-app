@@ -1,5 +1,5 @@
 // 詩歌App v211 TrackPlayer — 背景播放 + 生命樹主題
-import { COLORS, TYPOGRAPHY, SPACING } from './src/theme/designSystem';
+import { COLORS as DesignColors, TYPOGRAPHY, SPACING } from './src/theme/designSystem';
 import { useCachedHymns } from './src/hooks/useCachedHymns';
 import Skeleton from './src/components/Skeleton';
 import React, { useState, useEffect, createContext, useContext, useRef, useCallback } from 'react';
@@ -13,7 +13,7 @@ import TrackPlayer, {
 import {
   View, Text, ScrollView, TouchableOpacity, StyleSheet,
   ActivityIndicator, StatusBar, Image, Platform, Alert,
-  Modal, Dimensions, FlatList, Animated, PanResponder,
+  Modal, Dimensions, FlatList, Animated, PanResponder, Linking,
 } from 'react-native';
 import { COLORS } from './src/constants/theme';
 import { FavoritesProvider, useFavorites } from './src/context/FavoritesContext';
@@ -674,7 +674,7 @@ function PlayerProvider({ children }) {
       isPlaying, currentTime, duration,
       repeatMode, isShuffled, setIsShuffled,
       currentQueueIndex, setCurrentQueueIndex, queue: getQueue(hymns),
-      overlayExpanded, queueReady, isLoading, getPlayMode,
+      overlayExpanded, queueReady, isLoading, getPlayMode, customQueueRef,
       changeToSong, cmd_play, cmd_pause, togglePlayPause,
       handlePlayFromQueue, handleNextTrack, handlePrevTrack,
       setCurrentTime, setDuration,
@@ -1226,7 +1226,7 @@ const fsStyles = StyleSheet.create({
 
 // ===== AppContent =====
 function AppContent() {
-  const { hymns, setHymns, changeToSong, showPlayer, queueReady, isPlaying: debugPlaying, currentHymn: debugHymn, togglePlayPause: debugToggle } = usePlayer();
+  const { hymns, setHymns, changeToSong, showPlayer, queueReady, isPlaying: debugPlaying, currentHymn: debugHymn, togglePlayPause: debugToggle, customQueueRef } = usePlayer();
   const { hymns: allSongs, loading } = useCachedHymns();
   const bottomInset = useBottomInset();
   const [activeCategory, setActiveCategory] = useState('全部');

@@ -1,17 +1,17 @@
-import React from 'react';
-import { View, Animated, StyleSheet } from 'react-native';
+import React, { useEffect, useRef } from 'react';
+import { Animated } from 'react-native';
 
 const Skeleton = ({ style }) => {
- const opacity = new Animated.Value(0.3);
+ const opacity = useRef(new Animated.Value(0.3)).current;
 
- React.useEffect(() => {
+ useEffect(() => {
  Animated.loop(
  Animated.sequence([
  Animated.timing(opacity, { toValue: 1, duration: 800, useNativeDriver: true }),
  Animated.timing(opacity, { toValue: 0.3, duration: 800, useNativeDriver: true }),
  ])
  ).start();
- }, []);
+ }, [opacity]);
 
  return <Animated.View style={[style, { opacity }]} />;
 };
