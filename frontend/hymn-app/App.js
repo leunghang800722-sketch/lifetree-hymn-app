@@ -972,16 +972,27 @@ function FullScreenPlayerOverlay() {
       {/* Controls + Playlist button */}
       <View style={{ flex: 1, justifyContent: 'flex-end', paddingBottom: 8 }}>
         <View style={fsStyles.songInfo}>
-          <Text style={fsStyles.songTitle} numberOfLines={2}>{cur.title}</Text>
-          <Text style={fsStyles.songArtist}>{cur.artist}</Text>
-          <View style={{ flexDirection: 'row', marginTop: 8, justifyContent: 'center', gap: 24 }}>
-            <TouchableOpacity onPress={() => toggleFavorite(cur)}>
-              <Text style={{ color: isFavorite(cur.id) ? '#E8B86D' : '#9AA696', fontSize: 24 }}>{isFavorite(cur.id) ? '❤️' : '🤍'}</Text>
-            </TouchableOpacity>
-            <TouchableOpacity onPress={() => setShowPlaylistSheet(true)}>
-              <Text style={{ fontSize: 24 }}>📋</Text>
-            </TouchableOpacity>
-          </View>
+          <Text style={[{ ...TYPOGRAPHY.title, color: TEXT_PRIMARY, textAlign: 'center' }]} numberOfLines={2}>{cur.title}</Text>
+          <Text style={[{ ...TYPOGRAPHY.artist, textAlign: 'center', marginTop: 4 }]}>{cur.artist}</Text>
+        </View>
+
+        {/* Action Bar */}
+        <View style={{ flexDirection: 'row', justifyContent: 'space-around', paddingVertical: 16, backgroundColor: '#121A17', marginHorizontal: 16, borderRadius: 12, marginTop: 4 }}>
+          <TouchableOpacity onPress={() => toggleFavorite(cur)}>
+            <Text style={{ fontSize: 28, color: isFavorite(cur.id) ? '#E8B86D' : '#9AA696' }}>{isFavorite(cur.id) ? '❤️' : '🤍'}</Text>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => { /* 打開歌詞 */ }}>
+            <Text style={{ fontSize: 24, color: '#9AA696' }}>📝</Text>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => { /* 儲存 */ }}>
+            <Text style={{ fontSize: 24, color: '#9AA696' }}>💾</Text>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => { /* 分享 */ }}>
+            <Text style={{ fontSize: 24, color: '#9AA696' }}>🔗</Text>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => setShowPlaylistSheet(true)}>
+            <Text style={{ fontSize: 24, color: '#9AA696' }}>📋</Text>
+          </TouchableOpacity>
         </View>
         <View style={fsStyles.progressSection}>
           <TouchableOpacity style={fsStyles.progressBarTouchArea} onPress={(e) => { player.handleProgressBarPress(e); }}>
