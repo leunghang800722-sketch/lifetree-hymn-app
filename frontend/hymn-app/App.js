@@ -988,19 +988,19 @@ function FullScreenPlayerOverlay() {
           <Text style={[{ ...TYPOGRAPHY.artist, textAlign: 'center', marginTop: 4 }]}>{cur.artist}</Text>
         </View>
 
-        {/* Action Bar — modern pill style */}
-        <View style={{ flexDirection: 'row', backgroundColor: '#1F2925', marginHorizontal: 16, borderRadius: 999, padding: 6, marginBottom: 16 }}>
-          <TouchableOpacity style={{ flex: 1, alignItems: 'center', paddingVertical: 10, borderRadius: 999 }} onPress={() => toggleFavorite(cur)}>
-            <Text style={{ fontSize: 20, color: isFavorite(cur.id) ? '#E8B86D' : '#9AA696' }}>❤️</Text>
+        {/* Action Bar — modern pill-style segmented buttons */}
+        <View style={{ flexDirection: 'row', backgroundColor: '#1F2925', marginHorizontal: 16, borderRadius: 30, padding: 4, marginBottom: 16 }}>
+          <TouchableOpacity style={fsStyles.pillButton} onPress={() => toggleFavorite(cur)}>
+            <Text style={{ fontSize: 22, color: isFavorite(cur.id) ? '#E8B86D' : '#9AA696' }}>❤️</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={{ flex: 1, alignItems: 'center', paddingVertical: 10, borderRadius: 999 }} onPress={() => { /* TODO: 打開歌詞頁面 */ alert('歌詞功能開發中'); }}>
-            <Text style={{ fontSize: 20, color: '#9AA696' }}>📝</Text>
+          <TouchableOpacity style={fsStyles.pillButton} onPress={() => alert('歌詞功能開發中')}>
+            <Text style={{ fontSize: 22, color: '#9AA696' }}>📝</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={{ flex: 1, alignItems: 'center', paddingVertical: 10, borderRadius: 999 }} onPress={() => { /* 儲存 */ }}>
-            <Text style={{ fontSize: 20, color: '#9AA696' }}>💾</Text>
+          <TouchableOpacity style={fsStyles.pillButton} onPress={() => alert('下載功能開發中')}>
+            <Text style={{ fontSize: 22, color: '#9AA696' }}>⬇️</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={{ flex: 1, alignItems: 'center', paddingVertical: 10, borderRadius: 999 }} onPress={() => { /* 分享 */ }}>
-            <Text style={{ fontSize: 20, color: '#9AA696' }}>🔗</Text>
+          <TouchableOpacity style={fsStyles.pillButton} onPress={() => alert('分享功能開發中')}>
+            <Text style={{ fontSize: 22, color: '#9AA696' }}>🔗</Text>
           </TouchableOpacity>
         </View>
         <View style={fsStyles.progressSection}>
@@ -1179,6 +1179,7 @@ const fsStyles = StyleSheet.create({
   container: { flex: 1, height: SCREEN_HEIGHT, backgroundColor: MAIN_BG_COLOR },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   topBar: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, paddingBottom: 8 },
+  pillButton: { flex: 1, alignItems: 'center', paddingVertical: 12, borderRadius: 30 },
   dismissBtn: { width: 40, height: 40, justifyContent: 'center', alignItems: 'center' },
   dismissIcon: { fontSize: 16, color: '#FFFFFF' },
   topBarTitle: { fontSize: 16, fontWeight: '600', color: TEXT_PRIMARY },
