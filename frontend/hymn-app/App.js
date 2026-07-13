@@ -1,4 +1,7 @@
-// 詩歌App v131 TrackPlayer — 背景播放 + 生命樹主題
+// 詩歌App v211 TrackPlayer — 背景播放 + 生命樹主題
+import { COLORS, TYPOGRAPHY, SPACING } from './src/theme/designSystem';
+import { useCachedHymns } from './src/hooks/useCachedHymns';
+import Skeleton from './src/components/Skeleton';
 import React, { useState, useEffect, createContext, useContext, useRef, useCallback } from 'react';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import TrackPlayer, {
@@ -1152,9 +1155,8 @@ const fsStyles = StyleSheet.create({
 // ===== AppContent =====
 function AppContent() {
   const { hymns, setHymns, changeToSong, showPlayer, queueReady, isPlaying: debugPlaying, currentHymn: debugHymn, togglePlayPause: debugToggle } = usePlayer();
+  const { hymns: allSongs, loading } = useCachedHymns();
   const bottomInset = useBottomInset();
-  const [loading, setLoading] = useState(true);
-  const [allSongs, setAllSongs] = useState([]);
   const [activeCategory, setActiveCategory] = useState('全部');
   const [activeTab, setActiveTab] = useState('Home');
   const [authVisible, setAuthVisible] = useState(false);
@@ -1173,33 +1175,13 @@ function AppContent() {
     setHymnListVisible(false);
   };
 
-  // Show fallback hymns IMMEDIATELY so UI is never stuck at 0 songs
+  // Hymns loaded via useCachedHymns (MMKV cache + background refresh)
+  // When fresh data arrives, update PlayerProvider's hymns
   useEffect(() => {
-    setAllSongs(FALLBACK_HYMNS);
-    setHymns(FALLBACK_HYMNS);
-    setLoading(false);
-
-    // Try fetch in background — if component unmounts (Fabric error),
-    // fallback is already shown, so setState is best-effort only
-    safeFetchAllHymns().then(all => {
-      if (Array.isArray(all) && all.length > 0) {
-        setAllSongs(all);
-        setHymns(all);
-      }
-    }).catch(() => {});
-
-    // Also try fetching via adb-reverse-friendly localhost
-    fetch('http://127.0.0.1:3001/api/hymns', { method: 'HEAD' }).then(r => {
-      if (r.ok) {
-        safeFetchAllHymns().then(all => {
-          if (Array.isArray(all) && all.length > 0) {
-            setAllSongs(all);
-            setHymns(all);
-          }
-        }).catch(() => {});
-      }
-    }).catch(() => {});
-  }, []);
+    if (allSongs && allSongs.length > 0) {
+      setHymns(allSongs);
+    }
+  }, [allSongs]);
 
   async function handlePlayHymn(h, opts = {}) {
     if (!h) return;
@@ -1226,8 +1208,20 @@ function AppContent() {
   }
   function handleOpenFullScreen() { showPlayer(); }
 
-  // No loading screen — render immediately with fallback hymns
-  // TrackPlayer init happens in background; UI is not blocked by queueReady
+  // Skeleton loading while cache resolves (MMKV is instant, but show briefly on first launch)
+  if (loading && (!allSongs || allSongs.length === 0)) {
+    return (
+      <View style={pageStyles.container}>
+        <StatusBar barStyle="light-content" />
+        <View style={pageStyles.center}>
+          <Skeleton style={{ width: 200, height: 40, borderRadius: 8, marginBottom: 20 }} />
+          <Skeleton style={{ width: '90%', height: 120, borderRadius: 16, marginBottom: 20 }} />
+          <Skeleton style={{ width: '90%', height: 120, borderRadius: 16, marginBottom: 20 }} />
+          <Skeleton style={{ width: '90%', height: 120, borderRadius: 16, marginBottom: 20 }} />
+        </View>
+      </View>
+    );
+  }
 
   return (
     <View style={pageStyles.container}>
