@@ -8,6 +8,8 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const BIBLE_VERSES_PATH = path.join(__dirname, '..', 'data', 'bible-verses.json');
+
 const DB_PATH = path.join(__dirname, '..', 'hymns.db');
 
 const router = Router();
@@ -52,11 +54,15 @@ router.get('/daily-quote', async (req, res) => {
   }
 });
 
-// 2. 每日金句 — 隨機返回一首詩歌
+// 2. 每日金句 — 隨機返回一句聖經金句
 router.get('/daily-verse', async (req, res) => {
   try {
-    const row = await queryOne('SELECT * FROM hymns ORDER BY RANDOM() LIMIT 1');
-    res.json(row);
+    const verses = JSON.parse(fs.readFileSync(BIBLE_VERSES_PATH, 'utf8'));
+    // Same verse for the whole day using date-based seed
+    const today = new Date().toISOString().slice(0, 10);
+    const dayOfYear = Math.floor((new Date(today).getTime() - new Date(today.slice(0,4), 0, 0).getTime()) / 86400000);
+    const idx = dayOfYear % verses.length;
+    res.json(verses[idx]);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

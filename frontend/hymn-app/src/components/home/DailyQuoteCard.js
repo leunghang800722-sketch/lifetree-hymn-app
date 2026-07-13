@@ -1,10 +1,9 @@
-// src/components/home/DailyQuoteCard.js
-// 每日精選一句 — 大卡片，150px 高（深色主題版）
+// DailyQuoteCard — 每日精選一句（YouTube Music 風格大卡片）
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, ImageBackground, Image } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Image, Dimensions } from 'react-native';
+import { COLORS } from '../../constants/theme';
 
-const MAIN_BG_COLOR = '#131C16';
-const ACCENT_COLOR = '#A8C765';
+const CARD_WIDTH = Dimensions.get('window').width - 32;
 
 function getAlbumCoverUrl(youtubeId) {
   return youtubeId ? `https://img.youtube.com/vi/${youtubeId}/hqdefault.jpg` : null;
@@ -15,81 +14,140 @@ export default function DailyQuoteCard({ data, onPress }) {
 
   if (!data || data.message) {
     return (
-      <View style={styles.container}>
-        <Text style={styles.loadingText}>今日暫無精選</Text>
+      <View style={styles.empty}>
+        <Text style={styles.emptyText}>今日暫無精選</Text>
       </View>
     );
   }
 
   const uri = getAlbumCoverUrl(data.youtube_id);
-  const showCover = uri && !failed;
+  const hasCover = uri && !failed;
 
   return (
     <TouchableOpacity
-      style={styles.container}
+      style={styles.card}
       onPress={() => onPress(data)}
-      activeOpacity={0.8}
+      activeOpacity={0.85}
     >
-      <ImageBackground
-        source={{ uri: showCover ? uri : 'https://via.placeholder.com/400x150' }}
-        style={styles.background}
-        imageStyle={styles.backgroundImage}
-        onError={() => setFailed(true)}
-      >
-        <View style={styles.overlay}>
-          <Text style={styles.label}>每日精選</Text>
-          <Text style={styles.title} numberOfLines={2}>
-            {data.title}
-          </Text>
-          <Text style={styles.artist} numberOfLines={1}>
-            {data.artist || '未知藝人'}
-          </Text>
+      {/* Background cover */}
+      {hasCover && (
+        <Image source={{ uri }} style={styles.cover} blurRadius={40} />
+      )}
+      <View style={[styles.overlay, hasCover ? {} : { backgroundColor: COLORS.cardBg }]}>
+        {/* Label */}
+        <Text style={styles.label}>每日精選</Text>
+
+        {/* Album art + info */}
+        <View style={styles.contentRow}>
+          {hasCover ? (
+            <Image source={{ uri }} style={styles.albumArt} />
+          ) : (
+            <View style={[styles.albumArt, styles.albumFallback]}>
+              <Text style={styles.fallbackIcon}>🎵</Text>
+            </View>
+          )}
+
+          <View style={styles.info}>
+            <Text style={styles.title} numberOfLines={2}>{data.title}</Text>
+            <Text style={styles.artist} numberOfLines={1}>{data.artist || '未知'}</Text>
+          </View>
         </View>
-      </ImageBackground>
+
+        {/* Play button */}
+        <View style={styles.playBtn}>
+          <Text style={styles.playIcon}>▶</Text>
+        </View>
+      </View>
     </TouchableOpacity>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    height: 150,
+  card: {
+    width: CARD_WIDTH,
+    height: 160,
     marginHorizontal: 16,
-    marginTop: 16,
-    marginBottom: 8,
+    marginBottom: 16,
     borderRadius: 12,
     overflow: 'hidden',
-    backgroundColor: MAIN_BG_COLOR,
   },
-  background: {
-    flex: 1,
-    justifyContent: 'flex-end',
-  },
-  backgroundImage: {
-    borderRadius: 12,
+  cover: {
+    ...StyleSheet.absoluteFillObject,
+    width: CARD_WIDTH,
+    height: 160,
   },
   overlay: {
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    flex: 1,
     padding: 16,
+    justifyContent: 'space-between',
   },
   label: {
-    fontSize: 12,
-    color: ACCENT_COLOR,
-    fontWeight: '600',
-    marginBottom: 4,
+    fontSize: 11,
+    fontWeight: '700',
+    color: COLORS.accent,
+    letterSpacing: 1,
+    textTransform: 'uppercase',
+  },
+  contentRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  albumArt: {
+    width: 72,
+    height: 72,
+    borderRadius: 8,
+  },
+  albumFallback: {
+    backgroundColor: '#333',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  fallbackIcon: {
+    fontSize: 28,
+  },
+  info: {
+    flex: 1,
+    marginLeft: 12,
   },
   title: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#FFFFFF',
-    marginBottom: 4,
+    fontSize: 17,
+    fontWeight: '700',
+    color: COLORS.primary,
+    lineHeight: 22,
   },
   artist: {
-    fontSize: 14,
-    color: '#E0E0E0',
+    fontSize: 13,
+    color: COLORS.secondary,
+    marginTop: 4,
   },
-  loadingText: {
-    textAlign: 'center',
-    marginTop: 60,
-    color: '#888',
+  playBtn: {
+    position: 'absolute',
+    right: 12,
+    bottom: 12,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: COLORS.accent,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  playIcon: {
+    fontSize: 16,
+    color: '#000',
+    marginLeft: 2,
+  },
+  empty: {
+    width: CARD_WIDTH,
+    height: 160,
+    marginHorizontal: 16,
+    marginBottom: 16,
+    borderRadius: 12,
+    backgroundColor: COLORS.cardBg,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  emptyText: {
+    fontSize: 14,
+    color: COLORS.secondary,
   },
 });
