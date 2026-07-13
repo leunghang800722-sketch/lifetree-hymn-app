@@ -976,22 +976,19 @@ function FullScreenPlayerOverlay() {
           <Text style={[{ ...TYPOGRAPHY.artist, textAlign: 'center', marginTop: 4 }]}>{cur.artist}</Text>
         </View>
 
-        {/* Action Bar */}
-        <View style={{ flexDirection: 'row', justifyContent: 'space-around', paddingVertical: 16, backgroundColor: '#121A17', marginHorizontal: 16, borderRadius: 12, marginTop: 4 }}>
-          <TouchableOpacity onPress={() => toggleFavorite(cur)}>
-            <Text style={{ fontSize: 28, color: isFavorite(cur.id) ? '#E8B86D' : '#9AA696' }}>{isFavorite(cur.id) ? '❤️' : '🤍'}</Text>
+        {/* Action Bar — modern pill style */}
+        <View style={{ flexDirection: 'row', backgroundColor: '#1F2925', marginHorizontal: 16, borderRadius: 999, padding: 6, marginBottom: 16 }}>
+          <TouchableOpacity style={{ flex: 1, alignItems: 'center', paddingVertical: 10, borderRadius: 999 }} onPress={() => toggleFavorite(cur)}>
+            <Text style={{ fontSize: 20, color: isFavorite(cur.id) ? '#E8B86D' : '#9AA696' }}>❤️</Text>
           </TouchableOpacity>
-          <TouchableOpacity onPress={() => { /* 打開歌詞 */ }}>
-            <Text style={{ fontSize: 24, color: '#9AA696' }}>📝</Text>
+          <TouchableOpacity style={{ flex: 1, alignItems: 'center', paddingVertical: 10, borderRadius: 999 }} onPress={() => { /* 歌詞 */ }}>
+            <Text style={{ fontSize: 20, color: '#9AA696' }}>📝</Text>
           </TouchableOpacity>
-          <TouchableOpacity onPress={() => { /* 儲存 */ }}>
-            <Text style={{ fontSize: 24, color: '#9AA696' }}>💾</Text>
+          <TouchableOpacity style={{ flex: 1, alignItems: 'center', paddingVertical: 10, borderRadius: 999 }} onPress={() => { /* 儲存 */ }}>
+            <Text style={{ fontSize: 20, color: '#9AA696' }}>💾</Text>
           </TouchableOpacity>
-          <TouchableOpacity onPress={() => { /* 分享 */ }}>
-            <Text style={{ fontSize: 24, color: '#9AA696' }}>🔗</Text>
-          </TouchableOpacity>
-          <TouchableOpacity onPress={() => setShowPlaylistSheet(true)}>
-            <Text style={{ fontSize: 24, color: '#9AA696' }}>📋</Text>
+          <TouchableOpacity style={{ flex: 1, alignItems: 'center', paddingVertical: 10, borderRadius: 999 }} onPress={() => { /* 分享 */ }}>
+            <Text style={{ fontSize: 20, color: '#9AA696' }}>🔗</Text>
           </TouchableOpacity>
         </View>
         <View style={fsStyles.progressSection}>
