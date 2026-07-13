@@ -1,7 +1,14 @@
 import { useState, useEffect } from 'react';
 import { MMKV } from 'react-native-mmkv';
 
-const storage = new MMKV();
+let storage = null;
+function getStorage() {
+  if (!storage) {
+    try { storage = new MMKV(); } catch (e) { console.warn('MMKV init:', e); }
+  }
+  return storage;
+}
+
 const API_BASE = 'https://4e152f1ef2394bdb-94-190-228-145.serveousercontent.com';
 
 async function fetchAllHymns() {
@@ -20,21 +27,23 @@ export const useCachedHymns = () => {
  const [loading, setLoading] = useState(true);
 
  useEffect(() => {
-   // First read from local cache
-   const cached = storage.getString('allHymns');
-   if (cached) {
-     try {
-       setHymns(JSON.parse(cached));
-     } catch (e) {
-       // Corrupted cache — ignore
+   const s = getStorage();
+
+   // First read from local cache (if MMKV available)
+   if (s) {
+     const cached = s.getString('allHymns');
+     if (cached) {
+       try {
+         setHymns(JSON.parse(cached));
+       } catch (e) {}
+       setLoading(false);
      }
-     setLoading(false);
    }
 
    // Background refresh from server
    fetchAllHymns().then(fresh => {
      if (fresh && fresh.length > 0) {
-       storage.set('allHymns', JSON.stringify(fresh));
+       if (s) s.set('allHymns', JSON.stringify(fresh));
        setHymns(fresh);
      }
      setLoading(false);

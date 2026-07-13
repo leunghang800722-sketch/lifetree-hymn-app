@@ -1,18 +1,31 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { MMKV } from 'react-native-mmkv';
 
-const storage = new MMKV();
+let storage = null;
+function getStorage() {
+  if (!storage) {
+    try { storage = new MMKV(); } catch (e) { console.warn('MMKV init:', e); }
+  }
+  return storage;
+}
+
 const FavoritesCtx = createContext();
 
 export const FavoritesProvider = ({ children }) => {
  const [favorites, setFavorites] = useState([]);
 
  useEffect(() => {
- const saved = storage.getString('favorites');
- if (saved) setFavorites(JSON.parse(saved));
+ const s = getStorage();
+ if (!s) return;
+ const saved = s.getString('favorites');
+ if (saved) {
+   try { setFavorites(JSON.parse(saved)); } catch (e) {}
+ }
  }, []);
 
  const toggleFavorite = (hymn) => {
+ const s = getStorage();
+ if (!s) return;
  let newFavorites;
  if (favorites.some(f => f.id === hymn.id)) {
  newFavorites = favorites.filter(f => f.id !== hymn.id);
@@ -20,7 +33,7 @@ export const FavoritesProvider = ({ children }) => {
  newFavorites = [...favorites, hymn];
  }
  setFavorites(newFavorites);
- storage.set('favorites', JSON.stringify(newFavorites));
+ s.set('favorites', JSON.stringify(newFavorites));
  };
 
  const isFavorite = (id) => favorites.some(f => f.id === id);
