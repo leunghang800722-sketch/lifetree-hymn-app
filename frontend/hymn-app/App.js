@@ -989,7 +989,7 @@ function FullScreenPlayerOverlay() {
         </View>
 
         {/* Action Bar — long pill segmented bar */}
-        <View style={{ flexDirection: 'row', backgroundColor: '#1F2925', marginHorizontal: 16, borderRadius: 9999, padding: 4, marginBottom: 16 }}>
+        <View style={{ flexDirection: 'row', backgroundColor: '#1F2925', marginHorizontal: 16, borderRadius: 999, padding: 6, marginBottom: 16 }}>
           <TouchableOpacity style={fsStyles.pillButton} onPress={() => toggleFavorite(cur)}>
             <Text style={{ fontSize: 20 }}>❤️</Text>
             <Text style={{ fontSize: 11, color: '#9AA696' }}>最愛</Text>
@@ -1183,7 +1183,7 @@ const fsStyles = StyleSheet.create({
   container: { flex: 1, height: SCREEN_HEIGHT, backgroundColor: MAIN_BG_COLOR },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   topBar: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, paddingBottom: 8 },
-  pillButton: { flex: 1, alignItems: 'center', paddingVertical: 12, paddingHorizontal: 8, borderRadius: 9999 },
+  pillButton: { flex: 1, alignItems: 'center', paddingVertical: 12, paddingHorizontal: 8, borderRadius: 999, marginHorizontal: 2 },
   dismissBtn: { width: 40, height: 40, justifyContent: 'center', alignItems: 'center' },
   dismissIcon: { fontSize: 16, color: '#FFFFFF' },
   topBarTitle: { fontSize: 16, fontWeight: '600', color: TEXT_PRIMARY },
