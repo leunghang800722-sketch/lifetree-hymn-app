@@ -993,9 +993,6 @@ function FullScreenPlayerOverlay() {
           <TouchableOpacity style={fsStyles.pillButton} onPress={() => toggleFavorite(cur)}>
             <Text style={{ fontSize: 22, color: isFavorite(cur.id) ? '#E8B86D' : '#9AA696' }}>❤️</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={fsStyles.pillButton} onPress={() => alert('歌詞功能開發中')}>
-            <Text style={{ fontSize: 22, color: '#9AA696' }}>📝</Text>
-          </TouchableOpacity>
           <TouchableOpacity style={fsStyles.pillButton} onPress={() => alert('下載功能開發中')}>
             <Text style={{ fontSize: 22, color: '#9AA696' }}>⬇️</Text>
           </TouchableOpacity>
