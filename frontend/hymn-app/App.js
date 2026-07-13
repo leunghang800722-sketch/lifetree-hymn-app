@@ -17,6 +17,7 @@ import {
 } from 'react-native';
 import { COLORS } from './src/constants/theme';
 import { FavoritesProvider, useFavorites } from './src/context/FavoritesContext';
+import { PlaylistsProvider, usePlaylists } from './src/context/PlaylistsContext';
 import { AuthProvider, useAuth } from './src/context/AuthContext';
 import AuthScreen from './src/screens/AuthScreen';
 import { PlaylistProvider } from './src/context/PlaylistContext';
@@ -880,6 +881,9 @@ function FullScreenPlayerOverlay() {
   const bottomPad = (insets?.bottom || 20) + 8;
   const safeTop = (insets?.top || StatusBar.currentHeight || 24) + 8;
 
+  const { toggleFavorite, isFavorite } = useFavorites();
+  const { addToPlaylist } = usePlaylists();
+
   return (
     <View style={[fsStyles.container, { paddingBottom: bottomPad }]}>
       <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
@@ -929,6 +933,14 @@ function FullScreenPlayerOverlay() {
         <View style={fsStyles.songInfo}>
           <Text style={fsStyles.songTitle} numberOfLines={2}>{cur.title}</Text>
           <Text style={fsStyles.songArtist}>{cur.artist}</Text>
+          <View style={{ flexDirection: 'row', marginTop: 8, justifyContent: 'center', gap: 24 }}>
+            <TouchableOpacity onPress={() => toggleFavorite(cur)}>
+              <Text style={{ color: isFavorite(cur.id) ? '#E8B86D' : '#9AA696', fontSize: 24 }}>{isFavorite(cur.id) ? '❤️' : '🤍'}</Text>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => { /* 彈出 Bottom Sheet 選擇清單 */ }}>
+              <Text style={{ fontSize: 24 }}>📋</Text>
+            </TouchableOpacity>
+          </View>
         </View>
         <View style={fsStyles.progressSection}>
           <TouchableOpacity style={fsStyles.progressBarTouchArea} onPress={(e) => { player.handleProgressBarPress(e); }}>
@@ -1295,11 +1307,11 @@ export default function App() {
   if (SafeAreaProvider) {
     return (
       <SafeAreaProvider>
-        <AuthProvider><PlayerProvider><PlaylistProvider><FavoritesProvider><AppContent /></FavoritesProvider></PlaylistProvider></PlayerProvider></AuthProvider>
+        <AuthProvider><FavoritesProvider><PlaylistsProvider><PlayerProvider><PlaylistProvider><AppContent /></PlaylistProvider></PlayerProvider></PlaylistsProvider></FavoritesProvider></AuthProvider>
       </SafeAreaProvider>
     );
   }
-  return <AuthProvider><PlayerProvider><PlaylistProvider><FavoritesProvider><AppContent /></FavoritesProvider></PlaylistProvider></PlayerProvider></AuthProvider>;
+  return <AuthProvider><FavoritesProvider><PlaylistsProvider><PlayerProvider><PlaylistProvider><AppContent /></PlaylistProvider></PlayerProvider></PlaylistsProvider></FavoritesProvider></AuthProvider>;
 }
 
 const pageStyles = StyleSheet.create({
