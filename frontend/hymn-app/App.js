@@ -993,7 +993,7 @@ function FullScreenPlayerOverlay() {
           <TouchableOpacity style={{ flex: 1, alignItems: 'center', paddingVertical: 10, borderRadius: 999 }} onPress={() => toggleFavorite(cur)}>
             <Text style={{ fontSize: 20, color: isFavorite(cur.id) ? '#E8B86D' : '#9AA696' }}>❤️</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={{ flex: 1, alignItems: 'center', paddingVertical: 10, borderRadius: 999 }} onPress={() => { /* 歌詞 */ }}>
+          <TouchableOpacity style={{ flex: 1, alignItems: 'center', paddingVertical: 10, borderRadius: 999 }} onPress={() => { /* TODO: 打開歌詞頁面 */ alert('歌詞功能開發中'); }}>
             <Text style={{ fontSize: 20, color: '#9AA696' }}>📝</Text>
           </TouchableOpacity>
           <TouchableOpacity style={{ flex: 1, alignItems: 'center', paddingVertical: 10, borderRadius: 999 }} onPress={() => { /* 儲存 */ }}>
