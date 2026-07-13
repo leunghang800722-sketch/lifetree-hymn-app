@@ -988,8 +988,8 @@ function FullScreenPlayerOverlay() {
           <Text style={[{ ...TYPOGRAPHY.artist, textAlign: 'center', marginTop: 4 }]}>{cur.artist}</Text>
         </View>
 
-        {/* Action Bar — closer to reference image */}
-        <View style={{ flexDirection: 'row', backgroundColor: '#1F2925', marginHorizontal: 16, borderRadius: 30, padding: 4, marginBottom: 16 }}>
+        {/* Action Bar — 4 independent pill buttons */}
+        <View style={{ flexDirection: 'row', justifyContent: 'space-around', marginHorizontal: 16, marginBottom: 16 }}>
           <TouchableOpacity style={fsStyles.pillButton} onPress={() => toggleFavorite(cur)}>
             <Text style={{ fontSize: 20 }}>❤️</Text>
             <Text style={{ fontSize: 11, color: '#9AA696' }}>最愛</Text>
@@ -1183,7 +1183,7 @@ const fsStyles = StyleSheet.create({
   container: { flex: 1, height: SCREEN_HEIGHT, backgroundColor: MAIN_BG_COLOR },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   topBar: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, paddingBottom: 8 },
-  pillButton: { flex: 1, alignItems: 'center', paddingVertical: 10, borderRadius: 30 },
+  pillButton: { alignItems: 'center', backgroundColor: '#1F2925', paddingVertical: 10, paddingHorizontal: 16, borderRadius: 30, marginHorizontal: 4 },
   dismissBtn: { width: 40, height: 40, justifyContent: 'center', alignItems: 'center' },
   dismissIcon: { fontSize: 16, color: '#FFFFFF' },
   topBarTitle: { fontSize: 16, fontWeight: '600', color: TEXT_PRIMARY },
