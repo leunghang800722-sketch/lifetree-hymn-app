@@ -875,6 +875,7 @@ function FullScreenPlayerOverlay() {
   const queue = player.queue || [];
   const [isPlaylistVisible, setIsPlaylistVisible] = useState(false);
   const [lyricsVisible, setLyricsVisible] = useState(false);
+  const [showPlaylistSheet, setShowPlaylistSheet] = useState(false);
 
   const cur = player.currentHymn || { title: '', artist: '', youtube_id: '', id: null, lyrics: '' };
   const progressPercent = player.duration > 0 ? Math.min((player.currentTime / player.duration) * 100, 100) : 0;
@@ -937,7 +938,7 @@ function FullScreenPlayerOverlay() {
             <TouchableOpacity onPress={() => toggleFavorite(cur)}>
               <Text style={{ color: isFavorite(cur.id) ? '#E8B86D' : '#9AA696', fontSize: 24 }}>{isFavorite(cur.id) ? '❤️' : '🤍'}</Text>
             </TouchableOpacity>
-            <TouchableOpacity onPress={() => { /* 彈出 Bottom Sheet 選擇清單 */ }}>
+            <TouchableOpacity onPress={() => setShowPlaylistSheet(true)}>
               <Text style={{ fontSize: 24 }}>📋</Text>
             </TouchableOpacity>
           </View>
@@ -1077,6 +1078,25 @@ function FullScreenPlayerOverlay() {
       >
         <Text style={{ fontSize: 13, color: ACCENT_COLOR, fontWeight: '600' }}>📄 歌詞</Text>
       </TouchableOpacity>
+
+      {/* Bottom Sheet for adding to playlists */}
+      <Modal visible={showPlaylistSheet} animationType="slide" transparent>
+        <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.8)', justifyContent: 'flex-end' }}>
+          <View style={{ backgroundColor: '#121A17', borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 20 }}>
+            <Text style={{ color: '#FFFFFF', fontSize: 18, fontWeight: '600', marginBottom: 16 }}>加入到清單</Text>
+
+            <TouchableOpacity onPress={() => { toggleFavorite(cur); setShowPlaylistSheet(false); }}>
+              <Text style={{ color: '#E8B86D', padding: 12 }}>❤️ 最愛</Text>
+            </TouchableOpacity>
+
+            {/* 之後會列出自訂清單 */}
+
+            <TouchableOpacity onPress={() => setShowPlaylistSheet(false)} style={{ marginTop: 20 }}>
+              <Text style={{ color: '#9AA696' }}>取消</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
