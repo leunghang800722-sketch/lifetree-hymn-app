@@ -29,16 +29,21 @@ export const useCachedHymns = () => {
  useEffect(() => {
    const s = getStorage();
 
-   // First read from local cache (if MMKV available)
+   // Try MMKV cache first (non-blocking — even if MMKV fails, we show content)
    if (s) {
-     const cached = s.getString('allHymns');
-     if (cached) {
-       try {
-         setHymns(JSON.parse(cached));
-       } catch (e) {}
-       setLoading(false);
-     }
+     try {
+       const cached = s.getString('allHymns');
+       if (cached) {
+         const parsed = JSON.parse(cached);
+         if (Array.isArray(parsed) && parsed.length > 0) {
+           setHymns(parsed);
+           setLoading(false);
+         }
+       }
+     } catch (e) {}
    }
+   // Ensure loading ends even if cache is empty
+   setLoading(false);
 
    // Background refresh from server
    fetchAllHymns().then(fresh => {
@@ -46,8 +51,7 @@ export const useCachedHymns = () => {
        if (s) s.set('allHymns', JSON.stringify(fresh));
        setHymns(fresh);
      }
-     setLoading(false);
-   }).catch(() => setLoading(false));
+   }).catch(() => {});
  }, []);
 
  return { hymns: hymns || [], loading };

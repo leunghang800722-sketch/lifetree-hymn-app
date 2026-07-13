@@ -1323,21 +1323,6 @@ function AppContent() {
   }
   function handleOpenFullScreen() { showPlayer(); }
 
-  // Skeleton loading while cache resolves (MMKV is instant, but show briefly on first launch)
-  if (loading && (!allSongs || allSongs.length === 0)) {
-    return (
-      <View style={pageStyles.container}>
-        <StatusBar barStyle="light-content" />
-        <View style={pageStyles.center}>
-          <Skeleton style={{ width: 200, height: 40, borderRadius: 8, marginBottom: 20 }} />
-          <Skeleton style={{ width: '90%', height: 120, borderRadius: 16, marginBottom: 20 }} />
-          <Skeleton style={{ width: '90%', height: 120, borderRadius: 16, marginBottom: 20 }} />
-          <Skeleton style={{ width: '90%', height: 120, borderRadius: 16, marginBottom: 20 }} />
-        </View>
-      </View>
-    );
-  }
-
   return (
     <View style={pageStyles.container}>
       <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
