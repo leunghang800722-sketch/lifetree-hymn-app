@@ -988,16 +988,19 @@ function FullScreenPlayerOverlay() {
           <Text style={[{ ...TYPOGRAPHY.artist, textAlign: 'center', marginTop: 4 }]}>{cur.artist}</Text>
         </View>
 
-        {/* Action Bar — modern pill-style segmented buttons */}
+        {/* Action Bar — YouTube Music style with text labels */}
         <View style={{ flexDirection: 'row', backgroundColor: '#1F2925', marginHorizontal: 16, borderRadius: 30, padding: 4, marginBottom: 16 }}>
           <TouchableOpacity style={fsStyles.pillButton} onPress={() => toggleFavorite(cur)}>
-            <Text style={{ fontSize: 22, color: isFavorite(cur.id) ? '#E8B86D' : '#9AA696' }}>❤️</Text>
+            <Text style={{ fontSize: 18, color: isFavorite(cur.id) ? '#E8B86D' : '#9AA696' }}>❤️</Text>
+            <Text style={{ fontSize: 12, color: '#9AA696', marginTop: 2 }}>讚好</Text>
           </TouchableOpacity>
           <TouchableOpacity style={fsStyles.pillButton} onPress={() => alert('下載功能開發中')}>
-            <Text style={{ fontSize: 22, color: '#9AA696' }}>⬇️</Text>
+            <Text style={{ fontSize: 18, color: '#9AA696' }}>⬇️</Text>
+            <Text style={{ fontSize: 12, color: '#9AA696', marginTop: 2 }}>下載</Text>
           </TouchableOpacity>
           <TouchableOpacity style={fsStyles.pillButton} onPress={() => alert('分享功能開發中')}>
-            <Text style={{ fontSize: 22, color: '#9AA696' }}>🔗</Text>
+            <Text style={{ fontSize: 18, color: '#9AA696' }}>🔗</Text>
+            <Text style={{ fontSize: 12, color: '#9AA696', marginTop: 2 }}>分享</Text>
           </TouchableOpacity>
         </View>
         <View style={fsStyles.progressSection}>
@@ -1176,7 +1179,7 @@ const fsStyles = StyleSheet.create({
   container: { flex: 1, height: SCREEN_HEIGHT, backgroundColor: MAIN_BG_COLOR },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   topBar: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, paddingBottom: 8 },
-  pillButton: { flex: 1, alignItems: 'center', paddingVertical: 12, borderRadius: 30 },
+  pillButton: { flex: 1, alignItems: 'center', paddingVertical: 10, borderRadius: 30 },
   dismissBtn: { width: 40, height: 40, justifyContent: 'center', alignItems: 'center' },
   dismissIcon: { fontSize: 16, color: '#FFFFFF' },
   topBarTitle: { fontSize: 16, fontWeight: '600', color: TEXT_PRIMARY },
