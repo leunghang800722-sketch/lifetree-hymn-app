@@ -652,7 +652,7 @@ function PlayerProvider({ children }) {
     </PlayerCtx.Provider>
   );
 }
-function usePlayer() {
+export function usePlayer() {
   return useContext(PlayerCtx) || {};
 }
 
