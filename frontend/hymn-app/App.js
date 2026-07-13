@@ -916,6 +916,18 @@ function FullScreenPlayerOverlay() {
   const [isPlaylistVisible, setIsPlaylistVisible] = useState(false);
   const [lyricsVisible, setLyricsVisible] = useState(false);
   const [showPlaylistSheet, setShowPlaylistSheet] = useState(false);
+  const sheetPanY = useRef(new Animated.Value(0)).current;
+  const sheetPanResponder = useRef(PanResponder.create({
+    onStartShouldSetPanResponder: () => true,
+    onMoveShouldSetPanResponder: (_, gs) => Math.abs(gs.dy) > 10,
+    onPanResponderMove: Animated.event([null, { dy: sheetPanY }], { useNativeDriver: false }),
+    onPanResponderRelease: (_, gs) => {
+      if (gs.dy > 100) {
+        setShowPlaylistSheet(false);
+      }
+      Animated.timing(sheetPanY, { toValue: 0, duration: 150, useNativeDriver: true }).start();
+    },
+  })).current;
 
   const cur = player.currentHymn || { title: '', artist: '', youtube_id: '', id: null, lyrics: '' };
   const progressPercent = player.duration > 0 ? Math.min((player.currentTime / player.duration) * 100, 100) : 0;
@@ -1130,7 +1142,11 @@ function FullScreenPlayerOverlay() {
       {/* Bottom Sheet for adding to playlists */}
       <Modal visible={showPlaylistSheet} animationType="slide" transparent onRequestClose={() => setShowPlaylistSheet(false)}>
         <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.85)', justifyContent: 'flex-end' }}>
-          <View style={{ backgroundColor: '#121A17', borderTopLeftRadius: 20, borderTopRightRadius: 20, maxHeight: '70%' }}>
+          <Animated.View style={{ backgroundColor: '#121A17', borderTopLeftRadius: 20, borderTopRightRadius: 20, maxHeight: '70%', transform: [{ translateY: sheetPanY }] }}>
+            {/* Drag Handle */}
+            <View {...sheetPanResponder.panHandlers} style={{ alignItems: 'center', paddingVertical: 10 }}>
+              <View style={{ width: 36, height: 4, borderRadius: 2, backgroundColor: '#555' }} />
+            </View>
             <Text style={{ color: '#FFFFFF', fontSize: 18, fontWeight: '600', padding: 20 }}>加入到清單</Text>
 
             {/* 最愛 */}
@@ -1152,7 +1168,7 @@ function FullScreenPlayerOverlay() {
             <TouchableOpacity onPress={() => setShowPlaylistSheet(false)} style={{ padding: 20, alignItems: 'center' }}>
               <Text style={{ color: '#9AA696' }}>取消</Text>
             </TouchableOpacity>
-          </View>
+          </Animated.View>
         </View>
       </Modal>
     </View>
