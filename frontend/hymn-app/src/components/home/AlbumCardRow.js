@@ -26,7 +26,16 @@ function AlbumCover({ coverUrl, youtubeId }) {
 }
 
 export default function AlbumCardRow({ title, albums, onPlay }) {
-  if (!albums || albums.length === 0) return null;
+  if (!albums || albums.length === 0) {
+    return (
+      <View style={styles.container}>
+        <View style={styles.header}>
+          <Text style={styles.title}>{title}</Text>
+        </View>
+        <Text style={styles.emptyText}>暫無數據</Text>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
@@ -84,4 +93,10 @@ const styles = StyleSheet.create({
   coverIcon: { fontSize: 28 },
   cardTitle: { fontSize: 14, fontWeight: '600', color: COLORS.primary, marginTop: 8 },
   cardArtist: { fontSize: 12, color: COLORS.secondary, marginTop: 2 },
+  emptyText: {
+    fontSize: 14,
+    color: COLORS.secondary,
+    fontStyle: 'italic',
+    paddingHorizontal: 16,
+  },
 });

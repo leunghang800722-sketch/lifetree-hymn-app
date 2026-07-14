@@ -51,7 +51,16 @@ function PlaylistCover({ playlist, gradientIndex }) {
 }
 
 export default function PlaylistCardRow({ title, playlists, onPlay }) {
-  if (!playlists || playlists.length === 0) return null;
+  if (!playlists || playlists.length === 0) {
+    return (
+      <View style={styles.container}>
+        <View style={styles.header}>
+          <Text style={styles.title}>{title}</Text>
+        </View>
+        <Text style={styles.emptyText}>暫無數據</Text>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
@@ -172,5 +181,11 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: COLORS.secondary,
     marginTop: 2,
+  },
+  emptyText: {
+    fontSize: 14,
+    color: COLORS.secondary,
+    fontStyle: 'italic',
+    paddingHorizontal: 16,
   },
 });

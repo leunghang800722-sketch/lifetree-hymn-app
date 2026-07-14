@@ -4,7 +4,14 @@ import { View, Text, StyleSheet } from 'react-native';
 import { COLORS } from '../../constants/theme';
 
 export default function DailyVerseCard({ verse }) {
-  if (!verse || !verse.text) return null;
+  if (!verse || !verse.text) {
+    return (
+      <View style={styles.card}>
+        <Text style={styles.label}>每日金句</Text>
+        <Text style={styles.emptyText}>暫無數據</Text>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.card}>
@@ -42,6 +49,11 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: COLORS.secondary,
     marginTop: 8,
+    fontStyle: 'italic',
+  },
+  emptyText: {
+    fontSize: 14,
+    color: COLORS.secondary,
     fontStyle: 'italic',
   },
 });

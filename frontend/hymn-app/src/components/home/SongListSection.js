@@ -23,7 +23,16 @@ function Thumbnail({ youtubeId }) {
 }
 
 export default function SongListSection({ title, hymns, onPlay, onMore, showPlayAll }) {
-  if (!hymns || hymns.length === 0) return null;
+  if (!hymns || hymns.length === 0) {
+    return (
+      <View style={styles.container}>
+        <View style={styles.header}>
+          <Text style={styles.title}>{title}</Text>
+        </View>
+        <Text style={styles.emptyText}>暫無數據</Text>
+      </View>
+    );
+  }
 
   const displayHymns = hymns.slice(0, 8);
   const playCount = (h) => h.view_count || h.like_count || null;
@@ -84,6 +93,12 @@ const styles = StyleSheet.create({
   },
   title: { fontSize: 20, fontWeight: '700', color: COLORS.primary },
   playAll: { fontSize: 14, color: COLORS.accent, fontWeight: '600' },
+  emptyText: {
+    fontSize: 14,
+    color: COLORS.secondary,
+    fontStyle: 'italic',
+    paddingHorizontal: 16,
+  },
   row: {
     flexDirection: 'row',
     alignItems: 'center',

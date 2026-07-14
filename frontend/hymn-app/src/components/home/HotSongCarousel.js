@@ -46,7 +46,16 @@ export default function HotSongCarousel({ hymns, onPlay, onMore }) {
     return result;
   }, [hymns]);
 
-  if (pages.length === 0) return null;
+  if (pages.length === 0) {
+    return (
+      <View style={styles.container}>
+        <View style={styles.header}>
+          <Text style={styles.title}>推薦大熱歌曲</Text>
+        </View>
+        <Text style={styles.emptyText}>暫無數據</Text>
+      </View>
+    );
+  }
 
   const handleScrollEnd = useCallback((e) => {
     const x = e.nativeEvent.contentOffset.x;
@@ -202,6 +211,12 @@ const styles = StyleSheet.create({
     height: 6,
     borderRadius: 3,
     backgroundColor: 'rgba(255,255,255,0.25)',
+  },
+  emptyText: {
+    fontSize: 14,
+    color: COLORS.secondary,
+    fontStyle: 'italic',
+    paddingHorizontal: 16,
   },
   dotActive: {
     width: 8,

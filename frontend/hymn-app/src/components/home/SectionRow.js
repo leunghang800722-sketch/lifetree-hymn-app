@@ -30,7 +30,17 @@ function Thumbnail({ item }) {
 }
 
 export default function SectionRow({ title, data, onPress, subtitle }) {
-  if (!data || data.length === 0) return null;
+  if (!data || data.length === 0) {
+    return (
+      <View style={styles.container}>
+        <View style={styles.header}>
+          <Text style={styles.title}>{title}</Text>
+          {subtitle && <Text style={styles.subtitle}>{subtitle}</Text>}
+        </View>
+        <Text style={styles.emptyText}>暫無數據</Text>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
@@ -87,6 +97,12 @@ const styles = StyleSheet.create({
   subtitle: {
     fontSize: 13,
     color: COLORS.secondary,
+  },
+  emptyText: {
+    fontSize: 14,
+    color: COLORS.secondary,
+    fontStyle: 'italic',
+    paddingHorizontal: 16,
   },
   scrollContent: {
     paddingHorizontal: 12,

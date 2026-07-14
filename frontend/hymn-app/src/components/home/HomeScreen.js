@@ -16,6 +16,7 @@ import { homeApi } from '../../services/homeApi';
 export default function HomeScreen({ navigation, onPlayHymn }) {
   const [data, setData] = useState({
     dailyVerse: null,
+    dailyQuote: null,
     basedOnTaste: [], newReleases: [],
     genreRec: [], folkSharing: [], artist: null,
     combinedCharts: [], topVerses: [],
@@ -25,8 +26,9 @@ export default function HomeScreen({ navigation, onPlayHymn }) {
   useEffect(() => {
     (async () => {
       try {
-        const [verse, taste, releases, genre, folk, artist, charts, verses] = await Promise.all([
+        const [verse, quote, taste, releases, genre, folk, artist, charts, verses] = await Promise.all([
           homeApi.getDailyVerse().catch(() => null),
+          homeApi.getDailyQuote().catch(() => null),
           homeApi.getBasedOnTaste().catch(() => []),
           homeApi.getNewReleases().catch(() => []),
           homeApi.getGenreRecommendation().catch(() => []),
@@ -35,7 +37,7 @@ export default function HomeScreen({ navigation, onPlayHymn }) {
           homeApi.getCombinedCharts().catch(() => []),
           homeApi.getTopVerses().catch(() => []),
         ]);
-        setData({ dailyVerse: verse, basedOnTaste: taste, newReleases: releases, genreRec: genre, folkSharing: folk, artist, combinedCharts: charts, topVerses: verses });
+        setData({ dailyVerse: verse, dailyQuote: quote, basedOnTaste: taste, newReleases: releases, genreRec: genre, folkSharing: folk, artist, combinedCharts: charts, topVerses: verses });
       } catch (_) {}
       setLoading(false);
     })();
@@ -119,30 +121,31 @@ export default function HomeScreen({ navigation, onPlayHymn }) {
         {/* 0. 每日金句 */}
         <DailyVerseCard verse={data.dailyVerse} />
 
-        {/* 1. 為你推薦 */}
-        {data.basedOnTaste.length > 0 && (
-          <SectionRow title="為你推薦" data={data.basedOnTaste.slice(0, 10)} onPress={playSong} />
+        {/* 1. 每日隨機一句 */}
+        {(data.dailyQuote && data.dailyQuote.title) ? (
+          <SectionRow title="每日隨機一句" data={[data.dailyQuote]} onPress={playSong} />
+        ) : (
+          <View style={s.emptySection}>
+            <Text style={s.emptySectionTitle}>每日隨機一句</Text>
+            <Text style={s.emptyText}>暫無數據</Text>
+          </View>
         )}
 
-        {/* 2. 新作品 */}
-        {data.newReleases.length > 0 && (
-          <SectionRow title="新作品" data={data.newReleases.slice(0, 10)} onPress={playSong} />
-        )}
+        {/* 2. 為你推薦 */}
+        <SectionRow title="為你推薦" data={data.basedOnTaste.slice(0, 10)} onPress={playSong} />
 
-        {/* 3. 為你推薦的播放清單 */}
-        {playlists.length > 0 && (
-          <PlaylistCardRow title="為你推薦的播放清單" playlists={playlists} onPlay={playSong} />
-        )}
+        {/* 3. 新作品 */}
+        <SectionRow title="新作品" data={data.newReleases.slice(0, 10)} onPress={playSong} />
 
-        {/* 4. 推薦專輯 */}
-        {albumRows.length > 0 && (
-          <AlbumCardRow title="推薦專輯" albums={albumRows} onPlay={playSong} />
-        )}
+        {/* 4. 為你推薦的播放清單 */}
+        <PlaylistCardRow title="為你推薦的播放清單" playlists={playlists} onPlay={playSong} />
 
-        {/* 5. 推薦大熱歌曲 — 橫滑 4 頁 × 每頁 4 首 */}
-        {data.combinedCharts.length > 0 && (() => {
-          // Backfill to 16 songs for 4 full pages using other data sources
-          const pool = data.combinedCharts.slice(0, 16);
+        {/* 5. 推薦專輯 */}
+        <AlbumCardRow title="推薦專輯" albums={albumRows} onPlay={playSong} />
+
+        {/* 6. 推薦大熱歌曲 — 橫滑 4 頁 × 每頁 4 首 */}
+        {(() => {
+          const pool = (data.combinedCharts || []).slice(0, 16);
           const seen = new Set(pool.map(h => h.id || h.youtube_id));
           const fillers = [...(data.newReleases || []), ...(data.topVerses || []), ...(data.genreRec || [])];
           for (const h of fillers) {
@@ -156,15 +159,13 @@ export default function HomeScreen({ navigation, onPlayHymn }) {
           return <HotSongCarousel hymns={pool} onPlay={playSong} onMore={showMoreMenu} />;
         })()}
 
-        {/* 6. 排行榜 */}
-        {data.topVerses.length > 0 && (
-          <SongListSection title="排行榜" hymns={data.topVerses.slice(0, 8)} onPlay={playSong} onMore={showMoreMenu} />
-        )}
+        {/* 7. 排行榜 */}
+        <SongListSection title="排行榜" hymns={data.topVerses.slice(0, 8)} onPlay={playSong} onMore={showMoreMenu} />
 
-        {/* 7. 見證分享 — 星火飛騰 + 恩雨之聲 */}
+        {/* 8. 見證分享 — 星火飛騰 + 恩雨之聲 */}
         <TestimonyCarousel />
 
-        {/* 8. 純音樂 */}
+        {/* 9. 純音樂 */}
         <SectionRow title="純音樂" data={data.genreRec.slice(0, 10)} onPress={playSong} />
 
         <View style={{ height: 20 }} />
@@ -181,6 +182,24 @@ const plModalStyles = StyleSheet.create({
   item: { flexDirection: 'row', alignItems: 'center', paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#2A2A2A' },
   itemText: { flex: 1, fontSize: 15, color: '#FFFFFF', marginLeft: 10 },
   itemCount: { fontSize: 12, color: '#A0A0A0' },
+});
+
+const s = StyleSheet.create({
+  emptySection: {
+    marginBottom: 24,
+    paddingHorizontal: 16,
+  },
+  emptySectionTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: COLORS.primary,
+    marginBottom: 12,
+  },
+  emptyText: {
+    fontSize: 14,
+    color: COLORS.secondary,
+    fontStyle: 'italic',
+  },
 });
 
 const styles = StyleSheet.create({
