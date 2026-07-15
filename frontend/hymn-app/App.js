@@ -9,6 +9,7 @@ import TrackPlayer, {
   Event as TPEvent,
   RepeatMode as TPRepeatMode,
   Capability as TPCapability,
+  AppKilledPlaybackBehavior,
 } from 'react-native-track-player';
 import {
   View, Text, ScrollView, TouchableOpacity, StyleSheet,
@@ -199,6 +200,7 @@ function PlayerProvider({ children }) {
   const currentQueueIndexRef = useRef(0);
   const repeatModeRef = useRef(0);
   const isShuffledRef = useRef(false);
+  const errorSkipCountRef = useRef(0); // §3.7 — consecutive PlaybackError count
 
   // Lazy TrackPlayer initialization — runs on first play, not on mount
   const playerReadyRef = useRef(false);
@@ -231,6 +233,8 @@ function PlayerProvider({ children }) {
           importance: 1,
         },
         icon: require('./assets/icon.png'),
+        // §3.2 — keep playing when the user swipes the app away from recents
+        android: { appKilledPlaybackBehavior: AppKilledPlaybackBehavior.ContinuePlayback },
       });
     } catch (e) {
       console.warn('updateOptions (ignored):', e?.message);
@@ -329,19 +333,23 @@ function PlayerProvider({ children }) {
         setCurrentQueueIndex(idx);
         const song = queueRef.current[idx];
         if (song) { setHymn(song); setCurrentHymn(song); }
+        // §3.7 — a real track change means playback is healthy again.
+        errorSkipCountRef.current = 0;
       } catch (e) {}
     });
 
-    // PlaybackError: auto-skip when a track fails to play (dead link, etc).
-    // Minimal native fix for now (changeToSong is gone) — the real circuit
-    // breaker (§3.7) is Step 6.
+    // §3.7 — auto-skip on a failed track (dead link, etc), with a circuit
+    // breaker so a long dead-link run doesn't silently skip forever.
     const unsubscribeError = TrackPlayer.addEventListener(TPEvent.PlaybackError, async (event) => {
-      try {
-        console.error('[PlaybackError]', event?.code || '', event?.message || 'Unknown error');
-        await TrackPlayer.skipToNext();
-      } catch (e) {
-        // queue tail with repeat off — nothing to skip to, leave it stopped
+      console.error('[PlaybackError]', event?.code || '', event?.message || 'Unknown error');
+      errorSkipCountRef.current += 1;
+      if (errorSkipCountRef.current >= 5) {
+        await TrackPlayer.pause().catch(() => {});
+        Alert.alert('播放中斷', '連續幾首歌都載入唔到，請檢查網絡或者稍後再試');
+        errorSkipCountRef.current = 0;
+        return;
       }
+      try { await TrackPlayer.skipToNext(); } catch (e) { /* queue tail, repeat off — nothing to skip to */ }
     });
 
     return () => {
