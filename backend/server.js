@@ -7,12 +7,12 @@ import initSqlJs from 'sql.js';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { exec, execSync } from 'child_process';
 import homeRoutes from './routes/home.js';
 import searchRoutes from './routes/search.js';
 import categoryRoutes from './routes/category.js';
-import audioRoutes, { cache } from './routes/audio.js';
+import audioRoutes from './routes/audio.js';
 import authRoutes from './routes/auth.js';
+import { resolveAudioUrl } from './lib/resolveAudio.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const DB_PATH = path.join(__dirname, 'hymns.db');
@@ -108,41 +108,27 @@ app.listen(PORT, async () => {
     const stmt = db.prepare('SELECT id, youtube_id FROM hymns ORDER BY id');
     const hymns = [];
     while (stmt.step()) hymns.push(stmt.getAsObject());
+    stmt.free();
     db.close();
-    
+
     if (hymns.length > 0) {
       console.log(`🔁 Background pre-caching ${hymns.length} hymns...`);
       let cached = 0;
       const CONCURRENCY = 4;
-      
-      function preCacheOne(hymn) {
-        return new Promise((resolve) => {
-          const { id, youtube_id } = hymn;
-          if (!youtube_id || cache.has(youtube_id)) { resolve(); return; }
-          exec(
-            `yt-dlp -f "bestaudio[ext=m4a]/bestaudio" --get-url --no-playlist "https://www.youtube.com/watch?v=${youtube_id}"`,
-            { timeout: 30000 },
-            (error, stdout) => {
-              if (!error && stdout) {
-                const url = stdout.trim();
-                if (url && url.startsWith('http')) {
-                  cache.set(youtube_id, { url, title: '', duration: 0, thumbnail: null, timestamp: Date.now() });
-                  cached++;
-                  if (cached % 50 === 0) console.log(`  ✅ Pre-cached ${cached}/${hymns.length}`);
-                }
-              }
-              resolve();
-            }
-          );
-        });
-      }
-      
+
       // Process with concurrency
       const queue = [...hymns];
       async function worker() {
         while (queue.length > 0) {
           const hymn = queue.shift();
-          await preCacheOne(hymn);
+          if (!hymn.youtube_id) continue;
+          try {
+            await resolveAudioUrl(hymn.youtube_id);
+            cached++;
+            if (cached % 50 === 0) console.log(`  ✅ Pre-cached ${cached}/${hymns.length}`);
+          } catch (_) {
+            // dead link — skip, Phase 2 handles cleanup
+          }
         }
       }
       await Promise.all(Array.from({ length: CONCURRENCY }, () => worker()));
