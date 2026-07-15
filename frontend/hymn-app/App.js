@@ -95,11 +95,6 @@ const FALLBACK_HYMNS = [
   { id: 14, title: '主的喜樂是我力量', artist: '讚美之泉', youtube_id: 'HfE3WNcdDTk', lang: '國語' },
   { id: 15, title: '復興聖潔', artist: '讚美之泉', youtube_id: 'tPf7Ig1ebL4', lang: '國語' },
 ];
-const STATIC_PLAYLIST = FALLBACK_HYMNS.concat(
-  FALLBACK_HYMNS.map(h => ({...h, id: h.id + 1000})),
-  FALLBACK_HYMNS.map(h => ({...h, id: h.id + 2000})),
-  FALLBACK_HYMNS.map(h => ({...h, id: h.id + 3000, title: h.title + ' (copy)'}))
-);
 
 
 function useBottomInset() {
@@ -128,46 +123,10 @@ async function safeFetchAllHymns() {
   catch (e) { return []; }
 }
 
-// ============ Audio API ============
-async function fetchAudioUrl(youtubeId, showErrorAlert, retryCount = 2) {
-  if (!youtubeId) return null;
-  for (let attempt = 0; attempt <= retryCount; attempt++) {
-    try {
-      // Promise.race timeout instead of AbortController
-      const data = await Promise.race([
-        (async () => {
-          const res = await fetch(`${API_BASE}/api/audio/${youtubeId}`);
-          if (!res.ok) throw new Error(`HTTP ${res.status}`);
-          return await res.json();
-        })(),
-        new Promise((_, reject) =>
-          setTimeout(() => reject(new Error('Timeout (45s)')), 45000)
-        ),
-      ]);
-      if (data && data.url && typeof data.url === 'string') return data.url;
-      if (showErrorAlert && attempt === retryCount) Alert.alert('載入失敗', '無法取得音樂網址，請稍後再試');
-    } catch (e) {
-      const errMsg = `連線錯誤: ${e.message || e}`;
-      console.warn(`fetchAudioUrl attempt ${attempt + 1}/${retryCount + 1}:`, errMsg);
-      if (attempt < retryCount) {
-        // Wait 1s before retry
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        continue;
-      }
-      if (showErrorAlert) Alert.alert('網路錯誤', errMsg);
-    }
-  }
-  return null;
-}
-
 // ================================================================
 //  GLOBAL PLAYER CONTEXT
 // ================================================================
 const PlayerCtx = createContext();
-
-function getQueue(hymns) {
-  return Array.isArray(hymns) && hymns.length > 0 ? hymns : STATIC_PLAYLIST;
-}
 
 function PlayerProvider({ children }) {
   const [currentHymn, setCurrentHymn] = useState(null);
@@ -179,19 +138,15 @@ function PlayerProvider({ children }) {
   const [seekPercent, setSeekPercent] = useState(0);
   const [repeatMode, setRepeatMode] = useState(0); // 0=off, 1=repeat-all, 2=repeat-one
   const [isShuffled, setIsShuffled] = useState(false);
+  // Stub — just flips the flag for now. Real Fisher-Yates reorder (§3.6)
+  // is Step 5; this only needs to exist here because shuffleHistoryRef
+  // (the old fairness-tracking mechanism) is gone as of this step.
   const toggleShuffle = useCallback(() => {
-    setIsShuffled(s => {
-      const next = !s;
-      // Reset shuffle history when toggling on
-      if (next) shuffleHistoryRef.current = [currentQueueIndexRef.current];
-      return next;
-    });
+    setIsShuffled(s => !s);
   }, []);
   const [currentQueueIndex, setCurrentQueueIndex] = useState(0);
   // PHASE1-PLAYER-REBUILD.md §3.5 — single source of truth for the actual
-  // playback queue, written only by playQueue()/shuffle. Empty until a call
-  // site is rewired onto playQueue() in Step 4; the old JIT-queue path below
-  // keeps working off queueSnapshotRef until then.
+  // playback queue, written only by playQueue()/shuffle.
   const [queue, setQueue] = useState([]);
   const queueRef = useRef([]);
   const originalQueueRef = useRef([]); // pre-shuffle order, for shuffle-off restore
@@ -203,9 +158,6 @@ function PlayerProvider({ children }) {
   const currentQueueIndexRef = useRef(0);
   const repeatModeRef = useRef(0);
   const isShuffledRef = useRef(false);
-  const queueSnapshotRef = useRef([]);
-  const customQueueRef = useRef(null); // non-null when playing from a custom playlist
-  const shuffleHistoryRef = useRef([]); // tracks played indices for shuffle fairness
 
   // Lazy TrackPlayer initialization — runs on first play, not on mount
   const playerReadyRef = useRef(false);
@@ -320,126 +272,40 @@ function PlayerProvider({ children }) {
         setTrackState(val);
         // playQueue() (§3.2) leaves isLoading true until audio is actually
         // audible, rather than clearing it right after TrackPlayer.play()
-        // resolves. changeToSong already clears it itself, so this is a
-        // harmless extra no-op there — it only matters for playQueue().
+        // resolves — this is what clears it.
         if (val === TPState.Playing) setIsLoading(false);
       } catch (e) {}
     });
+    // PHASE1-PLAYER-REBUILD.md §3.5 — direct index lookup against `queue`
+    // (written by playQueue()). PlaybackQueueEnded is gone: repeat/advance
+    // are now native TrackPlayer behavior (see repeatMode sync below), not
+    // JS recomputing "what's next".
     const unsubscribeTrack = TrackPlayer.addEventListener(TPEvent.PlaybackActiveTrackChanged, async (event) => {
       try {
-        // New path (PHASE1-PLAYER-REBUILD.md §3.5): once playQueue() has
-        // populated `queue`, index lookup is direct — no native track refetch.
-        // Inert today (queueRef stays [] until Step 4 rewires call sites onto
-        // playQueue()), so this doesn't change current behavior yet.
-        if (queueRef.current.length > 0 && typeof event?.index === 'number') {
-          const idx = event.index;
-          currentQueueIndexRef.current = idx;
-          setCurrentQueueIndex(idx);
-          const song = queueRef.current[idx];
-          if (song) { setHymn(song); setCurrentHymn(song); }
-          return;
-        }
-
-        // Old path: JIT-queue songs looked up by matching id against
-        // queueSnapshotRef. Kept until Step 4 removes it (§3.4).
-        const trackIndex = await TrackPlayer.getActiveTrackIndex();
-        if (typeof trackIndex === 'number' && trackIndex >= 0) {
-          // ⚠️ Don't overwrite currentQueueIndexRef — changeToSong sets it
-          // from the hymns array index, not TrackPlayer's queue index
-          const track = await TrackPlayer.getTrack(trackIndex);
-          if (track && track.title) {
-            // Update current index to match the now-playing track
-            const q = queueSnapshotRef.current || [];
-            const newIdx = q.findIndex(h => String(h.id) === String(track.id));
-            if (newIdx >= 0) {
-              currentQueueIndexRef.current = newIdx;
-              setCurrentQueueIndex(newIdx);
-            }
-
-            const hymnData = {
-              id: track.id,
-              title: track.title,
-              artist: track.artist || '',
-              youtube_id: track.youtubeId || track.videoId || track.originalYoutubeId || '',
-            };
-            setHymn(hymnData);
-            setCurrentHymn(hymnData);
-            
-            // Track auto-advanced — pre-fetch the NEXT next track
-            prefetchNextTrack();
-          }
-        }
-      } catch (e) {}
-    });
-    const unsubscribeQueueEnd = TrackPlayer.addEventListener(TPEvent.PlaybackQueueEnded, async () => {
-      try {
-        if (repeatModeRef.current === 2) {
-          // Repeat one: restart current
-          await TrackPlayer.seekTo(0);
-          await TrackPlayer.play();
-        } else if (isShuffledRef.current) {
-          // Shuffle: pick next unplayed from history
-          const q = queueSnapshotRef.current || [];
-          if (!q.length) return;
-          const hist = shuffleHistoryRef.current;
-          const unplayed = q.map((_, i) => i).filter(i => !hist.includes(i));
-          if (unplayed.length > 0) {
-            const n = unplayed[Math.floor(Math.random() * unplayed.length)];
-            await changeToSong(q[n], n);
-          } else if (repeatModeRef.current === 1) {
-            // Repeat all: reset history and start over
-            shuffleHistoryRef.current = [];
-            const n = Math.floor(Math.random() * q.length);
-            await changeToSong(q[n], n);
-          }
-        } else {
-          // Normal sequential
-          const q = queueSnapshotRef.current || [];
-          const nextIdx = currentQueueIndexRef.current !== undefined ? currentQueueIndexRef.current + 1 : -1;
-          if (q.length > 0 && nextIdx >= 0 && nextIdx < q.length) {
-            await changeToSong(q[nextIdx], nextIdx);
-          } else if (repeatModeRef.current === 1 && q.length > 0) {
-            await changeToSong(q[0], 0);
-          }
-        }
+        if (typeof event?.index !== 'number') return;
+        const idx = event.index;
+        currentQueueIndexRef.current = idx;
+        setCurrentQueueIndex(idx);
+        const song = queueRef.current[idx];
+        if (song) { setHymn(song); setCurrentHymn(song); }
       } catch (e) {}
     });
 
-    // PlaybackError: auto-skip when a track fails to play
+    // PlaybackError: auto-skip when a track fails to play (dead link, etc).
+    // Minimal native fix for now (changeToSong is gone) — the real circuit
+    // breaker (§3.7) is Step 6.
     const unsubscribeError = TrackPlayer.addEventListener(TPEvent.PlaybackError, async (event) => {
       try {
-        const code = event?.code || '';
-        const message = event?.message || 'Unknown error';
-        console.error('[PlaybackError]', code, message);
-
-        // Try to skip to next track automatically
-        const q = queueSnapshotRef.current || [];
-        if (q.length === 0) return;
-
-        let nextIdx = currentQueueIndexRef.current + 1;
-        if (nextIdx >= q.length) {
-          if (repeatModeRef.current === 1) {
-            nextIdx = 0;
-          } else {
-            return; // No repeat and no next track — stop
-          }
-        }
-        const nextSong = q[nextIdx];
-        if (nextSong && getPlayMode(nextSong) === 'audio') {
-          console.log('[PlaybackError] auto-skipping to:', nextSong.title);
-          await changeToSong(nextSong, nextIdx);
-        } else if (nextSong && getPlayMode(nextSong) !== 'audio') {
-          console.log('[PlaybackError] skipping video-mode song:', nextSong.title);
-        }
+        console.error('[PlaybackError]', event?.code || '', event?.message || 'Unknown error');
+        await TrackPlayer.skipToNext();
       } catch (e) {
-        console.warn('[PlaybackError] handler error:', e);
+        // queue tail with repeat off — nothing to skip to, leave it stopped
       }
     });
 
     return () => {
       unsubscribe.remove();
       unsubscribeTrack.remove();
-      unsubscribeQueueEnd.remove();
       unsubscribeError.remove();
     };
   }, [queueReady]);
@@ -502,12 +368,11 @@ function PlayerProvider({ children }) {
     return 'audio';
   }
 
-  // playQueue: PHASE1-PLAYER-REBUILD.md §3.2 — the new single entry point for
+  // playQueue: PHASE1-PLAYER-REBUILD.md §3.2 — the single entry point for
   // "start playing this list from this index". Hands the whole list to
   // TrackPlayer at once (stable per-song URLs via toTrack/stream proxy), so
   // native next/prev/repeat/background-auto-advance can take over instead of
-  // JS recomputing "what's next" (see §1 root-cause). Not yet called from any
-  // screen — that's Step 4 (§3.8); added now so it can be exercised on its own.
+  // JS recomputing "what's next" (see §1 root-cause).
   async function playQueue(list, startIndex = 0) {
     if (!Array.isArray(list) || list.length === 0) return;
     setIsLoading(true);
@@ -530,127 +395,6 @@ function PlayerProvider({ children }) {
     // Playing, not here — per §3.2, so the indicator reflects real audible state.
   }
 
-  // changeToSong: load hymns into TrackPlayer, play
-  // Only the active song is added to the queue with its real URL
-  // Sequential play is handled by the PlaybackQueueEnded event handler
-  async function changeToSong(song, queueIndex) {
-    try {
-      if (!song || !song.youtube_id) return;
-      const mode = getPlayMode(song);
-      if (mode === 'video') {
-        // Video mode — open YouTube app directly (future: inline player)
-        try {
-          const { Linking } = require('react-native');
-          await Linking.openURL(`https://www.youtube.com/watch?v=${song.youtube_id}`);
-        } catch (_) {}
-        setIsLoading(false);
-        return;
-      }
-      setIsLoading(true);
-      // If playing from a custom playlist (e.g., user-created music/video list),
-      // use customQueueRef as the source queue instead of full hymns list
-      const useQueue = customQueueRef.current || getQueue(hymns);
-      const q = useQueue;
-      let idx = typeof queueIndex === 'number' ? queueIndex : q.findIndex(h => h.id === song.id);
-      if (idx < 0) idx = 0;
-
-      currentQueueIndexRef.current = idx;
-      setCurrentQueueIndex(idx);
-      setCurrentTime(0);
-      setDuration(0);
-
-      // Record in shuffle history to avoid repeat
-      if (isShuffledRef.current) {
-        const hist = shuffleHistoryRef.current;
-        if (!hist.includes(idx)) hist.push(idx);
-      }
-      setHymn(song);
-      setCurrentHymn(song);
-
-      // Resolve audio URL
-      let audioUrl = await fetchAudioUrl(song.youtube_id, true);
-      
-      // 🛡️ Defense: validate URL is a real, non-empty HTTP(S) URL
-      if (!audioUrl || typeof audioUrl !== 'string' || !audioUrl.startsWith('http')) {
-        setIsLoading(false);
-        Alert.alert('播放失敗', `無法取得音樂網址 (${song.title})，請確認後端伺服器已啟動`);
-        return;
-      }
-
-      // JIT queue: only add the current song with real URL
-      // Other songs are stored in queueSnapshotRef for FlatList display
-      // and PlaybackQueueEnded/handleNextTrack handles sequential play
-      queueSnapshotRef.current = q;
-      // Lazy init TrackPlayer on first play (not on mount, for faster launch)
-      await lazyEnsurePlayer();
-      await TrackPlayer.reset();
-      await TrackPlayer.add([{
-        id: song.id,
-        url: audioUrl,
-        title: song.title || 'Unknown',
-        artist: song.artist || '',
-        artwork: getAlbumCoverUrl(song.youtube_id),
-        originalYoutubeId: song.youtube_id,
-      }]);
-      await TrackPlayer.play();
-      setIsLoading(false);
-
-      // Background pre-fetch next track for gapless playback
-      prefetchNextTrack();
-    } catch (e) {
-    setIsLoading(false);
-    console.warn('changeToSong error:', e.message || e);
-    Alert.alert('播放錯誤', e.message || '無法播放此歌曲，請稍後再試');
-    }
-  }
-
-  // Pre-fetch the next track's URL and add to TrackPlayer queue for gapless playback
-  async function prefetchNextTrack() {
-    try {
-      const q = queueSnapshotRef.current || [];
-      if (!q.length) return;
-
-      let nextIdx;
-      if (isShuffledRef.current) {
-        // Shuffle: pick from unplayed tracks
-        const hist = shuffleHistoryRef.current;
-        const unplayed = q.map((_, i) => i).filter(i => !hist.includes(i));
-        if (unplayed.length === 0) {
-          if (repeatModeRef.current !== 1) return;
-          nextIdx = q.map((_, i) => i).filter(i => i !== currentQueueIndexRef.current);
-          nextIdx = nextIdx[Math.floor(Math.random() * nextIdx.length)] || 0;
-        } else {
-          nextIdx = unplayed[Math.floor(Math.random() * unplayed.length)];
-        }
-      } else {
-        nextIdx = currentQueueIndexRef.current + 1;
-        if (nextIdx >= q.length) {
-          if (repeatModeRef.current !== 1) return;
-          nextIdx = 0;
-        }
-      }
-
-      const nextSong = q[nextIdx];
-      if (!nextSong || !nextSong.youtube_id || nextSong.id === (currentHymn?.id)) return;
-      // Only prefetch audio-mode songs; skip video-mode songs
-      if (getPlayMode(nextSong) !== 'audio') return;
-
-      const nextUrl = await fetchAudioUrl(nextSong.youtube_id, false);
-      if (!nextUrl || typeof nextUrl !== 'string' || !nextUrl.startsWith('http')) return;
-
-      await TrackPlayer.add([{
-        id: nextSong.id,
-        url: nextUrl,
-        title: nextSong.title || 'Unknown',
-        artist: nextSong.artist || '',
-        artwork: getAlbumCoverUrl(nextSong.youtube_id),
-        originalYoutubeId: nextSong.youtube_id,
-      }]);
-    } catch (e) {
-      // Silent fail — pre-fetch is best-effort
-    }
-  }
-
   async function cmd_play() {
     await TrackPlayer.play();
   }
@@ -661,47 +405,42 @@ function PlayerProvider({ children }) {
     isPlaying ? cmd_pause() : cmd_play();
   }
 
-  async function handlePlayFromQueue(item) {
-    if (!item) return;
-    const q = getQueue(hymns);
-    const idx = q.findIndex(h => h.id === item.id);
-    if (idx >= 0) {
-      await changeToSong(item, idx);
+  // §3.5 — tap an item in the currently-playing queue: skip within it,
+  // don't reset/rebuild (that's what playQueue() is for, for a new list).
+  async function skipToQueueIndex(idx) {
+    if (typeof idx !== 'number' || idx < 0) return;
+    try {
+      await TrackPlayer.skip(idx);
+      await TrackPlayer.play();
+    } catch (e) {
+      console.warn('skipToQueueIndex error:', e.message || e);
     }
   }
 
+  // §3.3 — next/previous handed off to TrackPlayer's own queue/repeat state
+  // instead of JS recomputing "what's next".
   async function handleNextTrack() {
-    const q = customQueueRef.current || getQueue(hymns);
-    if (!q.length) return;
-    let nextIdx;
-    if (isShuffledRef.current) {
-      // Shuffle: pick from unplayed tracks to avoid repeats
-      const history = shuffleHistoryRef.current;
-      const unplayed = q.map((_, i) => i).filter(i => !history.includes(i));
-      if (unplayed.length === 0) {
-        // All played — reset history if repeat-all, else stop
-        if (repeatModeRef.current === 1) {
-          shuffleHistoryRef.current = [currentQueueIndexRef.current];
-          nextIdx = q.map((_, i) => i).filter(i => i !== currentQueueIndexRef.current);
-          nextIdx = nextIdx[Math.floor(Math.random() * nextIdx.length)];
-        } else {
-          return; // no more songs
-        }
-      } else {
-        nextIdx = unplayed[Math.floor(Math.random() * unplayed.length)];
+    try {
+      await TrackPlayer.skipToNext();
+    } catch (e) {
+      // Queue tail with repeat off — matches notification-bar behavior (no-op)
+      if (repeatModeRef.current === 1) {
+        await TrackPlayer.skip(0);
+        await TrackPlayer.play();
       }
-    } else {
-      nextIdx = (currentQueueIndexRef.current + 1) % q.length;
     }
-    await changeToSong(q[nextIdx], nextIdx);
   }
 
   async function handlePrevTrack() {
-    const q = customQueueRef.current || getQueue(hymns);
-    if (!q.length) return;
-    const prev = currentQueueIndexRef.current > 0
-      ? currentQueueIndexRef.current - 1 : q.length - 1;
-    await changeToSong(q[prev], prev);
+    try {
+      const { position } = await TrackPlayer.getProgress();
+      if (position > 3) { await TrackPlayer.seekTo(0); return; } // standard UX: >3s in, prev = restart
+    } catch (e) {}
+    try {
+      await TrackPlayer.skipToPrevious();
+    } catch (e) {
+      await TrackPlayer.seekTo(0); // queue head — restart instead
+    }
   }
 
   function handleSeekRelease() {
@@ -741,15 +480,10 @@ function PlayerProvider({ children }) {
       currentHymn: activeHymn, hymn, hymns, setHymns,
       isPlaying, currentTime, duration,
       repeatMode, isShuffled, setIsShuffled,
-      currentQueueIndex, setCurrentQueueIndex,
-      // §3.5 says this should just be `queue`, but no call site populates it
-      // yet (that's Step 4) — fall back to the old full-hymns-list display
-      // so the playlist UI doesn't go blank in the interim. Once playQueue()
-      // is actually wired up, `queue.length > 0` and this resolves to it.
-      queue: queue.length > 0 ? queue : getQueue(hymns),
-      overlayExpanded, queueReady, isLoading, getPlayMode, customQueueRef,
-      changeToSong, playQueue, cmd_play, cmd_pause, togglePlayPause,
-      handlePlayFromQueue, handleNextTrack, handlePrevTrack,
+      currentQueueIndex, setCurrentQueueIndex, queue,
+      overlayExpanded, queueReady, isLoading, getPlayMode,
+      playQueue, cmd_play, cmd_pause, togglePlayPause,
+      skipToQueueIndex, handleNextTrack, handlePrevTrack,
       setCurrentTime, setDuration,
       setSeekPercent, setIsSeeking, setRepeatMode,
       handleSeekRelease, handleProgressBarPress,
@@ -1161,7 +895,7 @@ function FullScreenPlayerOverlay() {
             showsVerticalScrollIndicator={true}
             renderItem={({ item }) => (
               <TouchableOpacity style={[fsStyles.queueItem, item.id === cur.id && fsStyles.queueItemActive]}
-                onPress={() => { player.handlePlayFromQueue(item); setIsPlaylistVisible(false); }} activeOpacity={0.7}>
+                onPress={() => { player.skipToQueueIndex(queue.findIndex(h => h.id === item.id)); setIsPlaylistVisible(false); }} activeOpacity={0.7}>
                 <CoverImage youtubeId={item.youtube_id} style={fsStyles.queueCover} fallbackIcon="🎵" />
                 <View style={fsStyles.queueInfo}>
                   <Text style={fsStyles.queueTitle} numberOfLines={1}>{item.title}</Text>
@@ -1338,7 +1072,7 @@ const fsStyles = StyleSheet.create({
 
 // ===== AppContent =====
 function AppContent() {
-  const { hymns, setHymns, changeToSong, showPlayer, queueReady, isPlaying: debugPlaying, currentHymn: debugHymn, togglePlayPause: debugToggle, customQueueRef } = usePlayer();
+  const { hymns, setHymns, playQueue, showPlayer, queueReady, isPlaying: debugPlaying, currentHymn: debugHymn, togglePlayPause: debugToggle } = usePlayer();
   const { hymns: allSongs, loading } = useCachedHymns();
   const bottomInset = useBottomInset();
   const [activeCategory, setActiveCategory] = useState('全部');
@@ -1349,14 +1083,6 @@ function AppContent() {
   const openAuth = useCallback(() => setAuthVisible(true), []);
   const closeAuth = useCallback(() => setAuthVisible(false), []);
   const [hymnListData, setHymnListData] = useState({ hymns: [], title: '' });
-
-  // Pre-warm cache for first song when hymns load (reduces first-play latency)
-  useEffect(() => {
-    if (allSongs && allSongs.length > 0 && allSongs[0].youtube_id) {
-      // Background fetch to warm the cache — no await, fire-and-forget
-      fetchAudioUrl(allSongs[0].youtube_id, false);
-    }
-  }, [allSongs]);
 
   const showHymnList = (hymns, title) => {
     setHymnListData({ hymns, title });
@@ -1381,22 +1107,12 @@ function AppContent() {
       Linking.openURL(`https://www.youtube.com/watch?v=${h.youtube_id}`);
       return;
     }
-    if (opts.playlist && opts.playlist.length > 1) {
-      // Reorder playlist starting from selected song
-      const q = opts.playlist;
-      const startIdx = q.findIndex(s => s.id === h.id);
-      const ordered = startIdx >= 0
-        ? [...q.slice(startIdx), ...q.slice(0, startIdx)]
-        : [...q];
-      // Set customQueueRef so changeToSong uses the playlist as source queue
-      // (not the full hymns list). changeToSong reads customQueueRef internally.
-      customQueueRef.current = ordered;
-      changeToSong(ordered[0]);
-      showPlayer();
-    } else {
-      changeToSong(h);
-      showPlayer();
-    }
+    // §3.8 — no more reordering the list to put the tapped song first;
+    // native skip(idx) keeps natural order so prev can go back further.
+    const list = opts.playlist?.length ? opts.playlist : (allSongs || FALLBACK_HYMNS);
+    const idx = Math.max(0, list.findIndex(s => s.id === h.id));
+    playQueue(list, idx);
+    showPlayer();
   }
   function handleOpenFullScreen() { showPlayer(); }
 
@@ -1456,7 +1172,8 @@ function AppContent() {
             hymns={hymnListData.hymns}
             title={hymnListData.title}
             onPlayHymn={(hymn) => {
-              changeToSong(hymn);
+              const idx = Math.max(0, hymnListData.hymns.findIndex(s => s.id === hymn.id));
+              playQueue(hymnListData.hymns, idx);
               showPlayer();
               closeHymnList();
             }}
