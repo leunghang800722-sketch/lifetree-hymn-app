@@ -21,6 +21,7 @@ import { PlaylistsProvider, usePlaylists } from './src/context/PlaylistsContext'
 import { AuthProvider, useAuth } from './src/context/AuthContext';
 import AuthScreen from './src/screens/AuthScreen';
 import { PlaylistProvider } from './src/context/PlaylistContext';
+import { API_BASE } from './src/config.js';
 
 // ===== MaterialIcons 圖標名稱 =====
 
@@ -33,7 +34,6 @@ try {
 } catch (e) {}
 
 // ===== Config =====
-const API_BASE = 'https://4e152f1ef2394bdb-94-190-228-145.serveousercontent.com';
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 const VIDEO_HEIGHT = SCREEN_WIDTH * 9 / 16;
 
@@ -46,6 +46,18 @@ const TEXT_SECONDARY = '#A0A0A0';
 
 function getAlbumCoverUrl(youtubeId) {
   return youtubeId ? `https://img.youtube.com/vi/${youtubeId}/hqdefault.jpg` : null;
+}
+
+// PHASE1-PLAYER-REBUILD.md §3.2 — stable per-song URL via the backend stream
+// proxy, so the whole list can be handed to TrackPlayer at once.
+function toTrack(song) {
+  return {
+    id: String(song.id),
+    url: `${API_BASE}/api/stream/${song.id}`,
+    title: song.title || 'Unknown',
+    artist: song.artist || '',
+    artwork: getAlbumCoverUrl(song.youtube_id),
+  };
 }
 
 // ===== CoverImage with fallback =====
@@ -176,6 +188,13 @@ function PlayerProvider({ children }) {
     });
   }, []);
   const [currentQueueIndex, setCurrentQueueIndex] = useState(0);
+  // PHASE1-PLAYER-REBUILD.md §3.5 — single source of truth for the actual
+  // playback queue, written only by playQueue()/shuffle. Empty until a call
+  // site is rewired onto playQueue() in Step 4; the old JIT-queue path below
+  // keeps working off queueSnapshotRef until then.
+  const [queue, setQueue] = useState([]);
+  const queueRef = useRef([]);
+  const originalQueueRef = useRef([]); // pre-shuffle order, for shuffle-off restore
   const [trackState, setTrackState] = useState(TPState.None);
   const [queueReady, setQueueReady] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -229,6 +248,7 @@ function PlayerProvider({ children }) {
   // 同步 ref 俾 event handler 用
   repeatModeRef.current = repeatMode;
   isShuffledRef.current = isShuffled;
+  queueRef.current = queue;
 
   // ===== 物理抽屜動畫 (slide-up/slide-down) =====
   const [overlayExpanded, setOverlayExpanded] = useState(false);
@@ -298,10 +318,30 @@ function PlayerProvider({ children }) {
         // v3: event.state = enum; v4: event.state = object with .state
         const val = typeof event?.state === 'object' ? event.state.state : event.state;
         setTrackState(val);
+        // playQueue() (§3.2) leaves isLoading true until audio is actually
+        // audible, rather than clearing it right after TrackPlayer.play()
+        // resolves. changeToSong already clears it itself, so this is a
+        // harmless extra no-op there — it only matters for playQueue().
+        if (val === TPState.Playing) setIsLoading(false);
       } catch (e) {}
     });
     const unsubscribeTrack = TrackPlayer.addEventListener(TPEvent.PlaybackActiveTrackChanged, async (event) => {
       try {
+        // New path (PHASE1-PLAYER-REBUILD.md §3.5): once playQueue() has
+        // populated `queue`, index lookup is direct — no native track refetch.
+        // Inert today (queueRef stays [] until Step 4 rewires call sites onto
+        // playQueue()), so this doesn't change current behavior yet.
+        if (queueRef.current.length > 0 && typeof event?.index === 'number') {
+          const idx = event.index;
+          currentQueueIndexRef.current = idx;
+          setCurrentQueueIndex(idx);
+          const song = queueRef.current[idx];
+          if (song) { setHymn(song); setCurrentHymn(song); }
+          return;
+        }
+
+        // Old path: JIT-queue songs looked up by matching id against
+        // queueSnapshotRef. Kept until Step 4 removes it (§3.4).
         const trackIndex = await TrackPlayer.getActiveTrackIndex();
         if (typeof trackIndex === 'number' && trackIndex >= 0) {
           // ⚠️ Don't overwrite currentQueueIndexRef — changeToSong sets it
@@ -460,6 +500,34 @@ function PlayerProvider({ children }) {
     // Video mode: song has mode='video' flag (not yet implemented in data model)
     if (s && s.mode === 'video') return 'video';
     return 'audio';
+  }
+
+  // playQueue: PHASE1-PLAYER-REBUILD.md §3.2 — the new single entry point for
+  // "start playing this list from this index". Hands the whole list to
+  // TrackPlayer at once (stable per-song URLs via toTrack/stream proxy), so
+  // native next/prev/repeat/background-auto-advance can take over instead of
+  // JS recomputing "what's next" (see §1 root-cause). Not yet called from any
+  // screen — that's Step 4 (§3.8); added now so it can be exercised on its own.
+  async function playQueue(list, startIndex = 0) {
+    if (!Array.isArray(list) || list.length === 0) return;
+    setIsLoading(true);
+    setQueue(list);
+    originalQueueRef.current = list;
+    setIsShuffled(false);
+    try {
+      await lazyEnsurePlayer();
+      await TrackPlayer.reset();
+      await TrackPlayer.add(list.map(toTrack));
+      if (startIndex > 0) await TrackPlayer.skip(startIndex);
+      await TrackPlayer.play();
+    } catch (e) {
+      setIsLoading(false);
+      console.warn('playQueue error:', e.message || e);
+      Alert.alert('播放錯誤', e.message || '無法播放此清單，請稍後再試');
+      return;
+    }
+    // isLoading is cleared by the PlaybackState listener once it observes
+    // Playing, not here — per §3.2, so the indicator reflects real audible state.
   }
 
   // changeToSong: load hymns into TrackPlayer, play
@@ -673,9 +741,14 @@ function PlayerProvider({ children }) {
       currentHymn: activeHymn, hymn, hymns, setHymns,
       isPlaying, currentTime, duration,
       repeatMode, isShuffled, setIsShuffled,
-      currentQueueIndex, setCurrentQueueIndex, queue: getQueue(hymns),
+      currentQueueIndex, setCurrentQueueIndex,
+      // §3.5 says this should just be `queue`, but no call site populates it
+      // yet (that's Step 4) — fall back to the old full-hymns-list display
+      // so the playlist UI doesn't go blank in the interim. Once playQueue()
+      // is actually wired up, `queue.length > 0` and this resolves to it.
+      queue: queue.length > 0 ? queue : getQueue(hymns),
       overlayExpanded, queueReady, isLoading, getPlayMode, customQueueRef,
-      changeToSong, cmd_play, cmd_pause, togglePlayPause,
+      changeToSong, playQueue, cmd_play, cmd_pause, togglePlayPause,
       handlePlayFromQueue, handleNextTrack, handlePrevTrack,
       setCurrentTime, setDuration,
       setSeekPercent, setIsSeeking, setRepeatMode,

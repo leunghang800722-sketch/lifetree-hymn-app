@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { MMKV } from 'react-native-mmkv';
+import { API_BASE } from '../config.js';
 
 let storage = null;
 function getStorage() {
@@ -8,8 +9,6 @@ function getStorage() {
   }
   return storage;
 }
-
-const API_BASE = 'https://4e152f1ef2394bdb-94-190-228-145.serveousercontent.com';
 
 async function fetchAllHymns() {
   try {
