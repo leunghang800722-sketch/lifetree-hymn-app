@@ -12,6 +12,7 @@ import searchRoutes from './routes/search.js';
 import categoryRoutes from './routes/category.js';
 import audioRoutes from './routes/audio.js';
 import authRoutes from './routes/auth.js';
+import streamRoutes from './routes/stream.js';
 import { resolveAudioUrl } from './lib/resolveAudio.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -37,6 +38,7 @@ app.use('/api/home', homeRoutes);
 app.use('/api/search', searchRoutes);
 app.use('/api/category', categoryRoutes);
 app.use('/api/audio', audioRoutes);
+app.use('/api/stream', streamRoutes(getDb));
 authRoutes(app, getDb);
 
 // Super simple APK download at root level
