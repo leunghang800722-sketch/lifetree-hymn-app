@@ -138,12 +138,53 @@ function PlayerProvider({ children }) {
   const [seekPercent, setSeekPercent] = useState(0);
   const [repeatMode, setRepeatMode] = useState(0); // 0=off, 1=repeat-all, 2=repeat-one
   const [isShuffled, setIsShuffled] = useState(false);
-  // Stub — just flips the flag for now. Real Fisher-Yates reorder (§3.6)
-  // is Step 5; this only needs to exist here because shuffleHistoryRef
-  // (the old fairness-tracking mechanism) is gone as of this step.
-  const toggleShuffle = useCallback(() => {
-    setIsShuffled(s => !s);
+  // §3.6 — real shuffle: reorder the actual TrackPlayer queue around the
+  // currently playing track instead of picking randomly at each transition.
+  const toggleShuffle = useCallback(async () => {
+    const activeIdx = await TrackPlayer.getActiveTrackIndex();
+    const q = queueRef.current;
+    if (activeIdx == null || !q.length) { setIsShuffled(s => !s); return; }
+
+    if (!isShuffledRef.current) {
+      // On: current song becomes the head, rest Fisher-Yates shuffled after it
+      const rest = q.filter((_, i) => i !== activeIdx);
+      for (let i = rest.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [rest[i], rest[j]] = [rest[j], rest[i]];
+      }
+      const newQ = [q[activeIdx], ...rest];
+      // Set the ref synchronously before touching TrackPlayer — the remove/add
+      // dance below can trigger PlaybackActiveTrackChanged mid-flight, and the
+      // handler reads queueRef.current directly (a setQueue() alone wouldn't
+      // land until the next render).
+      queueRef.current = newQ;
+      setQueue(newQ);
+      await rebuildAroundActive(newQ, 0, activeIdx);
+      setIsShuffled(true);
+    } else {
+      // Off: restore original order, current song keeps playing where it is
+      const orig = originalQueueRef.current || q;
+      const curSong = q[activeIdx];
+      const origIdx = Math.max(0, orig.findIndex(s => s.id === curSong.id));
+      queueRef.current = orig;
+      setQueue(orig);
+      await rebuildAroundActive(orig, origIdx, activeIdx);
+      setIsShuffled(false);
+    }
   }, []);
+
+  // Reorders the live TrackPlayer queue to `newQ` without interrupting
+  // playback: strip everything except the currently active track, then
+  // re-insert the rest before/after it in the new order.
+  async function rebuildAroundActive(newQ, newActiveIdx, oldActiveIdx) {
+    const n = (await TrackPlayer.getQueue()).length;
+    const others = [...Array(n).keys()].filter(i => i !== oldActiveIdx);
+    if (others.length) await TrackPlayer.remove(others);
+    const before = newQ.slice(0, newActiveIdx).map(toTrack);
+    const after = newQ.slice(newActiveIdx + 1).map(toTrack);
+    if (before.length) await TrackPlayer.add(before, 0);
+    if (after.length) await TrackPlayer.add(after);
+  }
   const [currentQueueIndex, setCurrentQueueIndex] = useState(0);
   // PHASE1-PLAYER-REBUILD.md §3.5 — single source of truth for the actual
   // playback queue, written only by playQueue()/shuffle.
