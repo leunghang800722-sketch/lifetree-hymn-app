@@ -988,23 +988,23 @@ function FullScreenPlayerOverlay() {
           <Text style={[{ ...TYPOGRAPHY.artist, textAlign: 'center', marginTop: 4 }]}>{cur.artist}</Text>
         </View>
 
-        {/* Action Bar — long pill segmented bar */}
-        <View style={{ flexDirection: 'row', backgroundColor: '#1F2925', marginHorizontal: 16, borderRadius: 999, padding: 6, marginBottom: 16 }}>
+        {/* Action Bar — 4 individual pills (圖2 style) */}
+        <View style={{ flexDirection: 'row', marginHorizontal: 16, marginBottom: 16 }}>
           <TouchableOpacity style={fsStyles.pillButton} onPress={() => toggleFavorite(cur)}>
-            <Text style={{ fontSize: 20 }}>❤️</Text>
-            <Text style={{ fontSize: 11, color: '#9AA696' }}>最愛</Text>
+            <MaterialIcons name={isFavorite(cur.id) ? 'favorite' : 'favorite-border'} size={18} color={isFavorite(cur.id) ? '#1ED760' : '#FFFFFF'} />
+            <Text style={{ fontSize: 13, fontWeight: '500', color: '#FFFFFF', marginLeft: 6 }}>最愛</Text>
           </TouchableOpacity>
           <TouchableOpacity style={fsStyles.pillButton} onPress={() => alert('歌詞')}>
-            <Text style={{ fontSize: 20 }}>📝</Text>
-            <Text style={{ fontSize: 11, color: '#9AA696' }}>歌詞</Text>
+            <MaterialIcons name='music-note' size={18} color='#FFFFFF' />
+            <Text style={{ fontSize: 13, fontWeight: '500', color: '#FFFFFF', marginLeft: 6 }}>歌詞</Text>
           </TouchableOpacity>
           <TouchableOpacity style={fsStyles.pillButton} onPress={() => alert('分享')}>
-            <Text style={{ fontSize: 20 }}>🔗</Text>
-            <Text style={{ fontSize: 11, color: '#9AA696' }}>分享</Text>
+            <MaterialIcons name='share' size={18} color='#FFFFFF' />
+            <Text style={{ fontSize: 13, fontWeight: '500', color: '#FFFFFF', marginLeft: 6 }}>分享</Text>
           </TouchableOpacity>
           <TouchableOpacity style={fsStyles.pillButton} onPress={() => setShowPlaylistSheet(true)}>
-            <Text style={{ fontSize: 20 }}>📋</Text>
-            <Text style={{ fontSize: 11, color: '#9AA696' }}>清單</Text>
+            <MaterialIcons name='queue-music' size={18} color='#FFFFFF' />
+            <Text style={{ fontSize: 13, fontWeight: '500', color: '#FFFFFF', marginLeft: 6 }}>清單</Text>
           </TouchableOpacity>
         </View>
         <View style={fsStyles.progressSection}>
@@ -1183,7 +1183,7 @@ const fsStyles = StyleSheet.create({
   container: { flex: 1, height: SCREEN_HEIGHT, backgroundColor: MAIN_BG_COLOR },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   topBar: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, paddingBottom: 8 },
-  pillButton: { flex: 1, alignItems: 'center', paddingVertical: 12, paddingHorizontal: 8, borderRadius: 999, marginHorizontal: 2 },
+  pillButton: { flexDirection: 'row', alignItems: 'center', height: 36, borderRadius: 18, backgroundColor: '#2C2C2C', paddingHorizontal: 14, paddingVertical: 8, flex: 1, marginHorizontal: 3 },
   dismissBtn: { width: 40, height: 40, justifyContent: 'center', alignItems: 'center' },
   dismissIcon: { fontSize: 16, color: '#FFFFFF' },
   topBarTitle: { fontSize: 16, fontWeight: '600', color: TEXT_PRIMARY },
