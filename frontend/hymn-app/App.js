@@ -139,49 +139,52 @@ function PlayerProvider({ children }) {
   const [seekPercent, setSeekPercent] = useState(0);
   const [repeatMode, setRepeatMode] = useState(0); // 0=off, 1=repeat-all, 2=repeat-one
   const [isShuffled, setIsShuffled] = useState(false);
-  // §3.6 — real shuffle: reorder the actual upcoming TrackPlayer queue rather
-  // than picking randomly at each transition. Only ever uses
-  // removeUpcomingTracks() + add() — never a bulk remove-by-index (removing
-  // ~1500 tracks by index array is what silently failed before, leaving the
-  // original order playing). Tracks already played (before the active one) are
-  // left in place as history; the shuffle pool excludes them to avoid dupes.
+  // §3.6 — real shuffle. Rebuilds the whole TrackPlayer queue with the current
+  // song first, via reset() + add(). Earlier attempts reordered the LIVE queue
+  // with remove([~1500 indices]) then removeUpcomingTracks()+add(); both left
+  // the original order playing (bulk removal of ~1500 tracks is unreliable at
+  // that scale). reset() is a single native op that can't partially fail, and
+  // add() at full scale is already proven (it's how playback starts). The one
+  // cost is a brief re-buffer of the current song (we seek back to where it
+  // was) — an acceptable trade for shuffle that actually works.
   const toggleShuffle = useCallback(async () => {
     try {
-      const activeIdx = await TrackPlayer.getActiveTrackIndex();
       const q = queueRef.current;
-      if (activeIdx == null || activeIdx < 0 || !q.length) { setIsShuffled(s => !s); return; }
-      const head = q.slice(0, activeIdx + 1); // history + current, kept as-is
+      if (!q.length) { setIsShuffled(s => !s); return; }
+      // Identify the current song robustly, not relying solely on
+      // getActiveTrackIndex (which can momentarily return undefined).
+      let idx = await TrackPlayer.getActiveTrackIndex();
+      if (typeof idx !== 'number' || idx < 0 || idx >= q.length) idx = currentQueueIndexRef.current;
+      if (typeof idx !== 'number' || idx < 0 || idx >= q.length) idx = 0;
+      const cur = q[idx];
+      let position = 0;
+      try { position = (await TrackPlayer.getProgress()).position || 0; } catch (_) {}
 
+      let newQ;
       if (!isShuffledRef.current) {
-        // On: shuffle everything not already queued up to the current track.
-        const played = new Set(head.map(s => String(s.id)));
-        const pool = q.filter(s => !played.has(String(s.id)));
-        for (let i = pool.length - 1; i > 0; i--) {
+        // On: current song first, everything else Fisher-Yates shuffled after.
+        const rest = q.filter(s => String(s.id) !== String(cur.id));
+        for (let i = rest.length - 1; i > 0; i--) {
           const j = Math.floor(Math.random() * (i + 1));
-          [pool[i], pool[j]] = [pool[j], pool[i]];
+          [rest[i], rest[j]] = [rest[j], rest[i]];
         }
-        const newQ = [...head, ...pool];
-        // Update the ref synchronously — the remove/add below can fire
-        // PlaybackActiveTrackChanged, whose handler reads queueRef.current
-        // directly (setQueue alone wouldn't land until the next render).
-        queueRef.current = newQ;
-        setQueue(newQ);
-        await TrackPlayer.removeUpcomingTracks();
-        if (pool.length) await TrackPlayer.add(pool.map(toTrack));
-        setIsShuffled(true);
+        newQ = [cur, ...rest];
       } else {
-        // Off: restore original order for everything after the current track.
-        const orig = originalQueueRef.current || q;
-        const curId = String(q[activeIdx].id);
-        const origIdx = Math.max(0, orig.findIndex(s => String(s.id) === curId));
-        const after = orig.slice(origIdx + 1);
-        const newQ = [...head, ...after];
-        queueRef.current = newQ;
-        setQueue(newQ);
-        await TrackPlayer.removeUpcomingTracks();
-        if (after.length) await TrackPlayer.add(after.map(toTrack));
-        setIsShuffled(false);
+        // Off: original order, rotated so the current song stays current.
+        const orig = originalQueueRef.current?.length ? originalQueueRef.current : q;
+        const oidx = Math.max(0, orig.findIndex(s => String(s.id) === String(cur.id)));
+        newQ = [...orig.slice(oidx), ...orig.slice(0, oidx)];
       }
+
+      queueRef.current = newQ;
+      setQueue(newQ);
+      currentQueueIndexRef.current = 0;
+      setCurrentQueueIndex(0);
+      await TrackPlayer.reset();
+      await TrackPlayer.add(newQ.map(toTrack));
+      await TrackPlayer.play();
+      if (position > 1) { try { await TrackPlayer.seekTo(position); } catch (_) {} }
+      setIsShuffled(!isShuffledRef.current);
     } catch (e) {
       console.warn('toggleShuffle error:', e?.message || e);
     }
