@@ -34,7 +34,11 @@ export default function streamRoutes(getDb) {
     }
 
     const controller = new AbortController();
-    req.on('close', () => controller.abort());
+    // Abort the upstream fetch only if the client bailed before we finished
+    // sending (ExoPlayer closes+reopens range connections constantly while
+    // streaming). res 'close' fires on normal completion too, so gate on
+    // writableFinished to avoid aborting a request that already succeeded.
+    res.on('close', () => { if (!res.writableFinished) controller.abort(); });
 
     const isHead = req.method === 'HEAD';
     const doFetch = (u) => fetch(u, {
@@ -70,7 +74,15 @@ export default function streamRoutes(getDb) {
     if (isHead || !upstream.body) {
       return res.end();
     }
-    Readable.fromWeb(upstream.body).pipe(res);
+
+    // Pipe the upstream body to the client. The 'error' handler is essential:
+    // when the client disconnects mid-stream, controller.abort() errors this
+    // web-stream, and without a handler that surfaces as a process-level
+    // 'uncaughtException' and leaves the client connection half-broken (which
+    // is exactly what made ExoPlayer hang on "loading" forever).
+    const body = Readable.fromWeb(upstream.body);
+    body.on('error', () => { if (!res.writableEnded) res.destroy(); });
+    body.pipe(res);
   });
 
   return router;
