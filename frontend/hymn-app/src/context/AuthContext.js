@@ -1,9 +1,9 @@
 // Auth Context — 會員系統
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { API_BASE } from '../config';
 
 const AUTH_KEY = '@hymn…uth';
-const API_BASE = 'https://4e152f1ef2394bdb-94-190-228-145.serveousercontent.com';
 
 const AuthContext = createContext(null);
 

@@ -1,6 +1,7 @@
 // src/services/categoryApi.js
 // Category API — 8 methods for the category screen
-const API_BASE = 'https://4e152f1ef2394bdb-94-190-228-145.serveousercontent.com/api';
+import { API_BASE as BASE_URL } from '../config';
+const API_BASE = `${BASE_URL}/api`;
 
 export const categoryApi = {
   // 中文名分類（所有中文詩歌）
