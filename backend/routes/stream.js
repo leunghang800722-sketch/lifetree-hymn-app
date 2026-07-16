@@ -41,9 +41,16 @@ export default function streamRoutes(getDb) {
     res.on('close', () => { if (!res.writableFinished) controller.abort(); });
 
     const isHead = req.method === 'HEAD';
+    const clientRange = req.headers.range;
+    // Always send a Range upstream. googlevideo throttles range-less (full-file)
+    // GETs to ~17KB/s but serves ranged requests at ~1.5MB/s. ExoPlayer's first
+    // request usually has NO Range header — forwarding that as-is throttled
+    // playback into an infinite buffer (the "正在載入" hang). When the client
+    // didn't ask for a range we request the whole thing as `bytes=0-` purely to
+    // dodge the throttle, then present the result to the client as a plain 200.
     const doFetch = (u) => fetch(u, {
       method: isHead ? 'HEAD' : 'GET',
-      headers: req.headers.range ? { Range: req.headers.range } : {},
+      headers: { Range: clientRange || 'bytes=0-' },
       signal: controller.signal,
     });
 
@@ -63,10 +70,20 @@ export default function streamRoutes(getDb) {
       return res.status(502).json({ error: `upstream ${upstream.status}` });
     }
 
-    res.status(upstream.status);
-    for (const h of ['content-type', 'content-length', 'content-range', 'accept-ranges']) {
+    // Forward pass-through headers. content-range is only meaningful when the
+    // client actually asked for a range — we may have added `bytes=0-` upstream
+    // purely to dodge throttling, so suppress it (and the 206) in that case and
+    // hand the client a normal full 200.
+    for (const h of ['content-type', 'content-length', 'accept-ranges']) {
       const v = upstream.headers.get(h);
       if (v) res.setHeader(h, v);
+    }
+    if (clientRange) {
+      const cr = upstream.headers.get('content-range');
+      if (cr) res.setHeader('content-range', cr);
+      res.status(upstream.status);
+    } else {
+      res.status(200);
     }
     if (!upstream.headers.get('accept-ranges')) res.setHeader('Accept-Ranges', 'bytes');
     if (!upstream.headers.get('content-type')) res.setHeader('Content-Type', 'audio/mp4');
