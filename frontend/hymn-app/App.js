@@ -38,7 +38,7 @@ try {
 // Bumped every build. Shown in the player top bar so a tester can confirm at a
 // glance exactly which JS bundle is running (the Android versionName is stuck
 // at 1.1.1 for every build, so it can't tell builds apart).
-const BUILD_TAG = 'v219-b14';
+const BUILD_TAG = 'v220-b15';
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 const VIDEO_HEIGHT = SCREEN_WIDTH * 9 / 16;
 
@@ -172,6 +172,15 @@ function PlayerProvider({ children }) {
       dbg(`shuffle:rawIdx=${rawIdx} idx=${idx} curId=${cur?.id}`);
       let position = 0;
       try { position = (await TrackPlayer.getProgress()).position || 0; } catch (_) {}
+      // Remember whether we were playing: reset() stops playback, so we have to
+      // resume deliberately afterwards (and must NOT start playing if the user
+      // had it paused).
+      let wasPlaying = false;
+      try {
+        const raw = await TrackPlayer.getPlaybackState();
+        const st = typeof raw === 'object' && raw !== null ? raw.state : raw;
+        wasPlaying = st === TPState.Playing || st === TPState.Buffering;
+      } catch (_) {}
 
       let newQ;
       if (!isShuffledRef.current) {
@@ -193,16 +202,21 @@ function PlayerProvider({ children }) {
       setQueue(newQ);
       currentQueueIndexRef.current = 0;
       setCurrentQueueIndex(0);
-      dbg(`shuffle:newQ first5=${newQ.slice(0, 5).map(s => s.id).join(',')}`);
+      dbg(`shuffle:newQ first5=${newQ.slice(0, 5).map(s => s.id).join(',')} wasPlaying=${wasPlaying} pos=${Math.round(position)}`);
       await TrackPlayer.reset();
       await TrackPlayer.add(newQ.map(toTrack));
-      await TrackPlayer.play();
+      // Restore position BEFORE resuming. play() must be the last action here:
+      // seeking right after play() left the player stalled at 0:00 (the queue
+      // was correct but playback sat paused).
       if (position > 1) { try { await TrackPlayer.seekTo(position); } catch (_) {} }
+      if (wasPlaying) { try { await TrackPlayer.play(); } catch (_) {} }
       setIsShuffled(!isShuffledRef.current);
       // PROOF: read the real native queue back and report its actual order.
       try {
         const nq = await TrackPlayer.getQueue();
-        dbg(`shuffle:NATIVE len=${nq.length} first5=${nq.slice(0, 5).map(t => t.id).join(',')}`);
+        const raw = await TrackPlayer.getPlaybackState();
+        const st = typeof raw === 'object' && raw !== null ? raw.state : raw;
+        dbg(`shuffle:NATIVE len=${nq.length} first5=${nq.slice(0, 5).map(t => t.id).join(',')} state=${st}`);
       } catch (e) { dbg(`shuffle:getQueue failed ${e?.message}`); }
     } catch (e) {
       dbg(`shuffle:ERROR ${e?.message || e}`);
