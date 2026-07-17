@@ -70,13 +70,6 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'ok' });
 });
 
-// TEMP diagnostic sink: lets the app report on-device state back here, since
-// we can't read logcat from the tester's phone. Remove once shuffle is settled.
-app.get('/api/debug', (req, res) => {
-  console.log(`[APP] ${req.query.m || ''}`);
-  res.json({ ok: true });
-});
-
 // Get all hymns from the database
 app.get('/api/hymns', async (req, res) => {
   try {
