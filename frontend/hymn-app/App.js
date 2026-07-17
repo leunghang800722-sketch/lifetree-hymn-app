@@ -35,8 +35,18 @@ try {
 } catch (e) {}
 
 // ===== Config =====
+// Bumped every build. Shown in the player top bar so a tester can confirm at a
+// glance which JS bundle is actually running (versionName is 1.1.1 on every
+// build, so it can't tell them apart).
+const BUILD_TAG = 'v224-b19';
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 const VIDEO_HEIGHT = SCREEN_WIDTH * 9 / 16;
+
+// TEMP diagnostic: report on-device state to the backend log, since logcat
+// isn't reachable from the tester's phone. Fire-and-forget.
+function dbg(msg) {
+  try { fetch(`${API_BASE}/api/debug?m=${encodeURIComponent(`[${BUILD_TAG}] ${msg}`)}`).catch(() => {}); } catch (_) {}
+}
 
 // ===== 黑色主調（Rolex 綠只做 accent） =====
 const MAIN_BG_COLOR = '#000000';
@@ -150,7 +160,8 @@ function PlayerProvider({ children }) {
   const toggleShuffle = useCallback(async () => {
     try {
       const q = queueRef.current;
-      if (!q.length) { setIsShuffled(s => !s); return; }
+      dbg(`shuffle:TAP qlen=${q.length} isShuffled=${isShuffledRef.current}`);
+      if (!q.length) { dbg('shuffle:BAILED empty queue'); setIsShuffled(s => !s); return; }
       // Identify the current song robustly, not relying solely on
       // getActiveTrackIndex (which can momentarily return undefined).
       let idx = await TrackPlayer.getActiveTrackIndex();
@@ -197,7 +208,13 @@ function PlayerProvider({ children }) {
       if (position > 1) { try { await TrackPlayer.seekTo(position); } catch (_) {} }
       if (wasPlaying) { try { await TrackPlayer.play(); } catch (_) {} }
       setIsShuffled(!isShuffledRef.current);
+      // PROOF: read the real native queue back and report its actual order.
+      try {
+        const nq = await TrackPlayer.getQueue();
+        dbg(`shuffle:NATIVE len=${nq.length} first5=${nq.slice(0, 5).map(t => t.id).join(',')}`);
+      } catch (e) { dbg(`shuffle:getQueue failed ${e?.message}`); }
     } catch (e) {
+      dbg(`shuffle:ERROR ${e?.message || e}`);
       console.warn('toggleShuffle error:', e?.message || e);
     }
   }, []);
@@ -445,6 +462,10 @@ function PlayerProvider({ children }) {
   // JS recomputing "what's next" (see §1 root-cause).
   async function playQueue(list, startIndex = 0) {
     if (!Array.isArray(list) || list.length === 0) return;
+    // DIAGNOSTIC: playQueue resets isShuffled=false and re-adds the ORIGINAL
+    // list. If this fires AFTER a shuffle, it silently undoes it — prime
+    // suspect for "shuffle then next plays the sequential song".
+    dbg(`playQueue:CALLED len=${list.length} startIdx=${startIndex} first3=${list.slice(0, 3).map(s => s.id).join(',')}`);
     setIsLoading(true);
     // Set the ref synchronously alongside the state (same reason as
     // toggleShuffle): TrackPlayer events fire during the add/play below and
@@ -497,6 +518,14 @@ function PlayerProvider({ children }) {
   // instead of JS recomputing "what's next".
   async function handleNextTrack() {
     try {
+      // DIAGNOSTIC: report what the native queue looks like at the moment
+      // "next" is pressed — this is the ground truth for whether the shuffle
+      // actually survived up to this point.
+      try {
+        const nq = await TrackPlayer.getQueue();
+        const ai = await TrackPlayer.getActiveTrackIndex();
+        dbg(`next:TAP activeIdx=${ai} nativeFirst5=${nq.slice(0, 5).map(t => t.id).join(',')} isShuffled=${isShuffledRef.current}`);
+      } catch (_) {}
       await TrackPlayer.skipToNext();
     } catch (e) {
       // Queue tail with repeat off — matches notification-bar behavior (no-op)
@@ -829,7 +858,7 @@ function FullScreenPlayerOverlay() {
         <TouchableOpacity style={fsStyles.dismissBtn} onPress={player.hidePlayer}>
           <MaterialIcons name="keyboard-arrow-down" size={24} color="#FFFFFF" />
         </TouchableOpacity>
-        <Text style={fsStyles.topBarTitle}>生命樹</Text>
+        <Text style={fsStyles.topBarTitle}>生命樹 <Text style={{ fontSize: 10, color: TEXT_SECONDARY }}>{BUILD_TAG}</Text></Text>
         <View style={fsStyles.dismissBtn} />
       </View>
 
