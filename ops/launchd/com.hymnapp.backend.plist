@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.hymnapp.backend</string>
+
+    <!-- Absolute paths: launchd has no shell, so `node` alone wouldn't resolve. -->
+    <key>ProgramArguments</key>
+    <array>
+        <string>/opt/homebrew/bin/node</string>
+        <string>/Users/macbookpro/.openclaw/workspace/hymn-app/backend/server.js</string>
+    </array>
+
+    <key>WorkingDirectory</key>
+    <string>/Users/macbookpro/.openclaw/workspace/hymn-app/backend</string>
+
+    <!-- CRITICAL: launchd's default PATH is /usr/bin:/bin:/usr/sbin:/sbin, which does
+         NOT include /opt/homebrew/bin. The backend shells out to `yt-dlp` (which also
+         needs python3), so without this the server would start happily but every single
+         song resolve would fail with "command not found" — i.e. the app connects but
+         no audio ever plays. -->
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>PATH</key>
+        <string>/opt/homebrew/bin:/opt/homebrew/sbin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+    </dict>
+
+    <!-- Start at login. -->
+    <key>RunAtLoad</key>
+    <true/>
+
+    <!-- Restart automatically if it ever exits/crashes. This is what makes it
+         "come back on its own" without anyone touching it. -->
+    <key>KeepAlive</key>
+    <true/>
+
+    <!-- Don't hammer restarts if it's crash-looping. -->
+    <key>ThrottleInterval</key>
+    <integer>10</integer>
+
+    <key>StandardOutPath</key>
+    <string>/tmp/hymn_backend.log</string>
+    <key>StandardErrorPath</key>
+    <string>/tmp/hymn_backend.log</string>
+</dict>
+</plist>

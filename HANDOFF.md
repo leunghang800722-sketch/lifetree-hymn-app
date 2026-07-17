@@ -15,12 +15,10 @@
 - **分支**：`feature/player-rebuild`（由 `develop-v211` 開出）—— 未 merge 返 develop-v211
 - **最新 APK**：`~/Desktop/詩歌App/hymn-app-v225.apk`（**versionCode 20**）—— 詳情見「七、最新 APK」
 - **API 固定 URL：`https://api.god-music.com`** ✅（2026-07-17 起，唔會再變）
-- **要跑起個 App，開兩個 terminal 就得**：
-  1. `cd backend && node server.js`
-  2. `cloudflared tunnel run hymn-api`
-- ✅ **條 URL 已經固定咗**：tunnel 死咗／電腦重開，行返上面第 2 句就得，
-  **唔使改 config、唔使 rebuild、唔使重裝 APK**
-- ⚠️ 但 backend 仍然係跑喺**呢部 Mac** 度：**部機要開住 + 有網**，App 先用到
+- ✅ **backend + tunnel 而家係 launchd 自動管理，唔使人手開**（2026-07-17 起，見「七、開機自動啟動」）
+  - 登入之後自動行；死咗會自動拉返起（實測 kill -9 兩個，~2 秒內自動復活）
+- ✅ **條 URL 已經固定咗**：`https://api.god-music.com`，唔使改 config、唔使 rebuild、唔使重裝 APK
+- ⚠️ 但 backend 仍然係跑喺**呢部 Mac** 度：**部機要開住、有網、而且要登入咗**，App 先用到
 
 ---
 
@@ -510,6 +508,53 @@ pgrep -fl "cloudflared tunnel run"  # tunnel 有冇行緊
 **想一勞永逸唔使記住開**（未做，要 sudo）：
 `sudo cloudflared service install` 可以裝做 launchd daemon，開機自動行。
 Backend 都可以寫個 launchd plist 做同樣嘢。要 Eric 自己入密碼。
+
+### 開機自動啟動（2026-07-17 已設定好）✅
+
+兩個 process 都交咗俾 launchd，**唔使再人手開**：
+
+| Service | plist | 做乜 |
+|---|---|---|
+| `com.hymnapp.backend` | `~/Library/LaunchAgents/com.hymnapp.backend.plist` | 行 `node server.js` |
+| `com.cloudflare.cloudflared` | `~/Library/LaunchAgents/com.cloudflare.cloudflared.plist` | 行 `cloudflared tunnel run hymn-api` |
+
+兩個都 `RunAtLoad` + `KeepAlive`，即係**登入就自動行，死咗會自動拉返起**。
+**實測**：`kill -9` 兩個 process → **~2 秒內自動復活**（PID 變咗，證明係新開唔係冇死過），
+之後 `api.god-music.com` 嘅 health / hymns / stream 全部照樣 200。
+
+**常用指令**（唔使 sudo）：
+```bash
+launchctl list | grep -iE "cloudflare|hymnapp"      # 睇兩個仲喺唔喺度（第 2 欄係 exit code）
+launchctl unload ~/Library/LaunchAgents/com.hymnapp.backend.plist   # 停
+launchctl load -w ~/Library/LaunchAgents/com.hymnapp.backend.plist  # 開
+tail -f /tmp/hymn_backend.log                                       # backend log
+tail -f ~/Library/Logs/com.cloudflare.cloudflared.err.log           # tunnel log
+```
+
+#### ⚠️ 兩個坑（改嗰陣一定要記住）
+
+1. **backend plist 一定要自己 set `PATH`**
+   launchd 預設 PATH 係 `/usr/bin:/bin:/usr/sbin:/sbin`，**冇 `/opt/homebrew/bin`**。
+   但 backend 要 exec `yt-dlp`（喺 `/opt/homebrew/bin`）。唔 set 嘅話 server 會**照開得成功**，
+   但**每一首歌 resolve 都會失敗**（command not found）→ App 連到 backend 但永遠冇聲，超難查。
+   plist 入面 `EnvironmentVariables` 已經 set 咗。
+
+2. **`cloudflared service install` 整出嚟嗰個 plist 係壞嘅，一定要手改**
+   佢 generate 出嚟嘅 `ProgramArguments` **淨係得個 binary，冇任何參數**。
+   Named tunnel 咁行唔通 —— 淨行 `cloudflared` 只會 print
+   「use `cloudflared tunnel run` to start tunnel hymn-api」然後 exit 1，
+   launchd 就會不停 crash-loop，`api.god-music.com` 一路 530。
+   已經手動加返 `--config ... tunnel run hymn-api`。
+   **如果將來再行一次 `cloudflared service install`，佢會覆蓋返個 plist，要記得再加返啲參數。**
+
+#### ⚠️ LaunchAgent = 「登入之後」先行，唔係「開機就行」
+`cloudflared service install` 自己都有 warn：user launch agent 只會喺**用戶登入咗**之後行。
+即係話部 Mac 重開之後**停喺登入畫面嘅話，兩個都唔會行**。
+- 想真係「開機就行」→ 部 Mac 要開 **自動登入**（系統設定 → 使用者與群組 → 自動登入），
+  咁開機自動登入之後兩個 agent 就會跟住行。
+- 另一條路係裝做 **LaunchDaemon**（要 sudo，開機即行、唔使登入），
+  但 cloudflared 嘅憑證喺 `~/.cloudflared/`，daemon 行緊 root 會搵唔到，要搬 config 同 credentials
+  去 `/etc/cloudflared/` 先得 —— 較麻煩，未做。
 
 ### Cloudflare named tunnel 設定（2026-07-17 已做好，記錄低以防要重做）
 - Domain：**god-music.com**（Eric 喺 Cloudflare Registrar 買，DNS 喺 Cloudflare）
