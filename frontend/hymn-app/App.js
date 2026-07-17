@@ -35,18 +35,8 @@ try {
 } catch (e) {}
 
 // ===== Config =====
-// Bumped every build. Shown in the player top bar so a tester can confirm at a
-// glance exactly which JS bundle is running (the Android versionName is stuck
-// at 1.1.1 for every build, so it can't tell builds apart).
-const BUILD_TAG = 'v220-b15';
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 const VIDEO_HEIGHT = SCREEN_WIDTH * 9 / 16;
-
-// TEMP diagnostic: report on-device state to the backend log, since logcat
-// isn't reachable from the tester's phone. Fire-and-forget.
-function dbg(msg) {
-  try { fetch(`${API_BASE}/api/debug?m=${encodeURIComponent(`[${BUILD_TAG}] ${msg}`)}`).catch(() => {}); } catch (_) {}
-}
 
 // ===== 黑色主調（Rolex 綠只做 accent） =====
 const MAIN_BG_COLOR = '#000000';
@@ -160,16 +150,13 @@ function PlayerProvider({ children }) {
   const toggleShuffle = useCallback(async () => {
     try {
       const q = queueRef.current;
-      dbg(`shuffle:TAP qlen=${q.length} isShuffled=${isShuffledRef.current}`);
-      if (!q.length) { dbg('shuffle:BAILED empty queue'); setIsShuffled(s => !s); return; }
+      if (!q.length) { setIsShuffled(s => !s); return; }
       // Identify the current song robustly, not relying solely on
       // getActiveTrackIndex (which can momentarily return undefined).
-      let rawIdx = await TrackPlayer.getActiveTrackIndex();
-      let idx = rawIdx;
+      let idx = await TrackPlayer.getActiveTrackIndex();
       if (typeof idx !== 'number' || idx < 0 || idx >= q.length) idx = currentQueueIndexRef.current;
       if (typeof idx !== 'number' || idx < 0 || idx >= q.length) idx = 0;
       const cur = q[idx];
-      dbg(`shuffle:rawIdx=${rawIdx} idx=${idx} curId=${cur?.id}`);
       let position = 0;
       try { position = (await TrackPlayer.getProgress()).position || 0; } catch (_) {}
       // Remember whether we were playing: reset() stops playback, so we have to
@@ -202,7 +189,6 @@ function PlayerProvider({ children }) {
       setQueue(newQ);
       currentQueueIndexRef.current = 0;
       setCurrentQueueIndex(0);
-      dbg(`shuffle:newQ first5=${newQ.slice(0, 5).map(s => s.id).join(',')} wasPlaying=${wasPlaying} pos=${Math.round(position)}`);
       await TrackPlayer.reset();
       await TrackPlayer.add(newQ.map(toTrack));
       // Restore position BEFORE resuming. play() must be the last action here:
@@ -211,15 +197,7 @@ function PlayerProvider({ children }) {
       if (position > 1) { try { await TrackPlayer.seekTo(position); } catch (_) {} }
       if (wasPlaying) { try { await TrackPlayer.play(); } catch (_) {} }
       setIsShuffled(!isShuffledRef.current);
-      // PROOF: read the real native queue back and report its actual order.
-      try {
-        const nq = await TrackPlayer.getQueue();
-        const raw = await TrackPlayer.getPlaybackState();
-        const st = typeof raw === 'object' && raw !== null ? raw.state : raw;
-        dbg(`shuffle:NATIVE len=${nq.length} first5=${nq.slice(0, 5).map(t => t.id).join(',')} state=${st}`);
-      } catch (e) { dbg(`shuffle:getQueue failed ${e?.message}`); }
     } catch (e) {
-      dbg(`shuffle:ERROR ${e?.message || e}`);
       console.warn('toggleShuffle error:', e?.message || e);
     }
   }, []);
@@ -839,7 +817,7 @@ function FullScreenPlayerOverlay() {
         <TouchableOpacity style={fsStyles.dismissBtn} onPress={player.hidePlayer}>
           <MaterialIcons name="keyboard-arrow-down" size={24} color="#FFFFFF" />
         </TouchableOpacity>
-        <Text style={fsStyles.topBarTitle}>生命樹 <Text style={{ fontSize: 10, color: TEXT_SECONDARY }}>{BUILD_TAG}</Text></Text>
+        <Text style={fsStyles.topBarTitle}>生命樹</Text>
         <View style={fsStyles.dismissBtn} />
       </View>
 
