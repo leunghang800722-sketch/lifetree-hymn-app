@@ -103,7 +103,7 @@ export default function CategoryScreen({ navigation, showHymnList }) {
 
       {loading && (
         <View style={styles.topLoading}>
-          <ActivityIndicator size="small" color="#1ED760" />
+          <ActivityIndicator size="small" color="#3DB389" />
           <Text style={styles.topLoadingText}>載入中...</Text>
         </View>
       )}
@@ -167,22 +167,22 @@ export default function CategoryScreen({ navigation, showHymnList }) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#000000' },
+  container: { flex: 1, backgroundColor: '#0B0F0E' },
 
   // Header
   header: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 8 },
-  headerTitle: { fontSize: 28, fontWeight: '800', color: '#FFFFFF' },
+  headerTitle: { fontSize: 28, fontWeight: '800', color: '#F5F7F4' },
 
   // Section tabs
-  sectionTabs: { flexDirection: 'row', marginHorizontal: 16, marginBottom: 12, backgroundColor: '#1A1A1A', borderRadius: 10, padding: 3 },
+  sectionTabs: { flexDirection: 'row', marginHorizontal: 16, marginBottom: 12, backgroundColor: '#121A17', borderRadius: 10, padding: 3 },
   sectionTab: { flex: 1, paddingVertical: 10, alignItems: 'center', borderRadius: 8 },
-  sectionTabActive: { backgroundColor: '#2A2A2A' },
-  sectionTabText: { fontSize: 14, color: '#A0A0A0', fontWeight: '500' },
-  sectionTabTextActive: { color: '#FFFFFF', fontWeight: '700' },
+  sectionTabActive: { backgroundColor: '#1F2925' },
+  sectionTabText: { fontSize: 14, color: '#9AA696', fontWeight: '500' },
+  sectionTabTextActive: { color: '#F5F7F4', fontWeight: '700' },
 
   // Loading
   topLoading: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: 12, gap: 6 },
-  topLoadingText: { fontSize: 13, color: '#A0A0A0' },
+  topLoadingText: { fontSize: 13, color: '#9AA696' },
 
   // Language section
   langContent: { padding: 16, paddingBottom: 40 },
@@ -194,15 +194,15 @@ const styles = StyleSheet.create({
   },
   langEmoji: { fontSize: 28, marginRight: 14 },
   langInfo: { flex: 1 },
-  langLabel: { fontSize: 17, fontWeight: '700', color: '#FFFFFF' },
-  langHint: { fontSize: 12, color: '#A0A0A0', marginTop: 2 },
+  langLabel: { fontSize: 17, fontWeight: '700', color: '#F5F7F4' },
+  langHint: { fontSize: 12, color: '#9AA696', marginTop: 2 },
   langArrow: { fontSize: 22, fontWeight: '300' },
 
   // Artist section
   artistContent: { paddingBottom: 40 },
   letterGroup: { marginBottom: 8 },
   letterHeader: {
-    fontSize: 16, fontWeight: '800', color: '#FFFFFF',
+    fontSize: 16, fontWeight: '800', color: '#F5F7F4',
     paddingHorizontal: 20, paddingVertical: 10, paddingTop: 16,
   },
   artistItem: {
@@ -211,12 +211,12 @@ const styles = StyleSheet.create({
   },
   artistAvatar: {
     width: 40, height: 40, borderRadius: 20,
-    backgroundColor: '#2A2A2A', justifyContent: 'center', alignItems: 'center',
+    backgroundColor: '#1F2925', justifyContent: 'center', alignItems: 'center',
     marginRight: 14,
   },
-  artistInitial: { fontSize: 16, fontWeight: '700', color: '#FFFFFF' },
+  artistInitial: { fontSize: 16, fontWeight: '700', color: '#F5F7F4' },
   artistInfo: { flex: 1 },
-  artistName: { fontSize: 15, fontWeight: '600', color: '#FFFFFF' },
-  artistCount: { fontSize: 12, color: '#A0A0A0', marginTop: 2 },
+  artistName: { fontSize: 15, fontWeight: '600', color: '#F5F7F4' },
+  artistCount: { fontSize: 12, color: '#9AA696', marginTop: 2 },
   artistArrow: { fontSize: 18, color: '#555' },
 });

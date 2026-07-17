@@ -47,10 +47,10 @@ export default function AuthScreen({ onClose }) {
       <View style={styles.container}>
         <View style={styles.inner}>
           <TouchableOpacity style={styles.closeBtn} onPress={onClose}>
-            <MaterialIcons name="close" size={24} color="#FFFFFF" />
+            <MaterialIcons name="close" size={24} color="#F5F7F4" />
           </TouchableOpacity>
           <View style={styles.logoArea}>
-            <View style={[styles.logoIcon, { backgroundColor: '#006039' }]}>
+            <View style={[styles.logoIcon, { backgroundColor: '#3DB389' }]}>
               <Text style={[styles.avatarLetter, { fontSize: 28, fontWeight: '800' }]}>{(user.username || '?').charAt(0).toUpperCase()}</Text>
             </View>
             <Text style={styles.logoTitle}>{user.username}</Text>
@@ -69,7 +69,7 @@ export default function AuthScreen({ onClose }) {
       <View style={styles.inner}>
         {/* Close button */}
         <TouchableOpacity style={styles.closeBtn} onPress={onClose}>
-          <MaterialIcons name="close" size={24} color="#FFFFFF" />
+          <MaterialIcons name="close" size={24} color="#F5F7F4" />
         </TouchableOpacity>
 
         {/* Logo area */}
@@ -141,26 +141,26 @@ export default function AuthScreen({ onClose }) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#000000' },
+  container: { flex: 1, backgroundColor: '#0B0F0E' },
   inner: { flex: 1, paddingHorizontal: 24, justifyContent: 'center' },
   closeBtn: { position: 'absolute', top: 50, right: 20, zIndex: 10, padding: 8 },
 
   // Logo
   logoArea: { alignItems: 'center', marginBottom: 40 },
-  logoIcon: { width: 72, height: 72, borderRadius: 36, backgroundColor: '#1A1A1A', justifyContent: 'center', alignItems: 'center', marginBottom: 12 },
+  logoIcon: { width: 72, height: 72, borderRadius: 36, backgroundColor: '#121A17', justifyContent: 'center', alignItems: 'center', marginBottom: 12 },
   logoEmoji: { fontSize: 32 },
-  logoTitle: { fontSize: 24, fontWeight: '800', color: '#FFFFFF', marginBottom: 4 },
-  logoSubtitle: { fontSize: 15, color: '#A0A0A0' },
+  logoTitle: { fontSize: 24, fontWeight: '800', color: '#F5F7F4', marginBottom: 4 },
+  logoSubtitle: { fontSize: 15, color: '#9AA696' },
 
   // Form
   form: { marginBottom: 20 },
-  inputWrap: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#1A1A1A', borderRadius: 12, marginBottom: 12, paddingHorizontal: 14, height: 52, borderWidth: 1, borderColor: '#2A2A2A' },
+  inputWrap: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#121A17', borderRadius: 12, marginBottom: 12, paddingHorizontal: 14, height: 52, borderWidth: 1, borderColor: '#1F2925' },
   inputIcon: { marginRight: 10 },
-  input: { flex: 1, fontSize: 16, color: '#FFFFFF' },
+  input: { flex: 1, fontSize: 16, color: '#F5F7F4' },
 
-  submitBtn: { backgroundColor: '#1ED760', borderRadius: 12, height: 52, justifyContent: 'center', alignItems: 'center', marginTop: 4 },
-  submitText: { fontSize: 17, fontWeight: '700', color: '#000000' },
+  submitBtn: { backgroundColor: '#3DB389', borderRadius: 12, height: 52, justifyContent: 'center', alignItems: 'center', marginTop: 4 },
+  submitText: { fontSize: 17, fontWeight: '700', color: '#0B0F0E' },
 
-  toggleText: { textAlign: 'center', fontSize: 14, color: '#1ED760', marginTop: 8 },
-  avatarLetter: { color: '#FFFFFF', textAlign: 'center' },
+  toggleText: { textAlign: 'center', fontSize: 14, color: '#3DB389', marginTop: 8 },
+  avatarLetter: { color: '#F5F7F4', textAlign: 'center' },
 });

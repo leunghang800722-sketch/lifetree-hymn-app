@@ -250,7 +250,7 @@ export default function SearchScreen({ navigation }) {
         <>
           {loading && (
             <View style={styles.topLoading}>
-              <ActivityIndicator size="small" color="#1ED760" />
+              <ActivityIndicator size="small" color="#3DB389" />
               <Text style={styles.topLoadingText}>搜尋中...</Text>
             </View>
           )}
@@ -287,11 +287,11 @@ export default function SearchScreen({ navigation }) {
 const DISCOVER_CARD_SIZE = Math.floor((SCREEN_WIDTH - 64) / 2.5);
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#000000' },
+  container: { flex: 1, backgroundColor: '#0B0F0E' },
 
   // Header
   header: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 8 },
-  headerTitle: { fontSize: 28, fontWeight: '800', color: '#FFFFFF' },
+  headerTitle: { fontSize: 28, fontWeight: '800', color: '#F5F7F4' },
 
   // Search bar
   searchWrap: {
@@ -306,10 +306,10 @@ const styles = StyleSheet.create({
   },
   searchWrapFocused: {
     borderWidth: 2,
-    borderColor: '#1ED760',
+    borderColor: '#3DB389',
   },
   searchIcon: { fontSize: 16, marginRight: 8 },
-  searchInput: { flex: 1, fontSize: 16, color: '#111111', height: 48 },
+  searchInput: { flex: 1, fontSize: 16, color: '#0B0F0E', height: 48 },
   clearBtn: { padding: 4 },
   clearIcon: { fontSize: 16, color: '#666' },
 
@@ -320,13 +320,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 20,
-    backgroundColor: '#2A2A2A',
+    backgroundColor: '#1F2925',
   },
   chipActive: {
-    backgroundColor: '#1ED760',
+    backgroundColor: '#3DB389',
   },
-  chipText: { fontSize: 14, color: '#A0A0A0', fontWeight: '500' },
-  chipTextActive: { color: '#000000', fontWeight: '700' },
+  chipText: { fontSize: 14, color: '#9AA696', fontWeight: '500' },
+  chipTextActive: { color: '#0B0F0E', fontWeight: '700' },
 
   // Default view
   defaultScroll: { flex: 1 },
@@ -334,7 +334,7 @@ const styles = StyleSheet.create({
 
   // Sections
   section: { marginBottom: 20 },
-  sectionTitle: { fontSize: 18, fontWeight: '700', color: '#FFFFFF', marginBottom: 10, paddingHorizontal: 16 },
+  sectionTitle: { fontSize: 18, fontWeight: '700', color: '#F5F7F4', marginBottom: 10, paddingHorizontal: 16 },
 
   // Recent
   recentRow: {
@@ -342,8 +342,8 @@ const styles = StyleSheet.create({
     paddingVertical: 10, paddingHorizontal: 16,
   },
   recentIcon: { fontSize: 16, marginRight: 12, width: 20, textAlign: 'center' },
-  recentText: { flex: 1, fontSize: 15, color: '#FFFFFF' },
-  recentArrow: { fontSize: 14, color: '#A0A0A0' },
+  recentText: { flex: 1, fontSize: 15, color: '#F5F7F4' },
+  recentArrow: { fontSize: 14, color: '#9AA696' },
 
   // Discover
   discoverScroll: { paddingHorizontal: 12, gap: 10 },
@@ -353,7 +353,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   discoverTagText: {
-    fontSize: 13, fontWeight: '700', color: '#FFFFFF',
+    fontSize: 13, fontWeight: '700', color: '#F5F7F4',
     backgroundColor: 'rgba(0,0,0,0.6)', paddingHorizontal: 10, paddingVertical: 3, borderRadius: 10,
     overflow: 'hidden',
   },
@@ -365,26 +365,26 @@ const styles = StyleSheet.create({
   },
   suggestIcon: { fontSize: 16, marginRight: 12, width: 20, textAlign: 'center' },
   suggestInfo: { flex: 1 },
-  suggestText: { fontSize: 15, color: '#FFFFFF' },
-  suggestType: { fontSize: 12, color: '#A0A0A0', marginTop: 1 },
-  suggestArrow: { fontSize: 14, color: '#A0A0A0' },
+  suggestText: { fontSize: 15, color: '#F5F7F4' },
+  suggestType: { fontSize: 12, color: '#9AA696', marginTop: 1 },
+  suggestArrow: { fontSize: 14, color: '#9AA696' },
 
   // Results
   topLoading: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: 12, gap: 6 },
-  topLoadingText: { fontSize: 13, color: '#A0A0A0' },
+  topLoadingText: { fontSize: 13, color: '#9AA696' },
   resultList: { flex: 1 },
   resultRow: {
     flexDirection: 'row', alignItems: 'center',
     paddingVertical: 10, paddingHorizontal: 16,
   },
-  thumb: { justifyContent: 'center', alignItems: 'center', backgroundColor: '#1A1A1A' },
+  thumb: { justifyContent: 'center', alignItems: 'center', backgroundColor: '#121A17' },
   resultInfo: { flex: 1, marginLeft: 12 },
-  resultTitle: { fontSize: 15, fontWeight: '600', color: '#FFFFFF' },
-  resultArtist: { fontSize: 12, color: '#A0A0A0', marginTop: 2 },
-  resultMore: { fontSize: 16, color: '#A0A0A0', paddingHorizontal: 8, paddingVertical: 4 },
+  resultTitle: { fontSize: 15, fontWeight: '600', color: '#F5F7F4' },
+  resultArtist: { fontSize: 12, color: '#9AA696', marginTop: 2 },
+  resultMore: { fontSize: 16, color: '#9AA696', paddingHorizontal: 8, paddingVertical: 4 },
 
   // Empty
   emptyWrap: { alignItems: 'center', paddingVertical: 60 },
-  emptyText: { fontSize: 16, color: '#A0A0A0' },
+  emptyText: { fontSize: 16, color: '#9AA696' },
   emptyHint: { fontSize: 13, color: '#666', marginTop: 6 },
 });

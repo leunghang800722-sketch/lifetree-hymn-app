@@ -98,7 +98,7 @@ export default function HomeScreen({ navigation, onPlayHymn }) {
               ) : (
                 userPlaylists.map(pl => (
                   <TouchableOpacity key={pl.id} style={plModalStyles.item} onPress={() => handleAddToPlaylist(pl.id)}>
-                    <MaterialIcons name={pl.type === 'video' ? 'videocam' : 'music-note'} size={18} color={pl.type === 'video' ? '#64B5F6' : '#A0A0A0'} />
+                    <MaterialIcons name={pl.type === 'video' ? 'videocam' : 'music-note'} size={18} color={pl.type === 'video' ? '#64B5F6' : '#9AA696'} />
                     <Text style={plModalStyles.itemText}>{pl.name}</Text>
                     <Text style={plModalStyles.itemCount}>{pl.hymns.length} 首</Text>
                   </TouchableOpacity>
@@ -175,12 +175,12 @@ export default function HomeScreen({ navigation, onPlayHymn }) {
 
 const plModalStyles = StyleSheet.create({
   overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.7)', justifyContent: 'center', alignItems: 'center', padding: 30 },
-  card: { backgroundColor: '#1A1A1A', borderRadius: 16, padding: 24, width: '100%', maxWidth: 360 },
-  title: { fontSize: 18, fontWeight: '800', color: '#FFFFFF', marginBottom: 14 },
-  empty: { fontSize: 14, color: '#A0A0A0', textAlign: 'center', paddingVertical: 20 },
-  item: { flexDirection: 'row', alignItems: 'center', paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#2A2A2A' },
-  itemText: { flex: 1, fontSize: 15, color: '#FFFFFF', marginLeft: 10 },
-  itemCount: { fontSize: 12, color: '#A0A0A0' },
+  card: { backgroundColor: '#121A17', borderRadius: 16, padding: 24, width: '100%', maxWidth: 360 },
+  title: { fontSize: 18, fontWeight: '800', color: '#F5F7F4', marginBottom: 14 },
+  empty: { fontSize: 14, color: '#9AA696', textAlign: 'center', paddingVertical: 20 },
+  item: { flexDirection: 'row', alignItems: 'center', paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#1F2925' },
+  itemText: { flex: 1, fontSize: 15, color: '#F5F7F4', marginLeft: 10 },
+  itemCount: { fontSize: 12, color: '#9AA696' },
 });
 
 const styles = StyleSheet.create({

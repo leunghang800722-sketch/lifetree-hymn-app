@@ -38,12 +38,16 @@ try {
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 const VIDEO_HEIGHT = SCREEN_WIDTH * 9 / 16;
 
-// ===== 黑色主調（Rolex 綠只做 accent） =====
-const MAIN_BG_COLOR = '#000000';
-const CARD_BG_COLOR = '#1A1A1A';
-const ACCENT_COLOR = '#1ED760';
-const TEXT_PRIMARY = '#FFFFFF';
-const TEXT_SECONDARY = '#A0A0A0';
+// ===== 「生命樹」色板 (REDESIGN-PLAN.md §5.2) =====
+// 呢五個常數散落用咗 60+ 次,所以唔逐個改,直接指返單一色板 —— 全部一次過轉色。
+// 舊值:黑底 #000000 + Spotify 綠 #1ED760(§5.2 明確要求同 Spotify 綠講拜拜,
+// 因為佢令個 App 睇落似 Spotify 翻版,同「安靜、屬靈陪伴」嘅定位相沖)。
+const MAIN_BG_COLOR = DesignColors.background;
+const CARD_BG_COLOR = DesignColors.card;
+const ACCENT_COLOR = DesignColors.accent;   // 生命綠
+const GOLD_COLOR = DesignColors.gold;       // 【只限金句/精選】
+const TEXT_PRIMARY = DesignColors.textPrimary;
+const TEXT_SECONDARY = DesignColors.textSecondary;
 
 function getAlbumCoverUrl(youtubeId) {
   return youtubeId ? `https://img.youtube.com/vi/${youtubeId}/hqdefault.jpg` : null;
@@ -608,10 +612,10 @@ function MiniPlayer({ onPress }) {
           </View>
         </TouchableOpacity>
         <TouchableOpacity style={miStyles.favBtn} onPress={(e) => { e.stopPropagation(); toggleFavorite(currentHymn); }} activeOpacity={0.7}>
-          <MaterialIcons name={fav ? 'favorite' : 'favorite-border'} size={24} color={fav ? '#1ED760' : '#FFFFFF'} />
+          <MaterialIcons name={fav ? 'favorite' : 'favorite-border'} size={24} color={fav ? ACCENT_COLOR : TEXT_PRIMARY} />
         </TouchableOpacity>
         <TouchableOpacity style={miStyles.playBtn} onPress={(e) => { e.stopPropagation(); togglePlayPause(); }} activeOpacity={0.8}>
-          <MaterialIcons name={isPlaying ? 'pause' : 'play-arrow'} size={20} color="#000000" />
+          <MaterialIcons name={isPlaying ? 'pause' : 'play-arrow'} size={20} color={MAIN_BG_COLOR} />
         </TouchableOpacity>
       </View>
     </View>
@@ -629,13 +633,13 @@ const miStyles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 10,
   },
-  cover: { width: 44, height: 44, borderRadius: 6, backgroundColor: '#161F19' },
+  cover: { width: 44, height: 44, borderRadius: 6, backgroundColor: DesignColors.cardLight },
   info: { flex: 1, marginLeft: 12 },
   title: { fontSize: 14, fontWeight: '600', color: TEXT_PRIMARY },
   artist: { fontSize: 12, color: TEXT_SECONDARY, marginTop: 1 },
   mainTouch: { flex: 1, flexDirection: 'row', alignItems: 'center' },
   favBtn: { width: 40, alignItems: 'center', justifyContent: 'center' },
-  playBtn: { width: 36, height: 36, borderRadius: 18, backgroundColor: '#FFFFFF', justifyContent: 'center', alignItems: 'center' },
+  playBtn: { width: 36, height: 36, borderRadius: 18, backgroundColor: TEXT_PRIMARY, justifyContent: 'center', alignItems: 'center' },
 });
 
 // ================================================================
@@ -710,13 +714,13 @@ function HomeScreen({ hymns, activeCategory, onCategoryChange, onPlayHymn, onOpe
         </View>
         <View style={hs.iconWrap}>
           <TouchableOpacity style={hs.iconBtn}>
-            <MaterialIcons name="notifications-none" size={24} color="#FFFFFF" />
+            <MaterialIcons name="notifications-none" size={24} color={TEXT_PRIMARY} />
           </TouchableOpacity>
           <TouchableOpacity style={hs.avatarBtn} onPress={onOpenAuth}>
             {user ? (
               <Text style={hs.avatarText}>{(user.username || '?').charAt(0).toUpperCase()}</Text>
             ) : (
-              <MaterialIcons name="person-outline" size={20} color="#FFFFFF" />
+              <MaterialIcons name="person-outline" size={20} color={TEXT_PRIMARY} />
             )}
           </TouchableOpacity>
         </View>
@@ -777,14 +781,14 @@ const hs = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: '#006039',
+    backgroundColor: DesignColors.accent,
     justifyContent: 'center',
     alignItems: 'center',
   },
   avatarText: {
     fontSize: 16,
     fontWeight: '700',
-    color: '#000000',
+    color: MAIN_BG_COLOR,
   },
 });
 
@@ -827,7 +831,7 @@ function FullScreenPlayerOverlay() {
       {/* Top Bar */}
       <View style={[fsStyles.topBar, { paddingTop: safeTop }]}>
         <TouchableOpacity style={fsStyles.dismissBtn} onPress={player.hidePlayer}>
-          <MaterialIcons name="keyboard-arrow-down" size={24} color="#FFFFFF" />
+          <MaterialIcons name="keyboard-arrow-down" size={24} color={TEXT_PRIMARY} />
         </TouchableOpacity>
         <Text style={fsStyles.topBarTitle}>生命樹</Text>
         <View style={fsStyles.dismissBtn} />
@@ -872,22 +876,22 @@ function FullScreenPlayerOverlay() {
         </View>
 
         {/* Action Bar — long pill segmented bar */}
-        <View style={{ flexDirection: 'row', backgroundColor: '#1F2925', marginHorizontal: 16, borderRadius: 999, padding: 6, marginBottom: 16 }}>
+        <View style={{ flexDirection: 'row', backgroundColor: DesignColors.border, marginHorizontal: 16, borderRadius: 999, padding: 6, marginBottom: 16 }}>
           <TouchableOpacity style={fsStyles.pillButton} onPress={() => toggleFavorite(cur)}>
             <Text style={{ fontSize: 20 }}>❤️</Text>
-            <Text style={{ fontSize: 11, color: '#9AA696' }}>最愛</Text>
+            <Text style={{ fontSize: 11, color: TEXT_SECONDARY }}>最愛</Text>
           </TouchableOpacity>
           <TouchableOpacity style={fsStyles.pillButton} onPress={() => alert('歌詞')}>
             <Text style={{ fontSize: 20 }}>📝</Text>
-            <Text style={{ fontSize: 11, color: '#9AA696' }}>歌詞</Text>
+            <Text style={{ fontSize: 11, color: TEXT_SECONDARY }}>歌詞</Text>
           </TouchableOpacity>
           <TouchableOpacity style={fsStyles.pillButton} onPress={() => alert('分享')}>
             <Text style={{ fontSize: 20 }}>🔗</Text>
-            <Text style={{ fontSize: 11, color: '#9AA696' }}>分享</Text>
+            <Text style={{ fontSize: 11, color: TEXT_SECONDARY }}>分享</Text>
           </TouchableOpacity>
           <TouchableOpacity style={fsStyles.pillButton} onPress={() => setShowPlaylistSheet(true)}>
             <Text style={{ fontSize: 20 }}>📋</Text>
-            <Text style={{ fontSize: 11, color: '#9AA696' }}>清單</Text>
+            <Text style={{ fontSize: 11, color: TEXT_SECONDARY }}>清單</Text>
           </TouchableOpacity>
         </View>
         <View style={fsStyles.progressSection}>
@@ -911,13 +915,13 @@ function FullScreenPlayerOverlay() {
             </View>
           </TouchableOpacity>
           <TouchableOpacity style={fsStyles.controlBtn} onPress={player.handlePrevTrack} activeOpacity={0.6}>
-            <MaterialIcons name="skip-previous" size={32} color="#FFFFFF" />
+            <MaterialIcons name="skip-previous" size={32} color={TEXT_PRIMARY} />
           </TouchableOpacity>
           <TouchableOpacity style={fsStyles.playBtn} onPress={player.togglePlayPause} activeOpacity={0.8}>
-            <MaterialIcons name={player.isPlaying ? 'pause' : 'play-arrow'} size={24} color="#000000" />
+            <MaterialIcons name={player.isPlaying ? 'pause' : 'play-arrow'} size={24} color={MAIN_BG_COLOR} />
           </TouchableOpacity>
           <TouchableOpacity style={fsStyles.controlBtn} onPress={player.handleNextTrack} activeOpacity={0.6}>
-            <MaterialIcons name="skip-next" size={32} color="#FFFFFF" />
+            <MaterialIcons name="skip-next" size={32} color={TEXT_PRIMARY} />
           </TouchableOpacity>
           <TouchableOpacity style={fsStyles.controlBtn} onPress={() => player.setRepeatMode?.((player.repeatMode + 1) % 3)} activeOpacity={0.6}>
             <View style={{ alignItems: 'center' }}>
@@ -957,7 +961,7 @@ function FullScreenPlayerOverlay() {
             paddingHorizontal: 16, paddingBottom: 12,
           }}>
             <TouchableOpacity onPress={() => setIsPlaylistVisible(false)} style={{ padding: 4 }}>
-              <MaterialIcons name="keyboard-arrow-down" size={24} color="#FFFFFF" />
+              <MaterialIcons name="keyboard-arrow-down" size={24} color={TEXT_PRIMARY} />
             </TouchableOpacity>
             <Text style={{ fontSize: 16, fontWeight: '600', color: TEXT_PRIMARY }}>📋 播放清單</Text>
             <View style={{ width: 40 }} />
@@ -1040,16 +1044,16 @@ function FullScreenPlayerOverlay() {
       {/* Bottom Sheet for adding to playlists */}
       <Modal visible={showPlaylistSheet} animationType="slide" transparent onRequestClose={() => setShowPlaylistSheet(false)}>
         <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.85)', justifyContent: 'flex-end' }}>
-          <Animated.View style={{ backgroundColor: '#121A17', borderTopLeftRadius: 20, borderTopRightRadius: 20, maxHeight: '70%', transform: [{ translateY: sheetPanY }] }}>
+          <Animated.View style={{ backgroundColor: CARD_BG_COLOR, borderTopLeftRadius: 20, borderTopRightRadius: 20, maxHeight: '70%', transform: [{ translateY: sheetPanY }] }}>
             {/* Drag Handle */}
             <View {...sheetPanResponder.panHandlers} style={{ alignItems: 'center', paddingVertical: 10 }}>
               <View style={{ width: 36, height: 4, borderRadius: 2, backgroundColor: '#555' }} />
             </View>
-            <Text style={{ color: '#FFFFFF', fontSize: 18, fontWeight: '600', padding: 20 }}>加入到清單</Text>
+            <Text style={{ color: TEXT_PRIMARY, fontSize: 18, fontWeight: '600', padding: 20 }}>加入到清單</Text>
 
             {/* 最愛 */}
-            <TouchableOpacity onPress={() => { toggleFavorite(cur); setShowPlaylistSheet(false); }} style={{ padding: 16, borderBottomWidth: 1, borderBottomColor: '#1F2925' }}>
-              <Text style={{ color: '#E8B86D' }}>❤️ 最愛清單</Text>
+            <TouchableOpacity onPress={() => { toggleFavorite(cur); setShowPlaylistSheet(false); }} style={{ padding: 16, borderBottomWidth: 1, borderBottomColor: DesignColors.border }}>
+              <Text style={{ color: GOLD_COLOR }}>❤️ 最愛清單</Text>
             </TouchableOpacity>
 
             {/* 其他清單 */}
@@ -1058,13 +1062,13 @@ function FullScreenPlayerOverlay() {
               keyExtractor={item => String(item.id)}
               renderItem={({ item }) => (
                 <TouchableOpacity onPress={() => { addToPlaylist(item.id, cur); setShowPlaylistSheet(false); }} style={{ padding: 16 }}>
-                  <Text style={{ color: '#FFFFFF' }}>{item.title}</Text>
+                  <Text style={{ color: TEXT_PRIMARY }}>{item.title}</Text>
                 </TouchableOpacity>
               )}
             />
 
             <TouchableOpacity onPress={() => setShowPlaylistSheet(false)} style={{ padding: 20, alignItems: 'center' }}>
-              <Text style={{ color: '#9AA696' }}>取消</Text>
+              <Text style={{ color: TEXT_SECONDARY }}>取消</Text>
             </TouchableOpacity>
           </Animated.View>
         </View>
@@ -1079,7 +1083,7 @@ const fsStyles = StyleSheet.create({
   topBar: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, paddingBottom: 8 },
   pillButton: { flex: 1, alignItems: 'center', paddingVertical: 12, paddingHorizontal: 8, borderRadius: 999, marginHorizontal: 2 },
   dismissBtn: { width: 40, height: 40, justifyContent: 'center', alignItems: 'center' },
-  dismissIcon: { fontSize: 16, color: '#FFFFFF' },
+  dismissIcon: { fontSize: 16, color: TEXT_PRIMARY },
   topBarTitle: { fontSize: 16, fontWeight: '600', color: TEXT_PRIMARY },
   coverWrap: {
     width: '85%',
@@ -1125,12 +1129,12 @@ const fsStyles = StyleSheet.create({
   controlsRow: { flexDirection: 'row', justifyContent: 'space-evenly', alignItems: 'center', paddingVertical: 10, paddingHorizontal: 20 },
   controlBtn: { width: 48, height: 48, justifyContent: 'center', alignItems: 'center' },
   ctrlIconShuffle: { fontSize: 32, color: TEXT_SECONDARY },
-  ctrlIconPrev: { fontSize: 32, color: '#FFFFFF' },
-  ctrlIconNext: { fontSize: 32, color: '#FFFFFF' },
+  ctrlIconPrev: { fontSize: 32, color: TEXT_PRIMARY },
+  ctrlIconNext: { fontSize: 32, color: TEXT_PRIMARY },
   ctrlIconActive: { color: ACCENT_COLOR },
   ctrlActiveDot: { width: 4, height: 4, borderRadius: 2, backgroundColor: ACCENT_COLOR, marginTop: 3 },
-  playBtn: { width: 68, height: 68, borderRadius: 34, backgroundColor: '#FFFFFF', justifyContent: 'center', alignItems: 'center' },
-  playBtnIcon: { fontSize: 24, color: '#000000', marginLeft: 2 },
+  playBtn: { width: 68, height: 68, borderRadius: 34, backgroundColor: TEXT_PRIMARY, justifyContent: 'center', alignItems: 'center' },
+  playBtnIcon: { fontSize: 24, color: MAIN_BG_COLOR, marginLeft: 2 },
   handleBar: { width: 36, height: 4, backgroundColor: 'rgba(255,255,255,0.2)', borderRadius: 2, marginBottom: 8 },
   sheetHandleRow: { flexDirection: 'row', alignItems: 'center' },
   sheetTitle: { fontSize: 14, fontWeight: '600', color: TEXT_PRIMARY, marginRight: 8 },
@@ -1144,7 +1148,7 @@ const fsStyles = StyleSheet.create({
   sheetCount: { fontSize: 12, color: TEXT_SECONDARY, fontWeight: '500' },
   queueItem: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 10 },
   queueItemActive: { backgroundColor: 'rgba(255,255,255,0.08)' },
-  queueCover: { width: 40, height: 40, borderRadius: 6, backgroundColor: '#161F19' },
+  queueCover: { width: 40, height: 40, borderRadius: 6, backgroundColor: DesignColors.cardLight },
   queueInfo: { flex: 1, marginLeft: 10 },
   queueTitle: { fontSize: 14, fontWeight: '600', color: TEXT_PRIMARY },
   queueArtist: { fontSize: 12, color: TEXT_SECONDARY, marginTop: 2 },
@@ -1296,7 +1300,7 @@ const pageStyles = StyleSheet.create({
   screenWrap: { flex: 1 },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   hymnListModal: { flex: 1, backgroundColor: MAIN_BG_COLOR },
-  hymnListClose: { padding: 16, backgroundColor: CARD_BG_COLOR, borderBottomWidth: 1, borderBottomColor: '#2A2A2A' },
+  hymnListClose: { padding: 16, backgroundColor: CARD_BG_COLOR, borderBottomWidth: 1, borderBottomColor: DesignColors.cardLight },
   hymnListCloseText: { fontSize: 16, color: TEXT_PRIMARY },
   loadingText: { color: TEXT_SECONDARY, marginTop: 16, fontSize: 15 },
 });

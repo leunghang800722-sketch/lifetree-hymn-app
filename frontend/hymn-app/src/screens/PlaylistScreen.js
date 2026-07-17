@@ -16,7 +16,7 @@ function CoverThumb({ youtubeId, size = CARD_SIZE, type }) {
   const uri = youtubeId ? `https://img.youtube.com/vi/${youtubeId}/hqdefault.jpg` : null;
   if (!uri || failed) {
     return (
-      <View style={[styles.cover, { width: size, height: size, borderRadius: type === 'video' ? 6 : 8, backgroundColor: type === 'video' ? '#1A237E' : '#1A1A1A' }]}>
+      <View style={[styles.cover, { width: size, height: size, borderRadius: type === 'video' ? 6 : 8, backgroundColor: type === 'video' ? '#1A237E' : '#121A17' }]}>
         <MaterialIcons name={type === 'video' ? 'videocam' : 'music-note'} size={size * 0.35} color="#555" />
       </View>
     );
@@ -79,7 +79,7 @@ export default function PlaylistScreen({ onPlayHymn }) {
       {allItems.length === 0 ? (
         <View style={styles.emptyWrap}>
           <View style={styles.emptyIconBg}>
-            <MaterialIcons name="library-music" size={40} color="#2A2A2A" />
+            <MaterialIcons name="library-music" size={40} color="#1F2925" />
           </View>
           <Text style={styles.emptyTitle}>建立你的第一個播放清單</Text>
           <Text style={styles.emptyHint}>音樂清單可背景播放；影音清單可前景觀看</Text>
@@ -102,8 +102,8 @@ export default function PlaylistScreen({ onPlayHymn }) {
                 <Text style={styles.rowName} numberOfLines={1}>{item.name}</Text>
                 <View style={styles.rowMeta}>
                   <View style={[styles.typeTag, { backgroundColor: item.type === 'video' ? 'rgba(100,181,246,0.15)' : item.type === 'system' ? 'rgba(30,215,96,0.15)' : 'rgba(160,160,160,0.15)' }]}>
-                    <MaterialIcons name={item.type === 'video' ? 'videocam' : item.type === 'system' ? 'favorite' : 'music-note'} size={12} color={item.type === 'video' ? '#64B5F6' : item.type === 'system' ? '#1ED760' : '#A0A0A0'} />
-                    <Text style={[styles.typeText, { color: item.type === 'video' ? '#64B5F6' : item.type === 'system' ? '#1ED760' : '#A0A0A0' }]}>
+                    <MaterialIcons name={item.type === 'video' ? 'videocam' : item.type === 'system' ? 'favorite' : 'music-note'} size={12} color={item.type === 'video' ? '#64B5F6' : item.type === 'system' ? '#3DB389' : '#9AA696'} />
+                    <Text style={[styles.typeText, { color: item.type === 'video' ? '#64B5F6' : item.type === 'system' ? '#3DB389' : '#9AA696' }]}>
                       {item.type === 'video' ? '影音' : item.type === 'system' ? '最愛' : '音樂'}
                     </Text>
                   </View>
@@ -155,7 +155,7 @@ export default function PlaylistScreen({ onPlayHymn }) {
         <View style={styles.detailContainer}>
           <View style={styles.detailHeader}>
             <TouchableOpacity onPress={() => setShowDetail(null)}>
-              <MaterialIcons name="arrow-back" size={24} color="#FFF" />
+              <MaterialIcons name="arrow-back" size={24} color="#F5F7F4" />
             </TouchableOpacity>
           </View>
           {showDetail && (
@@ -180,7 +180,7 @@ export default function PlaylistScreen({ onPlayHymn }) {
                     const shuffled = [...showDetail.hymns].sort(() => Math.random() - 0.5);
                     if (onPlayHymn) onPlayHymn(shuffled[0], { mode: showDetail.type === 'video' ? 'video' : 'audio', playlist: shuffled });
                   }}>
-                    <MaterialIcons name="shuffle" size={18} color="#A0A0A0" />
+                    <MaterialIcons name="shuffle" size={18} color="#9AA696" />
                   </TouchableOpacity>
                 </View>
               )}
@@ -236,65 +236,65 @@ export default function PlaylistScreen({ onPlayHymn }) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#000000' },
+  container: { flex: 1, backgroundColor: '#0B0F0E' },
 
   // Header
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, paddingTop: 16, paddingBottom: 12 },
-  title: { fontSize: 28, fontWeight: '800', color: '#FFFFFF' },
-  subtitle: { fontSize: 13, color: '#A0A0A0', marginTop: 2 },
-  addBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#1ED760', justifyContent: 'center', alignItems: 'center' },
+  title: { fontSize: 28, fontWeight: '800', color: '#F5F7F4' },
+  subtitle: { fontSize: 13, color: '#9AA696', marginTop: 2 },
+  addBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#3DB389', justifyContent: 'center', alignItems: 'center' },
 
   // Empty
   emptyWrap: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingBottom: 80, paddingHorizontal: 40 },
-  emptyIconBg: { width: 80, height: 80, borderRadius: 40, backgroundColor: '#1A1A1A', justifyContent: 'center', alignItems: 'center', marginBottom: 16 },
-  emptyTitle: { fontSize: 17, fontWeight: '700', color: '#FFFFFF', marginBottom: 6, textAlign: 'center' },
-  emptyHint: { fontSize: 13, color: '#A0A0A0', textAlign: 'center', lineHeight: 20, marginBottom: 20 },
-  emptyBtn: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#1ED760', paddingHorizontal: 20, paddingVertical: 12, borderRadius: 24, gap: 6 },
+  emptyIconBg: { width: 80, height: 80, borderRadius: 40, backgroundColor: '#121A17', justifyContent: 'center', alignItems: 'center', marginBottom: 16 },
+  emptyTitle: { fontSize: 17, fontWeight: '700', color: '#F5F7F4', marginBottom: 6, textAlign: 'center' },
+  emptyHint: { fontSize: 13, color: '#9AA696', textAlign: 'center', lineHeight: 20, marginBottom: 20 },
+  emptyBtn: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#3DB389', paddingHorizontal: 20, paddingVertical: 12, borderRadius: 24, gap: 6 },
 
   // Row
   listContent: { paddingBottom: 20 },
   row: { flexDirection: 'row', alignItems: 'center', paddingVertical: 8, paddingHorizontal: 16 },
   cover: { justifyContent: 'center', alignItems: 'center' },
   rowInfo: { flex: 1, marginLeft: 12 },
-  rowName: { fontSize: 16, fontWeight: '600', color: '#FFFFFF' },
+  rowName: { fontSize: 16, fontWeight: '600', color: '#F5F7F4' },
   rowMeta: { flexDirection: 'row', alignItems: 'center', marginTop: 4, gap: 8 },
   typeTag: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4, gap: 3 },
   typeText: { fontSize: 10, fontWeight: '700' },
-  rowCount: { fontSize: 12, color: '#A0A0A0' },
+  rowCount: { fontSize: 12, color: '#9AA696' },
   rowArrow: { fontSize: 18, color: '#555' },
 
   // Create Modal
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.7)', justifyContent: 'center', alignItems: 'center', padding: 30 },
-  modalCard: { backgroundColor: '#1A1A1A', borderRadius: 16, padding: 24, width: '100%', maxWidth: 360 },
-  modalTitle: { fontSize: 20, fontWeight: '800', color: '#FFFFFF', marginBottom: 16 },
-  modalInput: { backgroundColor: '#121212', borderRadius: 10, paddingHorizontal: 14, height: 48, fontSize: 16, color: '#FFFFFF', marginBottom: 16, borderWidth: 1, borderColor: '#2A2A2A' },
-  radioRow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: '#2A2A2A' },
-  radioCircle: { width: 20, height: 20, borderRadius: 10, borderWidth: 2, borderColor: '#1ED760', justifyContent: 'center', alignItems: 'center' },
-  radioDot: { width: 10, height: 10, borderRadius: 5, backgroundColor: '#1ED760' },
-  radioTitle: { fontSize: 15, fontWeight: '600', color: '#FFFFFF' },
-  radioHint: { fontSize: 12, color: '#A0A0A0', marginTop: 1 },
+  modalCard: { backgroundColor: '#121A17', borderRadius: 16, padding: 24, width: '100%', maxWidth: 360 },
+  modalTitle: { fontSize: 20, fontWeight: '800', color: '#F5F7F4', marginBottom: 16 },
+  modalInput: { backgroundColor: '#0B0F0E', borderRadius: 10, paddingHorizontal: 14, height: 48, fontSize: 16, color: '#F5F7F4', marginBottom: 16, borderWidth: 1, borderColor: '#1F2925' },
+  radioRow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: '#1F2925' },
+  radioCircle: { width: 20, height: 20, borderRadius: 10, borderWidth: 2, borderColor: '#3DB389', justifyContent: 'center', alignItems: 'center' },
+  radioDot: { width: 10, height: 10, borderRadius: 5, backgroundColor: '#3DB389' },
+  radioTitle: { fontSize: 15, fontWeight: '600', color: '#F5F7F4' },
+  radioHint: { fontSize: 12, color: '#9AA696', marginTop: 1 },
   modalActions: { flexDirection: 'row', justifyContent: 'flex-end', gap: 12, marginTop: 16 },
-  cancelBtn: { fontSize: 16, fontWeight: '600', color: '#A0A0A0', paddingVertical: 12, paddingHorizontal: 16 },
-  createBtn: { backgroundColor: '#1ED760', borderRadius: 10, paddingVertical: 12, paddingHorizontal: 24 },
-  createBtnText: { fontSize: 16, fontWeight: '700', color: '#000000' },
+  cancelBtn: { fontSize: 16, fontWeight: '600', color: '#9AA696', paddingVertical: 12, paddingHorizontal: 16 },
+  createBtn: { backgroundColor: '#3DB389', borderRadius: 10, paddingVertical: 12, paddingHorizontal: 24 },
+  createBtnText: { fontSize: 16, fontWeight: '700', color: '#0B0F0E' },
 
   // Detail
-  detailContainer: { flex: 1, backgroundColor: '#000000', paddingTop: 50 },
+  detailContainer: { flex: 1, backgroundColor: '#0B0F0E', paddingTop: 50 },
   detailHeader: { paddingHorizontal: 16, paddingBottom: 8 },
   detailTop: { alignItems: 'center', paddingHorizontal: 16, paddingBottom: 16 },
-  detailName: { fontSize: 22, fontWeight: '800', color: '#FFFFFF', marginTop: 12 },
-  detailMeta: { fontSize: 13, color: '#A0A0A0', marginTop: 4 },
+  detailName: { fontSize: 22, fontWeight: '800', color: '#F5F7F4', marginTop: 12 },
+  detailMeta: { fontSize: 13, color: '#9AA696', marginTop: 4 },
   detailActions: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 10, gap: 10 },
-  playAllBtn: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#1ED760', paddingHorizontal: 20, paddingVertical: 10, borderRadius: 24, gap: 4 },
-  playAllText: { fontSize: 15, fontWeight: '700', color: '#000000' },
-  shuffleBtn: { width: 40, height: 40, borderRadius: 20, borderWidth: 1, borderColor: '#2A2A2A', justifyContent: 'center', alignItems: 'center' },
+  playAllBtn: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#3DB389', paddingHorizontal: 20, paddingVertical: 10, borderRadius: 24, gap: 4 },
+  playAllText: { fontSize: 15, fontWeight: '700', color: '#0B0F0E' },
+  shuffleBtn: { width: 40, height: 40, borderRadius: 20, borderWidth: 1, borderColor: '#1F2925', justifyContent: 'center', alignItems: 'center' },
   detailList: { paddingBottom: 20 },
   detailRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 8, paddingHorizontal: 16 },
   detailRowInfo: { flex: 1, marginLeft: 12 },
-  detailRowTitle: { fontSize: 15, fontWeight: '600', color: '#FFFFFF' },
-  detailRowArtist: { fontSize: 12, color: '#A0A0A0', marginTop: 1 },
+  detailRowTitle: { fontSize: 15, fontWeight: '600', color: '#F5F7F4' },
+  detailRowArtist: { fontSize: 12, color: '#9AA696', marginTop: 1 },
   detailEmpty: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingBottom: 80 },
-  detailEmptyText: { fontSize: 15, color: '#FFFFFF', fontWeight: '600', marginBottom: 4 },
-  detailEmptyHint: { fontSize: 13, color: '#A0A0A0', marginBottom: 16 },
-  detailBackLink: { fontSize: 14, color: '#1ED760', fontWeight: '600' },
+  detailEmptyText: { fontSize: 15, color: '#F5F7F4', fontWeight: '600', marginBottom: 4 },
+  detailEmptyHint: { fontSize: 13, color: '#9AA696', marginBottom: 16 },
+  detailBackLink: { fontSize: 14, color: '#3DB389', fontWeight: '600' },
 });

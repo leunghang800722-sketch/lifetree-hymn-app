@@ -11,7 +11,7 @@ const FavoritesScreen = ({ onPlayHymn }) => {
 
  return (
  <View style={{ flex: 1, backgroundColor: '#0B0F0E', padding: 16 }}>
- <Text style={{ color: '#FFFFFF', fontSize: 24, fontWeight: '700', marginBottom: 16 }}>❤️ 最愛</Text>
+ <Text style={{ color: '#F5F7F4', fontSize: 24, fontWeight: '700', marginBottom: 16 }}>❤️ 最愛</Text>
 
  {favorites.length === 0 ? (
  <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
@@ -34,7 +34,7 @@ const FavoritesScreen = ({ onPlayHymn }) => {
  </View>
  )}
  <View style={{ flex: 1 }}>
- <Text style={{ color: '#FFFFFF', fontSize: 16, fontWeight: '600' }} numberOfLines={1}>{item.title}</Text>
+ <Text style={{ color: '#F5F7F4', fontSize: 16, fontWeight: '600' }} numberOfLines={1}>{item.title}</Text>
  <Text style={{ color: '#9AA696', fontSize: 14, marginTop: 2 }}>{item.artist || '未知作者'}</Text>
  </View>
  <TouchableOpacity onPress={() => toggleFavorite(item)} style={{ padding: 8 }}>
