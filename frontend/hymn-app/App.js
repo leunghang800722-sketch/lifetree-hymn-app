@@ -333,7 +333,15 @@ function PlayerProvider({ children }) {
         // playQueue() (§3.2) leaves isLoading true until audio is actually
         // audible, rather than clearing it right after TrackPlayer.play()
         // resolves — this is what clears it.
-        if (val === TPState.Playing) setIsLoading(false);
+        if (val === TPState.Playing) {
+          setIsLoading(false);
+          // §3.7 — only ACTUAL audible playback proves we've recovered, so the
+          // circuit breaker resets here. It must NOT reset on track-change:
+          // the breaker's own skipToNext() causes a track change, which would
+          // zero the counter every time and make the "5 strikes" limit
+          // unreachable.
+          errorSkipCountRef.current = 0;
+        }
       } catch (e) {}
     });
     // PHASE1-PLAYER-REBUILD.md §3.5 — direct index lookup against `queue`
@@ -348,8 +356,6 @@ function PlayerProvider({ children }) {
         setCurrentQueueIndex(idx);
         const song = queueRef.current[idx];
         if (song) { setHymn(song); setCurrentHymn(song); }
-        // §3.7 — a real track change means playback is healthy again.
-        errorSkipCountRef.current = 0;
       } catch (e) {}
     });
 
@@ -440,6 +446,12 @@ function PlayerProvider({ children }) {
   async function playQueue(list, startIndex = 0) {
     if (!Array.isArray(list) || list.length === 0) return;
     setIsLoading(true);
+    // Set the ref synchronously alongside the state (same reason as
+    // toggleShuffle): TrackPlayer events fire during the add/play below and
+    // PlaybackActiveTrackChanged reads queueRef.current directly to look up the
+    // song. A setQueue() alone wouldn't land until the next render, so an early
+    // event could read a stale queue and show the wrong title.
+    queueRef.current = list;
     setQueue(list);
     originalQueueRef.current = list;
     setIsShuffled(false);
