@@ -101,39 +101,70 @@ app.listen(PORT, async () => {
   console.log(`📡 Audio API: http://localhost:${PORT}/api/audio/:youtubeId (yt-dlp)`);
   console.log(`📡 Hymns API: http://localhost:${PORT}/api/hymns`);
   
-  // Background pre-cache: warm up all hymn audio URLs
-  // yt-dlp is fast locally (~1-2s per song, 665 songs ≈ 3-5 min)
+  // Background pre-cache — deliberately NARROW.
+  //
+  // This used to hammer yt-dlp for all 1518 hymns on every boot. That's the
+  // same burst pattern that got Zeabur's IP YouTube-banned, and it was doing it
+  // from the home broadband line the whole app now depends on. Not worth
+  // gambling the one working IP just to pre-warm songs nobody may play.
+  //
+  // So: warm only a small, bounded set that a first tap realistically hits.
+  // Most home sections are ORDER BY RANDOM() so they can't be predicted; we
+  // take the deterministic ones (featured / newest / most liked / most viewed)
+  // plus the head of the default id-ordered list, dedupe, and cap it.
+  // Everything else resolves on demand at play time (~1-2s) and is then cached.
+  const PRECACHE_MAX = 50;
+  const PRECACHE_CONCURRENCY = 2; // was 4 — gentler on the shared home IP
   try {
     const SQL = await initSqlJs();
     const buffer = fs.readFileSync(DB_PATH);
     const db = new SQL.Database(buffer);
-    const stmt = db.prepare('SELECT id, youtube_id FROM hymns ORDER BY id');
-    const hymns = [];
-    while (stmt.step()) hymns.push(stmt.getAsObject());
-    stmt.free();
+
+    const pick = (sql) => {
+      const out = [];
+      try {
+        const s = db.prepare(sql);
+        while (s.step()) out.push(s.getAsObject());
+        s.free();
+      } catch (_) {}
+      return out;
+    };
+
+    const candidates = [
+      ...pick('SELECT id, youtube_id FROM hymns WHERE featured = 1 LIMIT 10'),
+      ...pick('SELECT id, youtube_id FROM hymns ORDER BY COALESCE(release_date, created_at) DESC LIMIT 10'),
+      ...pick('SELECT id, youtube_id FROM hymns ORDER BY like_count DESC LIMIT 10'),
+      ...pick('SELECT id, youtube_id FROM hymns ORDER BY view_count DESC LIMIT 10'),
+      ...pick('SELECT id, youtube_id FROM hymns ORDER BY id LIMIT 20'),
+    ];
     db.close();
 
-    if (hymns.length > 0) {
-      console.log(`🔁 Background pre-caching ${hymns.length} hymns...`);
-      let cached = 0;
-      const CONCURRENCY = 4;
+    // dedupe by youtube_id (the DB has duplicate youtube_ids under different ids)
+    const seen = new Set();
+    const hymns = [];
+    for (const h of candidates) {
+      if (!h.youtube_id || seen.has(h.youtube_id)) continue;
+      seen.add(h.youtube_id);
+      hymns.push(h);
+      if (hymns.length >= PRECACHE_MAX) break;
+    }
 
-      // Process with concurrency
+    if (hymns.length > 0) {
+      console.log(`🔁 Background pre-caching ${hymns.length} hymns (narrow set; rest resolve on demand)...`);
+      let cached = 0;
       const queue = [...hymns];
       async function worker() {
         while (queue.length > 0) {
           const hymn = queue.shift();
-          if (!hymn.youtube_id) continue;
           try {
             await resolveAudioUrl(hymn.youtube_id);
             cached++;
-            if (cached % 50 === 0) console.log(`  ✅ Pre-cached ${cached}/${hymns.length}`);
           } catch (_) {
-            // dead link — skip, Phase 2 handles cleanup
+            // dead link — skip; the resolver now remembers the failure briefly
           }
         }
       }
-      await Promise.all(Array.from({ length: CONCURRENCY }, () => worker()));
+      await Promise.all(Array.from({ length: PRECACHE_CONCURRENCY }, () => worker()));
       console.log(`✅ Pre-cache complete: ${cached}/${hymns.length} hymns cached`);
     }
   } catch (e) {
