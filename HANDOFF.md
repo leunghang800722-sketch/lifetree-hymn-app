@@ -367,6 +367,13 @@ App 端唔再有「臨場喺 JS 度計下一首」嘅邏輯（呢個正正係以
     對 5 條唔同影片 **5/5 全部** 中：`Sign in to confirm you're not a bot`。
     即係 **datacenter IP 信譽封鎖**，唔係用得密先封 → **換 region / 開新 project 好可能都係一樣中招**。
   - 所以「Docker ready 就可以擺上 Zeabur」呢個假設**已經唔成立**。
+  - 🔺 **2026-07-17 追加實測：`--extractor-args "youtube:player_client=..."` 呢個免費解法試過，唔 work，唔好再試。**
+    喺 Zeabur container 內部掃咗 **8 個 client**（android / ios / tv / web / mweb / android_vr /
+    web_embedded / tv_embedded），**8/8 全部**照撞 `Sign in to confirm you're not a bot`。
+    對照組：同一條指令、同一條片、同一個 yt-dlp 版本，喺 MacBook 跑 `android_vr` **成功攞到 URL**。
+    → 證實個 block 係**純 IP 信譽**，喺 bot check 嗰層就擋，**換邊個 player_client 都冇用**。
+    （註：Mac 上面 android/ios/tv/web 會報 `Requested format is not available`，
+    嗰個係另一回事 —— 冇 JS runtime 令部分 format 攞唔到，**唔係** bot block，唔好撈亂。）
 - **選項 A**：Zeabur / Railway → ⚠️ 要先解決 IP 封鎖先講（見下面 mitigation）
 - **選項 B**：VPS（自行維護）→ 一樣要**事先驗證**嗰個 IP 冇俾 YouTube 封（用上面同一個測試）
 - **選項 C**：靜態化（預先提取 URL 存 DB）→ 但 googlevideo URL 會過期，做唔到長期
