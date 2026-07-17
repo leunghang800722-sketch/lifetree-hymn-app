@@ -3,7 +3,7 @@
 > 建立日期：2026-07-15
 > 最後更新：2026-07-17（Phase 1 播放核心重建完成）
 > 開發者：約拿（AI 助手） x 恒恒（Owner/PM）
-> Git 起點：2026-06 初，v100+ 演化至今 v214；Phase 1 由 v215 做到 v221
+> Git 起點：2026-06 初，v100+ 演化至今 v214；Phase 1 由 v215 做到 v223（versionCode 18）
 
 ---
 
@@ -13,7 +13,7 @@
 詳情見 `PHASE1-PLAYER-REBUILD.md`（技術方案）同下面「Phase 1 完成報告」。
 
 - **分支**：`feature/player-rebuild`（由 `develop-v211` 開出）—— 未 merge 返 develop-v211
-- **最新 APK**：`~/Desktop/詩歌App/hymn-app-v222.apk`（versionCode 17）
+- **最新 APK**：`~/Desktop/詩歌App/hymn-app-v223.apk`（**versionCode 18**）—— 詳情見「七、最新 APK」
 - **API 固定 URL：`https://api.god-music.com`** ✅（2026-07-17 起，唔會再變）
 - **要跑起個 App，開兩個 terminal 就得**：
   1. `cd backend && node server.js`
@@ -192,7 +192,7 @@ CREATE TABLE playlist_hymns (
 
 ---
 
-## 三之二、【新規劃書】Phase 1：播放核心重建（v215–v221）✅ 完成
+## 三之二、【新規劃書】Phase 1：播放核心重建（v215–v223）✅ 完成
 
 > 方案：`PHASE1-PLAYER-REBUILD.md`　分支：`feature/player-rebuild`　真機驗證：2026-07-16/17
 > （呢個係 `REDESIGN-PLAN.md` 嘅 Phase 1，同上面「Phase 1：啟動效能優化」係兩件事）
@@ -211,7 +211,7 @@ App 端唔再有「臨場喺 JS 度計下一首」嘅邏輯（呢個正正係以
 | 3 | Shuffle 真洗牌、唔重複、唔打斷 | ✅ PASS（v220 修好） |
 | 4 | 播放頁清單順序 = 實際播放順序 | ✅ PASS |
 | 5 | 通知欄 next/previous 同 App 內一致 | ✅ PASS |
-| 6 | 死鏈自動跳下一首、唔 crash | ✅ PASS（約 22 秒，偏慢，見下） |
+| 6 | 死鏈自動跳下一首、唔 crash | ✅ PASS（原本約 22 秒；已加 failure cache，撞返同一條死 link 由 6.5 秒 → 0.001 秒） |
 | 7 | 背景播放 | ⚠️ 播到，但約 30 分鐘後會停（**用戶決定唔跟進**，見下） |
 
 ### 新增／改動嘅檔案
@@ -333,9 +333,12 @@ App 端唔再有「臨場喺 JS 度計下一首」嘅邏輯（呢個正正係以
 - **想試嘅話**（唔使改 code、唔使重 build）：手機 → 設定 → 應用程式 → 呢個 App → 電池 → 揀「無限制」/ 關省電優化
 - Eric 已決定暫時唔跟進
 
-#### 15. 死鏈跳歌要等約 22 秒（偏慢）
-- 功能正常（會自動跳、唔卡死、唔 crash），但等太耐
-- 未跟進；可以睇下 `resolveAudio.js` 嘅 yt-dlp timeout（而家每個 strategy 30 秒 × 3 個 strategy）同前端 retry 策略
+#### 15. 死鏈跳歌慢（原本約 22 秒）— 🟢 已大幅改善
+- ✅ `resolveAudio.js` 加咗 **failure cache（15 分鐘）**：撞返同一條死 link 唔使再行足 3 個 yt-dlp strategy。
+  實測 hymn 11：**第一次 6.52 秒 → 之後 0.001 秒**。連環跳死 link 而家近乎即時。
+- 仲有得再快嘅話：**第一次**撞一條未見過嘅死 link 仍然要 ~6.5 秒（3 個 strategy 各自行到 fail）。
+  想再縮就要調 `STRATEGIES` 嘅 timeout（而家每個 30 秒上限）或者減少 strategy 數量 —— 未做。
+- 治本仍然係 Phase 2 嘅歌庫 cleanup（清走死 link）。
 
 ---
 
@@ -456,7 +459,9 @@ cp android/app/build/outputs/apk/release/app-release.apk ~/Desktop/詩歌App/hym
 ```bash
 # 1. Backend（MacBook 本地）
 cd backend && nohup node server.js > /tmp/hymn_backend.log 2>&1 & disown
-#    開機會背景 pre-cache 成 1518 首歌嘅 audio URL（幾分鐘，唔阻住用）
+#    開機會背景 pre-cache 一小批（~30-50 首，唔阻住用）。其餘歌播嗰陣先即時 resolve。
+#    ⚠️ 唔好改返做「開機掃晒成 1518 首」——嗰種爆發式打法就係搞到 Zeabur 個 IP 俾 YouTube 封嘅原因，
+#       而家部 Mac 個住宅 IP 係成個 App 唯一能用嘅 IP，唔值得去賭。
 
 # 2. Tunnel（手機要行呢步先連到）
 nohup cloudflared tunnel run hymn-api > /tmp/hymn_tunnel.log 2>&1 & disown
@@ -507,7 +512,17 @@ Backend 都可以寫個 launchd plist 做同樣嘢。要 Eric 自己入密碼。
 - **想部機開機自動行 tunnel**（唔使記住開）：可以行 `cloudflared service install`（未做）
 
 ### 最新 APK
-- **v221：`~/Desktop/詩歌App/hymn-app-v221.apk`（versionCode 16）← Phase 1 完成、乾淨版**
+> ⚠️ **只信呢一段。** 判斷邊個至新，**睇 `versionCode`（大 = 新），唔好睇檔案名嘅 vXXX**。
+> versionName 全部 build 都係 `1.1.1`，分唔到。
+
+- **✅ 而家應該裝呢個：`~/Desktop/詩歌App/hymn-app-v223.apk`（versionCode 18）**
+  —— Phase 1 + 獨立驗收 4 項修正（斷路器、failure cache、narrow pre-cache、queueRef sync）
+- 舊嘅（唔好裝，Android 都會拒絕降級）：
+  - v222（versionCode 17）— 轉用固定 URL `api.god-music.com`
+  - v221（versionCode 16）— Phase 1 完成、清走 debug instrumentation
+  - v220（versionCode 15）— shuffle 修好
+- Desktop 個資料夾入面仲有 v212–v231 等舊 APK。**嗰啲 v2xx 檔案名同 versionCode 冇對應關係**
+  （v231 個 versionCode 得 4，比而家細），**唔好靠檔案名認新舊**。
 - ⚠️ **APK 唔好再 commit 入 repo**：`backend/public/*.apk` 已經 `git rm --cached` 咗，`*.apk` 喺 `.gitignore` 入面。
   舊 APK 反覆 commit 令 `.git` 脹到 **750MB**。以後用 GitHub Releases 放 APK。
   （歷史 blob 未清理 —— 要清就要 `git filter-repo` 改寫 history + force push 全部分支，
@@ -530,7 +545,7 @@ Backend 都可以寫個 launchd plist 做同樣嘢。要 Eric 自己入密碼。
 ### Git Branches
 - `main` — 得最初一個 baseline commit，同 develop-v211 完全脫節
 - `develop-v211` — v211–v214 + HANDOFF
-- **`feature/player-rebuild` — ⭐ Phase 1 成果（v215–v221），最新，未 merge 返 develop-v211**
+- **`feature/player-rebuild` — ⭐ Phase 1 成果（v215–v223），最新，未 merge 返 develop-v211**
 - `release-v219` — ⚠️ **v215–v231 嘅真正 source 喺呢度**（Boaz/OpenClaw 嗰個 clone 做嘅），
   同 `feature/player-rebuild` 係**兩條獨立線**，未合併
 - `experimental/unmerged-actionbar-ui` — 一份來源不明、未 merge 嘅 action bar UI 改動，
