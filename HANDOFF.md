@@ -283,7 +283,7 @@ Mac(185.219.141.202)resolve 一條 URL,同一刻由 Zeabur(172.104.39.181)攞同
 ### ✅ 自動死鏈檢測
 - `backend/scripts/checkDeadLinks.js` + launchd `com.hymnapp.deadlinkcheck`(**每晚 04:00**)
 - **故意行得好慢**:concurrency **1**、每首隔 **3秒**、每晚 **150首**(~8分鐘),約 10 晚行完成個庫再循環
-  👉 **唔可以改快**。部 Mac 個住宅 IP 係全世界唯一仲 serve 到 YouTube 嘅 IP(Zeabur 已封死),
+  👉 **唔可以改快**。部 Mac 出去嘅 IP 係全世界唯一仲 serve 到 YouTube 嘅 IP（⚠️ 注意:嗰個係 **NordVPN** 個 IP,唔係住宅 IP,見「七、頻寬同容量」）(Zeabur 已封死),
   一旦呢個 IP 都俾人 flag,成個 App 冇得救。
 - **🔑 連續 3 日失敗先標記死鏈,任何一次成功即刻清零**
   呢條規則直接嚟自舊個 `hymn-check-report`「650/665 死、2.3% 可播」嘅假數據 ——
@@ -472,7 +472,8 @@ tail -f /tmp/hymn_deadlink.log                            # 每晚檢測 log
 - **選項 B**：VPS（自行維護）→ 一樣要**事先驗證**嗰個 IP 冇俾 YouTube 封（用上面同一個測試）
 - **選項 C**：靜態化（預先提取 URL 存 DB）→ 但 googlevideo URL 會過期，做唔到長期
 - **選項 D**：用戶自己上載歌 → **唯一唔使賭 YouTube IP 狀態**嘅方案，長遠最穩
-- **選項 E（而家行緊）**：家用 Mac + named tunnel。冇 IP 問題（住宅 IP 冇被封），
+- **選項 E（而家行緊）**：家用 Mac + named tunnel。冇 IP 問題 ⚠️ 但**唔係因為住宅 IP** ——
+  實情係部 Mac 行緊 **NordVPN**,出口 IP 係 PacketHub/NordVPN(美國西雅圖),只不過嗰條 IP 未被封。
   URL 固定，成本只係個 domain。**代價：部 Mac 要 24/7 開住**，唔 scale，唔算真正部署。
 - Mitigation 方向（未跟進）：yt-dlp 用 cookies、住宅／rotating proxy（要持續畀錢 + 維護）
 - `AUDIO_PROXY_TARGET` env var 已預留 proxy 模式
@@ -481,7 +482,8 @@ tail -f /tmp/hymn_deadlink.log                            # 每晚檢測 log
 
 > 💡 **值得留意嘅組合技**：`AUDIO_PROXY_TARGET` 本身就係為咗「雲端 server 唔 resolve，
 > 轉發返屋企部機 resolve」而設。即係話，將來如果要上雲又想避開 IP 封鎖，
-> 可以雲端行 server（穩定、24/7）＋ 部 Mac 淨係做 yt-dlp resolve（住宅 IP 冇被封）。
+> 可以雲端行 server（穩定、24/7）＋ 部 Mac 淨係做 yt-dlp resolve（靠 NordVPN 出口 IP 未被封）。
+> ⚠️ 但見「三之三」:googlevideo URL 綁 IP,所以音訊 byte 一樣要經 Mac 出,呢招慳唔到幾多。
 > 呢個係現有 code 已經支援嘅路，只係要 Eric 決定值唔值得咁複雜。
 
 ### 5. 生命樹品牌方向
@@ -546,7 +548,7 @@ cp android/app/build/outputs/apk/release/app-release.apk ~/Desktop/詩歌App/hym
 cd backend && nohup node server.js > /tmp/hymn_backend.log 2>&1 & disown
 #    開機會背景 pre-cache 一小批（~30-50 首，唔阻住用）。其餘歌播嗰陣先即時 resolve。
 #    ⚠️ 唔好改返做「開機掃晒成 1518 首」——嗰種爆發式打法就係搞到 Zeabur 個 IP 俾 YouTube 封嘅原因，
-#       而家部 Mac 個住宅 IP 係成個 App 唯一能用嘅 IP，唔值得去賭。
+#       而家部 Mac 出去嗰個 IP(NordVPN,唔係住宅)係成個 App 唯一能用嘅 IP，唔值得去賭。
 
 # 2. Tunnel（手機要行呢步先連到）
 nohup cloudflared tunnel run hymn-api > /tmp/hymn_tunnel.log 2>&1 & disown
@@ -584,6 +586,60 @@ pgrep -fl "cloudflared tunnel run"  # tunnel 有冇行緊
 **想一勞永逸唔使記住開**（未做，要 sudo）：
 `sudo cloudflared service install` 可以裝做 launchd daemon，開機自動行。
 Backend 都可以寫個 launchd plist 做同樣嘢。要 Eric 自己入密碼。
+
+### 頻寬同容量:最多同時幾多人聽?(2026-07-17 實測)
+
+#### 🚨 首先:部 Mac 行緊 **NordVPN**,唔係直駁住宅寬頻
+公網 IP `185.219.141.202` = **PacketHub S.A.(NordVPN),美國西雅圖**。
+(cloudflared 連嘅都係 `sea01/sea06/sea09` 西雅圖節點,對得上。)
+**成個 App 靠緊呢條 NordVPN 出口 IP 未被 YouTube 封。** 之前文件寫「住宅 IP」係**錯**嘅,已更正。
+
+⚠️ **最大隱藏風險**:NordVPN 一旦斷線 / 自動換節點 / 換 IP,新 IP **有機會係已經被 YouTube 封嘅**,
+咁就會變成「同 Zeabur 一樣」——即刻冇歌聽。呢個係目前架構**最脆弱**嘅一環,而且**唔喺我哋控制範圍**。
+👉 建議:NordVPN 揀「固定 IP / 專用 IP」或者至少鎖死一個 server,唔好用自動切換。
+
+#### 實測數字
+| 項目 | 實測 |
+|---|---|
+| 上傳(樽頸) | **136.8 Mbps** |
+| 下載 | 225.8 Mbps |
+| 機器 | M2 Pro,10 core,16GB |
+| backend 閒置 | 84 MB RSS,~0% CPU |
+| cloudflared | 47 MB RSS,~0.7% CPU |
+| yt-dlp resolve 一次 | 2.1 秒,**87 MB RAM**,0.35s CPU |
+| 30 條同時串流 | 30/30 成功 |
+
+#### 計算(128 kbps 一個聽眾)
+一個聽眾同時食:**128 kbps 上傳**(Mac→CF→電話)+ 128 kbps 下載(googlevideo→Mac)。上傳先爆。
+
+- 理論:136.8 Mbps ÷ 0.128 = **~1,068 人**
+- 扣 VPN + QUIC + TLS + HTTP 封裝開銷(~25-30%)→ **~750-800 人**
+
+**但頻寬根本唔係真樽頸。**
+
+#### 真樽頸(由嚴重到唔嚴重)
+1. **🔴 yt-dlp resolve 風暴** —— 最尖嗰個。cache miss 時每首**唔同**歌開一個 yt-dlp process:
+   2.1 秒、**87MB RAM**。50 個人同時開 50 首**未 cache** 嘅歌 → 50 × 87MB ≈ **4.3GB RAM** + CPU 尖峰。
+   in-flight dedup 只擋到「同一首歌」,擋唔到「50 首唔同歌」。
+   平時 150 首 curated + 4-5 小時 cache,miss 好少;但 **backend 一重開 + 一堆人同時用** 就會撞。
+   👉 緩解:開機 pre-cache 由 30 首加到成 150 首(150 × ~2.5s ÷ concurrency 2 ≈ 3 分鐘),
+      咁 cache 就長期暖住。**未做,值得做。**
+2. **🟠 Cloudflare 免費方案 ToS** —— Cloudflare 一向唔鍾意免費方案拎嚟大量派音訊/影片。
+   人多咗有機會俾佢限流或者叫你升級。呢個係**政策風險,唔係技術風險**,唔會有 error message 預警。
+3. **🟡 Node.js 單線程** —— 串流係 I/O bound(純 pipe),幾百條並發都應付到。實測 30 條 30/30 成功,
+   backend 幾乎 0% CPU。**唔係近期樽頸。**
+4. **🟢 googlevideo 每條 stream 自己 throttle** —— 實測每條約 0.8 Mbps,已經係 128kbps 嘅 6 倍,夠用。
+
+#### 建議數字
+| | 人數 | 講法 |
+|---|---|---|
+| 理論(頻寬) | ~800-1,000 | 數學上限,冇意義 |
+| 實際安全 | **30-50 人同時** | ✅ 建議唔好超過 |
+| 開始有風險 | 100+ | yt-dlp 風暴 + Cloudflare ToS |
+
+⚠️ **同 Eric 個 1000 用戶目標對返數**:音樂 App 嘅同時在線通常係總用戶嘅 **5-10%**,
+即係 **1000 用戶 ≈ 50-100 人同時** —— **啱啱好踩到呢個 setup 嘅上限**。
+即係話「1000 用戶」嗰陣,呢個架構就係頂唔頂得住嘅臨界點,到時就要認真傾版權/授權同真正嘅部署方案。
 
 ### 開機自動啟動（2026-07-17 已設定好）✅
 
