@@ -48,3 +48,7 @@ backend/node_modules/
 *.m4a
 *.wav
 *.part
+
+# DB backups from migrations
+backend/hymns.db.bak*
+backend/hymns.db.tmp
