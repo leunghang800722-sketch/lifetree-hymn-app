@@ -3,7 +3,7 @@
 > 建立日期：2026-07-15
 > 最後更新：2026-07-17（Phase 1 播放核心重建完成）
 > 開發者：約拿（AI 助手） x 恒恒（Owner/PM）
-> Git 起點：2026-06 初，v100+ 演化至今 v214；Phase 1 由 v215 做到 v223（versionCode 18）
+> Git 起點：2026-06 初，v100+ 演化至今 v214；Phase 1 由 v215 做到 v225（versionCode 20）
 
 ---
 
@@ -13,7 +13,7 @@
 詳情見 `PHASE1-PLAYER-REBUILD.md`（技術方案）同下面「Phase 1 完成報告」。
 
 - **分支**：`feature/player-rebuild`（由 `develop-v211` 開出）—— 未 merge 返 develop-v211
-- **最新 APK**：`~/Desktop/詩歌App/hymn-app-v223.apk`（**versionCode 18**）—— 詳情見「七、最新 APK」
+- **最新 APK**：`~/Desktop/詩歌App/hymn-app-v225.apk`（**versionCode 20**）—— 詳情見「七、最新 APK」
 - **API 固定 URL：`https://api.god-music.com`** ✅（2026-07-17 起，唔會再變）
 - **要跑起個 App，開兩個 terminal 就得**：
   1. `cd backend && node server.js`
@@ -192,7 +192,7 @@ CREATE TABLE playlist_hymns (
 
 ---
 
-## 三之二、【新規劃書】Phase 1：播放核心重建（v215–v223）✅ 完成
+## 三之二、【新規劃書】Phase 1：播放核心重建（v215–v225）✅ 完成
 
 > 方案：`PHASE1-PLAYER-REBUILD.md`　分支：`feature/player-rebuild`　真機驗證：2026-07-16/17
 > （呢個係 `REDESIGN-PLAN.md` 嘅 Phase 1，同上面「Phase 1：啟動效能優化」係兩件事）
@@ -208,7 +208,7 @@ App 端唔再有「臨場喺 JS 度計下一首」嘅邏輯（呢個正正係以
 |---|------|------|
 | 1 | 播 ≥5 首、熄芒放低，連續自動接落去 | ✅ PASS |
 | 2 | Repeat 三態（Off / All / One） | ✅ PASS |
-| 3 | Shuffle 真洗牌、唔重複、唔打斷 | ✅ PASS（v220 修好） |
+| 3 | Shuffle 真洗牌、唔重複、唔打斷 | ✅ PASS（v220 修好；v225 加咗「已隨機排序」提示，見下） |
 | 4 | 播放頁清單順序 = 實際播放順序 | ✅ PASS |
 | 5 | 通知欄 next/previous 同 App 內一致 | ✅ PASS |
 | 6 | 死鏈自動跳下一首、唔 crash | ✅ PASS（原本約 22 秒；已加 failure cache，撞返同一條死 link 由 6.5 秒 → 0.001 秒） |
@@ -243,6 +243,17 @@ App 端唔再有「臨場喺 JS 度計下一首」嘅邏輯（呢個正正係以
    👉 Shuffle 用 `reset()` + `add()` 成個重建（`add()` 大量 track 係 OK 嘅，playQueue 本身就係咁）。
    重建之後 **`play()` 一定要擺最後**（`reset()` 會停播；`play()` 之後即刻 `seekTo()` 會令 player 卡喺 paused 0:00）。
    代價：撳 shuffle 會有 ~1-2 秒 re-buffer，換返 shuffle 真係 work。
+
+### ⚠️ 「Shuffle 好似冇隨機」—— 唔係 bug，唔好again再查
+被報咗**三次**「shuffle 撳完撳 next 都係順序播」，三次都係**誤會**。實測證據（v224 instrumented）：
+洗牌後 native queue = `[6, 61, 1083, 687, 862]`，Eric 聽到 **id 61（耶穌在我裡面）**；
+如果真係順序播應該係 **id 7（榮耀神羔羊）**。兩首唔同歌 → 確認係隨機。
+
+**點解會誤會**：洗完牌之後，**播放清單顯示嘅就係洗咗牌嗰個新順序**，所以下一首必然「就喺現正播嗰首下面」，
+睇落就好似順住個 list 播。**但個 list 本身就係洗過㗎喇**（同 Spotify 一樣）。
+👉 驗證方法：**睇個清單嘅順序有冇變**（洗完應該係 6→61→1083…，唔再係 6→7→8），
+唔好用「next 有冇跳離個 list」嚟判斷。
+👉 v225 起播放清單頂會顯示 **「🔀 已隨機排序」**，一眼睇得出。
 
 ### Debug 心法（慳返好多來回）
 - **睇唔到手機 logcat** → 可以喺 backend 加一個 log sink endpoint，App 用 fire-and-forget fetch 報返 on-device 狀態返嚟。
@@ -515,9 +526,10 @@ Backend 都可以寫個 launchd plist 做同樣嘢。要 Eric 自己入密碼。
 > ⚠️ **只信呢一段。** 判斷邊個至新，**睇 `versionCode`（大 = 新），唔好睇檔案名嘅 vXXX**。
 > versionName 全部 build 都係 `1.1.1`，分唔到。
 
-- **✅ 而家應該裝呢個：`~/Desktop/詩歌App/hymn-app-v223.apk`（versionCode 18）**
-  —— Phase 1 + 獨立驗收 4 項修正（斷路器、failure cache、narrow pre-cache、queueRef sync）
+- **✅ 而家應該裝呢個：`~/Desktop/詩歌App/hymn-app-v225.apk`（versionCode 20）**
+  —— Phase 1 + 獨立驗收 4 項修正 + 播放清單「已隨機排序」提示
 - 舊嘅（唔好裝，Android 都會拒絕降級）：
+  - v223（versionCode 18）— 斷路器／failure cache／narrow pre-cache／queueRef sync
   - v222（versionCode 17）— 轉用固定 URL `api.god-music.com`
   - v221（versionCode 16）— Phase 1 完成、清走 debug instrumentation
   - v220（versionCode 15）— shuffle 修好
@@ -545,7 +557,7 @@ Backend 都可以寫個 launchd plist 做同樣嘢。要 Eric 自己入密碼。
 ### Git Branches
 - `main` — 得最初一個 baseline commit，同 develop-v211 完全脫節
 - `develop-v211` — v211–v214 + HANDOFF
-- **`feature/player-rebuild` — ⭐ Phase 1 成果（v215–v223），最新，未 merge 返 develop-v211**
+- **`feature/player-rebuild` — ⭐ Phase 1 成果（v215–v225），最新，未 merge 返 develop-v211**
 - `release-v219` — ⚠️ **v215–v231 嘅真正 source 喺呢度**（Boaz/OpenClaw 嗰個 clone 做嘅），
   同 `feature/player-rebuild` 係**兩條獨立線**，未合併
 - `experimental/unmerged-actionbar-ui` — 一份來源不明、未 merge 嘅 action bar UI 改動，
