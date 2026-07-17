@@ -455,17 +455,45 @@ cp android/app/build/outputs/apk/release/app-release.apk ~/Desktop/詩歌App/hym
 ### 啟動開發環境
 ```bash
 # 1. Backend（MacBook 本地）
-cd backend && node server.js
+cd backend && nohup node server.js > /tmp/hymn_backend.log 2>&1 & disown
 #    開機會背景 pre-cache 成 1518 首歌嘅 audio URL（幾分鐘，唔阻住用）
 
-# 2. Tunnel（另一個 terminal）—— 手機要行呢步先連到
-cloudflared tunnel run hymn-api
+# 2. Tunnel（手機要行呢步先連到）
+nohup cloudflared tunnel run hymn-api > /tmp/hymn_tunnel.log 2>&1 & disown
 #    ✅ 固定 URL：https://api.god-music.com（唔會變，唔使改 config、唔使 rebuild）
 #    config 喺 ~/.cloudflared/config.yml，已經指死 localhost:3001
 
 # 3. Frontend dev（如果唔係要出 APK）
 cd frontend/hymn-app && npx expo start
 ```
+
+### ⚠️ 兩個 process 都要 keep 住行，唔係 App 就死
+**症狀**：App 主頁淨係得「見證分享」、播放清單 (0)、player 得個紫色音符 placeholder
+= **連唔到 backend**。（同「tunnel URL 過時」嘅症狀一模一樣，好易撈亂。）
+
+**一步分辨**：
+```bash
+curl -s -o /dev/null -w "%{http_code}\n" https://api.god-music.com/api/hymns
+```
+- **530** = Cloudflare 話「搵唔到 origin」→ **tunnel 冇行緊**（或者 backend 冇行緊）
+- **200** = backend 冇問題，去第二度搵原因
+- **DNS 唔使懷疑**：`dig +short api.god-music.com` 應該有 Cloudflare IP（104.21.x / 172.67.x）。
+  DNS 一早 propagate 好晒，唔會係佢問題。
+
+**逐個 check**：
+```bash
+lsof -ti :3001                      # backend 有冇行緊
+pgrep -fl "cloudflared tunnel run"  # tunnel 有冇行緊
+```
+
+**⚠️ 一定要用 `nohup ... & disown`**：淨係用 `&` 開嘅 process 會喺個 shell session 完咗之後
+俾人收掉（曾經就係咁死咗，搞到以為又係 tunnel URL 出事）。
+開完之後 `ps -o ppid= -p <pid>` 應該係 **1**，即係已經 detach 咗。
+（註：`setsid` 係 Linux 嘅嘢，**macOS 冇**，唔好用。）
+
+**想一勞永逸唔使記住開**（未做，要 sudo）：
+`sudo cloudflared service install` 可以裝做 launchd daemon，開機自動行。
+Backend 都可以寫個 launchd plist 做同樣嘢。要 Eric 自己入密碼。
 
 ### Cloudflare named tunnel 設定（2026-07-17 已做好，記錄低以防要重做）
 - Domain：**god-music.com**（Eric 喺 Cloudflare Registrar 買，DNS 喺 Cloudflare）
