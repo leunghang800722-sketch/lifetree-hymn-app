@@ -13,13 +13,14 @@
 詳情見 `PHASE1-PLAYER-REBUILD.md`（技術方案）同下面「Phase 1 完成報告」。
 
 - **分支**：`feature/player-rebuild`（由 `develop-v211` 開出）—— 未 merge 返 develop-v211
-- **最新 APK**：`~/Desktop/詩歌App/hymn-app-v221.apk`（versionCode 16）
-- **要跑起個 App 要做兩件事**：
-  1. 開 backend：`cd backend && node server.js`
-  2. 開 tunnel：`cloudflared tunnel --url http://localhost:3001`，
-     **攞條新 URL 貼入 `frontend/hymn-app/src/config.js` 嘅 `API_BASE`，再 rebuild APK**
-- ⚠️ **每次 tunnel 重開 URL 都會變** → 一定要改 config + rebuild + 重裝，
-  呢個係 Phase 2「揀正式伺服器」未解決之前嘅硬傷（見「已知限制」）
+- **最新 APK**：`~/Desktop/詩歌App/hymn-app-v222.apk`（versionCode 17）
+- **API 固定 URL：`https://api.god-music.com`** ✅（2026-07-17 起，唔會再變）
+- **要跑起個 App，開兩個 terminal 就得**：
+  1. `cd backend && node server.js`
+  2. `cloudflared tunnel run hymn-api`
+- ✅ **條 URL 已經固定咗**：tunnel 死咗／電腦重開，行返上面第 2 句就得，
+  **唔使改 config、唔使 rebuild、唔使重裝 APK**
+- ⚠️ 但 backend 仍然係跑喺**呢部 Mac** 度：**部機要開住 + 有網**，App 先用到
 
 ---
 
@@ -359,8 +360,13 @@ App 端唔再有「臨場喺 JS 度計下一首」嘅邏輯（呢個正正係以
 - **選項 C**：用 YouTube Data API v3 定期驗證 ID 有效性
 - **當前**：未有決定，保留全部 665 首等 cleanup
 
-### 4. 後端部署方案 —— 🔴 **最高優先，而家最痛**
-- **目前**：開發者 MacBook 本地跑 server + cloudflared **臨時** tunnel expose
+### 4. 後端部署方案 —— 🟡 **止咗血，但未真正上雲**
+- **目前**：開發者 MacBook 本地跑 server + cloudflared **named（永久）** tunnel expose，
+  固定 URL `https://api.god-music.com`
+- ✅ **2026-07-17 已解決「URL 每次都變」呢個日常痛點**（買咗 god-music.com + named tunnel，見「七、開發筆記」）
+  → tunnel 重開唔使再改 config / rebuild / 重裝
+- ❌ **但根本問題未解決**：backend 仍然係跑喺**一部屋企嘅 Mac** 度 —— 部機閂咗／冇網，成個 App 就死。
+  呢個唔係「部署」，只係「有個固定門牌嘅家用伺服器」。真正上雲仲要面對下面個 IP 封鎖問題。
 - 🔺 **2026-07 實測結論（重要，會影響選型）**：
   - **Zeabur 個 IP 已經俾 YouTube 封咗** —— 唔係「yt-dlp 冇裝好」（之前嘅假設係錯嘅）。
     喺 Zeabur container 內部直接跑 yt-dlp（版本 2026.07.04，裝好晒），
@@ -378,10 +384,17 @@ App 端唔再有「臨場喺 JS 度計下一首」嘅邏輯（呢個正正係以
 - **選項 B**：VPS（自行維護）→ 一樣要**事先驗證**嗰個 IP 冇俾 YouTube 封（用上面同一個測試）
 - **選項 C**：靜態化（預先提取 URL 存 DB）→ 但 googlevideo URL 會過期，做唔到長期
 - **選項 D**：用戶自己上載歌 → **唯一唔使賭 YouTube IP 狀態**嘅方案，長遠最穩
+- **選項 E（而家行緊）**：家用 Mac + named tunnel。冇 IP 問題（住宅 IP 冇被封），
+  URL 固定，成本只係個 domain。**代價：部 Mac 要 24/7 開住**，唔 scale，唔算真正部署。
 - Mitigation 方向（未跟進）：yt-dlp 用 cookies、住宅／rotating proxy（要持續畀錢 + 維護）
-- **⚠️ 另一個獨立但同樣痛嘅問題**：`API_BASE` 係 build 時寫死。臨時 tunnel 一死，URL 就變，
-  要改 config + rebuild + 重裝 APK。**就算未搞掂 IP 問題，都值得先攞一個固定 domain 嘅 named tunnel 止血。**
-- `AUDIO_PROXY_TARGET` env var 已預留 proxy 模式（Zeabur 個 service 而家就係設緊呢個，指向一條**已死**嘅 localtunnel）
+- `AUDIO_PROXY_TARGET` env var 已預留 proxy 模式
+  （⚠️ Zeabur 個 service 而家仲設緊呢個，指向一條**已死**嘅 localtunnel `smart-vans-design.loca.lt`，
+  即係嗰個 Zeabur service 而家實質係壞緊嘅 —— 唔用就記得執走／唔好當佢 work）
+
+> 💡 **值得留意嘅組合技**：`AUDIO_PROXY_TARGET` 本身就係為咗「雲端 server 唔 resolve，
+> 轉發返屋企部機 resolve」而設。即係話，將來如果要上雲又想避開 IP 封鎖，
+> 可以雲端行 server（穩定、24/7）＋ 部 Mac 淨係做 yt-dlp resolve（住宅 IP 冇被封）。
+> 呢個係現有 code 已經支援嘅路，只係要 Eric 決定值唔值得咁複雜。
 
 ### 5. 生命樹品牌方向
 - 恒恒想用「Etz Chayim」希伯來文品牌
@@ -446,13 +459,24 @@ cd backend && node server.js
 #    開機會背景 pre-cache 成 1518 首歌嘅 audio URL（幾分鐘，唔阻住用）
 
 # 2. Tunnel（另一個 terminal）—— 手機要行呢步先連到
-cloudflared tunnel --url http://localhost:3001
-#    ⚠️ 佢會 print 一條全新 random URL，要貼返入 frontend/hymn-app/src/config.js
-#       嘅 API_BASE，然後 rebuild APK。每次重開 tunnel 都要做一次（見「五、4」）
+cloudflared tunnel run hymn-api
+#    ✅ 固定 URL：https://api.god-music.com（唔會變，唔使改 config、唔使 rebuild）
+#    config 喺 ~/.cloudflared/config.yml，已經指死 localhost:3001
 
 # 3. Frontend dev（如果唔係要出 APK）
 cd frontend/hymn-app && npx expo start
 ```
+
+### Cloudflare named tunnel 設定（2026-07-17 已做好，記錄低以防要重做）
+- Domain：**god-music.com**（Eric 喺 Cloudflare Registrar 買，DNS 喺 Cloudflare）
+- Tunnel 名：**hymn-api**，ID `d662c971-6a08-48e7-b97b-0448fc76dea8`
+- DNS：`api.god-music.com` → CNAME 指向條 tunnel
+- 憑證：`~/.cloudflared/cert.pem` + `~/.cloudflared/<tunnel-id>.json`
+  ⚠️ **呢兩個檔案係機密，唔好 commit 入 repo**（`.cloudflared/` 喺 home directory，唔喺 repo 入面，安全）
+- 設定檔：`~/.cloudflared/config.yml`（ingress: api.god-music.com → http://localhost:3001）
+- 要重做嘅話：`cloudflared tunnel login`（要人手喺瀏覽器撳 Authorize）→
+  `cloudflared tunnel create hymn-api` → `cloudflared tunnel route dns hymn-api api.god-music.com`
+- **想部機開機自動行 tunnel**（唔使記住開）：可以行 `cloudflared service install`（未做）
 
 ### 最新 APK
 - **v221：`~/Desktop/詩歌App/hymn-app-v221.apk`（versionCode 16）← Phase 1 完成、乾淨版**

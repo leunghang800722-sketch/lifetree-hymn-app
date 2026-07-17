@@ -1,3 +1,13 @@
 // App 設定
-// 用手機試用時，要改做你電腦嘅 IP
-export const API_BASE = 'https://del-alien-evanescence-reunion.trycloudflare.com';
+//
+// 固定 URL — 行緊 Cloudflare named tunnel（tunnel 名：hymn-api）。
+// 呢條 URL 唔會再變，所以 tunnel 重開／電腦重啟之後都唔使改呢度、唔使 rebuild APK。
+// （以前用臨時 trycloudflare tunnel，每次重開都係一條新 random URL，
+//   搞到每次都要改 config + rebuild + 重裝，好折磨。）
+//
+// 要跑起個 backend 要開兩樣嘢：
+//   1. cd backend && node server.js          （行喺 localhost:3001）
+//   2. cloudflared tunnel run hymn-api       （config 喺 ~/.cloudflared/config.yml）
+//
+// ⚠️ backend 仍然係跑喺開發者部 Mac 度，部機要開住 + 有網，App 先用到。
+export const API_BASE = 'https://api.god-music.com';
