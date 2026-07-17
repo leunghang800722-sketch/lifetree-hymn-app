@@ -262,6 +262,82 @@ App 端唔再有「臨場喺 JS 度計下一首」嘅邏輯（呢個正正係以
 
 ---
 
+## 三之三、【新規劃書】Phase 2:死鏈檢測 + 試版歌庫 ✅(部署部分放棄)
+
+> 2026-07-17。分支同上。
+
+### ❌ 「雲端部署」呢part**實測後放棄咗**,唔好再試
+**googlevideo 個音源 URL 綁死咗「邊個 IP resolve 就只准邊個 IP 攞」。** 實測(唔係估):
+Mac(185.219.141.202)resolve 一條 URL,同一刻由 Zeabur(172.104.39.181)攞同一條:
+
+| | 結果 |
+|---|---|
+| Mac(URL 入面 `ip=` 嗰個) | **206**,有 data,冇 redirect |
+| Zeabur(第二個 IP) | **302 → 403**,0 byte(而且 redirect 目標仲係帶住 `ip=185.219.141.202`) |
+
+➡️ 即係話「雲端 server + Mac 做 resolve」**行唔通** —— 每一個音訊 byte 都仍然要經 Mac 出。
+呢個唔會慳到「唔靠 Mac」,只會將唔穩陣嗰part由「成個server」縮細做「resolve + 成條音訊水管」,
+仲要多一個 hop。**Eric 決定:維持 Mac + named tunnel。**
+(版權問題 Eric 決定等有用戶量(目標1000人)先傾,所以「預先落載儲存」個方案而家唔做。)
+
+### ✅ 自動死鏈檢測
+- `backend/scripts/checkDeadLinks.js` + launchd `com.hymnapp.deadlinkcheck`(**每晚 04:00**)
+- **故意行得好慢**:concurrency **1**、每首隔 **3秒**、每晚 **150首**(~8分鐘),約 10 晚行完成個庫再循環
+  👉 **唔可以改快**。部 Mac 個住宅 IP 係全世界唯一仲 serve 到 YouTube 嘅 IP(Zeabur 已封死),
+  一旦呢個 IP 都俾人 flag,成個 App 冇得救。
+- **🔑 連續 3 日失敗先標記死鏈,任何一次成功即刻清零**
+  呢條規則直接嚟自舊個 `hymn-check-report`「650/665 死、2.3% 可播」嘅假數據 ——
+  嗰 650 個入面 **592 個係 Timeout**,係佢自己撞爆 rate limit 整出嚟,誤導咗成個 project 好耐。
+  **失敗唔係證據,成功先係。**(實測:strike 1/2 唔標記,strike 3 先標記;成功會 revive)
+- **隱藏唔刪除**:用 `status` 欄,資料原封不動留喺 `hymns_all`
+
+### ✅ 試版歌庫:150 首
+**45 粵語 / 75 國語 / 30 英文 = 30%/50%/20%**(Eric 指定),38 個歌手,**每一首都實測 resolve 到先收錄**。
+
+排除規則:重複 youtube_id(208組)、合輯(133)、非敬拜內容(23)、死鏈。
+
+**⚠️ 冇 popularity 可以排序**:`like_count` / `view_count` / `featured` **全部 1518 行都係 0**,
+所以**唔可能**按熱門度揀。改用**歌手 round-robin** 換取多樣性 —— 呢個係現有數據下唯一嘅質素槓桿。
+
+**第一次揀完之後發現 12% 垃圾(靠睇 acceptance 輸出先捉到,唔係靠 pass/fail 數字):**
+- 11 首其實係**合輯**(「精选…赞美诗歌15首（二）」、「小羊诗歌 精选20首」)—— 佢哋**播得到**,所以任何播放測試都捉唔到
+- 6 首係**世俗流行舞蹈片**:歌手「Grace Wu詩歌」其實係 **K-pop 舞蹈教學頻道**(23首入面22首係 Aespa/Doja Cat/Bruno Mars/BTS),得個名似詩歌
+兩樣都已經加咗 filter 重揀,而家 **0 合輯、0 世俗**。
+
+### 🔑 `hymns` 而家係一個 VIEW,唔係 table
+```
+hymns_all  = 真table(1518行,全部資料)          ← 寫入用呢個
+hymns      = VIEW:curated=1 AND status!='dead'  ← 讀取(App/API 用呢個,得150行)
+```
+點解咁做:有 ~20 個 `SELECT ... FROM hymns` 散落 server.js / home.js / category.js / search.js,
+漏改一個就會漏一首死歌出去。**而且後果比想像嚴重** —— App.js `handlePlayHymn` 係
+`Math.max(0, list.findIndex(...))` 對住 `/api/hymns`,所以一首「首頁見到但唔喺 /api/hymns 入面」嘅歌
+會 findIndex 返 -1 → 變 index 0 → **靜靜哋播錯另一首歌**。用 view 就由根本上唔可能出現呢種唔一致。
+- **讀 → `hymns`;寫 → `hymns_all`**(view 唔寫得)。維護腳本全部指住 `hymns_all`。
+- 改完 DB 要 `launchctl kickstart -k gui/$(id -u)/com.hymnapp.backend` 令 server 重新載入
+  (sql.js 開機先讀一次入記憶體)
+
+### 驗收 ✅
+隨機抽 20 首(經真實 `api.god-music.com`)→ **20/20 播到**。
+
+### 常用指令
+```bash
+node scripts/checkDeadLinks.js --limit 150 --delay 3000   # 手動行一次死鏈檢測
+node scripts/checkDeadLinks.js --ids 6,11 --delay 500     # 只查指定歌
+node scripts/curateLibrary.js --target 150 --cap 10 --dry # 試揀(唔寫入)
+tail -f /tmp/hymn_deadlink.log                            # 每晚檢測 log
+```
+
+### ⚠️ 取捨位 / 未解決
+- **粵語得 8 個歌手**(187首)。45首粵語 = 平均每個歌手 5.6 首,所以 artist cap 6 會餓死佢(得40/45),
+  要 cap 10 先填得滿。**限制係個歌庫本身,唔係個 cap。** 想粵語再多樣化 → 要加新粵語歌手入庫。
+- **`sql.js` 寫入完全冇 persist**:server 開機讀一次入記憶體,**從來冇寫返落 disk**。
+  即係話**用戶註冊功能其實係壞嘅**(開咗 account,backend 一 restart 就冇咗)。
+  ⚠️ 呢個係既有 bug,唔喺 Phase 2 範圍,**未修**。維護腳本自己 export() 寫檔所以冇事。
+- Zeabur 個 service **Eric 話唔使刪**,佢自己會設定唔續約。
+
+---
+
 ## 四、已知問題 / Bug / 踩過嘅坑
 
 ### 🔴 Critical
