@@ -23,6 +23,7 @@ import { AuthProvider, useAuth } from './src/context/AuthContext';
 import AuthScreen from './src/screens/AuthScreen';
 import { PlaylistProvider } from './src/context/PlaylistContext';
 import { API_BASE } from './src/config.js';
+import { saveLastPlayed } from './src/lastPlayed';
 
 // ===== MaterialIcons 圖標名稱 =====
 
@@ -459,6 +460,7 @@ function PlayerProvider({ children }) {
     setQueue(list);
     originalQueueRef.current = list;
     setIsShuffled(false);
+    saveLastPlayed(list[startIndex] || list[0]); // §2.3 繼續收聽
     try {
       await lazyEnsurePlayer();
       await TrackPlayer.reset();
@@ -645,55 +647,64 @@ const miStyles = StyleSheet.create({
 // ================================================================
 //  TAB BAR
 // ================================================================
+// §2.2 六格減到四格。舊版係 首頁/搜尋/分類/清單/最愛/播放 —— 六個掣太密、易撳錯,
+// 而且六樣嘢擺埋一齊冇主次。合併邏輯:
+//   搜尋 + 分類  -> 「搜尋」  (本質都係「搵歌」)
+//   清單 + 最愛 + 帳戶 + 設定 -> 「我的」
+//   新增「詩歌庫」(全部詩歌)
+//   「播放」唔再佔一格 —— 撳迷你播放條就向上展開,係全世界音樂 App 嘅標準做法
+// §5.4:圖標一律用向量圖標庫,唔用 Emoji(舊版 tab 用緊 🏠🔍📚📋❤️)
 const TAB_CONFIG = [
-  { key: 'Home', label: '首頁', emoji: '🏠' },
-  { key: 'Search', label: '搜尋', emoji: '🔍' },
-  { key: 'Category', label: '分類', emoji: '📚' },
-  { key: 'Playlist', label: '清單', emoji: '📋' },
-  { key: 'Favorites', label: '最愛', emoji: '❤️' },
+  { key: 'Home',    label: '首頁',   icon: 'home',          iconOff: 'home' },
+  { key: 'Search',  label: '搜尋',   icon: 'search',        iconOff: 'search' },
+  { key: 'Library', label: '詩歌庫', icon: 'library-music', iconOff: 'library-music' },
+  { key: 'Mine',    label: '我的',   icon: 'person',        iconOff: 'person-outline' },
 ];
 function TabBar({ activeTab, onTabChange, bottomInset, onMiniPlayerPress }) {
-  const { currentHymn } = usePlayer();
   const safePad = Math.max(bottomInset || 0, 4);
   return (
     <View style={[tbStyles.wrapper, { paddingBottom: safePad + 8 }]}>
-      <View style={tbStyles.miniWrap}>
-        <MiniPlayer onPress={onMiniPlayerPress} />
-      </View>
-      <View style={tbStyles.miniWrapSpacer} />
+      {/* 迷你播放條貫穿全 App,撳佢就展開播放頁(取代咗舊嘅「播放」tab) */}
+      <MiniPlayer onPress={onMiniPlayerPress} />
       <View style={tbStyles.bar}>
-        {TAB_CONFIG.map(tab => (
-          <TouchableOpacity key={tab.key} style={tbStyles.item} onPress={() => onTabChange(tab.key)}>
-            <Text style={tbStyles.icon}>{tab.emoji}</Text>
-            <Text style={[tbStyles.label, activeTab === tab.key && tbStyles.labelActive]}>{tab.label}</Text>
-          </TouchableOpacity>
-        ))}
-        <TouchableOpacity style={tbStyles.item} onPress={() => onMiniPlayerPress()}>
-          <MaterialIcons name="play-circle-outline" size={22} color={TEXT_SECONDARY} />
-          <Text style={tbStyles.label}>播放</Text>
-        </TouchableOpacity>
+        {TAB_CONFIG.map(tab => {
+          const active = activeTab === tab.key;
+          return (
+            <TouchableOpacity key={tab.key} style={tbStyles.item} onPress={() => onTabChange(tab.key)} activeOpacity={0.7}>
+              <MaterialIcons
+                name={active ? tab.icon : tab.iconOff}
+                size={24}
+                color={active ? ACCENT_COLOR : TEXT_SECONDARY}
+              />
+              <Text style={[tbStyles.label, active && tbStyles.labelActive]}>{tab.label}</Text>
+            </TouchableOpacity>
+          );
+        })}
       </View>
     </View>
   );
 }
 const tbStyles = StyleSheet.create({
   wrapper: { backgroundColor: MAIN_BG_COLOR },
-  miniWrap: { },
-  miniWrapSpacer: { height: 4 },
-  bar: { flexDirection: 'row', backgroundColor: MAIN_BG_COLOR, paddingTop: 4, paddingBottom: 4 },
-  item: { flex: 1, alignItems: 'center', paddingVertical: 6 },
-  icon: { fontSize: 18 },
-  label: { fontSize: 10, color: TEXT_SECONDARY, marginTop: 2, fontWeight: '500' },
-  labelActive: { color: TEXT_PRIMARY, fontWeight: '700' },
+  bar: {
+    flexDirection: 'row', backgroundColor: MAIN_BG_COLOR,
+    paddingTop: 6, paddingBottom: 4,
+    borderTopWidth: 0.5, borderTopColor: DesignColors.border,
+  },
+  item: { flex: 1, alignItems: 'center', paddingVertical: 4 },
+  // §5.3 重要功能嘅 icon 要配文字標籤
+  label: { fontSize: 11, color: TEXT_SECONDARY, marginTop: 3, fontWeight: '500' },
+  labelActive: { color: ACCENT_COLOR, fontWeight: '700' },
 });
 
-// ===== 引入新 Home 10 區塊元件 =====
+// ===== 各 tab 畫面 =====
 import HomeSections from './src/components/home/HomeScreen';
 import SearchScreen from './src/screens/SearchScreen';
-import CategoryScreen from './src/screens/CategoryScreen';
 import HymnListScreen from './src/screens/HymnListScreen';
-import PlaylistScreen from './src/screens/PlaylistScreen';
-import FavoritesScreen from './src/screens/FavoritesScreen';
+import LibraryScreen from './src/screens/LibraryScreen'; // §2.2 詩歌庫(新)
+import MineScreen from './src/screens/MineScreen';        // §2.2 我的(新,合併 最愛+清單+帳戶)
+// 舊 tab 畫面(Category / Playlist / Favorites)已由上面兩個新畫面取代 —— §2.2 六格減四格。
+// 檔案暫時保留喺 src/screens/ 未刪(等 Phase 3 收尾一次過清 legacy)。
 
 // ================================================================
 //  HOME SCREEN
@@ -706,7 +717,8 @@ function HomeScreen({ hymns, activeCategory, onCategoryChange, onPlayHymn, onOpe
       {/* Header — 生命樹品牌 + 通知 + 頭像 */}
       <View style={[hs.header, { paddingTop: (homeInsets.top || StatusBar.currentHeight || 24) + 8 }]}>
         <View style={hs.brandWrap}>
-          <Text style={hs.brandIcon}>🌳</Text>
+          {/* §5.4 唔用 Emoji;生命樹 = 向量樹圖標,用生命綠 */}
+          <MaterialIcons name="park" size={26} color={ACCENT_COLOR} style={{ marginRight: 10 }} />
           <View>
             <Text style={hs.brandTitle}>生命樹</Text>
             <Text style={hs.brandSub}>Etz Chayim</Text>
@@ -725,15 +737,7 @@ function HomeScreen({ hymns, activeCategory, onCategoryChange, onPlayHymn, onOpe
           </TouchableOpacity>
         </View>
       </View>
-      <HomeSections
-        navigation={{
-          navigate: (route, params) => {
-            if (route === 'Category') onCategoryChange(params?.category);
-            if (params?.hymn) onPlayHymn(params.hymn);
-          },
-        }}
-        onPlayHymn={onPlayHymn}
-      />
+      <HomeSections hymns={hymns} onPlayHymn={onPlayHymn} />
     </View>
   );
 }
@@ -1221,9 +1225,9 @@ function AppContent() {
 
 
       <View style={pageStyles.content}>
-        {/* Keep all screens mounted; hide inactive ones to preserve state */}
-        {/* Home: visible when Home tab, or other tabs without dedicated screen (Favorites/Player) */}
-        <View style={[pageStyles.screenWrap, { display: (activeTab === 'Home' || (activeTab !== 'Search' && activeTab !== 'Category' && activeTab !== 'Playlist' && activeTab !== 'Favorites')) ? 'flex' : 'none' }]}>
+        {/* 四 tab(§2.2):首頁 / 搜尋 / 詩歌庫 / 我的。全部 keep mount,靠 display 收埋
+            以保留各自 scroll/state。 */}
+        <View style={[pageStyles.screenWrap, { display: activeTab === 'Home' ? 'flex' : 'none' }]}>
           <HomeScreen hymns={allSongs || []} activeCategory={activeCategory}
             onCategoryChange={setActiveCategory} onPlayHymn={handlePlayHymn} onOpenAuth={openAuth} />
         </View>
@@ -1232,14 +1236,11 @@ function AppContent() {
             if (route === 'Player' && params?.hymn) handlePlayHymn(params.hymn);
           }}} />
         </View>
-        <View style={[pageStyles.screenWrap, { display: activeTab === 'Category' ? 'flex' : 'none' }]}>
-          <CategoryScreen showHymnList={showHymnList} />
+        <View style={[pageStyles.screenWrap, { display: activeTab === 'Library' ? 'flex' : 'none' }]}>
+          <LibraryScreen hymns={allSongs || []} onPlayHymn={handlePlayHymn} />
         </View>
-        <View style={[pageStyles.screenWrap, { display: activeTab === 'Playlist' ? 'flex' : 'none' }]}>
-          <PlaylistScreen onPlayHymn={handlePlayHymn} />
-        </View>
-        <View style={[pageStyles.screenWrap, { display: activeTab === 'Favorites' ? 'flex' : 'none' }]}>
-          <FavoritesScreen onPlayHymn={handlePlayHymn} />
+        <View style={[pageStyles.screenWrap, { display: activeTab === 'Mine' ? 'flex' : 'none' }]}>
+          <MineScreen onPlayHymn={handlePlayHymn} onOpenAuth={openAuth} />
         </View>
       </View>
 
