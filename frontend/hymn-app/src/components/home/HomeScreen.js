@@ -149,8 +149,14 @@ export default function HomeScreen({ hymns = [], onPlayHymn, onOpenList }) {
   // 「最近加入」—— 冇 created_at,用 id 由大到細近似(id 大 = 遲加入)
   const recent = useMemo(() => [...hymns].sort((a, b) => b.id - a.id).slice(0, 12), [hymns]);
 
-  const play = useCallback((hymn, list) => {
-    if (onPlayHymn && hymn) onPlayHymn(hymn, list ? { playlist: list } : undefined);
+  // v231 —— 兩種播放語義(Eric 要求,對齊 Spotify/YT Music):
+  //   explicit = true  → 用戶揀咗**成個清單**(「播全部」/「隨心聽」),跟清單次序播晒。
+  //   explicit = 唔傳  → 用戶淨係撳咗**一首散歌** → 播嗰首 + 自動接一段隨機,
+  //                      佇列會出「正在隨機播放：」分隔線。
+  // 第三個參數係**明確標記**,唔好用「hymn 係咪 list[0]」嚟猜 —— 撳「今日為你預備」
+  // 第一張卡就啱啱好等於 todayPicks[0],咁猜會撞錯。
+  const play = useCallback((hymn, list, explicit) => {
+    if (onPlayHymn && hymn) onPlayHymn(hymn, list ? { playlist: list, explicit: !!explicit } : undefined);
   }, [onPlayHymn]);
 
   // 隨心聽:每次撳都要唔同,所以用真隨機(唔落日期種子)。
@@ -158,7 +164,7 @@ export default function HomeScreen({ hymns = [], onPlayHymn, onOpenList }) {
   const playShuffleAll = useCallback(() => {
     if (!hasData) return;
     const shuffled = randomShuffle(hymns);
-    play(shuffled[0], shuffled);
+    play(shuffled[0], shuffled, true); // 洗好副牌 = 明確嘅清單,唔好再加隨機尾巴
   }, [hymns, hasData, play]);
 
   if (!hasData) {
@@ -269,7 +275,7 @@ export default function HomeScreen({ hymns = [], onPlayHymn, onOpenList }) {
           {/* 底部(成個分類共用一組,唔係逐頁重複) */}
           <View style={styles.chipFooter}>
             <TouchableOpacity style={styles.footerPlay} activeOpacity={0.85}
-              onPress={() => play(activeChip.songs[0], activeChip.songs)}>
+              onPress={() => play(activeChip.songs[0], activeChip.songs, true)}>
               <MaterialIcons name="play-arrow" size={18} color={COLORS.background} />
               <Text style={styles.footerPlayText}>播全部 {activeChip.songs.length} 首</Text>
             </TouchableOpacity>

@@ -1,7 +1,7 @@
 # 詩歌串流 App（生命樹 / Etz Chayim）— 交接文件
 
 > 建立日期：2026-07-15
-> 最後更新：2026-07-18（v230:sheet 真手勢 + 首頁五板塊,兩 session 撞車已 reconcile,待覆測）
+> 最後更新：2026-07-18（v231:sheet 殘留修正 + 單曲自動隨機接續,待覆測）
 > 開發者：約拿（AI 助手） x 恒恒（Owner/PM）
 > Git 起點：2026-06 初，v100+ 演化至今 v214；Phase 1-3 由 v215 做到 v226（versionCode 21）
 
@@ -13,7 +13,7 @@
 **Phase 3(介面重整)已完成,build 驗過,但個 bottom-sheet 手勢仲**未真機試**(見「三之四」)。
 
 - **分支**：`feature/player-rebuild`（由 `develop-v211` 開出）—— 未 merge 返 develop-v211
-- **最新 APK**：`~/Desktop/詩歌App/hymn-app-v230.apk`（**versionCode 25 / versionName 1.1.4**）—— bottom sheet 真手勢(「三之六」) **+** 首頁五板塊,兩個 session 撞車後查證過嘅乾淨版(「三之七」)。舊 apk（v223–v229）已搬去 `~/Desktop/詩歌App/舊版本_勿裝/`,**裝新 apk 前記得先解除安裝舊 App**(同簽名可覆蓋,但為咗清乾淨 state 建議 uninstall)。
+- **最新 APK**：`~/Desktop/詩歌App/hymn-app-v231.apk`（**versionCode 26 / versionName 1.1.5**）—— sheet 疊埋殘留修正 + 「單曲 + 自動隨機接續」播放語義(「三之八」)。舊 apk（v223–v230）已搬去 `~/Desktop/詩歌App/舊版本_勿裝/`,**裝新 apk 前記得先解除安裝舊 App**(同簽名可覆蓋,但為咗清乾淨 state 建議 uninstall)。
 - **API 固定 URL：`https://api.god-music.com`** ✅（2026-07-17 起，唔會再變）
 - ✅ **backend + tunnel 而家係 launchd 自動管理，唔使人手開**（2026-07-17 起，見「七、開機自動啟動」）
   - 登入之後自動行；死咗會自動拉返起（實測 kill -9 兩個，~2 秒內自動復活）
@@ -583,6 +583,109 @@ v230 = v229 + version bump + 本節文件。
 7. 板塊尾嗰個「**睇晒 N 首**」→ 入到全屏歌單頁,撳歌會播,撳「返回」收到。
 
 8. 裝之前**先解除安裝舊 App**(v228/v229 已搬去 `舊版本_勿裝/`)。
+
+---
+
+## 三之八、sheet 疊埋殘留 + 單曲自動隨機接續（v231,versionCode 26,2026-07-18）
+
+Eric 試 v230 之後提兩樣,一次過修。
+
+### Bug A:兩個 sheet 收埋之後露條邊,而且「冇手柄嗰個滑唔返上去」
+
+**病徵**(Eric 影到圖):播放頁底一開始就見到兩條橫嘢疊埋 ——「播放清單 (45)」
+上面有條 drag handle,下面仲 peek 住多一忽。有 handle 嗰個向上滑開到,
+另一個向下滑收咗之後就再滑唔返上去。
+
+**根因(兩個問題疊埋一齊)**
+
+1. **`paddingBottom` 令 sheet 露邊。** gorhom 個 `BottomSheetHostingContainer`
+   係 `StyleSheet.absoluteFill`。而 absolute 定位嘅 child 係相對 parent 嘅
+   **padding box**(CSS 同 Yoga 都係咁),唔係 border box。我哋當時寫:
+
+   ```jsx
+   <View style={[fsStyles.container, { paddingBottom: bottomPad }]}>
+   ```
+
+   → hosting container 比螢幕矮咗 `bottomPad`(≈ insets.bottom + 8),
+   `containerHeight` 跟住矮咗,而收埋咗嘅 sheet 就係停喺 `containerHeight`,
+   即係「螢幕底 - bottomPad」→ **每個 sheet 都露返條 bottomPad 高嘅邊**。
+   兩個 sheet 就露兩條 = Eric 見到嘅「2 個 sheet 疊埋」。
+
+2. **常駐嘅 add sheet 擋死 queue sheet。** 兩個 sheet 之前都係一直 mount 住
+   `index={-1}`。add sheet 喺 JSX 排後面 → 佢個 absoluteFill container 疊喺
+   queue sheet 上面。所以露出嚟嗰兩條邊,**得最面嗰條(add sheet)撳得到**,
+   queue sheet 嗰條俾人蓋住 → 「有手柄嗰個滑到、冇手柄嗰個滑唔到」。
+
+**修法**
+
+- 外層 container **拎走 padding**,padding 落喺新加嘅 content wrapper;
+  sheet 留喺無 padding 嘅外層 → `containerHeight` = 真螢幕高 → 收埋 = 真係唔見。
+- **queue sheet 改做常駐兩段式**:`snapPoints=[78px, '88%']`、`index={0}`、
+  **唔用 `enablePanDownToClose`**。collapsed 嗰段就係一條有 handle 嘅
+  「播放清單 (N)」bar,永遠喺度 → **永遠有嘢俾你向上滑**,向下滑 = 收返 collapsed
+  (唔會消失,所以唔會再出現「滑唔返上去」)。
+- **舊嗰個 static「播放清單 (N)」掣移走** —— 佢同 collapsed sheet 並排,
+  就係 Eric 見到嘅第二條 bar。而家 collapsed sheet 本身就係嗰個掣。
+- **add sheet 改做用到先 mount**,收埋(onChange index < 0)即刻 unmount,
+  零殘留、唔會再擋住 queue sheet。
+- queue sheet 個 backdrop 要 `appearsOnIndex={1} disappearsOnIndex={0}`,
+  唔係 collapsed 嗰陣會有塊透明遮罩擋死下面成個播放器啲掣。
+- content 嘅 `paddingBottom` 要加返 `QUEUE_COLLAPSED_H`,唔係啲播放掣會俾
+  collapsed bar 遮住。
+
+### Bug B:改做「單曲觸發 + 自動隨機接續」(Spotify / YT Music 語義)
+
+**Eric 要求**:淨係揀咗**成個清單**先跟清單次序播;撳**一首散歌**就應該
+「嗰首播先,跟住自動接一段隨機」,而且佇列入面要有一行「正在隨機播放：」分隔線。
+
+**實作**
+
+新增 `playSingle(hymn, pool)`:queue = `[hymn, ...pool 洗牌後頭 30 首]`,
+同時 set `autoRadioFrom = 1`。`playQueue(list, idx, opts)` 加第三個參數,
+`opts.autoRadioFrom` 決定條分隔線畫喺邊。佇列 sheet 喺 `index === autoRadioFrom`
+嗰行前面畫「⇄ 正在隨機播放：」。
+
+分派邏輯集中喺 `handlePlayHymn(h, opts)` 一個位:
+
+| 入口 | 語義 |
+|---|---|
+| chip「播全部 N 首」 | `explicit` → **跟清單次序** |
+| 「睇晒」歌單頁入面撳歌 | `explicit`(直接 call `playQueue`)→ **跟清單次序** |
+| 「隨心聽」(洗牌全庫) | `explicit` → 跟洗好嗰個次序 |
+| chip 入面撳一行歌 | 單曲 + 隨機接續 |
+| 「今日為你預備」卡 | 單曲 + 隨機接續 |
+| 「最近加入」卡 | 單曲 + 隨機接續 |
+| 「繼續收聽」 | 單曲 + 隨機接續 |
+| 詩歌庫 / 搜尋 / 我的 | 單曲 + 隨機接續 |
+
+**Default 係「單曲 + 隨機接續」**,要跟清單就要 caller 明確傳 `opts.explicit`。
+咁樣任何未標明嘅入口都自動係 Eric 要嘅行為,唔會漏。
+
+隨機接續一律由**全庫**抽,唔用 caller 傳落嚟嗰個 list 做 pool ——
+「今日為你預備」得 6 首,攞嚟做 pool 就得 5 首尾巴,太短。
+
+`toggleShuffle` 會清走 `autoRadioFrom`(洗完牌個 index 已經冇意義,
+留住條線會畫錯位呃人)。
+
+### v231 覆測清單(Eric)
+
+**A. Sheet**
+1. 開播放頁,底下**淨係得一條**「播放清單 (N)」bar(有條橫線 handle),**冇第二條**、冇殘留。
+2. 條 bar **向上滑** → 全開;**向下滑** → 收返做一條 bar(唔會消失)。撳條 bar 都一樣。
+3. 收返 collapsed 之後**再向上滑,一定要滑得返上去**(呢個就係之前壞嗰樣)。
+4. sheet collapsed 嗰陣,播放/上一首/下一首**照撳得**(冇隱形遮罩)。
+5. 「清單」pill → 加入到清單 sheet 彈出、可以向下滑收;收咗之後**唔會留低任何邊或殘影**。
+6. 返回鍵:add sheet 開住 → 收 add sheet;只有 queue 全開 → 收返 collapsed。
+
+**B. 播放語義**
+7. 首頁「即刻揀歌」撳**一行歌** → 播嗰首,開佇列見到第 2 首之前有「**正在隨機播放：**」。
+8. 「今日為你預備」/「最近加入」撳卡 → 同上。
+9. 詩歌庫/搜尋撳一首 → 同上。
+10. chip「**播全部 N 首**」→ 佇列**冇**分隔線,次序 = 清單次序。
+11. 「睇晒」入歌單頁撳一首 → 佇列**冇**分隔線,跟歌單次序,prev 返得到上一首。
+12. 「隨心聽」→ 洗牌全庫,冇分隔線。
+
+13. 裝之前**先解除安裝舊 App**。
 
 ---
 

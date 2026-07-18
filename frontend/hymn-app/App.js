@@ -252,6 +252,9 @@ function PlayerProvider({ children }) {
 
       queueRef.current = newQ;
       setQueue(newQ);
+      // 洗完牌之後,「邊度開始係自動接續」呢個 index 已經冇意義,清走條分隔線,
+      // 唔好留條線喺個完全唔同嘅位度呃人。
+      setAutoRadioFrom(null);
       currentQueueIndexRef.current = 0;
       setCurrentQueueIndex(0);
       await TrackPlayer.reset();
@@ -508,8 +511,35 @@ function PlayerProvider({ children }) {
   // TrackPlayer at once (stable per-song URLs via toTrack/stream proxy), so
   // native next/prev/repeat/background-auto-advance can take over instead of
   // JS recomputing "what's next" (see §1 root-cause).
-  async function playQueue(list, startIndex = 0) {
+  // 「單曲 + 自動隨機接續」(v231,Eric 要求,對齊 Spotify/YT Music)。
+  //
+  // 語義分界:
+  //  - 用戶揀咗一個**完整清單**(chip「播全部」/「睇晒」入面撳歌/隨心聽)
+  //    → `playQueue(list, idx)`,**照住清單次序播晒**,冇隨機尾巴。
+  //  - 用戶淨係撳**一首散歌**(首頁一行歌 / 今日為你預備 / 最近加入 /
+  //    詩歌庫 / 搜尋 / 繼續收聽)→ `playSingle(hymn, pool)`,
+  //    隊列 = [嗰首歌, ...由 pool 隨機抽嘅接續],UI 會喺交界畫「正在隨機播放：」。
+  //
+  // 為咗唔好一次過餵成千首落 TrackPlayer(reset+add 嘅成本同 §3.6 一樣),
+  // 隨機尾巴取 RADIO_LEN 首就夠;播到差唔多先算(暫時唔做無限接續)。
+  const RADIO_LEN = 30;
+  const [autoRadioFrom, setAutoRadioFrom] = useState(null); // queue 由邊個 index 開始係自動接續
+  async function playSingle(hymn, pool) {
+    if (!hymn) return;
+    const src = Array.isArray(pool) && pool.length ? pool : (queueRef.current || []);
+    const rest = src.filter(s => String(s.id) !== String(hymn.id));
+    for (let i = rest.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [rest[i], rest[j]] = [rest[j], rest[i]];
+    }
+    const list = [hymn, ...rest.slice(0, RADIO_LEN)];
+    // 冇嘢可以接(個 pool 得嗰首歌)就當普通單曲播,唔好畫條冇意思嘅分隔線。
+    await playQueue(list, 0, { autoRadioFrom: list.length > 1 ? 1 : null });
+  }
+
+  async function playQueue(list, startIndex = 0, opts = {}) {
     if (!Array.isArray(list) || list.length === 0) return;
+    setAutoRadioFrom(opts.autoRadioFrom ?? null);
     setIsLoading(true);
     // Set the ref synchronously alongside the state (same reason as
     // toggleShuffle): TrackPlayer events fire during the add/play below and
@@ -624,7 +654,8 @@ function PlayerProvider({ children }) {
       repeatMode, isShuffled, setIsShuffled,
       currentQueueIndex, setCurrentQueueIndex, queue,
       overlayExpanded, queueReady, isLoading, getPlayMode,
-      playQueue, cmd_play, cmd_pause, togglePlayPause,
+      playQueue, playSingle, autoRadioFrom,
+      cmd_play, cmd_pause, togglePlayPause,
       skipToQueueIndex, handleNextTrack, handlePrevTrack,
       setCurrentTime, setDuration,
       setSeekPercent, setIsSeeking, setRepeatMode,
@@ -861,7 +892,12 @@ const hs = StyleSheet.create({
 // ================================================================
 // snapPoints 要係穩定 reference,唔可以每次 render 新開 array(會令 gorhom 重算成套
 // layout,拖到一半彈返)。所以擺喺 module 層。
-const QUEUE_SNAP_POINTS = ['85%'];
+//
+// queue sheet 有兩個 detent:collapsed(常駐,得 handle + 標題)同 88%(全開)。
+// collapsed 用**固定 px** 唔用 %,因為呢個高度要同 content 嘅 paddingBottom
+// 啱啱好對得上(唔係就會遮住播放掣或者留條罅),固定數值先算得準。
+const QUEUE_COLLAPSED_H = 78;
+const QUEUE_SNAP_POINTS = [QUEUE_COLLAPSED_H, '88%'];
 const ADD_SNAP_POINTS = ['55%'];
 
 function FullScreenPlayerOverlay() {
@@ -870,41 +906,63 @@ function FullScreenPlayerOverlay() {
 
   const queue = player.queue || [];
   // 兩個 sheet 都係 inline `<BottomSheet>`(見檔頭 import 處嘅 v229 註解)。
-  // `index={-1}` = 收埋;開就 snapToIndex(0),收就 close()。ref 控制,唔使 state,
-  // 所以用家用手勢拖走個 sheet 嗰陣唔會同 React state 唔同步。
+  //
+  // v231 之後兩個 sheet 嘅角色**唔同**咗,呢點好重要:
+  //  - queue sheet:**常駐**,snapPoints = [collapsed, 88%],index 0 = collapsed。
+  //    永遠有條 handle 喺螢幕底,所以永遠滑得上去。向下滑 = 返 collapsed,唔會消失。
+  //  - add sheet:**撳掣先 mount**,收埋就 unmount,零殘留、唔會擋住 queue sheet。
   const queueSheetRef = useRef(null);
-  const openQueue = useCallback(() => queueSheetRef.current?.snapToIndex(0), []);
-  const closeQueue = useCallback(() => queueSheetRef.current?.close(), []);
+  const [queueExpanded, setQueueExpanded] = useState(false);
+  const openQueue = useCallback(() => queueSheetRef.current?.snapToIndex(1), []);
+  const closeQueue = useCallback(() => queueSheetRef.current?.snapToIndex(0), []);
   const [lyricsVisible, setLyricsVisible] = useState(false);
   const addSheetRef = useRef(null);
-  const openAddSheet = useCallback(() => addSheetRef.current?.snapToIndex(0), []);
+  // mount 咗先可以 present;所以「開」= setAddMounted(true),gorhom 自己
+  // 由 index 0 animate 上嚟(index={0} + animateOnMount default true)。
+  const [addMounted, setAddMounted] = useState(false);
+  const openAddSheet = useCallback(() => setAddMounted(true), []);
   const closeAddSheet = useCallback(() => addSheetRef.current?.close(), []);
 
   // 有 sheet 開緊嗰陣,Android 返回鍵應該係「收 sheet」而唔係「收埋成個播放器」。
-  // gorhom 每次位置變都會 call onChange,index -1 = 已收埋。
-  const [anySheetOpen, setAnySheetOpen] = useState(false);
+  // queue sheet:index 1 = 全開先叫「開」(index 0 係常駐 collapsed,唔算)。
+  // add sheet:index -1 = 收埋完,順手 unmount。
   const queueOpenRef = useRef(false);
   const addOpenRef = useRef(false);
+  const [anySheetOpen, setAnySheetOpen] = useState(false);
   const syncSheetOpen = useCallback(() => {
     setAnySheetOpen(queueOpenRef.current || addOpenRef.current);
   }, []);
-  const onQueueChange = useCallback((i) => { queueOpenRef.current = i >= 0; syncSheetOpen(); }, [syncSheetOpen]);
-  const onAddChange = useCallback((i) => { addOpenRef.current = i >= 0; syncSheetOpen(); }, [syncSheetOpen]);
+  const onQueueChange = useCallback((i) => {
+    queueOpenRef.current = i >= 1;
+    setQueueExpanded(i >= 1);
+    syncSheetOpen();
+  }, [syncSheetOpen]);
+  const onAddChange = useCallback((i) => {
+    addOpenRef.current = i >= 0;
+    // 收埋完就 unmount,唔好留個 absoluteFill container 喺度擋住 queue sheet。
+    if (i < 0) setAddMounted(false);
+    syncSheetOpen();
+  }, [syncSheetOpen]);
 
   useEffect(() => {
     if (!anySheetOpen) return undefined;
     const sub = BackHandler.addEventListener('hardwareBackPress', () => {
-      if (queueOpenRef.current) closeQueue();
+      // add sheet 喺 queue sheet 上面,有佢就先收佢。
       if (addOpenRef.current) closeAddSheet();
+      else if (queueOpenRef.current) closeQueue();
       return true; // 食咗個返回鍵,唔好傳落去收埋播放器
     });
     return () => sub.remove();
   }, [anySheetOpen, closeQueue, closeAddSheet]);
 
-  // 統一嘅 backdrop:半透明遮罩 + 撳一下收起。`disappearsOnIndex={-1}` 令 sheet 收埋
-  // 之後 backdrop 完全唔食 touch,唔會擋住下面啲掣。
+  // add sheet 嘅 backdrop:收埋(-1)之後完全唔食 touch。
   const renderBackdrop = useCallback((props) => (
     <BottomSheetBackdrop {...props} appearsOnIndex={0} disappearsOnIndex={-1} pressBehavior="close" />
+  ), []);
+  // queue sheet 嘅 backdrop:collapsed(index 0)嗰陣**唔可以**有遮罩,
+  // 唔係就會擋死下面成個播放器啲掣。全開(index 1)先出,撳一下收返 collapsed。
+  const renderQueueBackdrop = useCallback((props) => (
+    <BottomSheetBackdrop {...props} appearsOnIndex={1} disappearsOnIndex={0} pressBehavior="collapse" />
   ), []);
 
   const cur = player.currentHymn || { title: '', artist: '', youtube_id: '', id: null, lyrics: '' };
@@ -916,7 +974,15 @@ function FullScreenPlayerOverlay() {
   const { addToPlaylist } = usePlaylists();
 
   return (
-    <View style={[fsStyles.container, { paddingBottom: bottomPad }]}>
+    // ⚠️ 外層**唔可以有 padding**(v231)。gorhom 個 hosting container 係
+    // `StyleSheet.absoluteFill`,而 absolute 定位嘅 child 係相對 parent 嘅
+    // **padding box**(CSS/Yoga 都係咁)。之前喺呢度落咗 `paddingBottom`,
+    // 令 sheet 個 container 比螢幕矮咗 bottomPad,收埋咗嘅 sheet 就企喺
+    // 「螢幕底 - bottomPad」度 → 每個 sheet 都露返條 bottomPad 高嘅邊出嚟。
+    // 兩個 sheet 就露兩條 = Eric 見到「2 個 sheet 疊埋」。詳見「三之八」。
+    // padding 改為落喺下面個 content wrapper,sheet 留喺無 padding 嘅外層。
+    <View style={fsStyles.container}>
+      <View style={{ flex: 1, paddingBottom: bottomPad + QUEUE_COLLAPSED_H }}>
       <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
 
       {/* Top Bar */}
@@ -1038,58 +1104,73 @@ function FullScreenPlayerOverlay() {
           </TouchableOpacity>
         </View>
 
-        {/* 播放清單掣 —— 撳/向上滑都會彈出 bottom sheet(§3.4) */}
-        <TouchableOpacity style={{
-          flexDirection: 'row', justifyContent: 'center', alignItems: 'center',
-          paddingVertical: 14, marginHorizontal: 20, marginTop: 4,
-          backgroundColor: CARD_BG_COLOR, borderRadius: 16,
-        }} activeOpacity={0.7} onPress={openQueue}>
-          <MaterialIcons name="keyboard-arrow-up" size={18} color={TEXT_SECONDARY} style={{ marginRight: 6 }} />
-          <Text style={fsStyles.sheetTitle}>播放清單 ({queue.length})</Text>
-        </TouchableOpacity>
+        {/* 舊嗰個「播放清單 (N)」掣喺 v231 移走咗 —— 佢同下面 sheet 個收埋狀態
+            並排出現,就係 Eric 見到嘅「兩條 bar」。而家個 collapsed sheet
+            本身就係嗰個掣(有 drag handle,撳到又滑到)。 */}
+      </View>
       </View>
 
-      {/* ===== 播放清單 BOTTOM SHEET(v229,inline gorhom)=====
+      {/* ===== 播放清單 BOTTOM SHEET(v231:常駐 collapsed,可滑上滑落)=====
           擺喺 overlay container 最後一個 child → 畫喺 overlay 之上,冇 portal z-order 問題。
-          向上滑彈出 / 向下滑收起 = gorhom 原生手勢;BottomSheetFlatList 自己同 sheet
-          協調手勢,滾到頂再向下拖先會收 sheet。 */}
+          兩個 snap point:collapsed(得條 handle + 標題,常駐)同 88%(全開)。
+          **唔用 `enablePanDownToClose`** —— 呢個 sheet 唔會消失,向下滑 = 收返做
+          collapsed。咁就一定有嘢俾用戶向上滑,唔會出現「冇手柄就滑唔返上去」。 */}
       <BottomSheet
         ref={queueSheetRef}
-        index={-1}
+        index={0}
         snapPoints={QUEUE_SNAP_POINTS}
         enableDynamicSizing={false}
-        enablePanDownToClose
         onChange={onQueueChange}
-        backdropComponent={renderBackdrop}
+        backdropComponent={renderQueueBackdrop}
         backgroundStyle={{ backgroundColor: MAIN_BG_COLOR }}
         handleIndicatorStyle={{ backgroundColor: TEXT_SECONDARY }}
       >
-        <View style={{ paddingHorizontal: 16, paddingBottom: 8 }}>
-          <Text style={{ ...TYPOGRAPHY.sectionTitle, textAlign: 'center' }}>播放清單 ({queue.length})</Text>
-          {/* Shuffle indicator —— 個 list 本身就係洗咗牌嘅順序,冇呢個提示分唔出 */}
-          {player.isShuffled && (
-            <View style={[fsStyles.shuffleBanner, { marginTop: 8 }]}>
-              <MaterialIcons name="shuffle" size={14} color={ACCENT_COLOR} />
-              <Text style={fsStyles.shuffleBannerText}>已隨機排序</Text>
-            </View>
-          )}
-        </View>
+        {/* Collapsed 狀態見到嘅就係呢行 —— 撳佢 = 全開(同向上滑一樣效果)。 */}
+        <SheetTouchable
+          style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingHorizontal: 16, paddingBottom: 10 }}
+          onPress={queueExpanded ? closeQueue : openQueue}
+        >
+          <MaterialIcons
+            name={queueExpanded ? 'keyboard-arrow-down' : 'keyboard-arrow-up'}
+            size={18} color={TEXT_SECONDARY} style={{ marginRight: 6 }}
+          />
+          <Text style={{ ...TYPOGRAPHY.sectionTitle }}>播放清單 ({queue.length})</Text>
+        </SheetTouchable>
+        {/* Shuffle indicator —— 個 list 本身就係洗咗牌嘅順序,冇呢個提示分唔出 */}
+        {player.isShuffled && (
+          <View style={[fsStyles.shuffleBanner, { marginBottom: 8, alignSelf: 'center' }]}>
+            <MaterialIcons name="shuffle" size={14} color={ACCENT_COLOR} />
+            <Text style={fsStyles.shuffleBannerText}>已隨機排序</Text>
+          </View>
+        )}
         <BottomSheetFlatList
           data={queue}
           keyExtractor={(item) => String(item.id)}
           contentContainerStyle={{ paddingBottom: 40 }}
-          renderItem={({ item }) => (
-            <SheetTouchable style={[fsStyles.queueItem, item.id === cur.id && fsStyles.queueItemActive]}
-              onPress={() => { player.skipToQueueIndex(queue.findIndex(h => h.id === item.id)); closeQueue(); }} activeOpacity={0.7}>
-              <CoverImage youtubeId={item.youtube_id} style={fsStyles.queueCover} />
-              <View style={fsStyles.queueInfo}>
-                <Text style={fsStyles.queueTitle} numberOfLines={1}>{item.title}</Text>
-                <Text style={fsStyles.queueArtist} numberOfLines={1}>{item.artist}</Text>
-              </View>
-              {item.id === cur.id
-                ? <MaterialIcons name="play-arrow" size={18} color={ACCENT_COLOR} />
-                : <MaterialIcons name="queue-music" size={18} color={TEXT_SECONDARY} />}
-            </SheetTouchable>
+          renderItem={({ item, index }) => (
+            <>
+              {/* §「單曲 + 自動隨機接續」:由呢個 index 開始係系統自動接落去嘅歌,
+                  唔係用戶揀嘅清單。畫條線講明白,唔好扮到係佢自己揀嘅。 */}
+              {index === player.autoRadioFrom && (
+                <View style={fsStyles.radioDivider}>
+                  <View style={fsStyles.radioDividerLine} />
+                  <MaterialIcons name="shuffle" size={14} color={ACCENT_COLOR} style={{ marginHorizontal: 8 }} />
+                  <Text style={fsStyles.radioDividerText}>正在隨機播放：</Text>
+                  <View style={fsStyles.radioDividerLine} />
+                </View>
+              )}
+              <SheetTouchable style={[fsStyles.queueItem, item.id === cur.id && fsStyles.queueItemActive]}
+                onPress={() => { player.skipToQueueIndex(queue.findIndex(h => h.id === item.id)); closeQueue(); }} activeOpacity={0.7}>
+                <CoverImage youtubeId={item.youtube_id} style={fsStyles.queueCover} />
+                <View style={fsStyles.queueInfo}>
+                  <Text style={fsStyles.queueTitle} numberOfLines={1}>{item.title}</Text>
+                  <Text style={fsStyles.queueArtist} numberOfLines={1}>{item.artist}</Text>
+                </View>
+                {item.id === cur.id
+                  ? <MaterialIcons name="play-arrow" size={18} color={ACCENT_COLOR} />
+                  : <MaterialIcons name="queue-music" size={18} color={TEXT_SECONDARY} />}
+              </SheetTouchable>
+            </>
           )}
         />
       </BottomSheet>
@@ -1126,10 +1207,15 @@ function FullScreenPlayerOverlay() {
         </View>
       </Modal>
 
-      {/* 加入到清單 bottom sheet —— 同 queue sheet 一樣係 inline gorhom(v229) */}
+      {/* 加入到清單 bottom sheet(v231:**用到先 mount**)。
+          之前係一直 mount 住 index={-1},即係佢個 absoluteFill hosting container
+          永遠疊喺 queue sheet 上面 —— queue sheet 露出嘅嗰條邊就係俾佢擋住,
+          先至會「有手柄嗰個滑到、冇手柄嗰個滑唔到」。呢個 sheet 係撳掣先開嘅
+          對話框,冇理由常駐,收埋就直接 unmount,零殘留。 */}
+      {addMounted && (
       <BottomSheet
         ref={addSheetRef}
-        index={-1}
+        index={0}
         snapPoints={ADD_SNAP_POINTS}
         enableDynamicSizing={false}
         enablePanDownToClose
@@ -1163,6 +1249,7 @@ function FullScreenPlayerOverlay() {
           )}
         />
       </BottomSheet>
+      )}
     </View>
   );
 }
@@ -1238,6 +1325,10 @@ const fsStyles = StyleSheet.create({
   sheetHandleRow: { flexDirection: 'row', alignItems: 'center' },
   sheetTitle: { fontSize: 14, fontWeight: '600', color: TEXT_PRIMARY, marginRight: 8 },
   // native Modal bottom-sheet 外殼(手尾修正 v228,取代 gorhom)
+  // 「正在隨機播放：」分隔線 —— 用戶揀嘅歌 vs 系統自動接落去嘅歌之間嗰條界。
+  radioDivider: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, marginTop: 14, marginBottom: 6 },
+  radioDividerLine: { flex: 1, height: 1, backgroundColor: DesignColors.border },
+  radioDividerText: { color: ACCENT_COLOR, fontSize: 13, fontWeight: '600' },
   sheetScrim: { flex: 1, backgroundColor: 'rgba(0,0,0,0.55)', justifyContent: 'flex-end' },
   sheetCard: { borderTopLeftRadius: 20, borderTopRightRadius: 20, overflow: 'hidden', paddingBottom: 8 },
   sheetHandle: { width: 40, height: 5, borderRadius: 3, backgroundColor: TEXT_SECONDARY, alignSelf: 'center', marginTop: 8, marginBottom: 6 },
@@ -1273,7 +1364,7 @@ const fsStyles = StyleSheet.create({
 
 // ===== AppContent =====
 function AppContent() {
-  const { hymns, setHymns, playQueue, showPlayer, queueReady, isPlaying: debugPlaying, currentHymn: debugHymn, togglePlayPause: debugToggle } = usePlayer();
+  const { hymns, setHymns, playQueue, playSingle, showPlayer, queueReady, isPlaying: debugPlaying, currentHymn: debugHymn, togglePlayPause: debugToggle } = usePlayer();
   const { hymns: allSongs, loading } = useCachedHymns();
   const bottomInset = useBottomInset();
   const [activeCategory, setActiveCategory] = useState('全部');
@@ -1308,11 +1399,27 @@ function AppContent() {
       Linking.openURL(`https://www.youtube.com/watch?v=${h.youtube_id}`);
       return;
     }
-    // §3.8 — no more reordering the list to put the tapped song first;
-    // native skip(idx) keeps natural order so prev can go back further.
-    const list = opts.playlist?.length ? opts.playlist : (allSongs || FALLBACK_HYMNS);
-    const idx = Math.max(0, list.findIndex(s => s.id === h.id));
-    playQueue(list, idx);
+    // v231 —— 兩種播放語義,由 caller 用 `opts.explicit` 講明邊種:
+    //
+    //  explicit: true  = 用戶揀咗**成個清單**(chip「播全部」/「睇晒」歌單頁 /
+    //                    隨心聽)→ 照清單次序播晒,§3.8:唔重排,native skip(idx)
+    //                    保持自然次序,咁 prev 先返得返上面幾首。
+    //  explicit: 唔係   = 用戶淨係撳咗**一首散歌**→「單曲 + 自動隨機接續」。
+    //                    `opts.playlist` 喺呢種情況下淨係做隨機接續嘅 pool,
+    //                    **唔係**播放次序。
+    //
+    // Default 係「單曲 + 隨機接續」,所以任何未標明嘅入口(詩歌庫、搜尋、
+    // 我的、繼續收聽)都自動係 Eric 要嘅行為,唔會漏。
+    if (opts.explicit && opts.playlist?.length) {
+      const list = opts.playlist;
+      const idx = Math.max(0, list.findIndex(s => s.id === h.id));
+      playQueue(list, idx);
+    } else {
+      // 隨機接續一律由**全庫**抽,唔用 opts.playlist 做 pool ——「今日為你預備」
+      // 之類得 6 首,攞嚟做 pool 就得 5 首尾巴,太短。全庫抽先夠似 Spotify。
+      // (副作用:舊 caller 傳落嚟嘅 `playlist` 喺呢條路徑會被忽略,呢個係有意嘅。)
+      playSingle(h, allSongs || FALLBACK_HYMNS);
+    }
     showPlayer();
   }
   function handleOpenFullScreen() { showPlayer(); }
