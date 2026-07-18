@@ -12,6 +12,8 @@ import {
   Platform,
 } from 'react-native';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
+import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
+import { COLORS } from '../theme/designSystem';
 import { useAuth } from '../context/AuthContext';
 
 export default function AuthScreen({ onClose }) {
@@ -75,7 +77,7 @@ export default function AuthScreen({ onClose }) {
         {/* Logo area */}
         <View style={styles.logoArea}>
           <View style={styles.logoIcon}>
-            <Text style={styles.logoEmoji}>✝️</Text>
+            <MaterialCommunityIcons name="cross" size={34} color={COLORS.accent} />
           </View>
           <Text style={styles.logoTitle}>詩歌App</Text>
           <Text style={styles.logoSubtitle}>{mode === 'login' ? '歡迎回來' : '建立帳戶'}</Text>

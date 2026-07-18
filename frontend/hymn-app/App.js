@@ -14,7 +14,7 @@ import TrackPlayer, {
 import {
   View, Text, ScrollView, TouchableOpacity, StyleSheet,
   ActivityIndicator, StatusBar, Image, Platform, Alert,
-  Modal, Dimensions, FlatList, Animated, PanResponder, Linking, Share,
+  Modal, Dimensions, FlatList, Animated, Linking, Share,
 } from 'react-native';
 import { COLORS } from './src/constants/theme';
 import { FavoritesProvider, useFavorites } from './src/context/FavoritesContext';
@@ -815,19 +815,12 @@ function FullScreenPlayerOverlay() {
   const openQueue = useCallback(() => queueSheetRef.current?.present(), []);
   const closeQueue = useCallback(() => queueSheetRef.current?.dismiss(), []);
   const [lyricsVisible, setLyricsVisible] = useState(false);
-  const [showPlaylistSheet, setShowPlaylistSheet] = useState(false);
-  const sheetPanY = useRef(new Animated.Value(0)).current;
-  const sheetPanResponder = useRef(PanResponder.create({
-    onStartShouldSetPanResponder: () => true,
-    onMoveShouldSetPanResponder: (_, gs) => Math.abs(gs.dy) > 10,
-    onPanResponderMove: Animated.event([null, { dy: sheetPanY }], { useNativeDriver: false }),
-    onPanResponderRelease: (_, gs) => {
-      if (gs.dy > 100) {
-        setShowPlaylistSheet(false);
-      }
-      Animated.timing(sheetPanY, { toValue: 0, duration: 150, useNativeDriver: true }).start();
-    },
-  })).current;
+  // 「加入到清單」sheet 都轉埋做 gorhom(§3.4 統一手勢引擎)。舊版係自製
+  // PanResponder + Animated Modal,同一個 sheetPanY node 上溝用咗 useNativeDriver
+  // false(拖曳)同 true(回彈),會 warning 兼整壞動畫 —— 轉 gorhom 就冇晒。
+  const addSheetRef = useRef(null);
+  const openAddSheet = useCallback(() => addSheetRef.current?.present(), []);
+  const closeAddSheet = useCallback(() => addSheetRef.current?.dismiss(), []);
 
   const cur = player.currentHymn || { title: '', artist: '', youtube_id: '', id: null, lyrics: '' };
   const progressPercent = player.duration > 0 ? Math.min((player.currentTime / player.duration) * 100, 100) : 0;
@@ -904,7 +897,7 @@ function FullScreenPlayerOverlay() {
                 message: `一齊聽「${cur.title}」${cur.artist ? ' - ' + cur.artist : ''}（生命樹詩歌）`,
               }).catch(() => {}) },
             { key: 'que', label: '清單', icon: 'queue-music',
-              onPress: () => setShowPlaylistSheet(true) },
+              onPress: openAddSheet },
           ];
           return (
             <View style={fsStyles.actionRow}>
@@ -987,6 +980,7 @@ function FullScreenPlayerOverlay() {
       <BottomSheetModal
         ref={queueSheetRef}
         snapPoints={['85%']}
+        enableDynamicSizing={false}
         enablePanDownToClose
         backgroundStyle={{ backgroundColor: MAIN_BG_COLOR }}
         handleIndicatorStyle={{ backgroundColor: TEXT_SECONDARY }}
@@ -1053,38 +1047,40 @@ function FullScreenPlayerOverlay() {
         </View>
       </Modal>
 
-      {/* Bottom Sheet for adding to playlists */}
-      <Modal visible={showPlaylistSheet} animationType="slide" transparent onRequestClose={() => setShowPlaylistSheet(false)}>
-        <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.85)', justifyContent: 'flex-end' }}>
-          <Animated.View style={{ backgroundColor: CARD_BG_COLOR, borderTopLeftRadius: 20, borderTopRightRadius: 20, maxHeight: '70%', transform: [{ translateY: sheetPanY }] }}>
-            {/* Drag Handle */}
-            <View {...sheetPanResponder.panHandlers} style={{ alignItems: 'center', paddingVertical: 10 }}>
-              <View style={{ width: 36, height: 4, borderRadius: 2, backgroundColor: '#555' }} />
-            </View>
-            <Text style={{ color: TEXT_PRIMARY, fontSize: 18, fontWeight: '600', padding: 20 }}>加入到清單</Text>
-
-            {/* 最愛 */}
-            <TouchableOpacity onPress={() => { toggleFavorite(cur); setShowPlaylistSheet(false); }} style={{ padding: 16, borderBottomWidth: 1, borderBottomColor: DesignColors.border }}>
-              <Text style={{ color: GOLD_COLOR }}>最愛清單</Text>
+      {/* 加入到清單 bottom sheet —— 同 queue sheet 統一用 gorhom */}
+      <BottomSheetModal
+        ref={addSheetRef}
+        snapPoints={['55%']}
+        enableDynamicSizing={false}
+        enablePanDownToClose
+        backgroundStyle={{ backgroundColor: CARD_BG_COLOR }}
+        handleIndicatorStyle={{ backgroundColor: TEXT_SECONDARY }}
+      >
+        <Text style={{ color: TEXT_PRIMARY, fontSize: 18, fontWeight: '600', paddingHorizontal: 20, paddingVertical: 12 }}>加入到清單</Text>
+        {/* 最愛 —— 金色記號(屬靈重點) */}
+        <TouchableOpacity
+          onPress={() => { toggleFavorite(cur); closeAddSheet(); }}
+          style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: DesignColors.border }}
+        >
+          <MaterialIcons name="favorite" size={20} color={GOLD_COLOR} />
+          <Text style={{ color: GOLD_COLOR, marginLeft: 10, fontSize: 15, fontWeight: '600' }}>最愛清單</Text>
+        </TouchableOpacity>
+        <BottomSheetFlatList
+          data={favorites}
+          keyExtractor={(item) => String(item.id)}
+          contentContainerStyle={{ paddingBottom: 24 }}
+          ListEmptyComponent={
+            <Text style={{ color: TEXT_SECONDARY, paddingHorizontal: 20, paddingVertical: 16 }}>仲未有其他清單</Text>
+          }
+          renderItem={({ item }) => (
+            <TouchableOpacity onPress={() => { addToPlaylist(item.id, cur); closeAddSheet(); }}
+              style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 14 }}>
+              <MaterialIcons name="queue-music" size={20} color={TEXT_SECONDARY} />
+              <Text style={{ color: TEXT_PRIMARY, marginLeft: 10, fontSize: 15 }} numberOfLines={1}>{item.title}</Text>
             </TouchableOpacity>
-
-            {/* 其他清單 */}
-            <FlatList
-              data={favorites}
-              keyExtractor={item => String(item.id)}
-              renderItem={({ item }) => (
-                <TouchableOpacity onPress={() => { addToPlaylist(item.id, cur); setShowPlaylistSheet(false); }} style={{ padding: 16 }}>
-                  <Text style={{ color: TEXT_PRIMARY }}>{item.title}</Text>
-                </TouchableOpacity>
-              )}
-            />
-
-            <TouchableOpacity onPress={() => setShowPlaylistSheet(false)} style={{ padding: 20, alignItems: 'center' }}>
-              <Text style={{ color: TEXT_SECONDARY }}>取消</Text>
-            </TouchableOpacity>
-          </Animated.View>
-        </View>
-      </Modal>
+          )}
+        />
+      </BottomSheetModal>
     </View>
   );
 }

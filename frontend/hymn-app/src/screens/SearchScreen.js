@@ -1,5 +1,7 @@
 // SearchScreen — 搜尋頁 redesign（Spotify × YT Music 風格）
 import React, { useState, useEffect, useCallback } from 'react';
+import MaterialIcons from '@expo/vector-icons/MaterialIcons';
+import { COLORS } from '../theme/designSystem';
 import {
   View,
   TextInput,
@@ -30,7 +32,7 @@ function Thumbnail({ youtubeId, size = 48 }) {
   if (!uri || failed) {
     return (
       <View style={[styles.thumb, { width: size, height: size, borderRadius: 6 }]}>
-        <Text style={{ fontSize: size / 2.5 }}>🎵</Text>
+        <MaterialIcons name="music-note" size={size / 2.2} color={COLORS.textSecondary} />
       </View>
     );
   }
@@ -149,7 +151,7 @@ export default function SearchScreen({ navigation }) {
 
       {/* Search bar — near white pill */}
       <View style={[styles.searchWrap, focused && styles.searchWrapFocused]}>
-        <Text style={styles.searchIcon}>🔍</Text>
+        <MaterialIcons name="search" size={20} color={COLORS.textSecondary} style={styles.searchIcon} />
         <TextInput
           style={styles.searchInput}
           placeholder="搜尋歌名、歌手、歌詞、專輯"
@@ -167,7 +169,7 @@ export default function SearchScreen({ navigation }) {
         />
         {hasInput && (
           <TouchableOpacity style={styles.clearBtn} onPress={() => { setQuery(''); setResults([]); }}>
-            <Text style={styles.clearIcon}>✕</Text>
+            <MaterialIcons name="close" size={18} color={COLORS.textSecondary} />
           </TouchableOpacity>
         )}
       </View>
@@ -204,9 +206,9 @@ export default function SearchScreen({ navigation }) {
               <Text style={styles.sectionTitle}>最近搜尋</Text>
               {recentSearches.map((kw, i) => (
                 <TouchableOpacity key={i} style={styles.recentRow} onPress={() => handleRecentTap(kw)} activeOpacity={0.7}>
-                  <Text style={styles.recentIcon}>🕒</Text>
+                  <MaterialIcons name="history" size={18} color={COLORS.textSecondary} style={styles.recentIcon} />
                   <Text style={styles.recentText} numberOfLines={1}>{kw}</Text>
-                  <Text style={styles.recentArrow}>↗</Text>
+                  <MaterialIcons name="north-east" size={16} color={COLORS.textSecondary} style={styles.recentArrow} />
                 </TouchableOpacity>
               ))}
             </View>
@@ -233,12 +235,12 @@ export default function SearchScreen({ navigation }) {
             <Text style={styles.sectionTitle}>你可能會喜歡</Text>
             {SUGGESTIONS.map((item, i) => (
               <TouchableOpacity key={i} style={styles.suggestRow} onPress={() => { setQuery(item.text); handleSearch(item.text); }} activeOpacity={0.7}>
-                <Text style={styles.suggestIcon}>🔍</Text>
+                <MaterialIcons name="search" size={18} color={COLORS.textSecondary} style={styles.suggestIcon} />
                 <View style={styles.suggestInfo}>
                   <Text style={styles.suggestText}>{item.text}</Text>
                   <Text style={styles.suggestType}>{item.type}</Text>
                 </View>
-                <Text style={styles.recentArrow}>↗</Text>
+                <MaterialIcons name="north-east" size={16} color={COLORS.textSecondary} style={styles.recentArrow} />
               </TouchableOpacity>
             ))}
           </View>
