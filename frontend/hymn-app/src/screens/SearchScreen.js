@@ -1,6 +1,7 @@
 // SearchScreen — 搜尋頁 redesign（Spotify × YT Music 風格）
 import React, { useState, useEffect, useCallback } from 'react';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
+import { useInsets } from '../hooks/useInsets';
 import { COLORS } from '../theme/designSystem';
 import {
   View,
@@ -141,11 +142,13 @@ export default function SearchScreen({ navigation }) {
 
   const hasInput = query.trim().length > 0;
   const showDefaultView = !hasInput && !loading;
+  // edge-to-edge:唔加 top inset 個「搜尋」標題會頂到狀態列(見 useInsets.js)
+  const insets = useInsets();
 
   return (
     <View style={styles.container}>
       {/* Header */}
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
         <Text style={styles.headerTitle}>搜尋</Text>
       </View>
 

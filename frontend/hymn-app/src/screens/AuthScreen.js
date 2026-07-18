@@ -13,10 +13,13 @@ import {
 } from 'react-native';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
+import { useInsets } from '../hooks/useInsets';
 import { COLORS } from '../theme/designSystem';
 import { useAuth } from '../context/AuthContext';
 
 export default function AuthScreen({ onClose }) {
+  // edge-to-edge:個 X 掣本來寫死 top:50,喺唔同機頂到狀態列(見 useInsets.js)
+  const insets = useInsets();
   const { user, register, login, logout } = useAuth();
   const [mode, setMode] = useState('login');
   const [username, setUsername] = useState('');
@@ -48,7 +51,7 @@ export default function AuthScreen({ onClose }) {
     return (
       <View style={styles.container}>
         <View style={styles.inner}>
-          <TouchableOpacity style={styles.closeBtn} onPress={onClose}>
+          <TouchableOpacity style={[styles.closeBtn, { top: insets.top + 8 }]} onPress={onClose}>
             <MaterialIcons name="close" size={24} color="#F5F7F4" />
           </TouchableOpacity>
           <View style={styles.logoArea}>
@@ -70,7 +73,7 @@ export default function AuthScreen({ onClose }) {
     <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
       <View style={styles.inner}>
         {/* Close button */}
-        <TouchableOpacity style={styles.closeBtn} onPress={onClose}>
+        <TouchableOpacity style={[styles.closeBtn, { top: insets.top + 8 }]} onPress={onClose}>
           <MaterialIcons name="close" size={24} color="#F5F7F4" />
         </TouchableOpacity>
 

@@ -10,6 +10,7 @@ import React, { useState } from 'react';
 import { View, Text, FlatList, TouchableOpacity, StyleSheet, Image, Alert } from 'react-native';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { COLORS, TYPOGRAPHY } from '../theme/designSystem';
+import { useInsets } from '../hooks/useInsets';
 import { useFavorites } from '../context/FavoritesContext';
 import { usePlaylists } from '../context/PlaylistsContext';
 import { useAuth } from '../context/AuthContext';
@@ -33,8 +34,11 @@ export default function MineScreen({ onPlayHymn, onOpenAuth }) {
   const { user, logout } = useAuth() || {};
   const [tab, setTab] = useState('favorites'); // favorites | playlists
 
+  // edge-to-edge:唔加 top inset 個大字標題會同狀態列時間疊埋(見 useInsets.js)
+  const insets = useInsets();
+
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { paddingTop: insets.top + 8 }]}>
       <Text style={styles.header}>我的</Text>
 
       {/* 帳戶 */}
@@ -138,7 +142,7 @@ export default function MineScreen({ onPlayHymn, onOpenAuth }) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.background, paddingTop: 8 },
+  container: { flex: 1, backgroundColor: COLORS.background },
   header: { ...TYPOGRAPHY.title, paddingHorizontal: 16, marginBottom: 12 },
   account: {
     flexDirection: 'row', alignItems: 'center',

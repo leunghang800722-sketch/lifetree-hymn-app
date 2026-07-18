@@ -24,6 +24,7 @@ import AuthScreen from './src/screens/AuthScreen';
 import { PlaylistProvider } from './src/context/PlaylistContext';
 import { API_BASE } from './src/config.js';
 import { saveLastPlayed } from './src/lastPlayed';
+import { useInsets } from './src/hooks/useInsets';
 // 播放清單 / 加入到清單 sheet 用 @gorhom/bottom-sheet 嘅 **inline `<BottomSheet>`**(v229)。
 //
 // ⚠️ v228 曾經誤判呢個係「reanimated 4 + gorhom 5 唔夾」。真正原因係 **z-order**,唔關
@@ -143,6 +144,29 @@ function BigCover({ youtubeId }) {
   );
 }
 
+// ===== 清單用嘅心心掣 =====
+// 播放清單 / 加入清單 每一行右邊都有,一撳即加入(或者移出)最愛,唔使入返播放頁。
+// 用 Pressable + hitSlop:個 icon 細,唔撐大觸控範圍好易撳唔中兼撳親成行(變咗跳去播歌)。
+function FavHeart({ hymn }) {
+  const { isFavorite, toggleFavorite } = useFavorites() || {};
+  if (!hymn?.id || typeof toggleFavorite !== 'function') return null;
+  const on = typeof isFavorite === 'function' ? isFavorite(hymn.id) : false;
+  return (
+    <TouchableOpacity
+      onPress={(e) => { e?.stopPropagation?.(); toggleFavorite(hymn); }}
+      hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+      style={{ paddingLeft: 14, paddingVertical: 2 }}
+      activeOpacity={0.6}
+    >
+      <MaterialIcons
+        name={on ? 'favorite' : 'favorite-border'}
+        size={20}
+        color={on ? ACCENT_COLOR : TEXT_SECONDARY}
+      />
+    </TouchableOpacity>
+  );
+}
+
 // ===== Fallback Hymns =====
 const FALLBACK_HYMNS = [
   { id: 1, title: '恩典太美麗', artist: 'ACM', youtube_id: 'JlTb0Sf7xUg', lang: '粵語' },
@@ -163,11 +187,10 @@ const FALLBACK_HYMNS = [
 ];
 
 
+// 統一去 useInsets(唯一來源)。之前呢度自己一套 fallback(android 硬寫 20),
+// 三鍵導航列實際係 48dp,所以 tab 掣同 collapsed sheet 都會俾導航列食咗一截。
 function useBottomInset() {
-  const safe = typeof useSafeAreaInsets === 'function' ? useSafeAreaInsets() : null;
-  if (safe?.bottom) return safe.bottom;
-  if (Platform.OS === 'android') return 20;
-  return Platform.OS === 'ios' ? 34 : 0;
+  return useInsets().bottom;
 }
 
 async function fetchWithTimeout(url, ms = 8000) {
@@ -901,7 +924,9 @@ const QUEUE_SNAP_POINTS = [QUEUE_COLLAPSED_H, '88%'];
 const ADD_SNAP_POINTS = ['55%'];
 
 function FullScreenPlayerOverlay() {
-  const insets = typeof useSafeAreaInsets === 'function' ? useSafeAreaInsets() : { top: 0, bottom: 0 };
+  // 用統一嘅 useInsets:佢會幫 Android 落個底線,唔會計出 0 令 collapsed sheet
+  // 貼死喺螢幕底俾導航列蓋住(見 useInsets.js)。
+  const insets = useInsets();
   const player = usePlayer();
 
   const queue = player.queue || [];
@@ -1120,6 +1145,11 @@ function FullScreenPlayerOverlay() {
         index={0}
         snapPoints={QUEUE_SNAP_POINTS}
         enableDynamicSizing={false}
+        // ⚠️ collapsed bar 之前俾手機導航列蓋住半截(v232 修)。外層 container 係
+        // 全螢幕(edge-to-edge),所以 sheet 個底 = 螢幕底 = 導航列下面。gorhom 有
+        // `bottomInset` 專門做呢件事,成個 sheet 抬高返 inset 咁多,唔使喺外層落
+        // padding(落 padding 會整亂 gorhom 個 absoluteFill container,見 v231 註解)。
+        bottomInset={insets.bottom}
         onChange={onQueueChange}
         backdropComponent={renderQueueBackdrop}
         backgroundStyle={{ backgroundColor: MAIN_BG_COLOR }}
@@ -1169,6 +1199,9 @@ function FullScreenPlayerOverlay() {
                 {item.id === cur.id
                   ? <MaterialIcons name="play-arrow" size={18} color={ACCENT_COLOR} />
                   : <MaterialIcons name="queue-music" size={18} color={TEXT_SECONDARY} />}
+                {/* 心心 —— 喺清單度直接加最愛,唔使入返播放頁先撳。
+                    hitSlop 撐大觸控範圍,免得撳親隔離部分跳咗去播歌。 */}
+                <FavHeart hymn={item} />
               </SheetTouchable>
             </>
           )}
@@ -1244,7 +1277,8 @@ function FullScreenPlayerOverlay() {
             <SheetTouchable onPress={() => { addToPlaylist(item.id, cur); closeAddSheet(); }}
               style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 14 }}>
               <MaterialIcons name="queue-music" size={20} color={TEXT_SECONDARY} />
-              <Text style={{ color: TEXT_PRIMARY, marginLeft: 10, fontSize: 15 }} numberOfLines={1}>{item.title}</Text>
+              <Text style={{ color: TEXT_PRIMARY, marginLeft: 10, fontSize: 15, flex: 1 }} numberOfLines={1}>{item.title}</Text>
+              <FavHeart hymn={item} />
             </SheetTouchable>
           )}
         />
@@ -1255,7 +1289,8 @@ function FullScreenPlayerOverlay() {
 }
 
 const fsStyles = StyleSheet.create({
-  container: { flex: 1, height: SCREEN_HEIGHT, backgroundColor: MAIN_BG_COLOR },
+  // 同 pageStyles.container 一樣唔可以寫死 SCREEN_HEIGHT(見嗰邊註解)
+  container: { flex: 1, backgroundColor: MAIN_BG_COLOR },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   topBar: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, paddingBottom: 8 },
   pillButton: { flex: 1, alignItems: 'center', paddingVertical: 12, paddingHorizontal: 8, borderRadius: 999, marginHorizontal: 2 },
@@ -1367,6 +1402,7 @@ function AppContent() {
   const { hymns, setHymns, playQueue, playSingle, showPlayer, queueReady, isPlaying: debugPlaying, currentHymn: debugHymn, togglePlayPause: debugToggle } = usePlayer();
   const { hymns: allSongs, loading } = useCachedHymns();
   const bottomInset = useBottomInset();
+  const topInset = useInsets().top;
   const [activeCategory, setActiveCategory] = useState('全部');
   const [activeTab, setActiveTab] = useState('Home');
   const [authVisible, setAuthVisible] = useState(false);
@@ -1469,7 +1505,7 @@ function AppContent() {
       >
         <View style={pageStyles.hymnListModal}>
           <TouchableOpacity
-            style={pageStyles.hymnListClose}
+            style={[pageStyles.hymnListClose, { paddingTop: topInset + 12 }]}
             onPress={closeHymnList}
           >
             <Text style={pageStyles.hymnListCloseText}>返回</Text>
@@ -1506,7 +1542,11 @@ export default function App() {
 }
 
 const pageStyles = StyleSheet.create({
-  container: { flex: 1, height: SCREEN_HEIGHT, backgroundColor: MAIN_BG_COLOR },
+  // ⚠️ 唔可以寫 `height: SCREEN_HEIGHT`(v232 修)。個 App 係 edge-to-edge
+  // (styles.xml 兩條系統列都透明),`Dimensions.get('window').height` 計埋
+  // 導航列嗰條。硬撐成咁高,擺喺最底嘅 TabBar 就會俾導航列黑條蓋住 ——
+  // 即係 Eric 見到「4 個 tab 掣俾黑條檔住」。淨係用 flex:1 跟返實際可用高度。
+  container: { flex: 1, backgroundColor: MAIN_BG_COLOR },
   content: { flex: 1 },
   screenWrap: { flex: 1 },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center' },

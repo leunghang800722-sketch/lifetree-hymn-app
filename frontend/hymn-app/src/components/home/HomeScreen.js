@@ -6,8 +6,8 @@
 //
 //   1. 每日金句      —— 照舊
 //   2. 快速開播列    —— 繼續收聽 + 隨心聽(shuffle 全庫),永遠喺度
-//   3. 即刻揀歌      —— chip 撳一下切分類;揀咗嗰個分類啲歌橫向分頁,每頁 5 首、
-//                      最多 4 頁(即係一個分類滑得到 20 首),撳一下即出聲。
+//   3. 即刻揀歌      —— chip 撳一下切分類;揀咗嗰個分類啲歌橫向分頁,每頁 4 首、
+//                      最多 5 頁(即係一個分類滑得到 20 首),撳一下即出聲。
 //                      滑晒 20 首仲想睇就用底部「睇晒 N 首」入全 list。
 //                      (Eric 2026-07 指定,參考 YouTube Music)
 //   4. 今日為你預備  —— 日更 6 首(日期種子),三語言各至少一首
@@ -39,8 +39,10 @@ const PAGE_PEEK = 28;       // 露出下一頁幾多
 const PAGE_GAP = 12;
 const PAGE_W = SCREEN_W - PAGE_H_MARGIN * 2 - PAGE_PEEK;
 const PAGE_SNAP = PAGE_W + PAGE_GAP;
-const SONGS_PER_PAGE = 5;
-const MAX_PAGES = 4;        // 5 × 4 = 一個分類最多滑到 20 首,再多就用「睇晒」
+// 每頁 4 首(唔係 5)—— 5 首嗰陣最尾一首會俾 mini player 擋住,見唔晒。
+// 頁數補返上去 5 頁,所以一個分類仍然係滑到 20 首。
+const SONGS_PER_PAGE = 4;
+const MAX_PAGES = 5;        // 4 × 5 = 一個分類最多滑到 20 首,再多就用「睇晒」
 const ROW_H = 60;           // 40 縮圖 + 上下 10 padding;鎖死頁高用
 
 // 「即刻揀歌」嘅 chips。DB 冇 playlist 表,所以喺 150 首試版庫用語言 + 關鍵字即場砌 ——

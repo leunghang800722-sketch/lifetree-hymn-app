@@ -8,6 +8,7 @@ import React, { useState, useMemo } from 'react';
 import { View, Text, FlatList, TouchableOpacity, StyleSheet, Image } from 'react-native';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { COLORS, TYPOGRAPHY } from '../theme/designSystem';
+import { useInsets } from '../hooks/useInsets';
 
 const LANGS = ['全部', '粵語', '國語', '英文'];
 
@@ -42,8 +43,11 @@ export default function LibraryScreen({ hymns = [], onPlayHymn }) {
     return out;
   }, [hymns, lang, artist]);
 
+  // edge-to-edge:唔加 top inset 個大字標題會同狀態列時間疊埋(見 useInsets.js)
+  const insets = useInsets();
+
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { paddingTop: insets.top + 8 }]}>
       <Text style={styles.header}>詩歌庫</Text>
       <Text style={styles.count}>{shown.length} 首</Text>
 
@@ -113,7 +117,7 @@ export default function LibraryScreen({ hymns = [], onPlayHymn }) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.background, paddingTop: 8 },
+  container: { flex: 1, backgroundColor: COLORS.background },
   header: { ...TYPOGRAPHY.title, paddingHorizontal: 16 },
   count: { ...TYPOGRAPHY.artist, paddingHorizontal: 16, marginTop: 2, marginBottom: 10 },
   chipRow: { flexDirection: 'row', paddingHorizontal: 16, marginBottom: 10 },
