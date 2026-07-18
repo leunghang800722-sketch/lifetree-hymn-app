@@ -1,7 +1,7 @@
 # 詩歌串流 App（生命樹 / Etz Chayim）— 交接文件
 
 > 建立日期：2026-07-15
-> 最後更新：2026-07-18（Phase 3 + Eric 真機測試搵到 3 個 bug 已修,v228 待覆測）
+> 最後更新：2026-07-18（v229:bottom sheet 真根因 = z-order,已還原 gorhom 真手勢,待覆測）
 > 開發者：約拿（AI 助手） x 恒恒（Owner/PM）
 > Git 起點：2026-06 初，v100+ 演化至今 v214；Phase 1-3 由 v215 做到 v226（versionCode 21）
 
@@ -13,7 +13,7 @@
 **Phase 3(介面重整)已完成,build 驗過,但個 bottom-sheet 手勢仲**未真機試**(見「三之四」)。
 
 - **分支**：`feature/player-rebuild`（由 `develop-v211` 開出）—— 未 merge 返 develop-v211
-- **最新 APK**：`~/Desktop/詩歌App/hymn-app-v228.apk`（**versionCode 23 / versionName 1.1.2**）—— Phase 3 + 真機 3-bug 修正,詳情見「三之五」。舊 apk（v223–v227）已搬去 `~/Desktop/詩歌App/舊版本_勿裝/`,**裝新 apk 前記得先解除安裝舊 App**(同簽名可覆蓋,但為咗清乾淨 state 建議 uninstall)。
+- **最新 APK**：`~/Desktop/詩歌App/hymn-app-v229.apk`（**versionCode 24 / versionName 1.1.3**）—— bottom sheet 真手勢還原(真根因係 z-order,唔關 reanimated 事),詳情見「三之六」。舊 apk（v223–v228）已搬去 `~/Desktop/詩歌App/舊版本_勿裝/`,**裝新 apk 前記得先解除安裝舊 App**(同簽名可覆蓋,但為咗清乾淨 state 建議 uninstall)。
 - **API 固定 URL：`https://api.god-music.com`** ✅（2026-07-17 起，唔會再變）
 - ✅ **backend + tunnel 而家係 launchd 自動管理，唔使人手開**（2026-07-17 起，見「七、開機自動啟動」）
   - 登入之後自動行；死咗會自動拉返起（實測 kill -9 兩個，~2 秒內自動復活）
@@ -393,20 +393,10 @@ tail -f /tmp/hymn_deadlink.log                            # 每晚檢測 log
 > 試 v227 先浮面。呢個 build 修咗嗰 3 個,全部係「真機先見到」嗰種。
 
 ### Bug 1 & 2:兩個 bottom sheet 撳唔開(播放頁「清單」pill + 底部「播放清單」欄)
-- **病徵**:撳落去完全冇反應,sheet 彈唔出(唔係手勢問題,係根本冇開)。
-- **根因**:呢個係全 App **第一次真機試 @gorhom/bottom-sheet**。gorhom 5.2.14 靠
-  **reanimated 4.3.1** 驅動個 sheet 嘅位置動畫,但呢個「reanimated 4(worklets 拆咗出嚟)
-  + gorhom 5」嘅新組合上面,`.present()` set 咗 state 但個 sheet **冇 animate 出嚟** →
-  睇落就係「撳極冇反應」。呢類版本相容問題 code review / bundle 檢查一定睇唔到。
-- **點解唔繼續 debug gorhom**:呢個環境冇 emulator,任何 gorhom-specific 嘅修改都係
-  **untestable 嘅估**。而本 repo 一路以嚟 **native `<Modal>` bottom sheet 係驗證過穩陣**
-  嘅做法(見「三之四 legacy」同 `HYMN-APP-IRON-RULES.md`)。
-- **修法**:兩個 sheet 都改返 **native `<Modal>`**(`animationType="slide"` + 半透明 scrim
-  + drag-handle 視覺 + 可滾動 `FlatList`)。撳掣即彈、喺獨立 Android window 畫喺最面
-  (一定蓋過 player overlay)、唔靠手勢引擎。`BottomSheetModalProvider` 同 gorhom import
-  一併移走;`GestureHandlerRootView` 留返(通用、無害)。
-- **代價**:少咗「向上滑彈出」手勢。撳掣開 + 可滾動清單 + 撳 scrim/返回鍵收 嘅核心 UX 保留。
-  想要返手勢版可以之後有 device 喺手先重試 gorhom。
+- **病徵**:撳落去完全冇反應,sheet 彈唔出。
+- **v228 當時嘅判斷(❌ 後來證實係錯):**以為係「reanimated 4.3.1 + gorhom 5.2.14
+  唔夾,`.present()` set 咗 state 但冇 animate」,所以兩個 sheet 都改返 native `<Modal>`,
+  犧牲咗手勢。**真正根因見下面「三之六」。呢段保留落嚟做記錄,唔好照抄。**
 
 ### Bug 2b:action bar「最愛」掣撳落去冇反應(歌詞/分享有)
 - **根因**:`FavoritesContext.toggleFavorite` 舊版第一句係 `const s = getStorage(); if(!s) return;`
@@ -439,6 +429,83 @@ tail -f /tmp/hymn_deadlink.log                            # 每晚檢測 log
 3. action bar「最愛」→ 個心**即刻着燈/熄燈**(撳完再入返播放頁睇下記唔記得)。
 4. 播放頁大封面 + 首頁「最近加入」卡 → **冇黑邊**、圖填滿。
 5. 裝之前**先解除安裝舊 App**(舊 apk 已搬去 `舊版本_勿裝/`)。
+
+---
+
+## 三之六、bottom sheet 真根因 + 手勢版還原（v229,versionCode 24,2026-07-18）
+
+> Eric 唔收貨 v228 嗰個「撳先彈」嘅 static modal,要求一定要有 YouTube Music 果種
+> 向上滑彈出 / 向下滑收起。重新徹底 diagnose 之後,**證實 v228 嘅根因判斷係錯嘅**。
+
+### 真根因:唔關 reanimated 事,係 **z-order**
+
+版本組合完全冇問題,全部就係 Expo SDK 56 `bundledNativeModules.json` 欽定嗰套:
+
+| 套件 | 裝住 | SDK 56 指定 |
+|---|---|---|
+| react-native-reanimated | 4.3.1 | **4.3.1** ✅ |
+| react-native-worklets | 0.8.3 | **0.8.3** ✅ |
+| react-native-gesture-handler | 2.31.2 | ~2.31.1 ✅ |
+| react-native | 0.85.3 | reanimated peer 要 `0.81 - 0.85` ✅ |
+
+babel worklets plugin 都係行緊嘅 —— export 出嚟個 bundle grep 到 **34 個 `__workletHash`**。
+即係話 reanimated 由頭到尾都正常,個 sheet **其實有 present、有 animate**。
+
+問題喺 `<BottomSheetModal>` **唔會喺原地 render**,佢 portal 去 `<BottomSheetModalProvider>`。
+睇 gorhom 5.2.14 source(`BottomSheetModalProvider.tsx`):
+
+```jsx
+<BottomSheetHostingContainer ... />          {/* absoluteFill,冇 zIndex,排第一 */}
+<PortalProvider rootHostName={hostName}>{children}</PortalProvider>
+```
+
+而我哋成個 App 都喺 `{children}` 入面,**包括 `olStyles.overlay`**:
+
+```js
+overlay: { position:'absolute', top:0,left:0,right:0,bottom:0,
+           backgroundColor: MAIN_BG_COLOR,   // ← 不透明
+           zIndex: 999 }                     // ← 蓋過一切
+```
+
+RN 入面 zIndex 999 一定畫喺 zIndex 0 之上 → **個 sheet 係喺塊不透明全螢幕播放器底下
+animate 緊,用家永遠見唔到**。表徵就係「撳咗完全冇反應」。
+亦解釋到點解 native `<Modal>` 一改就掂 —— native Modal 係獨立 Android window,一定喺最面。
+
+### 修法:改用 **inline `<BottomSheet>`**(唔經 portal)
+
+`<BottomSheet>`(default export)係喺原地 render 嘅。擺喺 `FullScreenPlayerOverlay`
+個 container **最後一個 child** → 天然畫喺 overlay 內容之上,冇晒跨層 z-order 問題,
+而手勢引擎同 `<BottomSheetModal>` 完全一樣 → **向上滑彈出 / 向下滑收起照有**。
+
+要點:
+- `index={-1}` 起手收埋;開 = `ref.snapToIndex(0)`,收 = `ref.close()`。**用 ref 唔用 state**,
+  咁用家用手勢拖走個 sheet 嗰陣唔會同 React state 唔同步。
+- **唔可以加返 `BottomSheetModalProvider`** —— 加返就走返 portal 路,個 bug 即刻返嚟。
+  App.js 檔頭同 `export default function App()` 都寫咗警告。
+- `snapPoints` 提咗去 module 層(`QUEUE_SNAP_POINTS` / `ADD_SNAP_POINTS`)。每次 render
+  開新 array 會令 gorhom 重算 layout、拖到一半彈返。
+- `enableDynamicSizing={false}` 保留(v5 default `true` 對住 virtualized list 會度錯高度)。
+- 清單用 `BottomSheetFlatList`:由 gorhom 協調手勢同 scroll,滾到頂再向下拖先收 sheet。
+  **呢個就係點解唔可以自己寫 PanResponder**(v179–v189 撞 scroll 嗰個老坑)。
+- sheet **入面**啲掣用 gorhom 嘅 `TouchableOpacity`(import 做 `SheetTouchable`)。
+  RN 內置嗰個用舊 responder 系統,喺 gesture-handler 手勢區內喺 Android 會俾 pan
+  搶咗 touch,撳落去時好時壞。
+- Android 返回鍵:有 sheet 開緊就收 sheet,唔好收埋成個播放器(`BackHandler` + `onChange`)。
+
+### 驗證到邊
+- `expo export` 乾淨;`assembleRelease` BUILD SUCCESSFUL;
+- 拆返個 release APK 入面條 bundle 確認到 gorhom 真係入咗(`BottomSheetHostingContainer`)
+  同 worklets 有編譯(`__workletHash`)。
+- ⚠️ **手勢本身冇喺真機/emulator 試過**(呢個環境冇 device)。診斷係 source-level 推理,
+  但今次係讀住 gorhom 5.2.14 個 source 確認咗 render 次序同 style,唔係估。
+
+### v229 覆測清單(Eric)
+1. 播放頁撳底部「播放清單 (N)」→ sheet **滑上嚟**;**向下滑可以收起**;可以滾;撳歌會跳。
+2. 播放頁撳「清單」pill → 加入到清單 sheet 同樣**滑上滑落**。
+3. sheet 開住嗰陣撳 Android **返回鍵 → 只收 sheet**,唔會連播放頁一齊收埋。
+4. sheet 開住撳上面暗咗嗰忽(backdrop)→ 收起。
+5. sheet 收埋之後,下面啲掣(播放/上一首/下一首)**照撳得**(backdrop 冇擋住)。
+6. 裝之前**先解除安裝舊 App**(v228 已搬去 `舊版本_勿裝/`)。
 
 ---
 

@@ -14,7 +14,7 @@ import TrackPlayer, {
 import {
   View, Text, ScrollView, TouchableOpacity, StyleSheet,
   ActivityIndicator, StatusBar, Image, Platform, Alert,
-  Modal, Dimensions, FlatList, Animated, Linking, Share,
+  Modal, Dimensions, FlatList, Animated, Linking, Share, BackHandler,
 } from 'react-native';
 import { COLORS } from './src/constants/theme';
 import { FavoritesProvider, useFavorites } from './src/context/FavoritesContext';
@@ -24,10 +24,33 @@ import AuthScreen from './src/screens/AuthScreen';
 import { PlaylistProvider } from './src/context/PlaylistContext';
 import { API_BASE } from './src/config.js';
 import { saveLastPlayed } from './src/lastPlayed';
-// 播放清單 / 加入到清單 sheet 用 native <Modal>(v228 手尾修正)。原 Phase 3 試過
-// @gorhom/bottom-sheet,但 reanimated 4 + gorhom 5 喺真機 present() 冇反應,改返
-// native Modal(本 repo 一路驗證過穩陣)。GestureHandlerRootView 仍然包最外(通用需要,無害)。
+// 播放清單 / 加入到清單 sheet 用 @gorhom/bottom-sheet 嘅 **inline `<BottomSheet>`**(v229)。
+//
+// ⚠️ v228 曾經誤判呢個係「reanimated 4 + gorhom 5 唔夾」。真正原因係 **z-order**,唔關
+// reanimated 事(版本全部係 SDK 56 bundledNativeModules 嘅官方組合,冇任何唔夾):
+//   `<BottomSheetModal>` 唔會喺原地 render,佢 portal 去 `<BottomSheetModalProvider>`
+//   入面嘅 hosting container。而 gorhom 個 provider 係咁 render 嘅:
+//       <BottomSheetHostingContainer />   ← absoluteFill,**冇 zIndex**,排第一
+//       <PortalProvider>{children}</PortalProvider>
+//   我哋成個 App(連 `olStyles.overlay` —— position:absolute + 不透明底色 + zIndex:999
+//   嘅全螢幕播放器)都係喺 `{children}` 入面。RN 度 zIndex 999 一定畫喺 zIndex 0 之上,
+//   所以 sheet 其實 present 咗、reanimated 都 animate 緊,只不過**畫喺塊不透明 overlay
+//   下面**,用家永遠見唔到 → 表徵就係「撳咗完全冇反應」。
+//
+// 解法:改用 **inline `<BottomSheet>`**(唔經 portal),直接擺喺 overlay 個 container
+// 最後一個 child。冇咗 portal 就冇咗跨層 z-order 問題,而手勢引擎完全一樣 ——
+// 向上滑彈出 / 向下滑收起照有。`BottomSheetFlatList` 由 gorhom 協調手勢同 scroll,
+// 唔會有舊 PanResponder 撞 FlatList scroll 嗰個問題(HANDOFF 教訓)。
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
+// ⚠️ sheet **入面**啲掣要用 gorhom 自己嗰個 TouchableOpacity(SheetTouchable)。
+// RN 內置嘅 TouchableOpacity 用舊 responder 系統,喺 gesture-handler 嘅手勢區域入面
+// 喺 Android 上會俾 pan gesture 搶咗個 touch,撳落去時好時壞。gorhom 個版本係
+// gesture-handler 實現,同 sheet 嘅拖曳手勢正常協調。
+import BottomSheet, {
+  BottomSheetBackdrop,
+  BottomSheetFlatList,
+  TouchableOpacity as SheetTouchable,
+} from '@gorhom/bottom-sheet';
 
 // ===== MaterialIcons 圖標名稱 =====
 
@@ -746,7 +769,7 @@ import MineScreen from './src/screens/MineScreen';        // §2.2 我的(新,�
 // ================================================================
 //  HOME SCREEN
 // ================================================================
-function HomeScreen({ hymns, activeCategory, onCategoryChange, onPlayHymn, onOpenAuth }) {
+function HomeScreen({ hymns, activeCategory, onCategoryChange, onPlayHymn, onOpenAuth, onOpenList }) {
   const homeInsets = typeof useSafeAreaInsets === 'function' ? useSafeAreaInsets() : { top: 0 };
   const { user } = useAuth();
   return (
@@ -774,7 +797,7 @@ function HomeScreen({ hymns, activeCategory, onCategoryChange, onPlayHymn, onOpe
           </TouchableOpacity>
         </View>
       </View>
-      <HomeSections hymns={hymns} onPlayHymn={onPlayHymn} />
+      <HomeSections hymns={hymns} onPlayHymn={onPlayHymn} onOpenList={onOpenList} />
     </View>
   );
 }
@@ -836,25 +859,53 @@ const hs = StyleSheet.create({
 // ================================================================
 //  FULL SCREEN PLAYER OVERLAY — TrackPlayer 版（無 YouTube Iframe）
 // ================================================================
+// snapPoints 要係穩定 reference,唔可以每次 render 新開 array(會令 gorhom 重算成套
+// layout,拖到一半彈返)。所以擺喺 module 層。
+const QUEUE_SNAP_POINTS = ['85%'];
+const ADD_SNAP_POINTS = ['55%'];
+
 function FullScreenPlayerOverlay() {
   const insets = typeof useSafeAreaInsets === 'function' ? useSafeAreaInsets() : { top: 0, bottom: 0 };
   const player = usePlayer();
 
   const queue = player.queue || [];
-  // ⚠️ 手尾修正(v228):Phase 3 用咗 @gorhom/bottom-sheet,但真機測試發現喺
-  // reanimated 4.3.1 + gorhom 5.2.14 呢個新組合上面,.present() 撳落去完全冇反應
-  // (sheet 靠 reanimated 驅動位置,喺呢個版本組合冇 animate 出嚟)。呢個環境冇
-  // emulator 逐個 gorhom 版本試,而本 repo 一路以嚟 native <Modal> bottom sheet
-  // 係驗證過穩陣嘅做法(HANDOFF 三之四 / IRON-RULES)。所以兩個 sheet 都改返 native
-  // Modal:撳掣即彈、喺獨立 window 畫喺最面(一定蓋過 player overlay)、唔靠手勢引擎。
-  // 代價:少咗「向上滑彈出」手勢,但撳掣開 + 可滾動清單嘅核心 UX 保留。
-  const [queueVisible, setQueueVisible] = useState(false);
-  const openQueue = useCallback(() => setQueueVisible(true), []);
-  const closeQueue = useCallback(() => setQueueVisible(false), []);
+  // 兩個 sheet 都係 inline `<BottomSheet>`(見檔頭 import 處嘅 v229 註解)。
+  // `index={-1}` = 收埋;開就 snapToIndex(0),收就 close()。ref 控制,唔使 state,
+  // 所以用家用手勢拖走個 sheet 嗰陣唔會同 React state 唔同步。
+  const queueSheetRef = useRef(null);
+  const openQueue = useCallback(() => queueSheetRef.current?.snapToIndex(0), []);
+  const closeQueue = useCallback(() => queueSheetRef.current?.close(), []);
   const [lyricsVisible, setLyricsVisible] = useState(false);
-  const [addVisible, setAddVisible] = useState(false);
-  const openAddSheet = useCallback(() => setAddVisible(true), []);
-  const closeAddSheet = useCallback(() => setAddVisible(false), []);
+  const addSheetRef = useRef(null);
+  const openAddSheet = useCallback(() => addSheetRef.current?.snapToIndex(0), []);
+  const closeAddSheet = useCallback(() => addSheetRef.current?.close(), []);
+
+  // 有 sheet 開緊嗰陣,Android 返回鍵應該係「收 sheet」而唔係「收埋成個播放器」。
+  // gorhom 每次位置變都會 call onChange,index -1 = 已收埋。
+  const [anySheetOpen, setAnySheetOpen] = useState(false);
+  const queueOpenRef = useRef(false);
+  const addOpenRef = useRef(false);
+  const syncSheetOpen = useCallback(() => {
+    setAnySheetOpen(queueOpenRef.current || addOpenRef.current);
+  }, []);
+  const onQueueChange = useCallback((i) => { queueOpenRef.current = i >= 0; syncSheetOpen(); }, [syncSheetOpen]);
+  const onAddChange = useCallback((i) => { addOpenRef.current = i >= 0; syncSheetOpen(); }, [syncSheetOpen]);
+
+  useEffect(() => {
+    if (!anySheetOpen) return undefined;
+    const sub = BackHandler.addEventListener('hardwareBackPress', () => {
+      if (queueOpenRef.current) closeQueue();
+      if (addOpenRef.current) closeAddSheet();
+      return true; // 食咗個返回鍵,唔好傳落去收埋播放器
+    });
+    return () => sub.remove();
+  }, [anySheetOpen, closeQueue, closeAddSheet]);
+
+  // 統一嘅 backdrop:半透明遮罩 + 撳一下收起。`disappearsOnIndex={-1}` 令 sheet 收埋
+  // 之後 backdrop 完全唔食 touch,唔會擋住下面啲掣。
+  const renderBackdrop = useCallback((props) => (
+    <BottomSheetBackdrop {...props} appearsOnIndex={0} disappearsOnIndex={-1} pressBehavior="close" />
+  ), []);
 
   const cur = player.currentHymn || { title: '', artist: '', youtube_id: '', id: null, lyrics: '' };
   const progressPercent = player.duration > 0 ? Math.min((player.currentTime / player.duration) * 100, 100) : 0;
@@ -998,51 +1049,50 @@ function FullScreenPlayerOverlay() {
         </TouchableOpacity>
       </View>
 
-      {/* ===== 播放清單 BOTTOM SHEET —— native <Modal>(手尾修正 v228) =====
-          原本用 gorhom,真機 present() 冇反應;native Modal 撳掣即彈、畫喺最面。
-          撳上半透明位 / 返回鍵收起。 */}
-      <Modal
-        visible={queueVisible}
-        transparent
-        animationType="slide"
-        onRequestClose={closeQueue}
-        statusBarTranslucent
+      {/* ===== 播放清單 BOTTOM SHEET(v229,inline gorhom)=====
+          擺喺 overlay container 最後一個 child → 畫喺 overlay 之上,冇 portal z-order 問題。
+          向上滑彈出 / 向下滑收起 = gorhom 原生手勢;BottomSheetFlatList 自己同 sheet
+          協調手勢,滾到頂再向下拖先會收 sheet。 */}
+      <BottomSheet
+        ref={queueSheetRef}
+        index={-1}
+        snapPoints={QUEUE_SNAP_POINTS}
+        enableDynamicSizing={false}
+        enablePanDownToClose
+        onChange={onQueueChange}
+        backdropComponent={renderBackdrop}
+        backgroundStyle={{ backgroundColor: MAIN_BG_COLOR }}
+        handleIndicatorStyle={{ backgroundColor: TEXT_SECONDARY }}
       >
-        <View style={fsStyles.sheetScrim}>
-          <TouchableOpacity style={{ flex: 1 }} activeOpacity={1} onPress={closeQueue} />
-          <View style={[fsStyles.sheetCard, { height: '85%', backgroundColor: MAIN_BG_COLOR }]}>
-            <View style={fsStyles.sheetHandle} />
-            <View style={{ paddingHorizontal: 16, paddingBottom: 8 }}>
-              <Text style={{ ...TYPOGRAPHY.sectionTitle, textAlign: 'center' }}>播放清單 ({queue.length})</Text>
-              {/* Shuffle indicator —— 個 list 本身就係洗咗牌嘅順序,冇呢個提示分唔出 */}
-              {player.isShuffled && (
-                <View style={[fsStyles.shuffleBanner, { marginTop: 8 }]}>
-                  <MaterialIcons name="shuffle" size={14} color={ACCENT_COLOR} />
-                  <Text style={fsStyles.shuffleBannerText}>已隨機排序</Text>
-                </View>
-              )}
+        <View style={{ paddingHorizontal: 16, paddingBottom: 8 }}>
+          <Text style={{ ...TYPOGRAPHY.sectionTitle, textAlign: 'center' }}>播放清單 ({queue.length})</Text>
+          {/* Shuffle indicator —— 個 list 本身就係洗咗牌嘅順序,冇呢個提示分唔出 */}
+          {player.isShuffled && (
+            <View style={[fsStyles.shuffleBanner, { marginTop: 8 }]}>
+              <MaterialIcons name="shuffle" size={14} color={ACCENT_COLOR} />
+              <Text style={fsStyles.shuffleBannerText}>已隨機排序</Text>
             </View>
-            <FlatList
-              data={queue}
-              keyExtractor={(item) => String(item.id)}
-              contentContainerStyle={{ paddingBottom: 40 }}
-              renderItem={({ item }) => (
-                <TouchableOpacity style={[fsStyles.queueItem, item.id === cur.id && fsStyles.queueItemActive]}
-                  onPress={() => { player.skipToQueueIndex(queue.findIndex(h => h.id === item.id)); closeQueue(); }} activeOpacity={0.7}>
-                  <CoverImage youtubeId={item.youtube_id} style={fsStyles.queueCover} />
-                  <View style={fsStyles.queueInfo}>
-                    <Text style={fsStyles.queueTitle} numberOfLines={1}>{item.title}</Text>
-                    <Text style={fsStyles.queueArtist} numberOfLines={1}>{item.artist}</Text>
-                  </View>
-                  {item.id === cur.id
-                    ? <MaterialIcons name="play-arrow" size={18} color={ACCENT_COLOR} />
-                    : <MaterialIcons name="queue-music" size={18} color={TEXT_SECONDARY} />}
-                </TouchableOpacity>
-              )}
-            />
-          </View>
+          )}
         </View>
-      </Modal>
+        <BottomSheetFlatList
+          data={queue}
+          keyExtractor={(item) => String(item.id)}
+          contentContainerStyle={{ paddingBottom: 40 }}
+          renderItem={({ item }) => (
+            <SheetTouchable style={[fsStyles.queueItem, item.id === cur.id && fsStyles.queueItemActive]}
+              onPress={() => { player.skipToQueueIndex(queue.findIndex(h => h.id === item.id)); closeQueue(); }} activeOpacity={0.7}>
+              <CoverImage youtubeId={item.youtube_id} style={fsStyles.queueCover} />
+              <View style={fsStyles.queueInfo}>
+                <Text style={fsStyles.queueTitle} numberOfLines={1}>{item.title}</Text>
+                <Text style={fsStyles.queueArtist} numberOfLines={1}>{item.artist}</Text>
+              </View>
+              {item.id === cur.id
+                ? <MaterialIcons name="play-arrow" size={18} color={ACCENT_COLOR} />
+                : <MaterialIcons name="queue-music" size={18} color={TEXT_SECONDARY} />}
+            </SheetTouchable>
+          )}
+        />
+      </BottomSheet>
 
       {/* ===== NATIVE MODAL: Lyrics ===== */}
       <Modal
@@ -1076,45 +1126,43 @@ function FullScreenPlayerOverlay() {
         </View>
       </Modal>
 
-      {/* 加入到清單 bottom sheet —— native <Modal>(手尾修正 v228,同 queue sheet 一致) */}
-      <Modal
-        visible={addVisible}
-        transparent
-        animationType="slide"
-        onRequestClose={closeAddSheet}
-        statusBarTranslucent
+      {/* 加入到清單 bottom sheet —— 同 queue sheet 一樣係 inline gorhom(v229) */}
+      <BottomSheet
+        ref={addSheetRef}
+        index={-1}
+        snapPoints={ADD_SNAP_POINTS}
+        enableDynamicSizing={false}
+        enablePanDownToClose
+        onChange={onAddChange}
+        backdropComponent={renderBackdrop}
+        backgroundStyle={{ backgroundColor: CARD_BG_COLOR }}
+        handleIndicatorStyle={{ backgroundColor: TEXT_SECONDARY }}
       >
-        <View style={fsStyles.sheetScrim}>
-          <TouchableOpacity style={{ flex: 1 }} activeOpacity={1} onPress={closeAddSheet} />
-          <View style={[fsStyles.sheetCard, { maxHeight: '60%', backgroundColor: CARD_BG_COLOR }]}>
-            <View style={fsStyles.sheetHandle} />
-            <Text style={{ color: TEXT_PRIMARY, fontSize: 18, fontWeight: '600', paddingHorizontal: 20, paddingVertical: 12 }}>加入到清單</Text>
-            {/* 最愛 —— 金色記號(屬靈重點) */}
-            <TouchableOpacity
-              onPress={() => { toggleFavorite(cur); closeAddSheet(); }}
-              style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: DesignColors.border }}
-            >
-              <MaterialIcons name="favorite" size={20} color={GOLD_COLOR} />
-              <Text style={{ color: GOLD_COLOR, marginLeft: 10, fontSize: 15, fontWeight: '600' }}>最愛清單</Text>
-            </TouchableOpacity>
-            <FlatList
-              data={favorites}
-              keyExtractor={(item) => String(item.id)}
-              contentContainerStyle={{ paddingBottom: 24 }}
-              ListEmptyComponent={
-                <Text style={{ color: TEXT_SECONDARY, paddingHorizontal: 20, paddingVertical: 16 }}>仲未有其他清單</Text>
-              }
-              renderItem={({ item }) => (
-                <TouchableOpacity onPress={() => { addToPlaylist(item.id, cur); closeAddSheet(); }}
-                  style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 14 }}>
-                  <MaterialIcons name="queue-music" size={20} color={TEXT_SECONDARY} />
-                  <Text style={{ color: TEXT_PRIMARY, marginLeft: 10, fontSize: 15 }} numberOfLines={1}>{item.title}</Text>
-                </TouchableOpacity>
-              )}
-            />
-          </View>
-        </View>
-      </Modal>
+        <Text style={{ color: TEXT_PRIMARY, fontSize: 18, fontWeight: '600', paddingHorizontal: 20, paddingVertical: 12 }}>加入到清單</Text>
+        {/* 最愛 —— 金色記號(屬靈重點) */}
+        <SheetTouchable
+          onPress={() => { toggleFavorite(cur); closeAddSheet(); }}
+          style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: DesignColors.border }}
+        >
+          <MaterialIcons name="favorite" size={20} color={GOLD_COLOR} />
+          <Text style={{ color: GOLD_COLOR, marginLeft: 10, fontSize: 15, fontWeight: '600' }}>最愛清單</Text>
+        </SheetTouchable>
+        <BottomSheetFlatList
+          data={favorites}
+          keyExtractor={(item) => String(item.id)}
+          contentContainerStyle={{ paddingBottom: 24 }}
+          ListEmptyComponent={
+            <Text style={{ color: TEXT_SECONDARY, paddingHorizontal: 20, paddingVertical: 16 }}>仲未有其他清單</Text>
+          }
+          renderItem={({ item }) => (
+            <SheetTouchable onPress={() => { addToPlaylist(item.id, cur); closeAddSheet(); }}
+              style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 14 }}>
+              <MaterialIcons name="queue-music" size={20} color={TEXT_SECONDARY} />
+              <Text style={{ color: TEXT_PRIMARY, marginLeft: 10, fontSize: 15 }} numberOfLines={1}>{item.title}</Text>
+            </SheetTouchable>
+          )}
+        />
+      </BottomSheet>
     </View>
   );
 }
@@ -1280,7 +1328,8 @@ function AppContent() {
             以保留各自 scroll/state。 */}
         <View style={[pageStyles.screenWrap, { display: activeTab === 'Home' ? 'flex' : 'none' }]}>
           <HomeScreen hymns={allSongs || []} activeCategory={activeCategory}
-            onCategoryChange={setActiveCategory} onPlayHymn={handlePlayHymn} onOpenAuth={openAuth} />
+            onCategoryChange={setActiveCategory} onPlayHymn={handlePlayHymn} onOpenAuth={openAuth}
+            onOpenList={showHymnList} />
         </View>
         <View style={[pageStyles.screenWrap, { display: activeTab === 'Search' ? 'flex' : 'none' }]}>
           <SearchScreen navigation={{ navigate: (route, params) => {
@@ -1336,8 +1385,10 @@ function AppContent() {
 
 // ===== App Entry =====
 export default function App() {
-  // GestureHandlerRootView 包最外(通用需要)。sheet 用 native Modal,唔再需要
-  // BottomSheetModalProvider。
+  // GestureHandlerRootView 一定要包最外 —— gorhom 嘅拖曳手勢靠佢。
+  // 兩個 sheet 用 inline `<BottomSheet>`(唔經 portal),所以**故意唔加**
+  // BottomSheetModalProvider:加返佢就會走返 v228 嗰條 portal 路,個 hosting
+  // container 冇 zIndex,又會俾 zIndex:999 嘅播放器 overlay 蓋住。詳見檔頭註解。
   const tree = (
     <AuthProvider><FavoritesProvider><PlaylistsProvider><PlayerProvider><PlaylistProvider>
       <AppContent />
