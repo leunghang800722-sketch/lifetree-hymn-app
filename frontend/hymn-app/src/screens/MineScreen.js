@@ -16,7 +16,7 @@ import { useAuth } from '../context/AuthContext';
 
 function Cover({ youtubeId, size = 52 }) {
   const [failed, setFailed] = useState(false);
-  const uri = youtubeId ? `https://img.youtube.com/vi/${youtubeId}/hqdefault.jpg` : null;
+  const uri = youtubeId ? `https://img.youtube.com/vi/${youtubeId}/mqdefault.jpg` : null;
   if (!uri || failed) {
     return (
       <View style={[styles.cover, { width: size, height: size, alignItems: 'center', justifyContent: 'center' }]}>

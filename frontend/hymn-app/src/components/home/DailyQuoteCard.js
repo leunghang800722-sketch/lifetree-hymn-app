@@ -6,7 +6,7 @@ import { COLORS } from '../../constants/theme';
 const CARD_WIDTH = Dimensions.get('window').width - 32;
 
 function getAlbumCoverUrl(youtubeId) {
-  return youtubeId ? `https://img.youtube.com/vi/${youtubeId}/hqdefault.jpg` : null;
+  return youtubeId ? `https://img.youtube.com/vi/${youtubeId}/mqdefault.jpg` : null;
 }
 
 export default function DailyQuoteCard({ data, onPress }) {

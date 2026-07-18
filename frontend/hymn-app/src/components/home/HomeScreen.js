@@ -20,7 +20,7 @@ import { getLastPlayed } from '../../lastPlayed';
 
 function Thumb({ youtubeId, size, radius = 8, icon = 'music-note' }) {
   const [failed, setFailed] = React.useState(false);
-  const uri = youtubeId ? `https://img.youtube.com/vi/${youtubeId}/hqdefault.jpg` : null;
+  const uri = youtubeId ? `https://img.youtube.com/vi/${youtubeId}/mqdefault.jpg` : null;
   if (!uri || failed) {
     return (
       <View style={{ width: size, height: size, borderRadius: radius, backgroundColor: COLORS.cardLight, alignItems: 'center', justifyContent: 'center' }}>

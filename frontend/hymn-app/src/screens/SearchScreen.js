@@ -22,7 +22,7 @@ const RECENT_KEY = 'search_recent_v2';
 const MAX_RECENT = 10;
 
 function getCoverUrl(youtubeId) {
-  return youtubeId ? `https://img.youtube.com/vi/${youtubeId}/hqdefault.jpg` : null;
+  return youtubeId ? `https://img.youtube.com/vi/${youtubeId}/mqdefault.jpg` : null;
 }
 
 // Fallback cover for thumbnail

@@ -24,16 +24,21 @@ export const FavoritesProvider = ({ children }) => {
  }, []);
 
  const toggleFavorite = (hymn) => {
- const s = getStorage();
- if (!s) return;
+ if (!hymn || hymn.id == null) return;
  let newFavorites;
  if (favorites.some(f => f.id === hymn.id)) {
  newFavorites = favorites.filter(f => f.id !== hymn.id);
  } else {
  newFavorites = [...favorites, hymn];
  }
+ // 先更新記憶體 state,個心一定即刻着燈(唔好因為 storage 死咗就靜靜哋 no-op —
+ // 舊版 `if(!s) return` 喺 release JSI 出事嗰陣會令「最愛」掣撳極冇反應)。
  setFavorites(newFavorites);
- s.set('favorites', JSON.stringify(newFavorites));
+ // 持久化盡力而為:MMKV 掛咗就跳過,唔阻 UI。
+ const s = getStorage();
+ if (s) {
+ try { s.set('favorites', JSON.stringify(newFavorites)); } catch (e) { console.warn('favorites persist:', e); }
+ }
  };
 
  const isFavorite = (id) => favorites.some(f => f.id === id);

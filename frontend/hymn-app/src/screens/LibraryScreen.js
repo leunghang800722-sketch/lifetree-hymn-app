@@ -13,7 +13,7 @@ const LANGS = ['全部', '粵語', '國語', '英文'];
 
 function Cover({ youtubeId, size = 52 }) {
   const [failed, setFailed] = useState(false);
-  const uri = youtubeId ? `https://img.youtube.com/vi/${youtubeId}/hqdefault.jpg` : null;
+  const uri = youtubeId ? `https://img.youtube.com/vi/${youtubeId}/mqdefault.jpg` : null;
   if (!uri || failed) {
     // §5.4 唔用 Emoji 做 fallback,用向量圖標
     return (

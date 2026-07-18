@@ -9,5 +9,5 @@
 
 export function getAlbumCoverUrl(youtubeId) {
   if (!youtubeId) return null;
-  return `https://img.youtube.com/vi/${youtubeId}/hqdefault.jpg`;
+  return `https://img.youtube.com/vi/${youtubeId}/mqdefault.jpg`;
 }
