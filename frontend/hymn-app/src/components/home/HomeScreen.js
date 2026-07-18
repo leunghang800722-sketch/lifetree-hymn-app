@@ -27,6 +27,7 @@ import DailyVerseCard from './DailyVerseCard';
 import { getLastPlayed } from '../../lastPlayed';
 import { getHomeChip, saveHomeChip } from '../../homePrefs';
 import { dailyPick, dailyPickBalanced, randomShuffle } from '../../utils/dailyShuffle';
+import { useFavorites } from '../../context/FavoritesContext';
 
 const LANGS = ['粵語', '國語', '英文'];
 
@@ -43,7 +44,14 @@ const PAGE_SNAP = PAGE_W + PAGE_GAP;
 // 頁數補返上去 5 頁,所以一個分類仍然係滑到 20 首。
 const SONGS_PER_PAGE = 4;
 const MAX_PAGES = 5;        // 4 × 5 = 一個分類最多滑到 20 首,再多就用「睇晒」
-const ROW_H = 60;           // 40 縮圖 + 上下 10 padding;鎖死頁高用
+// 🔴 v233:上一版 ROW_H 當咗 60(40 縮圖 + 上下 10 padding),但一行實際高度係由
+// **文字**決定,唔係縮圖:歌名 18pt(預設行高 ~24)+ 間距 2 + 歌手 14pt(~19)= ~45,
+// 加返上下 padding 20 = **~65px**。4 行真係要 260px,但頁高鎖咗 4×60=240 →
+// overflow:hidden 就切咗第 4 首。而且系統字體放大仲會更差。
+// 而家改成**寫死每行高度 + 寫死行高**,個數就係實數,唔會再靠估。
+const ROW_TITLE_LH = 22;
+const ROW_ARTIST_LH = 18;
+const ROW_H = 64;           // 22 + 2 + 18 = 42 文字,+ 上下 11 padding = 64
 
 // 「即刻揀歌」嘅 chips。DB 冇 playlist 表,所以喺 150 首試版庫用語言 + 關鍵字即場砌 ——
 // 現有數據下最誠實嘅做法:有真歌、撳到、播到。將來加清單淨係加一項,唔使改版面。
@@ -78,13 +86,38 @@ function PlayBadge() {
   );
 }
 
+// 心心 —— 首頁每首歌都撳得,唔使入播放頁先加到最愛(Eric v233)。
+// stopPropagation:唔好連埋外面張卡/嗰行一齊觸發播歌。
+// hitSlop:20px 嘅 icon 冇撐大觸控範圍好易撳唔中。
+function Heart({ hymn, style }) {
+  const { isFavorite, toggleFavorite } = useFavorites() || {};
+  if (!hymn?.id || typeof toggleFavorite !== 'function') return null;
+  const on = typeof isFavorite === 'function' ? isFavorite(hymn.id) : false;
+  return (
+    <TouchableOpacity
+      onPress={(e) => { e?.stopPropagation?.(); toggleFavorite(hymn); }}
+      hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+      activeOpacity={0.6}
+      style={style}
+    >
+      <MaterialIcons
+        name={on ? 'favorite' : 'favorite-border'}
+        size={20}
+        color={on ? COLORS.accent : COLORS.textSecondary}
+      />
+    </TouchableOpacity>
+  );
+}
+
 // 「今日為你預備」/「最近加入」共用嘅歌卡(樣式統一)
+// 心心擺喺封面左上,同右下角個 play 角標分開,唔會撞。
 function SongCard({ hymn, onPress }) {
   return (
     <TouchableOpacity style={styles.songCard} activeOpacity={0.8} onPress={onPress}>
       <View>
         <Thumb youtubeId={hymn.youtube_id} size={120} radius={10} />
         <PlayBadge />
+        <Heart hymn={hymn} style={styles.cardHeart} />
       </View>
       <Text style={styles.cardTitle} numberOfLines={2}>{hymn.title}</Text>
       <Text style={styles.cardArtist} numberOfLines={1}>{hymn.artist || '未知'}</Text>
@@ -259,6 +292,7 @@ export default function HomeScreen({ hymns = [], onPlayHymn, onOpenList }) {
                       <Text style={styles.rowArtist} numberOfLines={1}>{h.artist || '未知'}</Text>
                     </View>
                     <MaterialIcons name="play-arrow" size={22} color={COLORS.textSecondary} />
+                    <Heart hymn={h} style={styles.rowHeart} />
                   </TouchableOpacity>
                 ))}
               </View>
@@ -386,11 +420,12 @@ const styles = StyleSheet.create({
   },
   songRow: {
     flexDirection: 'row', alignItems: 'center',
-    paddingHorizontal: 12, paddingVertical: 10, // 40 縮圖 + 上下 10 = 60 高,過 48 觸控標準
+    paddingHorizontal: 12,
+    height: ROW_H,   // 寫死:頁高 = SONGS_PER_PAGE × ROW_H 先至係實數(見上面註解)
   },
   rowTextWrap: { flex: 1, marginLeft: 12 },
-  rowTitle: { ...TYPOGRAPHY.songTitle }, // §5.3 列表歌名 18pt
-  rowArtist: { ...TYPOGRAPHY.artist, marginTop: 2 },
+  rowTitle: { ...TYPOGRAPHY.songTitle, lineHeight: ROW_TITLE_LH }, // §5.3 列表歌名 18pt
+  rowArtist: { ...TYPOGRAPHY.artist, marginTop: 2, lineHeight: ROW_ARTIST_LH },
   footerPlay: {
     flexDirection: 'row', alignItems: 'center',
     backgroundColor: COLORS.accent, borderRadius: 999,
@@ -404,6 +439,13 @@ const styles = StyleSheet.create({
   songCard: { width: 120, marginLeft: 16 },
   cardTitle: { fontSize: 14, fontWeight: '600', color: COLORS.textPrimary, marginTop: 8, lineHeight: 18 },
   cardArtist: { ...TYPOGRAPHY.artist, marginTop: 2 },
+  cardHeart: {
+    position: 'absolute', left: 6, top: 6,
+    width: 28, height: 28, borderRadius: 14,
+    backgroundColor: 'rgba(11,15,14,0.72)',
+    alignItems: 'center', justifyContent: 'center',
+  },
+  rowHeart: { paddingLeft: 12 },
   playBadge: {
     position: 'absolute', right: 6, bottom: 6,
     width: 28, height: 28, borderRadius: 14,

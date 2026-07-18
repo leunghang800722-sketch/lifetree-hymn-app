@@ -18,7 +18,7 @@ import {
 } from 'react-native';
 import { COLORS } from './src/constants/theme';
 import { FavoritesProvider, useFavorites } from './src/context/FavoritesContext';
-import { PlaylistsProvider, usePlaylists } from './src/context/PlaylistsContext';
+import { PlaylistsProvider, usePlaylists, MAX_PLAYLIST_SONGS } from './src/context/PlaylistsContext';
 import { AuthProvider, useAuth } from './src/context/AuthContext';
 import AuthScreen from './src/screens/AuthScreen';
 import { PlaylistProvider } from './src/context/PlaylistContext';
@@ -354,15 +354,39 @@ function PlayerProvider({ children }) {
   queueRef.current = queue;
 
   // ===== 物理抽屜動畫 (slide-up/slide-down) =====
+  //
+  // 🔴 v233 修「tab 掣俾黑條檔住一半」——
+  // 呢個 overlay 係 position:absolute + top0/bottom0(即係跟足 parent 實際高度)、
+  // 底色 #0B0F0E 近黑、**zIndex:999**、而且成個 Animated.View **永遠 mount**。
+  // 收埋嘅方法係 translateY 個 `SCREEN_HEIGHT`,但 SCREEN_HEIGHT 係
+  // `Dimensions.get('window').height` —— Android 呢個值**唔包導航列**,而 App 係
+  // edge-to-edge,root view 係鋪滿**成塊屏**(包埋導航列嗰條)。
+  // 即係:overlay 真高度 > 推落去嘅距離 → 底部永遠剩返一條約 48px 嘅近黑色
+  // zIndex:999 overlay,啱啱好蓋住 tab 掣下半截。
+  //
+  // 嗰條「黑條」根本唔係手機導航列,所以之前點樣搞 safe-area inset 都好,
+  // 一世都掂唔到佢。兩重保險:
+  //   (a) 用 onLayout 度返 overlay **實際**高度嚟做收埋距離,唔再靠 Dimensions;
+  //   (b) 完全收埋(!overlayExpanded)嗰陣直接 display:'none',零繪製。
+  //       收埋動畫行完先會 setOverlayExpanded(false),所以唔會截斷動畫。
   const [overlayExpanded, setOverlayExpanded] = useState(false);
+  const overlayHRef = useRef(SCREEN_HEIGHT);
   const drawerAnim = useRef(new Animated.Value(SCREEN_HEIGHT)).current;
   const isAnimatingRef = useRef(false);
+
+  const onOverlayLayout = useCallback((e) => {
+    const h = e?.nativeEvent?.layout?.height;
+    if (!h || Math.abs(h - overlayHRef.current) < 1) return;
+    overlayHRef.current = h;
+    // 淨係喺「收埋 + 冇動畫行緊」先重設,唔係會將開緊嘅播放器推走。
+    if (!isAnimatingRef.current && !overlayExpanded) drawerAnim.setValue(h);
+  }, [drawerAnim, overlayExpanded]);
 
   const showPlayer = useCallback(() => {
     if (overlayExpanded || isAnimatingRef.current) return;
     isAnimatingRef.current = true;
     setOverlayExpanded(true);
-    drawerAnim.setValue(SCREEN_HEIGHT);
+    drawerAnim.setValue(overlayHRef.current);
     Animated.timing(drawerAnim, {
       toValue: 0,
       duration: 300,
@@ -381,7 +405,7 @@ function PlayerProvider({ children }) {
     if (!overlayExpanded || isAnimatingRef.current) return;
     isAnimatingRef.current = true;
     Animated.timing(drawerAnim, {
-      toValue: SCREEN_HEIGHT,
+      toValue: overlayHRef.current,
       duration: 250,
       useNativeDriver: true,
     }).start(() => {
@@ -689,7 +713,16 @@ function PlayerProvider({ children }) {
       {children}
 
       {/* Fullscreen player overlay — always mounted, animated slide-up */}
-      <Animated.View style={[olStyles.overlay, { transform: [{ translateY: drawerAnim }] }]}>
+      <Animated.View
+        onLayout={onOverlayLayout}
+        pointerEvents={overlayExpanded ? 'auto' : 'none'}
+        style={[
+          olStyles.overlay,
+          { transform: [{ translateY: drawerAnim }] },
+          // 完全收埋就唔好畫 —— 呢行先係「黑條」嘅根治位
+          !overlayExpanded && { display: 'none' },
+        ]}
+      >
         {(overlayExpanded) && <FullScreenPlayerOverlay />}
       </Animated.View>
     </PlayerCtx.Provider>
@@ -996,7 +1029,32 @@ function FullScreenPlayerOverlay() {
   const safeTop = (insets?.top || StatusBar.currentHeight || 24) + 8;
 
   const { favorites, toggleFavorite, isFavorite } = useFavorites();
-  const { addToPlaylist } = usePlaylists();
+  const { playlists = [], addToPlaylist, createPlaylist } = usePlaylists() || {};
+
+  // 加入自訂清單 —— 滿 30 首就唔俾加,彈提示講清楚點解(§Eric v233 要求)。
+  const handleAddToPlaylist = useCallback((pl) => {
+    const res = addToPlaylist?.(pl.id, cur);
+    if (res?.ok) { closeAddSheet(); return; }
+    if (res?.reason === 'full') {
+      Alert.alert(
+        '清單已滿',
+        `「${pl.name}」已經有 ${MAX_PLAYLIST_SONGS} 首,加唔到再多。\n\n可以刪走啲舊歌,或者開一個新清單。`,
+        [{ text: '知道喇' }]
+      );
+      return;
+    }
+    if (res?.reason === 'duplicate') {
+      Alert.alert('已經喺清單入面', `「${cur.title}」已經加咗落「${pl.name}」。`, [{ text: '知道喇' }]);
+      return;
+    }
+    closeAddSheet();
+  }, [addToPlaylist, cur, closeAddSheet]);
+
+  // 冇 prompt UI(Android 冇 Alert.prompt),所以自動命名,開完即刻加埋當前呢首。
+  const handleCreatePlaylistAndAdd = useCallback(() => {
+    createPlaylist?.(`我嘅清單 ${(playlists.length || 0) + 1}`, cur);
+    closeAddSheet();
+  }, [createPlaylist, playlists.length, cur, closeAddSheet]);
 
   return (
     // ⚠️ 外層**唔可以有 padding**(v231)。gorhom 個 hosting container 係
@@ -1266,21 +1324,42 @@ function FullScreenPlayerOverlay() {
           <MaterialIcons name="favorite" size={20} color={GOLD_COLOR} />
           <Text style={{ color: GOLD_COLOR, marginLeft: 10, fontSize: 15, fontWeight: '600' }}>最愛清單</Text>
         </SheetTouchable>
+        {/* 自訂清單 —— 每個清單上限 30 首(MAX_PLAYLIST_SONGS)。
+            滿咗嘅清單淨低灰色 + 寫住「已滿」,撳落去彈提示唔會加得入。
+            ⚠️ v233 之前呢度列緊嘅係**最愛啲歌**當清單(仲要當歌 id 做 playlistId),
+            playlists 由頭到尾都係空 —— 而家改用返真嘅 playlists。 */}
         <BottomSheetFlatList
-          data={favorites}
+          data={playlists}
           keyExtractor={(item) => String(item.id)}
           contentContainerStyle={{ paddingBottom: 24 }}
           ListEmptyComponent={
-            <Text style={{ color: TEXT_SECONDARY, paddingHorizontal: 20, paddingVertical: 16 }}>仲未有其他清單</Text>
+            <Text style={{ color: TEXT_SECONDARY, paddingHorizontal: 20, paddingVertical: 16 }}>
+              仲未有自訂清單 —— 撳下面「新增清單」開一個
+            </Text>
           }
-          renderItem={({ item }) => (
-            <SheetTouchable onPress={() => { addToPlaylist(item.id, cur); closeAddSheet(); }}
-              style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 14 }}>
-              <MaterialIcons name="queue-music" size={20} color={TEXT_SECONDARY} />
-              <Text style={{ color: TEXT_PRIMARY, marginLeft: 10, fontSize: 15, flex: 1 }} numberOfLines={1}>{item.title}</Text>
-              <FavHeart hymn={item} />
+          ListFooterComponent={
+            <SheetTouchable
+              onPress={handleCreatePlaylistAndAdd}
+              style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 14, borderTopWidth: 1, borderTopColor: DesignColors.border }}
+            >
+              <MaterialIcons name="playlist-add" size={20} color={ACCENT_COLOR} />
+              <Text style={{ color: ACCENT_COLOR, marginLeft: 10, fontSize: 15, fontWeight: '600' }}>新增清單</Text>
             </SheetTouchable>
-          )}
+          }
+          renderItem={({ item }) => {
+            const count = item.songs?.length || 0;
+            const full = count >= MAX_PLAYLIST_SONGS;
+            return (
+              <SheetTouchable onPress={() => handleAddToPlaylist(item)}
+                style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 14, opacity: full ? 0.45 : 1 }}>
+                <MaterialIcons name="queue-music" size={20} color={full ? TEXT_SECONDARY : ACCENT_COLOR} />
+                <Text style={{ color: TEXT_PRIMARY, marginLeft: 10, fontSize: 15, flex: 1 }} numberOfLines={1}>{item.name}</Text>
+                <Text style={{ color: full ? GOLD_COLOR : TEXT_SECONDARY, fontSize: 13, fontWeight: full ? '700' : '500' }}>
+                  {full ? `已滿 ${count}/${MAX_PLAYLIST_SONGS}` : `${count}/${MAX_PLAYLIST_SONGS}`}
+                </Text>
+              </SheetTouchable>
+            );
+          }}
         />
       </BottomSheet>
       )}
