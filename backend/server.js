@@ -74,7 +74,10 @@ app.get('/api/health', (req, res) => {
 app.get('/api/hymns', async (req, res) => {
   try {
     const db = await getDb();
-    const stmt = db.prepare('SELECT id, title, artist, youtube_id, lang, duration FROM hymns ORDER BY id');
+    // lyrics included so the player can show real 歌詞 (§3.4) and grey out the
+    // 歌詞 pill when a song has none. Only ~10 of the curated songs have lyrics,
+    // so the payload cost is negligible.
+    const stmt = db.prepare('SELECT id, title, artist, youtube_id, lang, duration, lyrics FROM hymns ORDER BY id');
     const hymns = [];
     while (stmt.step()) {
       hymns.push(stmt.getAsObject());

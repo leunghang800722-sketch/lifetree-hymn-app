@@ -14,7 +14,7 @@ import TrackPlayer, {
 import {
   View, Text, ScrollView, TouchableOpacity, StyleSheet,
   ActivityIndicator, StatusBar, Image, Platform, Alert,
-  Modal, Dimensions, FlatList, Animated, PanResponder, Linking,
+  Modal, Dimensions, FlatList, Animated, PanResponder, Linking, Share,
 } from 'react-native';
 import { COLORS } from './src/constants/theme';
 import { FavoritesProvider, useFavorites } from './src/context/FavoritesContext';
@@ -67,16 +67,17 @@ function toTrack(song) {
 }
 
 // ===== CoverImage with fallback =====
-function CoverImage({ youtubeId, style, fallbackStyle, fallbackIcon }) {
+// §5.4 fallback 用向量圖標,唔用 Emoji 🎵。(fallbackIcon 舊 prop 仍收但只用嚟兼容,
+// 唔再當文字render。)
+function CoverImage({ youtubeId, style }) {
   const [failed, setFailed] = useState(false);
   const uri = getAlbumCoverUrl(youtubeId);
   if (!uri || failed) {
+    const flat = StyleSheet.flatten(style) || {};
+    const size = Math.min(flat.width || 44, flat.height || 44);
     return (
-      <View style={[{
-        backgroundColor: 'rgba(255,255,255,0.08)',
-        justifyContent: 'center', alignItems: 'center',
-      }, style]}>
-        <Text style={[{ fontSize: 24, opacity: 0.6 }, fallbackIcon]}>{fallbackIcon || '🎵'}</Text>
+      <View style={[{ backgroundColor: DesignColors.cardLight, justifyContent: 'center', alignItems: 'center' }, style]}>
+        <MaterialIcons name="music-note" size={Math.max(16, size * 0.45)} color={TEXT_SECONDARY} />
       </View>
     );
   }
@@ -607,7 +608,7 @@ function MiniPlayer({ onPress }) {
     <View style={miStyles.wrapper}>
       <View style={miStyles.container}>
         <TouchableOpacity style={miStyles.mainTouch} onPress={onPress} activeOpacity={0.85}>
-          <CoverImage youtubeId={currentHymn.youtube_id} style={miStyles.cover} fallbackIcon="🎵" />
+          <CoverImage youtubeId={currentHymn.youtube_id} style={miStyles.cover} />
           <View style={miStyles.info}>
             <Text style={miStyles.title} numberOfLines={1}>{currentHymn.title}</Text>
             <Text style={miStyles.artist} numberOfLines={1}>{currentHymn.artist}</Text>
@@ -851,7 +852,7 @@ function FullScreenPlayerOverlay() {
           />
         ) : (
           <View style={fsStyles.coverFallback}>
-            <Text style={fsStyles.coverFallbackIcon}>🎵</Text>
+            <MaterialIcons name="music-note" size={90} color={TEXT_SECONDARY} />
           </View>
         )}
         {player.isPlaying && (
@@ -879,25 +880,47 @@ function FullScreenPlayerOverlay() {
           <Text style={[{ ...TYPOGRAPHY.artist, textAlign: 'center', marginTop: 4 }]}>{cur.artist}</Text>
         </View>
 
-        {/* Action Bar — long pill segmented bar */}
-        <View style={{ flexDirection: 'row', backgroundColor: DesignColors.border, marginHorizontal: 16, borderRadius: 999, padding: 6, marginBottom: 16 }}>
-          <TouchableOpacity style={fsStyles.pillButton} onPress={() => toggleFavorite(cur)}>
-            <Text style={{ fontSize: 20 }}>❤️</Text>
-            <Text style={{ fontSize: 11, color: TEXT_SECONDARY }}>最愛</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={fsStyles.pillButton} onPress={() => alert('歌詞')}>
-            <Text style={{ fontSize: 20 }}>📝</Text>
-            <Text style={{ fontSize: 11, color: TEXT_SECONDARY }}>歌詞</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={fsStyles.pillButton} onPress={() => alert('分享')}>
-            <Text style={{ fontSize: 20 }}>🔗</Text>
-            <Text style={{ fontSize: 11, color: TEXT_SECONDARY }}>分享</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={fsStyles.pillButton} onPress={() => setShowPlaylistSheet(true)}>
-            <Text style={{ fontSize: 20 }}>📋</Text>
-            <Text style={{ fontSize: 11, color: TEXT_SECONDARY }}>清單</Text>
-          </TouchableOpacity>
-        </View>
+        {/* Action Bar — 4 粒獨立 pill(§3.4 / Eric 2026-07 指定順序):
+            最愛 / 歌詞 / 分享 / 清單。膠囊形、向量圖標(§5.4 唔用 Emoji)。
+            歌詞冇 data 就 disabled 灰咗,唔俾個掣呃人(§3.4)。 */}
+        {(() => {
+          const faved = isFavorite(cur.id);
+          const hasLyrics = !!(cur.lyrics && String(cur.lyrics).trim());
+          const pills = [
+            { key: 'fav', label: '最愛', icon: faved ? 'favorite' : 'favorite-border',
+              active: faved, onPress: () => toggleFavorite(cur) },
+            { key: 'lyr', label: '歌詞', icon: 'lyrics', disabled: !hasLyrics,
+              onPress: () => setLyricsVisible(true) },
+            { key: 'shr', label: '分享', icon: 'share',
+              onPress: () => Share.share({
+                message: `一齊聽「${cur.title}」${cur.artist ? ' - ' + cur.artist : ''}（生命樹詩歌）`,
+              }).catch(() => {}) },
+            { key: 'que', label: '清單', icon: 'queue-music',
+              onPress: () => setShowPlaylistSheet(true) },
+          ];
+          return (
+            <View style={fsStyles.actionRow}>
+              {pills.map((p) => (
+                <TouchableOpacity
+                  key={p.key}
+                  style={[fsStyles.pill, p.disabled && fsStyles.pillDisabled]}
+                  onPress={p.onPress}
+                  disabled={p.disabled}
+                  activeOpacity={0.7}
+                >
+                  <MaterialIcons
+                    name={p.icon}
+                    size={20}
+                    color={p.disabled ? DesignColors.border : (p.active ? ACCENT_COLOR : TEXT_PRIMARY)}
+                  />
+                  <Text style={[fsStyles.pillLabel, p.active && { color: ACCENT_COLOR }, p.disabled && { color: TEXT_SECONDARY }]}>
+                    {p.label}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          );
+        })()}
         <View style={fsStyles.progressSection}>
           <TouchableOpacity style={fsStyles.progressBarTouchArea} onPress={(e) => { player.handleProgressBarPress(e); }}>
             <View style={fsStyles.progressBarBg}>
@@ -945,7 +968,7 @@ function FullScreenPlayerOverlay() {
           paddingVertical: 14, marginHorizontal: 20, marginTop: 4,
           backgroundColor: CARD_BG_COLOR, borderRadius: 16,
         }} activeOpacity={0.7} onPress={() => setIsPlaylistVisible(true)}>
-          <Text style={fsStyles.sheetTitle}>📋 播放清單 ({queue.length})</Text>
+          <Text style={fsStyles.sheetTitle}>播放清單 ({queue.length})</Text>
         </TouchableOpacity>
       </View>
 
@@ -967,7 +990,7 @@ function FullScreenPlayerOverlay() {
             <TouchableOpacity onPress={() => setIsPlaylistVisible(false)} style={{ padding: 4 }}>
               <MaterialIcons name="keyboard-arrow-down" size={24} color={TEXT_PRIMARY} />
             </TouchableOpacity>
-            <Text style={{ fontSize: 16, fontWeight: '600', color: TEXT_PRIMARY }}>📋 播放清單</Text>
+            <Text style={{ fontSize: 16, fontWeight: '600', color: TEXT_PRIMARY }}>播放清單</Text>
             <View style={{ width: 40 }} />
           </View>
 
@@ -991,7 +1014,7 @@ function FullScreenPlayerOverlay() {
             renderItem={({ item }) => (
               <TouchableOpacity style={[fsStyles.queueItem, item.id === cur.id && fsStyles.queueItemActive]}
                 onPress={() => { player.skipToQueueIndex(queue.findIndex(h => h.id === item.id)); setIsPlaylistVisible(false); }} activeOpacity={0.7}>
-                <CoverImage youtubeId={item.youtube_id} style={fsStyles.queueCover} fallbackIcon="🎵" />
+                <CoverImage youtubeId={item.youtube_id} style={fsStyles.queueCover} />
                 <View style={fsStyles.queueInfo}>
                   <Text style={fsStyles.queueTitle} numberOfLines={1}>{item.title}</Text>
                   <Text style={fsStyles.queueArtist} numberOfLines={1}>{item.artist}</Text>
@@ -1021,29 +1044,25 @@ function FullScreenPlayerOverlay() {
           paddingHorizontal: 20,
         }}>
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingBottom: 16 }}>
-            <Text style={{ fontSize: 18, fontWeight: '700', color: TEXT_PRIMARY }}>📄 歌詞</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              <MaterialIcons name="lyrics" size={20} color={ACCENT_COLOR} />
+              <Text style={{ ...TYPOGRAPHY.sectionTitle, marginLeft: 8 }}>歌詞</Text>
+            </View>
             <TouchableOpacity onPress={() => setLyricsVisible(false)} style={{ padding: 4 }}>
-              <Text style={{ fontSize: 20, color: TEXT_SECONDARY }}>✕</Text>
+              <MaterialIcons name="close" size={24} color={TEXT_SECONDARY} />
             </TouchableOpacity>
           </View>
-          <ScrollView style={{ flex: 1 }}>
-            <Text style={{ fontSize: 16, color: TEXT_PRIMARY, lineHeight: 28 }}>{cur.lyrics || '暫無歌詞'}</Text>
+          {/* 歌名 + 歌手做副標 */}
+          <Text style={{ ...TYPOGRAPHY.songTitle, marginBottom: 2 }} numberOfLines={1}>{cur.title}</Text>
+          <Text style={{ ...TYPOGRAPHY.artist, marginBottom: 16 }} numberOfLines={1}>{cur.artist || ''}</Text>
+          <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingBottom: 40 }}>
+            {/* §5.3 歌詞行距 1.7x;冇歌詞唔呃人 */}
+            <Text style={cur.lyrics && String(cur.lyrics).trim() ? TYPOGRAPHY.lyrics : { ...TYPOGRAPHY.body, color: TEXT_SECONDARY }}>
+              {(cur.lyrics && String(cur.lyrics).trim()) || '暫無歌詞'}
+            </Text>
           </ScrollView>
         </View>
       </Modal>
-
-      {/* Lyrics button at bottom */}
-      <TouchableOpacity
-        onPress={() => setLyricsVisible(true)}
-        style={{
-          position: 'absolute', bottom: bottomPad + 50, right: 20,
-          paddingVertical: 8, paddingHorizontal: 16,
-          backgroundColor: 'rgba(30,215,96,0.15)', borderRadius: 20,
-          borderWidth: 1, borderColor: ACCENT_COLOR,
-        }}
-      >
-        <Text style={{ fontSize: 13, color: ACCENT_COLOR, fontWeight: '600' }}>📄 歌詞</Text>
-      </TouchableOpacity>
 
       {/* Bottom Sheet for adding to playlists */}
       <Modal visible={showPlaylistSheet} animationType="slide" transparent onRequestClose={() => setShowPlaylistSheet(false)}>
@@ -1057,7 +1076,7 @@ function FullScreenPlayerOverlay() {
 
             {/* 最愛 */}
             <TouchableOpacity onPress={() => { toggleFavorite(cur); setShowPlaylistSheet(false); }} style={{ padding: 16, borderBottomWidth: 1, borderBottomColor: DesignColors.border }}>
-              <Text style={{ color: GOLD_COLOR }}>❤️ 最愛清單</Text>
+              <Text style={{ color: GOLD_COLOR }}>最愛清單</Text>
             </TouchableOpacity>
 
             {/* 其他清單 */}
@@ -1086,6 +1105,15 @@ const fsStyles = StyleSheet.create({
   center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   topBar: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, paddingBottom: 8 },
   pillButton: { flex: 1, alignItems: 'center', paddingVertical: 12, paddingHorizontal: 8, borderRadius: 999, marginHorizontal: 2 },
+  // §3.4 4 粒獨立膠囊 pill:黑底(卡片色)、橫排並列
+  actionRow: { flexDirection: 'row', justifyContent: 'space-between', marginHorizontal: 16, marginBottom: 16 },
+  pill: {
+    flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+    backgroundColor: CARD_BG_COLOR, borderRadius: 999,
+    paddingVertical: 10, marginHorizontal: 4,
+  },
+  pillDisabled: { opacity: 0.45 },
+  pillLabel: { fontSize: 13, fontWeight: '600', color: TEXT_PRIMARY, marginLeft: 6 },
   dismissBtn: { width: 40, height: 40, justifyContent: 'center', alignItems: 'center' },
   dismissIcon: { fontSize: 16, color: TEXT_PRIMARY },
   topBarTitle: { fontSize: 16, fontWeight: '600', color: TEXT_PRIMARY },
@@ -1265,7 +1293,7 @@ function AppContent() {
             style={pageStyles.hymnListClose}
             onPress={closeHymnList}
           >
-            <Text style={pageStyles.hymnListCloseText}>✕ 返回</Text>
+            <Text style={pageStyles.hymnListCloseText}>返回</Text>
           </TouchableOpacity>
           <HymnListScreen
             hymns={hymnListData.hymns}
