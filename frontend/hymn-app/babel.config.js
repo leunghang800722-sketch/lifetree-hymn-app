@@ -1,0 +1,18 @@
+// Expo SDK 56 babel config.
+//
+// 呢個 project 之前冇 babel.config.js(靠 babel-preset-expo 嘅 default)。
+// 為咗用 @gorhom/bottom-sheet(§3.4 播放頁手勢),要引入 react-native-reanimated 4,
+// 而 reanimated 4 靠 react-native-worklets 嘅 babel plugin 做 worklet 轉換。
+// SDK 56 嘅 babel-preset-expo 會喺 react-native-worklets 裝咗嗰陣自動加返個 plugin,
+// 但要有一個明確嘅 babel.config.js 先至穩陣。
+//
+// ⚠️ worklets plugin 一定要係 plugins 陣列**最後**一個。
+module.exports = function (api) {
+  api.cache(true);
+  return {
+    presets: ['babel-preset-expo'],
+    plugins: [
+      'react-native-worklets/plugin',
+    ],
+  };
+};

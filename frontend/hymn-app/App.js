@@ -24,6 +24,11 @@ import AuthScreen from './src/screens/AuthScreen';
 import { PlaylistProvider } from './src/context/PlaylistContext';
 import { API_BASE } from './src/config.js';
 import { saveLastPlayed } from './src/lastPlayed';
+// §3.4 播放清單改用滑動手勢 —— 用成熟 bottom-sheet 庫做手勢引擎(唔用返自製 PanResponder,
+// 之前同清單滾動衝突係方法本身問題)。BottomSheetFlatList 由庫本身協調手勢同 scroll,
+// 唔會再撞。
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { BottomSheetModal, BottomSheetModalProvider, BottomSheetFlatList } from '@gorhom/bottom-sheet';
 
 // ===== MaterialIcons 圖標名稱 =====
 
@@ -805,7 +810,10 @@ function FullScreenPlayerOverlay() {
   const player = usePlayer();
 
   const queue = player.queue || [];
-  const [isPlaylistVisible, setIsPlaylistVisible] = useState(false);
+  // 播放清單改用 gorhom bottom sheet(§3.4)。用 ref present/dismiss,唔再用 Modal visible。
+  const queueSheetRef = useRef(null);
+  const openQueue = useCallback(() => queueSheetRef.current?.present(), []);
+  const closeQueue = useCallback(() => queueSheetRef.current?.dismiss(), []);
   const [lyricsVisible, setLyricsVisible] = useState(false);
   const [showPlaylistSheet, setShowPlaylistSheet] = useState(false);
   const sheetPanY = useRef(new Animated.Value(0)).current;
@@ -962,75 +970,56 @@ function FullScreenPlayerOverlay() {
           </TouchableOpacity>
         </View>
 
-        {/* 📋 Playlist button — opens full-screen Modal */}
+        {/* 播放清單掣 —— 撳/向上滑都會彈出 bottom sheet(§3.4) */}
         <TouchableOpacity style={{
           flexDirection: 'row', justifyContent: 'center', alignItems: 'center',
           paddingVertical: 14, marginHorizontal: 20, marginTop: 4,
           backgroundColor: CARD_BG_COLOR, borderRadius: 16,
-        }} activeOpacity={0.7} onPress={() => setIsPlaylistVisible(true)}>
+        }} activeOpacity={0.7} onPress={openQueue}>
+          <MaterialIcons name="keyboard-arrow-up" size={18} color={TEXT_SECONDARY} style={{ marginRight: 6 }} />
           <Text style={fsStyles.sheetTitle}>播放清單 ({queue.length})</Text>
         </TouchableOpacity>
       </View>
 
-      {/* ===== NATIVE MODAL: Playlist ===== */}
-      <Modal
-        visible={isPlaylistVisible}
-        animationType="slide"
-        presentationStyle="fullScreen"
-        onRequestClose={() => setIsPlaylistVisible(false)}
+      {/* ===== 播放清單 BOTTOM SHEET (§3.4) =====
+          向上滑彈出 / 向下滑收起。BottomSheetFlatList 由 gorhom 協調手勢同 scroll,
+          唔會再有舊 PanResponder 同 FlatList 撞 scroll 嘅問題。 */}
+      <BottomSheetModal
+        ref={queueSheetRef}
+        snapPoints={['85%']}
+        enablePanDownToClose
+        backgroundStyle={{ backgroundColor: MAIN_BG_COLOR }}
+        handleIndicatorStyle={{ backgroundColor: TEXT_SECONDARY }}
       >
-        <View style={{
-          flex: 1, backgroundColor: MAIN_BG_COLOR, paddingTop: safeTop,
-        }}>
-          {/* Modal header */}
-          <View style={{
-            flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
-            paddingHorizontal: 16, paddingBottom: 12,
-          }}>
-            <TouchableOpacity onPress={() => setIsPlaylistVisible(false)} style={{ padding: 4 }}>
-              <MaterialIcons name="keyboard-arrow-down" size={24} color={TEXT_PRIMARY} />
-            </TouchableOpacity>
-            <Text style={{ fontSize: 16, fontWeight: '600', color: TEXT_PRIMARY }}>播放清單</Text>
-            <View style={{ width: 40 }} />
-          </View>
-
-          {/* Shuffle indicator. Sits directly above the list because the list
-              IS the shuffled order — without this there's no way to tell a
-              shuffled queue from a sequential one (the list just looks like a
-              list, so "next" always looks like it's playing in order). */}
+        <View style={{ paddingHorizontal: 16, paddingBottom: 8 }}>
+          <Text style={{ ...TYPOGRAPHY.sectionTitle, textAlign: 'center' }}>播放清單 ({queue.length})</Text>
+          {/* Shuffle indicator —— 個 list 本身就係洗咗牌嘅順序,冇呢個提示分唔出 */}
           {player.isShuffled && (
-            <View style={fsStyles.shuffleBanner}>
+            <View style={[fsStyles.shuffleBanner, { marginTop: 8 }]}>
               <MaterialIcons name="shuffle" size={14} color={ACCENT_COLOR} />
               <Text style={fsStyles.shuffleBannerText}>已隨機排序</Text>
             </View>
           )}
-
-          {/* FlatList — 100% scrollable inside Modal */}
-          <FlatList
-            data={queue}
-            keyExtractor={item => String(item.id)}
-            style={{ flex: 1, width: '100%' }}
-            showsVerticalScrollIndicator={true}
-            renderItem={({ item }) => (
-              <TouchableOpacity style={[fsStyles.queueItem, item.id === cur.id && fsStyles.queueItemActive]}
-                onPress={() => { player.skipToQueueIndex(queue.findIndex(h => h.id === item.id)); setIsPlaylistVisible(false); }} activeOpacity={0.7}>
-                <CoverImage youtubeId={item.youtube_id} style={fsStyles.queueCover} />
-                <View style={fsStyles.queueInfo}>
-                  <Text style={fsStyles.queueTitle} numberOfLines={1}>{item.title}</Text>
-                  <Text style={fsStyles.queueArtist} numberOfLines={1}>{item.artist}</Text>
-                </View>
-                {item.id === cur.id ? (
-                  <MaterialIcons name="play-arrow" size={16} color={ACCENT_COLOR} />
-                ) : (
-                  <MaterialIcons name="queue-music" size={18} color={TEXT_SECONDARY} />
-                )}
-              </TouchableOpacity>
-            )}
-            scrollEnabled={true}
-            contentContainerStyle={{ paddingBottom: 40 }}
-          />
         </View>
-      </Modal>
+        <BottomSheetFlatList
+          data={queue}
+          keyExtractor={(item) => String(item.id)}
+          contentContainerStyle={{ paddingBottom: 40 }}
+          renderItem={({ item }) => (
+            <TouchableOpacity style={[fsStyles.queueItem, item.id === cur.id && fsStyles.queueItemActive]}
+              onPress={() => { player.skipToQueueIndex(queue.findIndex(h => h.id === item.id)); closeQueue(); }} activeOpacity={0.7}>
+              <CoverImage youtubeId={item.youtube_id} style={fsStyles.queueCover} />
+              <View style={fsStyles.queueInfo}>
+                <Text style={fsStyles.queueTitle} numberOfLines={1}>{item.title}</Text>
+                <Text style={fsStyles.queueArtist} numberOfLines={1}>{item.artist}</Text>
+              </View>
+              {item.id === cur.id
+                ? <MaterialIcons name="play-arrow" size={18} color={ACCENT_COLOR} />
+                : <MaterialIcons name="queue-music" size={18} color={TEXT_SECONDARY} />}
+            </TouchableOpacity>
+          )}
+        />
+      </BottomSheetModal>
 
       {/* ===== NATIVE MODAL: Lyrics ===== */}
       <Modal
@@ -1313,14 +1302,16 @@ function AppContent() {
 
 // ===== App Entry =====
 export default function App() {
-  if (SafeAreaProvider) {
-    return (
-      <SafeAreaProvider>
-        <AuthProvider><FavoritesProvider><PlaylistsProvider><PlayerProvider><PlaylistProvider><AppContent /></PlaylistProvider></PlayerProvider></PlaylistsProvider></FavoritesProvider></AuthProvider>
-      </SafeAreaProvider>
-    );
-  }
-  return <AuthProvider><FavoritesProvider><PlaylistsProvider><PlayerProvider><PlaylistProvider><AppContent /></PlaylistProvider></PlayerProvider></PlaylistsProvider></FavoritesProvider></AuthProvider>;
+  // GestureHandlerRootView 一定要包最外(gorhom bottom-sheet 手勢靠佢);
+  // BottomSheetModalProvider 令 <BottomSheetModal> 可以喺 App 任何位置 present。
+  const tree = (
+    <AuthProvider><FavoritesProvider><PlaylistsProvider><PlayerProvider><PlaylistProvider>
+      <AppContent />
+    </PlaylistProvider></PlayerProvider></PlaylistsProvider></FavoritesProvider></AuthProvider>
+  );
+  const withProviders = <BottomSheetModalProvider>{tree}</BottomSheetModalProvider>;
+  const inner = SafeAreaProvider ? <SafeAreaProvider>{withProviders}</SafeAreaProvider> : withProviders;
+  return <GestureHandlerRootView style={{ flex: 1 }}>{inner}</GestureHandlerRootView>;
 }
 
 const pageStyles = StyleSheet.create({
