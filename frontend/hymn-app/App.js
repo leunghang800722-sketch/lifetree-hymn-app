@@ -1587,6 +1587,8 @@ function AppContent() {
             style={[pageStyles.hymnListClose, { paddingTop: topInset + 12 }]}
             onPress={closeHymnList}
           >
+            {/* §5.4 向量圖標,同全 App 其他返回入口睇齊 */}
+            <MaterialIcons name="arrow-back" size={22} color={TEXT_PRIMARY} />
             <Text style={pageStyles.hymnListCloseText}>返回</Text>
           </TouchableOpacity>
           <HymnListScreen
@@ -1630,7 +1632,11 @@ const pageStyles = StyleSheet.create({
   screenWrap: { flex: 1 },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   hymnListModal: { flex: 1, backgroundColor: MAIN_BG_COLOR },
-  hymnListClose: { padding: 16, backgroundColor: CARD_BG_COLOR, borderBottomWidth: 1, borderBottomColor: DesignColors.cardLight },
-  hymnListCloseText: { fontSize: 16, color: TEXT_PRIMARY },
+  hymnListClose: {
+    flexDirection: 'row', alignItems: 'center',
+    padding: 16, backgroundColor: CARD_BG_COLOR,
+    borderBottomWidth: 1, borderBottomColor: DesignColors.cardLight,
+  },
+  hymnListCloseText: { fontSize: 16, color: TEXT_PRIMARY, marginLeft: 8 },
   loadingText: { color: TEXT_SECONDARY, marginTop: 16, fontSize: 15 },
 });
