@@ -1,7 +1,7 @@
 # 詩歌串流 App（生命樹 / Etz Chayim）— 交接文件
 
 > 建立日期：2026-07-15
-> 最後更新：2026-07-18（v229:bottom sheet 真根因 = z-order,已還原 gorhom 真手勢,待覆測）
+> 最後更新：2026-07-18（v230:sheet 真手勢 + 首頁五板塊,兩 session 撞車已 reconcile,待覆測）
 > 開發者：約拿（AI 助手） x 恒恒（Owner/PM）
 > Git 起點：2026-06 初，v100+ 演化至今 v214；Phase 1-3 由 v215 做到 v226（versionCode 21）
 
@@ -13,7 +13,7 @@
 **Phase 3(介面重整)已完成,build 驗過,但個 bottom-sheet 手勢仲**未真機試**(見「三之四」)。
 
 - **分支**：`feature/player-rebuild`（由 `develop-v211` 開出）—— 未 merge 返 develop-v211
-- **最新 APK**：`~/Desktop/詩歌App/hymn-app-v229.apk`（**versionCode 24 / versionName 1.1.3**）—— bottom sheet 真手勢還原(真根因係 z-order,唔關 reanimated 事),詳情見「三之六」。舊 apk（v223–v228）已搬去 `~/Desktop/詩歌App/舊版本_勿裝/`,**裝新 apk 前記得先解除安裝舊 App**(同簽名可覆蓋,但為咗清乾淨 state 建議 uninstall)。
+- **最新 APK**：`~/Desktop/詩歌App/hymn-app-v230.apk`（**versionCode 25 / versionName 1.1.4**）—— bottom sheet 真手勢(「三之六」) **+** 首頁五板塊,兩個 session 撞車後查證過嘅乾淨版(「三之七」)。舊 apk（v223–v229）已搬去 `~/Desktop/詩歌App/舊版本_勿裝/`,**裝新 apk 前記得先解除安裝舊 App**(同簽名可覆蓋,但為咗清乾淨 state 建議 uninstall)。
 - **API 固定 URL：`https://api.god-music.com`** ✅（2026-07-17 起，唔會再變）
 - ✅ **backend + tunnel 而家係 launchd 自動管理，唔使人手開**（2026-07-17 起，見「七、開機自動啟動」）
   - 登入之後自動行；死咗會自動拉返起（實測 kill -9 兩個，~2 秒內自動復活）
@@ -506,6 +506,83 @@ animate 緊,用家永遠見唔到**。表徵就係「撳咗完全冇反應」。
 4. sheet 開住撳上面暗咗嗰忽(backdrop)→ 收起。
 5. sheet 收埋之後,下面啲掣(播放/上一首/下一首)**照撳得**(backdrop 冇擋住)。
 6. 裝之前**先解除安裝舊 App**(v228 已搬去 `舊版本_勿裝/`)。
+
+---
+
+## 三之七、v229 兩個 session 撞車 + reconciliation（v230,versionCode 25,2026-07-18）
+
+### 發生咗咩事
+
+2026-07-18 有**兩個 Claude session 同時改緊同一個 worktree**:
+
+- **Opus session** —— 播放頁 bottom sheet 真手勢(「三之六」)
+- **Sonnet session** —— 首頁五板塊 discovery redesign(`HOME-DISCOVERY-REDESIGN.md`)
+
+Opus `git add` 咗自己嗰幾個 file、未 commit,Sonnet 就 `git commit -a` + push。
+結果**兩邊嘢一齊入咗 `ddf2467 feat(home): five-section discovery home`**,
+commit message 完全冇提 sheet 修正。兩個 session 之後各自都唔肯定最終狀態係咩,
+Sonnet 仲以為自己 3 行「睇晒」接線特登冇 commit(其實 `-a` 已經掃咗入去)。
+
+### Reconciliation 結果(逐項查證過)
+
+**1. Sonnet 嘅「睇晒」接線 —— 完整入咗,冇冧。** 成條鏈都喺 HEAD:
+
+```
+src/components/home/HomeScreen.js:211   onOpenList(activeChip.songs, activeChip.title)
+  → App.js:800   <HomeSections ... onOpenList={onOpenList} />
+  → App.js:772   function HomeScreen({ ..., onOpenList })
+  → App.js:1332  onOpenList={showHymnList}
+  → App.js:1288  showHymnList(hymns, title) → setHymnListVisible(true)
+  → App.js:1356  <Modal visible={hymnListVisible}> → <HymnListScreen />
+```
+
+signature 對得上(`(songs, title)` ↔ `(hymns, title)`)。`git diff HEAD` 喺 App.js 係空,
+即係 working tree == HEAD,冇未 commit 嘅遺漏。
+
+**2. 兩樣改動冇踩到腳。** 改嘅係完全唔同嘅區域:
+
+| | Opus(sheet) | Sonnet(首頁) |
+|---|---|---|
+| App.js | 檔頭 import、`FullScreenPlayerOverlay`(~845–1170)、`App()` root | `HomeScreen` wrapper(772–800)、`showHymnList` + HymnList Modal(1282–1375) |
+| 其他 | — | `src/components/home/*`、`src/homePrefs.js`、`src/utils/dailyShuffle.js` |
+
+⚠️ **首頁「睇晒」開嘅唔係 Opus 個 inline BottomSheet** —— 係 `hymnListVisible` 嗰個
+**native `<Modal>` + `HymnListScreen`**(全屏歌單頁),兩個係完全唔同嘅 surface,
+冇任何共用 state 或者 ref。
+
+**3. `BackHandler` 唔會搶錯返回鍵。** Opus 加嗰個 `BackHandler` listener 喺
+`FullScreenPlayerOverlay` 入面,而 overlay 係 `{overlayExpanded && <FullScreenPlayerOverlay/>}`
+**條件 mount** 嘅。用家喺首頁撳「睇晒」嗰陣 overlay 一定係收埋、component 已 unmount,
+listener 根本冇註冊 → 唔會同 HymnList Modal 嘅 `onRequestClose` 撞。
+
+**4. v229 其實已經係完整嘅**,但因為當時冇人肯定,所以照出 v230 做一個查證過嘅乾淨版。
+證據:v230 `expo export --clear` 出嚟條 bundle hash **同 v229 完全一樣**
+(`index-4f87d3d6fccb5071092efe9b07d813f6.hbc`)—— 即係 v229 個 JS 已經包晒兩邊最終 code。
+v230 = v229 + version bump + 本節文件。
+
+### 教訓:多 session 共用同一個 worktree
+
+- **唔好** `git add -A` / `git commit -a`。淨係 `git add` 列明自己改嗰幾個 file。
+- Commit 完即刻 `git show --stat HEAD` 核對,確認冇夾到人哋嘢、亦冇俾人夾走。
+- 出 build 之前 `git status` + 睇下唔屬於自己嗰啲 file 嘅 mtime,
+  確認冇夾到人哋做到一半嘅嘢入個 APK。
+- 已經 push 咗就**唔好**改寫歷史(共享分支 + 有 session 開緊工),照直報返俾用戶。
+- **最穩陣:同一個 file(尤其 `App.js`)一次只准一方郁,做完先輪到第二方。**
+
+### v230 覆測清單(Eric)
+
+**A. 播放頁 sheet 手勢(「三之六」)**
+1. 播放頁撳底部「播放清單 (N)」→ sheet **滑上嚟**;**向下滑可以收起**;可以滾;撳歌會跳。
+2. 播放頁撳「清單」pill → 加入到清單 sheet 同樣**滑上滑落**。
+3. sheet 開住撳 Android **返回鍵 → 只收 sheet**,唔會連播放頁一齊收埋。
+4. sheet 開住撳上面暗咗嗰忽(backdrop)→ 收起。
+5. sheet 收埋之後,下面啲掣(播放/上一首/下一首)**照撳得**。
+
+**B. 首頁五板塊(Sonnet)**
+6. 首頁五個板塊出到嚟、撳歌**即刻出聲**(冇中間頁)。
+7. 板塊尾嗰個「**睇晒 N 首**」→ 入到全屏歌單頁,撳歌會播,撳「返回」收到。
+
+8. 裝之前**先解除安裝舊 App**(v228/v229 已搬去 `舊版本_勿裝/`)。
 
 ---
 
