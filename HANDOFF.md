@@ -16,6 +16,8 @@
 - **最新 APK**：`~/Desktop/詩歌App/hymn-app-v231.apk`（**versionCode 26 / versionName 1.1.5**）—— sheet 疊埋殘留修正 + 「單曲 + 自動隨機接續」播放語義(「三之八」)。舊 apk（v223–v230）已搬去 `~/Desktop/詩歌App/舊版本_勿裝/`,**裝新 apk 前記得先解除安裝舊 App**(同簽名可覆蓋,但為咗清乾淨 state 建議 uninstall)。
 - **API 固定 URL：`https://api.god-music.com`** ✅（2026-07-17 起，唔會再變）
 - ✅ **backend + tunnel 而家係 launchd 自動管理，唔使人手開**（2026-07-17 起，見「七、開機自動啟動」）
+- 🌙 **歌庫夜晚自動擴充中**（2026-07-18 起）：每晚 00:07-08:07 慢慢收錄，每晚最多 54 首。
+  見「三之九」+ `LIBRARY-EXPANSION-PLAN.md`。睇進度：`node backend/scripts/growLibrary.js --status`
   - 登入之後自動行；死咗會自動拉返起（實測 kill -9 兩個，~2 秒內自動復活）
 - ✅ **條 URL 已經固定咗**：`https://api.god-music.com`，唔使改 config、唔使 rebuild、唔使重裝 APK
 - ⚠️ 但 backend 仍然係跑喺**呢部 Mac** 度：**部機要開住、有網、而且要登入咗**，App 先用到
@@ -686,6 +688,58 @@ Eric 試 v230 之後提兩樣,一次過修。
 12. 「隨心聽」→ 洗牌全庫,冇分隔線。
 
 13. 裝之前**先解除安裝舊 App**。
+
+---
+
+## 三之九、歌庫擴充:夜晚慢速收錄(2026-07-18 起,行緊)
+
+> 詳細規劃 → `LIBRARY-EXPANSION-PLAN.md`。呢度淨係寫新接手要即刻知嘅嘢。
+
+### 一句話
+歌庫入面**已經有 1153 首合資格但未收錄**嘅歌(`hymns_all` 1518 首過濾後),
+已收錄得 150 首。所以**頭 400 首擴充完全唔使爬 YouTube**,慢慢驗證升級就得。
+真正要爬新歌係為咗**團體多樣性**(粵語得 8 個歌手撐 30% 配額),唔係為咗數量。
+
+### 而家跑緊乜
+| | |
+|---|---|
+| script | `backend/scripts/growLibrary.js --mode curate --budget 6 --delay 4000` |
+| 排程 | launchd `com.hymnapp.growlibrary`,**00:07-08:07 每個鐘頭一次** |
+| 每晚上限 | 8 次 × 6 首 = **54 首** |
+| log | `/tmp/hymn_growlibrary.log` |
+| 睇進度 | `node backend/scripts/growLibrary.js --status`(唔改嘢) |
+
+### ⚠️ 兩個 job 嘅時間安排 —— 唔好改
+`com.hymnapp.deadlinkcheck` 喺 **04:00** 行,所以 `growlibrary` 個排程
+**特登跳過 4 點**(0,1,2,3,**5**,6,7,8)。兩個 job 都係用 yt-dlp 打 YouTube,
+撞埋一齊會即刻 double 咗請求頻率 —— 正正係我哋想避免嘅嘢。
+加新時段之前請先確認唔會撞正 4 點。
+分鐘用 `:07` 唔用 `:00`,唔好啱啱正點跳(節奏太整齊反而似機械人)。
+
+### ⚠️ 實測踩過嘅坑(唔好行返轉頭)
+1. **候選次序唔可以用 `id` 順序。** 低 id = 最早爬返嚟嗰批,死亡率高好多。
+   連試基恩敬拜同角聲使團各 3 首全部拎唔到,一度以為兩個團體成批片死晒;
+   但隨機抽樣 13 首(當中都有基恩敬拜)係 **13/13 全部生還**。
+   即係「死」集中喺**舊 id**,唔係集中喺某個團體。改用隨機次序之後,
+   即刻由 0/6 變 **5/6 成功**。
+2. **斷路器唔可以淨係數「連續失敗」。** 連續失敗可能係俾 block,亦可能淨係撞到
+   一批死片。撈埋一齊就會夜夜收工、進度永遠卡死喺 0。而家連續 3 次失敗會
+   **攞一首已收錄、驗過 work 嘅歌做對照探測**:對照拎到 = 唔關 block 事,繼續行;
+   對照都拎唔到 = 真係俾擋,收工。
+3. `fail_streak >= 3` 嘅歌會踢出候選池,唔好次次夜晚攞返出嚟阻住條隊。
+
+### ⚠️ 兒童詩歌 —— 未拍板
+原本 150 首試版庫**完全冇**兒童詩歌,粵30/國50/英20 個比例定嗰陣亦冇諗過呢類。
+Eric 明確要求要問過先,所以 `backend/data/worshipGroups.js` 入面 8 個兒童團體
+全部 `priority: 9`,**runner 唔會揀中**。Eric 拍板前唔好改。
+
+### 團體清單喺邊
+- `hymn-groups-database.md`(repo 根目錄)= Eric/OpenClaw 搜集嘅完整資料,**人睇**。
+  加新團體**先改呢度**。
+- `backend/data/worshipGroups.js` = 由上面提煉、runner 用嘅版本(channel handle /
+  priority / inPool)。63 個團體,20 個未吸納(估 1550 首),19 個有官方 YouTube handle。
+- discover mode **一定要用 channel handle,唔好用關鍵字搜尋** —— 關鍵字會扒一大堆
+  唔相干嘅片,嘥額度兼易撞 block。
 
 ---
 
