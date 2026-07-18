@@ -1,7 +1,7 @@
 # 詩歌串流 App（生命樹 / Etz Chayim）— 交接文件
 
 > 建立日期：2026-07-15
-> 最後更新：2026-07-18（Phase 3 介面重整完成,待真機測試）
+> 最後更新：2026-07-18（Phase 3 介面重整完成 + Opus 驗收手尾兩點已補,待真機測試）
 > 開發者：約拿（AI 助手） x 恒恒（Owner/PM）
 > Git 起點：2026-06 初，v100+ 演化至今 v214；Phase 1-3 由 v215 做到 v226（versionCode 21）
 
@@ -13,7 +13,7 @@
 **Phase 3(介面重整)已完成,build 驗過,但個 bottom-sheet 手勢仲**未真機試**(見「三之四」)。
 
 - **分支**：`feature/player-rebuild`（由 `develop-v211` 開出）—— 未 merge 返 develop-v211
-- **最新 APK**：`~/Desktop/詩歌App/hymn-app-v226.apk`（**versionCode 21**）—— Phase 3 介面重整,詳情見「三之四」
+- **最新 APK**：`~/Desktop/詩歌App/hymn-app-v227.apk`（**versionCode 22**）—— Phase 3 介面重整 + Opus 驗收手尾,詳情見「三之四」
 - **API 固定 URL：`https://api.god-music.com`** ✅（2026-07-17 起，唔會再變）
 - ✅ **backend + tunnel 而家係 launchd 自動管理，唔使人手開**（2026-07-17 起，見「七、開機自動啟動」）
   - 登入之後自動行；死咗會自動拉返起（實測 kill -9 兩個，~2 秒內自動復活）
@@ -340,7 +340,7 @@ tail -f /tmp/hymn_deadlink.log                            # 每晚檢測 log
 
 ## 三之四、【新規劃書】Phase 3:介面重整 ✅(2026-07-18)
 
-> 分支同上。APK:`hymn-app-v226.apk`(versionCode 21)。真機測試:**未做**(見下)。
+> 分支同上。APK:`hymn-app-v227.apk`(versionCode 22)。真機測試:**未做**(見下)。
 
 ### 做咗乜
 | 項目 | 做法 |
@@ -354,6 +354,12 @@ tail -f /tmp/hymn_deadlink.log                            # 每晚檢測 log
 | **播放頁 action bar** | 4 粒獨立膠囊 pill,順序 **最愛/歌詞/分享/清單**(Eric 指定)。向量圖標。最愛反映着燈狀態、分享用原生 Share sheet。 |
 | **播放清單手勢** | 改用 **@gorhom/bottom-sheet**(`BottomSheetModal` + `BottomSheetFlatList`),向上滑彈出/向下滑收起。唔再用自製 PanResponder(v179-v189 同 FlatList 撞 scroll 嘅老問題,BottomSheetFlatList 由庫本身協調就冇咗)。 |
 | **Emoji 清走** | §5.4:tab、封面 fallback、mini player、播放清單文字嘅 🏠🔍📚📋❤️🎵🌳 全部換向量圖標。live UI 零 Emoji。 |
+
+### ⚙️ Opus 驗收手尾兩點(v227,versionCode 22)
+獨立 Opus session 驗完 Phase 3 核心冇 regression,但點出兩個手尾,已補:
+1. **仲有兩個 live 畫面漏咗 Emoji**:上面嗰輪清 Emoji 漏咗 `SearchScreen.js`(搜尋 tab:🔍🕒↗🎵✕)同 `AuthScreen.js`(✝️)。兩個都係 live code。已全部換向量圖標(MaterialIcons / MaterialCommunityIcons `cross`),兩個 file 順手補返之前冇 import 嘅 `MaterialIcons` + 色板。**用真正 emit 出嚟嘅 bundle 核實**(唔淨止 grep source):🔍/🕒/🎵/✝️/🔀/🔁 喺 reachable Hermes bundle 全部 0。其餘 grep 到嘅 Emoji 全部喺**唔喺 import graph 嘅死 code**(舊 CategoriesScreen / WebPlayerScreen / home/* row 等),留返 legacy 一次過清。
+2. **action bar「清單」pill 之前仲開緊舊 sheet**:「清單」開嘅係舊嗰個自製 PanResponder + Animated Modal(`setShowPlaylistSheet`),仲帶住一個舊 bug —— 同一個 `sheetPanY` node 拖曳用 `useNativeDriver:false`、放手用 `:true`,會 warn 兼有機會整壞動畫。已轉做 gorhom `BottomSheetModal` + `BottomSheetFlatList`(同 queue sheet 一致),加 `enableDynamicSizing={false}`(gorhom v5 default `true` 對住 virtualized list 會度錯高度、有機會塌成一條)。PanResponder 至此完全冇用,已由 import 移走。
+3. queue sheet 嗰個 `enableDynamicSizing={false}`(App.js ~990)本 worktree 已經有,同 reviewer 未 commit 嗰行一致,唔使再補。
 
 ### ⚠️ reanimated 4 —— 一個高風險 native 升級,已驗證 build 得
 - @gorhom/bottom-sheet 要 `react-native-reanimated`。SDK 56 pin **reanimated 4.3.1**,
