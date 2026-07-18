@@ -6,8 +6,10 @@
 //
 //   1. 每日金句      —— 照舊
 //   2. 快速開播列    —— 繼續收聽 + 隨心聽(shuffle 全庫),永遠喺度
-//   3. 即刻揀歌      —— 左右滑嘅 4 頁 pager,每頁一個分類 5 首歌,撳一下即出聲
-//                      (Eric 2026-07 指定,參考 YouTube Music「為你推薦」)
+//   3. 即刻揀歌      —— chip 撳一下切分類;揀咗嗰個分類啲歌橫向分頁,每頁 5 首、
+//                      最多 4 頁(即係一個分類滑得到 20 首),撳一下即出聲。
+//                      滑晒 20 首仲想睇就用底部「睇晒 N 首」入全 list。
+//                      (Eric 2026-07 指定,參考 YouTube Music)
 //   4. 今日為你預備  —— 日更 6 首(日期種子),三語言各至少一首
 //   5. 最近加入      —— 照舊,卡加 play 角標
 //
@@ -38,6 +40,8 @@ const PAGE_GAP = 12;
 const PAGE_W = SCREEN_W - PAGE_H_MARGIN * 2 - PAGE_PEEK;
 const PAGE_SNAP = PAGE_W + PAGE_GAP;
 const SONGS_PER_PAGE = 5;
+const MAX_PAGES = 4;        // 5 × 4 = 一個分類最多滑到 20 首,再多就用「睇晒」
+const ROW_H = 60;           // 40 縮圖 + 上下 10 padding;鎖死頁高用
 
 // 「即刻揀歌」嘅 chips。DB 冇 playlist 表,所以喺 150 首試版庫用語言 + 關鍵字即場砌 ——
 // 現有數據下最誠實嘅做法:有真歌、撳到、播到。將來加清單淨係加一項,唔使改版面。
@@ -93,42 +97,46 @@ export default function HomeScreen({ hymns = [], onPlayHymn, onOpenList }) {
   const hasData = Array.isArray(hymns) && hymns.length > 0;
 
   // 每一頁 = 一個分類。每頁 5 首每日輪換(日期種子,當日內唔變),salt 用 chip id,
-  // 唔同分類唔會抽埋同一批。門檻用 SONGS_PER_PAGE:一頁擺唔滿 5 首嘅分類唔開頁,
-  // 咁 4 頁高度先會一致(pager 頁高唔一,滑起上嚟會跳,好核突)。
-  const pages = useMemo(
+  // 唔同分類唔會抽埋同一批。夠 3 首先開個 chip,唔好俾空清單呃人。
+  const chips = useMemo(
     () => CHIP_DEFS
       .map((c) => ({ ...c, songs: hymns.filter(c.match) }))
-      .filter((c) => c.songs.length >= SONGS_PER_PAGE)
-      .map((c) => ({ ...c, rows: dailyPick(c.songs, c.id, SONGS_PER_PAGE) })),
+      .filter((c) => c.songs.length >= 3),
     [hymns]
   );
 
-  // 主互動係左右滑;chips 淨係做指示器 + 跳頁捷徑。
+  // chip = 撳一下切分類(照舊)。記低嗰個可能已經冇咗,fallback 返第一個。
+  const [chipId, setChipId] = useState(() => getHomeChip());
+  const activeChip = chips.find((c) => c.id === chipId) || chips[0] || null;
+
+  // 揀咗嘅分類入面抽最多 20 首(4 頁 × 每頁 5 首),再切成一頁頁。
+  // 唔夠 20 首就少啲頁(例如靈修 14 首 = 3 頁),最尾一頁唔滿都照出,
+  // 但每頁高度鎖死 5 行,唔會因為尾頁少歌而彈高彈低。
+  const pages = useMemo(() => {
+    if (!activeChip) return [];
+    const picked = dailyPick(activeChip.songs, activeChip.id, SONGS_PER_PAGE * MAX_PAGES);
+    const out = [];
+    for (let i = 0; i < picked.length; i += SONGS_PER_PAGE) {
+      out.push(picked.slice(i, i + SONGS_PER_PAGE));
+    }
+    return out;
+  }, [activeChip]);
+
   const pagerRef = useRef(null);
-  const didInitPage = useRef(false);
   const [page, setPage] = useState(0);
 
-  const gotoPage = useCallback((idx, animated = true) => {
-    pagerRef.current?.scrollTo({ x: idx * PAGE_SNAP, y: 0, animated });
-    setPage(idx);
+  // 切分類 = 歌曲區域返返第一頁(唔好停喺上一個分類嘅第 3 頁)
+  const pickChip = useCallback((id) => {
+    setChipId(id);
+    saveHomeChip(id);
+    setPage(0);
+    pagerRef.current?.scrollTo({ x: 0, y: 0, animated: false });
   }, []);
 
-  // 滑完先記低 —— 用戶滑到邊一頁,下次開 App 就返嗰頁
   const onPagerSettle = useCallback((e) => {
     const raw = Math.round(e.nativeEvent.contentOffset.x / PAGE_SNAP);
-    const idx = Math.min(Math.max(raw, 0), Math.max(pages.length - 1, 0));
-    setPage(idx);
-    if (pages[idx]) saveHomeChip(pages[idx].id);
-  }, [pages]);
-
-  // 開 App 直接彈返上次嗰頁(粵語用戶日日見粵語歌)。只做一次,唔郁用戶之後嘅滑動。
-  const onPagerLayout = useCallback(() => {
-    if (didInitPage.current || pages.length === 0) return;
-    didInitPage.current = true;
-    const saved = getHomeChip();
-    const idx = pages.findIndex((p) => p.id === saved);
-    if (idx > 0) gotoPage(idx, false);
-  }, [pages, gotoPage]);
+    setPage(Math.min(Math.max(raw, 0), Math.max(pages.length - 1, 0)));
+  }, [pages.length]);
 
   // 「今日為你預備」:有人手精選(featured=1)就由精選池抽,冇就由全庫抽 —— 兩級 fallback。
   // 明買明賣係日更抽選,唔冒充個性化推薦(§2.4)。
@@ -198,28 +206,29 @@ export default function HomeScreen({ hymns = [], onPlayHymn, onOpenList }) {
       {/* ===== 3. 即刻揀歌 =====
           chips 切清單 → 即場列 6 首歌名 → 撳一行即出聲,唔使入任何子頁面。
           三個(將來更多)清單共用同一塊 6 行嘅位,密度同簡潔兩樣都攞到。 */}
-      {pages.length > 0 && (
+      {activeChip && (
         <View style={styles.section}>
           <Text style={styles.h2}>即刻揀歌</Text>
 
-          {/* chips = 指示器 + 跳頁捷徑(主互動係下面個 pager 左右滑) */}
+          {/* chips —— 撳一下切分類(照舊) */}
           <ScrollView horizontal showsHorizontalScrollIndicator={false}
             contentContainerStyle={styles.chipBar}>
-            {pages.map((p, i) => {
-              const on = i === page;
+            {chips.map((c) => {
+              const on = c.id === activeChip.id;
               return (
-                <TouchableOpacity key={p.id} onPress={() => gotoPage(i)} activeOpacity={0.8}
+                <TouchableOpacity key={c.id} onPress={() => pickChip(c.id)} activeOpacity={0.8}
                   style={[styles.chip, on && styles.chipOn]}>
                   <Text style={[styles.chipText, on && styles.chipTextOn]}>
-                    {p.title}（{p.songs.length}）
+                    {c.title}（{c.songs.length}）
                   </Text>
                 </TouchableOpacity>
               );
             })}
           </ScrollView>
 
-          {/* 橫向 pager:一屏見到成頁 5 首,右邊 peek 住下一頁話俾你知仲有得滑。
-              snapToInterval 令佢一頁一頁咁停,唔會停喺兩頁中間。 */}
+          {/* 揀咗嘅分類入面,啲歌橫向分頁:每頁 5 首,最多 4 頁 = 一個分類滑得到 20 首。
+              右邊 peek 住下一頁話俾你知仲有得滑;snapToInterval 令佢一頁一頁咁停。
+              滑晒 20 首仲想睇,就用下面「睇晒 N 首」入全 list。 */}
           <ScrollView
             ref={pagerRef}
             horizontal
@@ -229,14 +238,13 @@ export default function HomeScreen({ hymns = [], onPlayHymn, onOpenList }) {
             decelerationRate="fast"
             disableIntervalMomentum
             contentContainerStyle={{ paddingHorizontal: PAGE_H_MARGIN }}
-            onLayout={onPagerLayout}
             onMomentumScrollEnd={onPagerSettle}
           >
-            {pages.map((p) => (
-              <View key={p.id} style={styles.page}>
-                {p.rows.map((h) => (
+            {pages.map((rows, i) => (
+              <View key={`${activeChip.id}-${i}`} style={styles.page}>
+                {rows.map((h) => (
                   <TouchableOpacity key={h.id} style={styles.songRow} activeOpacity={0.7}
-                    onPress={() => play(h, p.songs)}>
+                    onPress={() => play(h, activeChip.songs)}>
                     <Thumb youtubeId={h.youtube_id} size={40} />
                     <View style={styles.rowTextWrap}>
                       <Text style={styles.rowTitle} numberOfLines={1}>{h.title}</Text>
@@ -245,23 +253,32 @@ export default function HomeScreen({ hymns = [], onPlayHymn, onOpenList }) {
                     <MaterialIcons name="play-arrow" size={22} color={COLORS.textSecondary} />
                   </TouchableOpacity>
                 ))}
-
-                {/* 每頁尾部:即刻播全部 / 想慢慢揀就入去睇晒 */}
-                <View style={styles.rowFooter}>
-                  <TouchableOpacity style={styles.footerPlay} activeOpacity={0.85}
-                    onPress={() => play(p.songs[0], p.songs)}>
-                    <MaterialIcons name="play-arrow" size={18} color={COLORS.background} />
-                    <Text style={styles.footerPlayText}>播全部 {p.songs.length} 首</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity style={styles.footerMore} activeOpacity={0.7}
-                    onPress={() => onOpenList && onOpenList(p.songs, p.title)}>
-                    <Text style={styles.footerMoreText}>睇晒 {p.songs.length} 首</Text>
-                    <MaterialIcons name="chevron-right" size={18} color={COLORS.textSecondary} />
-                  </TouchableOpacity>
-                </View>
               </View>
             ))}
           </ScrollView>
+
+          {/* 第幾頁指示器 —— 呢度啲頁冇名(全部都係同一個分類嘅歌),所以用 dots */}
+          {pages.length > 1 && (
+            <View style={styles.dots}>
+              {pages.map((_, i) => (
+                <View key={i} style={[styles.dot, i === page && styles.dotOn]} />
+              ))}
+            </View>
+          )}
+
+          {/* 底部(成個分類共用一組,唔係逐頁重複) */}
+          <View style={styles.chipFooter}>
+            <TouchableOpacity style={styles.footerPlay} activeOpacity={0.85}
+              onPress={() => play(activeChip.songs[0], activeChip.songs)}>
+              <MaterialIcons name="play-arrow" size={18} color={COLORS.background} />
+              <Text style={styles.footerPlayText}>播全部 {activeChip.songs.length} 首</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.footerMore} activeOpacity={0.7}
+              onPress={() => onOpenList && onOpenList(activeChip.songs, activeChip.title)}>
+              <Text style={styles.footerMoreText}>睇晒 {activeChip.songs.length} 首</Text>
+              <MaterialIcons name="chevron-right" size={18} color={COLORS.textSecondary} />
+            </TouchableOpacity>
+          </View>
         </View>
       )}
 
@@ -343,10 +360,21 @@ const styles = StyleSheet.create({
   chipOn: { backgroundColor: COLORS.accent, borderColor: COLORS.accent },
   chipText: { fontSize: 14, fontWeight: '600', color: COLORS.textSecondary },
   chipTextOn: { color: COLORS.background },
-  // 每一頁固定闊度 —— pager 靠呢個 + PAGE_SNAP 做 snap
+  // 每一頁固定闊度 + 鎖死高度(5 行)—— pager 靠呢個 + PAGE_SNAP 做 snap。
+  // 鎖高係因為最尾一頁可能唔夠 5 首,唔鎖住滑到嗰頁成個區塊會縮,好核突。
   page: {
-    width: PAGE_W, marginRight: PAGE_GAP,
+    width: PAGE_W, height: SONGS_PER_PAGE * ROW_H, marginRight: PAGE_GAP,
     backgroundColor: COLORS.card, borderRadius: 14, overflow: 'hidden',
+  },
+  dots: { flexDirection: 'row', justifyContent: 'center', marginTop: 10 },
+  dot: {
+    width: 6, height: 6, borderRadius: 3, marginHorizontal: 3,
+    backgroundColor: COLORS.border,
+  },
+  dotOn: { backgroundColor: COLORS.accent, width: 16 },
+  chipFooter: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    marginHorizontal: PAGE_H_MARGIN, marginTop: 12,
   },
   songRow: {
     flexDirection: 'row', alignItems: 'center',
@@ -355,11 +383,6 @@ const styles = StyleSheet.create({
   rowTextWrap: { flex: 1, marginLeft: 12 },
   rowTitle: { ...TYPOGRAPHY.songTitle }, // §5.3 列表歌名 18pt
   rowArtist: { ...TYPOGRAPHY.artist, marginTop: 2 },
-  rowFooter: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingHorizontal: 12, paddingVertical: 12,
-    borderTopWidth: 1, borderTopColor: COLORS.border,
-  },
   footerPlay: {
     flexDirection: 'row', alignItems: 'center',
     backgroundColor: COLORS.accent, borderRadius: 999,
