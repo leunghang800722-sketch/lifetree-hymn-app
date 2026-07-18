@@ -1,19 +1,19 @@
 # 詩歌串流 App（生命樹 / Etz Chayim）— 交接文件
 
 > 建立日期：2026-07-15
-> 最後更新：2026-07-17（Phase 1 播放核心重建完成）
+> 最後更新：2026-07-18（Phase 3 介面重整完成,待真機測試）
 > 開發者：約拿（AI 助手） x 恒恒（Owner/PM）
-> Git 起點：2026-06 初，v100+ 演化至今 v214；Phase 1 由 v215 做到 v225（versionCode 20）
+> Git 起點：2026-06 初，v100+ 演化至今 v214；Phase 1-3 由 v215 做到 v226（versionCode 21）
 
 ---
 
 ## ⚡ 快速上手（新接手先睇呢段）
 
-**而家喺邊：** Phase 1（播放核心重建）**已完成並喺真機驗證通過**。
-詳情見 `PHASE1-PLAYER-REBUILD.md`（技術方案）同下面「Phase 1 完成報告」。
+**而家喺邊：** Phase 1(播放核心)✅ + Phase 2(死鏈檢測/150首試版庫)✅ 都真機驗過;
+**Phase 3(介面重整)已完成,build 驗過,但個 bottom-sheet 手勢仲**未真機試**(見「三之四」)。
 
 - **分支**：`feature/player-rebuild`（由 `develop-v211` 開出）—— 未 merge 返 develop-v211
-- **最新 APK**：`~/Desktop/詩歌App/hymn-app-v225.apk`（**versionCode 20**）—— 詳情見「七、最新 APK」
+- **最新 APK**：`~/Desktop/詩歌App/hymn-app-v226.apk`（**versionCode 21**）—— Phase 3 介面重整,詳情見「三之四」
 - **API 固定 URL：`https://api.god-music.com`** ✅（2026-07-17 起，唔會再變）
 - ✅ **backend + tunnel 而家係 launchd 自動管理，唔使人手開**（2026-07-17 起，見「七、開機自動啟動」）
   - 登入之後自動行；死咗會自動拉返起（實測 kill -9 兩個，~2 秒內自動復活）
@@ -335,6 +335,49 @@ tail -f /tmp/hymn_deadlink.log                            # 每晚檢測 log
   即係話**用戶註冊功能其實係壞嘅**(開咗 account,backend 一 restart 就冇咗)。
   ⚠️ 呢個係既有 bug,唔喺 Phase 2 範圍,**未修**。維護腳本自己 export() 寫檔所以冇事。
 - Zeabur 個 service **Eric 話唔使刪**,佢自己會設定唔續約。
+
+---
+
+## 三之四、【新規劃書】Phase 3:介面重整 ✅(2026-07-18)
+
+> 分支同上。APK:`hymn-app-v226.apk`(versionCode 21)。真機測試:**未做**(見下)。
+
+### 做咗乜
+| 項目 | 做法 |
+|------|------|
+| **統一色板** | 清走 Spotify 綠 #1ED760,全 App 一套「生命樹」色板(深林綠 #0B0F0E / 生命綠 #3DB389 / 暖金 #E8B86D)。`designSystem.js` 做唯一來源,`constants/theme.js` 改成相容層指返佢。App.js 五個本地色常數 + 134 個散落 hex 全部改指色板 → App.js 零寫死 hex,live code 零 Spotify 綠。金色只留俾金句/精選。 |
+| **四 tab** | 六格(首頁/搜尋/分類/清單/最愛/播放)→ **四格(首頁/搜尋/詩歌庫/我的)**。搜尋+分類合併;清單+最愛+帳戶合併入「我的」;播放唔佔格(撳 mini player 展開)。tab 圖標改向量,active 用生命綠。 |
+| **首頁四區塊** | 十個(大部分假數據)→ **四個真嘢**:每日金句 / 繼續收聽 / 精選清單 / 最近加入。 |
+| **繼續收聽** | 新加:最後播嗰首存 MMKV(`src/lastPlayed.js`,獨立 module 免 circular import),`playQueue()` 寫入。 |
+| **精選清單** | DB 冇 playlist 定義,喺 150 首試版庫用語言+關鍵字即場砌(粵語敬拜/國語敬拜/English/安靜靈修),唔夠 3 首就唔顯示。 |
+| **歌詞頁** | 接返真 DB `lyrics` 欄(`/api/hymns` 而家有回傳,150 首入面得 10 首有歌詞)。冇歌詞 = 歌詞 pill 灰咗 disabled + 顯示「暫無歌詞」,唔呃人。 |
+| **播放頁 action bar** | 4 粒獨立膠囊 pill,順序 **最愛/歌詞/分享/清單**(Eric 指定)。向量圖標。最愛反映着燈狀態、分享用原生 Share sheet。 |
+| **播放清單手勢** | 改用 **@gorhom/bottom-sheet**(`BottomSheetModal` + `BottomSheetFlatList`),向上滑彈出/向下滑收起。唔再用自製 PanResponder(v179-v189 同 FlatList 撞 scroll 嘅老問題,BottomSheetFlatList 由庫本身協調就冇咗)。 |
+| **Emoji 清走** | §5.4:tab、封面 fallback、mini player、播放清單文字嘅 🏠🔍📚📋❤️🎵🌳 全部換向量圖標。live UI 零 Emoji。 |
+
+### ⚠️ reanimated 4 —— 一個高風險 native 升級,已驗證 build 得
+- @gorhom/bottom-sheet 要 `react-native-reanimated`。SDK 56 pin **reanimated 4.3.1**,
+  呢個 major version 要埋 **`react-native-worklets` 0.8.3** + 唔同嘅 babel plugin。
+- 新加咗 `babel.config.js`(之前**冇**),用 `babel-preset-expo` + `react-native-worklets/plugin`。
+- **點解要特別小心**:reanimated 4 好新,native 升級一撚錯成個 build 就冧。所以落 commit 之前
+  **分三關驗**:①`expo export` 裝完 bundle 到(681 modules)②wire 完 sheet 再 bundle(1229 modules)
+  ③`gradlew assembleRelease` **native build 成功**(3m45s,`libreanimated.so`/`libworklets.so`/
+  `libgesturehandler.so` 四個 ABI 都入咗 APK)。三關全過先 ship。
+- 🔴 **但我 test 唔到手勢** —— 呢個環境冇 emulator/device。**build 係驗證咗,但個 bottom sheet
+  「滑起上嚟順唔順」一定要 Eric 真機試。** 如果手勢有問題,係 runtime 唔係 build 問題。
+
+### 驗收(§7:搵未用過嘅朋友試,唔使教都行到主流程)—— 未做
+要 Eric 真機行一次。重點試:
+1. 四個 tab 撳落去都有嘢、mini player 撳到展開播放頁
+2. 首頁四區塊、「繼續收聽」有冇記到上次
+3. **播放清單向上滑彈出/向下滑收起順唔順**(reanimated 手勢,最需要驗)
+4. action bar 四粒掣、歌詞頁(揀一首有歌詞嘅 vs 冇歌詞嘅)
+5. 成個 App 冇 Spotify 綠、冇 Emoji
+
+### legacy 未清(唔阻 build)
+- 舊 tab 畫面 `CategoryScreen.js` / `PlaylistScreen.js` / `FavoritesScreen.js` 冇再 import,檔案仲喺度。
+- `src/screens/PlayerScreen.js` 本身有 syntax error(**Phase 3 之前已經壞**,冇 import,Metro 唔 bundle)。
+- 呢啲留返 Phase 3 收尾或者之後一次過清。
 
 ---
 
