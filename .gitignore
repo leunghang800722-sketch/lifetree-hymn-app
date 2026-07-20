@@ -52,3 +52,6 @@ backend/node_modules/
 # DB backups from migrations
 backend/hymns.db.bak*
 backend/hymns.db.tmp
+
+# resolve URL cache (URLs only, not audio) — PERF-FAST-START-PLAN §1a
+backend/cache/

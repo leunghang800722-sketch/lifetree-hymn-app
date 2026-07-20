@@ -4,10 +4,35 @@
 
 import { Router } from 'express';
 import { Readable } from 'stream';
-import { resolveAudioUrl, bustCache } from '../lib/resolveAudio.js';
+import { resolveAudioUrl, bustCache, preVerifyUrl } from '../lib/resolveAudio.js';
 
 export default function streamRoutes(getDb) {
   const router = Router();
+
+  // §3b PERF-FAST-START-PLAN:預熱端點。App 開機(繼續收聽 + 今日為你預備)同
+  // 每次起播後(隊列下 3 首)會 POST 呢度,令自動接續/撳「下一首」永遠 warm。
+  // ⚠️ 純附加路由,冇掂下面 GET /:hymnId 個 proxy(嗰個 Range 語義係 load-bearing)。
+  // 即回 202,resolve 喺背景單線程行,唔阻 response。
+  router.post('/warm', async (req, res) => {
+    const ids = Array.isArray(req.body?.ids) ? req.body.ids.slice(0, 10) : [];
+    res.status(202).json({ warming: ids.length });
+    if (!ids.length) return;
+    try {
+      const db = await getDb();
+      const ytIds = [];
+      for (const raw of ids) {
+        const id = Number(raw);
+        if (!Number.isInteger(id) || id <= 0) continue;
+        const stmt = db.prepare('SELECT youtube_id FROM hymns WHERE id = ?');
+        stmt.bind([id]);
+        if (stmt.step()) { const r = stmt.getAsObject(); if (r.youtube_id) ytIds.push(r.youtube_id); }
+        stmt.free();
+      }
+      for (const yt of ytIds) {
+        try { const url = await resolveAudioUrl(yt); await preVerifyUrl(yt, url); } catch (_) {}
+      }
+    } catch (_) { /* 背景嘢,靜靜哋收工就得 */ }
+  });
 
   router.get('/:hymnId', async (req, res) => {
     const id = Number(req.params.hymnId);

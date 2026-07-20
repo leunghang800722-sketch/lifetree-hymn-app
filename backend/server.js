@@ -13,7 +13,7 @@ import categoryRoutes from './routes/category.js';
 import audioRoutes from './routes/audio.js';
 import authRoutes from './routes/auth.js';
 import streamRoutes from './routes/stream.js';
-import { resolveAudioUrl } from './lib/resolveAudio.js';
+import { resolveAudioUrl, refreshAudioUrl, preVerifyUrl, cache } from './lib/resolveAudio.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const DB_PATH = path.join(__dirname, 'hymns.db');
@@ -111,12 +111,12 @@ app.listen(PORT, async () => {
   // from the home broadband line the whole app now depends on. Not worth
   // gambling the one working IP just to pre-warm songs nobody may play.
   //
-  // So: warm only a small, bounded set that a first tap realistically hits.
-  // Most home sections are ORDER BY RANDOM() so they can't be predicted; we
-  // take the deterministic ones (featured / newest / most liked / most viewed)
-  // plus the head of the default id-ordered list, dedupe, and cap it.
-  // Everything else resolves on demand at play time (~1-2s) and is then cached.
-  const PRECACHE_MAX = 50;
+  // §1b PERF-FAST-START-PLAN:由「熱 50 首」升到「全 curated 庫」(cap 200)。
+  // ⚠️ 睇落好似更爆,其實唔係 —— §1a 令 URL cache 由碟載返,開機只需補「過期咗
+  // 嗰啲」,唔係次次 150 首全做。第一次 boot(碟上冇 cache)先會做足全庫,
+  // 之後每次重啟大部分都仲熱。concurrency 照舊 2,唔會回到當初 ban IP 嗰個
+  // 「1518 首 × concurrency 4」爆發式流量。
+  const PRECACHE_MAX = 200;
   const PRECACHE_CONCURRENCY = 2; // was 4 — gentler on the shared home IP
   try {
     const SQL = await initSqlJs();
@@ -133,13 +133,8 @@ app.listen(PORT, async () => {
       return out;
     };
 
-    const candidates = [
-      ...pick('SELECT id, youtube_id FROM hymns WHERE featured = 1 LIMIT 10'),
-      ...pick('SELECT id, youtube_id FROM hymns ORDER BY COALESCE(release_date, created_at) DESC LIMIT 10'),
-      ...pick('SELECT id, youtube_id FROM hymns ORDER BY like_count DESC LIMIT 10'),
-      ...pick('SELECT id, youtube_id FROM hymns ORDER BY view_count DESC LIMIT 10'),
-      ...pick('SELECT id, youtube_id FROM hymns ORDER BY id LIMIT 20'),
-    ];
+    // §1b:全 curated 庫(hymns view 已經淨係 curated + 唔死)。
+    const candidates = pick('SELECT id, youtube_id FROM hymns ORDER BY id');
     db.close();
 
     // dedupe by youtube_id (the DB has duplicate youtube_ids under different ids)
@@ -153,7 +148,7 @@ app.listen(PORT, async () => {
     }
 
     if (hymns.length > 0) {
-      console.log(`🔁 Background pre-caching ${hymns.length} hymns (narrow set; rest resolve on demand)...`);
+      console.log(`🔁 Background pre-caching ${hymns.length} hymns (full curated lib; disk-cache means reboots mostly warm)...`);
       let cached = 0;
       const queue = [...hymns];
       async function worker() {
@@ -173,4 +168,57 @@ app.listen(PORT, async () => {
   } catch (e) {
     console.log('⚠️ Pre-cache skipped (first run? DB may need initialization):', e.message);
   }
+
+  startKeepWarm();
 });
+
+// §1c 保溫 loop —— URL 過期前自動續熱,令日常播放永遠行 warm 路徑。
+//
+// 流量帳(俾人安心):150 首 × URL 壽命 ~4.5 鐘 × 17 個活躍鐘 ≈ 每日 ~550 次
+// resolve,平均每分鐘 0.4 次,**永遠單線程**。對比被 ban 嗰次係「開機 1518 首 ×
+// concurrency 4」爆發式。呢個係細水長流。仍然有:①時段窗口 ②每分鐘最多 1 首
+// ③每日熔斷上限 ④env 總掣。
+function startKeepWarm() {
+  if (process.env.URL_KEEPWARM === '0') {
+    console.log('🌡️  URL keep-warm 停用 (URL_KEEPWARM=0)');
+    return;
+  }
+  const MAX_PER_DAY = Number(process.env.KEEPWARM_MAX_PER_DAY || 800);
+  const EXPIRING_WINDOW_MS = 30 * 60 * 1000; // 30 分鐘內就過期先續
+  let day = new Date().toDateString();
+  let usedToday = 0;
+  console.log(`🌡️  URL keep-warm 啟動:07:00-23:59,每分鐘最多續 1 首,每日上限 ${MAX_PER_DAY}`);
+
+  const timer = setInterval(async () => {
+    try {
+      const today = new Date().toDateString();
+      if (today !== day) { day = today; usedToday = 0; } // 過咗零點重置每日計數
+      const hr = new Date().getHours();
+      if (hr < 7) return;                 // 00:00-06:59 唔行,個窗口留返俾夜晚 grow job
+      if (usedToday >= MAX_PER_DAY) return; // 熔斷
+
+      // 揾「30 分鐘內就過期(或者已過期)」入面最快到期嗰一個,一次只續一首
+      const now = Date.now();
+      let pick = null;
+      for (const [id, v] of cache) {
+        if (v.expiresAt - now < EXPIRING_WINDOW_MS) {
+          if (!pick || v.expiresAt < pick.expiresAt) pick = { id, expiresAt: v.expiresAt };
+        }
+      }
+      if (!pick) return;
+
+      usedToday++;
+      try {
+        const url = await refreshAudioUrl(pick.id);
+        await preVerifyUrl(pick.id, url); // §4:順手 1-byte 預驗 + 暖 CDN
+      } catch (_) {
+        // 續唔到(多數係死鏈)→ 唔好留住個過期 entry,否則次次 tick 都揀返佢、
+        // 燒晒每日額度喺一條死鏈度。
+        cache.delete(pick.id);
+      }
+    } catch (e) {
+      console.warn('keep-warm tick error:', e?.message);
+    }
+  }, 60 * 1000);
+  if (timer.unref) timer.unref();
+}

@@ -24,7 +24,8 @@ import { AuthProvider, useAuth } from './src/context/AuthContext';
 import AuthScreen from './src/screens/AuthScreen';
 import { PlaylistProvider } from './src/context/PlaylistContext';
 import { API_BASE } from './src/config.js';
-import { saveLastPlayed } from './src/lastPlayed';
+import { saveLastPlayed, getLastPlayed } from './src/lastPlayed';
+import { dailyPickBalanced } from './src/utils/dailyShuffle';
 import { useInsets } from './src/hooks/useInsets';
 // 播放清單 / 加入到清單 sheet 用 @gorhom/bottom-sheet 嘅 **inline `<BottomSheet>`**(v229)。
 //
@@ -106,6 +107,20 @@ function toTrack(song) {
     artist: song.artist || '',
     artwork: getAlbumCoverUrl(song.youtube_id),
   };
+}
+
+// §3b PERF-FAST-START-PLAN:叫 backend 預熱嗰幾首歌嘅 URL(fire-and-forget)。
+// 令自動接續 / 撳「下一首」/ 開機頭幾首永遠行 warm 路徑。上限 10,backend 即回 202。
+function warmIds(ids) {
+  try {
+    const clean = (ids || []).filter((x) => x != null).slice(0, 10);
+    if (!clean.length) return;
+    fetch(`${API_BASE}/api/stream/warm`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ids: clean }),
+    }).catch(() => {});
+  } catch (_) {}
 }
 
 // ===== CoverImage with fallback =====
@@ -611,6 +626,8 @@ function PlayerProvider({ children }) {
       await TrackPlayer.add(list.map(toTrack));
       if (startIndex > 0) await TrackPlayer.skip(startIndex);
       await TrackPlayer.play();
+      // §3b:起播後預熱隊列下 3 首 → 自動接續 / 撳「下一首」永遠 warm。
+      warmIds(list.slice(startIndex + 1, startIndex + 4).map((s) => s.id));
     } catch (e) {
       setIsLoading(false);
       console.warn('playQueue error:', e.message || e);
@@ -1447,6 +1464,29 @@ function AppContent() {
     if (allSongs && allSongs.length > 0) {
       setHymns(allSongs);
     }
+  }, [allSongs]);
+
+  // §3a PERF-FAST-START-PLAN:開 App 熱身 ping —— 預先找數 DNS+TLS+tunnel 握手,
+  // 第一下撳歌慳 ~0.3-0.5s。fire-and-forget。
+  useEffect(() => {
+    fetch(`${API_BASE}/api/health`).catch(() => {});
+  }, []);
+
+  // §3b①:歌單一 load 好就預熱「繼續收聽」嗰首 + 「今日為你預備」6 首
+  // (同 HomeScreen 個算法一致),令開 App 後頭幾下撳落去都係 warm。只做一次。
+  const bootWarmedRef = useRef(false);
+  useEffect(() => {
+    if (bootWarmedRef.current || !allSongs?.length) return;
+    bootWarmedRef.current = true;
+    const ids = [];
+    const last = getLastPlayed();
+    if (last?.id) ids.push(last.id);
+    try {
+      const featured = allSongs.filter((h) => h.featured === 1);
+      const pool = featured.length >= 6 ? featured : allSongs;
+      for (const p of dailyPickBalanced(pool, 'today', 6, ['粵語', '國語', '英文'])) ids.push(p.id);
+    } catch (_) {}
+    warmIds(ids);
   }, [allSongs]);
 
   async function handlePlayHymn(h, opts = {}) {
