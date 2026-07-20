@@ -63,7 +63,7 @@ function Heart({ hymn }) {
   );
 }
 
-export default function HymnListScreen({ hymns = [], title, onPlayHymn }) {
+export default function HymnListScreen({ hymns = [], title, onPlayHymn, onAddToQueue }) {
   const handlePlayHymn = (hymn) => {
     if (onPlayHymn) onPlayHymn(hymn);
   };
@@ -96,7 +96,15 @@ export default function HymnListScreen({ hymns = [], title, onPlayHymn }) {
               <Text style={styles.rowTitle} numberOfLines={1}>{item.title}</Text>
               <Text style={styles.rowArtist} numberOfLines={1}>{item.artist || '未知'}</Text>
             </View>
-            <MaterialIcons name="play-arrow" size={22} color={COLORS.textSecondary} />
+            {/* ≡♪ 加入而家播緊嘅播放清單(同 Mine / queue sheet 一致) */}
+            <TouchableOpacity
+              onPress={(e) => { e?.stopPropagation?.(); onAddToQueue && onAddToQueue(item); }}
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              style={styles.rowAction}
+              activeOpacity={0.6}
+            >
+              <MaterialIcons name="playlist-add" size={22} color={COLORS.textSecondary} />
+            </TouchableOpacity>
             <Heart hymn={item} />
           </TouchableOpacity>
         )}
@@ -121,6 +129,7 @@ const styles = StyleSheet.create({
   rowInfo: { flex: 1, marginLeft: 12 },
   rowTitle: { ...TYPOGRAPHY.songTitle },   // §5.3 列表 18pt
   rowArtist: { ...TYPOGRAPHY.artist, marginTop: 2 },
+  rowAction: { paddingLeft: 14 },
   heart: { paddingLeft: 14 },
   empty: { alignItems: 'center', paddingTop: 60 },
   emptyText: { ...TYPOGRAPHY.artist, marginTop: 8 },

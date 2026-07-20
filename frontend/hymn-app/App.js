@@ -13,7 +13,7 @@ import TrackPlayer, {
 } from 'react-native-track-player';
 import {
   View, Text, ScrollView, TouchableOpacity, StyleSheet,
-  ActivityIndicator, StatusBar, Image, Platform, Alert,
+  ActivityIndicator, StatusBar, Image, Platform, Alert, ToastAndroid,
   Modal, Dimensions, FlatList, Animated, Linking, Share, BackHandler,
 } from 'react-native';
 import { COLORS } from './src/constants/theme';
@@ -584,6 +584,45 @@ function PlayerProvider({ children }) {
     await playQueue(list, 0, { autoRadioFrom: list.length > 1 ? 1 : null });
   }
 
+  // 加一首歌落而家播緊嘅 queue(唔中斷正在播嘅歌)。
+  // 回傳:'played'(本來冇 queue,當普通播放呢首)/ 'queued' / 'exists' / false。
+  // plain function(唔用 useCallback)→ 每次 render 都 fresh,直接讀到最新 autoRadioFrom。
+  async function addToQueue(hymn) {
+    if (!hymn?.id) return false;
+    const q = queueRef.current || [];
+    // 未有 queue → 冇嘢可以「加」,當普通播放呢首(順手建立咗個 queue)
+    if (!q.length) { await playSingle(hymn, [hymn]); return 'played'; }
+    // 已經喺 queue 就唔好塞多次(同一首撳兩下唔應該入兩次)
+    if (q.some((s) => String(s.id) === String(hymn.id))) return 'exists';
+
+    // 插入位置:一定要喺**正在播嗰首之後**(唔好插喺 current 或者之前,否則
+    // currentQueueIndexRef 會同 TrackPlayer 個 index 對唔上,skip 就會跳錯歌)。
+    // 有「自動隨機接續」尾巴嘅話,插喺條分隔線之前 —— 用戶明確加嘅歌屬於「用戶揀」
+    // 嗰段,唔應該排落「正在隨機播放」下面扮成系統自動接嘅歌。其餘情況排最後。
+    const curIdx = currentQueueIndexRef.current || 0;
+    const radioAt = autoRadioFrom;
+    const insertAt = (typeof radioAt === 'number' && radioAt > curIdx && radioAt <= q.length)
+      ? radioAt : q.length;
+
+    const newQ = [...q.slice(0, insertAt), hymn, ...q.slice(insertAt)];
+    queueRef.current = newQ;
+    setQueue(newQ);
+    // shuffle-off 還原用嘅 original order 都要有呢首,唔係熄 shuffle 就會唔見咗
+    originalQueueRef.current = [...(originalQueueRef.current || []), hymn];
+    // 分隔線跟住落一格(插咗喺佢之前)
+    if (insertAt < q.length && typeof radioAt === 'number') setAutoRadioFrom(radioAt + 1);
+
+    try {
+      await lazyEnsurePlayer();
+      if (insertAt >= q.length) await TrackPlayer.add([toTrack(hymn)]);
+      else await TrackPlayer.add([toTrack(hymn)], insertAt);
+    } catch (e) {
+      console.warn('addToQueue error:', e?.message || e);
+      return false;
+    }
+    return 'queued';
+  }
+
   async function playQueue(list, startIndex = 0, opts = {}) {
     if (!Array.isArray(list) || list.length === 0) return;
     setAutoRadioFrom(opts.autoRadioFrom ?? null);
@@ -701,7 +740,7 @@ function PlayerProvider({ children }) {
       repeatMode, isShuffled, setIsShuffled,
       currentQueueIndex, setCurrentQueueIndex, queue,
       overlayExpanded, queueReady, isLoading, getPlayMode,
-      playQueue, playSingle, autoRadioFrom,
+      playQueue, playSingle, addToQueue, autoRadioFrom,
       cmd_play, cmd_pause, togglePlayPause,
       skipToQueueIndex, handleNextTrack, handlePrevTrack,
       setCurrentTime, setDuration,
@@ -1478,7 +1517,16 @@ const fsStyles = StyleSheet.create({
 
 // ===== AppContent =====
 function AppContent() {
-  const { hymns, setHymns, playQueue, playSingle, showPlayer, queueReady, isPlaying: debugPlaying, currentHymn: debugHymn, togglePlayPause: debugToggle } = usePlayer();
+  const { hymns, setHymns, playQueue, playSingle, addToQueue, showPlayer, queueReady, isPlaying: debugPlaying, currentHymn: debugHymn, togglePlayPause: debugToggle } = usePlayer();
+
+  // 「加入播放清單」統一入口 —— 加完出個 toast 確認,唔係撳完毫無反應。
+  async function handleAddToQueue(h) {
+    if (!h) return;
+    const res = await addToQueue?.(h);
+    if (res === false || res == null) return;
+    const msg = res === 'exists' ? '已經喺播放清單' : res === 'played' ? '開始播放' : '已加入播放清單';
+    if (Platform.OS === 'android' && ToastAndroid) ToastAndroid.show(msg, ToastAndroid.SHORT);
+  }
   const { hymns: allSongs, loading } = useCachedHymns();
   const bottomInset = useBottomInset();
   const topInset = useInsets().top;
@@ -1562,7 +1610,7 @@ function AppContent() {
           <LibraryScreen hymns={allSongs || []} onPlayHymn={handlePlayHymn} />
         </View>
         <View style={[pageStyles.screenWrap, { display: activeTab === 'Mine' ? 'flex' : 'none' }]}>
-          <MineScreen onPlayHymn={handlePlayHymn} onOpenAuth={openAuth} />
+          <MineScreen onPlayHymn={handlePlayHymn} onAddToQueue={handleAddToQueue} onOpenAuth={openAuth} />
         </View>
       </View>
 
@@ -1594,6 +1642,7 @@ function AppContent() {
           <HymnListScreen
             hymns={hymnListData.hymns}
             title={hymnListData.title}
+            onAddToQueue={handleAddToQueue}
             onPlayHymn={(hymn) => {
               const idx = Math.max(0, hymnListData.hymns.findIndex(s => s.id === hymn.id));
               playQueue(hymnListData.hymns, idx);

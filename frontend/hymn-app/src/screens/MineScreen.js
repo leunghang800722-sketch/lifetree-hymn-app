@@ -28,7 +28,7 @@ function Cover({ youtubeId, size = 52 }) {
   return <Image source={{ uri }} style={[styles.cover, { width: size, height: size }]} onError={() => setFailed(true)} />;
 }
 
-export default function MineScreen({ onPlayHymn, onOpenAuth }) {
+export default function MineScreen({ onPlayHymn, onAddToQueue, onOpenAuth }) {
   const { favorites = [], toggleFavorite } = useFavorites() || {};
   const { playlists = [] } = usePlaylists() || {};
   const { user, logout } = useAuth() || {};
@@ -96,7 +96,11 @@ export default function MineScreen({ onPlayHymn, onOpenAuth }) {
                 <Text style={styles.rowTitle} numberOfLines={1}>{item.title}</Text>
                 <Text style={styles.rowArtist} numberOfLines={1}>{item.artist || '未知'}</Text>
               </View>
-              <TouchableOpacity onPress={() => toggleFavorite && toggleFavorite(item)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+              {/* ≡♪ 加入而家播緊嘅播放清單 —— 同 queue sheet 一致,唔使入返播放頁 */}
+              <TouchableOpacity onPress={() => onAddToQueue && onAddToQueue(item)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} style={styles.rowAction}>
+                <MaterialIcons name="playlist-add" size={22} color={COLORS.textSecondary} />
+              </TouchableOpacity>
+              <TouchableOpacity onPress={() => toggleFavorite && toggleFavorite(item)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} style={styles.rowAction}>
                 {/* §5.2 心心着燈用生命綠 */}
                 <MaterialIcons name="favorite" size={22} color={COLORS.accent} />
               </TouchableOpacity>
@@ -165,6 +169,7 @@ const styles = StyleSheet.create({
   segText: { fontSize: 13, color: COLORS.textSecondary, fontWeight: '600', marginLeft: 5 },
   segTextActive: { color: COLORS.background },
   row: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 8 },
+  rowAction: { paddingLeft: 14 },
   cover: { borderRadius: 6, backgroundColor: COLORS.cardLight },
   plCover: { width: 52, height: 52, alignItems: 'center', justifyContent: 'center' },
   rowInfo: { flex: 1, marginLeft: 12 },
