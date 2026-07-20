@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.hymnapp.growlibrary</string>
+
+    <!-- 夜晚慢速擴充歌庫。每晚 00:00-09:00,每個鐘頭行一次,每次淨係做 6 首。
+         上限 = 9 次 × 6 首 = 54 首/晚,而且每首之間有 ~4 秒(帶隨機)延遲。
+         script 本身仲有時段檢查,就算 launchd misfire 都唔會日頭爬。 -->
+    <key>ProgramArguments</key>
+    <array>
+        <string>/opt/homebrew/bin/node</string>
+        <string>/Users/macbookpro/.openclaw/workspace/hymn-app/backend/scripts/growLibrary.js</string>
+        <string>--mode</string>
+        <string>curate</string>
+        <string>--budget</string>
+        <string>6</string>
+        <string>--delay</string>
+        <string>4000</string>
+    </array>
+
+    <key>WorkingDirectory</key>
+    <string>/Users/macbookpro/.openclaw/workspace/hymn-app/backend</string>
+
+    <!-- Same trap as backend/deadlinkcheck: launchd's default PATH has no
+         /opt/homebrew/bin, and this script shells out to yt-dlp via resolveAudioUrl.
+         Without this every resolve (including the control probe) silently fails,
+         and the circuit breaker wrongly concludes "blocked by YouTube" every run. -->
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>PATH</key>
+        <string>/opt/homebrew/bin:/opt/homebrew/sbin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+    </dict>
+
+    <!-- 00:00 到 08:00 每個鐘頭一次。分鐘用 07 唔用 00 —— 唔好啱啱正點跳,
+         成個節奏太整齊反而似機械人。
+         ⚠️ 特登冇 4 點:com.hymnapp.deadlinkcheck 喺 04:00 行,兩個 job 撞埋
+         一齊會即刻double咗打 YouTube 嘅頻率,正正係我哋想避免嘅嘢。 -->
+    <key>StartCalendarInterval</key>
+    <array>
+        <dict><key>Hour</key><integer>0</integer><key>Minute</key><integer>7</integer></dict>
+        <dict><key>Hour</key><integer>1</integer><key>Minute</key><integer>7</integer></dict>
+        <dict><key>Hour</key><integer>2</integer><key>Minute</key><integer>7</integer></dict>
+        <dict><key>Hour</key><integer>3</integer><key>Minute</key><integer>7</integer></dict>
+        <dict><key>Hour</key><integer>5</integer><key>Minute</key><integer>7</integer></dict>
+        <dict><key>Hour</key><integer>6</integer><key>Minute</key><integer>7</integer></dict>
+        <dict><key>Hour</key><integer>7</integer><key>Minute</key><integer>7</integer></dict>
+        <dict><key>Hour</key><integer>8</integer><key>Minute</key><integer>7</integer></dict>
+    </array>
+
+    <!-- 一次性 job:唔准 KeepAlive,否則 launchd 會不停重開。 -->
+    <key>RunAtLoad</key>
+    <false/>
+    <key>KeepAlive</key>
+    <false/>
+
+    <key>StandardOutPath</key>
+    <string>/tmp/hymn_growlibrary.log</string>
+    <key>StandardErrorPath</key>
+    <string>/tmp/hymn_growlibrary.log</string>
+</dict>
+</plist>

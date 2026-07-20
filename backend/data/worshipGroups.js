@@ -14,7 +14,10 @@
 //   2 = 補國語缺口(國語 pool 夠多,但得 12 個歌手,擴到 400 首會太重複)。
 //   3 = 英文。pool 已經有 672 首可用 / 19 個歌手,20% 配額之下**根本唔等使爬**,
 //       擴到 3000+ 首先會唔夠 —— 所以英文排最後,唔好嘥風險額度去爬。
-//   9 = 兒童詩歌。**未拍板,等 Eric 決定**(見 §5),暫時唔會被 runner 揀中。
+//   4 = 兒童詩歌。2026-07-20 Eric 拍板:做第4個獨立分類、獨立配額(10%,
+//       見 growLibrary.js QUOTA)。⚠️ 呢 8 個團體全部 inPool:false,即係
+//       curate mode 幫唔到手 —— 要等 discover mode(§ runDiscover)真正接埋
+//       YouTube 頻道搜尋邏輯先會有實際兒童詩歌收錄,而家仍然係 0。
 
 export const GROUPS = [
   // ── 粵語(旗艦語言,artist 多樣性最缺)──────────────────────────
@@ -82,18 +85,22 @@ export const GROUPS = [
   { name: 'Mosaic MSC',       aliases: ['Mosaic MSC'],             lang: '英文', priority: 3, inPool: true },
   { name: 'Jesus Image',      aliases: ['Jesus Image'],            lang: '英文', priority: 3, inPool: true },
 
-  // ── 兒童詩歌 ⚠️ 未拍板,等 Eric 決定(LIBRARY-EXPANSION-PLAN.md §5)──
-  // priority 9 = runner **唔會**揀中。Eric 話 OK 先改做 1/2/3。
-  { name: '讚美之泉兒童',      aliases: ['讚美之泉兒童'],            lang: '兒童', priority: 9, inPool: false, channel: null,               est: 100, kidsLang: '國語' },
-  { name: '611 Kids Worship', aliases: ['611 Kids'],               lang: '兒童', priority: 9, inPool: false, channel: null,               est: 30,  kidsLang: '粵語/國語' },
-  { name: '天韻兒童詩歌',      aliases: ['天韻兒童'],                lang: '兒童', priority: 9, inPool: false, channel: '@heavenlymelody',  est: 30,  kidsLang: '國語' },
-  { name: 'ACM兒童詩歌',       aliases: ['ACM兒童'],                 lang: '兒童', priority: 9, inPool: false, channel: '@hkacm',           est: 20,  kidsLang: '粵語' },
-  { name: 'CantonHymn兒童版',  aliases: ['CantonHymn兒童'],          lang: '兒童', priority: 9, inPool: false, channel: '@cantonhymn',      est: 20,  kidsLang: '粵語' },
-  { name: 'Saddleback Kids',  aliases: ['Saddleback Kids'],        lang: '兒童', priority: 9, inPool: false, channel: '@saddlebackkids',  est: 100, kidsLang: '英文' },
-  { name: 'Hillsong Kids',    aliases: ['Hillsong Kids'],          lang: '兒童', priority: 9, inPool: false, channel: '@hillsongkids',    est: 80,  kidsLang: '英文' },
-  { name: 'Bethel Kids',      aliases: ['Bethel Kids'],            lang: '兒童', priority: 9, inPool: false, channel: null,               est: 30,  kidsLang: '英文' },
+  // ── 兒童詩歌 ✅ 2026-07-20 Eric 拍板:第4個獨立分類,獨立配額 10% ──
+  // priority 4 = runner 已經准揀,但全部 inPool:false,實際要等 discover mode
+  // 接埋搜尋邏輯先會有歌收錄(見上面 priority 意思段)。
+  { name: '讚美之泉兒童',      aliases: ['讚美之泉兒童'],            lang: '兒童', priority: 4, inPool: false, channel: null,               est: 100, kidsLang: '國語' },
+  { name: '611 Kids Worship', aliases: ['611 Kids'],               lang: '兒童', priority: 4, inPool: false, channel: null,               est: 30,  kidsLang: '粵語/國語' },
+  { name: '天韻兒童詩歌',      aliases: ['天韻兒童'],                lang: '兒童', priority: 4, inPool: false, channel: '@heavenlymelody',  est: 30,  kidsLang: '國語' },
+  { name: 'ACM兒童詩歌',       aliases: ['ACM兒童'],                 lang: '兒童', priority: 4, inPool: false, channel: '@hkacm',           est: 20,  kidsLang: '粵語' },
+  { name: 'CantonHymn兒童版',  aliases: ['CantonHymn兒童'],          lang: '兒童', priority: 4, inPool: false, channel: '@cantonhymn',      est: 20,  kidsLang: '粵語' },
+  { name: 'Saddleback Kids',  aliases: ['Saddleback Kids'],        lang: '兒童', priority: 4, inPool: false, channel: '@saddlebackkids',  est: 100, kidsLang: '英文' },
+  { name: 'Hillsong Kids',    aliases: ['Hillsong Kids'],          lang: '兒童', priority: 4, inPool: false, channel: '@hillsongkids',    est: 80,  kidsLang: '英文' },
+  { name: 'Bethel Kids',      aliases: ['Bethel Kids'],            lang: '兒童', priority: 4, inPool: false, channel: null,               est: 30,  kidsLang: '英文' },
+  // ⚠️ 未搬:`hymn-groups-database.md` §四原始資料仲有 4 個未搬落嚟 ——
+  // 約書亞樂團青少年版(國語~20)、共享詩歌兒童版(粵語~10)、Listenn Kids(英語~30)、
+  // God's Awesome Kids(粵語~10)。搬之前要人手覆核官方 handle,而家未做。
 ];
 
-// runner 唔准掂 priority 9(未拍板嘅分類)
-export const ACTIVE_GROUPS = GROUPS.filter((g) => g.priority <= 3);
+// 2026-07-20:priority <= 4(粵/國/英/兒童全部已拍板)。
+export const ACTIVE_GROUPS = GROUPS.filter((g) => g.priority <= 4);
 export const PENDING_GROUPS = GROUPS.filter((g) => g.priority === 9);

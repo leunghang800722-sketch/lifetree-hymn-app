@@ -1,24 +1,34 @@
 # launchd agents（開機自動啟動）
 
-兩個 plist 嘅**副本**，正本喺 `~/Library/LaunchAgents/`。放喺呢度係為咗版本控制 + 萬一要重做有得抄。
+四個 plist 嘅**副本**，正本喺 `~/Library/LaunchAgents/`。放喺呢度係為咗版本控制 + 萬一要重做有得抄。
 
 | 檔案 | 做乜 |
 |---|---|
 | `com.hymnapp.backend.plist` | 行 backend（`node server.js`，port 3001） |
 | `com.cloudflare.cloudflared.plist` | 行 tunnel（`cloudflared tunnel run hymn-api` → api.god-music.com） |
+| `com.hymnapp.deadlinkcheck.plist` | 每晚 04:00，慢速重驗歌庫死鏈（見 `HANDOFF.md` 三之三） |
+| `com.hymnapp.growlibrary.plist` | 每晚 00:07-08:07（跳過 4 點），慢速擴歌庫（見 `HANDOFF.md` 三之九、`LIBRARY-EXPANSION-PLAN.md`） |
 
 ## 安裝
 ```bash
 cp ops/launchd/*.plist ~/Library/LaunchAgents/
 launchctl load -w ~/Library/LaunchAgents/com.hymnapp.backend.plist
 launchctl load -w ~/Library/LaunchAgents/com.cloudflare.cloudflared.plist
+launchctl load -w ~/Library/LaunchAgents/com.hymnapp.deadlinkcheck.plist
+launchctl load -w ~/Library/LaunchAgents/com.hymnapp.growlibrary.plist
 launchctl list | grep -iE "cloudflare|hymnapp"   # 第 2 欄 exit code，0 = 正常
 ```
 **唔使 sudo。**
 
-## ⚠️ 兩個一定要知嘅坑
-1. **backend plist 要自己 set `PATH`** —— launchd 預設 PATH 冇 `/opt/homebrew/bin`，
-   但 backend 要 exec `yt-dlp`。唔 set 嘅話 server 開得成功但**每首歌都 resolve 唔到**（超難查）。
+## ⚠️ 一定要知嘅坑
+1. **凡係會 exec `yt-dlp` 嘅 job，plist 都要自己 set `EnvironmentVariables/PATH`** —— launchd 預設 PATH
+   冇 `/opt/homebrew/bin`。唔 set 嘅話 job **照樣「成功」執行完，但每一次 yt-dlp resolve 都靜靜哋
+   command-not-found**。而家四個 job 入面，`backend` / `deadlinkcheck` / `growlibrary` 三個都會行到
+   `yt-dlp`，全部都要有呢個 PATH 區塊。
+   🔺 **實測踩過**：`growlibrary` 裝落去嗰陣漏咗呢段，結果**由 07-18 裝好到 07-20 早,連續 9 次
+   每小時 run 全部收錄 0 首**，仲要令斷路器每次都誤判「俾 YouTube 擋緊」即刻收工
+   （因為連對照探測都係用 yt-dlp，一樣 command-not-found）。手動用 `env -i` 模擬 launchd 個
+   minimal PATH 先查到根因；一補返 PATH，同一批歌立即 resolve 得返。裝任何新 job 前先照返呢個 checklist。
 2. **`cloudflared service install` 整出嚟嗰個 plist 係壞嘅** —— 冇帶參數，
    淨行 `cloudflared` 會 exit 1 crash-loop，tunnel 永遠 530。一定要有 `tunnel run hymn-api`。
    再行一次 `service install` 會覆蓋返，要記得再加參數。

@@ -728,10 +728,43 @@ Eric 試 v230 之後提兩樣,一次過修。
    對照都拎唔到 = 真係俾擋,收工。
 3. `fail_streak >= 3` 嘅歌會踢出候選池,唔好次次夜晚攞返出嚟阻住條隊。
 
-### ⚠️ 兒童詩歌 —— 未拍板
-原本 150 首試版庫**完全冇**兒童詩歌,粵30/國50/英20 個比例定嗰陣亦冇諗過呢類。
-Eric 明確要求要問過先,所以 `backend/data/worshipGroups.js` 入面 8 個兒童團體
-全部 `priority: 9`,**runner 唔會揀中**。Eric 拍板前唔好改。
+### 🔴 2026-07-20 查到:job 由裝好嗰刻起連續 9 次 run 全部收錄 0 首 —— 已修好
+
+**病徵**:`com.hymnapp.growlibrary` 由 07-18 21:26 裝好開始,之後每個鐘頭(07-19 16:07 UTC
+起共 9 次)全部係「今次:收錄 0 首,失敗 3 首」,斷路器每次都判定「真係俾 YouTube 擋緊」即刻收工。
+睇落好似個 IP 又俾封咗(同「三之三」講嘅風險一模一樣),但實測 backend 正常(`curl` 200)、
+公網 IP 冇變(185.219.141.202)、手動用我自己個 shell 起 `resolveAudioUrl()` 6.6 秒就攞到 URL。
+
+**根因**:`com.hymnapp.growlibrary.plist` **漏咗 `EnvironmentVariables/PATH`** ——
+呢個坑「七、開機自動啟動」同 `ops/launchd/README.md` 都已經寫低,但裝呢個 job 嗰陣漏咗照做。
+launchd 預設 PATH 冇 `/opt/homebrew/bin`,`resolveAudioUrl()` exec `yt-dlp` 就
+command-not-found,睇落同「真係攞唔到音訊」一模一樣。仲要連斷路器嘅**對照探測**
+都係用同一個 `resolveAudioUrl()`,一樣 PATH 唔啱,所以每次都「探測都失敗」→
+誤判做「俾 YouTube 擋緊」,一首都冇收錄到就即刻收工。用 `env -i PATH="/opt/homebrew/bin:...
+同 launchd 一樣" node growLibrary.js` 模擬先確認到根因。
+
+**修法**:`~/Library/LaunchAgents/com.hymnapp.growlibrary.plist` 加返
+`EnvironmentVariables/PATH`(同 `backend` / `deadlinkcheck` 兩個 plist 一致),
+`launchctl unload` + `load -w` 重新註冊。`--dry` 同用 launchd 個 minimal PATH 模擬,
+分別都驗證到:同一批之前「全部拎唔到」嘅基恩敬拜歌曲,而家 resolve 得返(2/3、1/2 成功)。
+**修法已經 copy 落 `ops/launchd/` 做版本控制**,詳情見 `ops/launchd/README.md`。
+今晚(2026-07-20 00:07 起)開始應該會見到真正收錄。
+
+**教訓**:任何新 launchd job,只要會行到 `yt-dlp`(直接或間接經 `resolveAudioUrl`),
+裝落去之前一定要對返 `ops/launchd/README.md` 個 checklist 逐項核對,唔好淨係抄現有
+plist 個大致形狀。
+
+### ✅ 兒童詩歌 —— 2026-07-20 Eric 已拍板:第4個獨立分類
+原本 150 首試版庫**完全冇**兒童詩歌,粵30/國50/英20 個比例定嗰陣亦冇諗過呢類,
+所以之前特登問返 Eric 先(唔靜雞雞加落個比例度)。**Eric 揀咗「加做第4個分類、
+獨立配額」**。已落實:比例由 粵30/國50/英20 按原比例(3:5:2)縮 10% 讓位,
+變 **粵27/國45/英18/兒童10**(`growLibrary.js` QUOTA);`worshipGroups.js`
+8 個兒童團體 `priority` 由 9 解封做 4。
+⚠️ **但暫時仍然係 0 首**——8 個團體全部 `inPool:false`,要等
+discover mode(而家仲係 stub,未接搜尋邏輯,見「三之九」LIBRARY-EXPANSION-PLAN
+§2 Phase B)先會真正有兒童詩歌收錄。仲有 4 個團體(約書亞樂團青少年版/
+共享詩歌兒童版/Listenn Kids/God's Awesome Kids)喺 `hymn-groups-database.md`
+有但未搬落 `worshipGroups.js`,搬之前要人手覆核官方 handle。
 
 ### 團體清單喺邊
 - `hymn-groups-database.md`(repo 根目錄)= Eric/OpenClaw 搜集嘅完整資料,**人睇**。

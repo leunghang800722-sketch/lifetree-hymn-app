@@ -64,7 +64,9 @@
   攞返嚟會同其他團體大量重複，要人手睇過先好開。
 
 ### Phase C —— 兒童詩歌
-**未拍板，等 Eric 決定 —— 見 §5。** `priority: 9` 嘅團體 runner 唔會掂。
+**2026-07-20 Eric 拍板：做第4個獨立分類、獨立配額。** 詳見 §5。
+`priority: 4` 已解封俾 runner 揀，但 8 個團體全部 `inPool:false`，
+實際收錄要等 discover mode 接埋搜尋邏輯（仲未做，見 Phase B）。
 
 ---
 
@@ -108,18 +110,25 @@ Eric 部 Mac 嘅住宅 IP 係而家**唯一**仲行得通嘅 IP（Zeabur 個 IP 
 
 ---
 
-## 5. ⚠️ 兒童詩歌 —— 要 Eric 拍板先做
+## 5. ✅ 兒童詩歌 —— 2026-07-20 Eric 已拍板
 
-原本 150 首試版庫**完全冇**兒童詩歌，當初定 粵30/國50/英20 個比例嗰陣亦都冇諗過呢類。
-Eric 明確講過呢個要問過先，唔好靜雞雞加落個比例度。所以：
+**決定：做第4個獨立分類，獨立配額。** 原 粵30/國50/英20（比例 3:5:2）按比例縮
+10% 讓位：**粵27 / 國45 / 英18 / 兒童10**，已落實喺 `growLibrary.js` 嘅 `QUOTA`。
 
-- `backend/data/worshipGroups.js` 入面 8 個兒童團體全部 `priority: 9`，
-  **runner 唔會揀中**，改做 1/2/3 先會開始做。
-- 已經搜集好嘅兒童團體（估計 ~410 首）：讚美之泉兒童(100)、611 Kids(30)、
+- `backend/data/worshipGroups.js` 入面 8 個兒童團體 `priority` 由 9 改咗做 4，
+  **runner 已經准揀**。
+- ⚠️ **但實際上未有兒童詩歌會收錄** —— 呢 8 個團體全部 `inPool:false`
+  （歌庫完全未有呢類歌），要靠 discover mode 先攞到，而 discover mode
+  （`runDiscover()`）而家仲係一個 stub，未接埋 YouTube 頻道搜尋邏輯
+  （見 Phase B）。`QUOTA` 入面 `兒童:0.10` 會令 pickNextCandidate 每次
+  都見到最大 deficit 但揀唔到candidate，跳去下個語言 —— 唔會壞，但都
+  唔會有進度，直到 discover mode 做咗先會有得郁。
+- 已收集嘅 8 個團體（估計 ~410 首）：讚美之泉兒童(100)、611 Kids(30)、
   天韻兒童(30)、ACM兒童(20)、CantonHymn兒童(20)、Saddleback Kids(100)、
   Hillsong Kids(80)、Bethel Kids(30)。
-
-**要 Eric 答嘅係「點加」，唔係「加唔加」咁簡單** —— 三個選項見報告。
+- ⚠️ `hymn-groups-database.md` §四原始資料仲有 4 個未搬入
+  `worshipGroups.js`：約書亞樂團青少年版、共享詩歌兒童版、Listenn Kids、
+  God's Awesome Kids —— 搬之前要人手覆核官方 handle，未做。
 
 ---
 
