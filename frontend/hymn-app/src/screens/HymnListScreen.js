@@ -21,6 +21,7 @@ import {
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { COLORS, TYPOGRAPHY } from '../theme/designSystem';
 import { useFavorites } from '../context/FavoritesContext';
+import { useAddToPlaylist } from '../components/AddToPlaylistSheet';
 
 // mqdefault = 真 16:9 冇黑邊(hqdefault 係 4:3,黑邊 baked 咗入張圖)
 function Cover({ youtubeId, size = 52 }) {
@@ -63,7 +64,8 @@ function Heart({ hymn }) {
   );
 }
 
-export default function HymnListScreen({ hymns = [], title, onPlayHymn, onAddToQueue }) {
+export default function HymnListScreen({ hymns = [], title, onPlayHymn }) {
+  const { open: openAddToPlaylist } = useAddToPlaylist();
   const handlePlayHymn = (hymn) => {
     if (onPlayHymn) onPlayHymn(hymn);
   };
@@ -96,9 +98,9 @@ export default function HymnListScreen({ hymns = [], title, onPlayHymn, onAddToQ
               <Text style={styles.rowTitle} numberOfLines={1}>{item.title}</Text>
               <Text style={styles.rowArtist} numberOfLines={1}>{item.artist || '未知'}</Text>
             </View>
-            {/* ≡♪ 加入而家播緊嘅播放清單(同 Mine / queue sheet 一致) */}
+            {/* ≡♪ 加入到清單 —— 彈揀清單 sheet(同 Mine / 播放頁「清單」pill 一致) */}
             <TouchableOpacity
-              onPress={(e) => { e?.stopPropagation?.(); onAddToQueue && onAddToQueue(item); }}
+              onPress={(e) => { e?.stopPropagation?.(); openAddToPlaylist(item); }}
               hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
               style={styles.rowAction}
               activeOpacity={0.6}

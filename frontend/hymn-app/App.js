@@ -13,12 +13,13 @@ import TrackPlayer, {
 } from 'react-native-track-player';
 import {
   View, Text, ScrollView, TouchableOpacity, StyleSheet,
-  ActivityIndicator, StatusBar, Image, Platform, Alert, ToastAndroid,
+  ActivityIndicator, StatusBar, Image, Platform, Alert,
   Modal, Dimensions, FlatList, Animated, Linking, Share, BackHandler,
 } from 'react-native';
 import { COLORS } from './src/constants/theme';
 import { FavoritesProvider, useFavorites } from './src/context/FavoritesContext';
-import { PlaylistsProvider, usePlaylists, MAX_PLAYLIST_SONGS } from './src/context/PlaylistsContext';
+import { PlaylistsProvider } from './src/context/PlaylistsContext';
+import { AddToPlaylistProvider, useAddToPlaylist } from './src/components/AddToPlaylistSheet';
 import { AuthProvider, useAuth } from './src/context/AuthContext';
 import AuthScreen from './src/screens/AuthScreen';
 import { PlaylistProvider } from './src/context/PlaylistContext';
@@ -584,44 +585,6 @@ function PlayerProvider({ children }) {
     await playQueue(list, 0, { autoRadioFrom: list.length > 1 ? 1 : null });
   }
 
-  // 加一首歌落而家播緊嘅 queue(唔中斷正在播嘅歌)。
-  // 回傳:'played'(本來冇 queue,當普通播放呢首)/ 'queued' / 'exists' / false。
-  // plain function(唔用 useCallback)→ 每次 render 都 fresh,直接讀到最新 autoRadioFrom。
-  async function addToQueue(hymn) {
-    if (!hymn?.id) return false;
-    const q = queueRef.current || [];
-    // 未有 queue → 冇嘢可以「加」,當普通播放呢首(順手建立咗個 queue)
-    if (!q.length) { await playSingle(hymn, [hymn]); return 'played'; }
-    // 已經喺 queue 就唔好塞多次(同一首撳兩下唔應該入兩次)
-    if (q.some((s) => String(s.id) === String(hymn.id))) return 'exists';
-
-    // 插入位置:一定要喺**正在播嗰首之後**(唔好插喺 current 或者之前,否則
-    // currentQueueIndexRef 會同 TrackPlayer 個 index 對唔上,skip 就會跳錯歌)。
-    // 有「自動隨機接續」尾巴嘅話,插喺條分隔線之前 —— 用戶明確加嘅歌屬於「用戶揀」
-    // 嗰段,唔應該排落「正在隨機播放」下面扮成系統自動接嘅歌。其餘情況排最後。
-    const curIdx = currentQueueIndexRef.current || 0;
-    const radioAt = autoRadioFrom;
-    const insertAt = (typeof radioAt === 'number' && radioAt > curIdx && radioAt <= q.length)
-      ? radioAt : q.length;
-
-    const newQ = [...q.slice(0, insertAt), hymn, ...q.slice(insertAt)];
-    queueRef.current = newQ;
-    setQueue(newQ);
-    // shuffle-off 還原用嘅 original order 都要有呢首,唔係熄 shuffle 就會唔見咗
-    originalQueueRef.current = [...(originalQueueRef.current || []), hymn];
-    // 分隔線跟住落一格(插咗喺佢之前)
-    if (insertAt < q.length && typeof radioAt === 'number') setAutoRadioFrom(radioAt + 1);
-
-    try {
-      await lazyEnsurePlayer();
-      if (insertAt >= q.length) await TrackPlayer.add([toTrack(hymn)]);
-      else await TrackPlayer.add([toTrack(hymn)], insertAt);
-    } catch (e) {
-      console.warn('addToQueue error:', e?.message || e);
-      return false;
-    }
-    return 'queued';
-  }
 
   async function playQueue(list, startIndex = 0, opts = {}) {
     if (!Array.isArray(list) || list.length === 0) return;
@@ -740,7 +703,7 @@ function PlayerProvider({ children }) {
       repeatMode, isShuffled, setIsShuffled,
       currentQueueIndex, setCurrentQueueIndex, queue,
       overlayExpanded, queueReady, isLoading, getPlayMode,
-      playQueue, playSingle, addToQueue, autoRadioFrom,
+      playQueue, playSingle, autoRadioFrom,
       cmd_play, cmd_pause, togglePlayPause,
       skipToQueueIndex, handleNextTrack, handlePrevTrack,
       setCurrentTime, setDuration,
@@ -993,7 +956,6 @@ const hs = StyleSheet.create({
 // 啱啱好對得上(唔係就會遮住播放掣或者留條罅),固定數值先算得準。
 const QUEUE_COLLAPSED_H = 78;
 const QUEUE_SNAP_POINTS = [QUEUE_COLLAPSED_H, '88%'];
-const ADD_SNAP_POINTS = ['55%'];
 
 function FullScreenPlayerOverlay() {
   // 用統一嘅 useInsets:佢會幫 Android 落個底線,唔會計出 0 令 collapsed sheet
@@ -1013,49 +975,29 @@ function FullScreenPlayerOverlay() {
   const openQueue = useCallback(() => queueSheetRef.current?.snapToIndex(1), []);
   const closeQueue = useCallback(() => queueSheetRef.current?.snapToIndex(0), []);
   const [lyricsVisible, setLyricsVisible] = useState(false);
-  const addSheetRef = useRef(null);
-  // mount 咗先可以 present;所以「開」= setAddMounted(true),gorhom 自己
-  // 由 index 0 animate 上嚟(index={0} + animateOnMount default true)。
-  const [addMounted, setAddMounted] = useState(false);
-  const openAddSheet = useCallback(() => setAddMounted(true), []);
-  const closeAddSheet = useCallback(() => addSheetRef.current?.close(), []);
+  // 「加入到清單」picker 而家係 App 層級嘅 native Modal(見 AddToPlaylistSheet.js),
+  // 由 pill 撳 openAddToPlaylist(cur) 彈出,唔再係呢度嘅 gorhom sheet。
+  const { open: openAddToPlaylist } = useAddToPlaylist();
 
-  // 有 sheet 開緊嗰陣,Android 返回鍵應該係「收 sheet」而唔係「收埋成個播放器」。
-  // queue sheet:index 1 = 全開先叫「開」(index 0 係常駐 collapsed,唔算)。
-  // add sheet:index -1 = 收埋完,順手 unmount。
+  // queue sheet 全開(index 1)嗰陣,Android 返回鍵應該係「收返 collapsed」而唔係
+  // 收埋成個播放器。(add picker 係獨立 Modal,佢自己 onRequestClose 處理返回鍵。)
   const queueOpenRef = useRef(false);
-  const addOpenRef = useRef(false);
   const [anySheetOpen, setAnySheetOpen] = useState(false);
-  const syncSheetOpen = useCallback(() => {
-    setAnySheetOpen(queueOpenRef.current || addOpenRef.current);
-  }, []);
   const onQueueChange = useCallback((i) => {
     queueOpenRef.current = i >= 1;
     setQueueExpanded(i >= 1);
-    syncSheetOpen();
-  }, [syncSheetOpen]);
-  const onAddChange = useCallback((i) => {
-    addOpenRef.current = i >= 0;
-    // 收埋完就 unmount,唔好留個 absoluteFill container 喺度擋住 queue sheet。
-    if (i < 0) setAddMounted(false);
-    syncSheetOpen();
-  }, [syncSheetOpen]);
+    setAnySheetOpen(i >= 1);
+  }, []);
 
   useEffect(() => {
     if (!anySheetOpen) return undefined;
     const sub = BackHandler.addEventListener('hardwareBackPress', () => {
-      // add sheet 喺 queue sheet 上面,有佢就先收佢。
-      if (addOpenRef.current) closeAddSheet();
-      else if (queueOpenRef.current) closeQueue();
+      if (queueOpenRef.current) closeQueue();
       return true; // 食咗個返回鍵,唔好傳落去收埋播放器
     });
     return () => sub.remove();
-  }, [anySheetOpen, closeQueue, closeAddSheet]);
+  }, [anySheetOpen, closeQueue]);
 
-  // add sheet 嘅 backdrop:收埋(-1)之後完全唔食 touch。
-  const renderBackdrop = useCallback((props) => (
-    <BottomSheetBackdrop {...props} appearsOnIndex={0} disappearsOnIndex={-1} pressBehavior="close" />
-  ), []);
   // queue sheet 嘅 backdrop:collapsed(index 0)嗰陣**唔可以**有遮罩,
   // 唔係就會擋死下面成個播放器啲掣。全開(index 1)先出,撳一下收返 collapsed。
   const renderQueueBackdrop = useCallback((props) => (
@@ -1068,32 +1010,6 @@ function FullScreenPlayerOverlay() {
   const safeTop = (insets?.top || StatusBar.currentHeight || 24) + 8;
 
   const { favorites, toggleFavorite, isFavorite } = useFavorites();
-  const { playlists = [], addToPlaylist, createPlaylist } = usePlaylists() || {};
-
-  // 加入自訂清單 —— 滿 30 首就唔俾加,彈提示講清楚點解(§Eric v233 要求)。
-  const handleAddToPlaylist = useCallback((pl) => {
-    const res = addToPlaylist?.(pl.id, cur);
-    if (res?.ok) { closeAddSheet(); return; }
-    if (res?.reason === 'full') {
-      Alert.alert(
-        '清單已滿',
-        `「${pl.name}」已經有 ${MAX_PLAYLIST_SONGS} 首,加唔到再多。\n\n可以刪走啲舊歌,或者開一個新清單。`,
-        [{ text: '知道喇' }]
-      );
-      return;
-    }
-    if (res?.reason === 'duplicate') {
-      Alert.alert('已經喺清單入面', `「${cur.title}」已經加咗落「${pl.name}」。`, [{ text: '知道喇' }]);
-      return;
-    }
-    closeAddSheet();
-  }, [addToPlaylist, cur, closeAddSheet]);
-
-  // 冇 prompt UI(Android 冇 Alert.prompt),所以自動命名,開完即刻加埋當前呢首。
-  const handleCreatePlaylistAndAdd = useCallback(() => {
-    createPlaylist?.(`我嘅清單 ${(playlists.length || 0) + 1}`, cur);
-    closeAddSheet();
-  }, [createPlaylist, playlists.length, cur, closeAddSheet]);
 
   return (
     // ⚠️ 外層**唔可以有 padding**(v231)。gorhom 個 hosting container 係
@@ -1160,7 +1076,7 @@ function FullScreenPlayerOverlay() {
                 message: `一齊聽「${cur.title}」${cur.artist ? ' - ' + cur.artist : ''}（生命樹詩歌）`,
               }).catch(() => {}) },
             { key: 'que', label: '清單', icon: 'queue-music',
-              onPress: openAddSheet },
+              onPress: () => openAddToPlaylist(cur) },
           ];
           return (
             <View style={fsStyles.actionRow}>
@@ -1337,71 +1253,6 @@ function FullScreenPlayerOverlay() {
         </View>
       </Modal>
 
-      {/* 加入到清單 bottom sheet(v231:**用到先 mount**)。
-          之前係一直 mount 住 index={-1},即係佢個 absoluteFill hosting container
-          永遠疊喺 queue sheet 上面 —— queue sheet 露出嘅嗰條邊就係俾佢擋住,
-          先至會「有手柄嗰個滑到、冇手柄嗰個滑唔到」。呢個 sheet 係撳掣先開嘅
-          對話框,冇理由常駐,收埋就直接 unmount,零殘留。 */}
-      {addMounted && (
-      <BottomSheet
-        ref={addSheetRef}
-        index={0}
-        snapPoints={ADD_SNAP_POINTS}
-        enableDynamicSizing={false}
-        enablePanDownToClose
-        onChange={onAddChange}
-        backdropComponent={renderBackdrop}
-        backgroundStyle={{ backgroundColor: CARD_BG_COLOR }}
-        handleIndicatorStyle={{ backgroundColor: TEXT_SECONDARY }}
-      >
-        <Text style={{ color: TEXT_PRIMARY, fontSize: 18, fontWeight: '600', paddingHorizontal: 20, paddingVertical: 12 }}>加入到清單</Text>
-        {/* 最愛 —— 金色記號(屬靈重點) */}
-        <SheetTouchable
-          onPress={() => { toggleFavorite(cur); closeAddSheet(); }}
-          style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: DesignColors.border }}
-        >
-          <MaterialIcons name="favorite" size={20} color={GOLD_COLOR} />
-          <Text style={{ color: GOLD_COLOR, marginLeft: 10, fontSize: 15, fontWeight: '600' }}>最愛清單</Text>
-        </SheetTouchable>
-        {/* 自訂清單 —— 每個清單上限 30 首(MAX_PLAYLIST_SONGS)。
-            滿咗嘅清單淨低灰色 + 寫住「已滿」,撳落去彈提示唔會加得入。
-            ⚠️ v233 之前呢度列緊嘅係**最愛啲歌**當清單(仲要當歌 id 做 playlistId),
-            playlists 由頭到尾都係空 —— 而家改用返真嘅 playlists。 */}
-        <BottomSheetFlatList
-          data={playlists}
-          keyExtractor={(item) => String(item.id)}
-          contentContainerStyle={{ paddingBottom: 24 }}
-          ListEmptyComponent={
-            <Text style={{ color: TEXT_SECONDARY, paddingHorizontal: 20, paddingVertical: 16 }}>
-              仲未有自訂清單 —— 撳下面「新增清單」開一個
-            </Text>
-          }
-          ListFooterComponent={
-            <SheetTouchable
-              onPress={handleCreatePlaylistAndAdd}
-              style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 14, borderTopWidth: 1, borderTopColor: DesignColors.border }}
-            >
-              <MaterialIcons name="playlist-add" size={20} color={ACCENT_COLOR} />
-              <Text style={{ color: ACCENT_COLOR, marginLeft: 10, fontSize: 15, fontWeight: '600' }}>新增清單</Text>
-            </SheetTouchable>
-          }
-          renderItem={({ item }) => {
-            const count = item.songs?.length || 0;
-            const full = count >= MAX_PLAYLIST_SONGS;
-            return (
-              <SheetTouchable onPress={() => handleAddToPlaylist(item)}
-                style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 14, opacity: full ? 0.45 : 1 }}>
-                <MaterialIcons name="queue-music" size={20} color={full ? TEXT_SECONDARY : ACCENT_COLOR} />
-                <Text style={{ color: TEXT_PRIMARY, marginLeft: 10, fontSize: 15, flex: 1 }} numberOfLines={1}>{item.name}</Text>
-                <Text style={{ color: full ? GOLD_COLOR : TEXT_SECONDARY, fontSize: 13, fontWeight: full ? '700' : '500' }}>
-                  {full ? `已滿 ${count}/${MAX_PLAYLIST_SONGS}` : `${count}/${MAX_PLAYLIST_SONGS}`}
-                </Text>
-              </SheetTouchable>
-            );
-          }}
-        />
-      </BottomSheet>
-      )}
     </View>
   );
 }
@@ -1517,16 +1368,7 @@ const fsStyles = StyleSheet.create({
 
 // ===== AppContent =====
 function AppContent() {
-  const { hymns, setHymns, playQueue, playSingle, addToQueue, showPlayer, queueReady, isPlaying: debugPlaying, currentHymn: debugHymn, togglePlayPause: debugToggle } = usePlayer();
-
-  // 「加入播放清單」統一入口 —— 加完出個 toast 確認,唔係撳完毫無反應。
-  async function handleAddToQueue(h) {
-    if (!h) return;
-    const res = await addToQueue?.(h);
-    if (res === false || res == null) return;
-    const msg = res === 'exists' ? '已經喺播放清單' : res === 'played' ? '開始播放' : '已加入播放清單';
-    if (Platform.OS === 'android' && ToastAndroid) ToastAndroid.show(msg, ToastAndroid.SHORT);
-  }
+  const { hymns, setHymns, playQueue, playSingle, showPlayer, queueReady, isPlaying: debugPlaying, currentHymn: debugHymn, togglePlayPause: debugToggle } = usePlayer();
   const { hymns: allSongs, loading } = useCachedHymns();
   const bottomInset = useBottomInset();
   const topInset = useInsets().top;
@@ -1610,7 +1452,7 @@ function AppContent() {
           <LibraryScreen hymns={allSongs || []} onPlayHymn={handlePlayHymn} />
         </View>
         <View style={[pageStyles.screenWrap, { display: activeTab === 'Mine' ? 'flex' : 'none' }]}>
-          <MineScreen onPlayHymn={handlePlayHymn} onAddToQueue={handleAddToQueue} onOpenAuth={openAuth} />
+          <MineScreen onPlayHymn={handlePlayHymn} onOpenAuth={openAuth} />
         </View>
       </View>
 
@@ -1642,7 +1484,6 @@ function AppContent() {
           <HymnListScreen
             hymns={hymnListData.hymns}
             title={hymnListData.title}
-            onAddToQueue={handleAddToQueue}
             onPlayHymn={(hymn) => {
               const idx = Math.max(0, hymnListData.hymns.findIndex(s => s.id === hymn.id));
               playQueue(hymnListData.hymns, idx);
@@ -1663,9 +1504,9 @@ export default function App() {
   // BottomSheetModalProvider:加返佢就會走返 v228 嗰條 portal 路,個 hosting
   // container 冇 zIndex,又會俾 zIndex:999 嘅播放器 overlay 蓋住。詳見檔頭註解。
   const tree = (
-    <AuthProvider><FavoritesProvider><PlaylistsProvider><PlayerProvider><PlaylistProvider>
+    <AuthProvider><FavoritesProvider><PlaylistsProvider><AddToPlaylistProvider><PlayerProvider><PlaylistProvider>
       <AppContent />
-    </PlaylistProvider></PlayerProvider></PlaylistsProvider></FavoritesProvider></AuthProvider>
+    </PlaylistProvider></PlayerProvider></AddToPlaylistProvider></PlaylistsProvider></FavoritesProvider></AuthProvider>
   );
   const inner = SafeAreaProvider ? <SafeAreaProvider>{tree}</SafeAreaProvider> : tree;
   return <GestureHandlerRootView style={{ flex: 1 }}>{inner}</GestureHandlerRootView>;

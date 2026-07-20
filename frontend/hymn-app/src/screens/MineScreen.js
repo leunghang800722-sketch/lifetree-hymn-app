@@ -14,6 +14,7 @@ import { useInsets } from '../hooks/useInsets';
 import { useFavorites } from '../context/FavoritesContext';
 import { usePlaylists } from '../context/PlaylistsContext';
 import { useAuth } from '../context/AuthContext';
+import { useAddToPlaylist } from '../components/AddToPlaylistSheet';
 
 function Cover({ youtubeId, size = 52 }) {
   const [failed, setFailed] = useState(false);
@@ -28,10 +29,11 @@ function Cover({ youtubeId, size = 52 }) {
   return <Image source={{ uri }} style={[styles.cover, { width: size, height: size }]} onError={() => setFailed(true)} />;
 }
 
-export default function MineScreen({ onPlayHymn, onAddToQueue, onOpenAuth }) {
+export default function MineScreen({ onPlayHymn, onOpenAuth }) {
   const { favorites = [], toggleFavorite } = useFavorites() || {};
   const { playlists = [] } = usePlaylists() || {};
   const { user, logout } = useAuth() || {};
+  const { open: openAddToPlaylist } = useAddToPlaylist();
   const [tab, setTab] = useState('favorites'); // favorites | playlists
 
   // edge-to-edge:唔加 top inset 個大字標題會同狀態列時間疊埋(見 useInsets.js)
@@ -96,8 +98,8 @@ export default function MineScreen({ onPlayHymn, onAddToQueue, onOpenAuth }) {
                 <Text style={styles.rowTitle} numberOfLines={1}>{item.title}</Text>
                 <Text style={styles.rowArtist} numberOfLines={1}>{item.artist || '未知'}</Text>
               </View>
-              {/* ≡♪ 加入而家播緊嘅播放清單 —— 同 queue sheet 一致,唔使入返播放頁 */}
-              <TouchableOpacity onPress={() => onAddToQueue && onAddToQueue(item)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} style={styles.rowAction}>
+              {/* ≡♪ 加入到清單 —— 彈揀清單 sheet(同播放頁「清單」pill 一致),唔使入返播放頁 */}
+              <TouchableOpacity onPress={() => openAddToPlaylist(item)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} style={styles.rowAction}>
                 <MaterialIcons name="playlist-add" size={22} color={COLORS.textSecondary} />
               </TouchableOpacity>
               <TouchableOpacity onPress={() => toggleFavorite && toggleFavorite(item)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} style={styles.rowAction}>
