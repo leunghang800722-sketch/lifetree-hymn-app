@@ -26,6 +26,9 @@ import { PlaylistProvider } from './src/context/PlaylistContext';
 import { API_BASE } from './src/config.js';
 import { saveLastPlayed, getLastPlayed } from './src/lastPlayed';
 import { dailyPickBalanced } from './src/utils/dailyShuffle';
+import { buildAutoplayTail, visibleFlavors } from './src/utils/autoplay';
+import { getPlayLog, getRecentIds, recordPlay } from './src/playLog';
+import { getAutoplayEnabled, setAutoplayEnabled, getAutoplayFlavor, setAutoplayFlavor } from './src/autoplayPrefs';
 import { useInsets } from './src/hooks/useInsets';
 // 播放清單 / 加入到清單 sheet 用 @gorhom/bottom-sheet 嘅 **inline `<BottomSheet>`**(v229)。
 //
@@ -325,6 +328,7 @@ function PlayerProvider({ children }) {
 
   const progressRef = useRef(null);
   const currentQueueIndexRef = useRef(0);
+  const playLogTimerRef = useRef(null); // §3a:30 秒「算一次播放」計時器
   const repeatModeRef = useRef(0);
   const isShuffledRef = useRef(false);
   const errorSkipCountRef = useRef(0); // §3.7 — consecutive PlaybackError count
@@ -373,6 +377,16 @@ function PlayerProvider({ children }) {
   repeatModeRef.current = repeatMode;
   isShuffledRef.current = isShuffled;
   queueRef.current = queue;
+
+  // ── 自動播放(AUTOPLAY-MIX-PLAN)──────────────────────────────
+  const [autoplayEnabled, setAutoplayEnabledState] = useState(getAutoplayEnabled());
+  const [autoplayFlavor, setAutoplayFlavorState] = useState(getAutoplayFlavor());
+  const autoplayEnabledRef = useRef(autoplayEnabled);
+  const autoplayFlavorRef = useRef(autoplayFlavor);
+  autoplayEnabledRef.current = autoplayEnabled;
+  autoplayFlavorRef.current = autoplayFlavor;
+  const hymnsRef = useRef(null);
+  hymnsRef.current = hymns;
 
   // ===== 物理抽屜動畫 (slide-up/slide-down) =====
   //
@@ -492,6 +506,15 @@ function PlayerProvider({ children }) {
         setCurrentQueueIndex(idx);
         const song = queueRef.current[idx];
         if (song) { setHymn(song); setCurrentHymn(song); }
+        // §3a playLog:聽夠 30 秒先算一次(skip 唔算)。換咗歌就取消上一個計時器,
+        // 開一個新嘅;30 秒後如果仲係播緊同一首,先記錄。
+        if (playLogTimerRef.current) clearTimeout(playLogTimerRef.current);
+        if (song?.id != null) {
+          const startedId = song.id;
+          playLogTimerRef.current = setTimeout(() => {
+            if (queueRef.current[currentQueueIndexRef.current]?.id === startedId) recordPlay(startedId);
+          }, 30000);
+        }
       } catch (e) {}
     });
 
@@ -590,19 +613,73 @@ function PlayerProvider({ children }) {
   //
   // 為咗唔好一次過餵成千首落 TrackPlayer(reset+add 嘅成本同 §3.6 一樣),
   // 隨機尾巴取 RADIO_LEN 首就夠;播到差唔多先算(暫時唔做無限接續)。
-  const RADIO_LEN = 30;
   const [autoRadioFrom, setAutoRadioFrom] = useState(null); // queue 由邊個 index 開始係自動接續
+  const autoRadioFromRef = useRef(null);
+  autoRadioFromRef.current = autoRadioFrom;
   async function playSingle(hymn, pool) {
     if (!hymn) return;
-    const src = Array.isArray(pool) && pool.length ? pool : (queueRef.current || []);
-    const rest = src.filter(s => String(s.id) !== String(hymn.id));
-    for (let i = rest.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [rest[i], rest[j]] = [rest[j], rest[i]];
+    // 自動播放關咗 → 淨播嗰首,冇隨機尾巴(AUTOPLAY-MIX-PLAN:關咗就係關咗)
+    if (!autoplayEnabledRef.current) {
+      await playQueue([hymn], 0, { autoRadioFrom: null });
+      return;
     }
-    const list = [hymn, ...rest.slice(0, RADIO_LEN)];
-    // 冇嘢可以接(個 pool 得嗰首歌)就當普通單曲播,唔好畫條冇意思嘅分隔線。
-    await playQueue(list, 0, { autoRadioFrom: list.length > 1 ? 1 : null });
+    // 尾巴由全庫(hymns)按 flavor 加權抽;冇全庫先退返去 pool。
+    const libr = (hymnsRef.current && hymnsRef.current.length)
+      ? hymnsRef.current
+      : (Array.isArray(pool) && pool.length ? pool : (queueRef.current || []));
+    const tail = buildAutoplayTail(autoplayFlavorRef.current, hymn, libr, {
+      playLog: getPlayLog(), recentIds: getRecentIds(),
+    });
+    const list = [hymn, ...tail];
+    await playQueue(list, 0, { autoRadioFrom: tail.length > 0 ? 1 : null });
+  }
+
+  // 熱切換 flavor / toggle:唔斷歌 —— 剪走舊尾巴、生成新尾巴 add 返。
+  // 只喺而家有自動尾巴(autoRadioFrom != null)先郁;冇尾巴就淨係存設定,下次
+  // playSingle 先生效。⚠️ removeUpcomingTracks 之後 native queue = [0..current],
+  // 所以要同步 queueRef/setQueue/autoRadioFrom,唔係 index 會對唔上(§3.5 教訓)。
+  async function applyAutoplayFlavor(flavor) {
+    setAutoplayFlavorState(flavor);
+    setAutoplayFlavor(flavor);
+    autoplayFlavorRef.current = flavor;
+    if (autoRadioFromRef.current == null) return; // 冇尾巴,下次先生效
+    await rebuildTail();
+  }
+  async function applyAutoplayEnabled(on) {
+    setAutoplayEnabledState(on);
+    setAutoplayEnabled(on);
+    autoplayEnabledRef.current = on;
+    if (on) {
+      // 由關變開:如果而家播緊嘅係單曲(冇尾巴),補一條尾巴落去
+      if (autoRadioFromRef.current == null) await rebuildTail(true);
+      else await rebuildTail();
+    } else {
+      // 由開變關:剪走尾巴,淨返而家播緊 + 之前用戶揀嗰段
+      if (autoRadioFromRef.current == null) return;
+      try {
+        await TrackPlayer.removeUpcomingTracks();
+        const keep = queueRef.current.slice(0, (currentQueueIndexRef.current || 0) + 1);
+        queueRef.current = keep; setQueue(keep);
+        setAutoRadioFrom(null);
+      } catch (e) { console.warn('autoplay off error:', e?.message); }
+    }
+  }
+  async function rebuildTail(force) {
+    try {
+      const curIdx = currentQueueIndexRef.current || 0;
+      const cur = queueRef.current[curIdx];
+      if (!cur) return;
+      const libr = (hymnsRef.current && hymnsRef.current.length) ? hymnsRef.current : queueRef.current;
+      const tail = buildAutoplayTail(autoplayFlavorRef.current, cur, libr, {
+        playLog: getPlayLog(), recentIds: getRecentIds(),
+      });
+      await TrackPlayer.removeUpcomingTracks();
+      if (tail.length) await TrackPlayer.add(tail.map(toTrack));
+      const keep = queueRef.current.slice(0, curIdx + 1);
+      const newQ = [...keep, ...tail];
+      queueRef.current = newQ; setQueue(newQ);
+      setAutoRadioFrom(tail.length ? curIdx + 1 : null);
+    } catch (e) { console.warn('rebuildTail error:', e?.message); }
   }
 
 
@@ -752,6 +829,7 @@ function PlayerProvider({ children }) {
       playQueue, playSingle, autoRadioFrom,
       cmd_play, cmd_pause, togglePlayPause,
       skipToQueueIndex, reorderQueue, handleNextTrack, handlePrevTrack,
+      autoplayEnabled, autoplayFlavor, applyAutoplayEnabled, applyAutoplayFlavor,
       setCurrentTime, setDuration,
       setSeekPercent, setIsSeeking, setRepeatMode,
       handleSeekRelease, handleProgressBarPress,
@@ -1235,6 +1313,36 @@ function FullScreenPlayerOverlay() {
           />
           <Text style={{ ...TYPOGRAPHY.sectionTitle }}>播放清單 ({queue.length})</Text>
         </SheetTouchable>
+
+        {/* ===== 自動播放:toggle + flavor chips(AUTOPLAY-MIX-PLAN)=====
+            toggle 開先出 chips。冇貨嘅 flavor(個人創作/純音樂)由 visibleFlavors 隱藏。 */}
+        <View style={fsStyles.autoplayRow}>
+          <View style={{ flex: 1 }}>
+            <Text style={fsStyles.autoplayTitle}>自動播放</Text>
+            <Text style={fsStyles.autoplaySub}>加入類似內容,無間斷播放</Text>
+          </View>
+          <SheetTouchable
+            onPress={() => player.applyAutoplayEnabled?.(!player.autoplayEnabled)}
+            style={[fsStyles.toggleTrack, player.autoplayEnabled && fsStyles.toggleTrackOn]}
+            activeOpacity={0.8}
+          >
+            <View style={[fsStyles.toggleThumb, player.autoplayEnabled && fsStyles.toggleThumbOn]} />
+          </SheetTouchable>
+        </View>
+        {player.autoplayEnabled && (
+          <View style={fsStyles.chipBar}>
+            {visibleFlavors(player.hymns || []).map((f) => {
+              const on = (player.autoplayFlavor || '全部') === f;
+              return (
+                <SheetTouchable key={f} onPress={() => player.applyAutoplayFlavor?.(f)} activeOpacity={0.8}
+                  style={[fsStyles.apChip, on && fsStyles.apChipOn]}>
+                  <Text style={[fsStyles.apChipText, on && fsStyles.apChipTextOn]}>{f}</Text>
+                </SheetTouchable>
+              );
+            })}
+          </View>
+        )}
+
         {/* Shuffle indicator —— 個 list 本身就係洗咗牌嘅順序,冇呢個提示分唔出 */}
         {player.isShuffled && (
           <View style={[fsStyles.shuffleBanner, { marginBottom: 8, alignSelf: 'center' }]}>
@@ -1258,7 +1366,7 @@ function FullScreenPlayerOverlay() {
                   <View style={fsStyles.radioDivider}>
                     <View style={fsStyles.radioDividerLine} />
                     <MaterialIcons name="shuffle" size={14} color={ACCENT_COLOR} style={{ marginHorizontal: 8 }} />
-                    <Text style={fsStyles.radioDividerText}>正在隨機播放：</Text>
+                    <Text style={fsStyles.radioDividerText}>自動播放：{player.autoplayFlavor || '全部'}</Text>
                     <View style={fsStyles.radioDividerLine} />
                   </View>
                 )}
@@ -1402,6 +1510,22 @@ const fsStyles = StyleSheet.create({
   sheetScrim: { flex: 1, backgroundColor: 'rgba(0,0,0,0.55)', justifyContent: 'flex-end' },
   sheetCard: { borderTopLeftRadius: 20, borderTopRightRadius: 20, overflow: 'hidden', paddingBottom: 8 },
   sheetHandle: { width: 40, height: 5, borderRadius: 3, backgroundColor: TEXT_SECONDARY, alignSelf: 'center', marginTop: 8, marginBottom: 6 },
+  // 自動播放 toggle + chips
+  autoplayRow: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 8 },
+  autoplayTitle: { ...TYPOGRAPHY.songTitle, fontSize: 16 },
+  autoplaySub: { ...TYPOGRAPHY.artist, marginTop: 1 },
+  toggleTrack: { width: 46, height: 28, borderRadius: 14, backgroundColor: DesignColors.cardLight, padding: 3, justifyContent: 'center' },
+  toggleTrackOn: { backgroundColor: ACCENT_COLOR },
+  toggleThumb: { width: 22, height: 22, borderRadius: 11, backgroundColor: TEXT_SECONDARY },
+  toggleThumbOn: { backgroundColor: MAIN_BG_COLOR, alignSelf: 'flex-end' },
+  chipBar: { flexDirection: 'row', flexWrap: 'wrap', paddingHorizontal: 12, paddingBottom: 6 },
+  apChip: {
+    paddingHorizontal: 14, paddingVertical: 7, borderRadius: 999, margin: 4,
+    backgroundColor: CARD_BG_COLOR, borderWidth: 1, borderColor: DesignColors.border,
+  },
+  apChipOn: { backgroundColor: ACCENT_COLOR, borderColor: ACCENT_COLOR },
+  apChipText: { fontSize: 13, fontWeight: '600', color: TEXT_SECONDARY },
+  apChipTextOn: { color: MAIN_BG_COLOR },
   shuffleBanner: {
     flexDirection: 'row', alignItems: 'center', alignSelf: 'center',
     backgroundColor: 'rgba(30,215,96,0.12)',

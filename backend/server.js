@@ -12,6 +12,7 @@ import searchRoutes from './routes/search.js';
 import categoryRoutes from './routes/category.js';
 import audioRoutes from './routes/audio.js';
 import authRoutes from './routes/auth.js';
+import otpAuthRoutes from './routes/otpAuth.js';
 import streamRoutes from './routes/stream.js';
 import { resolveAudioUrl, refreshAudioUrl, preVerifyUrl, cache } from './lib/resolveAudio.js';
 
@@ -40,6 +41,7 @@ app.use('/api/category', categoryRoutes);
 app.use('/api/audio', audioRoutes);
 app.use('/api/stream', streamRoutes(getDb));
 authRoutes(app, getDb);
+otpAuthRoutes(app, getDb); // 電話 OTP 登入(PHONE-AUTH-PLAN;未有 TWILIO key 前回 503)
 
 // Super simple APK download at root level
 app.get('/app.apk', (req, res) => {
@@ -77,7 +79,9 @@ app.get('/api/hymns', async (req, res) => {
     // lyrics included so the player can show real 歌詞 (§3.4) and grey out the
     // 歌詞 pill when a song has none. Only ~10 of the curated songs have lyrics,
     // so the payload cost is negligible.
-    const stmt = db.prepare('SELECT id, title, artist, youtube_id, lang, duration, lyrics FROM hymns ORDER BY id');
+    // tags / view_count / created_at:俾自動播放 chip 加權抽樣用(AUTOPLAY-MIX-PLAN §5.6)。
+    // 全部係現有欄位(view_count 而家係 0,等 metadata job 填;tags 等標註 pass)。
+    const stmt = db.prepare('SELECT id, title, artist, youtube_id, lang, duration, lyrics, tags, view_count, created_at FROM hymns ORDER BY id');
     const hymns = [];
     while (stmt.step()) {
       hymns.push(stmt.getAsObject());

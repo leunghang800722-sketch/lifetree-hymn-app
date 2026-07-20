@@ -65,6 +65,28 @@ export function AuthProvider({ children }) {
     return data;
   }, [saveAuth]);
 
+  // ── 電話 OTP 登入(PHONE-AUTH-PLAN)──────────────────────────
+  const requestOtp = useCallback(async (phone) => {
+    const resp = await fetch(`${API_BASE}/api/auth/otp/request`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ phone }),
+    });
+    const data = await resp.json().catch(() => ({}));
+    if (!resp.ok) throw new Error(data.message || data.error || '發送失敗');
+    return data;
+  }, []);
+
+  const verifyOtp = useCallback(async (phone, code) => {
+    const resp = await fetch(`${API_BASE}/api/auth/otp/verify`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ phone, code }),
+    });
+    const data = await resp.json().catch(() => ({}));
+    if (!resp.ok) throw new Error(data.message || data.error || '驗證失敗');
+    await saveAuth(data.token, data.user);
+    return data;
+  }, [saveAuth]);
+
   const logout = useCallback(async () => {
     await clearAuth();
   }, [clearAuth]);
@@ -72,7 +94,7 @@ export function AuthProvider({ children }) {
   const getToken = useCallback(() => token, [token]);
 
   return (
-    <AuthContext.Provider value={{ user, token, loading, register, login, logout, getToken }}>
+    <AuthContext.Provider value={{ user, token, loading, register, login, logout, getToken, requestOtp, verifyOtp }}>
       {children}
     </AuthContext.Provider>
   );

@@ -16,11 +16,16 @@ import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { useInsets } from '../hooks/useInsets';
 import { COLORS } from '../theme/designSystem';
 import { useAuth } from '../context/AuthContext';
+import { PHONE_AUTH_ENABLED } from '../config';
+import PhoneLoginScreen from './PhoneLoginScreen';
 
 export default function AuthScreen({ onClose }) {
   // edge-to-edge:個 X 掣本來寫死 top:50,喺唔同機頂到狀態列(見 useInsets.js)
   const insets = useInsets();
   const { user, register, login, logout } = useAuth();
+  // PHONE_AUTH_ENABLED 開咗先預設電話登入(plan §6:電話為主,底部可切返 email)。
+  // flag false(而家)→ usePhone 一路係 false,登入頁維持現有 email/password。
+  const [usePhone, setUsePhone] = useState(PHONE_AUTH_ENABLED);
   const [mode, setMode] = useState('login');
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
@@ -67,6 +72,11 @@ export default function AuthScreen({ onClose }) {
         </View>
       </View>
     );
+  }
+
+  // 電話登入(flag 開咗先會行到呢度)。底部可以切返 email。
+  if (usePhone) {
+    return <PhoneLoginScreen onClose={onClose} onUseEmail={() => setUsePhone(false)} />;
   }
 
   return (
@@ -140,6 +150,11 @@ export default function AuthScreen({ onClose }) {
             {mode === 'login' ? '未有帳戶？按此註冊' : '已有帳戶？按此登入'}
           </Text>
         </TouchableOpacity>
+        {PHONE_AUTH_ENABLED && (
+          <TouchableOpacity onPress={() => setUsePhone(true)} style={{ marginTop: 12 }}>
+            <Text style={styles.toggleText}>改用電話登入</Text>
+          </TouchableOpacity>
+        )}
       </View>
     </KeyboardAvoidingView>
   );
