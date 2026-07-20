@@ -14,7 +14,7 @@ import audioRoutes from './routes/audio.js';
 import authRoutes from './routes/auth.js';
 import otpAuthRoutes from './routes/otpAuth.js';
 import streamRoutes from './routes/stream.js';
-import { resolveAudioUrl, refreshAudioUrl, preVerifyUrl, cache } from './lib/resolveAudio.js';
+import { resolveAudioUrl, refreshAudioUrl, preVerifyUrl, cache, anyStreaming, isStreaming } from './lib/resolveAudio.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const DB_PATH = path.join(__dirname, 'hymns.db');
@@ -201,10 +201,16 @@ function startKeepWarm() {
       if (hr < 7) return;                 // 00:00-06:59 唔行,個窗口留返俾夜晚 grow job
       if (usedToday >= MAX_PER_DAY) return; // 熔斷
 
-      // 揾「30 分鐘內就過期(或者已過期)」入面最快到期嗰一個,一次只續一首
+      // 🩹 止血:有任何歌播緊就唔好行 —— 唔好 spawn yt-dlp 同串流爭頻寬/CPU
+      // (呢個係「播下停下」regression 嘅其中一個成因)。用戶唔聽緊先續熱。
+      if (anyStreaming()) return;
+
+      // 揾「30 分鐘內就過期(或者已過期)」入面最快到期、而且**冇播緊**嗰一個,
+      // 一次只續一首。唔續正播緊嗰首 → 唔會中途換佢個 URL / format。
       const now = Date.now();
       let pick = null;
       for (const [id, v] of cache) {
+        if (isStreaming(id)) continue;
         if (v.expiresAt - now < EXPIRING_WINDOW_MS) {
           if (!pick || v.expiresAt < pick.expiresAt) pick = { id, expiresAt: v.expiresAt };
         }

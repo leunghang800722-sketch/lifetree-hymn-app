@@ -1314,6 +1314,10 @@ function FullScreenPlayerOverlay() {
           <Text style={{ ...TYPOGRAPHY.sectionTitle }}>播放清單 ({queue.length})</Text>
         </SheetTouchable>
 
+        {/* 🩹 §Eric #3/#6:collapsed 只顯示個 header(乾淨,冇歌封面突出圓角邊)。
+            自動播放控制 + 佇列 list 只喺 sheet 全開先 render —— 亦即係話,想見
+            5 個 chip 就將個 sheet 拉上去(全開)。 */}
+        {queueExpanded && (<>
         {/* ===== 自動播放:toggle + flavor chips(AUTOPLAY-MIX-PLAN)=====
             toggle 開先出 chips。冇貨嘅 flavor(個人創作/純音樂)由 visibleFlavors 隱藏。 */}
         <View style={fsStyles.autoplayRow}>
@@ -1372,27 +1376,30 @@ function FullScreenPlayerOverlay() {
                 )}
                 <SheetTouchable style={[fsStyles.queueItem, item.id === cur.id && fsStyles.queueItemActive, isActive && fsStyles.queueItemDragging]}
                   onPress={() => { player.skipToQueueIndex(queue.findIndex(h => h.id === item.id)); closeQueue(); }} activeOpacity={0.7}>
+                  {/* ≡ 拖曳 handle —— §Eric #4:搬咗去封面圖最左(成行最頭)。長按拖動排序。
+                      hitSlop 收窄,唔會再搶右邊啲掣嘅 touch(§Eric #5 就係俾佢搶咗)。 */}
+                  <SheetTouchable onLongPress={drag} delayLongPress={150} disabled={isActive}
+                    hitSlop={{ top: 10, bottom: 10, left: 2, right: 2 }} style={fsStyles.dragHandleLeft}>
+                    <MaterialIcons name="drag-handle" size={22} color={item.id === cur.id ? ACCENT_COLOR : TEXT_SECONDARY} />
+                  </SheetTouchable>
                   <CoverImage youtubeId={item.youtube_id} style={fsStyles.queueCover} />
                   <View style={fsStyles.queueInfo}>
                     <Text style={fsStyles.queueTitle} numberOfLines={1}>{item.title}</Text>
                     <Text style={fsStyles.queueArtist} numberOfLines={1}>{item.artist}</Text>
                   </View>
-                  {item.id === cur.id
-                    ? <MaterialIcons name="play-arrow" size={18} color={ACCENT_COLOR} />
-                    : <MaterialIcons name="queue-music" size={18} color={TEXT_SECONDARY} />}
-                  {/* 心心 —— 喺清單度直接加最愛,唔使入返播放頁先撳。 */}
-                  <FavHeart hymn={item} />
-                  {/* ≡ 拖曳 handle —— 長按拖動調整播放次序。用 onLongPress 觸發 gorhom
-                      /draggable 嘅 drag,唔會同「撳一下跳去嗰首」撞。 */}
-                  <SheetTouchable onLongPress={drag} delayLongPress={150} disabled={isActive}
-                    hitSlop={{ top: 12, bottom: 12, left: 12, right: 8 }} style={fsStyles.dragHandle}>
-                    <MaterialIcons name="drag-handle" size={22} color={TEXT_SECONDARY} />
+                  {/* ≡♪ 加入到清單 —— §Eric #5:同其他清單一致,撳到彈揀清單 sheet。 */}
+                  <SheetTouchable onPress={(e) => { e?.stopPropagation?.(); openAddToPlaylist(item); }}
+                    hitSlop={{ top: 10, bottom: 10, left: 6, right: 6 }} style={fsStyles.rowAct}>
+                    <MaterialIcons name="playlist-add" size={22} color={TEXT_SECONDARY} />
                   </SheetTouchable>
+                  {/* 心心 —— 喺清單度直接加最愛。 */}
+                  <FavHeart hymn={item} />
                 </SheetTouchable>
               </ScaleDecorator>
             );
           }}
         />
+        </>)}
       </BottomSheet>
 
       {/* ===== NATIVE MODAL: Lyrics ===== */}
@@ -1537,7 +1544,8 @@ const fsStyles = StyleSheet.create({
   queueItem: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 10 },
   queueItemActive: { backgroundColor: 'rgba(255,255,255,0.08)' },
   queueItemDragging: { backgroundColor: CARD_BG_COLOR, borderRadius: 10 },
-  dragHandle: { paddingLeft: 12, paddingVertical: 4 },
+  dragHandleLeft: { paddingRight: 10, paddingVertical: 4 }, // §Eric #4:喺最左
+  rowAct: { paddingHorizontal: 8, paddingVertical: 4 },
   queueCover: { width: 40, height: 40, borderRadius: 6, backgroundColor: DesignColors.cardLight },
   queueInfo: { flex: 1, marginLeft: 10 },
   queueTitle: { fontSize: 14, fontWeight: '600', color: TEXT_PRIMARY },

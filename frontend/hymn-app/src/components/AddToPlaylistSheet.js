@@ -16,6 +16,7 @@ import { Modal, View, Text, TextInput, TouchableOpacity, FlatList, StyleSheet, A
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { COLORS } from '../theme/designSystem';
 import { usePlaylists, MAX_PLAYLIST_SONGS } from '../context/PlaylistsContext';
+import { useInsets } from '../hooks/useInsets';
 
 const Ctx = createContext(null);
 // open(hymn):彈 sheet,揀清單加入呢首歌。
@@ -23,6 +24,7 @@ export const useAddToPlaylist = () => useContext(Ctx) || { open: () => {} };
 
 export function AddToPlaylistProvider({ children }) {
   const { playlists = [], addToPlaylist, createPlaylist } = usePlaylists() || {};
+  const insets = useInsets(); // §Eric #2:底部「＋新播放清單」唔好俾導航列檔住
   const [target, setTarget] = useState(null); // 要加入邊首歌
   const [creating, setCreating] = useState(false); // 展開緊新清單輸入框?
   const [newName, setNewName] = useState('');
@@ -63,7 +65,7 @@ export function AddToPlaylistProvider({ children }) {
       <Modal visible={visible} transparent animationType="slide" onRequestClose={close} statusBarTranslucent>
         <View style={styles.scrim}>
           <TouchableOpacity style={{ flex: 1 }} activeOpacity={1} onPress={close} />
-          <View style={styles.card}>
+          <View style={[styles.card, { paddingBottom: 8 + insets.bottom }]}>
             <View style={styles.handle} />
             <Text style={styles.title}>加入到清單</Text>
 

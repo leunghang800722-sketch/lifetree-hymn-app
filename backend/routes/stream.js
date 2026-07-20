@@ -4,7 +4,7 @@
 
 import { Router } from 'express';
 import { Readable } from 'stream';
-import { resolveAudioUrl, bustCache, preVerifyUrl } from '../lib/resolveAudio.js';
+import { resolveAudioUrl, bustCache, preVerifyUrl, markStreaming, unmarkStreaming } from '../lib/resolveAudio.js';
 
 export default function streamRoutes(getDb) {
   const router = Router();
@@ -58,12 +58,18 @@ export default function streamRoutes(getDb) {
       return res.status(502).json({ error: 'resolve failed' });
     }
 
+    // 止血:登記「呢首歌播緊」,keep-warm 就唔會中途換佢個 URL / 唔會同串流爭資源。
+    // 純附加,唔改下面 proxy 邏輯。refcount 應付 ExoPlayer 嘅多個 range 連線。
+    markStreaming(hymn.youtube_id);
+    let unmarked = false;
+    const doUnmark = () => { if (!unmarked) { unmarked = true; unmarkStreaming(hymn.youtube_id); } };
+
     const controller = new AbortController();
     // Abort the upstream fetch only if the client bailed before we finished
     // sending (ExoPlayer closes+reopens range connections constantly while
     // streaming). res 'close' fires on normal completion too, so gate on
     // writableFinished to avoid aborting a request that already succeeded.
-    res.on('close', () => { if (!res.writableFinished) controller.abort(); });
+    res.on('close', () => { doUnmark(); if (!res.writableFinished) controller.abort(); });
 
     const isHead = req.method === 'HEAD';
     const clientRange = req.headers.range;

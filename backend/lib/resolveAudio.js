@@ -29,9 +29,28 @@ const FAIL_TTL_MS = 15 * 60 * 1000;
 // §2b PERF-FAST-START-PLAN:冷 resolve timeout 由 30s → 12s。實測冷 resolve 6.6s,
 // 12s 綽綽有餘;死鏈全 fail 由最壞 90s(3×30)縮到 36s(3×12)。
 const RESOLVE_TIMEOUT_MS = 12000;
-// §2a:tv 同 default 兩個 strategy 平行 race,鬥快(冷 resolve 期望值砍半)。
-// 有前科(IP 俾 ban 過),所以留個 env 掣,想關返順序試就 RESOLVE_PARALLEL=0。
-const RESOLVE_PARALLEL = process.env.RESOLVE_PARALLEL !== '0';
+// ⚠️ 2026-07-20 止血:parallel resolve **預設關咗**(要開先 RESOLVE_PARALLEL=1)。
+// 點解:tv 同 default 係兩個唔同 YouTube client,`bestaudio[ext=m4a]` 揀到嘅可能係
+// **唔同 itag / bitrate / 檔案大細**。平行 race 邊個贏唔一定,所以同一首歌喺唔同時間
+// resolve 可能出唔同 format。一旦播緊途中要重 resolve(URL 過期 / keep-warm 續熱),
+// ExoPlayer 就會由 format A 嘅 byte offset 跳去 format B,byte 對唔上 → 播下停下。
+// 順序(tv 行先,tv 唔得先 default)= 同一首歌永遠出同一個 format,冇呢個問題
+// (= v238 之前嘅行為,嗰陣冇 stutter)。冷 resolve 慢返少少係可接受嘅代價。
+const RESOLVE_PARALLEL = process.env.RESOLVE_PARALLEL === '1';
+
+// ── 「而家播緊邊幾首」登記(止血用)──────────────────────────────
+// stream.js 開始 pipe 一首歌就 mark,收線就 unmark(refcount 應付 ExoPlayer 嘅
+// 多個 range 連線)。keep-warm 靠呢個避開:①唔續正播緊嗰首(唔好中途換佢個 URL)
+// ②有任何歌播緊就成個 tick 唔行(唔好 spawn yt-dlp 同串流爭頻寬/CPU)。
+const streaming = new Map(); // youtubeId -> refcount
+export function markStreaming(id) { if (id) streaming.set(id, (streaming.get(id) || 0) + 1); }
+export function unmarkStreaming(id) {
+  if (!id) return;
+  const n = (streaming.get(id) || 0) - 1;
+  if (n <= 0) streaming.delete(id); else streaming.set(id, n);
+}
+export function isStreaming(id) { return (streaming.get(id) || 0) > 0; }
+export function anyStreaming() { return streaming.size > 0; }
 
 const STRATEGIES = [
   { name: 'youtube:player_client=tv', fmt: 'bestaudio[ext=m4a]/bestaudio', extra: '--extractor-args "youtube:player_client=tv"' },
