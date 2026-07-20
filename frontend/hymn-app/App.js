@@ -53,6 +53,11 @@ import BottomSheet, {
   BottomSheetFlatList,
   TouchableOpacity as SheetTouchable,
 } from '@gorhom/bottom-sheet';
+// 佇列拖曳排序(§Eric v237)。放喺 gorhom sheet 入面,要關咗 sheet 嘅
+// content panning(enableContentPanningGesture={false}),否則長按拖曳同 sheet
+// 自己嘅下拉手勢會搶 touch。DraggableFlatList 本身用 gesture-handler + reanimated,
+// 兩個都已經喺 project 度。
+import DraggableFlatList, { ScaleDecorator } from 'react-native-draggable-flatlist';
 
 // ===== MaterialIcons 圖標名稱 =====
 
@@ -638,6 +643,30 @@ function PlayerProvider({ children }) {
     }
   }
 
+  // 拖曳調整播放次序(佇列 sheet)。newData = DraggableFlatList 洗好牌嘅新次序,
+  // from/to = 郁咗邊個到邊個。要點都好:JS queue、TrackPlayer 原生 queue、同「而家
+  // 播緊邊 index」三樣一定要一齊更新,唔係就會 skip 跳錯歌(§3.5 教訓)。
+  async function reorderQueue(newData, from, to) {
+    if (!Array.isArray(newData) || from === to) return;
+    // 喺覆寫 queueRef 之前,capture 住而家播緊嗰首(靠佢喺新次序搵返正確 index)
+    const playing = queueRef.current[currentQueueIndexRef.current];
+    queueRef.current = newData;
+    setQueue(newData);
+    // 冇 shuffle 時 original order = 顯示緊嘅次序;shuffle 開住就唔郁 original
+    // (熄 shuffle 會還原返未拖之前嗰個原始次序,呢個係合理嘅)。
+    if (!isShuffledRef.current) originalQueueRef.current = newData;
+    try {
+      await TrackPlayer.move(from, to);
+    } catch (e) {
+      console.warn('reorderQueue move error:', e?.message || e);
+    }
+    // TrackPlayer.move 唔會 fire track-changed,所以手動更新「而家播緊」個 index
+    if (playing) {
+      const ni = newData.findIndex((s) => String(s.id) === String(playing.id));
+      if (ni >= 0) { currentQueueIndexRef.current = ni; setCurrentQueueIndex(ni); }
+    }
+  }
+
   // §3.3 — next/previous handed off to TrackPlayer's own queue/repeat state
   // instead of JS recomputing "what's next".
   async function handleNextTrack() {
@@ -705,7 +734,7 @@ function PlayerProvider({ children }) {
       overlayExpanded, queueReady, isLoading, getPlayMode,
       playQueue, playSingle, autoRadioFrom,
       cmd_play, cmd_pause, togglePlayPause,
-      skipToQueueIndex, handleNextTrack, handlePrevTrack,
+      skipToQueueIndex, reorderQueue, handleNextTrack, handlePrevTrack,
       setCurrentTime, setDuration,
       setSeekPercent, setIsSeeking, setRepeatMode,
       handleSeekRelease, handleProgressBarPress,
@@ -738,6 +767,11 @@ const olStyles = StyleSheet.create({
   overlay: {
     position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
     backgroundColor: MAIN_BG_COLOR, zIndex: 999,
+    // 🔴 v237:collapsed queue bar 頂部圓角位露咗後面 mini player 個封面(藍色)出嚟。
+    // 根因係 Android 淨靠 zIndex 唔一定壓得住有自己 elevation 嘅 sibling(TabBar/mini
+    // player)。畫面層面 overlay 係不透明全屏,但冇 elevation 就可能俾後面嘢喺邊位透出。
+    // 補返 elevation 令佢喺 Android 都實實在在蓋晒後面所有嘢。
+    elevation: 32,
     overflow: 'hidden'
   },
 });
@@ -1158,6 +1192,10 @@ function FullScreenPlayerOverlay() {
         index={0}
         snapPoints={QUEUE_SNAP_POINTS}
         enableDynamicSizing={false}
+        // 佇列改用 DraggableFlatList 拖曳排序(§v237)。一定要關 sheet 嘅 content
+        // panning,唔係長按拖歌同 sheet 自己嘅下拉手勢會搶 touch。收埋 sheet 靠條
+        // handle grabber(handle panning 仍然開住)同埋撳標題(openQueue/closeQueue)。
+        enableContentPanningGesture={false}
         // ⚠️ collapsed bar 之前俾手機導航列蓋住半截(v232 修)。外層 container 係
         // 全螢幕(edge-to-edge),所以 sheet 個底 = 螢幕底 = 導航列下面。gorhom 有
         // `bottomInset` 專門做呢件事,成個 sheet 抬高返 inset 咁多,唔使喺外層落
@@ -1165,7 +1203,8 @@ function FullScreenPlayerOverlay() {
         bottomInset={insets.bottom}
         onChange={onQueueChange}
         backdropComponent={renderQueueBackdrop}
-        backgroundStyle={{ backgroundColor: MAIN_BG_COLOR }}
+        // 明確嘅圓角 + 不透明底色,collapsed 個頂邊界乾淨,唔會靠 gorhom default
+        backgroundStyle={{ backgroundColor: MAIN_BG_COLOR, borderTopLeftRadius: 16, borderTopRightRadius: 16 }}
         handleIndicatorStyle={{ backgroundColor: TEXT_SECONDARY }}
       >
         {/* Collapsed 狀態見到嘅就係呢行 —— 撳佢 = 全開(同向上滑一樣效果)。 */}
@@ -1186,38 +1225,48 @@ function FullScreenPlayerOverlay() {
             <Text style={fsStyles.shuffleBannerText}>已隨機排序</Text>
           </View>
         )}
-        <BottomSheetFlatList
+        <DraggableFlatList
           data={queue}
           keyExtractor={(item) => String(item.id)}
           contentContainerStyle={{ paddingBottom: 40 }}
-          renderItem={({ item, index }) => (
-            <>
-              {/* §「單曲 + 自動隨機接續」:由呢個 index 開始係系統自動接落去嘅歌,
-                  唔係用戶揀嘅清單。畫條線講明白,唔好扮到係佢自己揀嘅。 */}
-              {index === player.autoRadioFrom && (
-                <View style={fsStyles.radioDivider}>
-                  <View style={fsStyles.radioDividerLine} />
-                  <MaterialIcons name="shuffle" size={14} color={ACCENT_COLOR} style={{ marginHorizontal: 8 }} />
-                  <Text style={fsStyles.radioDividerText}>正在隨機播放：</Text>
-                  <View style={fsStyles.radioDividerLine} />
-                </View>
-              )}
-              <SheetTouchable style={[fsStyles.queueItem, item.id === cur.id && fsStyles.queueItemActive]}
-                onPress={() => { player.skipToQueueIndex(queue.findIndex(h => h.id === item.id)); closeQueue(); }} activeOpacity={0.7}>
-                <CoverImage youtubeId={item.youtube_id} style={fsStyles.queueCover} />
-                <View style={fsStyles.queueInfo}>
-                  <Text style={fsStyles.queueTitle} numberOfLines={1}>{item.title}</Text>
-                  <Text style={fsStyles.queueArtist} numberOfLines={1}>{item.artist}</Text>
-                </View>
-                {item.id === cur.id
-                  ? <MaterialIcons name="play-arrow" size={18} color={ACCENT_COLOR} />
-                  : <MaterialIcons name="queue-music" size={18} color={TEXT_SECONDARY} />}
-                {/* 心心 —— 喺清單度直接加最愛,唔使入返播放頁先撳。
-                    hitSlop 撐大觸控範圍,免得撳親隔離部分跳咗去播歌。 */}
-                <FavHeart hymn={item} />
-              </SheetTouchable>
-            </>
-          )}
+          activationDistance={12}
+          onDragEnd={({ data, from, to }) => player.reorderQueue(data, from, to)}
+          renderItem={({ item, drag, isActive, getIndex }) => {
+            const index = getIndex();
+            return (
+              <ScaleDecorator activeScale={1.03}>
+                {/* §「單曲 + 自動隨機接續」:由呢個 index 開始係系統自動接落去嘅歌。
+                    畫條線講明白,唔好扮到係佢自己揀嘅。 */}
+                {index === player.autoRadioFrom && (
+                  <View style={fsStyles.radioDivider}>
+                    <View style={fsStyles.radioDividerLine} />
+                    <MaterialIcons name="shuffle" size={14} color={ACCENT_COLOR} style={{ marginHorizontal: 8 }} />
+                    <Text style={fsStyles.radioDividerText}>正在隨機播放：</Text>
+                    <View style={fsStyles.radioDividerLine} />
+                  </View>
+                )}
+                <SheetTouchable style={[fsStyles.queueItem, item.id === cur.id && fsStyles.queueItemActive, isActive && fsStyles.queueItemDragging]}
+                  onPress={() => { player.skipToQueueIndex(queue.findIndex(h => h.id === item.id)); closeQueue(); }} activeOpacity={0.7}>
+                  <CoverImage youtubeId={item.youtube_id} style={fsStyles.queueCover} />
+                  <View style={fsStyles.queueInfo}>
+                    <Text style={fsStyles.queueTitle} numberOfLines={1}>{item.title}</Text>
+                    <Text style={fsStyles.queueArtist} numberOfLines={1}>{item.artist}</Text>
+                  </View>
+                  {item.id === cur.id
+                    ? <MaterialIcons name="play-arrow" size={18} color={ACCENT_COLOR} />
+                    : <MaterialIcons name="queue-music" size={18} color={TEXT_SECONDARY} />}
+                  {/* 心心 —— 喺清單度直接加最愛,唔使入返播放頁先撳。 */}
+                  <FavHeart hymn={item} />
+                  {/* ≡ 拖曳 handle —— 長按拖動調整播放次序。用 onLongPress 觸發 gorhom
+                      /draggable 嘅 drag,唔會同「撳一下跳去嗰首」撞。 */}
+                  <SheetTouchable onLongPress={drag} delayLongPress={150} disabled={isActive}
+                    hitSlop={{ top: 12, bottom: 12, left: 12, right: 8 }} style={fsStyles.dragHandle}>
+                    <MaterialIcons name="drag-handle" size={22} color={TEXT_SECONDARY} />
+                  </SheetTouchable>
+                </SheetTouchable>
+              </ScaleDecorator>
+            );
+          }}
         />
       </BottomSheet>
 
@@ -1346,6 +1395,8 @@ const fsStyles = StyleSheet.create({
   sheetCount: { fontSize: 12, color: TEXT_SECONDARY, fontWeight: '500' },
   queueItem: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 10 },
   queueItemActive: { backgroundColor: 'rgba(255,255,255,0.08)' },
+  queueItemDragging: { backgroundColor: CARD_BG_COLOR, borderRadius: 10 },
+  dragHandle: { paddingLeft: 12, paddingVertical: 4 },
   queueCover: { width: 40, height: 40, borderRadius: 6, backgroundColor: DesignColors.cardLight },
   queueInfo: { flex: 1, marginLeft: 10 },
   queueTitle: { fontSize: 14, fontWeight: '600', color: TEXT_PRIMARY },
