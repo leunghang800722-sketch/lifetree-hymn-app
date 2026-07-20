@@ -695,6 +695,20 @@ Eric 試 v230 之後提兩樣,一次過修。
 
 > 詳細規劃 → `LIBRARY-EXPANSION-PLAN.md`。呢度淨係寫新接手要即刻知嘅嘢。
 
+> 🔀 **2026-07-20 起,呢單嘢交咗俾獨立 session `local_fa531849` 專責跟進。**
+> 其他 session(包括寫 UI/bug 嗰個)**唔好再郁**呢部分,免得同佢撞
+> (共用 worktree,commit 會夾埋)。下面係交接嗰刻嘅實況:
+>
+> **交接時狀態(2026-07-20 ~11:20 HKT):**
+> - launchd job `com.hymnapp.growlibrary` **已載入、last exit 0**,唔使再 load(load 多次會撞)。
+> - PATH bug **已修 + 已 commit(`0090dd5`)+ push**。已用 `launchctl print` 確認載入咗嘅
+>   job 帶住 homebrew PATH;已用 `env -i` 複製 launchd 環境實測 resolve **work(2/3)**。
+> - **但重點未驗證:** 由裝好到而家,**真實透過 launchd 成功收錄嘅次數 = 0**,curated 仍然
+>   停喺 **150**(修正前每次 0 首;修正後嘅第一次 in-window run 係今晚 2026-07-20 00:07 之後)。
+>   **新 session 第一件事:睇 `/tmp/hymn_growlibrary.log` 確認今晚真係收錄到,唔好當佢一定成功。**
+> - discover mode(`runDiscover()`)仲係 stub,未接頻道搜尋 → 兒童詩歌 + 未吸納團體暫時收唔到。
+> - 兒童配額已入 `QUOTA`(粵27/國45/英18/兒童10),但因為 pool 空,實際唔會郁,唔會壞。
+
 ### 一句話
 歌庫入面**已經有 1153 首合資格但未收錄**嘅歌(`hymns_all` 1518 首過濾後),
 已收錄得 150 首。所以**頭 400 首擴充完全唔使爬 YouTube**,慢慢驗證升級就得。
