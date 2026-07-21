@@ -11,8 +11,8 @@
 // 嘅播放清單。列表顯示「清單名 + N 首歌曲」(YT Music 咁);底部「＋新播放清單」撳落
 // 即場展開一個標題輸入框開新清單。
 
-import React, { createContext, useContext, useState, useCallback } from 'react';
-import { Modal, View, Text, TextInput, TouchableOpacity, FlatList, StyleSheet, Alert } from 'react-native';
+import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
+import { Modal, View, Text, TextInput, TouchableOpacity, FlatList, StyleSheet, Alert, Keyboard } from 'react-native';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { COLORS } from '../theme/designSystem';
 import { usePlaylists, MAX_PLAYLIST_SONGS } from '../context/PlaylistsContext';
@@ -24,11 +24,21 @@ export const useAddToPlaylist = () => useContext(Ctx) || { open: () => {} };
 
 export function AddToPlaylistProvider({ children }) {
   const { playlists = [], addToPlaylist, createPlaylist } = usePlaylists() || {};
-  const insets = useInsets(); // §Eric #2:底部「＋新播放清單」唔好俾導航列檔住
+  const insets = useInsets(); // 底部「＋新播放清單」唔好俾導航列檔住
   const [target, setTarget] = useState(null); // 要加入邊首歌
   const [creating, setCreating] = useState(false); // 展開緊新清單輸入框?
   const [newName, setNewName] = useState('');
+  const [kbHeight, setKbHeight] = useState(0); // §Eric #1:鍵盤高度,用嚟抬高個 card
   const visible = !!target;
+
+  // §Eric #1:打新清單名嗰陣,鍵盤彈出會遮住輸入框/確認掣。聽鍵盤事件,
+  // 將 card 抬高鍵盤咁多,令輸入框 keep 喺鍵盤上面。Modal + Android 用
+  // KeyboardAvoidingView 好唔穩,呢個手動做法可靠好多。
+  useEffect(() => {
+    const show = Keyboard.addListener('keyboardDidShow', (e) => setKbHeight(e.endCoordinates?.height || 0));
+    const hide = Keyboard.addListener('keyboardDidHide', () => setKbHeight(0));
+    return () => { show.remove(); hide.remove(); };
+  }, []);
 
   const open = useCallback((hymn) => {
     if (hymn?.id) { setTarget(hymn); setCreating(false); setNewName(''); }
@@ -65,7 +75,9 @@ export function AddToPlaylistProvider({ children }) {
       <Modal visible={visible} transparent animationType="slide" onRequestClose={close} statusBarTranslucent>
         <View style={styles.scrim}>
           <TouchableOpacity style={{ flex: 1 }} activeOpacity={1} onPress={close} />
-          <View style={[styles.card, { paddingBottom: 8 + insets.bottom }]}>
+          {/* 鍵盤彈出時 marginBottom = 鍵盤高度 → card 抬到鍵盤上面(§Eric #1);
+              鍵盤收埋(kbHeight 0)先用返 safe-area inset 墊底(#2)。 */}
+          <View style={[styles.card, { marginBottom: kbHeight, paddingBottom: kbHeight > 0 ? 12 : 8 + insets.bottom }]}>
             <View style={styles.handle} />
             <Text style={styles.title}>加入到清單</Text>
 

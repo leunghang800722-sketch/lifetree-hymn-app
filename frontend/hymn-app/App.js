@@ -13,7 +13,7 @@ import TrackPlayer, {
 } from 'react-native-track-player';
 import {
   View, Text, ScrollView, TouchableOpacity, StyleSheet,
-  ActivityIndicator, StatusBar, Image, Platform, Alert,
+  ActivityIndicator, StatusBar, Image, Platform, Alert, AppState,
   Modal, Dimensions, FlatList, Animated, Linking, Share, BackHandler,
 } from 'react-native';
 import { COLORS } from './src/constants/theme';
@@ -538,6 +538,50 @@ function PlayerProvider({ children }) {
       unsubscribeError.remove();
     };
   }, [queueReady]);
+
+  // §Eric #2 —— app resume / 重開 之後同 native TrackPlayer 對返數。
+  // Android 低記憶體會殺咗個 JS(Activity),但 TrackPlayer 個 foreground service
+  // 靠 AppKilledPlaybackBehavior.ContinuePlayback 仲喺度播 → 用戶返嚟見到 mini
+  // player 唔見咗(currentHymn 係 null)但實際上有歌播緊。呢度讀返 native 嘅
+  // queue / 而家播緊嗰首 / 播放狀態,補返 JS 嘅 UI state。只讀 + set state,
+  // 唔會郁到 native 播緊嗰首。
+  const resyncFromNative = useCallback(async () => {
+    try {
+      await lazyEnsurePlayer(); // 確保呢個 JS instance 連到 native service(idempotent)
+      const [q, idxRaw, stateRaw] = await Promise.all([
+        TrackPlayer.getQueue().catch(() => []),
+        TrackPlayer.getActiveTrackIndex().catch(() => null),
+        TrackPlayer.getPlaybackState().catch(() => null),
+      ]);
+      const stateVal = typeof stateRaw === 'object' && stateRaw != null ? stateRaw.state : stateRaw;
+      if (stateVal != null) setTrackState(stateVal);
+      if (!Array.isArray(q) || q.length === 0) return; // native 冇嘢播,唔使補
+      // native track → hymn 物件:優先由 allSongs 攞齊資料;冇就由 track 砌返
+      // 最低限度(youtube_id 由 artwork URL 拆返)。
+      const lib = hymnsRef.current || [];
+      const toHymn = (t) => {
+        const found = lib.find((h) => String(h.id) === String(t.id));
+        if (found) return found;
+        const yt = typeof t.artwork === 'string' ? (t.artwork.match(/\/vi\/([^/]+)\//)?.[1] || '') : '';
+        return { id: Number(t.id) || t.id, title: t.title || '', artist: t.artist || '', youtube_id: yt, lyrics: '' };
+      };
+      const rebuilt = q.map(toHymn);
+      queueRef.current = rebuilt;
+      setQueue(rebuilt);
+      const idx = typeof idxRaw === 'number' && idxRaw >= 0 ? idxRaw : 0;
+      currentQueueIndexRef.current = idx;
+      setCurrentQueueIndex(idx);
+      const cur = rebuilt[idx];
+      if (cur) { setHymn(cur); setCurrentHymn(cur); }
+    } catch (_) {}
+  }, [lazyEnsurePlayer]);
+
+  useEffect(() => {
+    // 開機一次(俾 native service 少少時間重連)+ 每次返前台
+    const t = setTimeout(() => { resyncFromNative(); }, 800);
+    const sub = AppState.addEventListener('change', (s) => { if (s === 'active') resyncFromNative(); });
+    return () => { clearTimeout(t); sub.remove(); };
+  }, [resyncFromNative]);
 
   // Progress — poll TrackPlayer.getProgress() directly instead of useProgress hook
   // This avoids the hook being mounted before TrackPlayer is ready
