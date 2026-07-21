@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.hymnapp.fetchlyrics</string>
+
+    <!-- 歌詞入庫夜晚隊列(LYRICS-PIPELINE-PLAN)。STAGE 1 = CC 字幕層。
+         每晚一次,CC budget 12 首(CC 平,同 resolve 同級)。 -->
+    <key>ProgramArguments</key>
+    <array>
+        <string>/opt/homebrew/bin/node</string>
+        <string>/Users/macbookpro/.openclaw/workspace/hymn-app/backend/scripts/fetchLyrics.js</string>
+        <string>--budget</string>
+        <string>12</string>
+        <string>--delay</string>
+        <string>4000</string>
+    </array>
+
+    <key>WorkingDirectory</key>
+    <string>/Users/macbookpro/.openclaw/workspace/hymn-app/backend</string>
+
+    <!-- ⚠️ 一定要 set PATH:launchd 預設冇 /opt/homebrew/bin,fetchLyrics 行 yt-dlp。
+         唔 set 嘅話每首都 command-not-found、成個 job 靜靜哋收 0 首(growlibrary 踩過)。 -->
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>PATH</key>
+        <string>/opt/homebrew/bin:/opt/homebrew/sbin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+    </dict>
+
+    <!-- 04:20 —— 特登揀呢個位:growlibrary 排程跳過 4 點(唔會撞),deadlinkcheck
+         04:00 做完 ~4:07(4:20 已清)。呢個 gap 冇其他 job 打 YouTube 或者寫 hymns.db,
+         所以唔會同佢哋爭資源 / clobber 個 DB。fetchLyrics 一次 run 做完(CC 好快)
+         遠早過 growlibrary 下一 slot 05:07。 -->
+    <key>StartCalendarInterval</key>
+    <dict>
+        <key>Hour</key><integer>4</integer>
+        <key>Minute</key><integer>20</integer>
+    </dict>
+
+    <key>RunAtLoad</key>
+    <false/>
+    <key>KeepAlive</key>
+    <false/>
+
+    <key>StandardOutPath</key>
+    <string>/tmp/hymn_fetchlyrics.log</string>
+    <key>StandardErrorPath</key>
+    <string>/tmp/hymn_fetchlyrics.log</string>
+</dict>
+</plist>
