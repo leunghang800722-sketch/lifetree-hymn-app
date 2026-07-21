@@ -19,6 +19,9 @@ import { usePlaylists, MAX_PLAYLIST_SONGS } from '../context/PlaylistsContext';
 import { useInsets } from '../hooks/useInsets';
 
 const Ctx = createContext(null);
+// Android keyboardDidShow 個高度唔包上面條建議/emoji 工具列,補呢個高度令輸入框
+// 一定清到嗰條 bar。寧願多留少少 gap,好過又俾檔住。
+const KB_EXTRA = 52;
 // open(hymn):彈 sheet,揀清單加入呢首歌。
 export const useAddToPlaylist = () => useContext(Ctx) || { open: () => {} };
 
@@ -75,9 +78,10 @@ export function AddToPlaylistProvider({ children }) {
       <Modal visible={visible} transparent animationType="slide" onRequestClose={close} statusBarTranslucent>
         <View style={styles.scrim}>
           <TouchableOpacity style={{ flex: 1 }} activeOpacity={1} onPress={close} />
-          {/* 鍵盤彈出時 marginBottom = 鍵盤高度 → card 抬到鍵盤上面(§Eric #1);
-              鍵盤收埋(kbHeight 0)先用返 safe-area inset 墊底(#2)。 */}
-          <View style={[styles.card, { marginBottom: kbHeight, paddingBottom: kbHeight > 0 ? 12 : 8 + insets.bottom }]}>
+          {/* 鍵盤彈出時 card 抬起鍵盤咁高;鍵盤收埋先用返 safe-area inset 墊底。
+              §Eric(v242):Android 個 keyboardDidShow 高度**唔包**上面條建議/emoji
+              工具列,所以之前仲俾佢檔住半截 —— 加 KB_EXTRA 補返嗰條工具列嘅高度。 */}
+          <View style={[styles.card, { marginBottom: kbHeight > 0 ? kbHeight + KB_EXTRA : 0, paddingBottom: kbHeight > 0 ? 12 : 8 + insets.bottom }]}>
             <View style={styles.handle} />
             <Text style={styles.title}>加入到清單</Text>
 

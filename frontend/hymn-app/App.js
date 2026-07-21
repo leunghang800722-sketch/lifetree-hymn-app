@@ -1359,57 +1359,57 @@ function FullScreenPlayerOverlay() {
         </SheetTouchable>
 
         {/* 🩹 §Eric #3/#6:collapsed 只顯示個 header(乾淨,冇歌封面突出圓角邊)。
-            自動播放控制 + 佇列 list 只喺 sheet 全開先 render —— 亦即係話,想見
-            5 個 chip 就將個 sheet 拉上去(全開)。 */}
-        {queueExpanded && (<>
-        {/* ===== 自動播放:toggle + flavor chips(AUTOPLAY-MIX-PLAN)=====
-            toggle 開先出 chips。冇貨嘅 flavor(個人創作/純音樂)由 visibleFlavors 隱藏。 */}
-        <View style={fsStyles.autoplayRow}>
-          <View style={{ flex: 1 }}>
-            <Text style={fsStyles.autoplayTitle}>自動播放</Text>
-            <Text style={fsStyles.autoplaySub}>加入類似內容,無間斷播放</Text>
-          </View>
-          <SheetTouchable
-            onPress={() => player.applyAutoplayEnabled?.(!player.autoplayEnabled)}
-            style={[fsStyles.toggleTrack, player.autoplayEnabled && fsStyles.toggleTrackOn]}
-            activeOpacity={0.8}
-          >
-            <View style={[fsStyles.toggleThumb, player.autoplayEnabled && fsStyles.toggleThumbOn]} />
-          </SheetTouchable>
-        </View>
-        {player.autoplayEnabled && (
-          <View style={fsStyles.chipBar}>
-            {visibleFlavors(player.hymns || []).map((f) => {
-              const on = (player.autoplayFlavor || '全部') === f;
-              return (
-                <SheetTouchable key={f} onPress={() => player.applyAutoplayFlavor?.(f)} activeOpacity={0.8}
-                  style={[fsStyles.apChip, on && fsStyles.apChipOn]}>
-                  <Text style={[fsStyles.apChipText, on && fsStyles.apChipTextOn]}>{f}</Text>
-                </SheetTouchable>
-              );
-            })}
-          </View>
-        )}
-
-        {/* Shuffle indicator —— 個 list 本身就係洗咗牌嘅順序,冇呢個提示分唔出 */}
-        {player.isShuffled && (
-          <View style={[fsStyles.shuffleBanner, { marginBottom: 8, alignSelf: 'center' }]}>
-            <MaterialIcons name="shuffle" size={14} color={ACCENT_COLOR} />
-            <Text style={fsStyles.shuffleBannerText}>已隨機排序</Text>
-          </View>
-        )}
+            自動播放控制 + 佇列 list 只喺 sheet 全開先 render。 */}
+        {queueExpanded && (
         <DraggableFlatList
           data={queue}
           keyExtractor={(item) => String(item.id)}
           contentContainerStyle={{ paddingBottom: 40 }}
           activationDistance={12}
           onDragEnd={({ data, from, to }) => player.reorderQueue(data, from, to)}
+          // §Eric #1:自動播放控制放喺 ListHeaderComponent(唔係做 sibling)——
+          // DraggableFlatList 拖曳嗰陣會 translate 佢個 content,sibling 會俾佢一齊拖郁;
+          // ListHeaderComponent 係固定 header,拖歌唔會郁到佢。
+          ListHeaderComponent={
+            <View>
+              <View style={fsStyles.autoplayRow}>
+                <View style={{ flex: 1 }}>
+                  <Text style={fsStyles.autoplayTitle}>自動播放</Text>
+                  <Text style={fsStyles.autoplaySub}>加入類似內容,無間斷播放</Text>
+                </View>
+                <SheetTouchable
+                  onPress={() => player.applyAutoplayEnabled?.(!player.autoplayEnabled)}
+                  style={[fsStyles.toggleTrack, player.autoplayEnabled && fsStyles.toggleTrackOn]}
+                  activeOpacity={0.8}
+                >
+                  <View style={[fsStyles.toggleThumb, player.autoplayEnabled && fsStyles.toggleThumbOn]} />
+                </SheetTouchable>
+              </View>
+              {player.autoplayEnabled && (
+                <View style={fsStyles.chipBar}>
+                  {visibleFlavors(player.hymns || []).map((f) => {
+                    const on = (player.autoplayFlavor || '全部') === f;
+                    return (
+                      <SheetTouchable key={f} onPress={() => player.applyAutoplayFlavor?.(f)} activeOpacity={0.8}
+                        style={[fsStyles.apChip, on && fsStyles.apChipOn]}>
+                        <Text style={[fsStyles.apChipText, on && fsStyles.apChipTextOn]}>{f}</Text>
+                      </SheetTouchable>
+                    );
+                  })}
+                </View>
+              )}
+              {player.isShuffled && (
+                <View style={[fsStyles.shuffleBanner, { marginBottom: 8, alignSelf: 'center' }]}>
+                  <MaterialIcons name="shuffle" size={14} color={ACCENT_COLOR} />
+                  <Text style={fsStyles.shuffleBannerText}>已隨機排序</Text>
+                </View>
+              )}
+            </View>
+          }
           renderItem={({ item, drag, isActive, getIndex }) => {
             const index = getIndex();
             return (
               <ScaleDecorator activeScale={1.03}>
-                {/* §「單曲 + 自動隨機接續」:由呢個 index 開始係系統自動接落去嘅歌。
-                    畫條線講明白,唔好扮到係佢自己揀嘅。 */}
                 {index === player.autoRadioFrom && (
                   <View style={fsStyles.radioDivider}>
                     <View style={fsStyles.radioDividerLine} />
@@ -1420,9 +1420,11 @@ function FullScreenPlayerOverlay() {
                 )}
                 <SheetTouchable style={[fsStyles.queueItem, item.id === cur.id && fsStyles.queueItemActive, isActive && fsStyles.queueItemDragging]}
                   onPress={() => { player.skipToQueueIndex(queue.findIndex(h => h.id === item.id)); closeQueue(); }} activeOpacity={0.7}>
-                  {/* ≡ 拖曳 handle —— §Eric #4:搬咗去封面圖最左(成行最頭)。長按拖動排序。
-                      hitSlop 收窄,唔會再搶右邊啲掣嘅 touch(§Eric #5 就係俾佢搶咗)。 */}
-                  <SheetTouchable onLongPress={drag} delayLongPress={150} disabled={isActive}
+                  {/* ≡ 拖曳 handle(§Eric #4:喺成行最頭)。長按拖動排序。
+                      §Eric #3:唔用 disabled={isActive} —— draggable-flatlist 有時拖完唔 reset
+                      isActive,會令粒掣卡喺 disabled(變灰、撳唔到)。activeOpacity=1 = 撳落唔會
+                      dim,唔會卡喺灰色。 */}
+                  <SheetTouchable onLongPress={drag} delayLongPress={150} activeOpacity={1}
                     hitSlop={{ top: 10, bottom: 10, left: 2, right: 2 }} style={fsStyles.dragHandleLeft}>
                     <MaterialIcons name="drag-handle" size={22} color={item.id === cur.id ? ACCENT_COLOR : TEXT_SECONDARY} />
                   </SheetTouchable>
@@ -1431,19 +1433,18 @@ function FullScreenPlayerOverlay() {
                     <Text style={fsStyles.queueTitle} numberOfLines={1}>{item.title}</Text>
                     <Text style={fsStyles.queueArtist} numberOfLines={1}>{item.artist}</Text>
                   </View>
-                  {/* ≡♪ 加入到清單 —— §Eric #5:同其他清單一致,撳到彈揀清單 sheet。 */}
+                  {/* ≡♪ 加入到清單 */}
                   <SheetTouchable onPress={(e) => { e?.stopPropagation?.(); openAddToPlaylist(item); }}
                     hitSlop={{ top: 10, bottom: 10, left: 6, right: 6 }} style={fsStyles.rowAct}>
                     <MaterialIcons name="playlist-add" size={22} color={TEXT_SECONDARY} />
                   </SheetTouchable>
-                  {/* 心心 —— 喺清單度直接加最愛。 */}
                   <FavHeart hymn={item} />
                 </SheetTouchable>
               </ScaleDecorator>
             );
           }}
         />
-        </>)}
+        )}
       </BottomSheet>
 
       {/* ===== NATIVE MODAL: Lyrics ===== */}
