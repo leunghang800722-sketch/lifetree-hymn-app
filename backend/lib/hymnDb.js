@@ -61,7 +61,19 @@ export function isCompilation(title = '') {
   ].some((p) => t.includes(p));
   // "…15首" / "…精选20首" — N songs in one video.
   const nSongs = /\d+\s*首/.test(title);
-  return hit || nSongs;
+  // 直播/主日敬拜 set + 系列節目 —— 呢批冇上面任何關鍵字,靠內容特徵先捉到:
+  //  · YYYYMMDD 日期戳(20260705)= 某日直播/主日敬拜嗰場,唔係一首歌
+  //    (實測踩過:ROLCC「在你寶座前｜神羔羊…｜你是配得…20260705 #生命河主日敬拜」
+  //     20分44秒 4 首連唱,前端一播就斷斷續續 —— archived livestream 本身冇乾淨
+  //     progressive audio itag,resolve 落嚟個 format 令 ExoPlayer buffer 唔順)
+  //  · 第N集 = 節目/系列(天韻「聲活圈 第14集…」根本係清談節目,唔係詩歌)
+  //  · 主日敬拜/主日崇拜 = 成場崇拜,唔係單一首詩歌
+  // ⚠️ 特登唔用「多個 | 分隔」做訊號:｜ 喺英文敬拜台好常見(「歌名 | 歌手 | 廠牌」),
+  //    會誤殺一大堆正常單曲(Maverick City / Elevation…),命中率太低。
+  const dateStamp = /20\d{6}/.test(title);
+  const episode = /第\s*\d+\s*集/.test(title);
+  const worshipSet = /主日敬拜|主日崇拜|崇拜實況|敬拜實錄|崇拜直播/.test(title);
+  return hit || nSongs || dateStamp || episode || worshipSet;
 }
 
 // Not worship music at all. The scrape pulled in whole channels that merely

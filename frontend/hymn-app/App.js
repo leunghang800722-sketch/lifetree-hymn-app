@@ -1177,6 +1177,27 @@ function FullScreenPlayerOverlay() {
     <BottomSheetBackdrop {...props} appearsOnIndex={1} disappearsOnIndex={0} pressBehavior="collapse" />
   ), []);
 
+  // §Eric(v242 regression):content panning 要 keep 住 false(唔係長按拖歌會同
+  // sheet 下拉手勢搶 touch),但咁樣「滑」就淨係得條幼 handle indicator 食到,好易
+  // 撳唔中 → 要滑幾次先開/收。解法:成條標題 bar 升做**自訂 handleComponent** ——
+  // gorhom 個 pan 手勢係綁喺 handle 容器度,所以喺呢條 bar 上面**任何位**向上/向下
+  // 滑都 pan 到個 sheet,撳一下就照 toggle。拖歌手勢完全冇掂到。
+  const renderQueueHandle = useCallback(() => (
+    <View>
+      <View style={fsStyles.queueHandleBar} />
+      <SheetTouchable
+        style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingHorizontal: 16, paddingBottom: 10 }}
+        onPress={() => (queueOpenRef.current ? closeQueue() : openQueue())}
+      >
+        <MaterialIcons
+          name={queueExpanded ? 'keyboard-arrow-down' : 'keyboard-arrow-up'}
+          size={18} color={TEXT_SECONDARY} style={{ marginRight: 6 }}
+        />
+        <Text style={{ ...TYPOGRAPHY.sectionTitle }}>播放清單 ({queue.length})</Text>
+      </SheetTouchable>
+    </View>
+  ), [queueExpanded, queue.length, closeQueue, openQueue]);
+
   const cur = player.currentHymn || { title: '', artist: '', youtube_id: '', id: null, lyrics: '' };
   const progressPercent = player.duration > 0 ? Math.min((player.currentTime / player.duration) * 100, 100) : 0;
   const bottomPad = (insets?.bottom || 20) + 8;
@@ -1342,22 +1363,11 @@ function FullScreenPlayerOverlay() {
         bottomInset={insets.bottom}
         onChange={onQueueChange}
         backdropComponent={renderQueueBackdrop}
+        // §Eric(v242):成條標題 bar 升做 handle,喺 bar 上面任何位都滑得郁個 sheet。
+        handleComponent={renderQueueHandle}
         // 明確嘅圓角 + 不透明底色,collapsed 個頂邊界乾淨,唔會靠 gorhom default
         backgroundStyle={{ backgroundColor: MAIN_BG_COLOR, borderTopLeftRadius: 16, borderTopRightRadius: 16 }}
-        handleIndicatorStyle={{ backgroundColor: TEXT_SECONDARY }}
       >
-        {/* Collapsed 狀態見到嘅就係呢行 —— 撳佢 = 全開(同向上滑一樣效果)。 */}
-        <SheetTouchable
-          style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingHorizontal: 16, paddingBottom: 10 }}
-          onPress={queueExpanded ? closeQueue : openQueue}
-        >
-          <MaterialIcons
-            name={queueExpanded ? 'keyboard-arrow-down' : 'keyboard-arrow-up'}
-            size={18} color={TEXT_SECONDARY} style={{ marginRight: 6 }}
-          />
-          <Text style={{ ...TYPOGRAPHY.sectionTitle }}>播放清單 ({queue.length})</Text>
-        </SheetTouchable>
-
         {/* 🩹 §Eric #3/#6:collapsed 只顯示個 header(乾淨,冇歌封面突出圓角邊)。
             自動播放控制 + 佇列 list 只喺 sheet 全開先 render。 */}
         {queueExpanded && (
@@ -1487,6 +1497,8 @@ const fsStyles = StyleSheet.create({
   // 同 pageStyles.container 一樣唔可以寫死 SCREEN_HEIGHT(見嗰邊註解)
   container: { flex: 1, backgroundColor: MAIN_BG_COLOR },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  // queue sheet 自訂 handle 個 grabber(取代 gorhom default handleIndicator)
+  queueHandleBar: { alignSelf: 'center', width: 40, height: 5, borderRadius: 3, backgroundColor: TEXT_SECONDARY, marginTop: 8, marginBottom: 6 },
   topBar: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, paddingBottom: 8 },
   pillButton: { flex: 1, alignItems: 'center', paddingVertical: 12, paddingHorizontal: 8, borderRadius: 999, marginHorizontal: 2 },
   // §3.4 4 粒獨立膠囊 pill:黑底(卡片色)、橫排並列
