@@ -1,11 +1,13 @@
 // 詩歌庫 —— REDESIGN-PLAN §2.2「全部詩歌,可以按語言/歌手/專輯篩選」
+// 2026-07 SEARCH-MERGE-PLAN:獨立「搜尋」分頁已併入本頁 —— 搜尋欄喺標題下、
+// 語言 chip 上,本地即時 filter(歌名/英文名/歌手/歌詞/專輯),同 chip AND 夾用。
 //
 // 呢個 tab 係新嘅(舊版冇)。而家個庫係 Phase 2 揀出嚟嘅 150 首試版歌
 // (backend 個 `hymns` view 已經幫我哋隱藏咗死鏈同非 curated 嘅歌),
 // 所以呢度收到咩就顯示咩,唔使前端再過濾一次。
 
 import React, { useState, useMemo } from 'react';
-import { View, Text, FlatList, TouchableOpacity, StyleSheet, Image } from 'react-native';
+import { View, Text, TextInput, FlatList, TouchableOpacity, StyleSheet, Image, Keyboard } from 'react-native';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { COLORS, TYPOGRAPHY } from '../theme/designSystem';
 import { useInsets } from '../hooks/useInsets';
@@ -29,19 +31,39 @@ function Cover({ youtubeId, size = 52 }) {
 export default function LibraryScreen({ hymns = [], onPlayHymn }) {
   const [lang, setLang] = useState('全部');
   const [artist, setArtist] = useState(null);
+  // SEARCH-MERGE-PLAN:搜尋欄併入本頁,本地即時 filter,同 chip AND 夾用
+  const [query, setQuery] = useState('');
+  const [focused, setFocused] = useState(false);
+
+  // Filter 鏈:全庫 → 語言 chip → 搜尋字串 → 歌手 chip(AND)。
+  // 歌手 chip 嘅計數 base 跟埋語言+搜尋重算,所以搜尋層放喺歌手層之前。
+  const searched = useMemo(() => {
+    let base = lang === '全部' ? hymns : hymns.filter((h) => h.lang === lang);
+    const q = query.trim().toLowerCase();
+    if (!q) return base;
+    // 每欄 || '' 兜底:離線舊 cache 可能未有 album/title_en(SEARCH-MERGE-PLAN §5)
+    return base.filter((h) =>
+      (h.title || '').toLowerCase().includes(q) ||
+      (h.title_en || '').toLowerCase().includes(q) ||
+      (h.artist || '').toLowerCase().includes(q) ||
+      (h.album || '').toLowerCase().includes(q) ||
+      (h.lyrics || '').toLowerCase().includes(q)
+    );
+  }, [hymns, lang, query]);
 
   const artists = useMemo(() => {
-    const base = lang === '全部' ? hymns : hymns.filter((h) => h.lang === lang);
     const counts = {};
-    base.forEach((h) => { const a = h.artist || '未知'; counts[a] = (counts[a] || 0) + 1; });
+    searched.forEach((h) => { const a = h.artist || '未知'; counts[a] = (counts[a] || 0) + 1; });
     return Object.entries(counts).sort((a, b) => b[1] - a[1]);
-  }, [hymns, lang]);
+  }, [searched]);
 
   const shown = useMemo(() => {
-    let out = lang === '全部' ? hymns : hymns.filter((h) => h.lang === lang);
-    if (artist) out = out.filter((h) => (h.artist || '未知') === artist);
-    return out;
-  }, [hymns, lang, artist]);
+    if (!artist) return searched;
+    return searched.filter((h) => (h.artist || '未知') === artist);
+  }, [searched, artist]);
+
+  const hasQuery = query.trim().length > 0;
+  const hasChipFilter = lang !== '全部' || !!artist;
 
   // edge-to-edge:唔加 top inset 個大字標題會同狀態列時間疊埋(見 useInsets.js)
   const insets = useInsets();
@@ -50,6 +72,27 @@ export default function LibraryScreen({ hymns = [], onPlayHymn }) {
     <View style={[styles.container, { paddingTop: insets.top + 8 }]}>
       <Text style={styles.header}>詩歌庫</Text>
       <Text style={styles.count}>{shown.length} 首</Text>
+
+      {/* 搜尋欄(SEARCH-MERGE-PLAN §3)— 喺固定 header 區內,自動 pinned 唔跟 scroll */}
+      <View style={[styles.searchWrap, focused && styles.searchWrapFocused]}>
+        <MaterialIcons name="search" size={20} color={COLORS.textSecondary} style={styles.searchIcon} />
+        <TextInput
+          style={styles.searchInput}
+          placeholder="搜尋歌名、歌手、歌詞、專輯"
+          placeholderTextColor="#888"
+          value={query}
+          onChangeText={setQuery}
+          onFocus={() => setFocused(true)}
+          onBlur={() => setFocused(false)}
+          onSubmitEditing={() => Keyboard.dismiss()}
+          returnKeyType="search"
+        />
+        {hasQuery && (
+          <TouchableOpacity style={styles.clearBtn} onPress={() => setQuery('')}>
+            <MaterialIcons name="close" size={18} color={COLORS.textSecondary} />
+          </TouchableOpacity>
+        )}
+      </View>
 
       {/* 語言篩選 */}
       <View style={styles.chipRow}>
@@ -95,6 +138,8 @@ export default function LibraryScreen({ hymns = [], onPlayHymn }) {
         data={shown}
         keyExtractor={(item) => String(item.id)}
         contentContainerStyle={{ paddingBottom: 24 }}
+        keyboardShouldPersistTaps="handled"
+        onScrollBeginDrag={() => Keyboard.dismiss()}
         renderItem={({ item }) => (
           <TouchableOpacity style={styles.row} onPress={() => onPlayHymn && onPlayHymn(item)} activeOpacity={0.7}>
             <Cover youtubeId={item.youtube_id} />
@@ -107,8 +152,15 @@ export default function LibraryScreen({ hymns = [], onPlayHymn }) {
         )}
         ListEmptyComponent={
           <View style={styles.empty}>
-            <MaterialIcons name="library-music" size={40} color={COLORS.textSecondary} />
-            <Text style={styles.emptyText}>冇歌</Text>
+            <MaterialIcons name={hasQuery ? 'search-off' : 'library-music'} size={40} color={COLORS.textSecondary} />
+            <Text style={styles.emptyText}>{hasQuery ? `搵唔到「${query.trim()}」` : '冇歌'}</Text>
+            {hasQuery && <Text style={styles.emptyHint}>試下其他關鍵字</Text>}
+            {/* 有 chip filter 生效時俾個掣一撳重置,免得用戶唔知係 chip 累事 */}
+            {hasChipFilter && (
+              <TouchableOpacity style={styles.clearFilterBtn} onPress={() => { setLang('全部'); setArtist(null); }} activeOpacity={0.7}>
+                <Text style={styles.clearFilterText}>清除篩選</Text>
+              </TouchableOpacity>
+            )}
           </View>
         }
       />
@@ -120,6 +172,17 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.background },
   header: { ...TYPOGRAPHY.title, paddingHorizontal: 16 },
   count: { ...TYPOGRAPHY.artist, paddingHorizontal: 16, marginTop: 2, marginBottom: 10 },
+  // 搜尋欄 — 樣式跟舊 SearchScreen 嘅藥丸形睇齊
+  searchWrap: {
+    flexDirection: 'row', alignItems: 'center',
+    backgroundColor: '#E8E8E8', borderRadius: 24,
+    marginHorizontal: 16, paddingHorizontal: 16,
+    height: 48, marginBottom: 10,
+  },
+  searchWrapFocused: { borderWidth: 2, borderColor: COLORS.accent },
+  searchIcon: { marginRight: 8 },
+  searchInput: { flex: 1, fontSize: 16, color: '#0B0F0E', height: 48 },
+  clearBtn: { padding: 4 },
   chipRow: { flexDirection: 'row', paddingHorizontal: 16, marginBottom: 10 },
   chip: {
     paddingHorizontal: 16, paddingVertical: 7, borderRadius: 16,
@@ -143,4 +206,10 @@ const styles = StyleSheet.create({
   rowArtist: { ...TYPOGRAPHY.artist, marginTop: 2 },
   empty: { alignItems: 'center', paddingTop: 60 },
   emptyText: { ...TYPOGRAPHY.artist, marginTop: 8 },
+  emptyHint: { fontSize: 13, color: '#666', marginTop: 6 },
+  clearFilterBtn: {
+    marginTop: 16, paddingHorizontal: 20, paddingVertical: 8,
+    borderRadius: 18, borderWidth: 1, borderColor: COLORS.accent,
+  },
+  clearFilterText: { fontSize: 14, color: COLORS.accent, fontWeight: '600' },
 });

@@ -969,16 +969,16 @@ const miStyles = StyleSheet.create({
 // ================================================================
 //  TAB BAR
 // ================================================================
-// §2.2 六格減到四格。舊版係 首頁/搜尋/分類/清單/最愛/播放 —— 六個掣太密、易撳錯,
+// §2.2 六格減到四格,2026-07 SEARCH-MERGE-PLAN 再減到三格。
+// 舊版係 首頁/搜尋/分類/清單/最愛/播放 —— 六個掣太密、易撳錯,
 // 而且六樣嘢擺埋一齊冇主次。合併邏輯:
-//   搜尋 + 分類  -> 「搜尋」  (本質都係「搵歌」)
 //   清單 + 最愛 + 帳戶 + 設定 -> 「我的」
-//   新增「詩歌庫」(全部詩歌)
+//   搜尋 + 分類 -> 「搜尋」-> 2026-07 再併入「詩歌庫」(搜尋欄喺詩歌庫頁頂,
+//     本地即時 filter,見 SEARCH-MERGE-PLAN.md;獨立搜尋 tab 已刪)
 //   「播放」唔再佔一格 —— 撳迷你播放條就向上展開,係全世界音樂 App 嘅標準做法
 // §5.4:圖標一律用向量圖標庫,唔用 Emoji(舊版 tab 用緊 🏠🔍📚📋❤️)
 const TAB_CONFIG = [
   { key: 'Home',    label: '首頁',   icon: 'home',          iconOff: 'home' },
-  { key: 'Search',  label: '搜尋',   icon: 'search',        iconOff: 'search' },
   { key: 'Library', label: '詩歌庫', icon: 'library-music', iconOff: 'library-music' },
   { key: 'Mine',    label: '我的',   icon: 'person',        iconOff: 'person-outline' },
 ];
@@ -1021,12 +1021,12 @@ const tbStyles = StyleSheet.create({
 
 // ===== 各 tab 畫面 =====
 import HomeSections from './src/components/home/HomeScreen';
-import SearchScreen from './src/screens/SearchScreen';
 import HymnListScreen from './src/screens/HymnListScreen';
-import LibraryScreen from './src/screens/LibraryScreen'; // §2.2 詩歌庫(新)
+import LibraryScreen from './src/screens/LibraryScreen'; // §2.2 詩歌庫(2026-07 併入搜尋欄,SEARCH-MERGE-PLAN)
 import MineScreen from './src/screens/MineScreen';        // §2.2 我的(新,合併 最愛+清單+帳戶)
-// 舊 tab 畫面(Category / Playlist / Favorites)已由上面兩個新畫面取代 —— §2.2 六格減四格。
-// 檔案暫時保留喺 src/screens/ 未刪(等 Phase 3 收尾一次過清 legacy)。
+// 舊 tab 畫面(Category / Playlist / Favorites / Search)已由上面新畫面取代。
+// 檔案暫時保留喺 src/screens/ 未刪(等 Phase 3 收尾一次過清 legacy;
+// SearchScreen.js + services/searchApi.js 同樣唔再 import,一齊等清)。
 
 // ================================================================
 //  HOME SCREEN
@@ -1732,17 +1732,12 @@ function AppContent() {
 
 
       <View style={pageStyles.content}>
-        {/* 四 tab(§2.2):首頁 / 搜尋 / 詩歌庫 / 我的。全部 keep mount,靠 display 收埋
-            以保留各自 scroll/state。 */}
+        {/* 三 tab(§2.2 + SEARCH-MERGE-PLAN):首頁 / 詩歌庫 / 我的。全部 keep mount,
+            靠 display 收埋以保留各自 scroll/state(詩歌庫嘅搜尋字串都因此跨 tab 保留)。 */}
         <View style={[pageStyles.screenWrap, { display: activeTab === 'Home' ? 'flex' : 'none' }]}>
           <HomeScreen hymns={allSongs || []} activeCategory={activeCategory}
             onCategoryChange={setActiveCategory} onPlayHymn={handlePlayHymn} onOpenAuth={openAuth}
             onOpenList={showHymnList} />
-        </View>
-        <View style={[pageStyles.screenWrap, { display: activeTab === 'Search' ? 'flex' : 'none' }]}>
-          <SearchScreen navigation={{ navigate: (route, params) => {
-            if (route === 'Player' && params?.hymn) handlePlayHymn(params.hymn);
-          }}} />
         </View>
         <View style={[pageStyles.screenWrap, { display: activeTab === 'Library' ? 'flex' : 'none' }]}>
           <LibraryScreen hymns={allSongs || []} onPlayHymn={handlePlayHymn} />
