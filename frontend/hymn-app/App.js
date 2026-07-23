@@ -26,7 +26,7 @@ import { PlaylistProvider } from './src/context/PlaylistContext';
 import { API_BASE } from './src/config.js';
 import { saveLastPlayed, getLastPlayed } from './src/lastPlayed';
 import { dailyPickBalanced } from './src/utils/dailyShuffle';
-import { buildAutoplayTail, visibleFlavors } from './src/utils/autoplay';
+import { buildAutoplayTail, FLAVORS, poolSize } from './src/utils/autoplay';
 import { getPlayLog, getRecentIds, recordPlay } from './src/playLog';
 import { getAutoplayEnabled, setAutoplayEnabled, getAutoplayFlavor, setAutoplayFlavor } from './src/autoplayPrefs';
 import { useInsets } from './src/hooks/useInsets';
@@ -1396,16 +1396,31 @@ function FullScreenPlayerOverlay() {
                 </SheetTouchable>
               </View>
               {player.autoplayEnabled && (
-                <View style={fsStyles.chipBar}>
-                  {visibleFlavors(player.hymns || []).map((f) => {
-                    const on = (player.autoplayFlavor || '全部') === f;
+                <View>
+                  <View style={fsStyles.chipBar}>
+                    {/* §Eric(v244):chip 由 FLAVORS 設定檔驅動,五粒常設顯示,
+                        加新分類改 src/utils/autoplay.js 一行就得,唔使掂呢度。 */}
+                    {FLAVORS.map((f) => {
+                      const on = (player.autoplayFlavor || '全部') === f.key;
+                      return (
+                        <SheetTouchable key={f.key} onPress={() => player.applyAutoplayFlavor?.(f.key)} activeOpacity={0.8}
+                          style={[fsStyles.apChip, on && fsStyles.apChipOn]}>
+                          <Text style={[fsStyles.apChipText, on && fsStyles.apChipTextOn]}>{f.label}</Text>
+                        </SheetTouchable>
+                      );
+                    })}
+                  </View>
+                  {/* 揀咗嘅類別未有貨(tag 類 poolSize=0)→ 友善提示:話明入緊庫,
+                      同時 buildAutoplayTail 已 fallback 全庫隨機,唔會斷播。 */}
+                  {(() => {
+                    const sel = FLAVORS.find((f) => f.key === (player.autoplayFlavor || '全部'));
+                    if (!sel?.tag || poolSize(sel.key, player.hymns || []) > 0) return null;
                     return (
-                      <SheetTouchable key={f} onPress={() => player.applyAutoplayFlavor?.(f)} activeOpacity={0.8}
-                        style={[fsStyles.apChip, on && fsStyles.apChipOn]}>
-                        <Text style={[fsStyles.apChipText, on && fsStyles.apChipTextOn]}>{f}</Text>
-                      </SheetTouchable>
+                      <Text style={fsStyles.apChipHint}>
+                        「{sel.label}」詩歌入緊庫,暫時先為你隨機接續全庫詩歌
+                      </Text>
                     );
-                  })}
+                  })()}
                 </View>
               )}
               {player.isShuffled && (
@@ -1590,6 +1605,7 @@ const fsStyles = StyleSheet.create({
   apChipOn: { backgroundColor: ACCENT_COLOR, borderColor: ACCENT_COLOR },
   apChipText: { fontSize: 13, fontWeight: '600', color: TEXT_SECONDARY },
   apChipTextOn: { color: MAIN_BG_COLOR },
+  apChipHint: { ...TYPOGRAPHY.artist, paddingHorizontal: 16, paddingBottom: 8, marginTop: -2 },
   shuffleBanner: {
     flexDirection: 'row', alignItems: 'center', alignSelf: 'center',
     backgroundColor: 'rgba(30,215,96,0.12)',

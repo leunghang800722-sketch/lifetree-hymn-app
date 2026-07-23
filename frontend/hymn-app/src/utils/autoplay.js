@@ -10,7 +10,25 @@
 //   個人創作/純音樂  硬 filter tags,類內隨機(不足就有幾多播幾多)
 
 export const RADIO_LEN = 30;
-export const CHIP_MIN_POOL = 20; // 類內少過呢個數,chip 唔顯示
+
+// ===== Chip 設定(單一來源)=====
+// §Eric(v244):五粒 chip 全部常設顯示,唔再按庫存門檻隱藏(舊 CHIP_MIN_POOL 已廢)。
+// 加新分類 = 加一行:
+//   - 有 `tag` 嘅係「真類別」:硬 filter tags 欄含嗰個字;冇貨/唔夠貨有 fallback(見下)
+//   - 冇 `tag` 嘅係加權抽樣 flavor,權重邏輯喺 buildAutoplayTail 按 key 特判
+//     (新加權 flavor 先至要落 code;預期日後新增嘅多數係 tag 類,一行搞掂)
+// key 同時係 MMKV 入面存嘅值,改咗會令用戶已儲設定 fallback 返「全部」,所以唔好改舊 key。
+export const FLAVORS = [
+  { key: '全部', label: '全部' },
+  { key: '熱門', label: '熱門' },
+  { key: '隨心', label: '隨心' },
+  { key: '個人創作', label: '個人創作', tag: '個人創作' },
+  { key: '純音樂', label: '純音樂', tag: '純音樂' },
+];
+
+function flavorConfig(key) {
+  return FLAVORS.find((f) => f.key === key) || FLAVORS[0];
+}
 
 // tags 欄位 → 判斷類別(受控詞表)
 function hasTag(song, tag) {
@@ -41,20 +59,12 @@ function dedupeByYoutube(list) {
   return out;
 }
 
-// 一個 flavor 有幾多「貨」—— chip 顯示與否用(硬 filter 類先有意義)。
+// 一個 flavor 有幾多「貨」—— tag 類先有意義(其他 = 成個庫)。
+// UI 用嚟決定顯唔顯示「入緊庫」友善提示(chip 本身永遠顯示)。
 export function poolSize(flavor, allSongs = []) {
-  if (flavor === '個人創作') return allSongs.filter((s) => hasTag(s, '個人創作')).length;
-  if (flavor === '純音樂') return allSongs.filter((s) => hasTag(s, '純音樂')).length;
-  return allSongs.length; // 全部/熱門/隨心 = 成個庫
-}
-
-// 邊啲 chip 應該顯示(冇貨嗰啲隱藏,§4 門檻)
-export function visibleFlavors(allSongs = []) {
-  const base = ['全部', '熱門', '隨心'];
-  const gated = [];
-  if (poolSize('個人創作', allSongs) >= CHIP_MIN_POOL) gated.push('個人創作');
-  if (poolSize('純音樂', allSongs) >= CHIP_MIN_POOL) gated.push('純音樂');
-  return [...base, ...gated];
+  const cfg = flavorConfig(flavor);
+  if (cfg.tag) return allSongs.filter((s) => hasTag(s, cfg.tag)).length;
+  return allSongs.length;
 }
 
 // 生成自動尾巴。opts: { playLog, recentIds }
@@ -63,10 +73,14 @@ export function buildAutoplayTail(flavor, hymn, allSongs = [], opts = {}) {
   const recent = new Set(opts.recentIds || []); // 最近播過,壓權防循環
   const curId = hymn?.id;
 
-  // 硬 filter 類:類內隨機,不足 RADIO_LEN 就有幾多得幾多(播完前端會 fallback 全部池)
-  if (flavor === '個人創作' || flavor === '純音樂') {
-    const pool = dedupeByYoutube(allSongs.filter((s) => hasTag(s, flavor) && s.id !== curId));
-    return weightedSample(pool, () => 1, RADIO_LEN);
+  // 硬 filter 類(config 有 tag):類內隨機,不足 RADIO_LEN 就有幾多得幾多。
+  // 類入面完全冇貨 → fallback 做全庫 uniform(chip 常設顯示,「自動播放」嘅
+  // 無間斷承諾唔可以斷;UI 會另出「入緊庫」提示話畀用戶知)。
+  const cfg = flavorConfig(flavor);
+  if (cfg.tag) {
+    const pool = dedupeByYoutube(allSongs.filter((s) => hasTag(s, cfg.tag) && s.id !== curId));
+    if (pool.length > 0) return weightedSample(pool, () => 1, RADIO_LEN);
+    // fall through → 下面「全部」uniform 邏輯
   }
 
   const pool = dedupeByYoutube(allSongs.filter((s) => s.id !== curId));
