@@ -11,8 +11,31 @@ import { View, Text, TextInput, FlatList, TouchableOpacity, StyleSheet, Image, K
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { COLORS, TYPOGRAPHY } from '../theme/designSystem';
 import { useInsets } from '../hooks/useInsets';
+import { useFavorites } from '../context/FavoritesContext';
+import { useAddToPlaylist } from '../components/AddToPlaylistSheet';
 
 const LANGS = ['全部', '粵語', '國語', '英文'];
+
+// 同播放清單 / 歌單頁一致:喺清單度直接加最愛,唔使入返播放頁(款式照搬 HymnListScreen)
+function Heart({ hymn }) {
+  const { isFavorite, toggleFavorite } = useFavorites() || {};
+  if (!hymn?.id || typeof toggleFavorite !== 'function') return null;
+  const on = typeof isFavorite === 'function' ? isFavorite(hymn.id) : false;
+  return (
+    <TouchableOpacity
+      onPress={(e) => { e?.stopPropagation?.(); toggleFavorite(hymn); }}
+      hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+      style={styles.heart}
+      activeOpacity={0.6}
+    >
+      <MaterialIcons
+        name={on ? 'favorite' : 'favorite-border'}
+        size={20}
+        color={on ? COLORS.accent : COLORS.textSecondary}
+      />
+    </TouchableOpacity>
+  );
+}
 
 function Cover({ youtubeId, size = 52 }) {
   const [failed, setFailed] = useState(false);
@@ -64,6 +87,7 @@ export default function LibraryScreen({ hymns = [], onPlayHymn }) {
 
   const hasQuery = query.trim().length > 0;
   const hasChipFilter = lang !== '全部' || !!artist;
+  const { open: openAddToPlaylist } = useAddToPlaylist();
 
   // edge-to-edge:唔加 top inset 個大字標題會同狀態列時間疊埋(見 useInsets.js)
   const insets = useInsets();
@@ -147,7 +171,17 @@ export default function LibraryScreen({ hymns = [], onPlayHymn }) {
               <Text style={styles.rowTitle} numberOfLines={1}>{item.title}</Text>
               <Text style={styles.rowArtist} numberOfLines={1}>{item.artist || '未知'} · {item.lang}</Text>
             </View>
-            <MaterialIcons name="play-arrow" size={24} color={COLORS.textSecondary} />
+            {/* ≡♪ 加入到清單 + 心心 —— 同 HymnListScreen / 播放清單 sheet 行尾一致;
+                成行撳落去照舊播歌,所以唔再需要裝飾性 play-arrow */}
+            <TouchableOpacity
+              onPress={(e) => { e?.stopPropagation?.(); openAddToPlaylist(item); }}
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              style={styles.rowAction}
+              activeOpacity={0.6}
+            >
+              <MaterialIcons name="playlist-add" size={22} color={COLORS.textSecondary} />
+            </TouchableOpacity>
+            <Heart hymn={item} />
           </TouchableOpacity>
         )}
         ListEmptyComponent={
@@ -204,6 +238,8 @@ const styles = StyleSheet.create({
   rowInfo: { flex: 1, marginLeft: 12 },
   rowTitle: { ...TYPOGRAPHY.songTitle },   // §5.3 列表 18pt
   rowArtist: { ...TYPOGRAPHY.artist, marginTop: 2 },
+  rowAction: { paddingLeft: 14 },
+  heart: { paddingLeft: 14 },
   empty: { alignItems: 'center', paddingTop: 60 },
   emptyText: { ...TYPOGRAPHY.artist, marginTop: 8 },
   emptyHint: { fontSize: 13, color: '#666', marginTop: 6 },
