@@ -75,6 +75,14 @@ export const PlaylistsProvider = ({ children }) => {
     return { ok: true, playlist: target };
   }, [playlists, persist]);
 
+  // 改名:淨係改 name,songs 不動。空名直接唔理(UI 層有「未命名清單」fallback,
+  // 但改名唔同開新清單 —— 改做空白多數係手滑,保留原名穩陣過改成 placeholder)。
+  const renamePlaylist = useCallback((playlistId, name) => {
+    const trimmed = (name || '').trim();
+    if (!trimmed) return;
+    persist(playlists.map((p) => (p.id === playlistId ? { ...p, name: trimmed } : p)));
+  }, [playlists, persist]);
+
   const removeFromPlaylist = useCallback((playlistId, hymnId) => {
     persist(playlists.map((p) => (
       p.id === playlistId ? { ...p, songs: p.songs.filter((s) => s.id !== hymnId) } : p
@@ -95,7 +103,7 @@ export const PlaylistsProvider = ({ children }) => {
 
   return (
     <PlaylistsCtx.Provider value={{
-      playlists, createPlaylist, addToPlaylist,
+      playlists, createPlaylist, addToPlaylist, renamePlaylist,
       removeFromPlaylist, deletePlaylist, isPlaylistFull,
       MAX_PLAYLIST_SONGS,
     }}>

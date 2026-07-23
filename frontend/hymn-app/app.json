@@ -2,7 +2,7 @@
   "expo": {
     "name": "詩歌App",
     "slug": "hymn-app",
-    "version": "1.2.8",
+    "version": "1.2.9",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",

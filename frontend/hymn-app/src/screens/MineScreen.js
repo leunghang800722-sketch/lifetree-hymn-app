@@ -15,6 +15,7 @@ import { useFavorites } from '../context/FavoritesContext';
 import { usePlaylists } from '../context/PlaylistsContext';
 import { useAuth } from '../context/AuthContext';
 import { useAddToPlaylist } from '../components/AddToPlaylistSheet';
+import PlaylistDetailSheet from './PlaylistDetailSheet';
 
 function Cover({ youtubeId, size = 52 }) {
   const [failed, setFailed] = useState(false);
@@ -31,10 +32,27 @@ function Cover({ youtubeId, size = 52 }) {
 
 export default function MineScreen({ onPlayHymn, onOpenAuth }) {
   const { favorites = [], toggleFavorite } = useFavorites() || {};
-  const { playlists = [] } = usePlaylists() || {};
+  const { playlists = [], deletePlaylist } = usePlaylists() || {};
   const { user, logout } = useAuth() || {};
-  const { open: openAddToPlaylist } = useAddToPlaylist();
+  const { open: openAddToPlaylist, openCreate, openRename } = useAddToPlaylist();
   const [tab, setTab] = useState('favorites'); // favorites | playlists
+  const [detailId, setDetailId] = useState(null); // 開緊邊個清單嘅詳情頁
+
+  // 清單行 ⋯ 掣:得兩個選項,native Alert 夠用,唔使另開 action sheet
+  // (同下面帳戶卡登出一致做法)。
+  const showPlaylistMenu = (pl) => {
+    Alert.alert(pl.name, null, [
+      { text: '改名', onPress: () => openRename && openRename(pl) },
+      {
+        text: '刪除清單', style: 'destructive',
+        onPress: () => Alert.alert('刪除清單', `「${pl.name}」同入面 ${pl.songs?.length || 0} 首歌都會刪走。`, [
+          { text: '取消', style: 'cancel' },
+          { text: '刪除', style: 'destructive', onPress: () => deletePlaylist && deletePlaylist(pl.id) },
+        ]),
+      },
+      { text: '取消', style: 'cancel' },
+    ]);
+  };
 
   // edge-to-edge:唔加 top inset 個大字標題會同狀態列時間疊埋(見 useInsets.js)
   const insets = useInsets();
@@ -121,28 +139,43 @@ export default function MineScreen({ onPlayHymn, onOpenAuth }) {
           data={playlists}
           keyExtractor={(item) => String(item.id)}
           contentContainerStyle={{ paddingBottom: 24 }}
+          // ＋新清單擺列表最頂:同 AddToPlaylistSheet 底部嗰行同字眼同視覺,
+          // 空狀態都有入口;唔加喺 chip 度(目標區太細,又同切 tab 撈亂語義)。
+          ListHeaderComponent={
+            <TouchableOpacity style={styles.newRow} onPress={() => openCreate && openCreate()} activeOpacity={0.7}>
+              <MaterialIcons name="add" size={22} color={COLORS.accent} />
+              <Text style={styles.newText}>新播放清單</Text>
+            </TouchableOpacity>
+          }
           renderItem={({ item }) => (
+            // ⚠️ 資料模型係 item.songs(PlaylistsContext/MMKV)—— 之前寫咗 item.hymns
+            // (舊 PlaylistContext 嘅形狀),搞到首數永遠顯示 0、撳極都冇反應。
             <TouchableOpacity style={styles.row} activeOpacity={0.7}
-              onPress={() => item.hymns?.length && onPlayHymn && onPlayHymn(item.hymns[0], { playlist: item.hymns })}>
+              onPress={() => setDetailId(item.id)}>
               <View style={[styles.cover, styles.plCover]}>
                 <MaterialIcons name="queue-music" size={26} color={COLORS.textSecondary} />
               </View>
               <View style={styles.rowInfo}>
                 <Text style={styles.rowTitle} numberOfLines={1}>{item.name}</Text>
-                <Text style={styles.rowArtist}>{item.hymns?.length || 0} 首</Text>
+                <Text style={styles.rowArtist}>{item.songs?.length || 0} 首</Text>
               </View>
-              <MaterialIcons name="chevron-right" size={22} color={COLORS.textSecondary} />
+              <TouchableOpacity onPress={() => showPlaylistMenu(item)}
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} style={styles.rowAction}>
+                <MaterialIcons name="more-vert" size={22} color={COLORS.textSecondary} />
+              </TouchableOpacity>
             </TouchableOpacity>
           )}
           ListEmptyComponent={
             <View style={styles.empty}>
               <MaterialIcons name="queue-music" size={40} color={COLORS.textSecondary} />
               <Text style={styles.emptyText}>仲未有清單</Text>
-              <Text style={styles.emptyHint}>喺播放頁撳「清單」就可以加歌入去</Text>
+              <Text style={styles.emptyHint}>撳上面「＋新播放清單」開一個{'\n'}喺播放頁撳「清單」都可以加歌</Text>
             </View>
           }
         />
       )}
+
+      <PlaylistDetailSheet playlistId={detailId} onClose={() => setDetailId(null)} onPlayHymn={onPlayHymn} />
     </View>
   );
 }
@@ -179,5 +212,8 @@ const styles = StyleSheet.create({
   rowArtist: { ...TYPOGRAPHY.artist, marginTop: 2 },
   empty: { alignItems: 'center', paddingTop: 60 },
   emptyText: { ...TYPOGRAPHY.body, color: COLORS.textSecondary, marginTop: 8 },
-  emptyHint: { ...TYPOGRAPHY.artist, marginTop: 4 },
+  emptyHint: { ...TYPOGRAPHY.artist, marginTop: 4, textAlign: 'center', lineHeight: 20 },
+  // ＋新播放清單(視覺照 AddToPlaylistSheet 嘅 newRow/newText)
+  newRow: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12 },
+  newText: { color: COLORS.accent, marginLeft: 8, fontSize: 15, fontWeight: '700' },
 });

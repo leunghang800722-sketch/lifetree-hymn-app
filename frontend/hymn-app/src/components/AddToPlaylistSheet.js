@@ -1,6 +1,12 @@
 // 「加入到清單」揀清單 sheet —— App 層級,任何畫面都撳得(播放頁「清單」pill、
 // 「我的」最愛清單、「睇晒」歌單…全部行同一個)。參考 YouTube Music 個「儲存到播放清單」。
 //
+// §MYPAGE-PLAYLIST-MANAGE-PLAN:泛化做三個 mode,共用同一個 Modal、同一套鍵盤避讓、
+// 同一個名字輸入框 —— 唔准另起一套建立/改名流程,免得行為分叉:
+//   * open(hymn)      = 'add'    原有「加入到清單」,行為一 pixel 都冇變
+//   * openCreate()    = 'create' 淨係名字輸入框,建立一個空清單(「我的」頁＋掣用)
+//   * openRename(pl)  = 'rename' 輸入框預填舊名,確認改名
+//
 // 點解用 native <Modal> 而唔係 gorhom:呢個 picker 要喺**任何** context 之上彈到出嚟 ——
 // 包括疊喺 zIndex:999 嘅播放器 overlay 之上(由 pill 撳),又要喺 tab 內容之上(由清單列
 // 撳)。native Modal 係獨立 window,無論邊個 z-order 都一定畫喺最面(v228/v231 踩過 gorhom
@@ -22,17 +28,19 @@ const Ctx = createContext(null);
 // Android keyboardDidShow 個高度唔包上面條建議/emoji 工具列,補呢個高度令輸入框
 // 一定清到嗰條 bar。寧願多留少少 gap,好過又俾檔住。
 const KB_EXTRA = 52;
-// open(hymn):彈 sheet,揀清單加入呢首歌。
-export const useAddToPlaylist = () => useContext(Ctx) || { open: () => {} };
+// open(hymn):彈 sheet,揀清單加入呢首歌。openCreate/openRename 見檔頭。
+export const useAddToPlaylist = () => useContext(Ctx) || { open: () => {}, openCreate: () => {}, openRename: () => {} };
 
 export function AddToPlaylistProvider({ children }) {
-  const { playlists = [], addToPlaylist, createPlaylist } = usePlaylists() || {};
+  const { playlists = [], addToPlaylist, createPlaylist, renamePlaylist } = usePlaylists() || {};
   const insets = useInsets(); // 底部「＋新播放清單」唔好俾導航列檔住
-  const [target, setTarget] = useState(null); // 要加入邊首歌
-  const [creating, setCreating] = useState(false); // 展開緊新清單輸入框?
+  const [mode, setMode] = useState(null); // null | 'add' | 'create' | 'rename'
+  const [target, setTarget] = useState(null); // add mode:要加入邊首歌
+  const [renameTarget, setRenameTarget] = useState(null); // rename mode:改邊個清單
+  const [creating, setCreating] = useState(false); // add mode:展開緊新清單輸入框?
   const [newName, setNewName] = useState('');
   const [kbHeight, setKbHeight] = useState(0); // §Eric #1:鍵盤高度,用嚟抬高個 card
-  const visible = !!target;
+  const visible = !!mode;
 
   // §Eric #1:打新清單名嗰陣,鍵盤彈出會遮住輸入框/確認掣。聽鍵盤事件,
   // 將 card 抬高鍵盤咁多,令輸入框 keep 喺鍵盤上面。Modal + Android 用
@@ -44,9 +52,17 @@ export function AddToPlaylistProvider({ children }) {
   }, []);
 
   const open = useCallback((hymn) => {
-    if (hymn?.id) { setTarget(hymn); setCreating(false); setNewName(''); }
+    if (hymn?.id) { setMode('add'); setTarget(hymn); setRenameTarget(null); setCreating(false); setNewName(''); }
   }, []);
-  const close = useCallback(() => { setTarget(null); setCreating(false); setNewName(''); }, []);
+  const openCreate = useCallback(() => {
+    setMode('create'); setTarget(null); setRenameTarget(null); setCreating(false); setNewName('');
+  }, []);
+  const openRename = useCallback((pl) => {
+    if (pl?.id) { setMode('rename'); setTarget(null); setRenameTarget(pl); setCreating(false); setNewName(pl.name || ''); }
+  }, []);
+  const close = useCallback(() => {
+    setMode(null); setTarget(null); setRenameTarget(null); setCreating(false); setNewName('');
+  }, []);
 
   // 加入自訂清單 —— 滿 30 首就唔俾加、彈提示(§Eric v233);已經喺清單就講返。
   const addTo = useCallback((pl) => {
@@ -65,15 +81,43 @@ export function AddToPlaylistProvider({ children }) {
     close();
   }, [addToPlaylist, target, close]);
 
-  // 開新清單:用戶自己打名(YT Music 咁),開完即刻加埋當前呢首。
+  // 開新清單:用戶自己打名(YT Music 咁)。add mode 開完即刻加埋當前呢首;
+  // create mode(「我的」頁＋掣)冇 target,就係開一個空清單。
   const confirmCreate = useCallback(() => {
     const name = newName.trim() || '新播放清單';
     createPlaylist?.(name, target);
     close();
   }, [newName, createPlaylist, target, close]);
 
+  // 改名:空名 renamePlaylist 內部會唔理(保留原名),所以呢度唔使 guard。
+  const confirmRename = useCallback(() => {
+    renamePlaylist?.(renameTarget?.id, newName);
+    close();
+  }, [renamePlaylist, renameTarget, newName, close]);
+
+  // create / rename 兩個 mode 共用嘅輸入列(add mode 個 footer 都係呢舊 UI,
+  // 但佢有自己嘅展開邏輯,keep 返原樣)
+  const nameInputRow = (confirmFn, confirmLabel) => (
+    <View style={styles.createBox}>
+      <TextInput
+        style={styles.input}
+        value={newName}
+        onChangeText={setNewName}
+        placeholder="清單名(例如：婚禮)"
+        placeholderTextColor={COLORS.textSecondary}
+        autoFocus
+        returnKeyType="done"
+        onSubmitEditing={confirmFn}
+        maxLength={40}
+      />
+      <TouchableOpacity style={styles.createConfirm} onPress={confirmFn} activeOpacity={0.8}>
+        <Text style={styles.createConfirmText}>{confirmLabel}</Text>
+      </TouchableOpacity>
+    </View>
+  );
+
   return (
-    <Ctx.Provider value={{ open }}>
+    <Ctx.Provider value={{ open, openCreate, openRename }}>
       {children}
       <Modal visible={visible} transparent animationType="slide" onRequestClose={close} statusBarTranslucent>
         <View style={styles.scrim}>
@@ -83,9 +127,14 @@ export function AddToPlaylistProvider({ children }) {
               工具列,所以之前仲俾佢檔住半截 —— 加 KB_EXTRA 補返嗰條工具列嘅高度。 */}
           <View style={[styles.card, { marginBottom: kbHeight > 0 ? kbHeight + KB_EXTRA : 0, paddingBottom: kbHeight > 0 ? 12 : 8 + insets.bottom }]}>
             <View style={styles.handle} />
-            <Text style={styles.title}>加入到清單</Text>
+            <Text style={styles.title}>
+              {mode === 'create' ? '新播放清單' : mode === 'rename' ? '改清單名' : '加入到清單'}
+            </Text>
 
-            <FlatList
+            {mode === 'create' ? nameInputRow(confirmCreate, '建立') : null}
+            {mode === 'rename' ? nameInputRow(confirmRename, '改名') : null}
+
+            {mode === 'add' ? <FlatList
               data={playlists}
               keyExtractor={(item) => String(item.id)}
               contentContainerStyle={{ paddingBottom: 8 }}
@@ -95,23 +144,8 @@ export function AddToPlaylistProvider({ children }) {
               }
               ListFooterComponent={
                 creating ? (
-                  // 開新清單:標題輸入框 + 建立
-                  <View style={styles.createBox}>
-                    <TextInput
-                      style={styles.input}
-                      value={newName}
-                      onChangeText={setNewName}
-                      placeholder="清單名(例如：婚禮)"
-                      placeholderTextColor={COLORS.textSecondary}
-                      autoFocus
-                      returnKeyType="done"
-                      onSubmitEditing={confirmCreate}
-                      maxLength={40}
-                    />
-                    <TouchableOpacity style={styles.createConfirm} onPress={confirmCreate} activeOpacity={0.8}>
-                      <Text style={styles.createConfirmText}>建立</Text>
-                    </TouchableOpacity>
-                  </View>
+                  // 開新清單:同 create/rename mode 共用同一舊輸入列 UI
+                  nameInputRow(confirmCreate, '建立')
                 ) : (
                   <TouchableOpacity style={styles.newRow} onPress={() => setCreating(true)} activeOpacity={0.7}>
                     <MaterialIcons name="add" size={22} color={COLORS.accent} />
@@ -137,7 +171,7 @@ export function AddToPlaylistProvider({ children }) {
                   </TouchableOpacity>
                 );
               }}
-            />
+            /> : null}
           </View>
         </View>
       </Modal>
