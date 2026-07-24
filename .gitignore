@@ -55,3 +55,6 @@ backend/hymns.db.tmp
 
 # resolve URL cache (URLs only, not audio) — PERF-FAST-START-PLAN §1a
 backend/cache/
+
+# Claude agent auto-memory — belongs to the local session, not the project repo
+memory/
