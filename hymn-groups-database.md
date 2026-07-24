@@ -130,8 +130,9 @@
 | **Saddleback Kids** | 英語 | [@saddlebackkids](https://youtube.com/@saddlebackkids) | ~100+ | 英語+動畫 |
 | **Hillsong Kids** | 英語 | [@hillsongkids](https://youtube.com/@hillsongkids) | ~80+ | |
 | **Bethel Kids** | 英語 | Bethel Music Kids | ~30+ | |
-| **Listenn Kids** | 英語 | - | ~30+ | |
-| **God's Awesome Kids** | 粵語 | - | ~10+ | |
+| **Listener Kids** | 英語 | [@listenerkids](https://youtube.com/@listenerkids) | ~60+ | 2026-07-20 搵到並驗證,原表寫「Listenn Kids」係手民之誤 |
+| **God's Awesome Kids** | 粵語 | - | ~10+ | 2026-07-20 網上搜尋唔到,未搵到頻道 |
+| **Kids on the Move** | 英語 | [@KidsontheMove](https://youtube.com/@KidsontheMove) | ~60+ | 2026-07-20 Eric 提出,搜尋搵到並驗證(Church on the Move 兒童事工,Tulsa OK) |
 
 ---
 

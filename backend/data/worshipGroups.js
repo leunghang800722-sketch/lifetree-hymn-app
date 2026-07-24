@@ -9,15 +9,23 @@
 // `inPool: true` = 呢個團體已經喺 hymns_all 入面有歌(唔使再爬,curate 就得)。
 // `inPool: false` = 歌庫完全冇,要夜晚慢慢 discover。
 //
-// priority 意思(點解要咁排,見 LIBRARY-EXPANSION-PLAN.md §2):
+// priority 意思(呢個純粹用嚟排 discover mode「先爬邊個團體」嘅次序,
+// 同語言配額冇關係 —— growLibrary.js 2026-07-20 起已經冇固定語言比例呢個
+// 概念,擴充淨係跟歌手多樣性自然增長,詳見 LIBRARY-EXPANSION-PLAN.md §2):
 //   1 = 最急。粵語係旗艦(HK 用戶),但歌庫得 8 個粵語歌手,係 artist 多樣性嘅樽頸。
 //   2 = 補國語缺口(國語 pool 夠多,但得 12 個歌手,擴到 400 首會太重複)。
-//   3 = 英文。pool 已經有 672 首可用 / 19 個歌手,20% 配額之下**根本唔等使爬**,
-//       擴到 3000+ 首先會唔夠 —— 所以英文排最後,唔好嘥風險額度去爬。
-//   4 = 兒童詩歌。2026-07-20 Eric 拍板:做第4個獨立分類、獨立配額(10%,
-//       見 growLibrary.js QUOTA)。⚠️ 呢 8 個團體全部 inPool:false,即係
-//       curate mode 幫唔到手 —— 要等 discover mode(§ runDiscover)真正接埋
-//       YouTube 頻道搜尋邏輯先會有實際兒童詩歌收錄,而家仍然係 0。
+//   3 = 英文。pool 已經有 672 首可用 / 19 個歌手,遠比粵/國兩邊夠用,
+//       所以優先次序排最後,唔好嘥風險額度去爬。⚠️ 2026-07-21 Eric 追加拍板:
+//       **英文暫停主動擴充**(見 growLibrary.js PAUSED_LANGUAGES)——移除語言
+//       配額嗰一晚,45/48 首新歌都係英文,同「粵語優先」原意背馳,所以呢個
+//       priority 3 而家實際上唔會被 runner 揀中,keep 住個排位淨係做記錄。
+//   4 = 兒童詩歌。2026-07-20 Eric 拍板:做第4個獨立分類。⚠️ 呢 13 個團體
+//       全部 inPool:false,即係 curate mode 幫唔到手 —— 要 discover mode
+//       先會有實際兒童詩歌收錄。discover mode 本身已經實作咗(見
+//       growLibrary.js runDiscover,含分類/死鏈驗證/先寫入嘅完整關卡),
+//       但 launchd 排程仍然淨係跑 curate(Phase A 未見底,未到 Eric 話開
+//       Phase B 嗰步),所以而家兒童詩歌數量仍然係 0,要手動
+//       `--mode discover` 或者改排程先會郁。
 
 export const GROUPS = [
   // ── 粵語(旗艦語言,artist 多樣性最缺)──────────────────────────
@@ -34,7 +42,11 @@ export const GROUPS = [
   { name: 'CantonHymn',       aliases: ['CantonHymn'],             lang: '粵語', priority: 1, inPool: false, channel: '@cantonhymn',      est: 200 },
   { name: '同心圓敬拜',        aliases: ['同心圓', '同心圓敬拜'],     lang: '粵語', priority: 1, inPool: false, channel: '@theworshipers',   est: 100 },
   { name: '全心製作 HeartPro', aliases: ['HeartPro', '全心製作'],    lang: '粵語', priority: 1, inPool: false, channel: '@heartpro12',      est: 80 },
-  { name: '共享詩歌ShareHymns', aliases: ['ShareHymns', '共享詩歌'], lang: '粵語', priority: 1, inPool: false, channel: '@EnochLamSharehymns', est: 80 },
+  // 2026-07-23:`@EnochLamSharehymns` 實測 404,搵到正確係 `@WeShareHymns`(已驗證)。
+  // ⚠️ 呢個壞 handle 之前害到 discover mode 卡死:runDiscoverAll 揀「已收錄
+  // 最少」嘅團體,一個永遠 0 收錄嘅壞 channel 會永久贏晒呢個位,擋住粵語
+  // 其餘 15 個未吸納團體永遠冇機會攞到 discover 嘅 budget。
+  { name: '共享詩歌ShareHymns', aliases: ['ShareHymns', '共享詩歌'], lang: '粵語', priority: 1, inPool: false, channel: '@WeShareHymns', est: 80 },
   { name: 'SON Music',        aliases: ['SON Music'],              lang: '粵語', priority: 1, inPool: false, channel: '@SonMusicSongs',   est: 50 },
   { name: 'Milk&Honey',       aliases: ['Milk&Honey', 'Milk & Honey'], lang: '粵語', priority: 1, inPool: false, channel: '@milkandhoneyhk', est: 30 },
   { name: '天弦音樂事工',      aliases: ['天弦音樂', '天弦', 'Gsus Music'], lang: '粵語', priority: 1, inPool: false, channel: '@gsusmusicministry', est: 30 },
@@ -44,12 +56,26 @@ export const GROUPS = [
   { name: 'flow music',       aliases: ['flow music', '流堂'],      lang: '粵語', priority: 1, inPool: false, channel: '@flowmusichk',     est: 20 },
   { name: 'KEC Worship',      aliases: ['KEC Worship', '歌鄰敬拜'], lang: '粵語', priority: 1, inPool: false, channel: '@KECworship',      est: 20 },
   { name: '悦雨音樂 GRM',      aliases: ['悦雨音樂', 'GRM'],         lang: '粵語', priority: 1, inPool: false, channel: '@gladnessrainmusic', est: 20 },
-  { name: 'U-Fire GYRO Band', aliases: ['U-Fire', 'GYRO'],         lang: '粵語', priority: 1, inPool: false, channel: '@gyro_ufireband',  est: 20 },
+  // 2026-07-24:`@gyro_ufireband` 實測 404,搜尋搵到正身「Gyro_U-Fire Band」
+  // (@gyro_u-fireband4359,已用 yt-dlp 驗證有敬拜內容),handle 有連字號
+  // 易踩坑,改用穩陣嘅 channel id 形式。
+  { name: 'U-Fire GYRO Band', aliases: ['U-Fire', 'GYRO'],         lang: '粵語', priority: 1, inPool: false, channel: 'channel/UCX96y8yd_kRVwxWTQxrjhRA',  est: 20 },
   { name: 'Endless Worship',  aliases: ['Endless Worship', '無盡敬拜'], lang: '粵語', priority: 1, inPool: false, channel: '@endlessworship2022', est: 20 },
   // WorshiPool 係版權管理平台(收錄 40+ 個創作單位),唔係單一團體 —— 攞返嚟會撈埋
   // 好多重複同其他團體嘅歌,所以特登排最後,而且要人手睇過先好開。
-  { name: 'WorshiPool',       aliases: ['WorshiPool'],             lang: '粵語', priority: 1, inPool: false, channel: '@worshipool', est: 500, note: '平台性質,易重複,人手審視先' },
+  // 2026-07-24:`@worshipool` 實測 404(壞 handle 會永久霸住粵語 discover slot,
+  // 同 ShareHymns 一樣嘅坑)。已搵到正身「WorshiPool Official Channel」
+  // (UCBdH0Y3bL8UsOzjrY4CzBAw / @worshipoolofficialchannel7201,yt-dlp 驗證有
+  // 詩歌內容),但原本已註明「平台性質要人手審視先好開」,所以照舊唔開 ——
+  // channel 留 null,等 Eric 拍板先填返上面個 id。
+  { name: 'WorshiPool',       aliases: ['WorshiPool'],             lang: '粵語', priority: 1, inPool: false, channel: null, est: 500, note: '平台性質,易重複,人手審視先;2026-07-24 已搵到正確channel id(見上面註解)等拍板' },
   { name: 'JnX Worship',      aliases: ['JnX Worship', 'JnX'],     lang: '粵語', priority: 1, inPool: false, channel: null, est: 20 },
+  // 2026-07-24:Eric 份完整清單入面提到,但搜尋(WebSearch × 2 次,唔同關鍵字)
+  // 搵唔到任何肯定啱嘅粵語/香港 channel —— 搵到嘅"The Altar of Worship"、
+  // "Altar of Prayer"、"Altar Worship Official" 全部係其他國家嘅頻道,
+  // 冇一個對得上「香港粵語敬拜」呢個 context。**搵唔到,等 Eric 提供多啲
+  // 資料(例如官網/Facebook 連結)先補。**
+  { name: 'The Altar',        aliases: ['The Altar'],              lang: '粵語', priority: 1, inPool: false, channel: null, est: null, note: '2026-07-24 搜尋唔到啱嘅channel,等Eric提供多啲資料' },
 
   // ── 國語 / 普通話 ────────────────────────────────────────────
   { name: '讚美之泉',          aliases: ['讚美之泉'],                lang: '國語', priority: 2, inPool: true },
@@ -62,9 +88,25 @@ export const GROUPS = [
   { name: '我心旋律',          aliases: ['我心旋律'],                lang: '國語', priority: 2, inPool: true },
   { name: '盛曉玫',            aliases: ['盛曉玫'],                  lang: '國語', priority: 2, inPool: true },
   { name: 'Heavenly Melody',  aliases: ['Heavenly Melody'],        lang: '國語', priority: 2, inPool: true },
-  { name: '新心音樂事工',      aliases: ['新心音樂'],                lang: '國語', priority: 2, inPool: false, channel: '@newheartmusic', est: 100 },
-  { name: 'City Harvest Church', aliases: ['City Harvest'],        lang: '國語', priority: 2, inPool: false, channel: '@chc',           est: 100 },
+  // 2026-07-23:`@newheartmusic` 實測 404,搵到正確係舊式 /user/ URL(冇 @handle)。
+  { name: '新心音樂事工',      aliases: ['新心音樂'],                lang: '國語', priority: 2, inPool: false, channel: 'user/NewHeartMusic', est: 100 },
+  // 2026-07-23:`@chc` 實測 404,搜尋搵到嘅候選(Singapore CityHarvestSG /
+  // 一個叫「阿呵Hosea」嘅個人翻唱channel)都對唔上「City Harvest Church
+  // 國語敬拜」呢個原意,冇肯定嘅正確 handle,拆走等搵到先補(同上面
+  // ShareHymns 一樣嘅原因:一個永遠 404 嘅壞 channel 會卡死成個國語
+  // discover slot,擋住 611 Worship / 新心音樂事工 冇機會攞 budget)。
+  { name: 'City Harvest Church', aliases: ['City Harvest'],        lang: '國語', priority: 2, inPool: false, channel: null,            est: 100, note: '2026-07-23 拆走壞handle,等搵到先補' },
   { name: '611 Worship',      aliases: ['611 Worship', '611敬拜'],  lang: '國語', priority: 2, inPool: false, channel: '@611worship',   est: 80 },
+  // 2026-07-24:Eric 完整清單追加嘅 3 個,逐個用 yt-dlp 實測過先落:
+  { name: 'Asia for JESUS',   aliases: ['Asia for JESUS', '國度豐收協會'], lang: '國語', priority: 2, inPool: false, channel: '@asiaforjesusasia', est: 50, note: '約書亞樂團旗下協會channel,已驗證有內容;titles多為live worship set(多首歌連埋一個title),四關pipeline會自然篩走唔啱格式嗰啲' },
+  { name: '台北復興堂',        aliases: ['台北復興堂', 'Taipei Revival Church'], lang: '國語', priority: 2, inPool: false, channel: 'channel/UCZPH-BLihIzAGEYCk5lEasA', est: 50, note: '官方channel,已驗證有內容;夾雜住講道/名人講座,同ROLCC類似需要留意' },
+  // ⚠️ 「611靈糧堂」搵到嘅係「台北611靈糧堂」,實測內容幾乎全部係
+  // 晨禱/晚禱/生命見證(冇歌名,淨係傳道/牧師名+日期),同上面已有嘅
+  // 「611 Worship」(先係真正嘅敬拜歌頻道,已驗證粵國語都有)唔同源。
+  // 照Eric要求加落去跟機制排隊,但預期產量會好低——順手為此補咗
+  // isCompilation() 嘅「N天晚禱/生命見證/傳道+晨禱晚禱」過濾(見
+  // hymnDb.js 2026-07-24 條目,已驗證冇誤殺現有 520 首)。
+  { name: '611靈糧堂',        aliases: ['611靈糧堂', '台北611靈糧堂'], lang: '國語', priority: 2, inPool: false, channel: 'channel/UClkrlvh7cXJiM9xrUzYUZdw', est: 10, note: '2026-07-24 搵到channel但內容幾乎全係講道/禱告會,唔係詩歌,預期產量極低;已有「611 Worship」先係啱嘅敬拜歌source' },
 
   // ── 英文(pool 已經嚴重超額,唔使爬)────────────────────────────
   { name: 'Hillsong Worship', aliases: ['Hillsong Worship'],       lang: '英文', priority: 3, inPool: true },
@@ -85,20 +127,49 @@ export const GROUPS = [
   { name: 'Mosaic MSC',       aliases: ['Mosaic MSC'],             lang: '英文', priority: 3, inPool: true },
   { name: 'Jesus Image',      aliases: ['Jesus Image'],            lang: '英文', priority: 3, inPool: true },
 
-  // ── 兒童詩歌 ✅ 2026-07-20 Eric 拍板:第4個獨立分類,獨立配額 10% ──
+  // ── 兒童詩歌 ✅ 2026-07-20 Eric 拍板:第4個獨立分類(冇固定配額,自然增長,
+  // 見 growLibrary.js 頂部註解) ──
   // priority 4 = runner 已經准揀,但全部 inPool:false,實際要等 discover mode
   // 接埋搜尋邏輯先會有歌收錄(見上面 priority 意思段)。
   { name: '讚美之泉兒童',      aliases: ['讚美之泉兒童'],            lang: '兒童', priority: 4, inPool: false, channel: null,               est: 100, kidsLang: '國語' },
   { name: '611 Kids Worship', aliases: ['611 Kids'],               lang: '兒童', priority: 4, inPool: false, channel: null,               est: 30,  kidsLang: '粵語/國語' },
-  { name: '天韻兒童詩歌',      aliases: ['天韻兒童'],                lang: '兒童', priority: 4, inPool: false, channel: '@heavenlymelody',  est: 30,  kidsLang: '國語' },
-  { name: 'ACM兒童詩歌',       aliases: ['ACM兒童'],                 lang: '兒童', priority: 4, inPool: false, channel: '@hkacm',           est: 20,  kidsLang: '粵語' },
-  { name: 'CantonHymn兒童版',  aliases: ['CantonHymn兒童'],          lang: '兒童', priority: 4, inPool: false, channel: '@cantonhymn',      est: 20,  kidsLang: '粵語' },
+  // 2026-07-23:下面 3 個 channel 用 yt-dlp 逐個實測,發現都係錯嘅,已經
+  // 拆走 handle 改返 null(等日後搵到真.兒童子頻道先補),原因:
+  //   · 天韻兒童詩歌:`@heavenlymelody` 實測返嚟嘅係天韻**成人**主頻道
+  //     (「天韻聲活圈」清談節目 + 一般敬拜歌 + 一條「作詞課」教學片),
+  //     同已經 inPool:true 嗰個「Heavenly Melody / 天韻合唱團」係**同一個
+  //     頻道**,唔係獨立兒童子頻道,亂咁指會將成人內容(甚至教學片)
+  //     錯誤標做「兒童」收錄。
+  //   · ACM兒童詩歌:`@hkacm` 實測 404,呢個 handle 根本唔存在。
+  //   · CantonHymn兒童版:`@cantonhymn` 實測返嚟嘅同粵語嗰個
+  //     「CantonHymn」一模一樣(堂會投稿嘅廣東話 cover),都係同一個
+  //     general 頻道,唔係獨立兒童版。
+  { name: '天韻兒童詩歌',      aliases: ['天韻兒童'],                lang: '兒童', priority: 4, inPool: false, channel: null, est: 30,  kidsLang: '國語', note: '2026-07-23 拆走錯 handle(其實係成人主頻道),等搵到真.兒童子頻道先補' },
+  { name: 'ACM兒童詩歌',       aliases: ['ACM兒童'],                 lang: '兒童', priority: 4, inPool: false, channel: null, est: 20,  kidsLang: '粵語', note: '2026-07-23 拆走錯 handle(@hkacm 實測 404),等搵到先補' },
+  { name: 'CantonHymn兒童版',  aliases: ['CantonHymn兒童'],          lang: '兒童', priority: 4, inPool: false, channel: null, est: 20,  kidsLang: '粵語', note: '2026-07-23 拆走錯 handle(其實係CantonHymn general頻道),等搵到真.兒童版先補' },
   { name: 'Saddleback Kids',  aliases: ['Saddleback Kids'],        lang: '兒童', priority: 4, inPool: false, channel: '@saddlebackkids',  est: 100, kidsLang: '英文' },
   { name: 'Hillsong Kids',    aliases: ['Hillsong Kids'],          lang: '兒童', priority: 4, inPool: false, channel: '@hillsongkids',    est: 80,  kidsLang: '英文' },
   { name: 'Bethel Kids',      aliases: ['Bethel Kids'],            lang: '兒童', priority: 4, inPool: false, channel: null,               est: 30,  kidsLang: '英文' },
-  // ⚠️ 未搬:`hymn-groups-database.md` §四原始資料仲有 4 個未搬落嚟 ——
-  // 約書亞樂團青少年版(國語~20)、共享詩歌兒童版(粵語~10)、Listenn Kids(英語~30)、
-  // God's Awesome Kids(粵語~10)。搬之前要人手覆核官方 handle,而家未做。
+  // 2026-07-20:Eric 拍板將呢 4 個(+1 新搵到嘅)搬入嚟。channel handle 已經用
+  // `yt-dlp --flat-playlist` 逐個實測揾過先落,唔係靠估:
+  //   - Listenn Kids / God's Awesome Kids / Kids on the Move 三個係手動搜尋
+  //     搵到,原本 4 個入面淨係呢個先有得驗證;另外兩個(約書亞樂團青少年版、
+  //     共享詩歌兒童版)網上搜尋淨係搵到佢哋嘅**母頻道**(約書亞樂團、
+  //     ShareHymns@WeShareHymns,兩個都已經 inPool:true),搵唔到獨立嘅
+  //     青少年/兒童子頻道,所以 channel 留 null,唔好亂咁指去母頻道
+  //     (會同已收錄嗰個團體撞埋,重複扒同一個頻道)。
+  //   - ⚠️「Listenn Kids」呢個名喺 YouTube 搵唔到,但「**Listener Kids**」
+  //     (`@listenerkids`)完全對得上原本描述(英語、兒童 Bible/worship
+  //     animation),相信係 `hymn-groups-database.md` 手民之誤,已經用
+  //     呢個名 + 已驗證嘅 handle 收錄。
+  //   - 「Kids on the Move」(Eric 提過,但原始資料冇呢個團體)搵到官方
+  //     頻道 `@KidsontheMove`(Church on the Move 兒童事工,Tulsa OK,英語),
+  //     已驗證,加埋做第 5 個新搬入嘅團體。
+  { name: '約書亞樂團青少年版', aliases: ['約書亞樂團青少年版', 'Joshua Band Youth'], lang: '兒童', priority: 4, inPool: false, channel: null, est: 20, kidsLang: '國語', note: '搵唔到獨立子頻道,只有母頻道(已 inPool),待補' },
+  { name: '共享詩歌兒童版',    aliases: ['共享詩歌兒童版', 'ShareHymns Kids'],       lang: '兒童', priority: 4, inPool: false, channel: null, est: 10, kidsLang: '粵語', note: '搵唔到獨立子頻道,只有母頻道 @WeShareHymns(已 inPool),待補' },
+  { name: 'Listener Kids',    aliases: ['Listenn Kids', 'Listener Kids'],           lang: '兒童', priority: 4, inPool: false, channel: '@listenerkids', est: 60, kidsLang: '英文', note: '原始資料寫「Listenn Kids」,相信手民之誤,已驗證 @listenerkids 至少60條片' },
+  { name: "God's Awesome Kids", aliases: ["God's Awesome Kids"],                    lang: '兒童', priority: 4, inPool: false, channel: null, est: 10, kidsLang: '粵語', note: '網上搜尋唔到,搵返到先補' },
+  { name: 'Kids on the Move', aliases: ['Kids on the Move'],                        lang: '兒童', priority: 4, inPool: false, channel: '@KidsontheMove', est: 60, kidsLang: '英文', note: 'Eric 提過但原始資料冇,已搵到並驗證 @KidsontheMove(Church on the Move 兒童事工)至少60條片' },
 ];
 
 // 2026-07-20:priority <= 4(粵/國/英/兒童全部已拍板)。

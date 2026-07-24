@@ -58,6 +58,23 @@ export function isCompilation(title = '') {
     'top 100', 'top100', 'best of', 'ultimate', 'playlist', 'album',
     'listen through', 'non stop', 'nonstop', 'medley', 'compilation',
     '小時', 'hours', 'greatest hits',
+    // 2026-07-23 追加(查 ROLCC 順手撞到,唔係呢個頻道專屬):「最佳」/
+    // 「推荐经典」呢類推介框架同「熱門」/「精选」係同一類 best-of 合輯,
+    // 之前得「熱門/精选」冇埋呢兩個,漏咗一條 1h17m 嘅合輯冒充單曲。
+    '最佳', '推荐经典', '推薦經典',
+    // 2026-07-24 追加(discover 台北復興堂/Asia for JESUS 實測踩過):
+    // 「宣教月｜一個成全他人夢想的教會｜王亞辰牧師」冇歌名,淨係主題+
+    // 講員頭銜(牧師/傳道係中文講道嘅標準署名格式)。現有 520 首 curated
+    // 撞呢兩個字嘅得返呢一條,零誤殺風險。
+    '牧師', '傳道', '講座', '會長', '師母', '學院',
+    // Asia for JESUS「WE R ONE Worship｜Revival X Radical｜Alleluia、
+    // Shout For Freedom、10000 Armies…」呢類係大型特會現場全場敬拜
+    // 錄影(一條片入面連唱幾首),用返佢哋自己嘅活動品牌名做訊號
+    // (窄、但零誤殺,呢個頻道嘅同類內容全部用呢個品牌名)。
+    'we r one',
+    // Asia for JESUS 仲有網上課程/學院內容(「Kingdom Culture Online
+    // Academy」),同天韻兒童踩過嗰條「作詞課」教學片同一類問題。
+    'academy',
   ].some((p) => t.includes(p));
   // "…15首" / "…精选20首" — N songs in one video.
   const nSongs = /\d+\s*首/.test(title);
@@ -70,10 +87,46 @@ export function isCompilation(title = '') {
   //  · 主日敬拜/主日崇拜 = 成場崇拜,唔係單一首詩歌
   // ⚠️ 特登唔用「多個 | 分隔」做訊號:｜ 喺英文敬拜台好常見(「歌名 | 歌手 | 廠牌」),
   //    會誤殺一大堆正常單曲(Maverick City / Elevation…),命中率太低。
-  const dateStamp = /20\d{6}/.test(title);
+  // ⚠️ 2026-07-23 追加:唔可以淨係撞「YYYYMMDD 冇分隔」呢個 glued 格式。
+  // ROLCC生命河「07.05.2026 #生命河美國250週年國慶崇拜…」(1h42m 成場崇拜)
+  // 用嘅係 dotted 格式,原本 dateStamp 冧唔到,錯誤 curate 咗。
+  // ⚠️ 2026-07-24 追加:上面嗰條 dd.mm.yyyy 淨係捉到年份擺尾嘅日期。
+  // 台北611靈糧堂「台北611晨禱｜使徒行傳第28章…｜2026.06.19」用嘅係
+  // **年份擺頭**嘅 yyyy.mm.dd,原本兩條都冧唔到,要獨立加多一條。
+  const dateStamp = /20\d{6}/.test(title)
+    || /\b\d{1,2}[.\/]\d{1,2}[.\/]20\d{2}\b/.test(title)
+    || /\b20\d{2}[.\/]\d{1,2}[.\/]\d{1,2}\b/.test(title);
   const episode = /第\s*\d+\s*集/.test(title);
-  const worshipSet = /主日敬拜|主日崇拜|崇拜實況|敬拜實錄|崇拜直播/.test(title);
-  return hit || nSongs || dateStamp || episode || worshipSet;
+  // ⚠️ 2026-07-23 追加「N週年…崇拜」/「國慶崇拜」:同上面同一條 ROLCC
+  // 片撞到嘅第二個漏洞 —— 「國慶崇拜」唔喺原本 5 個固定詞組入面。
+  // ⚠️ 2026-07-24 追加「N天晚禱/生命見證/傳道講道」:台北611靈糧堂實測
+  // 踩過 —— 佢個頻道幾乎全部係晨禱、21天晚禱、生命見證呢類禱告會/見證
+  // 分享,冇歌名、淨係傳道/牧師名 + 日期。⚠️ 唔可以淨係撞「晨禱/晚禱」
+  // 兩個字 —— 實測踩過:id 389「晨禱詩歌2026-1 我心旋律新歌」係正牌
+  // 歌名(晨禱詩歌 = 詩歌嘅一種主題,唔係禱告會直播),撞單獨「晨禱」
+  // 會誤殺。要「晨禱/晚禱」同「傳道/牧師」呢類講員頭銜**同一個 title
+  // 出現**先算,或者「N天晚禱」(禱告會系列命名,好少會係歌名)先算。
+  const prayerMeeting = /(晨禱|晚禱).*(傳道|牧師)|(傳道|牧師).*(晨禱|晚禱)|\d+\s*天晚禱/.test(title);
+  const worshipSet = /主日敬拜|主日崇拜|崇拜實況|敬拜實錄|崇拜直播|週年.{0,6}崇拜|國慶崇拜|生命見證/.test(title) || prayerMeeting;
+  // 英文版「第N集」:2026-07-23 discover Saddleback Kids 實測踩過 ——
+  // "The Luminous City Episode 4 | Summer Blast 2026"、"Church at Home |
+  // Elementary | Wherever You Go Week 4 - May 30/31" 呢類兒童事工節目集數,
+  // 唔係歌,但冇撞上面任何中文關鍵字,一樣要擋。⚠️ 唔可以淨係撞「Series」+
+  // 「Week N」—— 好多集數標題(例如上面「Wherever You Go Week 4」)冇
+  // 「Series」呢個字,所以「Week N」自己一個就要當訊號,加埋「Church at
+  // Home」(兒童事工線上崇拜嘅慣用命名)做多一重保險。
+  const episodeEn = /\bepisode\s*\d+\b|\bweek\s*\d+\b|church at home/i.test(title);
+  // 2026-07-23:ROLCC生命河「彤話詩歌」系列 —— 標題本身好似正常歌名
+  // (「你神蹟如此真實」「你的愛不離不棄」),睇落完全捉唔到,要靠 YouTube
+  // 真.title 帶住嘅「(River Worship 彤話詩歌)」呢個 suffix 先分到清:
+  // 呢批片其實係「劉彤牧師主日崇拜講道尾聲嘅回應片段」,唔係獨立詩歌
+  // (實測:8 首已收錄嘅同一形式,description 逐隻一模一樣)。⚠️ 現存
+  // DB 嘅 title 已經俾之前某次入庫時嘅清理手續拆咗呢個 suffix,所以呢條
+  // pattern 對現有 backlog 冇用(冇嘢再撞得中),純粹係俾將來(discover
+  // mode 攞返呢個頻道,或者第二個掛住歌名但實質係講道回應片嘅頻道)
+  // 帶住原汁原味 YouTube title 嘅新候選,喺入庫嗰一刻就擋得住。
+  const sermonClip = /彤話詩歌|river worship/i.test(title);
+  return hit || nSongs || dateStamp || episode || worshipSet || episodeEn || sermonClip;
 }
 
 // Not worship music at all. The scrape pulled in whole channels that merely
@@ -105,3 +158,62 @@ export function dedupeByYoutubeId(rows) {
 // with burst traffic would take the entire app down with no fallback, so every
 // batch job here crawls on purpose.
 export const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+// ── DB 寫入鎖(2026-07-21 加)──────────────────────────────────────
+// growLibrary.js 同 checkDeadLinks.js 都係「openDb() 讀成個 DB 落記憶體、
+// 跑完先 saveDb() 一次過寫返落 disk」,兩個 script 完全冇協調。2026-07-21
+// 查 log 發現個「已收錄」數試過喺日頭(冇任何排程行緊)無故跌咗 9,懷疑就係
+// 呢個 lost-update:一個 script 讀咗個舊 snapshot,跑完先寫,蓋走咗第二個
+// script 早幾分鐘先寫落去嘅嘢。以前 growLibrary 淨係夜晚 00:00-09:00 行、
+// 特登跳過 checkDeadLinks 嘅 04:00,兩個好少埋堆先冇即刻爆出嚟。而家
+// growLibrary 轉 24 小時、每 15-20 分鐘一次(2026-07-21 Eric 拍板),
+// 冇咗「避開 4 點」呢層保護,撞埋嘅機會大好多,一定要有真正嘅互斥。
+//
+// 用一個簡單嘅 lockfile 做跨 process 互斥,兩個 script 都用同一條:
+// 一開始(openDb 之前)攞鎖,成個 run(包括所有 saveDb())做完先放。
+const LOCK_PATH = `${DB_PATH}.lock`;
+const LOCK_STALE_MS = 20 * 60 * 1000; // 冇 job 應該行咁耐;仲存在就當持有者死咗
+const LOCK_RETRY_MS = 3000;
+const LOCK_MAX_WAIT_MS = 5 * 60 * 1000; // 最多等 5 分鐘,再攞唔到就放棄,唔好卡死排程
+
+// ⚠️ 2026-07-23 追加:`acquireDbLock()` 而家傳返一個**擁有權 token**
+// (唔再係淨係 `true`),`releaseDbLock(token)` 一定要 token 對得上先真係
+// 刪個 lockfile。原因:舊版 `releaseDbLock()` 冇條件、淨係 `unlinkSync`,
+// 如果將來邊個 code path 手快快喺**未成功攞到鎖**就 call 咗佢(例如新加
+// 一個提早 return 嘅檢查,漏咗擺喺 acquire 之前),就會將**第二個 process
+// 合法持有緊嘅鎖**都刪走 —— 直接整翻返呢個鎖本身想解決嘅 race condition。
+// 有 token 校對之後,call 錯都只會係安全 no-op(唔啱身唔會刪),唔會再有
+// 呢種「累鄰居」嘅可能性。
+export async function acquireDbLock(owner = `pid${process.pid}`) {
+  const token = `${owner}:${process.pid}:${Date.now()}:${Math.random().toString(36).slice(2, 8)}`;
+  const deadline = Date.now() + LOCK_MAX_WAIT_MS;
+  for (;;) {
+    try {
+      fs.writeFileSync(LOCK_PATH, `${token}\n${new Date().toISOString()}\n`, { flag: 'wx' });
+      return token;
+    } catch (e) {
+      if (e.code !== 'EEXIST') throw e;
+      try {
+        const age = Date.now() - fs.statSync(LOCK_PATH).mtimeMs;
+        if (age > LOCK_STALE_MS) { fs.unlinkSync(LOCK_PATH); continue; } // 死鎖,搶返
+      } catch (_) { continue; } // 岩岩俾人放咗,即刻再試
+      if (Date.now() > deadline) return null;
+      await sleep(LOCK_RETRY_MS);
+    }
+  }
+}
+
+export function releaseDbLock(token) {
+  if (!token) return; // 冇 token = 呢個 process 本身就未攞過鎖,乜都唔使做
+  try {
+    const content = fs.readFileSync(LOCK_PATH, 'utf8');
+    if (!content.startsWith(`${token}\n`)) {
+      // 唔係我張鎖(可能已經俾 stale-lock 邏輯搶咗,或者根本唔屬於我)——
+      // 千其唔好郁,唔係就會刪走第二個 process 合法持有緊嘅鎖。
+      return;
+    }
+    fs.unlinkSync(LOCK_PATH);
+  } catch (_) {
+    // 檔案已經唔喺度 = 當已經 release 咗,冇問題。
+  }
+}

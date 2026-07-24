@@ -292,6 +292,10 @@ Mac(185.219.141.202)resolve 一條 URL,同一刻由 Zeabur(172.104.39.181)攞同
   嗰 650 個入面 **592 個係 Timeout**,係佢自己撞爆 rate limit 整出嚟,誤導咗成個 project 好耐。
   **失敗唔係證據,成功先係。**(實測:strike 1/2 唔標記,strike 3 先標記;成功會 revive)
 - **隱藏唔刪除**:用 `status` 欄,資料原封不動留喺 `hymns_all`
+- ⚠️ **2026-07-21 起同 `growLibrary.js` 共用一個 DB 寫入鎖**(`hymnDb.js
+  acquireDbLock`)。growLibrary 轉咗 24 小時 + 每 15 分鐘一次之後,同呢個
+  job(04:00,單次 run ~8 分鐘)撞埋嘅機會大好多,冇鎖會互相蓋寫,詳見
+  「三之九」。
 
 ### ✅ 試版歌庫:150 首
 **45 粵語 / 75 國語 / 30 英文 = 30%/50%/20%**(Eric 指定),38 個歌手,**每一首都實測 resolve 到先收錄**。
@@ -697,17 +701,51 @@ Eric 試 v230 之後提兩樣,一次過修。
 
 > 🔀 **2026-07-20 起,呢單嘢交咗俾獨立 session `local_fa531849` 專責跟進。**
 > 其他 session(包括寫 UI/bug 嗰個)**唔好再郁**呢部分,免得同佢撞
-> (共用 worktree,commit 會夾埋)。下面係交接嗰刻嘅實況:
+> (共用 worktree,commit 會夾埋)。下面係最新實況(持續更新緊):
 >
-> **交接時狀態(2026-07-20 ~11:20 HKT):**
+> **最新狀態(2026-07-22 ~09:25 HKT):**
+> - ⚠️ **2026-07-21 Eric 拍板:轉 24 小時運行,唔再限死 00:00-09:00。**
+>   而家得 Eric 一個人用,冇真實用戶撞資源風險。launchd 排程由 8 個固定
+>   夜間時段(`StartCalendarInterval`)改用 `StartInterval=900`(每 15 分鐘,
+>   24 小時)。單次請求節奏(concurrency 1、~4 秒 jitter、budget 6、斷路器)
+>   **完全冇變**,淨係 check-in 密咗。已經 unload+reload+kickstart 真實驗證過
+>   (`launchctl print` 確認 `run interval = 900 seconds`,kickstart 一次
+>   6/6 成功,234→240)。
+> - **新加 DB 寫入鎖**(`hymnDb.js` `acquireDbLock`/`releaseDbLock`,lockfile
+>   係 `hymns.db.lock`):growlibrary 加密之後同 `checkDeadLinks.js`(04:00,
+>   單次 run ~8 分鐘先一次過 save)撞埋嘅機會大好多,兩個 script 而家開波
+>   之前都要攞呢個鎖,攞唔到就今次跳過留返下次,唔會再互相蓋寫。已測試過
+>   兩個 process 爭鎖會正確排隊、release 後冇殘留 lockfile。**呢個順便解咗
+>   之前懷疑嘅「日頭無故跌 9 首」個 race condition。**
+> - **新加「有真人聽緊就縮」開關**(`THROTTLE_FOR_LISTENERS`,而家 `false`
+>   未開):server.js 新增 `GET /api/internal/activity`,直接讀返現有
+>   `anyStreaming()`(keep-warm 止血邏輯已經喺用嘅 refcount,唔係new嘢)。
+>   `growLibrary.js` 嘅 `detectActiveListeners()` 已經寫好測試過(手動起
+>   backend 驗證 `{"streaming":false}`),得 `THROTTLE_FOR_LISTENERS = true`
+>   一行就開得到。呼應返「攞歌搶咗播放中資源引致斷續」個已修好嘅舊 bug,
+>   等將來真係有用戶嗰日唔會重蹈覆轍。
+> - `ENFORCE_TIME_WINDOW`(而家 `false`)同上面兩個開關一齊擺喺
+>   `growLibrary.js` 頂部,想恢復夜間限定改返 `true` 就得,設計已經預留低。
 > - launchd job `com.hymnapp.growlibrary` **已載入、last exit 0**,唔使再 load(load 多次會撞)。
-> - PATH bug **已修 + 已 commit(`0090dd5`)+ push**。已用 `launchctl print` 確認載入咗嘅
->   job 帶住 homebrew PATH;已用 `env -i` 複製 launchd 環境實測 resolve **work(2/3)**。
-> - **但重點未驗證:** 由裝好到而家,**真實透過 launchd 成功收錄嘅次數 = 0**,curated 仍然
->   停喺 **150**(修正前每次 0 首;修正後嘅第一次 in-window run 係今晚 2026-07-20 00:07 之後)。
->   **新 session 第一件事:睇 `/tmp/hymn_growlibrary.log` 確認今晚真係收錄到,唔好當佢一定成功。**
-> - discover mode(`runDiscover()`)仲係 stub,未接頻道搜尋 → 兒童詩歌 + 未吸納團體暫時收唔到。
-> - 兒童配額已入 `QUOTA`(粵27/國45/英18/兒童10),但因為 pool 空,實際唔會郁,唔會壞。
+> - PATH bug **已修 + 已 commit(`0090dd5`)+ push,並且已經真正驗證成功**:
+>   2026-07-20 深夜 00:07-08:07 個窗口,8 個排程時段**全部準時觸發、全部成功、零失敗**,
+>   歌庫由 150 → **198**(+48,8 次 × 6 首)。呢個係 PATH fix 之後第一次完整經過真實
+>   launchd 自動 run 嘅驗證,結果係乾淨嘅 8/8 —— **fix 確認 work,唔再係得個模擬驗證**。
+> - ⚠️ **但語言分布出咗預期外偏斜**:48 首新歌入面 45 首(94%)係英文,粵語得 3、
+>   國語 0(因為移除語言配額之後,英文歌手多、又幾乎冇失敗,自然增長跑贏晒)。
+>   **Eric 2026-07-21 已拍板:英文暫停主動擴充**,已收錄嗰 75 首唔郁,但唔再揀佢做
+>   新候選 —— 見 `growLibrary.js` 嘅 `PAUSED_LANGUAGES`(而家 `{'英文'}`,想恢復刪走
+>   呢個名就得)。之後夜晚攞歌會集中落**粵語、國語、兒童詩歌**。今晚(07-21 00:07 起)
+>   係呢個新設定第一次真正 run,**新 session 記得覆核 log 睇有冇跟到預期(唔再見到英文)**。
+> - discover mode(`runDiscover()`)**已經實作**(唔再係 stub):`yt-dlp --flat-playlist`
+>   讀官方頻道候選,經返「分類/品質篩選 → 死鏈驗證 → 先寫入」四關先落庫,已經用
+>   `--dry` 測試過(CantonHymn 頻道 2/2 成功)。但 launchd 排程**仍然淨係跑 curate**,
+>   未轉去 discover(跟 Phase A → B 次序,未到時候),所以兒童詩歌 + 未吸納團體
+>   實際仍然係 0。discover 而家都跟 `PAUSED_LANGUAGES`,英文團體唔會被揀。
+> - ⚠️ **`QUOTA`(語言配額)已經整個移除** —— 2026-07-20 Eric 追加拍板:擴充機制唔好
+>   俾固定語言比例(原本諗住 粵27/國45/英18/兒童10)綁住,`pickNextCandidate()`
+>   而家淨係跟歌手多樣性揀,唔再分語言計數,每個分類自然按實際搵到嘅優質候選增長
+>   (英文除外,見上面暫停一項)。
 
 ### 一句話
 歌庫入面**已經有 1153 首合資格但未收錄**嘅歌(`hymns_all` 1518 首過濾後),
@@ -718,10 +756,15 @@ Eric 試 v230 之後提兩樣,一次過修。
 | | |
 |---|---|
 | script | `backend/scripts/growLibrary.js --mode curate --budget 6 --delay 4000` |
-| 排程 | launchd `com.hymnapp.growlibrary`,**00:07-08:07 每個鐘頭一次** |
-| 每晚上限 | 8 次 × 6 首 = **54 首** |
+| 排程 | launchd `com.hymnapp.growlibrary`,**每 15 分鐘一次,24 小時**(2026-07-21 起,見上面交接段) |
+| 主攻語言 | **粵語 / 國語 / 兒童**(2026-07-21 Eric 拍板,英文暫停主動擴充,見上面交接段) |
+| 安全機制 | concurrency 1、jitter、斷路器(冇變)+ DB 寫入鎖(新)+ 有真人聽緊就縮(已寫好,未開) |
+| 歌手上限 | ⚠️ **2026-07-23 Eric 拍板取消**:`ARTIST_CAP` 12→9999(等於冇上限)。
+  同已取消嘅語言 quota 係同一種精神(數字夠就唔畀郁),2026-07-22 全日觀察到
+  粵語/國語凌晨 04:19 起撞呢個 cap 停晒手先發現。取消後即刻真實 kickstart
+  驗證過:292→298,6/6 成功。多樣性淨係靠「歌手已收錄最少優先」嗰條 sort。 |
 | log | `/tmp/hymn_growlibrary.log` |
-| 睇進度 | `node backend/scripts/growLibrary.js --status`(唔改嘢) |
+| 睇進度 | `node backend/scripts/growLibrary.js --status`(唔改嘢,見交接段更新) |
 
 ### ⚠️ 兩個 job 嘅時間安排 —— 唔好改
 `com.hymnapp.deadlinkcheck` 喺 **04:00** 行,所以 `growlibrary` 個排程
@@ -768,17 +811,289 @@ command-not-found,睇落同「真係攞唔到音訊」一模一樣。仲要連�
 裝落去之前一定要對返 `ops/launchd/README.md` 個 checklist 逐項核對,唔好淨係抄現有
 plist 個大致形狀。
 
-### ✅ 兒童詩歌 —— 2026-07-20 Eric 已拍板:第4個獨立分類
+### ✅ 2026-07-24 追加:Eric 完整團體清單對比 + 新增 4 個團體
+Eric 提供咗完整團體清單(粵語30+/國語15+/兒童10+),要求逐個對比同補齊。
+
+**比對結果:** 粵語 18 個提到嘅入面 17 個已經喺 config,淨係 **The Altar**
+未加;國語缺 **Asia for JESUS**、**611靈糧堂**、**台北復興堂**;兒童
+全部已有(但「基督教兒童詩歌集/小天使詩歌各種合集」呢個係泛稱嘅
+compilation-style 描述,唔係一個具體 channel,同而家「唔要合輯」嘅
+品質標準有衝突,未加,等 Eric 提供具體 channel 先算)。
+
+**搵到 3 個、1 個搵唔到:**
+- ✅ Asia for JESUS → `@asiaforjesusasia`(已驗證)
+- ✅ 台北復興堂 → `channel/UCZPH-BLihIzAGEYCk5lEasA`(已驗證)
+- ✅ 611靈糧堂 → 搵到嘅係「台北611靈糧堂」`channel/UClkrlvh7cXJiM9xrUzYUZdw`
+- ❌ **The Altar 搵唔到**:WebSearch 兩輪、唔同關鍵字,搵到嘅"The Altar of
+  Worship"/"Altar of Prayer"/"Altar Worship Official" 全部係其他國家嘅
+  頻道,對唔上「香港粵語敬拜」呢個 context。已落 `channel: null` 帶
+  note,等 Eric 提供官網/Facebook 連結先補。
+
+**⚠️ 落地測試發現 3 個新加channel都遠比預期高噪音**(唔係壞事,係
+`--dry`/`--ignore-office-hours` 逐輪真實試先揭發到,証明個四關 pipeline
+確實有用):
+- **台北611靈糧堂**:內容幾乎全部係晨禱/晚禱/生命見證/主日崇拜(冇歌
+  名,淨係傳道/牧師名+日期)。
+- **Asia for JESUS**:內容以「WE R ONE Worship」品牌嘅大型特會全場
+  連唱(一條片幾首歌)、網上學院課程(「天國文化線上學院」)、專題
+  講座(甚至有「Smart Financial Management」呢類理財講座)為主 ——
+  **6 次真實 discover 試,0 首係真正單一詩歌**,懷疑呢個 channel
+  根本主力唔係出歌,而係機構/事工紀錄片性質。留咗喺 config 跟機制
+  排隊(冇擅自剔走),但建議 Eric 留意呢個 channel 嘅實際產出,可能
+  值得重新評估。
+- **台北復興堂**:同 ROLCC 相似,夾雜住講道/名人講座,但都有真正
+  詩歌(例如「祢真偉大+主愛有多少 (ReFill Live)」)。
+
+**已經修好嘅 filter 漏洞**(`hymnDb.js isCompilation()`,每一條都經
+regression test 對現有 curated 全庫,0 誤殺):
+1. `dateStamp`:加咗年份擺頭嘅 `yyyy.mm.dd` 格式(之前得年份擺尾嗰款)
+2. `worshipSet`:加咗「N天晚禱/生命見證」;⚠️ 首次寫「晨禱/晚禱」單獨
+   兩個字做關鍵字,即刻誤殺咗一首叫「晨禱詩歌」嘅正牌歌(id 389),
+   改成一定要同「傳道/牧師」呢類講員頭銜同一個 title 先算,或者
+   「N天晚禱」呢個更專門嘅系列命名。
+3. `isCompilation` 主關鍵字表加咗:`牧師`/`傳道`/`講座`/`會長`/
+   `師母`/`學院`/`we r one`/`academy`(逐個都係實測揪出嚟先加,唔係
+   靠估)。
+
+**過程中 6 首測試污染咗嘅內容已經全部 delist(curated=0,reversible)**:
+id 1559(宣教月講道)、1560/1563(WE R ONE 特會連唱)、1564(天國文化
+線上學院)、1568(理財講座)、1569(師母分享)。
+
+**真實 test 3 個新 channel 全部 confirm 攞到過至少一首真正詩歌**
+(唔係得個殼):Asia for JESUS 得返 medley/課程(見上面警示,冇一首
+單獨詩歌成功留低);台北復興堂「祢真偉大+主愛有多少」;611靈糧堂
+「新年，椪！椪！椪！ | 2026 台北611大家族 新年MV」。
+
+**現時真實 curated 總數:534**(直接 SQL 查證,已經扣走晒 6 首測試污染)。
+
+⚠️ **未做**:「基督教兒童詩歌集/小天使詩歌各種合集」呢項要問返 Eric
+先(冇具體 channel,同 anti-compilation 政策有衝突);The Altar 要 Eric
+提供多啲資料。兩者都未落 config。
+
+### ✅ 2026-07-24 追加:修好兒童 discover 卡死喺 Saddleback Kids
+上面提到「Saddleback Kids 每次都試 0 條」嗰個小問題,即刻修咗。**根因**:
+`runDiscoverAll()` 揀團體用「已收錄最少優先」,兒童 4 個團體(Saddleback
+Kids/Hillsong Kids/Listener Kids/Kids on the Move)啱啱好全部打和 1 首。
+`.sort()` 打和時用緊 `a.priority - b.priority` 做 tiebreak,但**同一語言
+入面全部團體 priority 值一樣**,呢個 tiebreak 從來冇真正生效過 —— 打和
+實際上係靠 stable sort 嘅陣列次序,Saddleback Kids 排第一,永遠贏。
+同 curate mode `pickNextCandidate()` 嗰個「唔可以用固定次序,要隨機」
+係同一種坑(見上面實測踩過嗰段)。
+
+**修法**:tiebreak 由 `a.priority - b.priority` 改做 `Math.random() - 0.5`,
+打和時隨機揀,唔會再被同一個團體長開霸位。
+
+**已測試(唔止dry run)**:
+- 連續 9 次 `--dry` 呼叫,兒童揀嘅團體響 Kids on the Move / Listener Kids /
+  Saddleback Kids / Hillsong Kids 之間隨機輪替,唔再永遠係 Saddleback Kids。
+- 真實 kickstart 一次(冇 `--dry`):揀中 **Listener Kids**,3/3 成功收錄
+  (Bible songs / Easter song / counting song,內容正常)。DB 直接查證:
+  Listener Kids 由 1 首 → **4 首**,其餘 3 個團體維持 1 首(等緊下次打和
+  輪到佢哋)。
+
+### ✅ 2026-07-24 追加:discover 加速 3 倍(每語言 1→3),已真實 test 3 輪確認冇撞 block
+Eric 唔接受「每 15 分鐘每語言得 1 首」,要求查清楚呢個 1 係咪硬性安全掣。
+**查證結果:唔係。** `DISCOVER_BUDGET=3`(即每語言 1)純粹係寫呢個功能
+嗰陣(2026-07-23)揀嘅保守估計,冇任何實測或者 YouTube 側嘅硬限制支持
+呢個數。真正嘅安全掣一直都係另外幾樣(冇改過):concurrency 1、每首之間
+jitter 延遲、連續 3 次失敗嘅斷路器 + 對照探測。discover 嘅 resolve 步驟
+同 curate 用緊**同一個** `resolveAudioUrl()`,冇理由話 discover 特別高危。
+
+**關鍵論證**:粵/國/兒童 curate backlog 而家已經見底(見上面條目),即係
+每個 tick curate 實際上做緊 **0 次** resolve(即刻退出)。之前
+curate(6)+discover(3)最多 9 次 resolve/tick 跑咗成日都零事故 —— 而家
+curate 嗰 6 個額度完全冧咗出嚟冇用。將 `DISCOVER_BUDGET` 由 3 拉到 **9**
+(3 per 語言),總 resolve 量都仲喺返嗰個**已經證明穩陣咗幾日**嘅上限
+之內,唔係新嘅冒險,係攞返之前留喺枱面冇用嘅額度。
+
+**已落地 + 真實 test 3 輪(唔係 dry run)**:491 → 511(+20),粵語
+(Milk&Honey/SON Music)3/3、國語(新心音樂事工/611 Worship)3/3,**全部
+6/6 成功,0 失敗,0 斷路器觸發**,DB 鎖正常 release。單次 tick 產量由
+之前 ~2 首(discover 部分)升到 ~6 首,理論每小時(4 個 tick)discover
+產量由 ~8 首 → ~24 首。
+
+⚠️ **冇改嘅嘢**:①15 分鐘嘅 tick 頻率(`StartInterval`)冇郁,雖然 Eric
+都問到呢個,但呢次淨係試咗「加大每 tick 嘅 budget」呢一個變數,想收埋
+分開再驗證,唔想一次過改兩樣分唔清邊樣嘅效果 ②辦公時間封鎖窗完全冇動。
+③兒童(Saddleback Kids)每次都試 0 條 —— 佢個頻道現有 30 條 listing
+window 已經俾之前幾輪掃晒(fresh=0),但「已收錄最少」揀法令佢繼續霸住
+兒童個 slot,冇轉去 Hillsong Kids / Listener Kids / Kids on the Move。
+呢個係 discover mode 嘅「listing 深度/群組輪替」問題,同呢次嘅 budget
+加速冇關,未修,留返之後跟。
+
+### ✅ 2026-07-24:「冇更多合資格候選」查證 —— curate 唔係全庫見底,係 backlog 見底
+Eric 質疑呢個訊息,問粵語/國語咁多歌點會咁快見底。**查證結果:**
+- **curate mode 嘅 backlog(`hymns_all` 入面原本已經有、未 curate 嗰批)
+  粵/國/兒童三個語言確認 100% 用晒**(直接 SQL 查證:過濾後可用 =
+  已curated,backlog 剩 0)。呢個唔代表市面冇更多粵語/國語詩歌,淨係
+  代表「一開始個 1153 首 backlog」呢一批食晒。
+- **discover mode 本身已經覆蓋粵/國,唔使另外開**——`runDiscoverAll()`
+  由設計開始就係「揀晒所有未暫停語言」(粵/國/兒童),唔係兒童專用機制。
+  粵語 25 個團體入面 17 個未吸納(16 個有 channel),國語 13 個入面 3 個
+  未吸納(3 個都有 channel)——呢批先係真正未挖過嘅 pool,估計仲有
+  上千首。
+- **但搵到個真正樽頸**:`共享詩歌ShareHymns`(`@EnochLamSharehymns`)同
+  `City Harvest Church`(`@chc`)兩個 handle 都係壞嘅(404)。`runDiscoverAll`
+  揀「已收錄最少」嘅團體 —— 一個永遠 0 收錄嘅壞 channel 會**永久**贏晒
+  呢個位,擋住粵語其餘 15 個、國語其餘 1 個團體永遠冇機會攞到 discover
+  budget。已經修好:ShareHymns 搵到正確 `@WeShareHymns`(已驗證);
+  City Harvest Church 搵唔到肯定啱嘅 handle,拆走做 `channel: null`
+  等日後搵到先補。**即場驗證**:discover mode 而家會揀去
+  ShareHymns(2/2 成功)、611 Worship(2/2 成功),唔再卡死。
+- ⚠️ **速度預期要調整**:而家開始,粵/國嘅新歌**幾乎全靠 discover**
+  (`DISCOVER_BUDGET=3` 分 3 個語言,每語言每 15 分鐘 ~1 首,仲要睇個
+  channel 有幾多未收錄嘅片/有幾多撞 filter),遠慢過之前 curate mode
+  每輪 6 首嘅速度。之後幾日整體日增數會明顯放緩,呢個係預期之內,
+  唔係新 bug。
+
+### ✅ 2026-07-23 追加:DB 鎖加咗擁有權 token(防止誤刪第二個 process 嘅鎖)
+Eric 懷疑辦公時間封鎖窗提早 exit 冇釋放鎖。**逐項查證(真實喺封鎖窗入面
+跑一次 + 睇 code):封鎖檢查本身就喺 `acquireDbLock()` 之前,根本未攞過
+鎖,冇嘢可以漏釋放**——呢個具體 case 冇搵到問題。但診斷過程發現舊版
+`releaseDbLock()` **冇條件**,淨係 `unlinkSync`:如果將來邊個 code path
+唔小心喺未攞到鎖嗰陣 call 咗佢,會將**第二個 process 合法持有緊嘅鎖**都
+刪走 —— 反而整翻返個鎖想解決嗰個 race condition。所以做咗個真正嘅
+fix:`acquireDbLock()` 而家傳返一個擁有權 token(唔再係 `true`),
+`releaseDbLock(token)` 一定要 token 對得上先真係刪 lockfile,唔啱身就係
+安全 no-op。`growLibrary.js` 嘅 `main()` 亦都改成單一 try/finally 包住成
+個 function body(`lockToken` 預設 `null`),`checkDeadLinks.js` 跟住一齊
+改。**測試過**:①封鎖窗跑一次,跑前跑後都冇 lockfile ②模擬用 `null`/
+錯 token 去 release,confirm 唔會刪走另一個 process 嘅合法鎖,用返啱嘅
+先刪得走 ③完整 curate+discover flow(`--dry`)跑完正常 release ④12 個
+office-hours 自測 case 全部照過(呢次改動冇動時間窗邏輯本身)。
+
+### ✅ 2026-07-23:辦公時間封鎖窗(平日 10:30-18:30 唔行)
+Eric 拍板:部 Mac 擺喺公司,辦公時間背景 job 會拖慢公司網絡,所以
+`growLibrary.js` 加咗一個**星期幾 + 幾點**雙重條件嘅封鎖:
+- 星期一至六 10:30-18:30(`[10:30, 18:30)`,10:30 開始封、18:30 本身已解封)唔做嘢
+- 星期日全日冇限制
+
+同舊嗰個 `ENFORCE_TIME_WINDOW`(純粹「一日入面邊段鐘」、日日一樣、係
+「限死喺窗入面先做」)語義唔同,冇改嗰set,獨立開咗 `isBlockedByOfficeHours()`
++ `OFFICE_HOURS_BLOCK`。淨係喺 `main()` 加多一個 if,launchd 個 15 分鐘
+interval 排程本身完全冇郁(`ops/launchd/com.hymnapp.growlibrary.plist`
+唔使改)——job 照樣每 15 分鐘觸發一次,淨係喺封鎖窗入面自己即刻 return。
+`--ignore-office-hours` 手動測試用嘅 override。
+**驗證**:`node scripts/growLibrary.js --test-office-hours` 自測 12 個
+「星期幾+幾點」組合(邊界值:10:29/10:30/18:29/18:30、星期日全日、
+星期六都封)全部啱;真實 launchd kickstart 一次(星期四 14:47,啱啱好喺
+封鎖窗入面)confirm 咗真係 skip。
+
+### 🔀 2026-07-23:全庫非詩歌內容覆核 —— 已交獨立 session,呢個 session 唔好再跟
+Eric 拍板:呢個 session 淨係專注 growLibrary 排程相關(佢每 6 個鐘會嚟呢度查數),
+全庫(409 首,查嗰陣嘅數)覆核「有冇混咗講道/崇拜錄影/合輯/旁白/節目集數」
+交咗俾**另一個獨立 session** 做,唔好再喺呢度跟落去。
+- Title-based 即時篩查(用返 §下面已加強嘅 `isCompilation`/`isNonWorship`)
+  對現有 409 首**掃過一次,0 中招** —— 即係話仲有問題嘅(如果有)一定係
+  「彤話詩歌」嗰種標題睇落正常、要查 description 先分到清嘅類型,冇得
+  靠 title regex 一次過掃晒,要逐首起真實 metadata。
+  - 呢個 title-based 篩查本身可以隨時再行一次,唔改任何嘢:
+    `node -e` 讀 `hymns_all WHERE curated=1`,逐個過 `isCompilation`/
+    `isNonWorship`(見 `backend/lib/hymnDb.js`)。
+- 已經開咗一個逐首起真.duration + description 嘅背景 job,查到 64/409
+  就俾 Eric 中途叫停(交咗俾新 session)。**部分結果留咗低,新 session
+  可以接手唔使由頭嚟**:
+  - `/tmp/all_curated_ids_clean.txt` —— 全部 409 首嘅 `id|youtube_id`清單
+  - `/tmp/full_audit.tsv` —— 已經查完嗰 64 首嘅 `id\tyoutube_id\tduration##description片段`
+  - 呢兩個係 `/tmp` 檔案,唔喺 repo 入面,執行 `logout`/重開機會清走,
+    新 session 想用就儘快去攞。
+- 查 ROLCC 嗰陣嘅方法論(見下面條目)值得參考:duration outlier(>10-15分鐘)
+  + description 關鍵字(講道/主日信息/牧師/崇拜/見證/教學)係最有效嘅
+  訊號,單靠 title 通常唔夠。
+
+### ✅ 2026-07-23:Eric 截圖揪出 ROLCC生命河 2 首「唔係歌」——查到 11 首壞data,已 delist
+Eric 喺 App 見到「祢神蹟如此真實」「你的愛不離不棄」兩首懷疑唔係歌。
+查證(逐個 youtube_id 起真.description):兩首都屬於 ROLCC生命河「彤話詩歌」
+系列 ——「劉彤牧師最令會眾感動的主日崇拜段落,他在講道末了…回應」,即係
+**講道尾聲嘅音樂回應片段,唔係獨立詩歌**。標題本身睇落完全似正常歌名
+(冇「彤話詩歌」呢個 marker——已經俾之前入庫嗰次清理手續拆咗),純靠
+description 先分到清。
+- **順藤摸瓜查晒成個 ROLCC生命河(77 行,49 已收錄)**,搵到總共 **8 首**
+  同類「彤話詩歌」sermon-clip(id 1299/1302/1305/1308/1311/1313/1316/1320),
+  加埋 **2 首完整講道/崇拜錄影**混咗入嚟(id 327「劉彤牧師 20260705」40 分鐘;
+  id 732「生命河美國250週年國慶崇拜」1h42m)。過程中順手撞到多一條唔關
+  ROLCC事、但同類問題嘅合輯(id 177「最佳基督教赞美诗歌 推荐经典好听的」
+  1h17m,artist=讚美之泉粵語)。**11 首全部已經 `curated=0`**(同之前死鏈
+  嘅做法一致,資料留喺 `hymns_all`,reversible)。backend 已 kickstart,
+  App 而家 API 應該見唔返呢 11 首。
+- **filter 已加強**(`hymnDb.js isCompilation()`,已驗證對現有 391 首
+  curated 冇任何誤殺):
+  1. `dateStamp` 加咗 dotted/slash 日期格式(`07.05.2026`),之前得
+     glued 8位數(`20260705`)先捉到。
+  2. `worshipSet` 加咗「N週年…崇拜」「國慶崇拜」。
+  3. 新加 `sermonClip`(「彤話詩歌」/「River Worship」)—— ⚠️ **對現有
+     backlog 冇用**(marker 已經俾入庫清理拆走),純粹保護將來(discover
+     mode 攞返呢個頻道,或者第二個「歌名靚但其實係講道回應片」嘅頻道)
+     帶住原汁原味 title 嘅新候選。
+  4. 新加「最佳/推荐经典/推薦經典」入合輯關鍵字(俾 id 177 順手揭發)。
+- ⚠️ **呢類問題嘅結構性限制**:title-regex 只可以擋「title 本身就有信號」
+  嘅個案。「彤話詩歌」呢批**一開始**就係靠 description 先分到清,一旦
+  title 嘅 marker 喺入庫階段俾人拆走,就冇得再靠 title 補救,只可以人手
+  逐首查。冇再做全庫(391 首)逐首覆核 —— 呢次淨係查咗 ROLCC生命河
+  成個頻道(77 行)+ 順手揭發嘅 1 條,未做過其他歌手/頻道嘅同類審查。
+
+### ✅ 2026-07-23:discover mode 正式開跑,13 個兒童團體同粵/國一齊收
+Eric 拍板:①13 個兒童團體全部拉入 discover 輪替,②所有團體/歌手唔設
+上限,淨係用「邊個收錄最少優先」做多樣性(呼應 `ARTIST_CAP` 攞走)。
+- `runDiscoverAll()`(新):每次排程(mode=curate)**自動夾埋一細撮
+  discover**(`DISCOVER_BUDGET=3`,粵/國/兒童逐個語言揀「收錄最少嗰個
+  未吸納團體」,唔再死跟 priority)—— 唔使開多一個 launchd job,亦唔會
+  好似之前咁「粵語 17 個未吸納團體排晒喺兒童 13 個之前,兒童永遠冚唔到
+  棚」。
+- ⚠️ **落地前實測揪出 3 個壞 channel handle**,已喺 `worshipGroups.js` 改咗
+  (channel: null 或者換啱嘅 handle,連帶累事嘅原因都寫低咗做 comment):
+  `天韻兒童詩歌`(`@heavenlymelody` 其實係天韻**成人**主頻道,同已
+  inPool 嗰個「Heavenly Melody」係同一個,會將教學片/成人歌錯標「兒童」)、
+  `ACM兒童詩歌`(`@hkacm` 404,handle 唔存在)、`CantonHymn兒童版`
+  (`@cantonhymn` 其實係粵語嗰個 CantonHymn 嘅 general 頻道,唔係獨立兒童
+  版)、`新心音樂事工`(`@newheartmusic` 404,搵到正確係舊式
+  `user/NewHeartMusic`)。
+- `hymnDb.js` `isCompilation()` 加咗英文版「集數」偵測(`Episode N` /
+  `Week N` / `Church at Home`)—— discover Saddleback Kids 實測踩過:
+  佢個頻道大部分內容係節目集數(「Church at Home | Elementary | ... Week
+  4」)唔係歌,冇呢個 pattern 會錯收一堆非歌內容做「兒童」詩歌。
+  ⚠️ 已知仲有漏網(「Stories of the Bible」呢類聖經故事旁白片),severity
+  低過上面幾個,未再追,留返日後迭代。
+- **實測 confirm**:真實 `launchctl kickstart` 一次,curate 6/6 + discover
+  粵/國/兒童各 +1,`兒童` 分類**第一次喺 report 出現**(0→1)。307 首,直接
+  SQL 查證過。
+
+### ✅ 2026-07-20:四關收錄關卡(Eric 明確要求) —— 已落實兩個 mode
+Eric 要求:「攞到個 YouTube ID」唔算完成,一定要**搜尋 → 分類/品質篩選 →
+死鏈驗證 → 先寫入 DB**,缺一不可。`curate` mode 本身已經隱含跟緊(候選喺
+`usablePool()` 已經做咗 isCompilation/isNonWorship 篩選,再 resolveAudioUrl
+驗證先 UPDATE curated=1)。`discover` mode 之前淨係一個 stub(未接搜尋邏輯),
+而家已經實作:`yt-dlp --flat-playlist` 讀官方頻道候選 → 分類/品質篩選 →
+死鏈驗證 → 先 INSERT。兩個 mode 而家用返同一套 `passesQuality()` /
+`verifyPlayable()` 關卡,已經用 `--dry` 測試過(CantonHymn 頻道 2/2 成功)。
+⚠️ **launchd 排程仍然淨係跑 `curate`**,未轉去 `discover`——跟返
+`LIBRARY-EXPANSION-PLAN.md` Phase A→B 嘅次序(Phase A 未見底,或者
+Eric 話開先轉),唔係話 discover 未做得。
+
+### ✅ 兒童詩歌 —— 2026-07-20 Eric 已拍板:第4個獨立分類,冇固定配額
 原本 150 首試版庫**完全冇**兒童詩歌,粵30/國50/英20 個比例定嗰陣亦冇諗過呢類,
-所以之前特登問返 Eric 先(唔靜雞雞加落個比例度)。**Eric 揀咗「加做第4個分類、
-獨立配額」**。已落實:比例由 粵30/國50/英20 按原比例(3:5:2)縮 10% 讓位,
-變 **粵27/國45/英18/兒童10**(`growLibrary.js` QUOTA);`worshipGroups.js`
-8 個兒童團體 `priority` 由 9 解封做 4。
-⚠️ **但暫時仍然係 0 首**——8 個團體全部 `inPool:false`,要等
-discover mode(而家仲係 stub,未接搜尋邏輯,見「三之九」LIBRARY-EXPANSION-PLAN
-§2 Phase B)先會真正有兒童詩歌收錄。仲有 4 個團體(約書亞樂團青少年版/
-共享詩歌兒童版/Listenn Kids/God's Awesome Kids)喺 `hymn-groups-database.md`
-有但未搬落 `worshipGroups.js`,搬之前要人手覆核官方 handle。
+所以之前特登問返 Eric 先(唔靜雞雞加落個比例度)。**Eric 揀咗「加做第4個分類」**,
+但明確要求**唔好幫佢設固定配額**(原本諗住 粵27/國45/英18/兒童10,Eric 話唔好
+俾呢啲數字綁住)。已落實:`worshipGroups.js` 兒童團體 `priority` 由 9
+解封做 4;`growLibrary.js` 嘅 `QUOTA` 語言配額機制**整個移除**,`pickNextCandidate()`
+而家淨係跟歌手多樣性揀,唔再分語言計數 —— 粵/國/英/兒童四個分類自然按實際
+搵到幾多優質(過得晒四關收錄關卡)嘅候選自己增長,唔會因為撞正某個目標比例
+就特登唔畀邊個分類再郁。
+
+**2026-07-20 追加:Eric 確認將原本卡住嘅 4 個候補團體一齊搬入,加埋新搵到
+嘅一個,兒童團體由 8 個變 13 個。** 逐個用 yt-dlp 實測 handle 先落庫,唔靠估:
+- **Listener Kids**(`@listenerkids`,已驗證)—— 原始資料寫「Listenn Kids」,
+  網上搵唔到,「Listener Kids」先啱,相信手民之誤,已經改名收錄。
+- **Kids on the Move**(`@KidsontheMove`,已驗證)—— Eric 提出但原始資料
+  冇呢個團體,搜尋搵到(Church on the Move 兒童事工,Tulsa OK)並收錄。
+- **約書亞樂團青少年版 / 共享詩歌兒童版** —— 已搬入,但淨係搵到母頻道
+  (兩個都已經 `inPool:true`),搵唔到獨立子頻道,`channel` 留 `null` 等補,
+  冇亂咁指去母頻道(避免同已收錄嗰個團體撞埋扒重複)。
+- **God's Awesome Kids** —— 網上搵唔到,`channel` 留 `null` 等補。
+
+⚠️ **但暫時仍然係 0 首**——13 個團體全部 `inPool:false`,要等
+discover mode(**已經實作咗**,唔再係 stub,見上面「四關收錄關卡」條目)
+先會真正有兒童詩歌收錄,而 launchd 排程仍然淨係跑 curate,未轉去 discover。
 
 ### 團體清單喺邊
 - `hymn-groups-database.md`(repo 根目錄)= Eric/OpenClaw 搜集嘅完整資料,**人睇**。
@@ -1197,3 +1512,48 @@ tail -f ~/Library/Logs/com.cloudflare.cloudflared.err.log           # tunnel log
 - `/Users/macbookpro/.openclaw/workspace/hymn-app` — 呢個（Phase 1 喺度做）
 - `/Users/macbookpro/Desktop/lifetree-hymn-app` — 另一個 clone，`release-v219` 分支有 v215–v231 嘅 source
 - 兩邊都指向同一個 GitHub repo。**開工前先 `git branch --show-current` 同 `git log --oneline -5` 確認自己喺邊。**
+
+---
+
+## 十、Fable 5 監督記錄（growLibrary 擴歌庫）
+
+> 2026-07-24 起，Eric 指定開一個 Fable 5 session 長期監督 growLibrary，
+> 每 3 個鐘 check 一次（辦公時間 Mon-Sat 10:30-18:30 跳過）。
+> ⚠️ 分工（2026-07-24 同日修正）：Fable 5 淨係「監督＋診斷＋開方案」，**唔落手改 code**；
+> 方案 send 俾「夜晚慢速擴歌庫排程」Sonnet session（local_fa531849-cb75-4f5f-b75f-bf338f1ac858）
+> 落地實測，搵唔到就記錄喺呢度等 Dispatch 安排。
+> （下面 11:20 嗰次係分工修正**之前**做嘅，改動已交返俾 Sonnet session 覆核接手。）
+
+### 2026-07-24 11:20 第一次 check —— 發現並修復「discover slot 卡死」問題
+
+**現況總結：** DB 539 首（粵185/國283/英62/兒9）。launchd job 正常每 15 分鐘行，
+辦公時間封鎖窗運作正確（今朝 10:30 起正確跳過）。今朝 08:00-10:24 增長正常（~20-33 首/小時）。
+
+**發現嘅問題（今晚 18:30 解封後必定重演尋晚成晚停擺）：**
+尋晚 7-23 23:24 至今朝 08:00，discover 三個語言 slot **全部**俾零產出頻道霸死，成晚 0 首：
+- 根因：`runDiscoverAll` 嘅「已收錄最少優先」規則對**永遠零產出**嘅頻道冇免疫力 ——
+  404 handle / 全講道頻道 / listing 攞晒嘅頻道，count 永遠最細，永遠贏個 slot。
+- 粵語 slot：`@worshipool`、`@gyro_ufireband` 兩個 404 handle 輪流霸位
+- 國語 slot：台北611靈糧堂（幾乎全講道，篩走晒）
+- 兒童 slot：Saddleback Kids（近 30 條片全部係兒童節目/講道，全篩走）
+- 另外 curate pool 已耗盡（粵 0 / 國 0 可揀），所以 discover 係唯一增長引擎，卡死 = 全停。
+
+**已落地嘅修復（全部實測 confirm）：**
+1. `worshipGroups.js`：U-Fire GYRO 壞 handle → 改用已驗證嘅 `channel/UCX96y8yd_kRVwxWTQxrjhRA`
+   （實測 list 到 Gyro Worship 敬拜歌）。
+2. `worshipGroups.js`：WorshiPool 壞 handle 拆走（channel: null）。已搵到正身
+   `UCBdH0Y3bL8UsOzjrY4CzBAw`（記咗喺註解），但原註明「平台性質要人手審視先好開」，
+   所以等 Eric 拍板先填返。
+3. `growLibrary.js` `runDiscoverAll`：加 fallthrough —— 一個頻道連一條都試唔到
+   （listing 失敗/冇新片/全部俾分類篩走，即 budget 一啖未使），即場跳去同語言
+   下一個「已收錄最少」團體，每語言每 run 最多試 3 個頻道。有真.試過先算用咗
+   slot，所以唔會加大對 YouTube 嘅實際請求量。
+   實測（--dry --ignore-office-hours budget 3）：Saddleback 試唔到 → 自動跳去
+   Kids on the Move → 成功收錄 1 首。兒童 slot 由此解鎖。
+
+**注意：** 兩個檔案嘅修改**未 commit**（同日早上「夜晚慢速擴歌庫」session 喺同一批檔案
+有未 commit 改動，唔想夾埋人哋嘅 commit）。launchd 直接跑 working tree，修復已即時生效。
+
+**監督機制：** 本 session 已設 3 小時一次嘅自我喚醒（cron 47 分 */3 小時，辦公時間
+自動跳過唔查）。Session-only 排程，7 日後過期；如果發現監督斷咗，要重開 Fable 5
+監督 session。

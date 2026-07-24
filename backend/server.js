@@ -72,6 +72,14 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'ok' });
 });
 
+// 內部用:俾夜晚維護 script(growLibrary.js / checkDeadLinks.js)查詢「而家有冇
+// 真人聽緊歌」,實現「有真人用就縮」呢個開關(2026-07-21 Eric 拍板,暫時未開)。
+// 直接讀返 keep-warm tick 用緊嗰個 refcount(見上面 §206 anyStreaming),
+// 唔係額外維護一份新狀態 —— 一個 process 入面單一事實來源。唔係俾 App 用嘅。
+app.get('/api/internal/activity', (req, res) => {
+  res.json({ streaming: anyStreaming() });
+});
+
 // Get all hymns from the database
 app.get('/api/hymns', async (req, res) => {
   try {

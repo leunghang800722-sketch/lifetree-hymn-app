@@ -12,6 +12,13 @@
 慢慢驗證升級就得，風險同每晚跑緊嘅死鏈檢測一模一樣。真正要爬新歌係為咗
 **團體多樣性**，唔係為咗數量 —— 而且應該由粵語開始。
 
+> ⚠️ **2026-07-21 Eric 拍板：英文暫停主動擴充。** 07-20 移除語言配額嗰一晚，
+> 8 次排程全部成功、零失敗，但 48 首新歌入面 45 首（94%）係英文（19 個歌手，
+> 幾乎冇失敗，自然增長跑贏晒），粵語得 3、國語 0——同「應該由粵語開始」呢個
+> 原意背馳。已喺 `growLibrary.js` 加 `PAUSED_LANGUAGES = {'英文'}`：curate/discover
+> 兩個 mode 都唔會再揀英文做候選，已收錄嗰 75 首唔郁。夜晚攞歌而家集中落
+> **粵語、國語、兒童詩歌**。
+
 ---
 
 ## 1. 先搞清楚個底：樽頸唔係「歌唔夠」
@@ -48,6 +55,17 @@
 
 ## 2. 三個階段（按呢個次序）
 
+> ✅ **2026-07-20：兩個 mode 而家都跟緊同一套四關收錄關卡（Eric 明確要求，
+> 唔可以「攞到個 YouTube ID」就當完成）：① 搜尋候選 → ② 分類/品質篩選
+> （合輯/世俗歌，平嘅一關做先）→ ③ 死鏈驗證（`resolveAudioUrl`，貴嘅一關
+> 留返俾已經睇落啱嘅候選）→ ④ 全部關卡都過咗先寫入 DB。任何一關唔過都
+> 唔會落庫。實作見 `growLibrary.js` 嘅 `passesQuality()` / `verifyPlayable()` /
+> `runCurate()` / `runDiscover()`。`runDiscover()` 之前係一個未接搜尋邏輯嘅
+> stub，而家已經實作咗（用 `yt-dlp --flat-playlist` 讀官方頻道候選,經同一
+> 套四關先寫入），已經用 `--dry` 測試過(CantonHymn 頻道 2/2 成功收錄)。
+> ⚠️ 但 launchd 排程**仍然淨係跑 `--mode curate`**，未轉去 `discover` ——
+> 呢個係下面 Phase A → B 嘅次序決定，唔係「未實作」。
+
 ### Phase A —— 唔使爬，先食晒手頭嘅（而家做緊）
 - `growLibrary.js --mode curate`：由 1153 首可用歌度驗證 + 升級。
 - **完全唔會搜尋 YouTube**，只係 `resolveAudioUrl()` 驗證，同死鏈檢測一樣嘅動作。
@@ -58,7 +76,7 @@
 - `--mode discover`：**用官方 YouTube 頻道**攞歌，唔用關鍵字搜尋。
   關鍵字搜尋會扒一大堆唔相干嘅片返嚟，既嘥額度又易撞 block。
   20 個未吸納團體入面 **19 個有官方 handle**（喺 `backend/data/worshipGroups.js`）。
-- 次序：**粵語（priority 1）→ 國語（2）→ 英文（3，基本上唔使做）**。
+- 次序：**粵語（priority 1）→ 國語（2）→ 英文（3，2026-07-21 起暫停，見 §0）→ 兒童（4）**。
 - 建議每晚額度細好多（2-3 首），因為呢個先係真.爬蟲。
 - ⚠️ `WorshiPool` 特登排最後：佢係版權管理平台（收 40+ 個創作單位），
   攞返嚟會同其他團體大量重複，要人手睇過先好開。
@@ -75,15 +93,23 @@
 Eric 部 Mac 嘅住宅 IP 係而家**唯一**仲行得通嘅 IP（Zeabur 個 IP 已經封死），
 所以呢個機制由頭到尾都係「慢過頭好過快一秒」：
 
+> ⚠️ **2026-07-21 Eric 拍板：轉 24 小時運行，時段限制解除。** 而家得 Eric
+> 一個人用 App，冇真實用戶撞資源嘅風險，所以由夜間 00:00-09:00 限定改做
+> 24 小時、每 **15 分鐘**一次（`launchd StartInterval`，見 `ops/launchd/`）。
+> **淨係「check-in 密咗」，單次請求嘅節奏(下表)完全冇變** —— 唔係一次過
+> 攞多好多。時段檢查(`ENFORCE_TIME_WINDOW`)冇刪，keep 住喺 `growLibrary.js`
+> 度，想返轉頭夜間限定改返 `true` 就得。詳見 §8「未來開關」。
+
 | 措施 | 做法 |
 |---|---|
-| 時段 | 只喺 **00:00-09:00** 行。script 自己再檢查一次，就算 launchd misfire 都唔會日頭爬 |
+| 時段 | ~~只喺 00:00-09:00 行~~ 2026-07-21 起 **24 小時**（見上面拍板）|
 | 併發 | 由頭到尾 **1**，一首完先落一首 |
 | 延遲 | 每首之間 ~4 秒，而且**隨機化**（0.7x-1.6x）—— 固定節奏最似機械人 |
-| 每次額度 | 6 首（`--budget`），每晚最多 54 首 |
-| 排程分散 | 每個鐘頭先行一次，唔係一次過跑晒 |
-| 唔撞死鏈 job | **特登跳過 4 點** —— `com.hymnapp.deadlinkcheck` 喺 04:00 行，兩個 job 撞埋會即刻 double 咗打 YouTube 嘅頻率 |
-| 分鐘錯開 | 用 `:07` 唔用 `:00`，唔好啱啱正點跳 |
+| 每次額度 | 6 首（`--budget`），冇變 |
+| 排程頻率 | 2026-07-21 起 **每 15 分鐘一次**（之前係每個鐘頭一次，仲要限夜間）|
+| DB 寫入鎖 | 2026-07-21 加：同 `com.hymnapp.deadlinkcheck`(04:00) 用同一條 lockfile
+  互斥（`hymnDb.js acquireDbLock`），攞唔到鎖就今次跳過。之前靠「跳過 4 點」
+  嚟避開撞期，加密之後實在避唔晒，改用真正嘅鎖 |
 | 斷路器 | 連續 3 次失敗 → **攞一首已收錄嘅歌做對照探測**，證實真係俾擋先收工（見 §4）|
 
 ---
@@ -112,23 +138,39 @@ Eric 部 Mac 嘅住宅 IP 係而家**唯一**仲行得通嘅 IP（Zeabur 個 IP 
 
 ## 5. ✅ 兒童詩歌 —— 2026-07-20 Eric 已拍板
 
-**決定：做第4個獨立分類，獨立配額。** 原 粵30/國50/英20（比例 3:5:2）按比例縮
-10% 讓位：**粵27 / 國45 / 英18 / 兒童10**，已落實喺 `growLibrary.js` 嘅 `QUOTA`。
+**決定：做第4個獨立分類。** `backend/data/worshipGroups.js` 入面 13 個兒童
+團體 `priority` 由 9 改咗做 4，**runner 已經准揀**（原本 8 個 + 2026-07-20
+Eric 追加拍板搬入嘅 4 個舊有候補 + 1 個新搵到嘅,詳見下面清單)。
 
-- `backend/data/worshipGroups.js` 入面 8 個兒童團體 `priority` 由 9 改咗做 4，
-  **runner 已經准揀**。
-- ⚠️ **但實際上未有兒童詩歌會收錄** —— 呢 8 個團體全部 `inPool:false`
-  （歌庫完全未有呢類歌），要靠 discover mode 先攞到，而 discover mode
-  （`runDiscover()`）而家仲係一個 stub，未接埋 YouTube 頻道搜尋邏輯
-  （見 Phase B）。`QUOTA` 入面 `兒童:0.10` 會令 pickNextCandidate 每次
-  都見到最大 deficit 但揀唔到candidate，跳去下個語言 —— 唔會壞，但都
-  唔會有進度，直到 discover mode 做咗先會有得郁。
-- 已收集嘅 8 個團體（估計 ~410 首）：讚美之泉兒童(100)、611 Kids(30)、
+⚠️ **2026-07-20 追加拍板：擴充機制唔設固定語言比例。** 原本諗住用
+粵27/國45/英18/兒童10 咁樣分配，但 Eric 話唔好俾呢啲固定數字綁住 ——
+每個分類（粵/國/英/兒童)應該按實際搵到幾多優質（過得晒 §3 四關）嘅候選
+自然增長，唔使湊夠一個預設嘅比例先罷休。`growLibrary.js` 已經移除咗
+`QUOTA` 呢個語言配額機制，`pickNextCandidate()` 而家淨係跟「歌手多樣性」
+（邊個歌手已收錄最少就優先佢）撈晒全部語言一齊揀，唔再分語言計算。
+
+- **但實際上未有兒童詩歌會收錄** —— 呢 13 個團體全部 `inPool:false`
+  （歌庫完全未有呢類歌），要靠 discover mode 先攞到。discover mode
+  （`runDiscover()`）**已經實作咗**（2026-07-20，唔再係 stub）：用官方頻道
+  `yt-dlp --flat-playlist` 攞候選，經返 §3 嘅四關（分類/品質篩選 → 死鏈
+  驗證 → 先寫入）先落庫，已經用 `--dry` 測試過。但 launchd 排程仍然淨係
+  跑 `curate`，未轉去 `discover`（跟 Phase A → B 次序，未到時候），
+  所以而家兒童詩歌數量仍然係 0，要手動 `--mode discover` 或者改排程先會郁。
+- 原本 8 個團體（估計 ~410 首）：讚美之泉兒童(100)、611 Kids(30)、
   天韻兒童(30)、ACM兒童(20)、CantonHymn兒童(20)、Saddleback Kids(100)、
   Hillsong Kids(80)、Bethel Kids(30)。
-- ⚠️ `hymn-groups-database.md` §四原始資料仲有 4 個未搬入
-  `worshipGroups.js`：約書亞樂團青少年版、共享詩歌兒童版、Listenn Kids、
-  God's Awesome Kids —— 搬之前要人手覆核官方 handle，未做。
+- ✅ **2026-07-20 Eric 拍板追加**、已經逐個用 yt-dlp 實測 handle 先落
+  `worshipGroups.js`（唔係靠估）：
+  - **Listener Kids**（`@listenerkids`，至少60條片）—— `hymn-groups-database.md`
+    原本寫「Listenn Kids」，網上搵唔到呢個名，「Listener Kids」先啱，
+    相信係手民之誤，已經改名 + 補齊 handle。
+  - **Kids on the Move**（`@KidsontheMove`，至少60條片）—— Eric 提出但原始
+    資料冇呢個團體，搜尋搵到(Church on the Move 兒童事工,Tulsa OK)並驗證。
+  - **約書亞樂團青少年版**、**共享詩歌兒童版** —— 已搬入 `worshipGroups.js`，
+    但網上搜尋淨係搵到佢哋嘅母頻道（約書亞樂團、ShareHymns @WeShareHymns，
+    兩個都已經 `inPool:true`），搵唔到獨立嘅青少年/兒童子頻道，`channel`
+    留 `null`，等搵到先補（冇亂咁指去母頻道,避免同已收錄嗰個團體撞埋)。
+  - **God's Awesome Kids** —— 網上搜尋唔到,`channel` 留 `null`,等搵到先補。
 
 ---
 
@@ -148,5 +190,21 @@ Eric 要求「每擴大若干首匯報一次」，唔使做晒先講：
 |---|---|
 | `hymn-groups-database.md` | Eric/OpenClaw 搜集嘅完整團體資料（人睇）。**加新團體先改呢度** |
 | `backend/data/worshipGroups.js` | 由上面提煉嘅可執行清單（runner 睇）：channel handle、priority、inPool |
-| `backend/scripts/growLibrary.js` | 夜晚慢速 runner，兩個 mode：curate / discover |
-| `~/Library/LaunchAgents/com.hymnapp.growlibrary.plist` | 排程：00:07-08:07 每個鐘頭一次，跳過 4 點 |
+| `backend/scripts/growLibrary.js` | 慢速 runner，兩個 mode：curate / discover |
+| `~/Library/LaunchAgents/com.hymnapp.growlibrary.plist` | 排程：**每 15 分鐘一次，24 小時**（2026-07-21 起） |
+
+---
+
+## 8. 未來開關（2026-07-21 加）
+
+而家兩個都**未開**，但已經寫好、測試過，等要用嗰日一行嘢就啟動得到：
+
+| 開關 | 而家 | 做乜 | 點開 |
+|---|---|---|---|
+| `ENFORCE_TIME_WINDOW`(`growLibrary.js`) | `false` | 恢復夜間 00:00-09:00 限定（2026-07-21 之前嘅行為）| 改做 `true` |
+| `THROTTLE_FOR_LISTENERS`(`growLibrary.js`) | `false` | **有真人聽緊歌就成輪跳過**，唔同真實播放爭 yt-dlp/backend 資源。經新加嘅 `GET /api/internal/activity`（server.js）問返 backend 現有嘅 `anyStreaming()` refcount（本身已經係 keep-warm 止血邏輯用緊嗰份真實狀態，唔係另起爐灶）| 改做 `true` |
+
+**點解而家兩個都唔開**：Eric 2026-07-21 拍板「得佢一個人用，冇真實用戶撞資源風險」，
+所以先可以由夜間限定 + 每小時，轉做 24 小時 + 每 15 分鐘。`THROTTLE_FOR_LISTENERS`
+就係專登為「將來真係有用戶」留低嘅安全網 —— 呼應返之前「攞歌搶咗播放中資源
+引致斷續」嗰個已經修好嘅 bug,防止同一類問題將來以另一個形式返嚟。

@@ -15,7 +15,7 @@
 //
 // Usage: node scripts/checkDeadLinks.js [--limit N] [--delay MS] [--ids 1,2,3]
 
-import { openDb, saveDb, query, sleep, DB_PATH } from '../lib/hymnDb.js';
+import { openDb, saveDb, query, sleep, DB_PATH, acquireDbLock, releaseDbLock } from '../lib/hymnDb.js';
 import { resolveAudioUrl } from '../lib/resolveAudio.js';
 
 const arg = (flag, dflt) => {
@@ -31,6 +31,25 @@ const DEAD_AFTER = 3; // consecutive failures, each on a different day
 const today = () => new Date().toISOString().slice(0, 10);
 
 async function main() {
+  // growLibrary.js 而家 24 小時、每 15-20 分鐘行一次(2026-07-21 起),同呢個
+  // job 撞埋嘅機會大好多 —— 兩個 script 都係「讀成個 DB 落記憶體、跑完先寫」,
+  // 冇鎖嘅話遲寫嗰個會靜靜哋蓋咗早寫嗰個嘅嘢。攞唔到鎖就跳過呢次,留返俾
+  // 下一次排程,唔好死等做成排程塞車。
+  const lockToken = await acquireDbLock('checkDeadLinks');
+  if (!lockToken) {
+    console.log(`[${today()}] 攞唔到 DB 鎖(俾 growLibrary 用緊),今次跳過,聽日/下次再嚟`);
+    return;
+  }
+  try {
+    await runCheck();
+  } finally {
+    // 2026-07-23:releaseDbLock 而家要 token 校對啱先真係刪(見 hymnDb.js),
+    // 防止唔小心刪走第二個 process 合法持有嘅鎖。
+    releaseDbLock(lockToken);
+  }
+}
+
+async function runCheck() {
   const db = await openDb();
 
   let targets;

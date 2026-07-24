@@ -5,9 +5,14 @@
     <key>Label</key>
     <string>com.hymnapp.growlibrary</string>
 
-    <!-- 夜晚慢速擴充歌庫。每晚 00:00-09:00,每個鐘頭行一次,每次淨係做 6 首。
-         上限 = 9 次 × 6 首 = 54 首/晚,而且每首之間有 ~4 秒(帶隨機)延遲。
-         script 本身仲有時段檢查,就算 launchd misfire 都唔會日頭爬。 -->
+    <!-- 慢速擴充歌庫。2026-07-21 Eric 拍板轉 24 小時運行(之前係 00:00-09:00
+         夜間限定):而家得 Eric 一個人用 App,冇真實用戶撞資源嘅風險,可以
+         進取啲。淨係加密咗「check-in」頻率(StartInterval,見下面),單次
+         請求節奏(concurrency 1、~4 秒帶隨機 jitter、連續 3 次失敗斷路器)
+         完全冇變 —— 唔係「一次過攞多好多」,係「多啲、密啲、每次都一樣咁細」。
+         script 本身有 DB 寫入鎖(hymnDb.js acquireDbLock),同 checkDeadLinks.js
+         唔會再撞埋手寫爛 DB;仲有一個「有真人聽緊就縮」開關(而家未開,
+         見 growLibrary.js 頂部註解),將來有真實用戶就開得返。 -->
     <key>ProgramArguments</key>
     <array>
         <string>/opt/homebrew/bin/node</string>
@@ -33,21 +38,13 @@
         <string>/opt/homebrew/bin:/opt/homebrew/sbin:/usr/bin:/bin:/usr/sbin:/sbin</string>
     </dict>
 
-    <!-- 00:00 到 08:00 每個鐘頭一次。分鐘用 07 唔用 00 —— 唔好啱啱正點跳,
-         成個節奏太整齊反而似機械人。
-         ⚠️ 特登冇 4 點:com.hymnapp.deadlinkcheck 喺 04:00 行,兩個 job 撞埋
-         一齊會即刻double咗打 YouTube 嘅頻率,正正係我哋想避免嘅嘢。 -->
-    <key>StartCalendarInterval</key>
-    <array>
-        <dict><key>Hour</key><integer>0</integer><key>Minute</key><integer>7</integer></dict>
-        <dict><key>Hour</key><integer>1</integer><key>Minute</key><integer>7</integer></dict>
-        <dict><key>Hour</key><integer>2</integer><key>Minute</key><integer>7</integer></dict>
-        <dict><key>Hour</key><integer>3</integer><key>Minute</key><integer>7</integer></dict>
-        <dict><key>Hour</key><integer>5</integer><key>Minute</key><integer>7</integer></dict>
-        <dict><key>Hour</key><integer>6</integer><key>Minute</key><integer>7</integer></dict>
-        <dict><key>Hour</key><integer>7</integer><key>Minute</key><integer>7</integer></dict>
-        <dict><key>Hour</key><integer>8</integer><key>Minute</key><integer>7</integer></dict>
-    </array>
+    <!-- 每 900 秒(15 分鐘)一次,24 小時全日。2026-07-21 由 8 個固定
+         StartCalendarInterval 時段(00:00-09:00 夜間限定)改用 StartInterval,
+         唔再限時段。之前特登跳過 04:00(避開 checkDeadLinks)嗰招而家唔使
+         再靠 —— 兩個 job 加密之後實在避唔晒撞期,改為靠 DB 寫入鎖
+         (hymnDb.js acquireDbLock)互斥,邊個攞唔到鎖就今次唔做、留返下次。 -->
+    <key>StartInterval</key>
+    <integer>900</integer>
 
     <!-- 一次性 job:唔准 KeepAlive,否則 launchd 會不停重開。 -->
     <key>RunAtLoad</key>
