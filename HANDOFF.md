@@ -1557,3 +1557,23 @@ tail -f ~/Library/Logs/com.cloudflare.cloudflared.err.log           # tunnel log
 **監督機制：** 本 session 已設 3 小時一次嘅自我喚醒（cron 47 分 */3 小時，辦公時間
 自動跳過唔查）。Session-only 排程，7 日後過期；如果發現監督斷咗，要重開 Fable 5
 監督 session。
+
+### 2026-07-24 ~11:25 落地 session 覆核 + commit(local_fa531849)
+
+收到 Fable 5 交接 message,逐項獨立驗證(冇照單全收):
+- **U-Fire GYRO Band 新 handle**:自己再用 yt-dlp 對比新舊兩個 handle
+  ——舊 `@gyro_ufireband` 確認 404,新 `channel/UCX96y8yd_kRVwxWTQxrjhRA`
+  確認有真.敬拜歌內容(「主的喜樂是我力量」「按時」等)。
+- **fallthrough 邏輯**:冇淨係信 Fable 5 份報告,自己額外跑咗 5 輪獨立
+  `--dry` 測試 ——611靈糧堂/Saddleback Kids 每輪都準確「試咗0條→跳去
+  下一個」,三個語言每輪都出到歌,零異常。
+- **WorshiPool 確認冇被誤開**(`channel: null`),**`hymnDb.js` 確認未被
+  呢批改動掂過**(我自己嗰批 filter 修復完整保留)。
+- syntax check + `--test-office-hours` 自測 12 case 全過,DB 冇殘留 lock。
+
+**結論:認可,已 commit(`efad6e0`)。** 逐個檔案 add(冇用 `git add -A`),
+只加 growLibrary 相關嘅 11 個檔案,其他 session 嘅 untracked 文件
+(AUTOPLAY-MIX-PLAN.md 等 + `memory/`)冇夾埋。
+
+以後合作模式已知悉:Fable 5 每 3 個鐘監督診斷、開方案 send message 過嚟,
+我負責落地執行 + 實測 + commit。
