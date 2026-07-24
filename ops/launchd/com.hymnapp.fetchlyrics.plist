@@ -6,17 +6,21 @@
     <string>com.hymnapp.fetchlyrics</string>
 
     <!-- 歌詞入庫夜晚隊列(LYRICS-PIPELINE-PLAN)。2026-07-24 STAGE 2 起:每晚一次過
-         行兩層 —— CC 字幕層(平,budget 12,處理新收錄嘅歌)先,跟住 OCR 層
-         (主力,budget 6,落片+抽frame+Vision OCR+需要時 whisper 後備,一首
-         幾分鐘)。CC 揾唔到嘅歌(source='cc:miss')先會入 OCR 隊,唔會夜夜重 CC。 -->
+         行兩層 —— CC 字幕層(平,處理新收錄嘅歌)先,跟住 OCR 層(主力,
+         落片+抽frame+Vision OCR+需要時 whisper 後備,一首幾分鐘)。
+         CC 揾唔到嘅歌(source='cc:miss')先會入 OCR 隊,唔會夜夜重 CC。
+         2026-07-24 Eric 拍板加速:每晚最少 20 首 → CC 25 + OCR 20。
+         ⚠️ CC budget 一定要 ≥ OCR budget:cc:miss 存貨係 OCR 嘅糧,CC 實測
+         命中率 ~0%,即係每晚 OCR 食幾多就要 CC 產幾多,細過佢 OCR 會斷糧。
+         20 首 OCR 預計 40-90 分鐘,04:20 開波遠早過 09:00 窗口尾,夠鬆。 -->
     <key>ProgramArguments</key>
     <array>
         <string>/opt/homebrew/bin/node</string>
         <string>/Users/macbookpro/.openclaw/workspace/hymn-app/backend/scripts/fetchLyrics.js</string>
         <string>--cc-budget</string>
-        <string>12</string>
+        <string>25</string>
         <string>--ocr-budget</string>
-        <string>6</string>
+        <string>20</string>
         <string>--delay</string>
         <string>4000</string>
     </array>
