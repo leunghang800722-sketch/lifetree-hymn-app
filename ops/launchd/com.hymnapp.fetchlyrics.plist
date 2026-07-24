@@ -5,14 +5,18 @@
     <key>Label</key>
     <string>com.hymnapp.fetchlyrics</string>
 
-    <!-- 歌詞入庫夜晚隊列(LYRICS-PIPELINE-PLAN)。STAGE 1 = CC 字幕層。
-         每晚一次,CC budget 12 首(CC 平,同 resolve 同級)。 -->
+    <!-- 歌詞入庫夜晚隊列(LYRICS-PIPELINE-PLAN)。2026-07-24 STAGE 2 起:每晚一次過
+         行兩層 —— CC 字幕層(平,budget 12,處理新收錄嘅歌)先,跟住 OCR 層
+         (主力,budget 6,落片+抽frame+Vision OCR+需要時 whisper 後備,一首
+         幾分鐘)。CC 揾唔到嘅歌(source='cc:miss')先會入 OCR 隊,唔會夜夜重 CC。 -->
     <key>ProgramArguments</key>
     <array>
         <string>/opt/homebrew/bin/node</string>
         <string>/Users/macbookpro/.openclaw/workspace/hymn-app/backend/scripts/fetchLyrics.js</string>
-        <string>--budget</string>
+        <string>--cc-budget</string>
         <string>12</string>
+        <string>--ocr-budget</string>
+        <string>6</string>
         <string>--delay</string>
         <string>4000</string>
     </array>
@@ -20,18 +24,22 @@
     <key>WorkingDirectory</key>
     <string>/Users/macbookpro/.openclaw/workspace/hymn-app/backend</string>
 
-    <!-- ⚠️ 一定要 set PATH:launchd 預設冇 /opt/homebrew/bin,fetchLyrics 行 yt-dlp。
-         唔 set 嘅話每首都 command-not-found、成個 job 靜靜哋收 0 首(growlibrary 踩過)。 -->
+    <!-- ⚠️ 一定要 set PATH:launchd 預設冇 /opt/homebrew/bin,fetchLyrics 行 yt-dlp/
+         ffmpeg/whisper-cli 呢啲 homebrew 裝嘅工具。唔 set 嘅話每首都
+         command-not-found、成個 job 靜靜哋收 0 首(growlibrary 踩過)。 -->
     <key>EnvironmentVariables</key>
     <dict>
         <key>PATH</key>
         <string>/opt/homebrew/bin:/opt/homebrew/sbin:/usr/bin:/bin:/usr/sbin:/sbin</string>
     </dict>
 
-    <!-- 04:20 —— 特登揀呢個位:growlibrary 排程跳過 4 點(唔會撞),deadlinkcheck
-         04:00 做完 ~4:07(4:20 已清)。呢個 gap 冇其他 job 打 YouTube 或者寫 hymns.db,
-         所以唔會同佢哋爭資源 / clobber 個 DB。fetchLyrics 一次 run 做完(CC 好快)
-         遠早過 growlibrary 下一 slot 05:07。 -->
+    <!-- 04:20 —— 沿用 STAGE 1 揀嘅時間(growlibrary/deadlinkcheck 嗰陣呢個位冇人爭)。
+         2026-07-24 加咗 OCR 之後單次 run 會長好多(OCR 一首幾分鐘,6 首 budget
+         可以行成 15-30 分鐘),唔再假設「同 growlibrary 一定冇撞期」—— 依家
+         真正嘅互斥係 hymnDb.js 嘅 acquireDbLock(見 fetchLyrics.js 檔頭嘅 P0
+         修註解):撞正 growLibrary(而家 24 小時每 15 分鐘一次)嗰陣邊個攞唔到
+         鎖就 skip 嗰一步,唔會再靠「揀啱時間唔撞」嚟保證安全。04:20 淨係
+         「盡量避開,減少空等鎖嘅次數」,唔係安全嘅唯一保證。 -->
     <key>StartCalendarInterval</key>
     <dict>
         <key>Hour</key><integer>4</integer>

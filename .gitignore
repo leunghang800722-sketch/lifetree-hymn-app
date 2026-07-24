@@ -28,6 +28,11 @@ Thumbs.db
 *.swp
 *.swo
 
+# 歌詞 OCR/whisper pipeline —— 大檔案唔入 repo(LYRICS-PIPELINE-PLAN §2④⑤)
+backend/models/*.bin
+backend/tools/ocrframe
+backend/tools/*.o
+
 # Logs
 npm-debug.log*
 yarn-debug.log*
