@@ -31,7 +31,11 @@ function Cover({ youtubeId, size = 52 }) {
   return <Image source={{ uri }} style={[styles.cover, { width: size, height: size }]} onError={() => setFailed(true)} />;
 }
 
-export default function PlaylistDetailSheet({ playlistId, onClose, onPlayHymn }) {
+// B9 — 呢個 Modal 冇 TabBar 陪住,mini player 由 App.js 傳落嚟企喺底(見
+// App.js/MineScreen.js 嘅註解)。約數高度,留返空間唔好俾佢遮咗尾幾行歌。
+const MINI_PLAYER_H = 64;
+
+export default function PlaylistDetailSheet({ playlistId, onClose, onPlayHymn, miniPlayer, hasMiniPlayer = false }) {
   const { playlists = [], removeFromPlaylist, deletePlaylist } = usePlaylists() || {};
   const { openRename } = useAddToPlaylist();
   const insets = useInsets();
@@ -98,7 +102,8 @@ export default function PlaylistDetailSheet({ playlistId, onClose, onPlayHymn })
         <FlatList
           data={songs}
           keyExtractor={(item) => String(item.id)}
-          contentContainerStyle={{ paddingBottom: 24 + insets.bottom }}
+          style={{ flex: 1 }}
+          contentContainerStyle={{ paddingBottom: 24 + insets.bottom + (hasMiniPlayer ? MINI_PLAYER_H : 0) }}
           ListHeaderComponent={
             <TouchableOpacity
               style={[styles.playAll, { opacity: songs.length ? 1 : 0.45 }]}
@@ -129,6 +134,8 @@ export default function PlaylistDetailSheet({ playlistId, onClose, onPlayHymn })
             </View>
           }
         />
+        {/* B9 — 呢個 Modal 冇 TabBar 陪住,音樂播緊要有得控制/跳返播放頁 */}
+        {miniPlayer}
       </View>
     </Modal>
   );

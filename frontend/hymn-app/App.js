@@ -620,14 +620,24 @@ function PlayerProvider({ children }) {
       if (!Array.isArray(q) || q.length === 0) return; // native 冇嘢播,唔使補
       // native track → hymn 物件:優先由 allSongs 攞齊資料;冇就由 track 砌返
       // 最低限度(youtube_id 由 artwork URL 拆返)。
+      //
+      // B6 修 —— 舊版「冇搵到」個分支直接硬寫 `lyrics: ''`,而呢個 track 本身
+      // 好可能真係有歌詞,淨係因為 lib(hymnsRef.current)呢一刻仲未 load 好
+      // 先搵唔到。結果:歌詞 pill 灰咗,永久鎖死(除非用戶去返歌單再撳一次
+      // 嗰首歌)。而家「搵唔到」就額外用 safeFetchHymnDetail() 補問一次 API
+      // (同 hymns 個 REST 形狀一致,見檔頭 safeFetchHymnDetail),攞到就用齊
+      // 全資料(包括真 lyrics);attempts 都失敗先至真係冇歌詞得 fallback 做
+      // `lyrics: ''`——呢種情況歌詞 pill 應該本身就要顯示灰(冇資料判斷唔到）。
       const lib = hymnsRef.current || [];
-      const toHymn = (t) => {
+      const toHymn = async (t) => {
         const found = lib.find((h) => String(h.id) === String(t.id));
         if (found) return found;
         const yt = typeof t.artwork === 'string' ? (t.artwork.match(/\/vi\/([^/]+)\//)?.[1] || '') : '';
+        const detail = await safeFetchHymnDetail(t.id);
+        if (detail) return detail;
         return { id: Number(t.id) || t.id, title: t.title || '', artist: t.artist || '', youtube_id: yt, lyrics: '' };
       };
-      const rebuilt = q.map(toHymn);
+      const rebuilt = await Promise.all(q.map(toHymn));
       queueRef.current = rebuilt;
       setQueue(rebuilt);
       const idx = typeof idxRaw === 'number' && idxRaw >= 0 ? idxRaw : 0;
@@ -657,7 +667,14 @@ function PlayerProvider({ children }) {
           const progress = await TrackPlayer.getProgress();
           if (mounted) {
             setCurrentTime(progress.position || 0);
-            setDuration(progress.duration || 0);
+            // B14 修 —— toggleShuffle 會 reset()+add() 成個 native queue,呢 1 秒
+            // poll 窗口入面有陣時 getProgress() 會短暫報 duration:0(隊列啱啱重
+            // 起,新 metadata 未到手),之前直接 setDuration(0) 就即刻喺 UI 度
+            // 睇到「總長 0:00 + 進度條彈返 0%」,自我修正返都要等成隻歌重新
+            // buffer(§3.6 註解提過嘅代價)。呢個 0 淨係短暫、唔係真值,唔應該
+            // 覆蓋一個已知嘅正確長度 —— 淨係喺攞到正數先更新,0/undefined 就
+            // 保留返上一個已知值,唔會喺 UI 度出現「肯定係假」嘅 0:00。
+            if (progress.duration > 0) setDuration(progress.duration);
           }
         } catch (e) {
           // TrackPlayer not ready yet, skip
@@ -1147,10 +1164,9 @@ function HomeScreen({ hymns, activeCategory, onCategoryChange, onPlayHymn, onOpe
             <Text style={hs.brandTitle}>God Music</Text>
           </View>
         </View>
+        {/* B13 —— 舊嘅通知鐘掣冇 onPress(App 未有通知功能),撳落去零反應。
+            一個死掣好過冇掣,而家直接拆走,將來真係有通知功能先加返。 */}
         <View style={hs.iconWrap}>
-          <TouchableOpacity style={hs.iconBtn}>
-            <MaterialIcons name="notifications-none" size={24} color={TEXT_PRIMARY} />
-          </TouchableOpacity>
           <TouchableOpacity style={hs.avatarBtn} onPress={onOpenAuth}>
             {user ? (
               <Text style={hs.avatarText}>{(user.username || '?').charAt(0).toUpperCase()}</Text>
@@ -1197,13 +1213,6 @@ const hs = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
-  },
-  iconBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    justifyContent: 'center',
-    alignItems: 'center',
   },
   avatarBtn: {
     width: 36,
@@ -1346,15 +1355,21 @@ function FullScreenPlayerOverlay() {
             <View style={[fsStyles.equalizerBar, fsStyles.equalizerBar4]} />
           </View>
         )}
+        {/* B5 修:loadingOverlay 之前 absolute top0/bottom0 貼住成個 fsStyles.container
+            (即係成個播放頁,由封面貼到控制列),所以個「正在載入音訊...」文字
+            實際上係喺成頁正中間,同下面 songInfo 個歌名(2 行就會撞落嚟)冇任何
+            關係——歌名行數點變都好,個 loading 文字位置係定死喺頁中間,梗會撞。
+            而家搬入嚟 coverWrap 度做佢個 sibling:coverWrap 有 overflow:hidden,
+            absolute top0/bottom0 就淨係填滿封面格,structurally 冧唔到歌名
+            (歌名喺 coverWrap 之後,完全喺 loadingOverlay 嘅範圍以外),1/2/3 行
+            標題都唔會再撞。 */}
+        {player.isLoading && (
+          <View style={fsStyles.loadingOverlay}>
+            <ActivityIndicator size="large" color={ACCENT_COLOR} />
+            <Text style={fsStyles.loadingText}>正在載入音訊...</Text>
+          </View>
+        )}
       </View>
-
-      {/* Loading overlay */}
-      {player.isLoading && (
-        <View style={fsStyles.loadingOverlay}>
-          <ActivityIndicator size="large" color={ACCENT_COLOR} />
-          <Text style={fsStyles.loadingText}>正在載入音訊...</Text>
-        </View>
-      )}
 
       {/* Controls + Playlist button */}
       <View style={{ flex: 1, justifyContent: 'flex-end', paddingBottom: 8 }}>
@@ -1643,9 +1658,16 @@ const fsStyles = StyleSheet.create({
   dismissBtn: { width: 40, height: 40, justifyContent: 'center', alignItems: 'center' },
   dismissIcon: { fontSize: 16, color: TEXT_PRIMARY },
   topBarTitle: { fontSize: 16, fontWeight: '600', color: TEXT_PRIMARY },
+  // B4 修:呢個容器之前係 aspectRatio:1(正方形),但 BigCover 嘅圖源全部係
+  // YouTube 縮圖(maxresdefault/mqdefault,真 16:9)——正方形容器逼 16:9 圖用
+  // resizeMode cover 填滿闊度就爆高度,爆出嚟嘅部分喺頂/底露返個容器底色
+  // (transparent → 透出 fsStyles.container 嘅 MAIN_BG_COLOR,近黑;有陣時
+  // 圖仲未載到、tier 跌到 fallback 果格,個底色偏白,就變成 Eric 見到嗰種
+  // 「白邊」)。改做 16:9 容器,同圖源原生比例一致,cover 唔使裁到爆高度,
+  // 結構性冧唔到再有頂/底邊(裁側邊闊度就得,唔會變形)。
   coverWrap: {
     width: '85%',
-    aspectRatio: 1,
+    aspectRatio: 16 / 9,
     alignSelf: 'center',
     marginTop: 8,
     justifyContent: 'center',
@@ -1758,7 +1780,11 @@ const fsStyles = StyleSheet.create({
 
 // ===== AppContent =====
 function AppContent() {
-  const { hymns, setHymns, playQueue, playSingle, showPlayer, queueReady, isPlaying: debugPlaying, currentHymn: debugHymn, togglePlayPause: debugToggle } = usePlayer();
+  const {
+    hymns, setHymns, playQueue, playSingle, showPlayer, queueReady,
+    isPlaying: debugPlaying, currentHymn, togglePlayPause: debugToggle,
+    overlayExpanded, hidePlayer,
+  } = usePlayer();
   const { hymns: allSongs, loading } = useCachedHymns();
   const bottomInset = useBottomInset();
   const topInset = useInsets().top;
@@ -1766,6 +1792,32 @@ function AppContent() {
   const [activeTab, setActiveTab] = useState('Home');
   const [authVisible, setAuthVisible] = useState(false);
   const [hymnListVisible, setHymnListVisible] = useState(false);
+
+  // B7 修 —— 之前全 App 淨係得 FullScreenPlayerOverlay 入面嗰個 BackHandler
+  // (見嗰邊,喺 anySheetOpen 先註冊,淨係管「收返 queue sheet」)。冇任何嘢
+  // 處理過「而家喺邊個 tab」,所以喺「詩歌庫」/「我的」撳返回鍵,RN 冇人食
+  // 呢個事件,就直接跌落去 Android 預設行為——退出 App。
+  //
+  // 呢個 effect 補返「非首頁 tab 撳返回 = 返首頁」。優先順序(點解冇撞):
+  //  1. queue sheet 全開 —— FullScreenPlayerOverlay 嗰個 handler 處理,唔關呢度事。
+  //  2. 播放器全螢幕開住(overlayExpanded)—— 呢度先收返 mini player。
+  //  3. 唔喺首頁 tab —— 呢度切返首頁。
+  //  4. 首頁 tab + 播放器收埋 —— 乜都唔做,俾返 RN 預設行為(退出)。
+  // RN 嘅 BackHandler 係後註冊嘅 listener 優先(LIFO)。FullScreenPlayerOverlay
+  // 淨係喺 overlayExpanded 先會 mount(見 PlayerProvider 個 `{overlayExpanded &&
+  // <FullScreenPlayerOverlay/>}`),而佢喺 render tree 排喺 AppContent 之後
+  // (PlayerProvider 先 render `{children}`即 AppContent,先至到 overlay),
+  // 所以兩個 effect 同一個 commit 內一齊註冊時,佢實會排喺呢度之後、變成
+  // 最新嗰個 → 佢個 handler 優先食events,同上面優先順序 1 > 2 一致,唔使
+  // 額外協調狀態。
+  useEffect(() => {
+    const sub = BackHandler.addEventListener('hardwareBackPress', () => {
+      if (overlayExpanded) { hidePlayer(); return true; }
+      if (activeTab !== 'Home') { setActiveTab('Home'); return true; }
+      return false; // 首頁 tab + 播放器收埋:保留預設行為(退出 App)
+    });
+    return () => sub.remove();
+  }, [overlayExpanded, hidePlayer, activeTab]);
 
   const openAuth = useCallback(() => setAuthVisible(true), []);
   const closeAuth = useCallback(() => setAuthVisible(false), []);
@@ -1844,6 +1896,32 @@ function AppContent() {
   }
   function handleOpenFullScreen() { showPlayer(); }
 
+  // B9 修 —— MiniPlayer 之前淨係喺 <TabBar> 入面 render(主 tab 專用)。
+  // 「睇晒 N 首」分類詳情頁(下面 HymnList Modal)同「我的」入面嘅播放清單
+  // 詳情頁(PlaylistDetailSheet,喺 MineScreen.js 度)兩個都係 **native
+  // `<Modal>`**——Modal 喺 Android 係獨立一層,會完全遮住底下嗰層,所以主
+  // tab 嗰個 MiniPlayer/TabBar 影都見唔到,音樂播緊都冇得控制、都唔切得
+  // 返 tab。
+  //
+  // 呢兩個畫面唔喺 App.js 度(HymnListScreen 喺呢度,PlaylistDetailSheet
+  // 就係由 MineScreen.js 開嘅),為咗唔好將 MiniPlayer 呢個組件抄多份
+  // (或者由嗰啲畫面 import 返 App.js,製造返 lastPlayed.js 個註解講嘅
+  // circular import 問題),做法係喺呢度起**一個** MiniPlayer 嘅 React
+  // element,包埋佢自己嘅底部 safe-area padding(mini player 企喺呢兩個
+  // Modal 度冇 TabBar 陪住,要自己頂住導航列),再用 props 派落去。
+  // MiniPlayer 本身喺冇 currentHymn 就 return null,唔會喺冇歌播嗰陣佔位。
+  //
+  // Tab bar 就冇跟落去 —— 呢兩頁定位係「入咗一層」嘅詳情頁(似 stack
+  // push),唔係平行嘅主 tab;跟返返回鍵/返回掣就返到去主 tab,毋須要
+  // 再喺呢層度切 tab。淨係補返控制播放呢一環先啱用家最迫切嘅需要
+  // (音樂播緊冇得控)。
+  const miniPlayerNode = (
+    <View style={{ backgroundColor: CARD_BG_COLOR, paddingBottom: bottomInset }}>
+      <MiniPlayer onPress={handleOpenFullScreen} />
+    </View>
+  );
+  const hasMiniPlayer = !!currentHymn?.id;
+
   return (
     <View style={pageStyles.container}>
       <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
@@ -1862,7 +1940,8 @@ function AppContent() {
           <LibraryScreen hymns={allSongs || []} onPlayHymn={handlePlayHymn} />
         </View>
         <View style={[pageStyles.screenWrap, { display: activeTab === 'Mine' ? 'flex' : 'none' }]}>
-          <MineScreen onPlayHymn={handlePlayHymn} onOpenAuth={openAuth} />
+          <MineScreen onPlayHymn={handlePlayHymn} onOpenAuth={openAuth}
+            miniPlayer={miniPlayerNode} hasMiniPlayer={hasMiniPlayer} />
         </View>
       </View>
 
@@ -1894,6 +1973,7 @@ function AppContent() {
           <HymnListScreen
             hymns={hymnListData.hymns}
             title={hymnListData.title}
+            hasMiniPlayer={hasMiniPlayer}
             onPlayHymn={(hymn) => {
               const idx = Math.max(0, hymnListData.hymns.findIndex(s => s.id === hymn.id));
               playQueue(hymnListData.hymns, idx);
@@ -1901,6 +1981,8 @@ function AppContent() {
               closeHymnList();
             }}
           />
+          {/* B9 — 呢個 Modal 冇 TabBar 陪住,音樂播緊要有得控制/跳返播放頁 */}
+          {miniPlayerNode}
         </View>
       </Modal>
     </View>

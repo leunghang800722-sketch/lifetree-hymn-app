@@ -87,6 +87,14 @@ export default function LibraryScreen({ hymns = [], onPlayHymn }) {
 
   const hasQuery = query.trim().length > 0;
   const hasChipFilter = lang !== '全部' || !!artist;
+  // B11 修 —— 之前唔理 hasChipFilter,搜尋撞 0 個結果一律話「搵唔到「Chris」/
+  // 試下其他關鍵字」,但歌手 chip(例如「ACM 21」)已經 scroll 出咗畫面,用戶
+  // 見唔到仲揀緊邊個歌手,以為個關鍵字真係冇貨(其實清埋篩選就有 12 首)。
+  // 呢個 App 嘅 chip 本身設計成同搜尋 AND 埋一齊用(`shown` = searched 再過
+  // 一次 artist),所以唔改做「打字就自動清 chip」(方案 a)—— 咁樣就同 chip
+  // 原本「揀個歌手嘅範圍再搵」嘅意圖相反。改用方案 b:老實話明係邊個篩選
+  // 令結果空,「清除篩選」掣照用(已經識埋 lang+artist 一齊清)。
+  const filterLabel = [lang !== '全部' ? lang : null, artist].filter(Boolean).join(' · ');
   const { open: openAddToPlaylist } = useAddToPlaylist();
 
   // edge-to-edge:唔加 top inset 個大字標題會同狀態列時間疊埋(見 useInsets.js)
@@ -195,8 +203,21 @@ export default function LibraryScreen({ hymns = [], onPlayHymn }) {
         ListEmptyComponent={
           <View style={styles.empty}>
             <MaterialIcons name={hasQuery ? 'search-off' : 'library-music'} size={40} color={COLORS.textSecondary} />
-            <Text style={styles.emptyText}>{hasQuery ? `搵唔到「${query.trim()}」` : '冇歌'}</Text>
-            {hasQuery && <Text style={styles.emptyHint}>試下其他關鍵字</Text>}
+            {hasQuery ? (
+              hasChipFilter ? (
+                <>
+                  <Text style={styles.emptyText}>喺「{filterLabel}」入面搵唔到「{query.trim()}」</Text>
+                  <Text style={styles.emptyHint}>清埋篩選再搵下成個詩歌庫</Text>
+                </>
+              ) : (
+                <>
+                  <Text style={styles.emptyText}>搵唔到「{query.trim()}」</Text>
+                  <Text style={styles.emptyHint}>試下其他關鍵字</Text>
+                </>
+              )
+            ) : (
+              <Text style={styles.emptyText}>冇歌</Text>
+            )}
             {/* 有 chip filter 生效時俾個掣一撳重置,免得用戶唔知係 chip 累事 */}
             {hasChipFilter && (
               <TouchableOpacity style={styles.clearFilterBtn} onPress={() => { setLang('全部'); setArtist(null); }} activeOpacity={0.7}>

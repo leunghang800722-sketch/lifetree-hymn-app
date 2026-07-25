@@ -22,6 +22,12 @@ import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { COLORS, TYPOGRAPHY } from '../theme/designSystem';
 import { useFavorites } from '../context/FavoritesContext';
 import { useAddToPlaylist } from '../components/AddToPlaylistSheet';
+import { useInsets } from '../hooks/useInsets';
+
+// B9 — 呢頁而家可能有 App.js 傳落嚟嘅 mini player 企喺底(見 App.js
+// hymnListModal),要留返呢個高度嘅空間,唔係尾幾行歌會俾佢遮咗。約數
+// (44 封面 + 上下 padding 10*2)已經夠準,唔使逐 px 對正。
+const MINI_PLAYER_H = 64;
 
 // mqdefault = 真 16:9 冇黑邊(hqdefault 係 4:3,黑邊 baked 咗入張圖)
 function Cover({ youtubeId, size = 52 }) {
@@ -64,11 +70,16 @@ function Heart({ hymn }) {
   );
 }
 
-export default function HymnListScreen({ hymns = [], title, onPlayHymn }) {
+export default function HymnListScreen({ hymns = [], title, onPlayHymn, hasMiniPlayer = false }) {
   const { open: openAddToPlaylist } = useAddToPlaylist();
   const handlePlayHymn = (hymn) => {
     if (onPlayHymn) onPlayHymn(hymn);
   };
+  // B8 修 —— 之前呢度寫死 `paddingBottom: 32`,edge-to-edge 底下嗰 32px 冚
+  // 唔到手勢導航列(見 useInsets.js 檔頭大段解釋),尾幾行歌就俾條白色
+  // gesture pill 蓋住半截。跟返 PlaylistDetailSheet.js 個做法用 useInsets()。
+  const insets = useInsets();
+  const bottomPad = 24 + insets.bottom + (hasMiniPlayer ? MINI_PLAYER_H : 0);
 
   return (
     <View style={styles.container}>
@@ -80,7 +91,7 @@ export default function HymnListScreen({ hymns = [], title, onPlayHymn }) {
       <FlatList
         data={hymns}
         keyExtractor={(item) => String(item.id)}
-        contentContainerStyle={{ paddingBottom: 32 }}
+        contentContainerStyle={{ paddingBottom: bottomPad }}
         ListEmptyComponent={
           <View style={styles.empty}>
             <MaterialIcons name="music-off" size={36} color={COLORS.textSecondary} />

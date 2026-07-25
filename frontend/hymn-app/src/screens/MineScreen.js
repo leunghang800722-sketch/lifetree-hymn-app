@@ -30,7 +30,7 @@ function Cover({ youtubeId, size = 52 }) {
   return <Image source={{ uri }} style={[styles.cover, { width: size, height: size }]} onError={() => setFailed(true)} />;
 }
 
-export default function MineScreen({ onPlayHymn, onOpenAuth }) {
+export default function MineScreen({ onPlayHymn, onOpenAuth, miniPlayer, hasMiniPlayer }) {
   const { favorites = [], toggleFavorite } = useFavorites() || {};
   const { playlists = [], deletePlaylist } = usePlaylists() || {};
   const { user, logout } = useAuth() || {};
@@ -175,7 +175,11 @@ export default function MineScreen({ onPlayHymn, onOpenAuth }) {
         />
       )}
 
-      <PlaylistDetailSheet playlistId={detailId} onClose={() => setDetailId(null)} onPlayHymn={onPlayHymn} />
+      {/* B9 — PlaylistDetailSheet 係獨立 native Modal,冇 TabBar 陪住,mini player
+          由 App.js 傳落嚟(避免呢度反過來 import App.js 撞 circular import,
+          見 App.js handleOpenFullScreen 上面嗰段註解)。 */}
+      <PlaylistDetailSheet playlistId={detailId} onClose={() => setDetailId(null)} onPlayHymn={onPlayHymn}
+        miniPlayer={miniPlayer} hasMiniPlayer={hasMiniPlayer} />
     </View>
   );
 }
