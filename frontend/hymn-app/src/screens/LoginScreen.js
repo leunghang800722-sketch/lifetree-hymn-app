@@ -50,7 +50,7 @@ export default function LoginScreen() {
         {/* Logo */}
         <View style={styles.logoContainer}>
           <Text style={styles.logoEmoji}>🎵</Text>
-          <Text style={styles.appName}>詩歌App</Text>
+          <Text style={styles.appName}>God Music</Text>
           <Text style={styles.tagline}>敬拜 • 讚美 • 靈修</Text>
         </View>
 

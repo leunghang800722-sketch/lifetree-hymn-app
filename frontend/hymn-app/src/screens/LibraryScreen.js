@@ -165,7 +165,15 @@ export default function LibraryScreen({ hymns = [], onPlayHymn }) {
         keyboardShouldPersistTaps="handled"
         onScrollBeginDrag={() => Keyboard.dismiss()}
         renderItem={({ item }) => (
-          <TouchableOpacity style={styles.row} onPress={() => onPlayHymn && onPlayHymn(item)} activeOpacity={0.7}>
+          // BUG3(a) P0 — 之前撳一首歌冇傳 explicit/playlist,跌落「單曲 + 30 首
+          // 隨機接續」嗰條路,睇落成個詩歌庫得 31 首。而家傳 explicit:true +
+          // 而家顯示緊(已經行埋語言/搜尋/歌手 filter)嘅 `shown`,同「睇晒」
+          // 個分類詳情頁一致:揀成個當前清單做隊列,由撳嗰首開始播。
+          <TouchableOpacity
+            style={styles.row}
+            onPress={() => onPlayHymn && onPlayHymn(item, { explicit: true, playlist: shown })}
+            activeOpacity={0.7}
+          >
             <Cover youtubeId={item.youtube_id} />
             <View style={styles.rowInfo}>
               <Text style={styles.rowTitle} numberOfLines={1}>{item.title}</Text>

@@ -112,6 +112,19 @@ function toTrack(song) {
   };
 }
 
+// BUG1 P0 — DB 用 "|" 分行儲歌詞(見 GET /api/hymns 回傳嘅 lyrics 欄),
+// 舊版直接畫 cur.lyrics 出嚟,「|」就一路帶埋出嚟變成成段字中間嵌晒字面
+// pipe。統一用呢個 helper 轉做真正換行:同時兼容已經有 "\n"、或者「\n」同
+// "|" 兩種都用埋嘅舊資料,並且清走首尾/重複造成嘅空行。
+function formatLyrics(raw) {
+  if (!raw) return '';
+  return String(raw)
+    .split(/\r\n|\r|\n|\|/)
+    .map((line) => line.trim())
+    .filter((line) => line.length > 0)
+    .join('\n');
+}
+
 // §3b PERF-FAST-START-PLAN:叫 backend 預熱嗰幾首歌嘅 URL(fire-and-forget)。
 // 令自動接續 / 撳「下一首」/ 開機頭幾首永遠行 warm 路徑。上限 10,backend 即回 202。
 function warmIds(ids) {
@@ -332,6 +345,19 @@ function PlayerProvider({ children }) {
   const repeatModeRef = useRef(0);
   const isShuffledRef = useRef(false);
   const errorSkipCountRef = useRef(0); // §3.7 — consecutive PlaybackError count
+  // BUG2 P0 — 記低「呢首歌已經 retry 過一次未」,先至知道下次撞 PlaybackError
+  // 係要再 retry 定係死心跳下一首。存 song id(唔係 index),因為 retry() 唔會
+  // 改變 index,兩次錯誤事件個 index 一樣,靠 id 分辨「係咪同一首」。
+  const retriedTrackRef = useRef(null);
+  // BUG2 P0 — 單曲載入失敗嘅輕量非阻擋提示(唔用會擋住成個畫面嘅白色系統
+  // Alert)。noticeTimerRef 用嚟蓋過上一個未完嘅計時器,唔會提早收咗新嗰句。
+  const [noticeText, setNoticeText] = useState(null);
+  const noticeTimerRef = useRef(null);
+  const showNotice = useCallback((msg) => {
+    setNoticeText(msg);
+    if (noticeTimerRef.current) clearTimeout(noticeTimerRef.current);
+    noticeTimerRef.current = setTimeout(() => setNoticeText(null), 2800);
+  }, []);
 
   // Lazy TrackPlayer initialization — runs on first play, not on mount
   const playerReadyRef = useRef(false);
@@ -363,7 +389,7 @@ function PlayerProvider({ children }) {
           name: '詩歌播放',
           importance: 1,
         },
-        icon: require('./assets/icon.png'),
+        icon: require('./assets/notification-icon.png'),
         // §3.2 — keep playing when the user swipes the app away from recents
         android: { appKilledPlaybackBehavior: AppKilledPlaybackBehavior.ContinuePlayback },
       });
@@ -491,6 +517,9 @@ function PlayerProvider({ children }) {
           // zero the counter every time and make the "5 strikes" limit
           // unreachable.
           errorSkipCountRef.current = 0;
+          // BUG2 P0 — 呢首歌真係播到聲,清埋 retry flag,下次撞返嚟(例如
+          // repeat/prev)先至又攞多一次 retry 機會,唔會永久鎖死。
+          retriedTrackRef.current = null;
         }
       } catch (e) {}
     });
@@ -520,15 +549,48 @@ function PlayerProvider({ children }) {
 
     // §3.7 — auto-skip on a failed track (dead link, etc), with a circuit
     // breaker so a long dead-link run doesn't silently skip forever.
+    //
+    // BUG2 P0(實測):冷 song(backend resolve-cache 未 warm)/api/stream/:id
+    // 要 8–11s 先返第一個 byte,ExoPlayer 預設 connect/read timeout = 8s,
+    // 所以冷歌幾乎一定 timeout。react-native-track-player v4.1.2 嘅
+    // setupPlayer/updateOptions（PlayerOptions/AndroidOptions）冇任何欄位可以
+    // 調呢個 HTTP timeout——真正嘅 DefaultHttpDataSource 喺 kotlinaudio(native
+    // maven 依賴,唔喺呢個 repo 度)入面,唔喺 JS 層可以改,亦唔喺呢次改動範圍
+    // (唔准掂 native)。所以呢度純粹用「retry 一次」嚟頂:backend 502/timeout
+    // 好多時得一次(實測 id=369:錯一次、retry 就成功),warm 咗就得返 ~1.5s。
     const unsubscribeError = TrackPlayer.addEventListener(TPEvent.PlaybackError, async (event) => {
       console.error('[PlaybackError]', event?.code || '', event?.message || 'Unknown error');
+
+      // 邊首歌爆咗:靠而家 active index 喺 queueRef 度攞返個 song id(PlaybackError
+      // event 本身冇帶 track 資訊)。攞唔到就當唔識,直接跳去下面 skip 分支。
+      let curIdx = null;
+      try { curIdx = await TrackPlayer.getActiveTrackIndex(); } catch (_) {}
+      const curSong = typeof curIdx === 'number' ? queueRef.current[curIdx] : null;
+      const curId = curSong?.id ?? null;
+
+      // 呢首歌未 retry 過 → retry 一次先,唔即刻放棄跳下一首。
+      if (curId != null && retriedTrackRef.current !== curId) {
+        retriedTrackRef.current = curId;
+        try {
+          await TrackPlayer.retry();
+          return; // 得唔得都要俾 native 再試一次機會；再撞 error 先至到下面 skip 分支
+        } catch (_) { /* retry() 本身拋錯就直接落去 skip */ }
+      }
+      // 呢首歌啱啱先 retry 過都仲係錯 → 死心,跳去下一首,並清返 retry flag
+      // (下次冇再撞返呢首歌之前唔會誤判成「未 retry 過」)。
+      retriedTrackRef.current = null;
+
       errorSkipCountRef.current += 1;
-      if (errorSkipCountRef.current >= 5) {
+      // BUG2(d)P0 — 舊門檻 5 太遲先出聲,而家 3 次連續失敗就出（Eric 要求 2–3）。
+      if (errorSkipCountRef.current >= 3) {
         await TrackPlayer.pause().catch(() => {});
         Alert.alert('播放中斷', '連續幾首歌都載入唔到，請檢查網絡或者稍後再試');
         errorSkipCountRef.current = 0;
         return;
       }
+      // BUG2(c)P0 — 單首歌失敗唔好再用會擋住成個畫面嘅白色系統 Alert,
+      // 改用輕量、非阻擋、自動消失嘅提示。
+      showNotice('呢首歌暫時載入唔到，跳去下一首');
       try { await TrackPlayer.skipToNext(); } catch (e) { /* queue tail, repeat off — nothing to skip to */ }
     });
 
@@ -729,26 +791,45 @@ function PlayerProvider({ children }) {
 
   async function playQueue(list, startIndex = 0, opts = {}) {
     if (!Array.isArray(list) || list.length === 0) return;
-    setAutoRadioFrom(opts.autoRadioFrom ?? null);
+    // BUG3(b) P0(Eric 實測)—— explicit 隊列(例如「我的」清單「播全部」/撳單曲)
+    // 如果自動播放開住,都應該好似其他入口咁播晒之後有隨機尾巴接落去,唔係就
+    // 死死哋停,同「⏭ 冇嘢跳」變死掣(見下面 hasNext)。
+    // 淨係 opts.appendAutoplayTail 嘅 caller 先會加尾巴(目前得 PlaylistDetailSheet)——
+    // 「睇晒 N 首」分類詳情頁 / 「隨心聽」/ 首頁「即刻揀歌」呢啲本身已經係
+    // 「成個分類/成個庫」嘅清單,冇傳呢個 flag,行為完全冇變(播晒就完)。
+    let finalList = list;
+    let autoRadioFrom = opts.autoRadioFrom ?? null;
+    if (opts.appendAutoplayTail && autoplayEnabledRef.current) {
+      const seed = list[startIndex] || list[0];
+      const libr = (hymnsRef.current && hymnsRef.current.length) ? hymnsRef.current : list;
+      const tail = buildAutoplayTail(autoplayFlavorRef.current, seed, libr, {
+        playLog: getPlayLog(), recentIds: getRecentIds(),
+      }).filter((t) => !list.some((s) => String(s.id) === String(t.id))); // 唔好同個清單本身撞歌
+      if (tail.length) {
+        finalList = [...list, ...tail];
+        autoRadioFrom = list.length;
+      }
+    }
+    setAutoRadioFrom(autoRadioFrom);
     setIsLoading(true);
     // Set the ref synchronously alongside the state (same reason as
     // toggleShuffle): TrackPlayer events fire during the add/play below and
     // PlaybackActiveTrackChanged reads queueRef.current directly to look up the
     // song. A setQueue() alone wouldn't land until the next render, so an early
     // event could read a stale queue and show the wrong title.
-    queueRef.current = list;
-    setQueue(list);
-    originalQueueRef.current = list;
+    queueRef.current = finalList;
+    setQueue(finalList);
+    originalQueueRef.current = finalList;
     setIsShuffled(false);
-    saveLastPlayed(list[startIndex] || list[0]); // §2.3 繼續收聽
+    saveLastPlayed(finalList[startIndex] || finalList[0]); // §2.3 繼續收聽
     try {
       await lazyEnsurePlayer();
       await TrackPlayer.reset();
-      await TrackPlayer.add(list.map(toTrack));
+      await TrackPlayer.add(finalList.map(toTrack));
       if (startIndex > 0) await TrackPlayer.skip(startIndex);
       await TrackPlayer.play();
       // §3b:起播後預熱隊列下 3 首 → 自動接續 / 撳「下一首」永遠 warm。
-      warmIds(list.slice(startIndex + 1, startIndex + 4).map((s) => s.id));
+      warmIds(finalList.slice(startIndex + 1, startIndex + 4).map((s) => s.id));
     } catch (e) {
       setIsLoading(false);
       console.warn('playQueue error:', e.message || e);
@@ -895,9 +976,31 @@ function PlayerProvider({ children }) {
       >
         {(overlayExpanded) && <FullScreenPlayerOverlay />}
       </Animated.View>
+
+      {/* BUG2(c) P0 — 單首歌載入失敗嘅輕量非阻擋提示。擺喺 PlayerProvider 呢層
+          (唔係入面某個 screen),邊個 tab / 全螢幕播放器開唔開住都見得到；
+          pointerEvents="none" 唔會擋到底下任何 touch,計時器到就自動消失。 */}
+      {noticeText && (
+        <View pointerEvents="none" style={noticeStyles.wrap}>
+          <View style={noticeStyles.pill}>
+            <Text style={noticeStyles.text} numberOfLines={2}>{noticeText}</Text>
+          </View>
+        </View>
+      )}
     </PlayerCtx.Provider>
   );
 }
+const noticeStyles = StyleSheet.create({
+  wrap: {
+    position: 'absolute', top: (StatusBar.currentHeight || 44) + 12, left: 16, right: 16,
+    alignItems: 'center', zIndex: 1000,
+  },
+  pill: {
+    backgroundColor: CARD_BG_COLOR, borderRadius: 20, borderWidth: 1, borderColor: DesignColors.border,
+    paddingHorizontal: 16, paddingVertical: 10, maxWidth: '92%', elevation: 8,
+  },
+  text: { color: TEXT_PRIMARY, fontSize: 13, fontWeight: '600', textAlign: 'center' },
+});
 export function usePlayer() {
   return useContext(PlayerCtx) || {};
 }
@@ -1036,14 +1139,12 @@ function HomeScreen({ hymns, activeCategory, onCategoryChange, onPlayHymn, onOpe
   const { user } = useAuth();
   return (
     <View style={{ flex: 1, backgroundColor: COLORS.bg }}>
-      {/* Header — 生命樹品牌 + 通知 + 頭像 */}
+      {/* Header — God Music 品牌 + 通知 + 頭像 */}
       <View style={[hs.header, { paddingTop: (homeInsets.top || StatusBar.currentHeight || 24) + 8 }]}>
         <View style={hs.brandWrap}>
-          {/* §5.4 唔用 Emoji;生命樹 = 向量樹圖標,用生命綠 */}
-          <MaterialIcons name="park" size={26} color={ACCENT_COLOR} style={{ marginRight: 10 }} />
+          <Image source={require('./assets/android-icon-foreground.png')} style={hs.brandIconImg} />
           <View>
-            <Text style={hs.brandTitle}>生命樹</Text>
-            <Text style={hs.brandSub}>Etz Chayim</Text>
+            <Text style={hs.brandTitle}>God Music</Text>
           </View>
         </View>
         <View style={hs.iconWrap}>
@@ -1081,15 +1182,16 @@ const hs = StyleSheet.create({
     fontSize: 24,
     marginRight: 10,
   },
+  brandIconImg: {
+    width: 38,
+    height: 38,
+    marginRight: 10,
+    resizeMode: 'contain',
+  },
   brandTitle: {
     fontSize: 20,
     fontWeight: '800',
     color: COLORS.primary,
-  },
-  brandSub: {
-    fontSize: 11,
-    color: COLORS.secondary,
-    marginTop: 1,
   },
   iconWrap: {
     flexDirection: 'row',
@@ -1199,6 +1301,13 @@ function FullScreenPlayerOverlay() {
   ), [queueExpanded, queue.length, closeQueue, openQueue]);
 
   const cur = player.currentHymn || { title: '', artist: '', youtube_id: '', id: null, lyrics: '' };
+  // BUG1 P0 — 統一喺呢度轉一次,下面 hasLyrics 判斷同歌詞 Modal 顯示都食呢個
+  // 已經拆好行嘅版本,唔再各自 trim() 原始「|」字串。
+  const lyricsText = formatLyrics(cur.lyrics);
+  // BUG3(c) P0(Eric 實測)—— 自動播放關咗 + 播緊 queue 最後一首,⏭ 之前係
+  // 冇 disabled 狀態嘅死掣(撳落去 TrackPlayer.skipToNext() 靜靜哋失敗,冇反應)。
+  // repeatMode===1(repeat-all)會 wrap 返轉頭,所以呢種情況仲係「有嘢跳」。
+  const hasNext = player.repeatMode === 1 || (player.currentQueueIndex ?? 0) < queue.length - 1;
   const progressPercent = player.duration > 0 ? Math.min((player.currentTime / player.duration) * 100, 100) : 0;
   const bottomPad = (insets?.bottom || 20) + 8;
   const safeTop = (insets?.top || StatusBar.currentHeight || 24) + 8;
@@ -1222,7 +1331,7 @@ function FullScreenPlayerOverlay() {
         <TouchableOpacity style={fsStyles.dismissBtn} onPress={player.hidePlayer}>
           <MaterialIcons name="keyboard-arrow-down" size={24} color={TEXT_PRIMARY} />
         </TouchableOpacity>
-        <Text style={fsStyles.topBarTitle}>生命樹</Text>
+        <Text style={fsStyles.topBarTitle}>God Music</Text>
         <View style={fsStyles.dismissBtn} />
       </View>
 
@@ -1259,7 +1368,7 @@ function FullScreenPlayerOverlay() {
             歌詞冇 data 就 disabled 灰咗,唔俾個掣呃人(§3.4)。 */}
         {(() => {
           const faved = isFavorite(cur.id);
-          const hasLyrics = !!(cur.lyrics && String(cur.lyrics).trim());
+          const hasLyrics = !!lyricsText;
           const pills = [
             { key: 'fav', label: '最愛', icon: faved ? 'favorite' : 'favorite-border',
               active: faved, onPress: () => toggleFavorite(cur) },
@@ -1267,7 +1376,7 @@ function FullScreenPlayerOverlay() {
               onPress: () => setLyricsVisible(true) },
             { key: 'shr', label: '分享', icon: 'share',
               onPress: () => Share.share({
-                message: `一齊聽「${cur.title}」${cur.artist ? ' - ' + cur.artist : ''}（生命樹詩歌）`,
+                message: `一齊聽「${cur.title}」${cur.artist ? ' - ' + cur.artist : ''}（God Music 詩歌）`,
               }).catch(() => {}) },
             { key: 'que', label: '清單', icon: 'queue-music',
               onPress: () => openAddToPlaylist(cur) },
@@ -1321,7 +1430,12 @@ function FullScreenPlayerOverlay() {
           <TouchableOpacity style={fsStyles.playBtn} onPress={player.togglePlayPause} activeOpacity={0.8}>
             <MaterialIcons name={player.isPlaying ? 'pause' : 'play-arrow'} size={24} color={MAIN_BG_COLOR} />
           </TouchableOpacity>
-          <TouchableOpacity style={fsStyles.controlBtn} onPress={player.handleNextTrack} activeOpacity={0.6}>
+          <TouchableOpacity
+            style={[fsStyles.controlBtn, !hasNext && fsStyles.controlBtnDisabled]}
+            onPress={player.handleNextTrack}
+            activeOpacity={0.6}
+            disabled={!hasNext}
+          >
             <MaterialIcons name="skip-next" size={32} color={TEXT_PRIMARY} />
           </TouchableOpacity>
           <TouchableOpacity style={fsStyles.controlBtn} onPress={() => player.setRepeatMode?.((player.repeatMode + 1) % 3)} activeOpacity={0.6}>
@@ -1496,9 +1610,10 @@ function FullScreenPlayerOverlay() {
           <Text style={{ ...TYPOGRAPHY.songTitle, marginBottom: 2 }} numberOfLines={1}>{cur.title}</Text>
           <Text style={{ ...TYPOGRAPHY.artist, marginBottom: 16 }} numberOfLines={1}>{cur.artist || ''}</Text>
           <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingBottom: 40 }}>
-            {/* §5.3 歌詞行距 1.7x;冇歌詞唔呃人 */}
-            <Text style={cur.lyrics && String(cur.lyrics).trim() ? TYPOGRAPHY.lyrics : { ...TYPOGRAPHY.body, color: TEXT_SECONDARY }}>
-              {(cur.lyrics && String(cur.lyrics).trim()) || '暫無歌詞'}
+            {/* §5.3 歌詞行距 1.7x;冇歌詞唔呃人。BUG1:呢度食已經轉好換行嘅
+                lyricsText,唔再係原始「|」分隔字串。 */}
+            <Text style={lyricsText ? TYPOGRAPHY.lyrics : { ...TYPOGRAPHY.body, color: TEXT_SECONDARY }}>
+              {lyricsText || '暫無歌詞'}
             </Text>
           </ScrollView>
         </View>
@@ -1571,6 +1686,8 @@ const fsStyles = StyleSheet.create({
   timeText: { fontSize: 12, color: TEXT_SECONDARY },
   controlsRow: { flexDirection: 'row', justifyContent: 'space-evenly', alignItems: 'center', paddingVertical: 10, paddingHorizontal: 20 },
   controlBtn: { width: 48, height: 48, justifyContent: 'center', alignItems: 'center' },
+  // BUG3(c) — ⏭ 冇嘢跳嗰陣唔再係死掣,dim 落嚟同 pillDisabled(opacity: 0.45)睇齊。
+  controlBtnDisabled: { opacity: 0.45 },
   ctrlIconShuffle: { fontSize: 32, color: TEXT_SECONDARY },
   ctrlIconPrev: { fontSize: 32, color: TEXT_PRIMARY },
   ctrlIconNext: { fontSize: 32, color: TEXT_PRIMARY },
@@ -1714,7 +1831,9 @@ function AppContent() {
     if (opts.explicit && opts.playlist?.length) {
       const list = opts.playlist;
       const idx = Math.max(0, list.findIndex(s => s.id === h.id));
-      playQueue(list, idx);
+      // BUG3(b) — 淨係打晒標記嘅 caller(PlaylistDetailSheet)先會加自動播放
+      // 尾巴,見 playQueue() 註解。
+      playQueue(list, idx, { appendAutoplayTail: !!opts.appendAutoplayTail });
     } else {
       // 隨機接續一律由**全庫**抽,唔用 opts.playlist 做 pool ——「今日為你預備」
       // 之類得 6 首,攞嚟做 pool 就得 5 首尾巴,太短。全庫抽先夠似 Spotify。

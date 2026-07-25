@@ -10,9 +10,9 @@ import {
   ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
+  Image,
 } from 'react-native';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
-import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { useInsets } from '../hooks/useInsets';
 import { COLORS } from '../theme/designSystem';
 import { useAuth } from '../context/AuthContext';
@@ -87,12 +87,11 @@ export default function AuthScreen({ onClose }) {
           <MaterialIcons name="close" size={24} color="#F5F7F4" />
         </TouchableOpacity>
 
-        {/* Logo area */}
+        {/* Logo area — 品牌 icon 同 App.js:1042 home header 同一個做法(F 形音符/十字融合,
+            teal→navy 漸變),Text 就分開寫,免得個 icon 細碼位帶字(BRAND-GODMUSIC-PLAN.md §icon 規則)。 */}
         <View style={styles.logoArea}>
-          <View style={styles.logoIcon}>
-            <MaterialCommunityIcons name="cross" size={34} color={COLORS.accent} />
-          </View>
-          <Text style={styles.logoTitle}>詩歌App</Text>
+          <Image source={require('../../assets/android-icon-foreground.png')} style={styles.brandLogoImg} />
+          <Text style={styles.logoTitle}>God Music</Text>
           <Text style={styles.logoSubtitle}>{mode === 'login' ? '歡迎回來' : '建立帳戶'}</Text>
         </View>
 
@@ -168,7 +167,7 @@ const styles = StyleSheet.create({
   // Logo
   logoArea: { alignItems: 'center', marginBottom: 40 },
   logoIcon: { width: 72, height: 72, borderRadius: 36, backgroundColor: '#121A17', justifyContent: 'center', alignItems: 'center', marginBottom: 12 },
-  logoEmoji: { fontSize: 32 },
+  brandLogoImg: { width: 88, height: 88, marginBottom: 12, resizeMode: 'contain' },
   logoTitle: { fontSize: 24, fontWeight: '800', color: '#F5F7F4', marginBottom: 4 },
   logoSubtitle: { fontSize: 15, color: '#9AA696' },
 

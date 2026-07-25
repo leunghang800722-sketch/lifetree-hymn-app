@@ -190,6 +190,13 @@ export default function HomeScreen({ hymns = [], onPlayHymn, onOpenList }) {
   //                      佇列會出「正在隨機播放：」分隔線。
   // 第三個參數係**明確標記**,唔好用「hymn 係咪 list[0]」嚟猜 —— 撳「今日為你預備」
   // 第一張卡就啱啱好等於 todayPicks[0],咁猜會撞錯。
+  //
+  // BUG3(a) P0(Eric 實測):「即刻揀歌」入面撳一行歌之前冇傳 explicit,
+  // 就跌落「單曲 + 自動接續」嗰條路,結果隊列淨係 [嗰首, ...30 首隨機尾巴]，
+  // 完全睇唔到嗰個分類仲有幾多首——同「睇晒 N 首」個分類詳情頁次序播晒成個
+  // 分類唔一致。而家改咗做 explicit=true,同「睇晒」/「隨心聽」同一條路:
+  // 揀成個 activeChip.songs 做隊列,由撳嗰首開始播。「今日為你預備」/
+  // 「最近加入」嗰兩行卡**冇改**——嗰兩個原本就係設計成單曲 + 隨機接續。
   const play = useCallback((hymn, list, explicit) => {
     if (onPlayHymn && hymn) onPlayHymn(hymn, list ? { playlist: list, explicit: !!explicit } : undefined);
   }, [onPlayHymn]);
@@ -285,7 +292,7 @@ export default function HomeScreen({ hymns = [], onPlayHymn, onOpenList }) {
               <View key={`${activeChip.id}-${i}`} style={styles.page}>
                 {rows.map((h) => (
                   <TouchableOpacity key={h.id} style={styles.songRow} activeOpacity={0.7}
-                    onPress={() => play(h, activeChip.songs)}>
+                    onPress={() => play(h, activeChip.songs, true)}>
                     <Thumb youtubeId={h.youtube_id} size={40} />
                     <View style={styles.rowTextWrap}>
                       <Text style={styles.rowTitle} numberOfLines={1}>{h.title}</Text>

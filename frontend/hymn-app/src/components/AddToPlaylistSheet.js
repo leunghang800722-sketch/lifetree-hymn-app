@@ -17,7 +17,7 @@
 // 嘅播放清單。列表顯示「清單名 + N 首歌曲」(YT Music 咁);底部「＋新播放清單」撳落
 // 即場展開一個標題輸入框開新清單。
 
-import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
+import React, { createContext, useContext, useState, useCallback, useEffect, useRef } from 'react';
 import { Modal, View, Text, TextInput, TouchableOpacity, FlatList, StyleSheet, Alert, Keyboard } from 'react-native';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { COLORS } from '../theme/designSystem';
@@ -40,7 +40,16 @@ export function AddToPlaylistProvider({ children }) {
   const [creating, setCreating] = useState(false); // add mode:展開緊新清單輸入框?
   const [newName, setNewName] = useState('');
   const [kbHeight, setKbHeight] = useState(0); // §Eric #1:鍵盤高度,用嚟抬高個 card
+  const [toast, setToast] = useState(''); // 建立清單後嘅輕量非阻擋提示(唔用 Alert —— 黑底 UI 唔啱擺白色系統對話框)
+  const toastTimer = useRef(null);
   const visible = !!mode;
+
+  const showToast = useCallback((msg) => {
+    setToast(msg);
+    if (toastTimer.current) clearTimeout(toastTimer.current);
+    toastTimer.current = setTimeout(() => setToast(''), 1800);
+  }, []);
+  useEffect(() => () => { if (toastTimer.current) clearTimeout(toastTimer.current); }, []);
 
   // §Eric #1:打新清單名嗰陣,鍵盤彈出會遮住輸入框/確認掣。聽鍵盤事件,
   // 將 card 抬高鍵盤咁多,令輸入框 keep 喺鍵盤上面。Modal + Android 用
@@ -83,11 +92,13 @@ export function AddToPlaylistProvider({ children }) {
 
   // 開新清單:用戶自己打名(YT Music 咁)。add mode 開完即刻加埋當前呢首;
   // create mode(「我的」頁＋掣)冇 target,就係開一個空清單。
+  // §Eric:撳完「建立」以前完全靜雞雞就閂咗,唔知有冇成功 —— 加個 toast 講返俾用戶知。
   const confirmCreate = useCallback(() => {
     const name = newName.trim() || '新播放清單';
     createPlaylist?.(name, target);
+    showToast(target ? `已加入「${name}」` : `已建立「${name}」`);
     close();
-  }, [newName, createPlaylist, target, close]);
+  }, [newName, createPlaylist, target, close, showToast]);
 
   // 改名:空名 renamePlaylist 內部會唔理(保留原名),所以呢度唔使 guard。
   const confirmRename = useCallback(() => {
@@ -119,7 +130,13 @@ export function AddToPlaylistProvider({ children }) {
   return (
     <Ctx.Provider value={{ open, openCreate, openRename }}>
       {children}
-      <Modal visible={visible} transparent animationType="slide" onRequestClose={close} statusBarTranslucent>
+      {/* ⚠️ Bug fix(2026-07):App 成個 activity 係 edge-to-edge(styles.xml 兩條系統列透明),
+          但 native <Modal> 開嘅係另一個獨立 window —— 冇加 navigationBarTranslucent 嘅話,
+          呢個 window 會自己讓出導航列高度、唔會頂到真正嘅畫面底。結果:card 個 marginBottom
+          (跟住鍵盤高度計)喺呢個「較矮」嘅座標系入面計,會俾導航列高度咁多 —— 即係
+          sheet 同鍵盤之間漏一條罅,穿到落去見到後面畫面(玻璃海個 bug)。加呢個 prop
+          令 Modal window 都變 edge-to-edge,同 activity 座標系對齊。 */}
+      <Modal visible={visible} transparent animationType="slide" onRequestClose={close} statusBarTranslucent navigationBarTranslucent>
         <View style={styles.scrim}>
           <TouchableOpacity style={{ flex: 1 }} activeOpacity={1} onPress={close} />
           {/* 鍵盤彈出時 card 抬起鍵盤咁高;鍵盤收埋先用返 safe-area inset 墊底。
@@ -175,6 +192,15 @@ export function AddToPlaylistProvider({ children }) {
           </View>
         </View>
       </Modal>
+      {/* 建立/加入清單後嘅輕量提示 —— 非阻擋(唔使用戶撳掣打斷),1.8s 後自己收埋。 */}
+      {toast ? (
+        <View pointerEvents="none" style={[styles.toastWrap, { bottom: insets.bottom + 24 }]}>
+          <View style={styles.toastBubble}>
+            <MaterialIcons name="check-circle" size={16} color={COLORS.accent} style={{ marginRight: 6 }} />
+            <Text style={styles.toastText} numberOfLines={1}>{toast}</Text>
+          </View>
+        </View>
+      ) : null}
     </Ctx.Provider>
   );
 }
@@ -216,4 +242,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16, paddingVertical: 11,
   },
   createConfirmText: { color: COLORS.background, fontWeight: '700', fontSize: 15 },
+  // 輕量 toast(建立/加入清單後嘅非阻擋提示)
+  toastWrap: { position: 'absolute', left: 0, right: 0, alignItems: 'center', zIndex: 999, elevation: 999 },
+  toastBubble: {
+    flexDirection: 'row', alignItems: 'center', maxWidth: '86%',
+    backgroundColor: COLORS.card, paddingHorizontal: 16, paddingVertical: 10, borderRadius: 24,
+    borderWidth: 1, borderColor: COLORS.border,
+    shadowColor: '#000', shadowOpacity: 0.3, shadowRadius: 8, shadowOffset: { width: 0, height: 2 },
+  },
+  toastText: { color: COLORS.textPrimary, fontSize: 14, fontWeight: '600' },
 });
