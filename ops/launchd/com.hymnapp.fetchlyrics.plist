@@ -12,7 +12,7 @@
          2026-07-24 Eric 拍板加速:每晚最少 20 首 → CC 25 + OCR 20。
          ⚠️ CC budget 一定要 ≥ OCR budget:cc:miss 存貨係 OCR 嘅糧,CC 實測
          命中率 ~0%,即係每晚 OCR 食幾多就要 CC 產幾多,細過佢 OCR 會斷糧。
-         20 首 OCR 預計 40-90 分鐘,04:20 開波遠早過 09:00 窗口尾,夠鬆。 -->
+         20 首 OCR 預計 40-90 分鐘,05:00 開波遠早過 09:00 窗口尾,夠鬆。 -->
     <key>ProgramArguments</key>
     <array>
         <string>/opt/homebrew/bin/node</string>
@@ -37,17 +37,22 @@
         <string>/opt/homebrew/bin:/opt/homebrew/sbin:/usr/bin:/bin:/usr/sbin:/sbin</string>
     </dict>
 
-    <!-- 04:20 —— 沿用 STAGE 1 揀嘅時間(growlibrary/deadlinkcheck 嗰陣呢個位冇人爭)。
-         2026-07-24 加咗 OCR 之後單次 run 會長好多(OCR 一首幾分鐘,6 首 budget
-         可以行成 15-30 分鐘),唔再假設「同 growlibrary 一定冇撞期」—— 依家
-         真正嘅互斥係 hymnDb.js 嘅 acquireDbLock(見 fetchLyrics.js 檔頭嘅 P0
-         修註解):撞正 growLibrary(而家 24 小時每 15 分鐘一次)嗰陣邊個攞唔到
-         鎖就 skip 嗰一步,唔會再靠「揀啱時間唔撞」嚟保證安全。04:20 淨係
-         「盡量避開,減少空等鎖嘅次數」,唔係安全嘅唯一保證。 -->
+    <!-- 2026-07-25 由 04:20 改做 05:00(Fable 5 監督 session 診斷咗琴晚
+         2026-07-25 04:20 個 run 0 首落地嘅 root cause 之後拍板)——
+         checkDeadLinks 04:00 開波,150 首 x 3 秒一首,實測成個 run 要
+         ~20-25 分鐘(遠超落 04:00+8min 個估算),佢揸住 hymnDb.js 個
+         DB 寫入鎖直到 saveDb() 嗰刻(即成個 run 尾)先放。04:20 開波
+         啱啱好撞正佢揸緊鎖嗰段中間,fetchLyrics 嘅 writeLyricsRow 會
+         attempt 攞鎖,就算 acquireDbLock 而家已經修好唔會再錯誤咁搶走
+         生勾勾嘅鎖(見 hymnDb.js 嘅 pid-alive 檢查),都只會乖乖等到
+         checkDeadLinks 放先攞到,即係 CC 層前面幾首基本上係喺度空等。
+         05:00 開波,checkDeadLinks 04:00-04:25 一定完咗、鎖一早放咗,
+         唔使等。20 首 OCR 預計 40-90 分鐘,05:00 到 09:00 窗口尾仲有
+         成 4 個鐘,夠鬆有突。 -->
     <key>StartCalendarInterval</key>
     <dict>
-        <key>Hour</key><integer>4</integer>
-        <key>Minute</key><integer>20</integer>
+        <key>Hour</key><integer>5</integer>
+        <key>Minute</key><integer>0</integer>
     </dict>
 
     <key>RunAtLoad</key>

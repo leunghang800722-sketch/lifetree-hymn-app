@@ -206,7 +206,11 @@ function cleanVtt(raw) {
 
 async function runCC(db, budget) {
   log(`mode=CC budget=${budget} delay=~${DELAY_MS}ms`);
-  const cands = pickCandidates(db);
+  // 同 runOcr 一致化:一律用最新 snapshot 揀候選,唔好靠 main() 傳落嚟嗰個
+  // (呢度風險本身細好多——run 一開波就叫,同 main() openDb() 相隔幾乎零——
+  // 但養成「揀候選就攞新鮮」嘅習慣,唔會因為第日改咗執行次序而中招)。
+  const freshDb = await openDb();
+  const cands = pickCandidates(freshDb);
   if (!cands.length) { log('冇更多要做嘅歌(全部 curated 都試過 CC 或者有歌詞)'); return 0; }
 
   let drafted = 0, missed = 0, streak = 0;
@@ -413,7 +417,14 @@ async function runOcr(db, budget) {
   const whisperReady = await checkWhisperAvailable();
   log(`  whisper 後備:${whisperReady ? '已裝妥,OCR 唔夠字會撞落去' : '未裝 / model 未落,OCR 唔夠字嘅歌會標 ocr:miss 留低(唔算失敗)'}`);
 
-  const cands = pickOcrCandidates(db);
+  // ⚠️ 2026-07-25 P0 修:唔可以用 main() 開場嗰個舊 `db` snapshot 揀候選 ——
+  // 實錄:CC 層(runCC)喺同一個 run 入面經 writeLyricsRow 剛啱標咗 25 首
+  // cc:miss(呢啲寫入直接落正式 DB 檔,冇改到記憶體入面呢個舊 snapshot),
+  // 跟住呢度用舊 snapshot 查 pickOcrCandidates 就完全見唔到呢 25 首,
+  // 誤判「冇更多 cc:miss 等 OCR」,0 首收工。要重新 openDb() 攞返呢一刻
+  // 最新嘅版,先睇得到 CC 層啱啱寫落去嘅嘢。
+  const freshDb = await openDb();
+  const cands = pickOcrCandidates(freshDb);
   if (!cands.length) { log('冇更多 cc:miss 嘅歌等 OCR'); return 0; }
 
   let drafted = 0, unavailable = 0, ocrMiss = 0, streak = 0;

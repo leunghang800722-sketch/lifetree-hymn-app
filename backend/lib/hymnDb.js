@@ -176,6 +176,33 @@ const LOCK_STALE_MS = 20 * 60 * 1000; // 冇 job 應該行咁耐;仲存在就當
 const LOCK_RETRY_MS = 3000;
 const LOCK_MAX_WAIT_MS = 5 * 60 * 1000; // 最多等 5 分鐘,再攞唔到就放棄,唔好卡死排程
 
+// ⚠️ 2026-07-25 追加:淨睇檔案年齡嚟判斷「stale」唔夠——2026-07-25 04:20
+// 實錄:checkDeadLinks 04:00 開波,150 首 x 3 秒一首,成個 run 行咗 ~20-25
+// 分鐘(遠超「應該幾分鐘搞掂」嘅假設,亦即超過咗底下嘅 LOCK_STALE_MS)先
+// saveDb 一次。fetchLyrics 04:20 攞鎖嗰陣,鎖齡已經 >20 分鐘,誤判持有者
+// 死咗,搶咗把鎖去寫 25 首,跟住 checkDeadLinks 做完至 saveDb 佢自己嗰個
+// 04:00 舊 snapshot,將呢 25 首全部冚走。教訓:「行咗好耐」唔等於「個
+// process 死咗」——一定要真係去問 OS 個 pid 仲喺唔喺度。
+// lockfile 第一行 token 格式:`owner:pid:timestamp:random`。
+function parseLockPid(content) {
+  const firstLine = (content || '').split('\n')[0] || '';
+  const pid = Number(firstLine.split(':')[1]);
+  return Number.isInteger(pid) && pid > 0 ? pid : null;
+}
+
+// process.kill(pid, 0) 淨係探生死,唔會真係送 signal 殺人。
+//   ESRCH = 冇呢個 pid,真係死咗。
+//   EPERM = 個 pid 屬於第二個 user 冇權限探,但佢實實在在生存緊,要當生存。
+function isPidAlive(pid) {
+  try {
+    process.kill(pid, 0);
+    return true;
+  } catch (e) {
+    if (e.code === 'EPERM') return true;
+    return false; // ESRCH 或者其他錯誤(理論上唔應該有第三種),當死咗
+  }
+}
+
 // ⚠️ 2026-07-23 追加:`acquireDbLock()` 而家傳返一個**擁有權 token**
 // (唔再係淨係 `true`),`releaseDbLock(token)` 一定要 token 對得上先真係
 // 刪個 lockfile。原因:舊版 `releaseDbLock()` 冇條件、淨係 `unlinkSync`,
@@ -194,8 +221,20 @@ export async function acquireDbLock(owner = `pid${process.pid}`) {
     } catch (e) {
       if (e.code !== 'EEXIST') throw e;
       try {
+        const content = fs.readFileSync(LOCK_PATH, 'utf8');
         const age = Date.now() - fs.statSync(LOCK_PATH).mtimeMs;
-        if (age > LOCK_STALE_MS) { fs.unlinkSync(LOCK_PATH); continue; } // 死鎖,搶返
+        const holderPid = parseLockPid(content);
+        if (holderPid !== null) {
+          // 攞到 pid:真正嘅生死先算數,唔再淨睇年齡。持有者仲生 → 唔准搶,
+          // 落去底下嘅 deadline/retry 繼續等。死咗 → 先准搶,仲加返 age 門檻
+          // 做雙重保險(pid 死咗都要夠舊先搶,避免瞬間 pid 重用嘅邊緣case)。
+          if (!isPidAlive(holderPid) && age > LOCK_STALE_MS) { fs.unlinkSync(LOCK_PATH); continue; }
+        } else if (age > LOCK_STALE_MS) {
+          // parse 唔到 pid(格式唔啱/舊版 lockfile)→ 冇得問生死,退返舊版
+          // 純年齡判斷做保底。
+          fs.unlinkSync(LOCK_PATH);
+          continue;
+        }
       } catch (_) { continue; } // 岩岩俾人放咗,即刻再試
       if (Date.now() > deadline) return null;
       await sleep(LOCK_RETRY_MS);
