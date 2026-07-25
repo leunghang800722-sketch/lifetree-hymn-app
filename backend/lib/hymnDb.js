@@ -173,6 +173,14 @@ export const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 // 一開始(openDb 之前)攞鎖,成個 run(包括所有 saveDb())做完先放。
 const LOCK_PATH = `${DB_PATH}.lock`;
 const LOCK_STALE_MS = 20 * 60 * 1000; // 冇 job 應該行咁耐;仲存在就當持有者死咗
+// 2026-07-25 追加(獨立驗收指出嘅死角):pid 生死檢查喺「部機死機/重開」
+// 嘅情況會出事——殘留 lockfile 入面個 pid,開機之後可能啱啱好撞正另一個
+// 無關 process(pid 係會重用嘅),於是永遠誤判「生存」、永遠搶唔到把鎖,
+// 成條夜晚 job 鏈靜靜哋停晒,要人手刪 lockfile 先救返。所以要有一個唔理
+// pid 生死嘅硬上限:鎖齡超過就一律當殭屍鎖照搶。揀 2 個鐘:而家最長嘅
+// 合法持鎖係 checkDeadLinks 成個 run ~20-25 分鐘,2 個鐘有 4-5 倍鬆動位;
+// 而真係出殭屍鎖嗰陣,最多阻 2 個鐘就自動復原,00:00-09:00 窗口內追得返。
+const LOCK_HARD_STALE_MS = 2 * 60 * 60 * 1000;
 const LOCK_RETRY_MS = 3000;
 const LOCK_MAX_WAIT_MS = 5 * 60 * 1000; // 最多等 5 分鐘,再攞唔到就放棄,唔好卡死排程
 
@@ -203,6 +211,21 @@ function isPidAlive(pid) {
   }
 }
 
+// 「呢把鎖搶唔搶得?」嘅完整判斷,三層由硬到軟:
+//   1. 鎖齡 > LOCK_HARD_STALE_MS(2粒鐘)→ 搶得,唔理 pid 生死(防重開機後
+//      pid 撞正無關 process 嘅永久死鎖,見上面 LOCK_HARD_STALE_MS 註解)
+//   2. parse 到 pid → 持有者死咗**而且**鎖齡 > LOCK_STALE_MS 先搶得
+//      (雙重保險:pid 死咗都要夠舊,避免瞬間 pid 重用嘅邊緣 case)
+//   3. parse 唔到 pid(格式唔啱/舊版 lockfile)→ 退返純年齡判斷做保底
+// 抽出嚟做獨立 function 係為咗可以直接單元測試,唔使等 acquireDbLock
+// 嘅 5 分鐘 retry loop。
+export function lockIsStealable(content, age) {
+  if (age > LOCK_HARD_STALE_MS) return true;
+  const holderPid = parseLockPid(content);
+  if (holderPid !== null) return !isPidAlive(holderPid) && age > LOCK_STALE_MS;
+  return age > LOCK_STALE_MS;
+}
+
 // ⚠️ 2026-07-23 追加:`acquireDbLock()` 而家傳返一個**擁有權 token**
 // (唔再係淨係 `true`),`releaseDbLock(token)` 一定要 token 對得上先真係
 // 刪個 lockfile。原因:舊版 `releaseDbLock()` 冇條件、淨係 `unlinkSync`,
@@ -223,18 +246,7 @@ export async function acquireDbLock(owner = `pid${process.pid}`) {
       try {
         const content = fs.readFileSync(LOCK_PATH, 'utf8');
         const age = Date.now() - fs.statSync(LOCK_PATH).mtimeMs;
-        const holderPid = parseLockPid(content);
-        if (holderPid !== null) {
-          // 攞到 pid:真正嘅生死先算數,唔再淨睇年齡。持有者仲生 → 唔准搶,
-          // 落去底下嘅 deadline/retry 繼續等。死咗 → 先准搶,仲加返 age 門檻
-          // 做雙重保險(pid 死咗都要夠舊先搶,避免瞬間 pid 重用嘅邊緣case)。
-          if (!isPidAlive(holderPid) && age > LOCK_STALE_MS) { fs.unlinkSync(LOCK_PATH); continue; }
-        } else if (age > LOCK_STALE_MS) {
-          // parse 唔到 pid(格式唔啱/舊版 lockfile)→ 冇得問生死,退返舊版
-          // 純年齡判斷做保底。
-          fs.unlinkSync(LOCK_PATH);
-          continue;
-        }
+        if (lockIsStealable(content, age)) { fs.unlinkSync(LOCK_PATH); continue; }
       } catch (_) { continue; } // 岩岩俾人放咗,即刻再試
       if (Date.now() > deadline) return null;
       await sleep(LOCK_RETRY_MS);
