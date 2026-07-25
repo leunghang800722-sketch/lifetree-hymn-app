@@ -109,6 +109,20 @@ export default function MineScreen({ onPlayHymn, onOpenAuth, miniPlayer, hasMini
           data={favorites}
           keyExtractor={(item) => String(item.id)}
           contentContainerStyle={{ paddingBottom: 24 }}
+          // 播全部最愛(Eric 2026-07-25)—— 同首頁「▶ 播全部 N 首」/清單詳情頁一款;
+          // explicit: true = 照收藏次序播晒(v231 語義),唔係單曲+隨機接續
+          ListHeaderComponent={
+            favorites.length ? (
+              <TouchableOpacity
+                style={styles.playAll}
+                onPress={() => onPlayHymn && onPlayHymn(favorites[0], { explicit: true, playlist: favorites })}
+                activeOpacity={0.8}
+              >
+                <MaterialIcons name="play-arrow" size={22} color={COLORS.background} />
+                <Text style={styles.playAllText}>播全部 {favorites.length} 首</Text>
+              </TouchableOpacity>
+            ) : null
+          }
           renderItem={({ item }) => (
             <TouchableOpacity style={styles.row} onPress={() => onPlayHymn && onPlayHymn(item)} activeOpacity={0.7}>
               <Cover youtubeId={item.youtube_id} />
@@ -220,4 +234,11 @@ const styles = StyleSheet.create({
   // ＋新播放清單(視覺照 AddToPlaylistSheet 嘅 newRow/newText)
   newRow: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12 },
   newText: { color: COLORS.accent, marginLeft: 8, fontSize: 15, fontWeight: '700' },
+  // 播全部最愛 pill(視覺照 PlaylistDetailSheet 嘅 playAll)
+  playAll: {
+    flexDirection: 'row', alignItems: 'center', alignSelf: 'flex-start',
+    marginHorizontal: 16, marginBottom: 12, paddingHorizontal: 18, paddingVertical: 9,
+    backgroundColor: COLORS.accent, borderRadius: 20,
+  },
+  playAllText: { color: COLORS.background, fontWeight: '700', fontSize: 15, marginLeft: 4 },
 });
