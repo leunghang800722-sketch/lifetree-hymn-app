@@ -159,7 +159,14 @@ function CoverImage({ youtubeId, style }) {
 
 // ===== 播放頁大封面 =====
 // tier 0 = maxresdefault(1280x720 高清 16:9),1 = mqdefault(320x180 16:9),2 = 向量 fallback。
-// 兩個 tier 都係 16:9 無黑邊;maxres 有時 404 就 onError 降到 mq。全部 resizeMode cover。
+// B4 修(第二版):容器返咗做正方形(見 coverWrap),但唔少 YouTube 縮圖本身
+// 個「相片」係方形專輯封面俾 YT 加咗色帶再存做 16:9 檔(例:掛號信
+// K4T7-k0aZUs——色帶係燒死喺 JPEG 像素入面,唔係容器/resizeMode 整出嚟,
+// 正方形 cover-crop 裁走晒側邊色帶,但相入面自己嵌住嘅頂/底白邊有時仲留低
+// 一線)。做法跟返正牌音樂 App:auto-fallback 之外,加多層「同一張圖、放大
+// 再 blur」做背景墊底,前景正常靚圖疊喺上面——殘留嗰線就融入返個模糊色場,
+// 唔會再讀成一條突兀嘅黑/白 bar。前景同背景一定用同一個 uri(同一 tier),
+// 唔會出現背景先 fallback 咗前景仲未 fallback 嘅唔同步情況。
 function BigCover({ youtubeId }) {
   const [tier, setTier] = useState(0);
   useEffect(() => { setTier(0); }, [youtubeId]);
@@ -172,12 +179,21 @@ function BigCover({ youtubeId }) {
   }
   const uri = tier === 0 ? getAlbumCoverUrlHi(youtubeId) : getAlbumCoverUrl(youtubeId);
   return (
-    <Image
-      source={{ uri }}
-      style={fsStyles.coverImg}
-      resizeMode="cover"
-      onError={() => setTier((t) => t + 1)}
-    />
+    <>
+      <Image
+        source={{ uri }}
+        style={fsStyles.coverBackdrop}
+        resizeMode="cover"
+        blurRadius={Platform.OS === 'android' ? 30 : 25}
+        pointerEvents="none"
+      />
+      <Image
+        source={{ uri }}
+        style={fsStyles.coverImg}
+        resizeMode="cover"
+        onError={() => setTier((t) => t + 1)}
+      />
+    </>
   );
 }
 
@@ -1658,16 +1674,13 @@ const fsStyles = StyleSheet.create({
   dismissBtn: { width: 40, height: 40, justifyContent: 'center', alignItems: 'center' },
   dismissIcon: { fontSize: 16, color: TEXT_PRIMARY },
   topBarTitle: { fontSize: 16, fontWeight: '600', color: TEXT_PRIMARY },
-  // B4 修:呢個容器之前係 aspectRatio:1(正方形),但 BigCover 嘅圖源全部係
-  // YouTube 縮圖(maxresdefault/mqdefault,真 16:9)——正方形容器逼 16:9 圖用
-  // resizeMode cover 填滿闊度就爆高度,爆出嚟嘅部分喺頂/底露返個容器底色
-  // (transparent → 透出 fsStyles.container 嘅 MAIN_BG_COLOR,近黑;有陣時
-  // 圖仲未載到、tier 跌到 fallback 果格,個底色偏白,就變成 Eric 見到嗰種
-  // 「白邊」)。改做 16:9 容器,同圖源原生比例一致,cover 唔使裁到爆高度,
-  // 結構性冧唔到再有頂/底邊(裁側邊闊度就得,唔會變形)。
+  // B4 修(第二版,revert):試過 aspectRatio:16/9 但令 Eric 部機睇落更差——
+  // 唔少縮圖嘅色帶係燒死喺 JPEG 像素入面(唔係容器逼出嚟嘅偽影),16:9 容器
+  // 反而完整顯示埋個色帶,仲拉開咗封面同歌名之間嘅空隙。改返正方形,由
+  // BigCover 用「模糊放大墊底 + 正常前景」蓋走殘留色帶(見 BigCover 註解)。
   coverWrap: {
     width: '85%',
-    aspectRatio: 16 / 9,
+    aspectRatio: 1,
     alignSelf: 'center',
     marginTop: 8,
     justifyContent: 'center',
@@ -1680,6 +1693,17 @@ const fsStyles = StyleSheet.create({
     height: '100%',
     borderRadius: 24,
     resizeMode: 'cover',
+  },
+  // 背景墊底層:同前景同一張圖、放大 15% 再 blur,填滿成個 coverWrap,行
+  // 喺前景之後(z-order 靠 View child order,呢層擺喺 coverImg 之前 render)。
+  // 放大係要避免 blurRadius 喺圖邊採樣到透明/邊緣像素,整出一圈唔均勻嘅邊。
+  coverBackdrop: {
+    position: 'absolute',
+    top: 0, left: 0, right: 0, bottom: 0,
+    width: '100%',
+    height: '100%',
+    borderRadius: 24,
+    transform: [{ scale: 1.15 }],
   },
   coverFallback: {
     width: '100%',

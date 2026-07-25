@@ -25,9 +25,22 @@ import { usePlaylists, MAX_PLAYLIST_SONGS } from '../context/PlaylistsContext';
 import { useInsets } from '../hooks/useInsets';
 
 const Ctx = createContext(null);
-// Android keyboardDidShow 個高度唔包上面條建議/emoji 工具列,補呢個高度令輸入框
-// 一定清到嗰條 bar。寧願多留少少 gap,好過又俾檔住。
-const KB_EXTRA = 52;
+// Android keyboardDidShow 高度有時唔包晒上面條建議/emoji 工具列,留返少少
+// buffer 保住輸入框/確認掣一定喺鍵盤之上。
+// ⚠️ 呢個數之前係 52 ——後來加咗 navigationBarTranslucent(令 Modal window
+// edge-to-edge)之後,kbHeight 本身已經係跟正確、較高嗰個座標系計,52 變成
+// 同 navigationBarTranslucent 「雙重補償」,將 card 多褪高咗一截,card
+// 底同鍵盤之間爆出一條透明罅,漏返個播放頁出嚟(Eric 實測 ~85 device px /
+// ~28dp)。呢度縮細做細細個安全邊(唔敢直接歸零,因為部分 IME 嘅建議列
+// 呢個高度計算方式始終唔係 100% 保證跨機一致)。真正解決漏罅嘅係下面
+// keyboardScrim(belt-and-braces):就算呢個數仲有少少誤差,keyboardScrim
+// 都會用同 card 一樣嘅實色補晒個罅,唔會再透出後面畫面。
+const KB_SAFETY_BUFFER = 12;
+// keyboardScrim 嘅高度 —— 大幅蓋過任何殘餘計算誤差(絕對定位、唔會影響
+// card 本身嘅 flex 排位,所以就算呢個數放大咗都唔會逼 card 內容爆出畫面
+// 頂)。實際畫面上佢一定俾真.系統鍵盤(topmost surface)蓋晒,所以留大啲
+// 都冇代價。
+const KB_SCRIM_HEIGHT = 140;
 // open(hymn):彈 sheet,揀清單加入呢首歌。openCreate/openRename 見檔頭。
 export const useAddToPlaylist = () => useContext(Ctx) || { open: () => {}, openCreate: () => {}, openRename: () => {} };
 
@@ -139,10 +152,18 @@ export function AddToPlaylistProvider({ children }) {
       <Modal visible={visible} transparent animationType="slide" onRequestClose={close} statusBarTranslucent navigationBarTranslucent>
         <View style={styles.scrim}>
           <TouchableOpacity style={{ flex: 1 }} activeOpacity={1} onPress={close} />
-          {/* 鍵盤彈出時 card 抬起鍵盤咁高;鍵盤收埋先用返 safe-area inset 墊底。
-              §Eric(v242):Android 個 keyboardDidShow 高度**唔包**上面條建議/emoji
-              工具列,所以之前仲俾佢檔住半截 —— 加 KB_EXTRA 補返嗰條工具列嘅高度。 */}
-          <View style={[styles.card, { marginBottom: kbHeight > 0 ? kbHeight + KB_EXTRA : 0, paddingBottom: kbHeight > 0 ? 12 : 8 + insets.bottom }]}>
+          {/* belt-and-braces 第二重保障:實色補罅,貼實個 window 底(絕對定位,
+              唔參與 flex 排位,唔會逼 card 內容爆出畫面頂)。就算 marginBottom
+              個計法有少少誤差,card 底同真.鍵盤之間都唔會再透出後面畫面 ——
+              呢張色板保證俾真.系統鍵盤(topmost surface)蓋晒,冇代價可以留大啲。
+              先於 card 畫(render order 排喺 card 之前),所以 card 一定疊喺上面。 */}
+          {kbHeight > 0 && (
+            <View pointerEvents="none" style={styles.keyboardScrim} />
+          )}
+          {/* 鍵盤彈出時 card 抬起鍵盤咁高(kbHeight + 細細個安全邊);鍵盤收埋
+              先用返 safe-area inset 墊底。belt-and-braces 嘅第二重保障喺
+              keyboardScrim(上面),就算呢個數計錯咗都唔會透出後面畫面。 */}
+          <View style={[styles.card, { marginBottom: kbHeight > 0 ? kbHeight + KB_SAFETY_BUFFER : 0, paddingBottom: kbHeight > 0 ? 12 : 8 + insets.bottom }]}>
             <View style={styles.handle} />
             <Text style={styles.title}>
               {mode === 'create' ? '新播放清單' : mode === 'rename' ? '改清單名' : '加入到清單'}
@@ -207,6 +228,12 @@ export function AddToPlaylistProvider({ children }) {
 
 const styles = StyleSheet.create({
   scrim: { flex: 1, backgroundColor: 'rgba(0,0,0,0.55)', justifyContent: 'flex-end' },
+  // belt-and-braces keyboard 補罅板 —— 見上面 JSX 註解。絕對定位貼實 window 底,
+  // 顏色同 card 一樣,萬一 marginBottom 計少咗都唔會透出後面畫面。
+  keyboardScrim: {
+    position: 'absolute', left: 0, right: 0, bottom: 0,
+    height: KB_SCRIM_HEIGHT, backgroundColor: COLORS.card,
+  },
   card: {
     maxHeight: '65%', backgroundColor: COLORS.card,
     borderTopLeftRadius: 20, borderTopRightRadius: 20, overflow: 'hidden', paddingBottom: 8,
