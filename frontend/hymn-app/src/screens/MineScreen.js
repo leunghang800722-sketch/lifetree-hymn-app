@@ -16,6 +16,7 @@ import { usePlaylists } from '../context/PlaylistsContext';
 import { useAuth } from '../context/AuthContext';
 import { useAddToPlaylist } from '../components/AddToPlaylistSheet';
 import PlaylistDetailSheet from './PlaylistDetailSheet';
+import { getDisplayTitle } from '../utils/displayTitle';
 
 function Cover({ youtubeId, size = 52 }) {
   const [failed, setFailed] = useState(false);
@@ -127,7 +128,7 @@ export default function MineScreen({ onPlayHymn, onOpenAuth, miniPlayer, hasMini
             <TouchableOpacity style={styles.row} onPress={() => onPlayHymn && onPlayHymn(item)} activeOpacity={0.7}>
               <Cover youtubeId={item.youtube_id} />
               <View style={styles.rowInfo}>
-                <Text style={styles.rowTitle} numberOfLines={1}>{item.title}</Text>
+                <Text style={styles.rowTitle} numberOfLines={2}>{getDisplayTitle(item)}</Text>
                 <Text style={styles.rowArtist} numberOfLines={1}>{item.artist || '未知'}</Text>
               </View>
               {/* ≡♪ 加入到清單 —— 彈揀清單 sheet(同播放頁「清單」pill 一致),唔使入返播放頁 */}

@@ -13,6 +13,7 @@ import { COLORS, TYPOGRAPHY } from '../theme/designSystem';
 import { useInsets } from '../hooks/useInsets';
 import { useFavorites } from '../context/FavoritesContext';
 import { useAddToPlaylist } from '../components/AddToPlaylistSheet';
+import { getDisplayTitle } from '../utils/displayTitle';
 
 const LANGS = ['全部', '粵語', '國語', '英文'];
 
@@ -184,7 +185,7 @@ export default function LibraryScreen({ hymns = [], onPlayHymn }) {
           >
             <Cover youtubeId={item.youtube_id} />
             <View style={styles.rowInfo}>
-              <Text style={styles.rowTitle} numberOfLines={1}>{item.title}</Text>
+              <Text style={styles.rowTitle} numberOfLines={2}>{getDisplayTitle(item)}</Text>
               <Text style={styles.rowArtist} numberOfLines={1}>{item.artist || '未知'} · {item.lang}</Text>
             </View>
             {/* ≡♪ 加入到清單 + 心心 —— 同 HymnListScreen / 播放清單 sheet 行尾一致;

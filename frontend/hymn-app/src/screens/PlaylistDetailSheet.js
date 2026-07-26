@@ -16,6 +16,7 @@ import { COLORS, TYPOGRAPHY } from '../theme/designSystem';
 import { useInsets } from '../hooks/useInsets';
 import { usePlaylists, MAX_PLAYLIST_SONGS } from '../context/PlaylistsContext';
 import { useAddToPlaylist } from '../components/AddToPlaylistSheet';
+import { getDisplayTitle } from '../utils/displayTitle';
 
 // mqdefault = 真 16:9 冇黑邊(同 MineScreen / HymnListScreen 一致)
 function Cover({ youtubeId, size = 52 }) {
@@ -117,7 +118,7 @@ export default function PlaylistDetailSheet({ playlistId, onClose, onPlayHymn, m
               onPress={() => play(item)}>
               <Cover youtubeId={item.youtube_id} />
               <View style={styles.rowInfo}>
-                <Text style={styles.rowTitle} numberOfLines={1}>{item.title}</Text>
+                <Text style={styles.rowTitle} numberOfLines={2}>{getDisplayTitle(item)}</Text>
                 <Text style={styles.rowArtist} numberOfLines={1}>{item.artist || '未知'}</Text>
               </View>
               <TouchableOpacity onPress={() => removeFromPlaylist && removeFromPlaylist(pl.id, item.id)}

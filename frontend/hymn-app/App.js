@@ -30,6 +30,7 @@ import { buildAutoplayTail, FLAVORS, poolSize } from './src/utils/autoplay';
 import { getPlayLog, getRecentIds, recordPlay } from './src/playLog';
 import { getAutoplayEnabled, setAutoplayEnabled, getAutoplayFlavor, setAutoplayFlavor } from './src/autoplayPrefs';
 import { useInsets } from './src/hooks/useInsets';
+import { getDisplayTitle } from './src/utils/displayTitle';
 // 播放清單 / 加入到清單 sheet 用 @gorhom/bottom-sheet 嘅 **inline `<BottomSheet>`**(v229)。
 //
 // ⚠️ v228 曾經誤判呢個係「reanimated 4 + gorhom 5 唔夾」。真正原因係 **z-order**,唔關
@@ -106,7 +107,7 @@ function toTrack(song) {
   return {
     id: String(song.id),
     url: `${API_BASE}/api/stream/${song.id}`,
-    title: song.title || 'Unknown',
+    title: song.display_title || song.title || 'Unknown',
     artist: song.artist || '',
     artwork: getAlbumCoverUrl(song.youtube_id),
   };
@@ -1067,7 +1068,7 @@ function MiniPlayer({ onPress }) {
         <TouchableOpacity style={miStyles.mainTouch} onPress={onPress} activeOpacity={0.85}>
           <CoverImage youtubeId={currentHymn.youtube_id} style={miStyles.cover} />
           <View style={miStyles.info}>
-            <Text style={miStyles.title} numberOfLines={1}>{currentHymn.title}</Text>
+            <Text style={miStyles.title} numberOfLines={1}>{getDisplayTitle(currentHymn)}</Text>
             <Text style={miStyles.artist} numberOfLines={1}>{currentHymn.artist}</Text>
           </View>
         </TouchableOpacity>
@@ -1390,7 +1391,7 @@ function FullScreenPlayerOverlay() {
       {/* Controls + Playlist button */}
       <View style={{ flex: 1, justifyContent: 'flex-end', paddingBottom: 8 }}>
         <View style={fsStyles.songInfo}>
-          <Text style={[{ ...TYPOGRAPHY.title, color: TEXT_PRIMARY, textAlign: 'center' }]} numberOfLines={2}>{cur.title}</Text>
+          <Text style={[{ ...TYPOGRAPHY.title, color: TEXT_PRIMARY, textAlign: 'center' }]} numberOfLines={2}>{getDisplayTitle(cur)}</Text>
           <Text style={[{ ...TYPOGRAPHY.artist, textAlign: 'center', marginTop: 4 }]}>{cur.artist}</Text>
         </View>
 
@@ -1407,7 +1408,7 @@ function FullScreenPlayerOverlay() {
               onPress: () => setLyricsVisible(true) },
             { key: 'shr', label: '分享', icon: 'share',
               onPress: () => Share.share({
-                message: `一齊聽「${cur.title}」${cur.artist ? ' - ' + cur.artist : ''}（God Music 詩歌）`,
+                message: `一齊聽「${getDisplayTitle(cur)}」${cur.artist ? ' - ' + cur.artist : ''}（God Music 詩歌）`,
               }).catch(() => {}) },
             { key: 'que', label: '清單', icon: 'queue-music',
               onPress: () => openAddToPlaylist(cur) },
@@ -1600,7 +1601,7 @@ function FullScreenPlayerOverlay() {
                   </SheetTouchable>
                   <CoverImage youtubeId={item.youtube_id} style={fsStyles.queueCover} />
                   <View style={fsStyles.queueInfo}>
-                    <Text style={fsStyles.queueTitle} numberOfLines={1}>{item.title}</Text>
+                    <Text style={fsStyles.queueTitle} numberOfLines={2}>{getDisplayTitle(item)}</Text>
                     <Text style={fsStyles.queueArtist} numberOfLines={1}>{item.artist}</Text>
                   </View>
                   {/* ≡♪ 加入到清單 */}
@@ -1638,7 +1639,7 @@ function FullScreenPlayerOverlay() {
             </TouchableOpacity>
           </View>
           {/* 歌名 + 歌手做副標 */}
-          <Text style={{ ...TYPOGRAPHY.songTitle, marginBottom: 2 }} numberOfLines={1}>{cur.title}</Text>
+          <Text style={{ ...TYPOGRAPHY.songTitle, marginBottom: 2 }} numberOfLines={2}>{getDisplayTitle(cur)}</Text>
           <Text style={{ ...TYPOGRAPHY.artist, marginBottom: 16 }} numberOfLines={1}>{cur.artist || ''}</Text>
           <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingBottom: 40 }}>
             {/* §5.3 歌詞行距 1.7x;冇歌詞唔呃人。BUG1:呢度食已經轉好換行嘅

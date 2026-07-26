@@ -28,6 +28,7 @@ import { getLastPlayed } from '../../lastPlayed';
 import { getHomeChip, saveHomeChip } from '../../homePrefs';
 import { dailyPick, dailyPickBalanced, randomShuffle } from '../../utils/dailyShuffle';
 import { useFavorites } from '../../context/FavoritesContext';
+import { getDisplayTitle } from '../../utils/displayTitle';
 
 const LANGS = ['粵語', '國語', '英文'];
 
@@ -119,7 +120,7 @@ function SongCard({ hymn, onPress }) {
         <PlayBadge />
         <Heart hymn={hymn} style={styles.cardHeart} />
       </View>
-      <Text style={styles.cardTitle} numberOfLines={2}>{hymn.title}</Text>
+      <Text style={styles.cardTitle} numberOfLines={2}>{getDisplayTitle(hymn)}</Text>
       <Text style={styles.cardArtist} numberOfLines={1}>{hymn.artist || '未知'}</Text>
     </TouchableOpacity>
   );
@@ -234,7 +235,7 @@ export default function HomeScreen({ hymns = [], onPlayHymn, onOpenList }) {
             <MaterialIcons name="play-circle-filled" size={26} color={COLORS.accent} />
             <View style={styles.quickTextWrap}>
               <Text style={styles.quickTitle} numberOfLines={1}>繼續收聽</Text>
-              <Text style={styles.quickSub} numberOfLines={1}>{last.title}</Text>
+              <Text style={styles.quickSub} numberOfLines={1}>{getDisplayTitle(last)}</Text>
             </View>
           </TouchableOpacity>
         )}
@@ -295,7 +296,12 @@ export default function HomeScreen({ hymns = [], onPlayHymn, onOpenList }) {
                     onPress={() => play(h, activeChip.songs, true)}>
                     <Thumb youtubeId={h.youtube_id} size={40} />
                     <View style={styles.rowTextWrap}>
-                      <Text style={styles.rowTitle} numberOfLines={1}>{h.title}</Text>
+                      {/* numberOfLines stays 1 here — ROW_H (64px) is a hand-tuned
+                          constant load-bearing for the fixed-height horizontal pager
+                          above (page height = SONGS_PER_PAGE × ROW_H); a 2nd text line
+                          would overflow/clip it. getDisplayTitle() already shortens
+                          the common cases, so this is still a net improvement. */}
+                      <Text style={styles.rowTitle} numberOfLines={1}>{getDisplayTitle(h)}</Text>
                       <Text style={styles.rowArtist} numberOfLines={1}>{h.artist || '未知'}</Text>
                     </View>
                     <MaterialIcons name="play-arrow" size={22} color={COLORS.textSecondary} />

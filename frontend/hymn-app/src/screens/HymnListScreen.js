@@ -23,6 +23,7 @@ import { COLORS, TYPOGRAPHY } from '../theme/designSystem';
 import { useFavorites } from '../context/FavoritesContext';
 import { useAddToPlaylist } from '../components/AddToPlaylistSheet';
 import { useInsets } from '../hooks/useInsets';
+import { getDisplayTitle } from '../utils/displayTitle';
 
 // B9 — 呢頁而家可能有 App.js 傳落嚟嘅 mini player 企喺底(見 App.js
 // hymnListModal),要留返呢個高度嘅空間,唔係尾幾行歌會俾佢遮咗。約數
@@ -106,7 +107,7 @@ export default function HymnListScreen({ hymns = [], title, onPlayHymn, hasMiniP
           >
             <Cover youtubeId={item.youtube_id} />
             <View style={styles.rowInfo}>
-              <Text style={styles.rowTitle} numberOfLines={1}>{item.title}</Text>
+              <Text style={styles.rowTitle} numberOfLines={2}>{getDisplayTitle(item)}</Text>
               <Text style={styles.rowArtist} numberOfLines={1}>{item.artist || '未知'}</Text>
             </View>
             {/* ≡♪ 加入到清單 —— 彈揀清單 sheet(同 Mine / 播放頁「清單」pill 一致) */}

@@ -90,7 +90,7 @@ app.get('/api/hymns', async (req, res) => {
     // tags / view_count / created_at:俾自動播放 chip 加權抽樣用(AUTOPLAY-MIX-PLAN §5.6)。
     // 全部係現有欄位(view_count 而家係 0,等 metadata job 填;tags 等標註 pass)。
     // album / title_en:詩歌庫頁本地搜尋要齊維度(SEARCH-MERGE-PLAN §5)。
-    const stmt = db.prepare('SELECT id, title, artist, youtube_id, lang, duration, lyrics, tags, view_count, created_at, album, title_en FROM hymns ORDER BY id');
+    const stmt = db.prepare('SELECT id, title, display_title, artist, youtube_id, lang, duration, lyrics, tags, view_count, created_at, album, title_en FROM hymns ORDER BY id');
     const hymns = [];
     while (stmt.step()) {
       hymns.push(stmt.getAsObject());
