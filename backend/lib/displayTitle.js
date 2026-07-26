@@ -12,14 +12,50 @@
 const DECORATIVE_PHRASES = [
   '官方歌詞版mv', '官方歌詞mv', '官方版mv', '官方授权版', '官方授權版', '官方mv',
   '官方授权', '官方授權', '現場敬拜mv', '现场敬拜mv', '動態歌詞', '动态歌词',
-  '中英字幕', '字幕版mv', '字幕版',
+  '中英字幕', '字幕版mv', '字幕版', '動態mv', '动态mv', '小組敬拜用',
+  '線上音樂會', '线上音乐会', '敬拜音樂會', '敬拜音乐会', 'ʟɪᴠᴇ ᴡᴏʀꜱʜɪᴘ ᴍᴏᴍᴇɴᴛꜱ',
+  'dance version mv', "praise stream children's worship and praise",
+  "praise stream children's worship", 'preschool', 'crossover',
   'official music video', 'official lyrics mv', 'official lyric video',
   'official mv', 'official video', 'official audio',
   'lyric video', 'lyrics video', 'live worship mv', 'cantonese version',
 ];
 
+// Known bilingual / short-nickname aliases for a DB `artist` value — added to
+// the removeArtistSubstring() candidate list for that artist only. e.g. the
+// artist column says "讚美之泉兒童" but a title spells that out in English as
+// "Praise Stream Children's Worship and Praise"; the DB value alone can't
+// catch that. Zero collision risk elsewhere since each entry is scoped to
+// its own artist string.
+const ARTIST_ALIASES = {
+  '讚美之泉': ["stream of praise", "praise stream"],
+  '讚美之泉粵語': ["stream of praise", "praise stream"],
+  '讚美之泉兒童': ["stream of praise", "praise stream", "praise stream children's worship and praise", "praise stream children's worship"],
+  '同心圓敬拜': ['tws 敬拜者使團', '同心圓', 'tws'],
+};
+
+// Boilerplate that's specific to ONE channel — e.g. 全心製作 HeartPro appends
+// the exact same album footer "《HIS70ry 齊唱。吳秉堅之歌。》自傳第一樂章。" to
+// every song in this series. Scoped to the exact artist string, so this can
+// never misfire on another channel's legitimate use of similar punctuation.
+const ARTIST_SCOPED_PHRASES = {
+  '全心製作 HeartPro': ['《HIS70ry 齊唱。吳秉堅之歌。》自傳第一樂章。', '見證'],
+  'Heavenly Melody': ['___跟天韻合唱團一起敬拜神', '__天韻合唱團'],
+};
+
 function escapeRegex(s) {
   return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+// \b anchors on any edge that starts/ends on an ASCII word char, so an
+// English phrase only matches a whole word — e.g. "preschool" must not eat
+// the "preschool" inside "Preschoolers", leaving a stray "ers" (\b is a
+// no-op on a CJK edge, where this kind of mid-word collision doesn't apply).
+function phraseRegex(phrase, flags = 'ig') {
+  const escaped = escapeRegex(phrase);
+  const left = /^\w/.test(phrase) ? '\\b' : '';
+  const right = /\w$/.test(phrase) ? '\\b' : '';
+  return new RegExp(`${left}${escaped}${right}`, flags);
 }
 
 // Longest-first everywhere below: a specific compound phrase (e.g. "兒童事工")
@@ -30,8 +66,7 @@ const DECORATIVE_PHRASES_SORTED = [...DECORATIVE_PHRASES].sort((a, b) => b.lengt
 function stripDecorative(s) {
   let out = s;
   for (const phrase of DECORATIVE_PHRASES_SORTED) {
-    const re = new RegExp(escapeRegex(phrase), 'ig');
-    out = out.replace(re, ' ');
+    out = out.replace(phraseRegex(phrase), ' ');
   }
   // A phrase strip can leave a bracket pair wrapping nothing (e.g. "【中英字幕】"
   // → "【 】"); collapse those rather than shipping an empty bracket.
@@ -39,6 +74,7 @@ function stripDecorative(s) {
     .replace(/【\s*】/g, ' ')
     .replace(/「\s*」/g, ' ')
     .replace(/『\s*』/g, ' ')
+    .replace(/《\s*》/g, ' ')
     .replace(/（\s*）/g, ' ')
     .replace(/\(\s*\)/g, ' ')
     .replace(/\[\s*\]/g, ' ');
@@ -48,7 +84,7 @@ function stripDecorative(s) {
 function normalizeForCompare(s) {
   return (s || '')
     .toLowerCase()
-    .replace(/[【】\[\]()（）「」『』"'.,，、。！？!?\-–—_/⧸|｜│:：~～*·•✝️🔥🙌🎶🪨#＃]+/g, '')
+    .replace(/[【】《》\[\]()（）「」『』"'.,，、。！？!?\-–—_/⧸|｜│:：~～*·•✝️🔥🙌🎶🪨#＃]+/g, '')
     .replace(/\s+/g, '')
     .trim();
 }
@@ -83,16 +119,26 @@ const GENERIC_LABEL_WORDS_SORTED = [...GENERIC_LABEL_WORDS].sort((a, b) => b.len
 function stripGenericLabels(s) {
   let out = s;
   for (const w of GENERIC_LABEL_WORDS_SORTED) {
-    const re = new RegExp(escapeRegex(w), 'ig');
-    out = out.replace(re, ' ');
+    out = out.replace(phraseRegex(w), ' ');
   }
   return out;
 }
 
-function removeArtistSubstring(title, artist) {
+// includeAliases is deliberately opt-in and used ONLY by isDecorativeFragment
+// (i.e. to help DECIDE whether a bracket-extraction candidate is safe), never
+// by the general title-mutation pass in cleanDisplayTitle. An alias can be
+// broad enough (e.g. "同心圓", a channel's short nickname) that blindly
+// substring-removing it from the WHOLE title — when bracket-extraction
+// itself didn't fire, because the rest of the title has real content that
+// isn't decorative — leaves fragments dangling around orphaned brackets/
+// pipes (see id 1847 test note) instead of a clean sentence. Restricting
+// aliases to the yes/no decision keeps the actual output text change scoped
+// to cases the bracket-extraction already validated as safe.
+function removeArtistSubstring(title, artist, includeAliases = false) {
   if (!artist) return title;
   let out = title;
-  const candidates = [artist.trim(), coreArtist(artist)].filter((s) => s && s.length >= 2);
+  const candidates = [artist.trim(), coreArtist(artist), ...(includeAliases ? (ARTIST_ALIASES[artist] || []) : [])]
+    .filter((s) => s && s.length >= 2);
   for (const cand of candidates) {
     // Escape + allow optional internal spaces to be flexible about spacing drift.
     // A trailing \d* (no whitespace before it) also eats a glued episode/album
@@ -116,7 +162,7 @@ function removeArtistSubstring(title, artist) {
 // "定睛在耶穌身上" sits outside the bracket — the reverse of the usual case).
 function isDecorativeFragment(fragment, artist) {
   let s = stripDecorative(fragment);
-  if (artist) s = removeArtistSubstring(s, artist);
+  if (artist) s = removeArtistSubstring(s, artist, true);
   s = stripGenericLabels(s);
   const stripped = normalizeForCompare(s);
   if (!stripped) return true;
@@ -166,10 +212,76 @@ function trimConnectors(s) {
     .replace(/^x\s+/i, '')
     // Whitespace left clinging to a bracket delimiter after a mid-string
     // removal, e.g. "（ 重投豐盛專輯）" → "（重投豐盛專輯）".
-    .replace(/([【「『（(\[])\s+/g, '$1')
-    .replace(/\s+([】」』）)\]])/g, '$1')
+    .replace(/([【「『《（(\[])\s+/g, '$1')
+    .replace(/\s+([】」』》）)\]])/g, '$1')
     .replace(/\s{2,}/g, ' ')
     .trim();
+}
+
+const BIBLE_BOOKS = [
+  '創世記', '出埃及記', '利未記', '民數記', '申命記', '約書亞記', '士師記', '路得記',
+  '撒母耳記', '列王紀', '歷代志', '以斯拉記', '尼希米記', '以斯帖記', '約伯記', '詩篇',
+  '箴言', '傳道書', '雅歌', '以賽亞書', '耶利米書', '耶利米哀歌', '以西結書', '但以理書',
+  '何西阿書', '約珥書', '阿摩司書', '俄巴底亞書', '約拿書', '彌迦書', '那鴻書', '哈巴谷書',
+  '西番雅書', '哈該書', '撒迦利亞書', '瑪拉基書', '馬太福音', '馬可福音', '路加福音',
+  '約翰福音', '使徒行傳', '羅馬書', '哥林多前書', '哥林多後書', '加拉太書', '以弗所書',
+  '腓立比書', '歌羅西書', '帖撒羅尼迦前書', '帖撒羅尼迦後書', '提摩太前書', '提摩太後書',
+  '提多書', '腓利門書', '希伯來書', '雅各書', '彼得前書', '彼得後書', '約翰一書', '約翰二書',
+  '約翰三書', '猶大書', '啟示錄', '妥拉',
+];
+
+// Generic scripture/worship-category labels — these show up as one whole
+// segment in a "l"-separated title (see splitOnLowercaseLPipe below) and are
+// never the song's own name, just a category tag.
+const SCRIPTURE_TAG_PHRASES = [
+  '敬拜詩歌', '經文詩歌', '敬拜之聲', '妥拉詩歌', '妥拉史詩', '節期詩歌', '原創詩歌',
+  '聖經詩歌', '聖經經文詩歌', '聖經經文', '聖經妥拉經文', '經文敬拜詩歌', '基督教詩歌', '詩篇大衛的詩歌', '詩歌',
+  'worship song', 'worship songs', 'scripture song', 'torah worship song',
+  'song of torah', 'new year song', 'song of david',
+];
+// Longest-first — same reason as DECORATIVE_PHRASES_SORTED above: 'worship
+// song' matching inside 'Worship Songs' first would strand a trailing "s".
+const SCRIPTURE_TAG_PHRASES_SORTED = [...SCRIPTURE_TAG_PHRASES].sort((a, b) => b.length - a.length);
+
+// A segment counts as a droppable tag if, once known category phrases and a
+// Bible-book + chapter/verse citation (e.g. "出埃及記1161") are stripped out,
+// nothing meaningful is left.
+function isScriptureTagSegment(segment) {
+  let s = segment;
+  for (const phrase of SCRIPTURE_TAG_PHRASES_SORTED) {
+    s = s.replace(phraseRegex(phrase), ' ');
+  }
+  for (const book of BIBLE_BOOKS) {
+    s = s.replace(new RegExp(`${escapeRegex(book)}[\\d:：\\-–—]*`, 'g'), ' ');
+  }
+  const stripped = normalizeForCompare(s);
+  return !stripped || /^\d+$/.test(stripped);
+}
+
+// Letter-spaced stylized text (e.g. "C h r i s  T o m l i n") produces the
+// exact same "single-char token between spaces" shape as a genuine "l" pipe —
+// bail out on that rather than mis-splitting it.
+function looksLetterSpaced(title) {
+  return /(?:\b\w\s){4,}\w\b/.test(title);
+}
+
+// 我心旋律 (and possibly other channels) use a lowercase " l " as a segment
+// separator across most of their titles, e.g. "敬畏祢的名 l Revere Your Name l
+// 聖經妥拉經文 出埃及記1161 l 敬拜詩歌 l Worship Song l Scripture Song l 經文詩歌".
+// Segment ORDER is inconsistent — sometimes the real (bilingual) song name
+// comes first, sometimes a tag like "敬拜詩歌" does (see id 388: "敬拜詩歌
+// l起初l Worship Song…", where the tag leads) — so this classifies each
+// segment as content vs. tag rather than assuming a fixed position, and keeps
+// every segment that isn't recognizably a tag. If nothing is recognized as a
+// tag at all, the split is abandoned (title returned unchanged) rather than
+// guessed at.
+function splitOnLowercaseLPipe(title) {
+  if (!/\bl\b/.test(title) || looksLetterSpaced(title)) return title;
+  const segments = title.split(/\s*\bl\b\s*/).map((s) => s.trim()).filter(Boolean);
+  if (segments.length < 2) return title;
+  const kept = segments.filter((seg) => !isScriptureTagSegment(seg));
+  if (!kept.length || kept.length === segments.length) return title;
+  return kept.join(' / ');
 }
 
 function looksBroken(candidate) {
@@ -186,10 +298,16 @@ function looksBroken(candidate) {
   // common real English word/title-starter ("I Surrender") that must not be
   // mistaken for this.
   if (/(^|\s)l(\s|$)/.test(candidate)) return true;
-  const pairs = [['【', '】'], ['「', '」'], ['『', '』'], ['（', '）'], ['(', ')'], ['[', ']']];
+  // Full-width and half-width parens are grouped together — scraped titles
+  // routinely mix them (e.g. "（Live)" or "(Live）"), so treating "（" and "("
+  // as strictly separate pair types flags pre-existing source-data quirks as
+  // if this function had broken something (see id 207-333 test note: a
+  // "（…「…」)" title with a half-width close got wrongly reverted to the
+  // untouched original even though nothing about the cleaning was wrong).
+  const pairs = [['【', '】'], ['「', '」'], ['『', '』'], ['《', '》'], ['（(', '）)'], ['[', ']']];
   for (const [open, close] of pairs) {
-    const o = (candidate.match(new RegExp(escapeRegex(open), 'g')) || []).length;
-    const c = (candidate.match(new RegExp(escapeRegex(close), 'g')) || []).length;
+    const o = (candidate.match(new RegExp(`[${open}]`, 'g')) || []).length;
+    const c = (candidate.match(new RegExp(`[${close}]`, 'g')) || []).length;
     if (o !== c) return true;
   }
   return false;
@@ -200,9 +318,23 @@ export function cleanDisplayTitle(rawTitle, artist = '') {
   const original = rawTitle.trim();
   let title = original;
 
-  // 1. Bracket extraction: a single 【..】/「..」 wrapping the real song name,
-  //    with purely decorative text (channel tag / duplicate artist) outside it.
-  const bracketMatch = title.match(/^(.*?)[【「](.+?)[】」](.*)$/);
+  // 0. Channel-specific fixed boilerplate (exact phrases known to be repeated
+  //    verbatim across every upload from this one artist) and the "l"-as-pipe
+  //    segment style some channels use — both rewrite the raw text before any
+  //    of the general-purpose steps below run.
+  for (const phrase of ARTIST_SCOPED_PHRASES[artist] || []) {
+    title = title.replace(phraseRegex(phrase), ' ');
+  }
+  title = splitOnLowercaseLPipe(title);
+
+  // 1. Bracket extraction: a single 【..】/「..」/《..》 wrapping the real song
+  //    name, with purely decorative text (channel tag / duplicate artist)
+  //    outside it. 《..》 doubles as this in some channels (a title-mark
+  //    wrapping the real name, e.g. "同心圓｜《盼祢捉緊我》｜TWS…") and as a
+  //    decorative album/series footer in others (e.g. "…《一粒麥子》專輯") —
+  //    the same before/after-must-be-decorative test used for 【】/「」
+  //    handles both correctly without special-casing which one it is.
+  const bracketMatch = title.match(/^(.*?)[【「《](.+?)[】」》](.*)$/);
   if (bracketMatch) {
     const [, before, inner, after] = bracketMatch;
     if (
@@ -214,7 +346,7 @@ export function cleanDisplayTitle(rawTitle, artist = '') {
     }
   }
 
-  // 2. Remove redundant artist-name occurrences.
+  // 2. Remove redundant artist-name occurrences (incl. known aliases).
   title = removeArtistSubstring(title, artist);
 
   // 3. Remove known decorative MV/format descriptors.

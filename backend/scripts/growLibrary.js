@@ -46,6 +46,7 @@ import { promisify } from 'util';
 import { openDb, saveDb, query, sleep, isCompilation, isNonWorship, dedupeByYoutubeId, acquireDbLock, releaseDbLock } from '../lib/hymnDb.js';
 import { resolveAudioUrl } from '../lib/resolveAudio.js';
 import { ACTIVE_GROUPS } from '../data/worshipGroups.js';
+import { cleanDisplayTitle } from '../lib/displayTitle.js';
 
 const exec = promisify(execCb);
 
@@ -411,11 +412,13 @@ async function discoverFromGroup(db, group, budget) {
     streak = 0;
 
     // 4. 四關全過,先至寫入 —— 呢一步先真正成為歌庫一部份。
+    // display_title 喺插入嗰刻就計埋(唔使再靠人手隔幾耐先補一次 batch),
+    // 新歌一入庫 UI 即刻見到乾淨嘅版本。
     if (!DRY) {
       db.run(
-        `INSERT INTO hymns_all (title, artist, category, youtube_id, lang, curated, status, last_checked, fail_streak)
-         VALUES (?, ?, ?, ?, ?, 1, 'ok', ?, 0)`,
-        [v.title, group.name, group.lang, v.id, group.lang, today()]
+        `INSERT INTO hymns_all (title, display_title, artist, category, youtube_id, lang, curated, status, last_checked, fail_streak)
+         VALUES (?, ?, ?, ?, ?, ?, 1, 'ok', ?, 0)`,
+        [v.title, cleanDisplayTitle(v.title, group.name), group.name, group.lang, v.id, group.lang, today()]
       );
       saveDb(db);
     }
