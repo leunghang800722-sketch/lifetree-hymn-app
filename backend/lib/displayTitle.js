@@ -59,6 +59,14 @@ const ARTIST_SCOPED_PHRASES = {
   // Source-data typo: this one row spells the artist "Hilsong" (missing an
   // "l") so the exact-match general pass never catches it.
   'Hillsong Kids': ['hilsong kids'],
+  // "Kari Jobe Carnes" in the title vs. DB artist "Kari Jobe" — this full
+  // form must be listed BEFORE the general pass's exact "Kari Jobe" match
+  // gets a chance to fire, or it strands a bare "Carnes".
+  'Kari Jobe': ['Kari Jobe Carnes'],
+  // 原始和聲's "真 敬拜瞬間" ("True Worship Moment", a series variant name) —
+  // the plain "敬拜瞬間" is already a general decorative phrase, but the "真"
+  // prefix survives on its own unless paired here.
+  '原始和聲': ['真 敬拜瞬間', '真敬拜瞬間', '真 · 敬拜瞬間'],
 };
 
 function escapeRegex(s) {
