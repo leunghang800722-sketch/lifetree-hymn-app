@@ -17,8 +17,11 @@ const DECORATIVE_PHRASES = [
   'dance version mv', "praise stream children's worship and praise",
   "praise stream children's worship", 'preschool', 'crossover',
   'official music video', 'official lyrics mv', 'official lyric video',
-  'official mv', 'official video', 'official audio',
+  'official ai music video', 'official mv', 'official video', 'official audio',
+  'offical lyrics video', 'offical music video', 'offical mv',
   'lyric video', 'lyrics video', 'live worship mv', 'cantonese version',
+  '現場敬拜', '现场敬拜', '堂會投稿', '堂会投稿', '廣東話版', '广东话版',
+  'demo cover', '敬拜瞬間', '敬拜瞬间', 'mv',
 ];
 
 // Known bilingual / short-nickname aliases for a DB `artist` value — added to
@@ -38,9 +41,24 @@ const ARTIST_ALIASES = {
 // the exact same album footer "《HIS70ry 齊唱。吳秉堅之歌。》自傳第一樂章。" to
 // every song in this series. Scoped to the exact artist string, so this can
 // never misfire on another channel's legitimate use of similar punctuation.
+// Order matters here (unlike the general lists elsewhere, this array isn't
+// auto-sorted) — put longer/more-specific phrases first so e.g. "盛曉玫詩歌
+// 默想" gets matched whole before "盛曉玫詩歌" can chop it up.
 const ARTIST_SCOPED_PHRASES = {
   '全心製作 HeartPro': ['《HIS70ry 齊唱。吳秉堅之歌。》自傳第一樂章。', '見證'],
   'Heavenly Melody': ['___跟天韻合唱團一起敬拜神', '__天韻合唱團'],
+  // 泥土音樂 is a label; its uploads all lead with the actual singer's name
+  // ("盛曉玫") + a generic "詩歌"/"詩歌默想" ("hymn"/"hymn meditation") tag —
+  // the DB artist string is the label, not this singer, so the general
+  // artist-substring pass never catches it.
+  '泥土音樂': ['盛曉玫詩歌默想', '盛曉玫 詩歌默想', '盛曉玫詩歌', '盛曉玫 詩歌'],
+  '天弦音樂事工': ['gsus music ministry'],
+  '共享詩歌ShareHymns': ['共享詩歌'],
+  'CJ and Friends': ['cj & friends'],
+  'KEC Worship': ['歌鄰敬拜'],
+  // Source-data typo: this one row spells the artist "Hilsong" (missing an
+  // "l") so the exact-match general pass never catches it.
+  'Hillsong Kids': ['hilsong kids'],
 };
 
 function escapeRegex(s) {
@@ -143,9 +161,11 @@ function removeArtistSubstring(title, artist, includeAliases = false) {
     // Escape + allow optional internal spaces to be flexible about spacing drift.
     // A trailing \d* (no whitespace before it) also eats a glued episode/album
     // number like "團契遊樂園3" — but NOT "ACM 2012" (space before the digits
-    // means it's a separate token, e.g. a year, and stays untouched).
+    // means it's a separate token, e.g. a year, and stays untouched). A
+    // trailing possessive 's/’s (e.g. "Yancy's Annual...") is glued the same
+    // way and would otherwise strand a bare "'s" once the name is gone.
     const pattern = escapeRegex(cand).replace(/\\ /g, '\\s*');
-    const re = new RegExp(`${pattern}\\d*`, 'ig');
+    const re = new RegExp(`${pattern}(?:['’]s)?\\d*`, 'ig');
     out = out.replace(re, ' ');
   }
   return out;
@@ -178,6 +198,11 @@ function isDecorativeFragment(fragment, artist) {
 // "…（基督教詩歌".
 function trimConnectors(s) {
   return s
+    // A run of trailing "#word" hashtags (social-media metadata, e.g.
+    // "#worship #singwithme #onewayjesus #hillsong") is never part of the
+    // song's own name — but a bare "#" mid-title (rare, decorative musical
+    // sharp sign) is left alone since this only matches at the true end.
+    .replace(/(?:\s*#[\w一-鿿]+)+\s*$/, '')
     .replace(/^[\s\-–—|｜│:：·•,，、/⧸_&]+/, '')
     .replace(/[\s\-–—|｜│:：·•,，、/⧸_&]+$/, '')
     // A comma/、/&/"and" sitting right next to a dash or pipe is what's left
@@ -206,7 +231,10 @@ function trimConnectors(s) {
     // as when "獨一拯救 | SON Music | ft. …" has "SON Music" removed →
     // "獨一拯救 |  | ft. …" — the artist sat directly between two separators,
     // so nothing real is left between them; collapse the whole run to one.
-    .replace(/([-–—|｜│])(?:\s*[-–—|｜│])+/g, '$1')
+    // Includes "/" for the same reason — a "/"-joined list like "除祢以外 /
+    // 讚美之泉 / 注目看耶穌" with the artist-name entry removed would
+    // otherwise leave a dangling "/  /" empty slot.
+    .replace(/([-–—|｜│/⧸])(?:\s*[-–—|｜│/⧸])+/g, '$1')
     // "X" as a bare connector word ("團A X 團B" = "A crossover B") orphaned at
     // the very front once the leading artist name is gone.
     .replace(/^x\s+/i, '')
@@ -304,10 +332,17 @@ function looksBroken(candidate) {
   // if this function had broken something (see id 207-333 test note: a
   // "（…「…」)" title with a half-width close got wrongly reverted to the
   // untouched original even though nothing about the cleaning was wrong).
+  // Counts by escaped-literal alternation, not a `[...]` character class —
+  // building a class from a single "]" produces the SOURCE STRING "[]]",
+  // which JS parses as an EMPTY class "[]" (matches nothing, ever) followed
+  // by a stray literal "]", so it silently never counted a single closing
+  // "]" correctly. That made every title containing "[...]" (e.g. "Stay
+  // [停留]", "[堂會投稿]", "SON Music [我向祢禱告]") register as permanently
+  // unbalanced and get reverted to the untouched original no matter what.
   const pairs = [['【', '】'], ['「', '」'], ['『', '』'], ['《', '》'], ['（(', '）)'], ['[', ']']];
   for (const [open, close] of pairs) {
-    const o = (candidate.match(new RegExp(`[${open}]`, 'g')) || []).length;
-    const c = (candidate.match(new RegExp(`[${close}]`, 'g')) || []).length;
+    const o = (candidate.match(new RegExp(open.split('').map(escapeRegex).join('|'), 'g')) || []).length;
+    const c = (candidate.match(new RegExp(close.split('').map(escapeRegex).join('|'), 'g')) || []).length;
     if (o !== c) return true;
   }
   return false;
