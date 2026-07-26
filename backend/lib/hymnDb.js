@@ -92,6 +92,11 @@ export function isCompilation(title = '') {
     // Asia for JESUS 仲有網上課程/學院內容(「Kingdom Culture Online
     // Academy」),同天韻兒童踩過嗰條「作詞課」教學片同一類問題。
     'academy',
+    // 2026-07-26 追加(discover Yancy 兒童頻道實測踩過):「What more
+    // churches should be doing! Convo about Hosting Special Events with
+    // Yancy + Brooke Gibson.」係訪談片唔係歌。backlog 得返多一條同類
+    // (「...Interview with Canaan Baca...」),零誤殺風險。
+    'convo', 'interview',
   ].some((p) => t.includes(p));
   // "…15首" / "…精选20首" — N songs in one video.
   const nSongs = /\d+\s*首/.test(title);

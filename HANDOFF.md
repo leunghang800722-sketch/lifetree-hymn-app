@@ -15,7 +15,7 @@
 | 最新版本 | **versionName 1.3.8 / versionCode 49**（commit `f7a249e`）。APK 喺 `~/Desktop/詩歌App/` |
 | 分支 | `feature/player-rebuild`（未 merge 返 `develop-v211`） |
 | 後端 | 跑喺 **Eric 部 Mac**，`https://api.god-music.com`（Cloudflare named tunnel，固定 URL）。backend + tunnel 由 launchd 自動管理，登入就行、死咗自動起返 |
-| 歌庫 | `hymns_all` 1809 首，**curated 799 首**（粵 328 / 國 321 / 兒童 88 / 英 62）。歌詞：verified 10、draft 19、未有 740 |
+| 歌庫 | `hymns_all` 1809 首，**curated 841 首**（粵 339 / 國 346 / 兒童 94 / 英 62）。歌詞：verified 10、draft 19、未有 740 |
 | 背景 job | growLibrary（每 15 分鐘擴歌庫）、checkDeadLinks（每晚 04:00）、fetchLyrics（每晚 04:20） |
 | 前端 stack | Expo SDK 56 / RN 0.85.3、react-native-track-player v4、@gorhom/bottom-sheet + reanimated 4、MMKV |
 | 後端 stack | Node 18 ESM + Express 4、SQLite via `sql.js`、`yt-dlp` |
@@ -229,3 +229,20 @@ tail -f /tmp/hymn_growlibrary.log /tmp/hymn_deadlink.log /tmp/hymn_backend.log
 # 改完 DB 要 reload backend
 launchctl kickstart -k gui/$(id -u)/com.hymnapp.backend
 ```
+
+### ✅ 2026-07-25→26 兒童組增長卡死 — 已落地(local_fa531849)
+
+**診斷(Fable 5):** 兒童組 88 首後停——13 個團體得 4 個有 channel,3 個高產嘅已食盡
+「最新 30 條」listing 窗口,中文兒童團體 channel 全部 null。
+
+**已落地(A1/A2/A3/B 全做,反面清單全部冇加):**
+- 「讚美之泉兒童」channel: null → `@StreamofPraiseKids`(已驗證,官方獨立兒童頻道)
+- 新增「CJ and Friends」`@cjandfriends`、「Yancy」`@yancynotnancy`(兩個都已驗證)
+- `discoverFromGroup` 淺層(30)fresh=0 先加深到 200 先放棄,平時淺層夠嘅頻道唔使加大請求
+- Yancy 實測踩到多一個漏洞:訪談片("Convo about Hosting..." / "Interview with...")
+  唔係歌,加咗 `convo`/`interview` keyword(backlog regression 0 誤殺)
+- C(per-group titleMustMatch)未做,留返日後
+
+**驗收結果(真實 kickstart,唔係 dry run):** 兒童 88 → 94(+6,新增 Yancy 3 首 + 讚美之泉
+兒童 3 首,CJ and Friends 已驗證會揀中但呢輪未輪到),全庫 799 → 841。歌手數由 4 個 → 6 個。
+Regression check 對全庫 841 首,0 誤殺。

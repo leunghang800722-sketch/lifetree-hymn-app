@@ -193,3 +193,12 @@ discover 每個 tick 都準時觸發，但「已收錄最少優先」揀中嘅�
 listing」呢個方案**對兒童仍然有效、未落地**，建議下一個落地 session 跟。粵/國由於今次
 filter fix 令健康頻道(611 Worship/Endless Worship/CantonHymn 等)重新收得，短期內未必再撞
 listing 深度樽頸，暫時擱置咗遞進加深呢個方向。
+
+**2026-07-26 09:xx 落地 session 執行兒童組方案（local_fa531849）：**
+Fable 5 診斷 + 已驗證嘅 A1/A2/A3/B 全部落地：讚美之泉兒童 channel null→`@StreamofPraiseKids`；
+新增 CJ and Friends、Yancy；discoverFromGroup 淺層 fresh=0 先加深到 200。反面清單
+（@gofishguys/@amberskyrecords/@orangekidsmusic 404；@hkacm_worship 成人主頻道）全部冇加。
+過程中額外實測踩到：Yancy 頻道夾雜訪談片（"Convo about Hosting..."），加咗 `convo`/`interview`
+keyword（backlog regression 0 誤殺）。真實 kickstart（唔係 dry run）confirm：兒童 88→94，
+歌手數 4→6，全庫 799→841，regression 0 誤殺。CJ and Friends 已驗證會揀中（dry run 2/2 成功）
+但真實 run 呢輪未輪到，下一輪隨機 tiebreak 應該會到。

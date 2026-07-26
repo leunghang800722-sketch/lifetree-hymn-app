@@ -362,17 +362,25 @@ async function discoverFromGroup(db, group, budget) {
   // 都係由頭攞嗰個頻道**最新**嗰幾條,budget 細嘅話,dedup 幾次之後
   // 呢幾條片就會全部見過,之後永遠 fresh.length=0,睇落好似個團體「攞晒」
   // 但其實個頻道仲有排片喺後面攞唔到。攞多啲(至少 30)確保有得揀好幾晚。
-  let listing;
-  try {
-    listing = await listChannelVideos(group.channel, Math.max(budget * 5, 30));
-  } catch (e) {
-    log(`    頻道列表攞唔到:${e?.message || e}`);
-    return { added: 0, tried: 0 };
-  }
-  if (!listing.length) { log('    呢個頻道搵唔到片,可能 handle 舊咗'); return { added: 0, tried: 0 }; }
-
+  // ⚠️ 2026-07-26 Fable 5 診斷兒童組卡死:淺層(30)都唔夠 —— Listener
+  // Kids/Hillsong Kids/Kids on the Move 各有成百條舊片,--flat-playlist
+  // 淺層淨係攞到最新嗰 30,dedup 幾晚就全部見過。而家淺層 fresh=0 先
+  // 加深到 200 先放棄(唔係每次都攞 200 —— 平時淺層已經夠嘅頻道唔使
+  // 加大 YouTube 請求量,淨係真係「攞晒」嘅先加深)。
   const existing = new Set(query(db, `SELECT youtube_id FROM hymns_all`).map((r) => r.youtube_id));
-  const fresh = listing.filter((v) => v.id && !existing.has(v.id));
+  let listing = [], fresh = [];
+  for (const depth of [Math.max(budget * 5, 30), 200]) {
+    try {
+      listing = await listChannelVideos(group.channel, depth);
+    } catch (e) {
+      log(`    頻道列表攞唔到:${e?.message || e}`);
+      return { added: 0, tried: 0 };
+    }
+    if (!listing.length) { log('    呢個頻道搵唔到片,可能 handle 舊咗'); return { added: 0, tried: 0 }; }
+    fresh = listing.filter((v) => v.id && !existing.has(v.id));
+    if (fresh.length > 0) break;
+    log(`    淺層(${depth} 條)全部見過,加深搜尋…`);
+  }
   log(`    頻道列出 ${listing.length} 條,${fresh.length} 條未收錄過`);
 
   let added = 0, tried = 0, streak = 0;

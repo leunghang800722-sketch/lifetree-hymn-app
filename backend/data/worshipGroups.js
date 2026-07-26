@@ -131,7 +131,10 @@ export const GROUPS = [
   // 見 growLibrary.js 頂部註解) ──
   // priority 4 = runner 已經准揀,但全部 inPool:false,實際要等 discover mode
   // 接埋搜尋邏輯先會有歌收錄(見上面 priority 意思段)。
-  { name: '讚美之泉兒童',      aliases: ['讚美之泉兒童'],            lang: '兒童', priority: 4, inPool: false, channel: null,               est: 100, kidsLang: '國語' },
+  // 2026-07-26:Fable 5 監督診斷 + 已 yt-dlp 實測 —— 兒童組 13 個團體得
+  // 4 個有 channel,中文兒童團體全部 null,兒童組實質純英文。呢個係官方
+  // 獨立兒童頻道(唔係讚美之泉成人主頻道),實測 ≥100 條,全部兒童敬拜 MV。
+  { name: '讚美之泉兒童',      aliases: ['讚美之泉兒童'],            lang: '兒童', priority: 4, inPool: false, channel: '@StreamofPraiseKids', est: 100, kidsLang: '國語' },
   { name: '611 Kids Worship', aliases: ['611 Kids'],               lang: '兒童', priority: 4, inPool: false, channel: null,               est: 30,  kidsLang: '粵語/國語' },
   // 2026-07-23:下面 3 個 channel 用 yt-dlp 逐個實測,發現都係錯嘅,已經
   // 拆走 handle 改返 null(等日後搵到真.兒童子頻道先補),原因:
@@ -170,6 +173,13 @@ export const GROUPS = [
   { name: 'Listener Kids',    aliases: ['Listenn Kids', 'Listener Kids'],           lang: '兒童', priority: 4, inPool: false, channel: '@listenerkids', est: 60, kidsLang: '英文', note: '原始資料寫「Listenn Kids」,相信手民之誤,已驗證 @listenerkids 至少60條片' },
   { name: "God's Awesome Kids", aliases: ["God's Awesome Kids"],                    lang: '兒童', priority: 4, inPool: false, channel: null, est: 10, kidsLang: '粵語', note: '網上搜尋唔到,搵返到先補' },
   { name: 'Kids on the Move', aliases: ['Kids on the Move'],                        lang: '兒童', priority: 4, inPool: false, channel: '@KidsontheMove', est: 60, kidsLang: '英文', note: 'Eric 提過但原始資料冇,已搵到並驗證 @KidsontheMove(Church on the Move 兒童事工)至少60條片' },
+  // 2026-07-26:Fable 5 診斷兒童組卡死(13個團體得4個有channel)之後加嘅
+  // 兩個,已 yt-dlp 實測:
+  { name: 'CJ and Friends',   aliases: ['CJ and Friends'],                          lang: '兒童', priority: 4, inPool: false, channel: '@cjandfriends', est: 60, kidsLang: '英文', note: '2026-07-26 已驗證,兒童敬拜dance/sing-along內容' },
+  // ⚠️ Yancy 個頻道夾雜清談/merch 推廣片(例如「Convo about Hosting
+  // Special Events」),唔淨係歌 —— 靠現有 passesQuality() 篩,冇專門加
+  // keyword,留意實際收錄率。
+  { name: 'Yancy',            aliases: ['Yancy'],                                   lang: '兒童', priority: 4, inPool: false, channel: '@yancynotnancy', est: 30, kidsLang: '英文', note: '2026-07-26 已驗證,但頻道夾雜清談/推廣片,靠quality filter篩,收錄率可能唔算高' },
 ];
 
 // 2026-07-20:priority <= 4(粵/國/英/兒童全部已拍板)。
