@@ -169,3 +169,27 @@ writer 嘅嘢。兩個都係細改，建議今日內落地，聽朝 04:20 壓測
 一個 request 就攞到，成本極低）；② 同步考慮幫 inPool:true 嗰批團體（ACM/玻璃海/讚美之泉等）
 重行 search import 補 curate pool（而家粵/國 0 首可揀）。唔急（辦公時間封鎖窗到 18:30，
 之前都冇得 run），但今晚 18:30 前唔落地嘅話今晚增長會係 0。
+
+**2026-07-26 09:xx 落地 session 覆查「觀察項2」— 真正主因唔係 listing 深度，係 filter 誤殺（local_fa531849）：**
+Eric 直接問點解全日 0 增長，逐個排除（唔係封鎖窗、唔係 job 冇 run），查到粵/國/兒童
+discover 每個 tick 都準時觸發，但「已收錄最少優先」揀中嘅頻道**大量 0 條試得**，同觀察項2
+講嘅「listing 窗口耗盡」表徵一樣。深查落去，真正主因係另一樣，比 listing 深度嚴重好多：
+- **`isCompilation()` 嘅 `專輯`/`album`（冇「全」字）誤殺咗 backlog 78 首正常單曲** ——
+  「OO Track N of Mini-Album」呢類係「呢首歌出自邊隻碟」嘅正常署名，唔代表條片本身係
+  成隻碟。查證：現有 curated 全庫入面「專輯/album」命中數 = **0**（呢個 keyword 由一開始
+  已經喺度，即係話呢個 filter 靜靜哋擋咗好耐都未必淨係今日）。已改成淨係擋 `全碟`/`全專輯`
+  （加返英文對應 `full album`），regression 對 799 首 curated 做過，0 誤殺；78 首入面
+  73 首而家過到（剩低 5 首係真.合輯，繼續正確擋住）。
+- **discover 嘅 fallthrough 上限（`attemptsLeft = 3`）冚唔到細候選名單** —— 國語得 5 個
+  未吸納團體、兒童得 4 個，3 個試晒都跳唔出個「持續低產 bottom-3」（611靈糧堂/Asia for
+  JESUS/台北復興堂；Saddleback/Listener/Hillsong Kids），永遠去唔到健康嘅 611 Worship /
+  Kids on the Move。改成「呢個語言有幾多候選就試幾多」，冇上限但都唔會加大 resolve 呼叫量
+  （淨係列表 call，攞唔到嘢嘅唔算 resolve）。
+- **Listener Kids / Saddleback Kids 個別歌名帶「Compilation/Greatest Hits/1 Hour」**——
+  補埋 `full album`/`1 hour`（單數，原本 `hours` 得複數形式）先擋到。
+
+**結果：769 → 799（+30），真實 kickstart 逐輪 confirm 過，粵/國兩個語言由完全停擺變返正常
+增長。** 兒童（88 首）而家 4 個團體 30-deep listing 全部 fresh=0，觀察項2 講嘅「加深
+listing」呢個方案**對兒童仍然有效、未落地**，建議下一個落地 session 跟。粵/國由於今次
+filter fix 令健康頻道(611 Worship/Endless Worship/CantonHymn 等)重新收得，短期內未必再撞
+listing 深度樽頸，暫時擱置咗遞進加深呢個方向。

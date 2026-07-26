@@ -15,7 +15,7 @@
 | 最新版本 | **versionName 1.3.8 / versionCode 49**（commit `f7a249e`）。APK 喺 `~/Desktop/詩歌App/` |
 | 分支 | `feature/player-rebuild`（未 merge 返 `develop-v211`） |
 | 後端 | 跑喺 **Eric 部 Mac**，`https://api.god-music.com`（Cloudflare named tunnel，固定 URL）。backend + tunnel 由 launchd 自動管理，登入就行、死咗自動起返 |
-| 歌庫 | `hymns_all` 1809 首，**curated 769 首**（粵 316 / 國 303 / 兒童 88 / 英 62）。歌詞：verified 10、draft 19、未有 740 |
+| 歌庫 | `hymns_all` 1809 首，**curated 799 首**（粵 328 / 國 321 / 兒童 88 / 英 62）。歌詞：verified 10、draft 19、未有 740 |
 | 背景 job | growLibrary（每 15 分鐘擴歌庫）、checkDeadLinks（每晚 04:00）、fetchLyrics（每晚 04:20） |
 | 前端 stack | Expo SDK 56 / RN 0.85.3、react-native-track-player v4、@gorhom/bottom-sheet + reanimated 4、MMKV |
 | 後端 stack | Node 18 ESM + Express 4、SQLite via `sql.js`、`yt-dlp` |
@@ -91,6 +91,11 @@ Zeabur 嘅 datacenter IP **已經被封死**（實測 5/5 全部 `Sign in to con
   兩次都係同一種坑：**打和要 `Math.random()`，唔好靠 stable sort 嘅次序。**
 - 斷路器**唔可以淨係數連續失敗** —— 要攞一首已收錄、驗過 work 嘅歌做**對照探測**，
   對照拎到就繼續行（唔係俾 block，只係撞到一批死片）。
+- **`isCompilation()` 嘅關鍵字唔可以太闊。** `專輯`/`album`（冇「全」字）曾經誤殺
+  backlog **78 首**正常單曲（「OO Track N of Mini-Album」呢類係「呢首歌出自邊隻碟」嘅
+  正常署名，唔代表條片本身係成隻碟；同一原因 `學院` 誤殺過一首歌名順帶提到「XX神學院」
+  嘅正常詩歌）。淨係擋真正嘅整隻碟訊號（`全碟`/`全專輯`/`Full Album`），加新關鍵字之前
+  一定要 `SELECT ... WHERE curated=0 AND title LIKE '%關鍵字%'` 對成個 backlog 查一次先落。
 
 ### 2.5 launchd 背景 job
 

@@ -467,13 +467,20 @@ async function runDiscoverAll(db, totalBudget) {
   // 成個語言嘅 discover 就咁卡死(2026-07-23 夜晚實測:三個語言 slot
   // 全部卡晒,由 23:24 到朝早成晚 0 首)。而家一個頻道連「試」都試唔到
   // 一條(listing 失敗/冇新片/全部俾分類篩走)—— 即係 budget 一啖都未
-  // 使過 —— 就即場跳去同語言下一個團體,最多試 3 個。有真.試過(唔理
-  // 收唔收到)先算用咗個 slot,唔會加大對 YouTube 嘅實際請求量。
+  // 使過 —— 就即場跳去同語言下一個團體。有真.試過(唔理收唔收到)先算
+  // 用咗個 slot,唔會加大對 YouTube 嘅實際請求量。
+  // ⚠️ 2026-07-26 追加修:原本硬寫死「最多試 3 個」,但國語得 5 個候選、
+  // 兒童得 4 個 ——實測 Eric 問「點解全日 0 增長」揪出嚟:粵/國/兒童三個
+  // 語言嘅「已收錄最少」bottom-3 剛好全部係持續低產嘅頻道(611靈糧堂/
+  // Asia for JESUS/台北復興堂;Saddleback/Listener/Hillsong Kids),
+  // 3 個試晒都仲係 0,但 3 已經係國語/兒童成個候選名單嘅六成幾,冚唔到
+  // 剩低嗰 1-2 個健康候選(611 Worship/新心音樂事工;Kids on the Move)。
+  // 改做「呢個語言有幾多候選就試幾多」(冇上限跳過任何一個),確保一定
+  // 唔會漏低仲有嘢俾嘅團體。粵語 15 個團體全試都係 15 次列表 call,
+  // 一樣平,唔會加大 resolve 呼叫量(淨係試唔到嘅唔算 resolve)。
   let added = 0;
   for (const candidates of langCandidates) {
-    let attemptsLeft = 3;
     for (const group of candidates) {
-      if (attemptsLeft-- <= 0) break;
       const r = await discoverFromGroup(db, group, perGroup);
       added += r.added;
       if (r.tried > 0) break;

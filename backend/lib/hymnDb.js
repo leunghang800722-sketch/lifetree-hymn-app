@@ -49,15 +49,27 @@ export const COMPILATION_PATTERNS = [
 export function isCompilation(title = '') {
   const t = title.toLowerCase();
   const hit = [
-    '全碟', '全專輯', '專輯', '合輯', '合集', '詩歌集',
+    // ⚠️ 2026-07-26 查證(Eric 追問「點解成日0增長」揪出嚟):原本呢度有
+    // 淨係「專輯」/「album」(冇「全」字),實測導致 backlog **78 首**正常
+    // 單曲被誤殺 —— 「OO Track N of Mini-Album」、「XX詩歌專輯 6幸福」
+    // 呢類係「呢首歌出自邊隻碟」嘅正常署名,唔代表條片本身係成隻碟。
+    // 真正要擋嘅係「全碟/全專輯」(成隻碟一條片),已經有咗,唔可以再撞
+    // 埋淨係「專輯/album」——留低會誤殺幾乎所有官方發行單曲。
+    '全碟', '全專輯', '合輯', '合集', '詩歌集',
     // Found in the first curation pass: 11 of 143 curated songs were actually
     // multi-song compilations titled like "精选【天韵合唱团】...赞美诗歌15首（二）"
     // or "小羊诗歌 精选20首". They play, so acceptance wouldn't catch them — but
     // one "song" being 15 songs is not a hymn library.
     '精选', '精選', '热门', '熱門', '串烧', '串燒',
-    'top 100', 'top100', 'best of', 'ultimate', 'playlist', 'album',
+    'top 100', 'top100', 'best of', 'ultimate', 'playlist',
     'listen through', 'non stop', 'nonstop', 'medley', 'compilation',
     '小時', 'hours', 'greatest hits',
+    // ⚠️ 2026-07-26 追加:攞走「album」單字之後,English 版「全碟」冇晒
+    // 對應嘅信號——實測 Hillsong Kids「Piano Lullabies (Full Album) |
+    // Hillsong Kids (1 Hour Peaceful Worship)」漏網(「hours」得複數形式,
+    // 呢條係單數「1 Hour」)。加返「full album」(等於「全專輯」嘅英文版,
+    // 冇「專輯」單字咁廣義,窄而準)同單數「1 hour」。
+    'full album', '1 hour',
     // 2026-07-23 追加(查 ROLCC 順手撞到,唔係呢個頻道專屬):「最佳」/
     // 「推荐经典」呢類推介框架同「熱門」/「精选」係同一類 best-of 合輯,
     // 之前得「熱門/精选」冇埋呢兩個,漏咗一條 1h17m 嘅合輯冒充單曲。
@@ -66,7 +78,12 @@ export function isCompilation(title = '') {
     // 「宣教月｜一個成全他人夢想的教會｜王亞辰牧師」冇歌名,淨係主題+
     // 講員頭銜(牧師/傳道係中文講道嘅標準署名格式)。現有 520 首 curated
     // 撞呢兩個字嘅得返呢一條,零誤殺風險。
-    '牧師', '傳道', '講座', '會長', '師母', '學院',
+    // ⚠️ 2026-07-26 追加:「學院」原本淨係兩個字,discover 鹹蛋音樂事工
+    // 實測撞到假陽性——「若未來留白...（建道神學院「___to the future
+    // 青年會議」主題曲）」係正常歌,「建道神學院」淨係鳴謝／出處,唔係話
+    // 條片本身係學院課程。收窄做「線上學院」,先啱得返原本想擋嘅
+    // 「天國文化線上學院」呢類真.網課。
+    '牧師', '傳道', '講座', '會長', '師母', '線上學院',
     // Asia for JESUS「WE R ONE Worship｜Revival X Radical｜Alleluia、
     // Shout For Freedom、10000 Armies…」呢類係大型特會現場全場敬拜
     // 錄影(一條片入面連唱幾首),用返佢哋自己嘅活動品牌名做訊號
