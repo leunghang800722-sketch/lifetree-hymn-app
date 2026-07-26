@@ -21,7 +21,7 @@ const DECORATIVE_PHRASES = [
   'offical lyrics video', 'offical music video', 'offical mv',
   'lyric video', 'lyrics video', 'live worship mv', 'cantonese version',
   '現場敬拜', '现场敬拜', '堂會投稿', '堂会投稿', '廣東話版', '广东话版',
-  'demo cover', '敬拜瞬間', '敬拜瞬间', 'mv',
+  'demo cover', '敬拜瞬間', '敬拜瞬间', 'mv', 'demo',
 ];
 
 // Known bilingual / short-nickname aliases for a DB `artist` value — added to
