@@ -15,7 +15,7 @@
 | 最新版本 | **versionName 1.3.8 / versionCode 49**（commit `f7a249e`）。APK 喺 `~/Desktop/詩歌App/` |
 | 分支 | `feature/player-rebuild`（未 merge 返 `develop-v211`） |
 | 後端 | 跑喺 **Eric 部 Mac**，`https://api.god-music.com`（Cloudflare named tunnel，固定 URL）。backend + tunnel 由 launchd 自動管理，登入就行、死咗自動起返 |
-| 歌庫 | `hymns_all` 1809 首，**curated 841 首**（粵 339 / 國 346 / 兒童 94 / 英 62）。歌詞：verified 10、draft 19、未有 740 |
+| 歌庫 | `hymns_all` 1809+ 首，**curated 1480 首**（粵 593 / 國 556 / 兒童 269 / 英 62）。歌詞：verified 10、draft 19、未有 740 |
 | 背景 job | growLibrary（每 15 分鐘擴歌庫）、checkDeadLinks（每晚 04:00）、fetchLyrics（每晚 **01:00 + 05:00 兩個時段**，各 CC 50 + OCR 40，2026-07-27 Eric 拍板 80 首/晚拆半） |
 | 前端 stack | Expo SDK 56 / RN 0.85.3、react-native-track-player v4、@gorhom/bottom-sheet + reanimated 4、MMKV |
 | 後端 stack | Node 18 ESM + Express 4、SQLite via `sql.js`、`yt-dlp` |
@@ -204,10 +204,10 @@ ops/launchd/             五個 plist 嘅版本控制副本 + README checklist
 | **YouTube 版權** | Eric 決定等有用戶量（目標 1000 人）先傾。⚠️ 1000 用戶 ≈ 50-100 人同時 = 啱啱好踩到呢個 setup 上限 |
 | **歌詞版權路線** | `LYRICS-PIPELINE-PLAN.md` 出咗 A/B/C 三條路，未揀。實測 CC 字幕命中率極低，主力要 OCR |
 | **OCR 歌詞質素參差** | 抽查 4 首：1 首乾淨、3 首有認錯字／YouTube UI 文字混入。方案見 `docs/SUPERVISION-LOG.md` |
-| **growLibrary 飽和** | listing 只攞到最新 30 條，窗口耗盡。方案：遞進加深 listing（30→100→200） |
 | **`sql.js` 寫入唔 persist** | server 開機讀一次入記憶體、從來冇寫返落 disk → **用戶註冊功能實質係壞嘅**（restart 就冇咗）。維護腳本自己 `export()` 所以冇事 |
 | **The Altar / 兒童合集團體** | 搵唔到官方 channel，等 Eric 提供連結 |
 | **API response format 不一致** | `/api/hymns` 返 `{data:[...]}`、home routes 直接返 array |
+| **`isCompilation()` 冇「正面確認係歌」呢一步** | 純 blocklist 設計，淨係識擋已知負面關鍵字，「What Makes Truth True?」「God's Animal - X | Preschool」呢類題目式/教學式標題完全冇撞任何負面詞，會漏網。2026-07-27 Kids on the Move 實測：87 首入面 83 首（95%）係兒童聖經教育節目唔係歌，冇一條撞到現有 filter。已 delist 83 首 + 拆走個 channel，但**架構性缺口未解決**——加新 channel 前嘅人手抽查只 sample 幾條最新標題，唔夠代表性。交 Fable 5 監督 session 診斷方案（唔使即刻大改，記錄喺 `docs/SUPERVISION-LOG.md`）。|
 
 ---
 

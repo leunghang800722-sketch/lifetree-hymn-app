@@ -172,7 +172,18 @@ export const GROUPS = [
   { name: '共享詩歌兒童版',    aliases: ['共享詩歌兒童版', 'ShareHymns Kids'],       lang: '兒童', priority: 4, inPool: false, channel: null, est: 10, kidsLang: '粵語', note: '搵唔到獨立子頻道,只有母頻道 @WeShareHymns(已 inPool),待補' },
   { name: 'Listener Kids',    aliases: ['Listenn Kids', 'Listener Kids'],           lang: '兒童', priority: 4, inPool: false, channel: '@listenerkids', est: 60, kidsLang: '英文', note: '原始資料寫「Listenn Kids」,相信手民之誤,已驗證 @listenerkids 至少60條片' },
   { name: "God's Awesome Kids", aliases: ["God's Awesome Kids"],                    lang: '兒童', priority: 4, inPool: false, channel: null, est: 10, kidsLang: '粵語', note: '網上搜尋唔到,搵返到先補' },
-  { name: 'Kids on the Move', aliases: ['Kids on the Move'],                        lang: '兒童', priority: 4, inPool: false, channel: '@KidsontheMove', est: 60, kidsLang: '英文', note: 'Eric 提過但原始資料冇,已搵到並驗證 @KidsontheMove(Church on the Move 兒童事工)至少60條片' },
+  // 2026-07-27:Eric 截圖揪出,人手逐條(87首)睇晒 channel 內容,confirm 咗
+  // 呢個 channel **本質係兒童聖經教育/品格節目**,唔係詩歌台 —— 87 首入面
+  // 淨係 4 首係明確嘅歌(有 Lyric Video/♫ 標記),其餘 83 首係「God's Animal
+  // | Preschool」動物知識show、「Bible Story」/「Parafries」故事集、
+  // 「Let's Talk About X」/「What is X?」討論教學segment、角色skit
+  // (Eggward 等)、Advent devotional、經文解釋、Supercut 合輯 ——
+  // 呢啲 titles 完全冇撞任何 isCompilation() 嘅負面關鍵字(冇「合輯/講座/
+  // 見證」呢類字眼),純粹因為題目式標題唔似歌名先俾人手睇得出。83 首
+  // 已經 `curated=0`(reversible),淨返嗰 4 首明確歌保留。channel 拆走
+  // 改 null,唔好再俾 discover mode 挖(尤其而家個 mechanism 淺層搵唔到
+  // 會自動深挖到 200,只會挖多更多同類非詩歌內容)。
+  { name: 'Kids on the Move', aliases: ['Kids on the Move'],                        lang: '兒童', priority: 4, inPool: false, channel: null, est: 4, kidsLang: '英文', note: '2026-07-27 拆走channel——實測87首入面83首唔係歌(兒童聖經教育節目,唔係詩歌台),已delist,唔好再discover' },
   // 2026-07-26:Fable 5 診斷兒童組卡死(13個團體得4個有channel)之後加嘅
   // 兩個,已 yt-dlp 實測:
   { name: 'CJ and Friends',   aliases: ['CJ and Friends'],                          lang: '兒童', priority: 4, inPool: false, channel: '@cjandfriends', est: 60, kidsLang: '英文', note: '2026-07-26 已驗證,兒童敬拜dance/sing-along內容' },

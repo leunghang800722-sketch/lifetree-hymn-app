@@ -202,3 +202,119 @@ Fable 5 診斷 + 已驗證嘅 A1/A2/A3/B 全部落地：讚美之泉兒童 chann
 keyword（backlog regression 0 誤殺）。真實 kickstart（唔係 dry run）confirm：兒童 88→94，
 歌手數 4→6，全庫 799→841，regression 0 誤殺。CJ and Friends 已驗證會揀中（dry run 2/2 成功）
 但真實 run 呢輪未輪到，下一輪隨機 tiebreak 應該會到。
+
+## 🔴 2026-07-26 10:30 Fable 5 check:發現內容污染(P1,live 影響 App)+ 方案(派「夜晚慢速擴歌庫排程」)
+
+**兩個 project 大體極好:** 全庫 863(粵343/國361/兒97/英62),兒童方案落地後 88→97 增長中;
+fetchLyrics 尋晚 OCR 20/20 全數達標(05:26 完,窗口內),draft 19→39。
+
+**但質素抽查揪出 P1:兩個粵語團體 handle 指咗去完全唔相干嘅頻道,20 首垃圾已 curated live:**
+- `@singforgod`(SingforGod薪火敬拜)實測係**私人家庭片頻道**("my sweet"/"pe doo.m2v"/
+  "20060714 180527")→ 已收 7 首垃圾("clever child"/"Karen New Year"/"Bible"等,全標粵語)
+- `@redseamusic`(Redsea Music)實測係**巴西葡語翻唱頻道**("Lugar Secreto"/"Bom Bom Pai...
+  Tradução")→ 已收 13 首(葡語敬拜,全標粵語)
+- 全庫 audit(粵/國 curated 標題含 CJK 檢查):**淨係呢兩個係 100% 非中文**,其餘團體 1-3 首
+  非 CJK 屬正常英文歌名。污染 = 恰好 20 首。
+
+**方案(執行 session 落地,注意全部跟 HANDOFF 紅線):**
+1. **止血:** worshipGroups.js 兩個 handle → channel: null + note(同 City Harvest 做法):
+   SingforGod薪火敬拜 note「2026-07-26 實測 @singforgod 係私人家庭片頻道,錯 handle,待搵正身」;
+   Redsea Music note「2026-07-26 實測 @redseamusic 係巴西葡語翻唱頻道,錯 handle,待搵正身」。
+2. **清污(隱藏唔刪除):** `UPDATE hymns_all SET curated=0 WHERE artist IN
+   ('SingforGod薪火敬拜','Redsea Music') AND curated=1;`(預期 20 行;兩團體 inPool=false,
+   冇合法舊歌,全部係壞 handle 入嚟)。用 acquireDbLock,改完 `launchctl kickstart -k
+   gui/$(id -u)/com.hymnapp.backend`(紅線 2.4)。
+3. **防護(防下一個壞 handle):** discoverFromGroup 對中文團體(粵/國,連中文 kidsLang 兒童)加
+   **channel-level** sanity check:listing 30 條入面 **0 條**含 CJK → 成個 channel 當疑似錯
+   handle,跳過+log 警告。要 channel-level 唔好 per-video(粵語歌可以有純英文名,per-video 會誤殺)。
+4. **一次過 handle 大掃除(平,~15 個 flat-playlist call):** 逐個有 channel 嘅團體 print 頭 3 條
+   title 眼睇對唔對辦 —— 呢兩個壞 handle 係 7-20 前未經 yt-dlp 驗證嗰批,可能仲有同類。
+   (共享詩歌ShareHymns 嗰 3 首非 CJK 順手睇埋,預期係合法英文名。)
+**驗證:** 落地後兩個 artist curated=0;audit query 冇新 100% 非 CJK 團體;App 唔再見嗰 20 首。
+
+**2026-07-26 13:20 check：例行全部正常，但 🔴 P1 未落地（第二次催）。**
+- growLibrary 極好:863→968(+105/3h),兒童 97→130(讚美之泉兒童收緊歌,listing 加深生效
+  —— 新心音樂事工見到 158 條新片)。冇 block 冇斷路。
+- fetchLyrics 正常:draft 維持 39(尋晚 run 已計),下次 04:20。
+- **🔴 10:30 個 P1 方案(兩個壞 handle 20 首垃圾清污)三個鐘後仲未有人接:**
+  Redsea Music 13 + SingforGod 7 仍然 curated=1 live 喺 App,兩個壞 handle 未拆,
+  隨時繼續收垃圾(暫時未見新增,仍然 20 首)。方案全文喺上面 10:30 條目,
+  **等 Dispatch 派俾「夜晚慢速擴歌庫排程」session,愈快愈好**。
+
+**2026-07-26 16:20 check：例行全部正常（DB 1075／兒童 166／draft 39）；🔴 P1 六個鐘仍未落地（第三催）。**
+- growLibrary:968→1075(+107/3h),兒童 130→166,冇 error。壞 handle 暫時 0 新片
+  (fallthrough 跳過,冇再入垃圾),污染凍結喺 20 首但仍然 curated=1 live。
+- P1 方案(10:30 條目)繼續等派。落地係細改:拆兩 handle→null、20 首 curated=0、
+  kickstart backend,前後 15 分鐘內搞掂。
+
+**2026-07-26 19:20 check：例行全綠（DB 1162／兒童 193／draft 39）；🔴 P1 九個鐘仍未落地（第四催）。**
+growLibrary +87/3h 冇 error;fetchLyrics 隊列正常。20 首垃圾照舊 curated=1(冇新增,
+壞頻道 0 新片)。P1 方案唔變:SUPERVISION-LOG 07-26 10:30 條目四步,15 分鐘細改。
+
+**2026-07-26 22:20 check：例行全綠（DB 1258／兒童 226／draft 39）；🔴 P1 十二個鐘仍未落地（第五催）。**
+growLibrary +96/3h 冇 error;兒童持續增長。垃圾維持 20 首冇新增。方案:07-26 10:30 條目。
+
+**2026-07-27 01:20 check：例行全綠（DB 1350／兒童 256／draft 39）；🔴 P1 約 15 小時仍未落地。**
+growLibrary +92/3h 冇 error。垃圾維持 20 首。方案:07-26 10:30 條目。已催五次,
+今次唔重複 push(半夜,冇新資訊);預期週一辦公前時段執行 session 返場處理。
+
+**2026-07-27 04:20 check：例行全綠（DB 1424／兒童 286／draft 39）；🔴 P1 仍未落地。**
+growLibrary +74/3h 冇 error;checkDeadLinks 04:00 例行跑緊;fetchLyrics 04:20 開波,
+07:47 驗收。垃圾維持 20 首。
+
+**2026-07-27 07:20 check：例行全綠（DB 1492／兒童 316／draft 59）；🔴 P1 仍未落地（~21h）。**
+- fetchLyrics 連續第三晚滿額:CC 25→OCR 20/20(05:05-05:22 完),draft 39→59。
+- 質素抽查(3 首):可辨認但仍然夾雜 credit 文字(曲/詞/編曲/監製)、頻道 branding
+  (「SALTED EGG」「NEW HEART MUSIC MINISTRIES」)、OCR 錯字(「監蚁」)。觀察項1 嘅
+  清洗方案仍然有效、未落地。**補充發現:**一首「【鋼琴譜示範影片】快快地聽…讚美之泉
+  兒童創意鋼琴譜」——教學片混入咗歌庫(SOP Kids 頻道),建議喺質素 filter 加
+  `鋼琴譜/示範/tutorial` 關鍵字(跟紅線:落之前 backlog regression query 驗誤殺)。
+  呢項可以夾埋觀察項1 一齊派「全庫歌詞補齊規劃」+「夜晚慢速擴歌庫排程」。
+- growLibrary +68/3h,兒童 286→316,冇 error。國語呢輪企喺 556(候選窗口暫時清空,正常波動)。
+
+**2026-07-27 15:55 改動記錄(Dispatch 指示,Eric 拍板):fetchLyrics 額度 20→80 首/晚,拆兩個時段。**
+- plist 改為 StartCalendarInterval array:**01:00 + 05:00 各一個 slot,每個 CC 50 + OCR 40**
+  (每晚合共 CC 100 / OCR 80)。比例維持 5:4,CC≥OCR 餵飽 OCR 隊嘅鐵律不變。
+- 時段安全:01:00 slot 預計 ~02:10 完(最壞 ~02:40),離 checkDeadLinks 04:00 有成粒鐘凸;
+  05:00 slot 照舊。拆兩段係攤薄住宅 IP 流量 pattern(80 首一口氣要兩個幾鐘)。
+- 已 deploy + launchctl reload,launchctl print 確認兩個 calendarinterval 都註冊咗;
+  --dry smoke test 通過。commit:plist + HANDOFF 背景 job 表(見 git log)。
+- **監督重點(今晚起):**第一晚 80 首係新流量水位,check 嗰陣特別留意 block 探測
+  有冇觸發、兩個 slot 各自完成時間、draft 應該日增 ~80(59 → 預期 ~139)。
+
+**2026-07-27 10:20 check：例行全綠（DB 1557／兒童 349／draft 23）；歌詞 verified 10→46 🎉；🔴 P1 仍未清。**
+- 有人今朝做咗 draft 覆核:36 首 draft 升咗做 verified(10→46),draft 59→23 —— 
+  draft→verified 覆核流程開始行,好事。
+- growLibrary +65/3h 冇 error,兒童 349。P1 嗰 20 首垃圾照舊 curated=1,方案(07-26 10:30
+  條目)+質素清洗(觀察項1)+鋼琴譜filter(07-27 07:20 補充)三樣繼續等派。
+
+**2026-07-27 落地 session（local_fa531849）：Kids on the Move 全頻道 non-song 清查 + delist**
+Eric 截圖揪出 Kids on the Move（詩歌庫篩選見到 84/87 首）「呢一批完全唔係詩歌」。逐條（87首）
+人手睇晒，confirm：淨返 4 首明確係歌（有 Lyric Video/♫ 標記：id 2223/2270/2303/2485），其餘
+**83 首（95%）係兒童聖經教育／品格節目**——「God's Animal - X | Preschool」動物知識show(~19)、
+「Bible Story」/「Parafries」故事集(~15)、「Let's Talk About X」/「What is X?」討論教學(~15)、
+角色skit(Eggward等)/Advent devotional/經文解釋/Supercut合輯(~29)。全部 83 首**冇一條**撞到
+現有 `isCompilation()` 嘅任何負面關鍵字——之前個 `NON-SONG-CONTENT-REVIEW.md`（keyword 掃）
+淨係揪到 17 條，仲明確寫低「~15條 God's Animal 唔肯定,冇放入清單」，證實 keyword-only 掃描
+對呢類「題目式/教學式」標題完全冇效。
+
+**已執行（Eric confirm 之後）：**
+- 83 首(含糊嘅 5 首都一併 delist，寧緊勿鬆) `curated=0`（reversible），淨返嗰 4 首明確歌
+- `worshipGroups.js` Kids on the Move channel 拆走做 null，discover mode 唔會再挖（呢個
+  channel 本質係教育節目 source，唔係詩歌台，深挖只會挖多同類內容）
+- Regression check：全庫 `isCompilation()` 誤殺 = 0；Kids on the Move 現存 curated 精確 = 4
+  （同保留清單完全對得上，冇手民之誤）
+
+**交低俾監督 session 診斷嘅系統性缺口（未落手改架構）：**
+`isCompilation()`/`isNonWorship()` 純粹係 **blocklist**（識擋已知負面關鍵字），完全冇「正面
+確認呢真係一首歌」呢一步。「What Makes Truth True?」、「Let's Talk About Farming」呢類題目式
+標題，同「God's Animal - The Owl | Preschool」呢類教學show標題，天生就唔會撞到任何負面詞。
+加新 channel 落 `worshipGroups.js` 前嘅人手抽查，一直都係淨係睇最新嗰幾條標題(spot-check)，
+唔夠代表性——Kids on the Move 最初驗證嗰陣抽到嘅頭幾條剛好都係呢類「睇落似正經但其實唔係
+歌」嘅題目，所以漏檢咗。建議方向（供監督 session 判斷，未落實）：
+① 加新 channel 前用更大樣本(例如 20-30 條,唔止 3-5 條)去估算「song ratio」，低於某個比例
+   就淨係揀讀 titleMustMatch 白名單而唔係全開；
+② 或者揀正面訊號詞(Lyric/Worship Song/MV/官方 MV 呢類)做輔助判斷，唔淨係睇負面詞；
+③ 現有 13 個已加嘅 channel 入面，可能仲有第二個類似 Kids on the Move 嘅「教育為主，偶爾出歌」
+   source（Saddleback Kids 都有唔少 "Church at Home" 節目片，已經部分靠 Week N/Episode N
+   keyword 擋咗，但未做過同 Kids on the Move 一樣嘅全頻道人手覆核，值得抽時間查）。
