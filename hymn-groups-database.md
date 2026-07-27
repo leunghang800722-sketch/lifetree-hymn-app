@@ -124,7 +124,9 @@
 | **611 Kids Worship** | 粵語+國語 | 611 Kids | ~30+ | |
 | **約書亞樂團青少年版** | 國語 | Joshua Band | ~20+ | |
 | **天韻兒童詩歌** | 國語 | Heavenly Melody | ~30+ | |
-| **ACM兒童詩歌** | 粵語 | HKACM | ~20+ | |
+| **ACM兒童詩歌** | 粵語 | HKACM Official 主channel《ACM齊唱兒歌》playlist([list=PLKztYP2DMa7idpsANDjeTwBK7O8zh-wXa](https://www.youtube.com/playlist?list=PLKztYP2DMa7idpsANDjeTwBK7O8zh-wXa)) | 76(已實測) | 2026-07-27 Eric截圖搵到,已yt-dlp實測76條全部官方CD/DVD版兒歌;主channel成人詩歌為主,只指住playlist唔指成個channel |
+| **基恩敬拜祈禱仔** | 粵語 | 基恩敬拜主channel「祈禱仔兒童敬拜系列」playlist([list=PLj-Kuc40oOv0TU1rYIw1W3y2P_RAMpjb3](https://www.youtube.com/playlist?list=PLj-Kuc40oOv0TU1rYIw1W3y2P_RAMpjb3)) | 40(已實測,49條中~40條係歌) | 2026-07-27 Eric截圖搵到,已yt-dlp實測;name特登唔同成人組「基恩敬拜」免撈亂artist統計 |
+| **Giggles and Tunes 童唱童樂** | 粵語 | channel UC6WbY8uNiqTBZg3UayJdr2A「粵語兒童詩歌系列」playlist([list=PLS4thsi71CJOrjaZmOR3LQo-4AB_0BW8z](https://www.youtube.com/playlist?list=PLS4thsi71CJOrjaZmOR3LQo-4AB_0BW8z)) | 64(已實測) | 2026-07-27 Eric截圖搵到,已yt-dlp實測64條全部純歌;⚠️成個channel一半以上係兒童聖經故事節目,只准指playlist |
 | **CantonHymn兒童版** | 粵語 | CantonHymn | ~20+ | 翻譯兒童詩歌 |
 | **共享詩歌兒童版** | 粵語 | ShareHymns | ~10+ | |
 | **Saddleback Kids** | 英語 | [@saddlebackkids](https://youtube.com/@saddlebackkids) | ~100+ | 英語+動畫 |

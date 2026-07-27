@@ -7,6 +7,10 @@ import initSqlJs from 'sql.js';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { exec as execCb } from 'child_process';
+import { promisify } from 'util';
+
+const exec = promisify(execCb);
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 export const DB_PATH = path.join(__dirname, '..', 'hymns.db');
@@ -84,6 +88,14 @@ export function isCompilation(title = '') {
     // 條片本身係學院課程。收窄做「線上學院」,先啱得返原本想擋嘅
     // 「天國文化線上學院」呢類真.網課。
     '牧師', '傳道', '講座', '會長', '師母', '線上學院',
+    // 2026-07-27 追加(discover 基恩敬拜祈禱仔 playlist 實測踩過):「花絮」/
+    // 「專輯介紹」/「課程回顧」呢類非歌 title 格式 —— 幕後花絮片、專輯宣傳
+    // 介紹片、課程/事工回顧片,冇歌名。特登揀窄嘅完整詞組(唔加淨係
+    // 「介紹」/「回顧」咁廣),因為「介紹」呢類字眼好可能出現喺正常歌名嘅
+    // 副標題入面(誤殺風險高),已用現有 1480 首 curated 歌 check 過,
+    // 「專輯介紹」「課程回顧」零命中,「花絮」命中嘅 5 首本身已經係
+    // 誤收嘅幕後花絮片(唔係真歌),確認呢個關鍵字精準。
+    '花絮', '專輯介紹', '課程回顧',
     // Asia for JESUS「WE R ONE Worship｜Revival X Radical｜Alleluia、
     // Shout For Freedom、10000 Armies…」呢類係大型特會現場全場敬拜
     // 錄影(一條片入面連唱幾首),用返佢哋自己嘅活動品牌名做訊號

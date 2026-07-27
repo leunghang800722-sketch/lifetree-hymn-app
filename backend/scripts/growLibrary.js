@@ -258,8 +258,15 @@ async function verifyPlayable(youtubeId) {
 
 // discover mode 專用:用官方頻道 handle 列片(flat-playlist,唔落載、唔逐條resolve,
 // 好平),**唔好用關鍵字搜尋** —— 撳正官方頻道先準,又慳 request。
+// 2026-07-27 起:worshipGroups.js 嘅 `channel` 欄除咗 `@handle` 之外,仲接受
+// `playlist?list=XXX` 形式 —— 機構主 channel 成人/兒童內容混埋一齊嗰陣,
+// 指住官方兒童 playlist 先攞得準(唔好成個 channel 咁掃)。playlist URL
+// 唔可以好似 `@handle` 咁加 `/videos` 尾巴,否則會壞。深度邏輯(--playlist-end)
+// 兩種形式都一樣有效,唔使改。
 async function listChannelVideos(channelHandle, limit) {
-  const url = `https://www.youtube.com/${channelHandle}/videos`;
+  const url = channelHandle.startsWith('playlist?list=')
+    ? `https://www.youtube.com/${channelHandle}`
+    : `https://www.youtube.com/${channelHandle}/videos`;
   const { stdout } = await exec(
     `yt-dlp --flat-playlist --playlist-end ${limit} --print "%(id)s|%(title)s" "${url}"`,
     { timeout: 30000 }

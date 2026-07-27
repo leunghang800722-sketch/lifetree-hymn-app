@@ -134,6 +134,11 @@ export const GROUPS = [
   // 2026-07-26:Fable 5 監督診斷 + 已 yt-dlp 實測 —— 兒童組 13 個團體得
   // 4 個有 channel,中文兒童團體全部 null,兒童組實質純英文。呢個係官方
   // 獨立兒童頻道(唔係讚美之泉成人主頻道),實測 ≥100 條,全部兒童敬拜 MV。
+  // 2026-07-27:Eric 截圖 sourcing、Fable 5 yt-dlp 驗證後加咗 3 個粵語兒童
+  // playlist 源(粵語兒童組由 0 開始有貨)——見下面「ACM兒童詩歌」改動同
+  // 新加嘅「基恩敬拜祈禱仔」「Giggles and Tunes 童唱童樂」。三個都係指住
+  // 官方機構主 channel 入面嘅兒童 playlist(唔係成個 channel),因為主
+  // channel 通常成人/兒童混埋,見 growLibrary.js listChannelVideos()。
   { name: '讚美之泉兒童',      aliases: ['讚美之泉兒童'],            lang: '兒童', priority: 4, inPool: false, channel: '@StreamofPraiseKids', est: 100, kidsLang: '國語' },
   { name: '611 Kids Worship', aliases: ['611 Kids'],               lang: '兒童', priority: 4, inPool: false, channel: null,               est: 30,  kidsLang: '粵語/國語' },
   // 2026-07-23:下面 3 個 channel 用 yt-dlp 逐個實測,發現都係錯嘅,已經
@@ -148,7 +153,11 @@ export const GROUPS = [
   //     「CantonHymn」一模一樣(堂會投稿嘅廣東話 cover),都係同一個
   //     general 頻道,唔係獨立兒童版。
   { name: '天韻兒童詩歌',      aliases: ['天韻兒童'],                lang: '兒童', priority: 4, inPool: false, channel: null, est: 30,  kidsLang: '國語', note: '2026-07-23 拆走錯 handle(其實係成人主頻道),等搵到真.兒童子頻道先補' },
-  { name: 'ACM兒童詩歌',       aliases: ['ACM兒童'],                 lang: '兒童', priority: 4, inPool: false, channel: null, est: 20,  kidsLang: '粵語', note: '2026-07-23 拆走錯 handle(@hkacm 實測 404),等搵到先補' },
+  // 2026-07-27:Eric YouTube 截圖搵到 —— HKACM Official 主 channel
+  // (UCIGCKTWZFjtQB-zGylKGiXg)嘅《ACM齊唱兒歌》系列 playlist,已 yt-dlp
+  // 實測 76 條全部係官方 CD/DVD 版兒歌,好乾淨。主 channel 本身成人詩歌
+  // 為主,所以指住呢個 playlist,唔指成個 channel(避免掃埋成人內容)。
+  { name: 'ACM兒童詩歌',       aliases: ['ACM兒童'],                 lang: '兒童', priority: 4, inPool: false, channel: 'playlist?list=PLKztYP2DMa7idpsANDjeTwBK7O8zh-wXa', est: 76,  kidsLang: '粵語', note: '2026-07-27 改指HKACM Official主channel嘅《ACM齊唱兒歌》playlist,實測76條全部官方CD/DVD版兒歌' },
   { name: 'CantonHymn兒童版',  aliases: ['CantonHymn兒童'],          lang: '兒童', priority: 4, inPool: false, channel: null, est: 20,  kidsLang: '粵語', note: '2026-07-23 拆走錯 handle(其實係CantonHymn general頻道),等搵到真.兒童版先補' },
   { name: 'Saddleback Kids',  aliases: ['Saddleback Kids'],        lang: '兒童', priority: 4, inPool: false, channel: '@saddlebackkids',  est: 100, kidsLang: '英文' },
   { name: 'Hillsong Kids',    aliases: ['Hillsong Kids'],          lang: '兒童', priority: 4, inPool: false, channel: '@hillsongkids',    est: 80,  kidsLang: '英文' },
@@ -191,6 +200,17 @@ export const GROUPS = [
   // Special Events」),唔淨係歌 —— 靠現有 passesQuality() 篩,冇專門加
   // keyword,留意實際收錄率。
   { name: 'Yancy',            aliases: ['Yancy'],                                   lang: '兒童', priority: 4, inPool: false, channel: '@yancynotnancy', est: 30, kidsLang: '英文', note: '2026-07-26 已驗證,但頻道夾雜清談/推廣片,靠quality filter篩,收錄率可能唔算高' },
+  // 2026-07-27:Eric YouTube 截圖搵到嘅粵語兒童 playlist 源,已 yt-dlp 實測。
+  // 基恩敬拜(成人組已 inPool)主 channel 嘅「祈禱仔兒童敬拜系列」playlist,
+  // 實測 49 條,~40 條係歌,其餘係專輯介紹/課程回顧/精華花絮呢類(靠
+  // isCompilation 篩,見 hymnDb.js)。name 特登唔同成人組個「基恩敬拜」,
+  // 免得 artist 統計撈亂。
+  { name: '基恩敬拜祈禱仔',    aliases: ['祈禱仔', '基恩敬拜兒童'],  lang: '兒童', priority: 4, inPool: false, channel: 'playlist?list=PLj-Kuc40oOv0TU1rYIw1W3y2P_RAMpjb3', est: 40, kidsLang: '粵語' },
+  // channel UC6WbY8uNiqTBZg3UayJdr2A 嘅「粵語兒童詩歌系列」playlist,實測
+  // 64 條全部係【廣東話兒童詩歌】《歌名》格式純歌。⚠️ 成個 channel 一半以上
+  // 係「兒童聖經故事/Bible Story for Kids」節目(同 Kids on the Move 一樣
+  // 嘅陷阱),所以只准指呢個 playlist,唔好改做成個 channel。
+  { name: 'Giggles and Tunes', aliases: ['Giggles and Tunes', '童唱童樂'],          lang: '兒童', priority: 4, inPool: false, channel: 'playlist?list=PLS4thsi71CJOrjaZmOR3LQo-4AB_0BW8z', est: 64, kidsLang: '粵語' },
 ];
 
 // 2026-07-20:priority <= 4(粵/國/英/兒童全部已拍板)。
