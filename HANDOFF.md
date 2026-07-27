@@ -203,6 +203,50 @@ mode 一定要順序捱以下幾關（`growLibrary.js` `discoverFromGroup()`，�
 **尚未做嘅（Eric 拍板「之後再講」）**：語義層 —— 用 LLM 逐個判斷 curated 標題似
 唔似歌名，補機械 filter（片長/blocklist/標題 allowlist）都睇唔出嘅 edge case。
 
+### 2.10 EAS Update（OTA，2026-07-27 落地）
+
+跟 `EAS-UPDATE-PLAN.md` 落地：`expo-updates` 已裝，`app.json` 加咗
+`runtimeVersion: "1"`（明文 string，唔用 policy）、`updates.url`、
+`requestHeaders.expo-channel-name: "production"`；`android/app/src/main/AndroidManifest.xml`
+同 `res/values/strings.xml`（後者冇入 git，`/android` 大部分 gitignore，
+淨係 `build.gradle`/`AndroidManifest.xml` 兩個 file 例外係 force-add）已手改對齊。
+EAS 專案：`@god-music-team/hymn-app`，`EXPO_TOKEN` 已寫入 `~/.zshrc`（任何 terminal
+自動有得用 `eas` 指令，唔使 `eas login`）。
+
+- **日常推 OTA**：`cd frontend/hymn-app && git status`（清場，見 §2.1）→
+  `eas update --channel production --platform android --message "..."`。
+  一定要帶 `--platform android`（唔帶預設 all platforms 會連 web 一齊 export，
+  而 web bundle 因為 `react-native-track-player` 嘅 web backend 缺
+  `shaka-player` peer dep 會 export 失敗）。
+- **OTA 定出新 APK？** 跟 `EAS-UPDATE-PLAN.md` §四嗰張表。灰色地帶一律當
+  native（出 APK + bump `app.json` 同 `android/app/build.gradle` 兩處
+  `versionCode`/`version(Name)`）。
+- 🔴 **每次都要 `git status` 清場先 publish**——`eas update` 係 export 當刻
+  working tree。2026-07-27 落地嗰陣，共用 worktree 有另一個 session 未
+  commit 嘅 icon/wordmark rebrand 改動,兩次 publish 前都用
+  `git stash push -- <指定 file>`（唔係 `git stash` 全部）擋開,publish
+  完即刻 `git stash pop` 還原,先冇夾埋人哋未完成嘅嘢。
+- **驗證流程**（emulator，release build，v1.4.0 已行過一次全套）：
+  1. `adb uninstall` 舊版 → `adb install -r` 新 release APK → 冷啟動一次
+     （背景 check+download，睇 logcat `dev.expo.updates` 有冇
+     `DownloadComplete` / `isUpdatePending=true`）。
+  2. `eas update` 推一個小改動 → app 冷啟動一次（背景下載完）→ 唔郁佢 →
+     再冷啟動一次先會見到新內容生效（`isUpdatePending` 落返 `false`）。
+     或者中途撳 banner 即刻 `Updates.reloadAsync()`。
+  3. 撞過嘅坑：
+     - 第一次 build 冧咗 `OutOfMemoryError: Metaspace`（`android/gradle.properties`
+       原本 `-Xmx2048m -XX:MaxMetaspaceSize=512m` 加咗 expo-updates 之後唔夠,
+       已加大做 `-Xmx4096m -XX:MaxMetaspaceSize=1024m`）。daemon 死咗之後 client
+       process 會卡住唔會自己退出,`ps`/daemon log 對唔上先發現,唔係真係卡建置。
+     - `UpdateBanner` 一定要喺 `AppContent` 入面、`<TabBar>` 之前用**正常 flow**
+       render（唔好 `position:absolute`）——TabBar 本身冇自己 absolute 定位,
+       absolute banner 會疊喺佢上面遮住個掣(第一版試過遮咗「詩歌庫」)。
+     - `useInsets()`（`useSafeAreaInsets`）要喺 `<SafeAreaProvider>` 底下先有值,
+       唔可以擺去 `GestureHandlerRootView` 呢層(擺錯咗會即刻 crash：
+       `No safe area value available`)。
+- **banner 邏輯**：`Updates.useUpdates()` 只喺 `!__DEV__` 先 render（debug
+  build 冇 embed updates config,expo-updates 停用）。
+
 ---
 
 ## 三、架構速覽
