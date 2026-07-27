@@ -60,6 +60,7 @@ const CHIP_DEFS = [
   { id: 'cantonese', title: '粵語敬拜', match: (h) => h.lang === '粵語' },
   { id: 'mandarin',  title: '國語敬拜', match: (h) => h.lang === '國語' },
   { id: 'english',   title: 'English',  match: (h) => h.lang === '英文' },
+  { id: 'kids',      title: '兒童詩歌', match: (h) => h.lang === '兒童' },
   { id: 'quiet',     title: '安靜靈修',
     match: (h) => /(安靜|靈修|禱告|恩典|同在|安息|寧靜|Still|Peace|Quiet|Rest)/i.test(h.title || '') },
 ];

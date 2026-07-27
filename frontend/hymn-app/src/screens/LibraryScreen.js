@@ -15,7 +15,7 @@ import { useFavorites } from '../context/FavoritesContext';
 import { useAddToPlaylist } from '../components/AddToPlaylistSheet';
 import { getDisplayTitle } from '../utils/displayTitle';
 
-const LANGS = ['全部', '粵語', '國語', '英文'];
+const LANGS = ['全部', '粵語', '國語', '英文', '兒童'];
 
 // 同播放清單 / 歌單頁一致:喺清單度直接加最愛,唔使入返播放頁(款式照搬 HymnListScreen)
 function Heart({ hymn }) {
