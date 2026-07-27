@@ -425,3 +425,184 @@ isInSongDurationBand/passesTitlePositiveSignal)、`backend/scripts/growLibrary.j
 `backend/hymns.db`(P1 delist 20 首)、`HANDOFF.md`(§2.9 新增機制文檔 + 狀態
 數字更新)。**驗證:**`node --check` 全部過、`--status` 正常、dry-run discover
 睇到 [片長]/[分類]/[標題] 三種 skip log 都出現,實測數字全部記喺呢條 entry。
+
+**2026-07-27 18:40 STAGE 3 全批重新驗證完成(Eric 拍板方法+批次)。**
+- 方法:whisper 時間軸(medium model,按歌鎖語言)做演唱次序 ground truth + OCR 字面 +
+  段落只顯示一次(官方慣例)+ 官方來源只核對唔照抄(紅線 2.0)。
+- 結果:verify 33 / demote 26(範圍 59 首 pipeline 歌)。App 而家 43 首有歌詞(33+10 manual)。
+  之前出街 35 首:保留 30(內容全面更新)、落架 5(數據不足,寧缺勿錯)。
+- 過程插曲(已修):whisper small 語言偵測炒車(17 首 0% match)→ medium+鎖語言+簡繁歸一重跑;
+  校對輸出部份太薄 → 逐首同完整版擇優。三次攔截全部發生喺 apply 之前,零壞數據出街。
+- 今晚起 01:00/05:00 slot 新歌原生行新方法(OCR 段落級合併+whisper 齊做)。
+
+## ✅ 2026-07-27 歌詞出街批次 Fable 5 驗收(Eric 要求先驗後試)
+
+**範圍:** 43 首 verified(33 新方法 + 10 人手),重點 6 首樣本 + 全批結構掃描(全部 read-only)。
+
+**6 首樣本逐首:** 全部 PASS —— 
+48 祂為我開路(段落齊,經文附註（以賽亞書 43:18-19）格式啱)/141 認識你是祢(粵語段落乾淨,
+呢首正係 alignLyrics 黃金測試用例)/186 平安(中英對照 style,跟 SOP 官方慣例)/
+1533 祢真偉大(經典聖詩結構完美,副歌重複保留正確)/1687 Oh How I Love Jesus(副歌三連
+係真唱,設計上同段落內重複唔剔,啱)/2364 神我屬祢(段落+副歌齊整)。
+
+**全批掃描:** 長度 52-853 avg 224,冇空白;連續重複行 check 唯一命中係 1687(上述,合理);
+193 唱一首天上的歌 52 字睇落短,查過迦南詩歌呢首本身就係咁(去重後完整),PASS。
+
+**揪到一個小問題(唔阻 Eric 試):** id 402 空谷的回音 經文附註裸寫「詩篇36:9」「羅馬書3:23-24」,
+同標準格式「（書卷 章:節）」(48/70 嗰種)唔一致 —— 派「全庫歌詞補齊規劃」session 修:
+補（）+ 書卷同章節之間加空格,順手 grep 埋成批 verified 有冇同款(SELECT id FROM hymns_all
+WHERE lyrics_status='verified' AND (lyrics LIKE '%書_:%' OR ...) 樣式驗一次)。
+
+**結論:6 首樣本全部驗收通過,可以俾 Eric 開 App 試。** 402 係批次入面另一首嘅 cosmetic
+問題,唔使等佢修先試。
+
+## 🔴 2026-07-27 16:50 「認識你是祢」App 顯示舊版 — Fable 5 root cause(派「全庫歌詞補齊規劃」即修)
+
+**三層逐層驗過(全部即時實測,唔係推測):**
+- DB `lyrics` 欄(141):✅ 乾淨去重版(284 字,「是祢告訴我…」開頭,段落正確)。
+  display layer 寫入 `lyrics`、verification layer 喺 `lyrics_timeline`(whisper timestamps),
+  架構冇搞錯欄位。
+- Backend API 實測(`curl /api/hymns` 抽 id=141):✅ 而家回緊乾淨版,同 DB 一致。
+- **問題喺時序+App cache:** backend 14:33 先重啟(sql.js 開機先讀 DB 入記憶體,紅線 2.4)。
+  歌詞 --apply 係朝早做(10:17 check 已見 verified 10→46),即係 **~10:00-14:33 之間
+  API 一直服務緊舊記憶體副本**。Eric 部機喺呢段時間開過 App 嘅話,`useCachedHymns`
+  會將舊版寫入 MMKV;之後再開 App 即刻先畫 MMKV 舊版,background refresh 先至覆蓋。
+  Eric 16:30 見到嘅就係呢份 MMKV 舊版(內容=修復前版本,同佢描述完全吻合)。
+- 「已核對」問題確認:執行 session 淨係核對咗 DB 層,冇 kickstart+API 驗證,更加冇 App 端
+  —— 正正係紅線 2.4 警告嘅情況。
+
+**修復指令(local_fdeacc3b):**
+1. **即時:** 話返俾 Eric 知 —— 完全收埋 App(force quit)再開,喺歌單停 2-3 秒(俾 background
+   refresh 行完)再入首歌;應該已經係新版(API 而家係啱嘅)。如果仲係舊版 → 睇第 3 點。
+2. **流程修正(必做):** reviewLyrics.js --apply 完結步驟加:①`launchctl kickstart -k
+   gui/$(id -u)/com.hymnapp.backend`;②curl /api/hymns 抽改咗嗰啲 id confirm 新內容;
+   ③emulator 開 App 截圖實際顯示先算 done。「DB 已核對」以後唔准當 done。
+3. **App 端跟進(驗證,可能要修):** check 歌詞畫面攞數據嘅方式 —— 如果 route params/初始
+   snapshot 揸住個 hymn object,background refresh 之後個畫面唔會更新,要改做 render 時
+   按 id 由 live hymns state 攞。另考慮 API 加 dataVersion/lyrics_updated_at 做 cache-bust。
+**Fable 5 驗收方式(修完我做):** curl API 對 43 首 verified 逐首 hash 對 DB;執行 session
+  提供 emulator 截圖或我行 emulator check;唔收「DB 已核對」字面交貨。
+
+## 🟠 2026-07-27 17:30 search「神我屬」搵唔到 — root cause + 方案(App 端,派 Dispatch 指定嘅前端 session)
+
+**診斷(實測):** 首歌在庫冇事(id 2364,curated=1/ok/國語)。問題係 title「神**, **我屬祢!
+You are My God」有逗號+空格,而 LibraryScreen.js 嘅搜尋(line ~64 `searched` useMemo)係
+**原字串 `includes()` 連續比對**,「神我屬」呢個 query 冚唪唥對唔上(歌詞欄「神，我屬祢！」
+全形逗號一樣唔中)。SQL 模擬 6 首抽查:其餘 5 首自然字串全部搵到,唯獨呢首 0。
+Backend /api/search 嘅 LIKE 都係同款問題,但新 UI 用本地 filter,backend 嗰邊次要。
+
+**方案(LibraryScreen.js,細改):** 比對前兩邊 normalize —— 剩返字母/數字/CJK:
+`const norm = (s) => (s || '').toLowerCase().replace(/[^\p{L}\p{N}]/gu, '');`
+`searched` 入面改做 `norm(h.title).includes(nq)`(nq = norm(query),五個欄同款)。
+效能:1500+ 首每次撳鍵都行 5 個 regex 會拖 —— 將每首歌嘅 normalize 結果 memo 埋
+(useMemo 對 hymns 陣列預計一次 `_searchBlob = norm(title)+norm(title_en)+norm(artist)+
+norm(album)+norm(lyrics)`,之後每次 query 淨係 `includes` 一個字串)。
+**驗證:** 搜「神我屬」「神我屬祢」「youaremygod」都應該中 id 2364;
+現有 pass 嗰 5 首自然字串照中(regression);中英夾雜 query 唔誤殺。
+
+## 🟠 2026-07-27 18:00 dataVersion cache-bust — 落地 instruction(派「全庫歌詞補齊規劃」local_fdeacc3b)
+
+**背景:** 同類 stale-cache 事故 24 小時內連中兩次(認識你是祢/歌名亂)——都係「DB+API 一早啱,
+App 顯示 MMKV 舊 cache」。而家將 cache-bust 由建議升做即刻落地。
+
+**設計(三件套,全部細改):**
+1. **Backend(server.js):** boot 載入 DB 嗰陣捕捉 `dataVersion`(建議用 hymns.db 檔案 mtime
+   ms + 檔案大小拼串,夠平夠唯一;sql.js 每 boot 讀死一份,所以 per-boot 一個 version 啱晒)。
+   加 `GET /api/version` → `{dataVersion}`(超平,唔讀 DB);同時 `/api/hymns` 個 envelope
+   加返 `dataVersion` 欄(`{data, dataVersion}`,向後兼容)。
+2. **App(src/hooks/useCachedHymns.js):** MMKV 多存一個 `allHymnsVersion`。mount 流程:
+   ①照舊即刻畫 cached(UX 唔變);②fetch `/api/version`(細);③version 唔同(或攞唔到
+   cached version)→ full fetch `/api/hymns`,寫 MMKV(data+version),setHymns;
+   ④version 相同 → 跳過 full fetch(慳咗而家每次開 App 都全量拉嘅流量,順手賺);
+   ⑤`/api/version` fail → fallback 返而家嘅無條件 background refresh(唔可以變差)。
+3. **Snapshot 修正(16:50 條目第 3 點,一齊做):** 驗證歌詞畫面/播放器係咪揸住 route params
+   嘅 hymn snapshot —— 係就改做 render 時按 id 由 live hymns state 攞,否則 refresh 完
+   已開畫面照舊。
+**驗證(執行 session 要做齊):** ①改一首歌 lyrics → kickstart → App force-quit 重開 →
+2-3 秒內見新版;②backend 冇重啟時重開 App → /api/version 相同 → 冇 full fetch(睇 backend
+log 請求數);③斷網開 App → 照畫 MMKV cache(offline 唔可以爛);④emulator 截圖交貨。
+**檔案衝突提示:** 唔好掂 LibraryScreen.js(search normalize fix 由另一 session 做緊),
+server.js/useCachedHymns.js 開工前照紅線 2.1 check git status。
+
+**2026-07-27 19:20 check：正常，清污進行中（DB 1501／兒童 284／draft 26／verified 43）。**
+- 全庫 1557→1501(-56):KotM 節目片 delist 生效(兒童 349→284),係預期內嘅淨化,唔係故障。
+- P1 部分進行:Redsea 13→7,SingforGod 仍 7 —— 淨返 14 首垃圾,繼續跟。
+- 新 launchd job `com.hymnapp.alignbackfill` 出現(歌詞 STAGE 3 對齊回填),下次 check 順眼睇 log。
+- growLibrary 0 error 跑緊;fetchLyrics 下次 04:20。
+
+## ✅ 2026-07-27 20:00 EAS Update (OTA) 落地 Fable 5 獨立驗收 — PASS,可以叫 Eric 裝 v1.4.0
+
+**逐項 claim 對獨立證據(唔係齋信摘要):**
+1. Wiring ✓ — APK manifest 實測:ENABLED=true/CHECK_ON_LAUNCH=ALWAYS/LAUNCH_WAIT_MS=0(silent
+   非阻塞)/EXPO_UPDATE_URL=u.expo.dev/2fc23a2a…;app.json runtimeVersion "1"+production channel。
+2. 「真係推送過」✓ — 直接 curl u.expo.dev manifest endpoint(production/rt=1/android):
+   有 live update 019fa308-…(createdAt 18:04 HKT,同 commit a0ce3f2 時間吻合)。
+3. **我自己喺 emulator 重現咗成個 e2e loop**(唔係齋覆核佢個測試):adb 實裝 v1.4.0 →
+   cold start #1 logcat 見 background DownloadComplete(isUpdatePending=true),FATAL 0 →
+   force-stop → cold start #2 用已下載 bundle 起,主頁完整 render(截圖,歌數 576/556/62
+   同 DB 一致),FATAL 0。channel 上個 update 係正式 1.4.0 bundle,**冇 test-change 垃圾**。
+4. APK ✓ — aapt2 實測 versionCode 50 / versionName 1.4.0(上版 49,遞增啱,紅線 2.7)。
+5. Banner code ✓ — useUpdates→isUpdatePending 先顯示,撳先 reloadAsync,可 dismiss,標準安全
+   pattern。「撳banner唔crash」呢項冇獨立重現(要有更新嘅 update 先觸發到),code review
+   +佢哋實測紀錄接受。
+**結論:可以叫 Eric 裝 ~/Desktop/詩歌App/hymn-app-v1.4.0.apk(記住先解除安裝舊版先裝,
+或者同簽名直接覆蓋亦得——versionCode 50>49 唔會撞降級問題)。裝完之後所有 JS 改動行 OTA。**
+
+## 🔴 2026-07-27 22:30 P0:delist 會被 curate 自動翻生 — 「rejected」狀態缺失(派「夜晚慢速擴歌庫排程」即修)
+
+**實證:** KotM 節目片尋日 delist 到 4 首,今晚 22:12 已翻生到 62 首(log:「God's Animal -
+The Bison | Preschool」照樣「驗證中」);Redsea 19:17 得 7,19:32-19:50 log 見 curate 逐首
+re-verify,22:17 返到 13。根因:`curated=0` 喺 curate mode 眼中=「未上架 backlog 候選」,
+usablePool(growLibrary.js:184)filter 鏈只有 isCompilation/isNonWorship/dead/fail_streak,
+**冇任何「內容已判死刑」狀態** —— 所有 delist 過嘅垃圾都會喺之後嘅 run 循環翻生。
+呢個係「隱藏唔刪除」機制同 curate backlog 機制嘅根本衝突,唔修,所有清污都係白做。
+
+**方案:**
+1. **新 terminal 狀態:** `status='rejected'`(內容性質唔啱,唔係死鏈)。usablePool 加
+   `.filter((r) => r.status !== 'rejected')`。checkDeadLinks 只掃 curated=1,唔會掂佢;
+   `hymns` view 已有 status!='dead' 條件,要確定 rejected 都唔出街(view 係 curated=1 AND
+   status!='dead',rejected 行 curated=0 本身出唔到,OK,但 view 定義順手覆核)。
+2. **清污一次過用新狀態重做(用鎖+完事 kickstart):**
+   - `UPDATE hymns_all SET curated=0, status='rejected' WHERE artist IN
+     ('Redsea Music','SingforGod薪火敬拜');`(兩個 handle 成個頻道錯晒,全 artist 判)
+   - KotM:節目片嗰批(delist session 手上有 id 清單;冇嘅話用「title 唔含 ♫/lyric/
+     song/video」啲規則重新界定,眼睇 confirm 先執行)同樣 SET rejected。
+   - 之前 10:30 P1 講嘅 worshipGroups 拆 handle(@redseamusic/@singforgod → null)**必須
+     同步做**,否則 discover 繼續拉新片入 backlog。
+3. **驗證:** 改完行兩個 curate cycle(30 分鐘)後 SELECT 三個 artist curated=1 應穩定喺
+   0/0/(KotM 淨返真歌數);log 唔應再見呢啲 artist「驗證中」;App 兒童分類抽查冇節目片。
+**優先級:P0 —— 今晚唔修,聽朝垃圾全數翻生,之前所有清污等於冇做過。**
+
+---
+
+## ✅ 2026-07-27 23:xx 執行 session(local_fa531849):P0 已落地,兩個 curate cycle 驗證穩定
+
+即刻做,冇等。三步方案全部落地:
+
+1. **`status='rejected'` 終態** —— `usablePool()`([growLibrary.js:184](../backend/scripts/growLibrary.js))
+   filter 鏈加 `.filter((r) => r.status !== 'rejected')`。`hymns` view 順手覆核:
+   DROP+CREATE 加咗 `AND status != 'rejected'`(原本淨係 `curated=1 AND status!='dead'`,
+   雖然理論上 rejected 一律配 curated=0 唔會出街,但加多重保險防手民之誤)。
+2. **三個污染源一次過判死**(`acquireDbLock`→`UPDATE`→`saveDb`→`releaseDbLock`):
+   - `Redsea Music`(13 首,全 artist)、`SingforGod薪火敬拜`(7 首,全 artist)
+     → `curated=0, status='rejected'`。兩個 handle 早喺 P1 落地嗰陣已經拆咗
+     (`channel: null`),今次冇再撞。
+   - Kids on the Move:用返 07-27 delist 時嘅原 id 清單(83 首,keep 4 首確認歌
+     2223/2270/2303/2485)→ 逐 id `status='rejected'`。查證咗成個 artist 而家
+     總數仍然係 87(冇新片,discover 早已拆走 channel),87 個 id **同 delist
+     嗰陣一模一樣**,冇漏、冇多。
+3. **驗證:** 行咗兩個完整 curate cycle(`--budget 30`,每次連自動 discover)。
+   結果:cycle 1 後 Redsea 0/SingforGod 0/KotM 4,**同 delist 剛完成嗰刻一樣**;
+   cycle 2 log 用 `grep -iE "Redsea|SingforGod|Kids on the Move"` 搵**完全冇
+   命中**——三個 artist 而家連喺 log 度「驗證中」都唔會再出現,證明 `usablePool()`
+   喺揀候選嗰一步已經完全過濾咗佢哋,唔係「驗到但又拒絕」,係「連試都唔試」。
+   最終確認:cycle 2 後仍然 0/0/4,**穩定唔反彈**。
+
+**已 `launchctl kickstart` backend,`/api/health` 確認 200。** 歌庫改咗嘅 duration
+backfill(discover 順手做)+ curate 自然增長令總數由 1461 升到 1561(粵 621/國
+555/兒童 323/英 62)——呢個增長同今次 P0 修正冇關,係正常夜間擴歌庫。
+
+**改動檔案:** `backend/scripts/growLibrary.js`(usablePool 加 rejected filter)、
+`backend/hymns.db`(20+83 首判 rejected、`hymns` view 重建)、`HANDOFF.md`
+(§2.4 新增「curated=0 唔算判死刑」硬規矩)。未 commit,等指示 push 定係就咁留低
+等執行 session 匯報後 Eric 確認。

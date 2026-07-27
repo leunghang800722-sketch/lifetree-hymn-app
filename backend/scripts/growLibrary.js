@@ -188,6 +188,14 @@ function usablePool(db) {
     .filter((r) => !isCompilation(r.title))
     .filter((r) => !isNonWorship(r.title, r.artist))
     .filter((r) => r.status !== 'dead')
+    // ⚠️ 2026-07-27 22:30 P0(SUPERVISION-LOG 條目):`curated=0` 喺呢個 pool
+    // 眼中一直冧曬做「未上架 backlog 候選」,冇任何「內容已判死刑」嘅終態 ——
+    // 之前用嘅 delist(Kids on the Move 節目片、Redsea Music/SingforGod薪火
+    // 敬拜壞 handle 全 artist)全部俾 curate mode 逐首 re-verify 翻生返(KotM
+    // 4→74,Redsea/SingforGod 100% 全數翻生)。`status='rejected'` 先係真.
+    // 終態 —— 同 `status='dead'`(死鏈)分開,呢個係「內容性質判死」,一樣
+    // 一定要喺呢度過濾,唔畀 curate/discover 兩個 mode 再摸到。
+    .filter((r) => r.status !== 'rejected')
     // 試咗 3 次都拎唔到音訊 = 當佢死,唔好次次夜晚都攞返出嚟阻住條隊。
     // (真正標 'dead' 係 checkDeadLinks.js 嘅職責,呢度淨係唔揀佢。)
     .filter((r) => (r.fail_streak || 0) < 3);

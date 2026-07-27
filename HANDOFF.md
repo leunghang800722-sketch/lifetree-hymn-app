@@ -15,7 +15,7 @@
 | 最新版本 | **versionName 1.3.8 / versionCode 49**（commit `f7a249e`）。APK 喺 `~/Desktop/詩歌App/` |
 | 分支 | `feature/player-rebuild`（未 merge 返 `develop-v211`） |
 | 後端 | 跑喺 **Eric 部 Mac**，`https://api.god-music.com`（Cloudflare named tunnel，固定 URL）。backend + tunnel 由 launchd 自動管理，登入就行、死咗自動起返 |
-| 歌庫 | `hymns_all` 2178+ 首，**curated 1461 首**（粵 572 / 國 555 / 兒童 272 / 英 62）。歌詞：verified 10、draft 19、未有 740 |
+| 歌庫 | `hymns_all` 2175+ 首，**curated 1561 首**（粵 621 / 國 555 / 兒童 323 / 英 62）。歌詞：verified 10、draft 19、未有 740 |
 | 背景 job | growLibrary（每 15 分鐘擴歌庫）、checkDeadLinks（每晚 04:00）、fetchLyrics（每晚 **01:00 + 05:00 兩個時段**，各 CC 50 + OCR 40，2026-07-27 Eric 拍板 80 首/晚拆半） |
 | 前端 stack | Expo SDK 56 / RN 0.85.3、react-native-track-player v4、@gorhom/bottom-sheet + reanimated 4、MMKV |
 | 後端 stack | Node 18 ESM + Express 4、SQLite via `sql.js`、`yt-dlp` |
@@ -99,6 +99,12 @@ Zeabur 嘅 datacenter IP **已經被封死**（實測 5/5 全部 `Sign in to con
   「650/665 死、2.3% 可播」入面 **592 個係 Timeout**（自己撞爆 rate limit 整出嚟嘅假數據），
   誤導咗成個 project 好耐。**失敗唔係證據，成功先係。**
 - **隱藏唔刪除**：死鏈／非詩歌內容一律 `curated=0` 或者 `status`，資料原封留喺 `hymns_all`，reversible。
+- **淨係 `curated=0` 唔算「判死刑」，會翻生。** 2026-07-27 22:30 P0：curate mode
+  眼中 `curated=0` = 「未上架 backlog 候選」，會逐晚 re-verify、驗到又 `curated=1`
+  返。實測 Kids on the Move 節目片 delist 到 4 首、一晚翻生到 74；Redsea
+  Music／SingforGod薪火敬拜兩個壞 handle 全 artist 100% 翻生。**內容性質判死
+  （唔係死鏈）一定要 `status='rejected'`**（`usablePool()` 同 `hymns` view
+  都已經過濾呢個狀態），淨係 `curated=0` 唔夠。
 - **候選次序唔可以用固定次序。** ①用 `id` 順序 → 低 id 係最早爬嗰批、死亡率高好多，一度以為
   成個團體死晒（改隨機之後 0/6 → 5/6）。②打和 tiebreak 用固定 priority → 同一個團體永遠霸住個 slot。
   兩次都係同一種坑：**打和要 `Math.random()`，唔好靠 stable sort 嘅次序。**
@@ -299,6 +305,7 @@ ops/launchd/             五個 plist 嘅版本控制副本 + README checklist
 | `BRAND-GODMUSIC-PLAN.md` | 改名 God Music + logo（已拍板執行） |
 | `LIBRARY-EXPANSION-PLAN.md` | 擴歌庫規劃 |
 | `LYRICS-PIPELINE-PLAN.md` | 歌詞入庫方案（等拍板） |
+| `EAS-UPDATE-PLAN.md` | OTA 更新機制實作計劃（Eric 已拍板要做，等 Sonnet 落地；⚠️ 內有共用 worktree publish 紅線） |
 | `hymn-groups-database.md` | 團體完整資料（**人睇**；加新團體先改呢度，再落 `worshipGroups.js`） |
 | `REDESIGN-PLAN.md` / `PHASE1-PLAYER-REBUILD.md` / `HOME-DISCOVERY-*.md` / `MYPAGE-PLAYLIST-MANAGE-PLAN.md` / `SEARCH-MERGE-PLAN.md` / `AUTOPLAY-MIX-PLAN.md` / `PERF-FAST-START-PLAN.md` / `PHONE-AUTH-PLAN.md` | 各功能規劃書 |
 | `BLUEPRINT.md` / `DEAD_LINKS.md` | 舊文件（死鏈率數字唔可信，見 §2.4） |
