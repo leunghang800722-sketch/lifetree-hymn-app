@@ -15,7 +15,7 @@
 | 最新版本 | **versionName 1.3.8 / versionCode 49**（commit `f7a249e`）。APK 喺 `~/Desktop/詩歌App/` |
 | 分支 | `feature/player-rebuild`（未 merge 返 `develop-v211`） |
 | 後端 | 跑喺 **Eric 部 Mac**，`https://api.god-music.com`（Cloudflare named tunnel，固定 URL）。backend + tunnel 由 launchd 自動管理，登入就行、死咗自動起返 |
-| 歌庫 | `hymns_all` 1809+ 首，**curated 1480 首**（粵 593 / 國 556 / 兒童 269 / 英 62）。歌詞：verified 10、draft 19、未有 740 |
+| 歌庫 | `hymns_all` 2178+ 首，**curated 1461 首**（粵 572 / 國 555 / 兒童 272 / 英 62）。歌詞：verified 10、draft 19、未有 740 |
 | 背景 job | growLibrary（每 15 分鐘擴歌庫）、checkDeadLinks（每晚 04:00）、fetchLyrics（每晚 **01:00 + 05:00 兩個時段**，各 CC 50 + OCR 40，2026-07-27 Eric 拍板 80 首/晚拆半） |
 | 前端 stack | Expo SDK 56 / RN 0.85.3、react-native-track-player v4、@gorhom/bottom-sheet + reanimated 4、MMKV |
 | 後端 stack | Node 18 ESM + Express 4、SQLite via `sql.js`、`yt-dlp` |
@@ -170,6 +170,39 @@ Zeabur 嘅 datacenter IP **已經被封死**（實測 5/5 全部 `Sign in to con
 - **背景播放 ~30 分鐘後停** —— 唔係 code bug（Manifest / RNTP 設定查過全對），係手機
   battery optimization / Doze。解法係喺手機設定將 App 電池設做「無限制」。Eric 已決定唔跟進。
 
+### 2.9 discover mode 收錄關卡（2026-07-27 Fable 5 方案，Kids on the Move 事故之後）
+
+Kids on the Move 事故（87 首入面 83 首係兒童聖經教育節目，唔係歌，冇一條撞到
+`isCompilation()` 嘅負面關鍵字）揭發咗純 blocklist 設計嘅根本缺口。而家 discover
+mode 一定要順序捱以下幾關（`growLibrary.js` `discoverFromGroup()`，缺一不可）：
+
+1. **Layer 1 片長帶 gate（全局，零成本）** —— `hymnDb.js` `isInSongDurationBand()`，
+   75-600 秒帶外一律 log `[片長]` 跳過。`listChannelVideos()` 嘅 flat-playlist 本身
+   就帶 `%(duration)s`，唔加額外 request；順手 backfill 舊歌空白嘅 `duration` 欄
+   （見同一個 function 入面嘅 backfill 段）。
+2. **分類/品質篩選**（原有）—— `isCompilation()` / `isNonWorship()`。
+3. **Layer 2 標題正面訊號（選擇性，per-group `contentGate:'duration+title'`）** ——
+   `hymnDb.js` `passesTitlePositiveSignal()`（♫/lyric/worship/dance/sing along/mv/
+   official/cover）。**淨係全部英文兒童頻道開**（`worshipGroups.js` 逐個
+   `kidsLang:'英文'` 團體已設）——實測全局 allowlist 對中文歌誤殺率好高（611
+   Worship 7%/盛曉玫 17%/有情天 21%），**唔可以加落中文團體**。
+4. **語言 sanity check（channel-level，中文團體）** —— `discoverFromGroup()` 入面：
+   粵/國/中文兒童團體嘅 listing 入面**一條都冇中文字** → 當疑似錯 handle，成個
+   channel 今次唔試（P1 事故：`@singforgod`/`@redseamusic` 兩個壞 handle 撞入 20
+   首垃圾，全部誤標粵語但內容係私人家庭片/巴西葡語翻唱，已 curated=0 清走）。
+5. **死鏈驗證**（原有）→ 寫入(帶埋 duration)。
+
+**新頻道 / 覆核舊頻道流程** —— `scripts/auditChannel.js`：攞 60 條 duration+title，
+計三個比例（歌片長帶% / blocklist 命中% / 標題正面訊號%），隨機（唔淨係最新）抽
+10 條俾人眼睇。門檻：**≥60% 正常收；30-60% GATE（英文兒童頻道先可以加
+`contentGate:'duration+title'`，中文頻道留俾人手/未來語義層覆核）；<30% REJECT，
+拆走 channel**。2026-07-27 全庫回溯 29 個有 handle 嘅頻道，REJECT 咗 3 個（全部
+0 curated，discover 從未成功過，拆咗 channel）：Saddleback Kids（13.3%）、
+台北復興堂（18.3%）、611靈糧堂（5%）。
+
+**尚未做嘅（Eric 拍板「之後再講」）**：語義層 —— 用 LLM 逐個判斷 curated 標題似
+唔似歌名，補機械 filter（片長/blocklist/標題 allowlist）都睇唔出嘅 edge case。
+
 ---
 
 ## 三、架構速覽
@@ -207,7 +240,7 @@ ops/launchd/             五個 plist 嘅版本控制副本 + README checklist
 | **`sql.js` 寫入唔 persist** | server 開機讀一次入記憶體、從來冇寫返落 disk → **用戶註冊功能實質係壞嘅**（restart 就冇咗）。維護腳本自己 `export()` 所以冇事 |
 | **The Altar / 兒童合集團體** | 搵唔到官方 channel，等 Eric 提供連結 |
 | **API response format 不一致** | `/api/hymns` 返 `{data:[...]}`、home routes 直接返 array |
-| **`isCompilation()` 冇「正面確認係歌」呢一步** | 純 blocklist 設計，淨係識擋已知負面關鍵字，「What Makes Truth True?」「God's Animal - X | Preschool」呢類題目式/教學式標題完全冇撞任何負面詞，會漏網。2026-07-27 Kids on the Move 實測：87 首入面 83 首（95%）係兒童聖經教育節目唔係歌，冇一條撞到現有 filter。已 delist 83 首 + 拆走個 channel，但**架構性缺口未解決**——加新 channel 前嘅人手抽查只 sample 幾條最新標題，唔夠代表性。交 Fable 5 監督 session 診斷方案（唔使即刻大改，記錄喺 `docs/SUPERVISION-LOG.md`）。|
+| **語義層(LLM 逐個判斷 curated 標題似唔似歌名)** | 2026-07-27 已解決機械層缺口(見下段)，Fable 5 方案仲提到一個更強嘅語義層，用 LLM 補機械 filter(片長/blocklist/標題 allowlist)都睇唔出嘅 edge case。Eric 拍板「呢步可以之後再講」，未排期。|
 
 ---
 

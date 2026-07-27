@@ -41,14 +41,14 @@
 //   node scripts/growLibrary.js --status          # 淨係報告進度,唔改嘢
 //   node scripts/growLibrary.js --ignore-window   # 手動測試用,繞過時段檢查(而家預設已經冇時段限制)
 
-import { exec as execCb } from 'child_process';
-import { promisify } from 'util';
-import { openDb, saveDb, query, sleep, isCompilation, isNonWorship, dedupeByYoutubeId, acquireDbLock, releaseDbLock } from '../lib/hymnDb.js';
+import {
+  openDb, saveDb, query, sleep, isCompilation, isNonWorship, dedupeByYoutubeId,
+  acquireDbLock, releaseDbLock, listChannelVideos, formatDuration,
+  isInSongDurationBand, passesTitlePositiveSignal,
+} from '../lib/hymnDb.js';
 import { resolveAudioUrl } from '../lib/resolveAudio.js';
 import { ACTIVE_GROUPS } from '../data/worshipGroups.js';
 import { cleanDisplayTitle } from '../lib/displayTitle.js';
-
-const exec = promisify(execCb);
 
 const arg = (f, d) => { const i = process.argv.indexOf(f); return i > -1 && process.argv[i + 1] ? process.argv[i + 1] : d; };
 const MODE = arg('--mode', 'curate');
@@ -256,27 +256,6 @@ async function verifyPlayable(youtubeId) {
   }
 }
 
-// discover mode 專用:用官方頻道 handle 列片(flat-playlist,唔落載、唔逐條resolve,
-// 好平),**唔好用關鍵字搜尋** —— 撳正官方頻道先準,又慳 request。
-// 2026-07-27 起:worshipGroups.js 嘅 `channel` 欄除咗 `@handle` 之外,仲接受
-// `playlist?list=XXX` 形式 —— 機構主 channel 成人/兒童內容混埋一齊嗰陣,
-// 指住官方兒童 playlist 先攞得準(唔好成個 channel 咁掃)。playlist URL
-// 唔可以好似 `@handle` 咁加 `/videos` 尾巴,否則會壞。深度邏輯(--playlist-end)
-// 兩種形式都一樣有效,唔使改。
-async function listChannelVideos(channelHandle, limit) {
-  const url = channelHandle.startsWith('playlist?list=')
-    ? `https://www.youtube.com/${channelHandle}`
-    : `https://www.youtube.com/${channelHandle}/videos`;
-  const { stdout } = await exec(
-    `yt-dlp --flat-playlist --playlist-end ${limit} --print "%(id)s|%(title)s" "${url}"`,
-    { timeout: 30000 }
-  );
-  return stdout.trim().split('\n').filter(Boolean).map((line) => {
-    const i = line.indexOf('|');
-    return { id: line.slice(0, i), title: line.slice(i + 1) };
-  });
-}
-
 // curate mode 嘅四關對應:① 搜尋 = usablePool()(候選已經喺 hymns_all);
 // ② 分類/品質篩選 = usablePool() 入面嘅 isCompilation/isNonWorship(呢批歌原始
 // import 嗰陣已經分咗 lang,呢度淨係再篩多次質素);③ 死鏈驗證 = 下面嘅
@@ -391,13 +370,66 @@ async function discoverFromGroup(db, group, budget) {
   }
   log(`    頻道列出 ${listing.length} 條,${fresh.length} 條未收錄過`);
 
+  // ⚠️ 2026-07-26 P1 方案(SUPERVISION-LOG 10:30 條目)步驟③:channel-level
+  // 語言 sanity check。實測踩過:`@singforgod`(私人家庭片頻道)、
+  // `@redseamusic`(巴西葡語翻唱頻道)兩個壞 handle 撞入嚟 20 首垃圾,全部
+  // 誤標粵語 —— 「已收錄最少優先」嘅揀法對呢類壞 handle 冇免疫力,個頻道
+  // listing 出嚟嘅片全部行得通(死鏈驗證過關),純粹內容語言唔啱。
+  // 用 channel-level(唔係 per-video)判斷:成個 listing 入面**一條都冇**
+  // 中文字先當疑似錯 handle —— 唔可以 per-video 判(粵語歌可以有純英文
+  // 名,per-video 會誤殺正常候選),但一個真.粵語/國語詩歌頻道嘅 30+ 條
+  // 片入面連一條都冇中文字幾乎唔可能。兒童組同樣邏輯,但淨係 kidsLang
+  // 唔係英文嘅先查(英文兒童頻道本身就應該全英文,唔屬呢個訊號)。
+  const isChineseGroup = group.lang === '粵語' || group.lang === '國語'
+    || (group.lang === '兒童' && group.kidsLang && group.kidsLang !== '英文');
+  if (isChineseGroup && listing.length >= 10) {
+    const cjkHits = listing.filter((v) => /[一-鿿㐀-䶿]/.test(v.title)).length;
+    if (cjkHits === 0) {
+      log(`    ⚠ [語言] listing ${listing.length} 條全部冇撞到中文字,懷疑「${group.name}」個 handle 錯咗,今次唔試呢個頻道`);
+      return { added: 0, tried: 0 };
+    }
+  }
+
+  // ⚠️ 2026-07-27 Fable 5 方案(SUPERVISION-LOG 10:40 條目)Q1:順手用呢次
+  // 已經攞緊嘅 listing 幫「已收錄但 duration 仲空白」嘅舊歌 backfill duration
+  // —— 唔加額外 request,flat-playlist 本身就帶埋呢個欄位,之前淨係揀
+  // fresh 果批嚟用,`existing` 嗰批嘅 duration 一直冚埋喺度冇用過。
+  if (!DRY) {
+    let backfilled = 0;
+    for (const v of listing) {
+      if (!v.id || !existing.has(v.id) || v.duration == null) continue;
+      const fmt = formatDuration(v.duration);
+      if (!fmt) continue;
+      db.run(`UPDATE hymns_all SET duration=? WHERE youtube_id=? AND (duration IS NULL OR duration='')`, [fmt, v.id]);
+      backfilled++;
+    }
+    if (backfilled > 0) { saveDb(db); log(`    ⏪ 順手 backfill duration ${backfilled} 首(免額外 request)`); }
+  }
+
   let added = 0, tried = 0, streak = 0;
   for (const v of fresh) {
     if (tried >= budget) break;
 
-    // 2. 分類 / 品質篩選 —— 平嘅一關,喺呢度做完先至值得使錢做第 3 關。
+    // 2a. Layer 1 片長帶 gate(全局,零成本)—— 2026-07-27 Fable 5 方案。
+    // duration 攞唔到(flat-playlist 罕見冚咗)就唔攔,留返俾下面嘅
+    // 分類/標題/死鏈幾關判斷,唔好因為冇資料就誤殺。
+    if (v.duration != null && !isInSongDurationBand(v.duration)) {
+      log(`    ⏭ [片長] 「${v.title}」${Math.round(v.duration)}s 出咗 75-600s 帶,跳過`);
+      continue;
+    }
+
+    // 2b. 分類 / 品質篩選 —— 平嘅一關,喺呢度做完先至值得使錢做第 3 關。
     if (!passesQuality(v.title, group.name)) {
       log(`    ⏭ [分類] 「${v.title}」睇個標題係合輯/世俗歌,唔驗證直接跳過`);
+      continue;
+    }
+
+    // 2c. Layer 2 標題正面訊號(選擇性,淨係 contentGate='duration+title'
+    // 嘅頻道開)—— 2026-07-27 Fable 5 方案:全局 allowlist 對中文歌誤殺率
+    // 高,但英文兒童頻道嘅歌片標題慣例穩定,用嚟擋題目式教學集數
+    // (Kids on the Move 嗰類,片長帶都可能啱啱好喺 75-600s 入面)。
+    if (group.contentGate === 'duration+title' && !passesTitlePositiveSignal(v.title)) {
+      log(`    ⏭ [標題] 「${v.title}」冇撞到歌訊號(♫/lyric/worship/cover等),跳過`);
       continue;
     }
 
@@ -423,9 +455,9 @@ async function discoverFromGroup(db, group, budget) {
     // 新歌一入庫 UI 即刻見到乾淨嘅版本。
     if (!DRY) {
       db.run(
-        `INSERT INTO hymns_all (title, display_title, artist, category, youtube_id, lang, curated, status, last_checked, fail_streak)
-         VALUES (?, ?, ?, ?, ?, ?, 1, 'ok', ?, 0)`,
-        [v.title, cleanDisplayTitle(v.title, group.name), group.name, group.lang, v.id, group.lang, today()]
+        `INSERT INTO hymns_all (title, display_title, artist, category, youtube_id, lang, curated, status, last_checked, fail_streak, duration)
+         VALUES (?, ?, ?, ?, ?, ?, 1, 'ok', ?, 0, ?)`,
+        [v.title, cleanDisplayTitle(v.title, group.name), group.name, group.lang, v.id, group.lang, today(), formatDuration(v.duration)]
       );
       saveDb(db);
     }

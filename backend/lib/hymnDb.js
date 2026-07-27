@@ -174,6 +174,64 @@ export function isNonWorship(title = '', artist = '') {
   return /(dance tutorial|dance choreograph|choreography|relay dance|dance cover)/i.test(title);
 }
 
+// discover mode 專用:用官方頻道 handle(或者 playlist?list=XXX)列片,
+// flat-playlist 唔落載、唔逐條resolve,好平。2026-07-27 由 growLibrary.js
+// 搬過嚟(集中一份,俾 growLibrary.js 同 auditChannel.js 共用)。
+//
+// ⚠️ 2026-07-27 Fable 5 content-filter 架構升級方案(docs/SUPERVISION-LOG.md
+// 10:40 條目)Q1 Layer 1:順手攞埋 `%(duration)s` —— flat-playlist 本身就帶
+// 呢個欄位,唔加額外 request,俾 growLibrary 嘅片長 gate 同 auditChannel.js
+// 嘅頻道審核用。
+export async function listChannelVideos(channelHandle, limit) {
+  const url = channelHandle.startsWith('playlist?list=')
+    ? `https://www.youtube.com/${channelHandle}`
+    : `https://www.youtube.com/${channelHandle}/videos`;
+  const { stdout } = await exec(
+    `yt-dlp --flat-playlist --playlist-end ${limit} --print "%(id)s|%(duration)s|%(title)s" "${url}"`,
+    { timeout: 30000 }
+  );
+  return stdout.trim().split('\n').filter(Boolean).map((line) => {
+    // title 本身可以帶「|」,唔可以淨係 split('|') —— 要靠位置切,唔靠個數。
+    const i1 = line.indexOf('|');
+    const i2 = line.indexOf('|', i1 + 1);
+    const id = line.slice(0, i1);
+    const durationRaw = line.slice(i1 + 1, i2);
+    const title = line.slice(i2 + 1);
+    const d = Number(durationRaw);
+    return { id, title, duration: Number.isFinite(d) && d > 0 ? d : null };
+  });
+}
+
+// 歌嘅正常片長帶:75s(短過呢個多數係 shorts/片段)至 600s=10 分鐘(長過呢個
+// 多數係崇拜/講道/合輯直播)。閾值本身唔係萬能——只係「語言無關」嘅最強
+// 訊號,實測 known-good 中文團體(611 Worship/盛曉玫/有情天)嘅正常歌幾乎
+// 全部跌喺呢個帶入面,而節目/講道/合輯普遍遠超 600s。
+export const SONG_DURATION_MIN = 75;
+export const SONG_DURATION_MAX = 600;
+export function isInSongDurationBand(seconds) {
+  return seconds != null && seconds >= SONG_DURATION_MIN && seconds <= SONG_DURATION_MAX;
+}
+
+// duration 欄現存資料用 "m:ss"(例如 "4:32")顯示格式,前端直接讀嚟顯示
+// (PlayerScreen.js 等),唔係原始秒數,呢度要跟返呢個格式先唔會累到現有 UI。
+export function formatDuration(seconds) {
+  if (!Number.isFinite(seconds) || seconds <= 0) return null;
+  const s = Math.round(seconds);
+  const m = Math.floor(s / 60);
+  const sec = s % 60;
+  return `${m}:${String(sec).padStart(2, '0')}`;
+}
+
+// Layer 2(選擇性,per-group 開關)—— 2026-07-27 Fable 5 方案:全局 title
+// allowlist 對中文歌誤殺率太高(實測 known-good 團體 611 Worship 7%/
+// 盛曉玫 17%/有情天 21% 命中,抽樣驗證全部係正常歌,純歌名標題冇呢啲字眼),
+// 唔可以做主軸。但英文兒童頻道嘅歌片標題慣例穩定(♫/Lyric/Official/Cover
+// 等),用嚟補片長 gate 攔唔晒嘅短集數(Kids on the Move 嗰類教學節目,
+// 好多集數本身都啱啱好跌喺 75-600s 帶入面,淨靠片長唔夠)。
+export function passesTitlePositiveSignal(title = '') {
+  return /♫|lyrics?\b|\bsong\b|worship|dance|sing[\s-]?along|\bmv\b|official|\bcover\b/i.test(title);
+}
+
 // The DB has 208 groups of duplicate youtube_ids (same video under different
 // ids). Keep the lowest id of each group as canonical.
 export function dedupeByYoutubeId(rows) {

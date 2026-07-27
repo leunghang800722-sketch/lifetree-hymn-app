@@ -50,9 +50,16 @@ export const GROUPS = [
   { name: 'SON Music',        aliases: ['SON Music'],              lang: '粵語', priority: 1, inPool: false, channel: '@SonMusicSongs',   est: 50 },
   { name: 'Milk&Honey',       aliases: ['Milk&Honey', 'Milk & Honey'], lang: '粵語', priority: 1, inPool: false, channel: '@milkandhoneyhk', est: 30 },
   { name: '天弦音樂事工',      aliases: ['天弦音樂', '天弦', 'Gsus Music'], lang: '粵語', priority: 1, inPool: false, channel: '@gsusmusicministry', est: 30 },
-  { name: 'SingforGod薪火敬拜', aliases: ['SingforGod', '薪火敬拜'], lang: '粵語', priority: 1, inPool: false, channel: '@singforgod',      est: 30 },
+  // 2026-07-26 Fable 5 質素抽查揪出 P1(SUPERVISION-LOG 10:30 條目):`@singforgod`
+  // 實測係**私人家庭片頻道**("my sweet"/"pe doo.m2v"/"20060714 180527" 等),
+  // 錯 handle 撞入嚟 7 首垃圾(全部誤標粵語),已 curated=0 清走,channel 拆走
+  // 等搵到正身先補。
+  { name: 'SingforGod薪火敬拜', aliases: ['SingforGod', '薪火敬拜'], lang: '粵語', priority: 1, inPool: false, channel: null,      est: 30, note: '2026-07-26 實測 @singforgod 係私人家庭片頻道,錯 handle,已清 7 首垃圾,待搵正身' },
   { name: '鹹蛋音樂事工',      aliases: ['鹹蛋音樂', 'SEMM'],        lang: '粵語', priority: 1, inPool: false, channel: '@semmhk',          est: 30 },
-  { name: 'Redsea Music',     aliases: ['Redsea Music'],           lang: '粵語', priority: 1, inPool: false, channel: '@redseamusic',     est: 20 },
+  // 2026-07-26 Fable 5 P1:`@redseamusic` 實測係**巴西葡語翻唱頻道**
+  // ("Lugar Secreto"/"Bom Bom Pai...Tradução" 等),錯 handle 撞入嚟 13 首
+  // 葡語敬拜(全部誤標粵語),已 curated=0 清走,channel 拆走等搵到正身先補。
+  { name: 'Redsea Music',     aliases: ['Redsea Music'],           lang: '粵語', priority: 1, inPool: false, channel: null,     est: 20, note: '2026-07-26 實測 @redseamusic 係巴西葡語翻唱頻道,錯 handle,已清 13 首垃圾,待搵正身' },
   { name: 'flow music',       aliases: ['flow music', '流堂'],      lang: '粵語', priority: 1, inPool: false, channel: '@flowmusichk',     est: 20 },
   { name: 'KEC Worship',      aliases: ['KEC Worship', '歌鄰敬拜'], lang: '粵語', priority: 1, inPool: false, channel: '@KECworship',      est: 20 },
   { name: '悦雨音樂 GRM',      aliases: ['悦雨音樂', 'GRM'],         lang: '粵語', priority: 1, inPool: false, channel: '@gladnessrainmusic', est: 20 },
@@ -98,15 +105,27 @@ export const GROUPS = [
   { name: 'City Harvest Church', aliases: ['City Harvest'],        lang: '國語', priority: 2, inPool: false, channel: null,            est: 100, note: '2026-07-23 拆走壞handle,等搵到先補' },
   { name: '611 Worship',      aliases: ['611 Worship', '611敬拜'],  lang: '國語', priority: 2, inPool: false, channel: '@611worship',   est: 80 },
   // 2026-07-24:Eric 完整清單追加嘅 3 個,逐個用 yt-dlp 實測過先落:
-  { name: 'Asia for JESUS',   aliases: ['Asia for JESUS', '國度豐收協會'], lang: '國語', priority: 2, inPool: false, channel: '@asiaforjesusasia', est: 50, note: '約書亞樂團旗下協會channel,已驗證有內容;titles多為live worship set(多首歌連埋一個title),四關pipeline會自然篩走唔啱格式嗰啲' },
-  { name: '台北復興堂',        aliases: ['台北復興堂', 'Taipei Revival Church'], lang: '國語', priority: 2, inPool: false, channel: 'channel/UCZPH-BLihIzAGEYCk5lEasA', est: 50, note: '官方channel,已驗證有內容;夾雜住講道/名人講座,同ROLCC類似需要留意' },
+  // 2026-07-27 auditChannel.js 全庫回溯(SUPERVISION-LOG 10:40 條目 Q3):
+  // 60 條 sample,歌片長帶 36.7%、blocklist 命中 60%——GATE 級(30-60%)。
+  // ⚠️ 冇加 contentGate:'duration+title'——呢個頻道係中文,Layer 2 嘅
+  // allowlist 淨係英文兒童頻道先安全(全局實測中文誤殺率高,見上面
+  // contentGate 註解),硬加會連呢個頻道少數真.敬拜歌都篩晒(標題正面
+  // 訊號淨係 10%)。現有 Layer1 片長 + isCompilation blocklist 已經擋走
+  // 大部分講座/研習會內容,剩低嗰批留俾人手/未來語義層覆核,唔係機械
+  // gate 增強能解決,暫時照舊(0 curated,冇急切性)。
+  { name: 'Asia for JESUS',   aliases: ['Asia for JESUS', '國度豐收協會'], lang: '國語', priority: 2, inPool: false, channel: '@asiaforjesusasia', est: 50, note: '約書亞樂團旗下協會channel;titles多為live worship set + 名人講座,四關pipeline自然篩走唔啱格式嗰啲;2026-07-27 audit:帶內36.7%/blocklist60%/正面10%,GATE級但中文唔設Layer2,留俾人手/語義層覆核' },
+  // 2026-07-27 auditChannel.js 全庫回溯:60 條 sample,歌片長帶淨係 18.3%、
+  // blocklist 命中 61.7%——REJECT 級(<30%),同 Kids on the Move 一樣嘅
+  // 「頻道本質係節目台」問題。0 curated(discover 從未成功過),拆走
+  // channel 唔好再試,免得夜夜嘥 discover budget。
+  { name: '台北復興堂',        aliases: ['台北復興堂', 'Taipei Revival Church'], lang: '國語', priority: 2, inPool: false, channel: null, est: 50, note: '官方channel,已驗證有內容,但夾雜住大量講道/名人講座;2026-07-27 audit:帶內18.3%/blocklist61.7%,REJECT級,已拆走channel(0 curated,discover從未成功過)' },
   // ⚠️ 「611靈糧堂」搵到嘅係「台北611靈糧堂」,實測內容幾乎全部係
   // 晨禱/晚禱/生命見證(冇歌名,淨係傳道/牧師名+日期),同上面已有嘅
   // 「611 Worship」(先係真正嘅敬拜歌頻道,已驗證粵國語都有)唔同源。
-  // 照Eric要求加落去跟機制排隊,但預期產量會好低——順手為此補咗
-  // isCompilation() 嘅「N天晚禱/生命見證/傳道+晨禱晚禱」過濾(見
-  // hymnDb.js 2026-07-24 條目,已驗證冇誤殺現有 520 首)。
-  { name: '611靈糧堂',        aliases: ['611靈糧堂', '台北611靈糧堂'], lang: '國語', priority: 2, inPool: false, channel: 'channel/UClkrlvh7cXJiM9xrUzYUZdw', est: 10, note: '2026-07-24 搵到channel但內容幾乎全係講道/禱告會,唔係詩歌,預期產量極低;已有「611 Worship」先係啱嘅敬拜歌source' },
+  // 2026-07-27 auditChannel.js 全庫回溯確認:60 條 sample,歌片長帶淨係
+  // 5%、blocklist 命中 95%——REJECT 級,實測結果同原本(2026-07-24)嘅
+  // 預判完全脗合。0 curated,拆走 channel 唔好再試。
+  { name: '611靈糧堂',        aliases: ['611靈糧堂', '台北611靈糧堂'], lang: '國語', priority: 2, inPool: false, channel: null, est: 10, note: '2026-07-24 搵到channel但內容幾乎全係講道/禱告會,已有「611 Worship」先係啱嘅敬拜歌source;2026-07-27 audit確認:帶內5%/blocklist95%,REJECT級,已拆走channel(0 curated)' },
 
   // ── 英文(pool 已經嚴重超額,唔使爬)────────────────────────────
   { name: 'Hillsong Worship', aliases: ['Hillsong Worship'],       lang: '英文', priority: 3, inPool: true },
@@ -139,6 +158,14 @@ export const GROUPS = [
   // 新加嘅「基恩敬拜祈禱仔」「Giggles and Tunes 童唱童樂」。三個都係指住
   // 官方機構主 channel 入面嘅兒童 playlist(唔係成個 channel),因為主
   // channel 通常成人/兒童混埋,見 growLibrary.js listChannelVideos()。
+  //
+  // 2026-07-27 Fable 5 content-filter 架構升級(docs/SUPERVISION-LOG.md
+  // 10:40 條目)Q1 Layer 2:`contentGate:'duration+title'` —— 淨係全部
+  // 英文兒童頻道開(呢批頻道嘅節目集數可以好短,片長帶單靠 Layer 1 攔唔晒,
+  // 但英文歌片標題慣例穩定,♫/lyric/worship/cover 等 allowlist 誤殺率低)。
+  // 中文兒童頻道**唔設呢層**——實測全局 allowlist 對中文歌誤殺率好高
+  // (611 Worship 7%/盛曉玫 17%/有情天 21%),中文頻道淨靠 Layer 1 片長 +
+  // 現有 isCompilation()/isNonWorship() blocklist 已經夠。
   { name: '讚美之泉兒童',      aliases: ['讚美之泉兒童'],            lang: '兒童', priority: 4, inPool: false, channel: '@StreamofPraiseKids', est: 100, kidsLang: '國語' },
   { name: '611 Kids Worship', aliases: ['611 Kids'],               lang: '兒童', priority: 4, inPool: false, channel: null,               est: 30,  kidsLang: '粵語/國語' },
   // 2026-07-23:下面 3 個 channel 用 yt-dlp 逐個實測,發現都係錯嘅,已經
@@ -159,9 +186,16 @@ export const GROUPS = [
   // 為主,所以指住呢個 playlist,唔指成個 channel(避免掃埋成人內容)。
   { name: 'ACM兒童詩歌',       aliases: ['ACM兒童'],                 lang: '兒童', priority: 4, inPool: false, channel: 'playlist?list=PLKztYP2DMa7idpsANDjeTwBK7O8zh-wXa', est: 76,  kidsLang: '粵語', note: '2026-07-27 改指HKACM Official主channel嘅《ACM齊唱兒歌》playlist,實測76條全部官方CD/DVD版兒歌' },
   { name: 'CantonHymn兒童版',  aliases: ['CantonHymn兒童'],          lang: '兒童', priority: 4, inPool: false, channel: null, est: 20,  kidsLang: '粵語', note: '2026-07-23 拆走錯 handle(其實係CantonHymn general頻道),等搵到真.兒童版先補' },
-  { name: 'Saddleback Kids',  aliases: ['Saddleback Kids'],        lang: '兒童', priority: 4, inPool: false, channel: '@saddlebackkids',  est: 100, kidsLang: '英文' },
-  { name: 'Hillsong Kids',    aliases: ['Hillsong Kids'],          lang: '兒童', priority: 4, inPool: false, channel: '@hillsongkids',    est: 80,  kidsLang: '英文' },
-  { name: 'Bethel Kids',      aliases: ['Bethel Kids'],            lang: '兒童', priority: 4, inPool: false, channel: null,               est: 30,  kidsLang: '英文' },
+  // 2026-07-27 auditChannel.js 全庫回溯:60 條 sample,歌片長帶淨係
+  // 13.3%、blocklist 命中 93.3%、標題正面訊號 0%——REJECT 級,同 Kids on
+  // the Move 一樣「本質係節目台」(「Church at Home | Elementary | ...
+  // Week N」呢類 15-20 分鐘兒童事工節目集數)。Layer1+Layer2 兩層都開埋
+  // 都幾乎揀唔到嘢(正面訊號 0%)。0 curated(discover 從來冇成功過,同
+  // growLibrary.js 註解入面提到嘅「永遠零產出」頻道吻合),拆走 channel
+  // 唔好再試。
+  { name: 'Saddleback Kids',  aliases: ['Saddleback Kids'],        lang: '兒童', priority: 4, inPool: false, channel: null,  est: 100, kidsLang: '英文', contentGate: 'duration+title', note: '2026-07-27 audit:帶內13.3%/blocklist93.3%/正面0%,REJECT級,已拆走channel(0 curated,discover從未成功過)' },
+  { name: 'Hillsong Kids',    aliases: ['Hillsong Kids'],          lang: '兒童', priority: 4, inPool: false, channel: '@hillsongkids',    est: 80,  kidsLang: '英文', contentGate: 'duration+title' },
+  { name: 'Bethel Kids',      aliases: ['Bethel Kids'],            lang: '兒童', priority: 4, inPool: false, channel: null,               est: 30,  kidsLang: '英文', contentGate: 'duration+title' },
   // 2026-07-20:Eric 拍板將呢 4 個(+1 新搵到嘅)搬入嚟。channel handle 已經用
   // `yt-dlp --flat-playlist` 逐個實測揾過先落,唔係靠估:
   //   - Listenn Kids / God's Awesome Kids / Kids on the Move 三個係手動搜尋
@@ -179,7 +213,7 @@ export const GROUPS = [
   //     已驗證,加埋做第 5 個新搬入嘅團體。
   { name: '約書亞樂團青少年版', aliases: ['約書亞樂團青少年版', 'Joshua Band Youth'], lang: '兒童', priority: 4, inPool: false, channel: null, est: 20, kidsLang: '國語', note: '搵唔到獨立子頻道,只有母頻道(已 inPool),待補' },
   { name: '共享詩歌兒童版',    aliases: ['共享詩歌兒童版', 'ShareHymns Kids'],       lang: '兒童', priority: 4, inPool: false, channel: null, est: 10, kidsLang: '粵語', note: '搵唔到獨立子頻道,只有母頻道 @WeShareHymns(已 inPool),待補' },
-  { name: 'Listener Kids',    aliases: ['Listenn Kids', 'Listener Kids'],           lang: '兒童', priority: 4, inPool: false, channel: '@listenerkids', est: 60, kidsLang: '英文', note: '原始資料寫「Listenn Kids」,相信手民之誤,已驗證 @listenerkids 至少60條片' },
+  { name: 'Listener Kids',    aliases: ['Listenn Kids', 'Listener Kids'],           lang: '兒童', priority: 4, inPool: false, channel: '@listenerkids', est: 60, kidsLang: '英文', contentGate: 'duration+title', note: '原始資料寫「Listenn Kids」,相信手民之誤,已驗證 @listenerkids 至少60條片' },
   { name: "God's Awesome Kids", aliases: ["God's Awesome Kids"],                    lang: '兒童', priority: 4, inPool: false, channel: null, est: 10, kidsLang: '粵語', note: '網上搜尋唔到,搵返到先補' },
   // 2026-07-27:Eric 截圖揪出,人手逐條(87首)睇晒 channel 內容,confirm 咗
   // 呢個 channel **本質係兒童聖經教育/品格節目**,唔係詩歌台 —— 87 首入面
@@ -192,14 +226,14 @@ export const GROUPS = [
   // 已經 `curated=0`(reversible),淨返嗰 4 首明確歌保留。channel 拆走
   // 改 null,唔好再俾 discover mode 挖(尤其而家個 mechanism 淺層搵唔到
   // 會自動深挖到 200,只會挖多更多同類非詩歌內容)。
-  { name: 'Kids on the Move', aliases: ['Kids on the Move'],                        lang: '兒童', priority: 4, inPool: false, channel: null, est: 4, kidsLang: '英文', note: '2026-07-27 拆走channel——實測87首入面83首唔係歌(兒童聖經教育節目,唔係詩歌台),已delist,唔好再discover' },
+  { name: 'Kids on the Move', aliases: ['Kids on the Move'],                        lang: '兒童', priority: 4, inPool: false, channel: null, est: 4, kidsLang: '英文', contentGate: 'duration+title', note: '2026-07-27 拆走channel——實測87首入面83首唔係歌(兒童聖經教育節目,唔係詩歌台),已delist,唔好再discover' },
   // 2026-07-26:Fable 5 診斷兒童組卡死(13個團體得4個有channel)之後加嘅
   // 兩個,已 yt-dlp 實測:
-  { name: 'CJ and Friends',   aliases: ['CJ and Friends'],                          lang: '兒童', priority: 4, inPool: false, channel: '@cjandfriends', est: 60, kidsLang: '英文', note: '2026-07-26 已驗證,兒童敬拜dance/sing-along內容' },
+  { name: 'CJ and Friends',   aliases: ['CJ and Friends'],                          lang: '兒童', priority: 4, inPool: false, channel: '@cjandfriends', est: 60, kidsLang: '英文', contentGate: 'duration+title', note: '2026-07-26 已驗證,兒童敬拜dance/sing-along內容' },
   // ⚠️ Yancy 個頻道夾雜清談/merch 推廣片(例如「Convo about Hosting
   // Special Events」),唔淨係歌 —— 靠現有 passesQuality() 篩,冇專門加
   // keyword,留意實際收錄率。
-  { name: 'Yancy',            aliases: ['Yancy'],                                   lang: '兒童', priority: 4, inPool: false, channel: '@yancynotnancy', est: 30, kidsLang: '英文', note: '2026-07-26 已驗證,但頻道夾雜清談/推廣片,靠quality filter篩,收錄率可能唔算高' },
+  { name: 'Yancy',            aliases: ['Yancy'],                                   lang: '兒童', priority: 4, inPool: false, channel: '@yancynotnancy', est: 30, kidsLang: '英文', contentGate: 'duration+title', note: '2026-07-26 已驗證,但頻道夾雜清談/推廣片,靠quality filter篩,收錄率可能唔算高' },
   // 2026-07-27:Eric YouTube 截圖搵到嘅粵語兒童 playlist 源,已 yt-dlp 實測。
   // 基恩敬拜(成人組已 inPool)主 channel 嘅「祈禱仔兒童敬拜系列」playlist,
   // 實測 49 條,~40 條係歌,其餘係專輯介紹/課程回顧/精華花絮呢類(靠

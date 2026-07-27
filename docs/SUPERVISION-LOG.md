@@ -318,3 +318,110 @@ Eric 截圖揪出 Kids on the Move（詩歌庫篩選見到 84/87 首）「呢一
 ③ 現有 13 個已加嘅 channel 入面，可能仲有第二個類似 Kids on the Move 嘅「教育為主，偶爾出歌」
    source（Saddleback Kids 都有唔少 "Church at Home" 節目片，已經部分靠 Week N/Episode N
    keyword 擋咗，但未做過同 Kids on the Move 一樣嘅全頻道人手覆核，值得抽時間查）。
+
+## 🔴 2026-07-27 10:40 Fable 5:content filter 架構性缺口 — 完整方案(Eric 指示即刻出,派「夜晚慢速擴歌庫排程」)
+
+**問題(Eric 發現):** Kids on the Move 87 首入面 78 首係聖經教育/品格節目集數,唔係歌。
+根因:filter 係純 blocklist(識剔已知壞 keyword),冇「positive confirm 係一首歌」嘅步驟,
+題目式標題("What Makes Truth True?")唔撞任何負面詞,全部漏網。(執行 session 已做緊
+delist,check 時 KotM curated 已 87→4。)
+
+**設計前提(實測數據,唔好行錯路):** 用 SQL 對全庫做咗「標題正面訊號」審核 —— known-good
+中文團體嘅正面關鍵字命中率極低(611 Worship 7%/盛曉玫 17%/有情天 21%,抽樣驗證全部係
+正常歌,純歌名標題)。**即係「title positive allowlist」做全局準入會大量誤殺中文歌,
+唔可以做主軸。** 語言無關嘅最強訊號係**片長**(歌 2-8 分鐘 vs 節目/講道/晨禱 10-60 分鐘)。
+
+**Q1 方案 — 兩層 song-confirmation(discover 收錄前,語言校準):**
+1. **Layer 1(全局,零成本):片長帶 gate。** `listChannelVideos` 嘅 --print 加 `%(duration)s`
+   (flat-playlist 本身有 duration,唔加請求)。收錄條件:75s ≤ duration ≤ 600s,
+   出界就 log「⏭ [片長]」跳過。同時順手將 duration 寫入 DB(而家 1430 首 curated 空白,
+   遲啲 audit 都用得着)。閾值執行者可用 known-good 頻道 listing 抽樣校準。
+2. **Layer 2(選擇性):title positive signal。** worshipGroups per-group 新欄位
+   `contentGate: 'duration'(default) | 'duration+title'`。設 'duration+title' 嘅頻道,
+   過埋片長之後仲要標題命中歌訊號(♫/lyric/song/worship/dance/sing.?along/MV/official/
+   cover 等)先收 —— 應用於**全部英文兒童頻道**(佢哋節目集數可以好短,片長攔唔晒;
+   而英文歌片標題慣例穩定,allowlist 誤殺率低)。中文頻道唔使 Layer 2(節目=長片,
+   Layer 1+現有 blocklist 已夠;實測 allowlist 對中文會誤殺)。
+
+**Q2 方案 — 加 channel 審核流程(寫入 worshipGroups.js 檔頭做規矩):**
+新頻道收錄前一律:①攞 60 條(唔係 3 條)`--flat-playlist --print "%(duration)s|%(title)s"`;
+②計三個比例:歌片長帶%、blocklist命中%、正面訊號%;③隨機抽 10 條眼睇(唔好淨睇最新
+—— 最新嗰批會被當季系列 bias 晒);④門檻:歌帶 ≥60% 正常收;30-60% 收但必須
+`contentGate:'duration+title'` + note 記低比例;<30% 係節目台,唔收(Saddleback/611靈糧堂
+呢類事後睇就係咁);⑤note 記 audit 日期+三個比例,日後可覆查。建議寫個細 script
+`scripts/auditChannel.js` 做①②,一個 channel 一個 flat-playlist call。
+
+**Q3 方案 — 全庫回溯 audit(兩步,派埋「全庫內容覆核」方法):**
+1. **機械層:** 用 auditChannel.js 掃晒 ~20 個有 handle 嘅頻道(每個一個 call),出報告排可疑度。
+   優先級(按現有證據):英文兒童頻道全部(Listener Kids/CJ and Friends/Yancy/Hillsong Kids
+   —— KotM 已中招,同類風險最高)> Asia for JESUS/台北復興堂(known 夾雜)> 中文成人頻道(低危)。
+2. **語義層(最強,零 YouTube 請求):** 全庫 curated 標題 by artist 攞晒出嚟,俾一個 LLM session
+   逐個判斷「呢個標題似唔似一首歌」——"What Makes Truth True?" 呢類機械 filter 睇唔出,
+   LLM 一眼睇出。建議由執行 session 或者「全庫內容覆核」session 做一次過批量覆核,
+   可疑清單再人手/延伸驗證,delist 一律 curated=0(隱藏唔刪除)+kickstart。
+**驗證:** 落地後 KotM 類節目片 0 首新增;英文兒童頻道試收時 log 見 [片長]/[標題] 兩種跳過;
+全庫 audit 報告入 SUPERVISION-LOG;delist 完 App 抽查兒童分類冇節目片。
+
+---
+
+## ✅ 2026-07-27 05:10 執行 session(local_fa531849):Q1-Q3 全數落地 + P1 一併清埋
+
+Eric 確認方案,即刻落地,冇再停低問。逐項匯報:
+
+**Q1 Layer 1(片長 gate)——已落地。**`hymnDb.js` 新增 `listChannelVideos()`(由
+growLibrary.js 搬過嚟集中一份)、`isInSongDurationBand()`(75-600s)、
+`formatDuration()`。`discoverFromGroup()` 加咗片長 gate,out-of-band 直接
+log `[片長]` 跳過,唔使嘥錢做死鏈驗證。**實測效果好強**——dry-run 撞到 Asia
+for JESUS/台北復興堂大量 40-80 分鐘嘅研習會/名人講座,片長 gate 喺 blocklist
+關鍵字比對之前就擋咗晒,冇一條走漏。順手 backfill:`discoverFromGroup()` 每次
+攞 listing 都會用 `existing` 嗰批(之前掉晒唔用)嘅 duration 幫舊歌補空白欄
+(免額外 request)。INSERT 新歌時一併寫 duration。
+
+**Q1 Layer 2(標題正面訊號)——已落地。**`hymnDb.js` `passesTitlePositiveSignal()`
+(♫/lyric/song/worship/dance/sing along/mv/official/cover)。`worshipGroups.js`
+7 個英文兒童團體(Saddleback Kids/Hillsong Kids/Bethel Kids/Listener Kids/Kids
+on the Move/CJ and Friends/Yancy)全部加 `contentGate:'duration+title'`。中文
+團體**冇加**——跟返方案原意,實測數據已證(611 Worship 7%/盛曉玫 17%/有情天
+21% 誤殺率)。用 CJ and Friends 25 條真實 listing 驗證:22/25 正確判斷。
+
+**Q2(auditChannel.js)——已寫好。**`backend/scripts/auditChannel.js`,支援
+`--channel`/`--group`/`--all`,攞 N 條(預設 60)計三比例、隨機抽 10 條印出嚟
+人手覆核、按門檻(≥60/30-60/<30%)分級判定。
+
+**Q3(全庫回溯)——已跑晒 29 個有 handle 嘅頻道**(比原估「~20 個」多,因為
+07-27 12:52 另一個 session 加咗 3 個粵語兒童 playlist 源)。結果:
+
+| 判定 | 頻道 |
+|---|---|
+| REJECT(<30%,已拆 channel) | Saddleback Kids(13.3%)、台北復興堂(18.3%)、611靈糧堂(5%) |
+| GATE(30-60%) | Listener Kids(50%,已有 contentGate)、Asia for JESUS(36.7%,中文,冇加 Layer2,留返俾人手/語義層) |
+| OK(≥60%) | 其餘 24 個 |
+
+3 個 REJECT 頻道全部 **0 curated**(discover 從未成功過,同之前「永遠零產出」
+嘅診斷吻合),拆 channel 唔涉及刪任何已收錄歌,零風險。完整 60 條 sample 報告
+喺執行 session 本機(未存檔,如要覆查可以 `node scripts/auditChannel.js
+--group "台北復興堂"` 重新跑)。
+
+**順手清咗嘅 P1(SUPERVISION-LOG 07-26 10:30 條目,拖咗 ~18.5 小時):**
+- `curated=0` 咗 20 首垃圾(7 首 SingforGod薪火敬拜 + 13 首 Redsea Music),
+  同原本診斷嘅 id/數量完全脗合。
+- 兩個 handle 拆走(`@singforgod`/`@redseamusic` → `null`),note 記低。
+- **仲順手做埋原本 P1 方案步驟③**(channel-level CJK sanity check,一直未
+  落地):`discoverFromGroup()` 加咗語言 sanity check——粵/國/中文兒童團體嘅
+  listing 入面一條中文字都冇,就當疑似錯 handle,成個 channel 今次唔試。
+  用 regex 喺 flow music/同心圓等健康頻道驗證過冇誤殺。
+
+**額外發現(冇喺今次方案範圍,記低俾之後跟進):** Asia for JESUS 覆核期間見到
+「Endless Worship」個頻道有 5 首歌因為標題掛住「XX牧師」(鳴謝/推薦嘉賓,唔係
+講道)撞正 `isCompilation()` 嘅「牧師」關鍵字,誤判做「分類」跳過。呢個同
+2026-07-24 已經修過嘅「建道神學院」誤殺屬同一類問題(關鍵字太廣),但今次冇喺
+方案範圍內單獨驗證/修,留俾下次覆核 `isCompilation()` 關鍵字精準度嗰陣一併睇。
+
+**改動檔案:** `backend/lib/hymnDb.js`(+listChannelVideos/formatDuration/
+isInSongDurationBand/passesTitlePositiveSignal)、`backend/scripts/growLibrary.js`
+(片長 gate/標題 gate/CJK sanity check/duration backfill,搬走 listChannelVideos)、
+`backend/scripts/auditChannel.js`(新)、`backend/data/worshipGroups.js`
+(contentGate 7 個 + REJECT 3 個 channel:null + P1 兩個 channel:null)、
+`backend/hymns.db`(P1 delist 20 首)、`HANDOFF.md`(§2.9 新增機制文檔 + 狀態
+數字更新)。**驗證:**`node --check` 全部過、`--status` 正常、dry-run discover
+睇到 [片長]/[分類]/[標題] 三種 skip log 都出現,實測數字全部記喺呢條 entry。
