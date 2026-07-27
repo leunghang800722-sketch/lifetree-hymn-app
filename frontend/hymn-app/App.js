@@ -49,6 +49,7 @@ import { getDisplayTitle } from './src/utils/displayTitle';
 // 向上滑彈出 / 向下滑收起照有。`BottomSheetFlatList` 由 gorhom 協調手勢同 scroll,
 // 唔會有舊 PanResponder 撞 FlatList scroll 嗰個問題(HANDOFF 教訓)。
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import * as Updates from 'expo-updates';
 // ⚠️ sheet **入面**啲掣要用 gorhom 自己嗰個 TouchableOpacity(SheetTouchable)。
 // RN 內置嘅 TouchableOpacity 用舊 responder 系統,喺 gesture-handler 嘅手勢區域入面
 // 喺 Android 上會俾 pan gesture 搶咗個 touch,撳落去時好時壞。gorhom 個版本係
@@ -124,6 +125,24 @@ function formatLyrics(raw) {
     .map((line) => line.trim())
     .filter((line) => line.length > 0)
     .join('\n');
+}
+
+// 段落分組 —— STAGE 3 對嘴驗證 pipeline(backend/scripts/alignLyrics.js)寫
+// displayText 入 DB 嗰陣,段落之間已經用空行(\n\n)分隔咗(見 alignLyrics.js
+// 嘅 displayStanzas.join('\n\n'))。呢度淨係讀返嗰個現成分界,唔重新判斷邊度
+// 斷句 —— 冇空行分界嘅舊資料(純 "|" 一行到尾)就自然變返一個段落。
+function formatLyricsStanzas(raw) {
+  if (!raw) return [];
+  return String(raw)
+    .replace(/\r\n|\r/g, '\n')
+    .split(/\n\s*\n+/)
+    .map((chunk) =>
+      chunk
+        .split(/\n|\|/)
+        .map((line) => line.trim())
+        .filter((line) => line.length > 0)
+    )
+    .filter((lines) => lines.length > 0);
 }
 
 // §3b PERF-FAST-START-PLAN:叫 backend 預熱嗰幾首歌嘅 URL(fire-and-forget)。
@@ -1330,6 +1349,7 @@ function FullScreenPlayerOverlay() {
   // BUG1 P0 — 統一喺呢度轉一次,下面 hasLyrics 判斷同歌詞 Modal 顯示都食呢個
   // 已經拆好行嘅版本,唔再各自 trim() 原始「|」字串。
   const lyricsText = formatLyrics(cur.lyrics);
+  const lyricsStanzas = formatLyricsStanzas(cur.lyrics);
   // BUG3(c) P0(Eric 實測)—— 自動播放關咗 + 播緊 queue 最後一首,⏭ 之前係
   // 冇 disabled 狀態嘅死掣(撳落去 TrackPlayer.skipToNext() 靜靜哋失敗,冇反應)。
   // repeatMode===1(repeat-all)會 wrap 返轉頭,所以呢種情況仲係「有嘢跳」。
@@ -1643,10 +1663,22 @@ function FullScreenPlayerOverlay() {
           <Text style={{ ...TYPOGRAPHY.artist, marginBottom: 16 }} numberOfLines={1}>{cur.artist || ''}</Text>
           <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingBottom: 40 }}>
             {/* §5.3 歌詞行距 1.7x;冇歌詞唔呃人。BUG1:呢度食已經轉好換行嘅
-                lyricsText,唔再係原始「|」分隔字串。 */}
-            <Text style={lyricsText ? TYPOGRAPHY.lyrics : { ...TYPOGRAPHY.body, color: TEXT_SECONDARY }}>
-              {lyricsText || '暫無歌詞'}
-            </Text>
+                lyricsText,唔再係原始「|」分隔字串。
+                段落間距:lyricsStanzas 每個元素係一個段落(主歌/副歌),用
+                獨立 <View> 分開再加 marginBottom,唔係淨係塞多幾個 "\n" 落
+                一嚿 Text 度 —— 段落邊界本身就係 STAGE 3 對嘴驗證 pipeline
+                寫落 DB 嗰陣已經分好,呢度只係跟住個結構畫返出嚟。 */}
+            {lyricsStanzas.length > 0 ? (
+              lyricsStanzas.map((lines, i) => (
+                <View key={i} style={{ marginBottom: i < lyricsStanzas.length - 1 ? 28 : 0 }}>
+                  {lines.map((line, j) => (
+                    <Text key={j} style={TYPOGRAPHY.lyrics}>{line}</Text>
+                  ))}
+                </View>
+              ))
+            ) : (
+              <Text style={{ ...TYPOGRAPHY.body, color: TEXT_SECONDARY }}>暫無歌詞</Text>
+            )}
           </ScrollView>
         </View>
       </Modal>
@@ -1977,6 +2009,7 @@ function AppContent() {
         </Modal>
       )}
 
+      {!__DEV__ ? <UpdateBanner /> : null}
       <TabBar activeTab={activeTab} onTabChange={setActiveTab}
         bottomInset={bottomInset} onMiniPlayerPress={handleOpenFullScreen} />
 
@@ -2013,6 +2046,43 @@ function AppContent() {
     </View>
   );
 }
+
+// ===== EAS Update — 靜默下載 + 薄 banner（雙保險，唔撳都會喺下次冷啟動生效）=====
+// __DEV__/debug build 冇 embed updates config,expo-updates 停用,故意唔喺呢啲環境
+// render 呢個 component(唔淨係 guard 內部邏輯),避免 native module 報錯。
+//
+// ⚠️ 呢個 banner 一定要用**正常 flow**(唔好 position:absolute)——TabBar 本身
+// 就係 flow 入面最尾一個 sibling(冇自己嘅 absolute 定位),absolute banner
+// 會直接疊喺 TabBar 上面遮住個掣(撞過:遮咗「詩歌庫」個掣)。用返 flow,
+// 出現時將 TabBar 自然推低少少,唔會遮任何嘢。
+function UpdateBanner() {
+  const { isUpdatePending } = Updates.useUpdates();
+  const [dismissed, setDismissed] = useState(false);
+  if (!isUpdatePending || dismissed) return null;
+  return (
+    <View style={updateBannerStyles.wrap}>
+      <TouchableOpacity
+        style={updateBannerStyles.bubble}
+        activeOpacity={0.85}
+        onPress={() => { setDismissed(true); Updates.reloadAsync(); }}
+      >
+        <MaterialIcons name="system-update" size={16} color={ACCENT_COLOR} style={{ marginRight: 6 }} />
+        <Text style={updateBannerStyles.text} numberOfLines={1}>已有新版本，撳一下更新</Text>
+      </TouchableOpacity>
+    </View>
+  );
+}
+
+const updateBannerStyles = StyleSheet.create({
+  wrap: { alignItems: 'center', backgroundColor: MAIN_BG_COLOR, paddingVertical: 8 },
+  bubble: {
+    flexDirection: 'row', alignItems: 'center', maxWidth: '86%',
+    backgroundColor: CARD_BG_COLOR, paddingHorizontal: 16, paddingVertical: 10, borderRadius: 24,
+    borderWidth: 1, borderColor: DesignColors.border,
+    shadowColor: '#000', shadowOpacity: 0.3, shadowRadius: 8, shadowOffset: { width: 0, height: 2 },
+  },
+  text: { color: TEXT_PRIMARY, fontSize: 14, fontWeight: '600' },
+});
 
 // ===== App Entry =====
 export default function App() {
