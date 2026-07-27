@@ -1,6 +1,6 @@
 # launchd agents（開機自動啟動）
 
-四個 plist 嘅**副本**，正本喺 `~/Library/LaunchAgents/`。放喺呢度係為咗版本控制 + 萬一要重做有得抄。
+呢啲 plist 嘅**副本**，正本喺 `~/Library/LaunchAgents/`。放喺呢度係為咗版本控制 + 萬一要重做有得抄。
 
 | 檔案 | 做乜 |
 |---|---|
@@ -8,6 +8,8 @@
 | `com.cloudflare.cloudflared.plist` | 行 tunnel（`cloudflared tunnel run hymn-api` → api.god-music.com） |
 | `com.hymnapp.deadlinkcheck.plist` | 每晚 04:00，慢速重驗歌庫死鏈（見 `HANDOFF.md` 三之三） |
 | `com.hymnapp.growlibrary.plist` | **每 15 分鐘一次、24 小時**（2026-07-21 由夜間 00:07-08:07 改，見下面），慢速擴歌庫（見 `HANDOFF.md` 三之九、`LIBRARY-EXPANSION-PLAN.md`） |
+| `com.hymnapp.fetchlyrics.plist` | 每晚 01:00 + 05:00,歌詞入庫（CC/OCR/whisper draft，見 `LYRICS-PIPELINE-PLAN.md`） |
+| `com.hymnapp.alignbackfill.plist` | 每晚 06:50,STAGE 3 音訊次序驗證層——補舊歌嘅 whisper timeline（`scripts/alignBackfill.js`，見底下時序理由） |
 
 ## 安裝
 ```bash
@@ -16,6 +18,8 @@ launchctl load -w ~/Library/LaunchAgents/com.hymnapp.backend.plist
 launchctl load -w ~/Library/LaunchAgents/com.cloudflare.cloudflared.plist
 launchctl load -w ~/Library/LaunchAgents/com.hymnapp.deadlinkcheck.plist
 launchctl load -w ~/Library/LaunchAgents/com.hymnapp.growlibrary.plist
+launchctl load -w ~/Library/LaunchAgents/com.hymnapp.fetchlyrics.plist
+launchctl load -w ~/Library/LaunchAgents/com.hymnapp.alignbackfill.plist
 launchctl list | grep -iE "cloudflare|hymnapp"   # 第 2 欄 exit code，0 = 正常
 ```
 **唔使 sudo。**

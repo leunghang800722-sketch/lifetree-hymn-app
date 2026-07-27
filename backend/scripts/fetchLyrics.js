@@ -64,6 +64,7 @@ import os from 'os';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { openDb, saveDb, query, sleep, acquireDbLock, releaseDbLock } from '../lib/hymnDb.js';
+import { normCompare, bigramDice } from '../lib/textSimilarity.js';
 
 const exec = promisify(execCb);
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -313,40 +314,36 @@ function cleanOcrLine(raw) {
   return s;
 }
 
-// 標點唔理,淨係比對文字本身 —— OCR 好易將「，」讀成「。」/「：」讀成「；」,
-// 純標點誤差唔應該累到成組逐行浮現嘅偵測斷鏈(見下面 mergeOcrLines 嘅用法)。
-const normCompare = (s) => s.replace(/[，。！？；：、,.!?;:]/g, '');
+// 段落級(block)相似度門檻 —— 相鄰 frame 嘅文字 normalize 後 bigram Dice ≥ 呢個數,
+// 當係同一版字幕(OCR 抽 frame 密過畫面轉字幕,同一句歌詞正常會影中 2-5 張 frame)。
+const BLOCK_SIM_THRESHOLD = 0.7;
 
-// 幫一行文字揀去留:同 out 最後一句比,連續完全一樣就丟、係 prefix 就丟/擴、
-// 唔係先至真係push新一行。抽出嚟做獨立 function 俾 mergeOcrLines 兩種情況共用。
-function pushLine(out, line) {
-  if (!out.length) { out.push(line); return; }
-  const prev = out[out.length - 1];
-  if (line === prev) return;                                       // 連續重複(同一句撐幾張 frame)
-  if (line.length > prev.length && line.startsWith(prev)) { out[out.length - 1] = line; return; } // 逐字浮現,留長嗰句
-  if (prev.length > line.length && prev.startsWith(line)) return;   // 新嗰句係舊嗰句嘅 prefix,冇新資訊
-  out.push(line);
-}
-
-// 合併全部 frame 嘅 OCR 文字做一份歌詞草稿。
-//   · 水印過濾:一行喺 >60% 有字嘅 frame 都出現 → 當佢係歌名/團體名/logo,剔走
-//     (呢個捉嘅係「成條片都有」嘅角標/署名,唔係下面嗰種淨係某一段出現嘅定格)。
-//   · 逐行/逐段浮現去重(卡拉OK 效果、經文逐句 fade-in 都係呢種):將呢張 frame
-//     嘅內容成組同上一張(已剔水印)嘅內容比對共同 prefix 有幾長 —— 完全包住
-//     上一張、後面淨係加多幾行 → 淨係 append 新增嗰截;完全係上一張嘅 prefix
-//     (冇新資訊,可能漸漸淡出)→ 成幅跳過;內容有變(換咗新歌詞/經文)→ 當
-//     新一組,逐行行 `pushLine` 嘅單行去重。比對用 `normCompare`(唔理標點),
-//     減少純標點 OCR 誤差累到斷鏈。
-//   · 保持時間順序(frameLineLists 本身已經係落片嘅時間序)。
-// ⚠️ 呢個係草稿,唔係最終歌詞。實測(id 48「祂為我開路」)撞到:片頭 title 卡
-// 第一行俾 OCR 讀成「衪」/「祂」兩種寫法交替(唔係標點,`normCompare` 救唔到),
-// 令去重斷鏈剩返幾組漏網;呢個唔可自呃當完美,但 status='draft' 一定要經
-// reviewLyrics.js 校對先出街,呢個 function 淨係盡量減低校對負擔,唔追求完美。
+// 合併全部 frame 嘅 OCR 文字做一份歌詞草稿 + 段落級時間軸。
+//
+// ⚠️ 2026-07-27 STAGE 3(音訊次序驗證層)重寫:舊版(逐行/逐段浮現去重)靠「畫面
+// 顯示次序」做重複判斷嘅唯一根據,冇對照實際演唱(audio)—— Eric 抽查 id=141
+// 揪出嚟:OCR 每 2 秒抽一張 frame,同一版字幕正常影 2-5 次(假重複),舊版嘅
+// 「連續完全一樣先算重複」對雜訊(卡拉OK填色令逐張 OCR 結果有少少出入)好脆弱,
+// 斷鏈之後假重複同真重複(唱兩次)混埋一齊,冇得分。
+//
+// 新做法分兩步(唔再靠「畫面次序」判斷真假重複 —— 呢個判斷而家交咗俾 STAGE 3
+// 嘅 alignLyrics.js,靠 whisper timestamp 做 ground truth):
+//   1. 段落分組:相鄰 frame 文字相似度 ≥ BLOCK_SIM_THRESHOLD → 同一個 block(假
+//      重複,frame 抽得密過字幕轉嘅速度),block 代表文字揀當中最長/最完整嘅
+//      變體(卡拉OK/經文逐字浮現,最遲嗰張通常最齊全,但唔假設順序,逐張比長度)。
+//   2. 相鄰 block 之間再撞多次相似度 —— OCR 雜訊(一張讀衰咗)有時會將本應
+//      合埋嘅假重複喺同一版字幕入面截斷做兩個相鄰 block,需要再合一次。相隔
+//      遠(中間隔咗其他唔同 block)嘅重複唔會撞入呢層,保留做「可能係真重複」
+//      (真定假,終極由 alignLyrics.js 對照 whisper 判)。
+// 唔再用「同句全曲上限N次」呢種規則 —— 會連真正嘅第二輪都一齊刪走。
+//
+// 回傳 { blocks: [{t, text}], text, watermarkCount }。blocks 直接存入
+// lyrics_timeline.ocr(STAGE 3 schema:{t: 秒, text: block 文字})。
 // frameLineLists: string[][],每個元素係一張 frame(已經跟返個 frame 上到下嘅次序)嘅文字行。
 function mergeOcrLines(frameLineLists) {
   const cleaned = frameLineLists.map((lines) => lines.map(cleanOcrLine).filter(Boolean));
 
-  // 水印偵測:淨係當有字嘅 frame 做分母(冇字嘅 frame 唔應該拉低個百分比)。
+  // 水印偵測(不變):淨係當有字嘅 frame 做分母(冇字嘅 frame 唔應該拉低個百分比)。
   const framesWithText = cleaned.filter((f) => f.length > 0);
   const freq = new Map();
   for (const f of cleaned) for (const line of new Set(f)) freq.set(line, (freq.get(line) || 0) + 1);
@@ -355,29 +352,53 @@ function mergeOcrLines(frameLineLists) {
     for (const [line, n] of freq) if (n / framesWithText.length > 0.6) watermark.add(line);
   }
 
-  const out = [];
-  let lastBlock = []; // 上一張(已剔水印)嘅 frame 內容,成組同而家呢張比對
-  for (const rawFrame of cleaned) {
-    const frame = rawFrame.filter((l) => !watermark.has(l));
-    if (!frame.length) continue;
+  // 逐張 frame 剔水印,計時間點(第 N 張 frame ≈ N × FRAME_INTERVAL_SEC 秒,N 由 1 起)。
+  const frames = [];
+  cleaned.forEach((rawFrame, idx) => {
+    const lines = rawFrame.filter((l) => !watermark.has(l));
+    if (!lines.length) return;
+    frames.push({ t: (idx + 1) * FRAME_INTERVAL_SEC, text: lines.join('\n') });
+  });
 
-    let k = 0;
-    while (k < frame.length && k < lastBlock.length && normCompare(frame[k]) === normCompare(lastBlock[k])) k++;
-
-    if (k === lastBlock.length && frame.length > lastBlock.length) {
-      // 完全包含返上一張,後面淨係加多咗幾行(經文/歌詞逐行浮現)→ 淨係 append 新增嗰部份
-      for (const line of frame.slice(k)) pushLine(out, line);
-      lastBlock = frame;
-    } else if (k === frame.length && frame.length <= lastBlock.length) {
-      // 而家呢張淨係上一張嘅 prefix,冇新資訊(可能漸漸淡出)→ 跳過
-      continue;
+  // Step 1:段落分組 —— 相鄰 frame 相似度夠高就合做同一個 block。
+  const rawBlocks = [];
+  for (const f of frames) {
+    const cur = rawBlocks[rawBlocks.length - 1];
+    const lastFrameInBlock = cur ? cur.frames[cur.frames.length - 1] : null;
+    if (lastFrameInBlock && bigramDice(normCompare(lastFrameInBlock.text), normCompare(f.text)) >= BLOCK_SIM_THRESHOLD) {
+      cur.frames.push(f);
     } else {
-      // 內容有變(換咗新嘅歌詞/經文行)→ 當新一組,逐行行返單行去重邏輯
-      for (const line of frame) pushLine(out, line);
-      lastBlock = frame;
+      rawBlocks.push({ frames: [f] });
     }
   }
-  return { text: out.join('\n').trim(), watermarkCount: watermark.size };
+  // 每個 block 揀最長(最完整)嘅變體做代表文字。
+  let blocks = rawBlocks.map((b) => {
+    const best = b.frames.reduce((a, c) => (charCount(c.text) >= charCount(a.text) ? c : a));
+    return { t: b.frames[0].t, text: best.text };
+  });
+
+  // Step 2:相鄰 block 之間再合一次(修雜訊令假重複斷鏈嘅情況)。
+  let merged = true;
+  while (merged) {
+    merged = false;
+    const next = [];
+    for (const b of blocks) {
+      const prev = next[next.length - 1];
+      if (prev && bigramDice(normCompare(prev.text), normCompare(b.text)) >= BLOCK_SIM_THRESHOLD) {
+        if (charCount(b.text) > charCount(prev.text)) prev.text = b.text; // 揀長嗰份
+        merged = true; // t 保留 prev 嗰個(較早)
+      } else {
+        next.push({ ...b });
+      }
+    }
+    blocks = next;
+  }
+
+  return {
+    blocks,
+    text: blocks.map((b) => b.text).join('\n\n').trim(),
+    watermarkCount: watermark.size,
+  };
 }
 
 async function extractAudioWav(videoPath, dir) {
@@ -400,22 +421,41 @@ async function checkWhisperAvailable() {
 }
 
 // 用返任務1已經落載嗰條片嘅音軌轉錄 —— 零額外 YouTube request。small model,
-// -l auto 自動偵測語言(粵/國/英都食到),-np -nt 淨係要純文字。
+// -l auto 自動偵測語言(粵/國/英都食到)。
+// ⚠️ 2026-07-27 STAGE 3 改用 -oj(JSON,帶 timestamp)代替舊版 -otxt -nt(淨文字,
+// 冇時間) —— alignLyrics.js 對齊演算法要 whisper 嘅逐段時間做「實際演唱」ground
+// truth,冇 timestamp 就做唔到。回傳 [{t0,t1,text}](秒),plainText() 幫手 join
+// 返純文字俾 OCR 唔夠字嗰種 fallback(舊行為,直接寫 lyrics_draft)用。
 async function runWhisperTranscribe(wavPath) {
   const outBase = wavPath.replace(/\.wav$/, '');
   await exec(
-    `${WHISPER_BIN} -m "${WHISPER_MODEL}" -f "${wavPath}" -l auto -otxt -of "${outBase}" -np -nt`,
+    `${WHISPER_BIN} -m "${WHISPER_MODEL}" -f "${wavPath}" -l auto -oj -of "${outBase}" -np`,
     { timeout: 300000 }
   );
-  const txtPath = `${outBase}.txt`;
-  if (!fs.existsSync(txtPath)) return '';
-  return fs.readFileSync(txtPath, 'utf8').trim();
+  const jsonPath = `${outBase}.json`;
+  if (!fs.existsSync(jsonPath)) return [];
+  const parsed = JSON.parse(fs.readFileSync(jsonPath, 'utf8'));
+  const segs = parsed?.transcription || [];
+  return segs
+    .map((s) => ({
+      t0: Math.round((s.offsets?.from ?? 0) / 10) / 100,
+      t1: Math.round((s.offsets?.to ?? 0) / 10) / 100,
+      text: (s.text || '').trim(),
+    }))
+    .filter((s) => s.text);
 }
+const whisperPlainText = (segs) => segs.map((s) => s.text).join(' ').trim();
+
+const WHISPER_MODEL_NAME = path.basename(WHISPER_MODEL).replace(/^ggml-/, '').replace(/\.bin$/, '');
 
 async function runOcr(db, budget) {
   log(`mode=OCR budget=${budget} delay=~${DELAY_MS}ms`);
   const whisperReady = await checkWhisperAvailable();
-  log(`  whisper 後備:${whisperReady ? '已裝妥,OCR 唔夠字會撞落去' : '未裝 / model 未落,OCR 唔夠字嘅歌會標 ocr:miss 留低(唔算失敗)'}`);
+  // 2026-07-27 STAGE 3:whisper 而家唔再淨係「OCR 唔夠字」先撞——同一個 run 順手
+  // 幫每首(唔理 OCR 夠唔夠字)做埋 whisper,攞 timestamp 存 lyrics_timeline.whisper
+  // 做 alignLyrics.js 對齊嘅 ground truth(零額外 YouTube request,片已經落咗)。
+  // OCR 唔夠字嗰種情況,whisper 出嚟嘅文字仲係會當 draft 後備(舊行為冇變)。
+  log(`  whisper:${whisperReady ? `已裝妥(${WHISPER_MODEL_NAME} model)——每首順手做 timeline,OCR 唔夠字仲會揀嚟做 draft 後備` : '未裝 / model 未落,冇 timeline,OCR 唔夠字嘅歌會標 ocr:miss 留低(唔算失敗)'}`);
 
   // ⚠️ 2026-07-25 P0 修:唔可以用 main() 開場嗰個舊 `db` snapshot 揀候選 ——
   // 實錄:CC 層(runCC)喺同一個 run 入面經 writeLyricsRow 剛啱標咗 25 首
@@ -455,40 +495,46 @@ async function runOcr(db, budget) {
       log(`    抽咗 ${frames.length} 張 frame`);
       const frameLines = [];
       for (const f of frames) frameLines.push(await ocrFrame(f));
-      const { text: ocrText, watermarkCount } = mergeOcrLines(frameLines);
+      const { blocks: ocrBlocks, text: ocrText, watermarkCount } = mergeOcrLines(frameLines);
       const ocrChars = charCount(ocrText);
-      log(`    OCR 草稿 ${ocrChars} 隻字(剔咗 ${watermarkCount} 種疑似水印行)`);
+      log(`    OCR 草稿 ${ocrChars} 隻字、${ocrBlocks.length} 個段落 block(剔咗 ${watermarkCount} 種疑似水印行)`);
+
+      // 順手做 whisper(用返呢首歌啱啱落載嗰條片嘅音軌,零額外 request)。失敗
+      // 唔阻 OCR draft(catch 咗)——timeline 冇 whisper 就等 alignBackfill.js 補。
+      let whisperSegs = [], whisperError = null;
+      if (whisperReady) {
+        try {
+          const wav = await extractAudioWav(videoPath, dir);
+          whisperSegs = await runWhisperTranscribe(wav);
+          log(`    whisper 出咗 ${whisperSegs.length} 段(存 timeline,俾將來對齊用)`);
+        } catch (e) {
+          whisperError = e;
+          log(`    ⚠ whisper 轉錄出錯(唔阻 OCR draft):${e?.message || e}`);
+        }
+      }
+      const whisperText = whisperPlainText(whisperSegs);
+      const whisperChars = charCount(whisperText);
+      const timelineFields = (ocrBlocks.length || whisperSegs.length)
+        ? { lyrics_timeline: JSON.stringify({ ocr: ocrBlocks, whisper: whisperSegs, model: WHISPER_MODEL_NAME, updatedAt: new Date().toISOString() }) }
+        : {};
 
       if (ocrChars >= MIN_DRAFT_CHARS) {
-        if (!DRY) await writeLyricsRow(c.id, { lyrics_draft: ocrText, lyrics_status: 'draft', lyrics_source: 'ocr', lyrics_checked_at: today() });
+        if (!DRY) await writeLyricsRow(c.id, { lyrics_draft: ocrText, lyrics_status: 'draft', lyrics_source: 'ocr', lyrics_checked_at: today(), ...timelineFields });
         drafted++;
         log(`    ✓ OCR 有效草稿(累計 +${drafted})`);
+      } else if (whisperChars >= MIN_DRAFT_CHARS) {
+        // OCR 去晒水印之後少過 40 字(當畫面冇字幕)—— whisper 文字夠就做後備 draft。
+        if (!DRY) await writeLyricsRow(c.id, { lyrics_draft: whisperText, lyrics_status: 'draft', lyrics_source: 'whisper', lyrics_checked_at: today(), ...timelineFields });
+        drafted++;
+        log(`    ✓ OCR 冇字幕,whisper 有效草稿(累計 +${drafted})`);
+      } else if (whisperReady && !whisperError) {
+        if (!DRY) await writeLyricsRow(c.id, { lyrics_status: 'unavailable', lyrics_source: 'whisper', lyrics_checked_at: today(), ...timelineFields });
+        unavailable++;
+        log('    · OCR 冇字幕、whisper 都攞唔到嘢(可能純音樂/即興 live),標 unavailable');
       } else {
-        log('    · OCR 去晒水印之後少過 40 字,當畫面冇字幕,試 whisper…');
-        if (whisperReady) {
-          try {
-            const wav = await extractAudioWav(videoPath, dir);
-            const whisperText = await runWhisperTranscribe(wav);
-            const whisperChars = charCount(whisperText);
-            if (whisperChars >= MIN_DRAFT_CHARS) {
-              if (!DRY) await writeLyricsRow(c.id, { lyrics_draft: whisperText, lyrics_status: 'draft', lyrics_source: 'whisper', lyrics_checked_at: today() });
-              drafted++;
-              log(`    ✓ whisper 有效草稿(累計 +${drafted})`);
-            } else {
-              if (!DRY) await writeLyricsRow(c.id, { lyrics_status: 'unavailable', lyrics_source: 'whisper', lyrics_checked_at: today() });
-              unavailable++;
-              log('    · whisper 都攞唔到嘢(可能純音樂/即興 live),標 unavailable');
-            }
-          } catch (e) {
-            log(`    ⚠ whisper 轉錄出錯:${e?.message || e},標 ocr:miss 留低(下次再試)`);
-            if (!DRY) await writeLyricsRow(c.id, { lyrics_source: 'ocr:miss', lyrics_checked_at: today() });
-            ocrMiss++;
-          }
-        } else {
-          if (!DRY) await writeLyricsRow(c.id, { lyrics_source: 'ocr:miss', lyrics_checked_at: today() });
-          ocrMiss++;
-          log('    · whisper 未裝,標 ocr:miss 留低(唔算失敗,等裝好再揀返)');
-        }
+        if (!DRY) await writeLyricsRow(c.id, { lyrics_source: 'ocr:miss', lyrics_checked_at: today(), ...timelineFields });
+        ocrMiss++;
+        log(whisperReady ? '    · whisper 轉錄出錯,標 ocr:miss 留低(下次再試)' : '    · whisper 未裝,標 ocr:miss 留低(唔算失敗,等裝好再揀返)');
       }
     } finally {
       try { fs.rmSync(dir, { recursive: true, force: true }); } catch (_) {}
