@@ -17,6 +17,10 @@ import { getDisplayTitle } from '../utils/displayTitle';
 
 const LANGS = ['全部', '粵語', '國語', '英文', '兒童'];
 
+// 搜尋 normalize —— 剩返字母/數字/CJK,咁「神, 我屬祢!」呢類標點先唔會拆散
+// query 同歌名嘅比對(Eric 實測「神我屬」搵唔到,SUPERVISION-LOG 2026-07-27 17:30)。
+const norm = (s) => (s || '').toLowerCase().replace(/[^\p{L}\p{N}]/gu, '');
+
 // 同播放清單 / 歌單頁一致:喺清單度直接加最愛,唔使入返播放頁(款式照搬 HymnListScreen)
 function Heart({ hymn }) {
   const { isFavorite, toggleFavorite } = useFavorites() || {};
@@ -59,21 +63,22 @@ export default function LibraryScreen({ hymns = [], onPlayHymn }) {
   const [query, setQuery] = useState('');
   const [focused, setFocused] = useState(false);
 
+  // 每首歌嘅 normalize 結果淨係喺 hymns 陣列變嗰陣先重算一次(1500+ 首每下
+  // 撳鍵都行 5 個 regex 會拖慢),之後搜尋淨係一個字串 includes。
+  const augmented = useMemo(() => hymns.map((h) => ({
+    ...h,
+    // 每欄 || '' 兜底:離線舊 cache 可能未有 album/title_en(SEARCH-MERGE-PLAN §5)
+    _searchBlob: norm(h.title) + norm(h.title_en) + norm(h.artist) + norm(h.album) + norm(h.lyrics),
+  })), [hymns]);
+
   // Filter 鏈:全庫 → 語言 chip → 搜尋字串 → 歌手 chip(AND)。
   // 歌手 chip 嘅計數 base 跟埋語言+搜尋重算,所以搜尋層放喺歌手層之前。
   const searched = useMemo(() => {
-    let base = lang === '全部' ? hymns : hymns.filter((h) => h.lang === lang);
-    const q = query.trim().toLowerCase();
-    if (!q) return base;
-    // 每欄 || '' 兜底:離線舊 cache 可能未有 album/title_en(SEARCH-MERGE-PLAN §5)
-    return base.filter((h) =>
-      (h.title || '').toLowerCase().includes(q) ||
-      (h.title_en || '').toLowerCase().includes(q) ||
-      (h.artist || '').toLowerCase().includes(q) ||
-      (h.album || '').toLowerCase().includes(q) ||
-      (h.lyrics || '').toLowerCase().includes(q)
-    );
-  }, [hymns, lang, query]);
+    let base = lang === '全部' ? augmented : augmented.filter((h) => h.lang === lang);
+    const nq = norm(query);
+    if (!nq) return base;
+    return base.filter((h) => h._searchBlob.includes(nq));
+  }, [augmented, lang, query]);
 
   const artists = useMemo(() => {
     const counts = {};
