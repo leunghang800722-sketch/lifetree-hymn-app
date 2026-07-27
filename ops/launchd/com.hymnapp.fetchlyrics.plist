@@ -9,18 +9,22 @@
          行兩層 —— CC 字幕層(平,處理新收錄嘅歌)先,跟住 OCR 層(主力,
          落片+抽frame+Vision OCR+需要時 whisper 後備,一首幾分鐘)。
          CC 揾唔到嘅歌(source='cc:miss')先會入 OCR 隊,唔會夜夜重 CC。
-         2026-07-24 Eric 拍板加速:每晚最少 20 首 → CC 25 + OCR 20。
+         2026-07-27 Eric 再拍板加速:每晚 80 首草稿,拆兩個時段(01:00 +
+         05:00)各 CC 50 + OCR 40 —— 即係每晚合共 CC 100 / OCR 80。
+         拆兩個時段係攤薄同一個住宅 IP 嘅流量 pattern(唔好一口氣連續
+         兩個幾鐘狂撞 YouTube),兩個 slot 都係同一條命令、同一份 budget。
          ⚠️ CC budget 一定要 ≥ OCR budget:cc:miss 存貨係 OCR 嘅糧,CC 實測
          命中率 ~0%,即係每晚 OCR 食幾多就要 CC 產幾多,細過佢 OCR 會斷糧。
-         20 首 OCR 預計 40-90 分鐘,05:00 開波遠早過 09:00 窗口尾,夠鬆。 -->
+         每個 slot 實測預計 ~55-70 分鐘(OCR 平均 ~57 秒/首 + 落載失敗
+         每次最多蝕 3 分鐘 timeout),詳見底下時段註解。 -->
     <key>ProgramArguments</key>
     <array>
         <string>/opt/homebrew/bin/node</string>
         <string>/Users/macbookpro/.openclaw/workspace/hymn-app/backend/scripts/fetchLyrics.js</string>
         <string>--cc-budget</string>
-        <string>25</string>
+        <string>50</string>
         <string>--ocr-budget</string>
-        <string>20</string>
+        <string>40</string>
         <string>--delay</string>
         <string>4000</string>
     </array>
@@ -49,11 +53,25 @@
          05:00 開波,checkDeadLinks 04:00-04:25 一定完咗、鎖一早放咗,
          唔使等。20 首 OCR 預計 40-90 分鐘,05:00 到 09:00 窗口尾仲有
          成 4 個鐘,夠鬆有突。 -->
+    <!-- 2026-07-27 起兩個時段(Eric 拍板 80 首/晚拆半):
+         01:00 slot:CC50+OCR40 ~55-70 分鐘,02:10 左右完(最壞 ~02:40),
+                    離 checkDeadLinks 04:00 開波仲有成粒鐘以上,冇機會撞。
+         05:00 slot:checkDeadLinks 04:00-04:25 一定完晒、鎖一早放咗;
+                    ~06:10 完(最壞 ~06:40),離 09:00 窗口尾好遠。
+         growLibrary 每 15 分鐘一個 slot 照行,靠 hymnDb.js 嘅 DB 鎖互斥
+         (fetchLyrics 每首歌只喺寫入嗰一刻揸鎖,毫秒級,已實戰驗證)。
+         launchd 嘅 StartCalendarInterval 可以係 array,兩個 dict = 兩個時間點。 -->
     <key>StartCalendarInterval</key>
-    <dict>
-        <key>Hour</key><integer>5</integer>
-        <key>Minute</key><integer>0</integer>
-    </dict>
+    <array>
+        <dict>
+            <key>Hour</key><integer>1</integer>
+            <key>Minute</key><integer>0</integer>
+        </dict>
+        <dict>
+            <key>Hour</key><integer>5</integer>
+            <key>Minute</key><integer>0</integer>
+        </dict>
+    </array>
 
     <key>RunAtLoad</key>
     <false/>
