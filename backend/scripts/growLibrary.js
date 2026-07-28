@@ -135,6 +135,19 @@ const ARTIST_CAP = Number(arg('--cap', 9999));
 // 淨係加個名落嚟就會即刻重新畀英文郁 —— 想恢復嘅話刪走 '英文' 就得。
 const PAUSED_LANGUAGES = new Set(['英文']);
 
+// ⚠️ 2026-07-28 Eric 拍板:兒童詩歌**依家多數係英文**,想暫停攞英文兒童、
+// 主力集中粵語/國語兒童。⚠️ 呢個唔可以撈埋上面嗰個 `PAUSED_LANGUAGES` 用 ——
+// 個一係「頂層語言」(粵語/國語/英文/兒童,對應 group.lang),兒童本身**已經
+// 係獨立一個頂層語言桶**,同粵語/國語成人桶完全分開分 budget(見
+// `runDiscoverAll` 嘅 `langCandidates`)。淨係想暫停「兒童入面嘅英文」呢個
+// 更幼細嘅維度(對應 group.kidsLang,唔係 group.lang),要獨立一個 set,
+// 唔可以加 '英文' 落 PAUSED_LANGUAGES(嗰個已經喺度,係管緊成人英文桶)。
+// 用喺 `runDiscoverAll` 揀「兒童」呢個語言桶嘅候選團體嗰步:淨係過濾走
+// kidsLang 喺呢個 set 入面嘅團體,粵語/國語兒童團體、同埋粵語/國語**成人**
+// 桶嘅 budget 完全唔受影響(兩個桶本身已經獨立)。**暫停唔係刪除**:淨係
+// 唔會揀佢哋做新候選,已收錄嘅英文兒童歌唔郁;想恢復淨係刪走 '英文' 就得。
+const PAUSED_KIDS_LANGUAGES = new Set(['英文']);
+
 const today = () => new Date().toISOString().slice(0, 10);
 const stamp = () => new Date().toISOString().replace('T', ' ').slice(0, 19);
 const log = (...a) => console.log(`[${stamp()}]`, ...a);
@@ -507,7 +520,15 @@ async function runDiscoverAll(db, totalBudget) {
   // 團體機會均等,唔會再被同一個(尤其係已經攞晒嘅)團體長開霸位。
   const langCandidates = [];
   for (const lang of langs) {
-    const candidates = ACTIVE_GROUPS.filter((g) => g.lang === lang && !g.inPool && g.channel);
+    let candidates = ACTIVE_GROUPS.filter((g) => g.lang === lang && !g.inPool && g.channel);
+    // 2026-07-28 Eric 拍板:兒童呢個桶入面,暫停英文(見 PAUSED_KIDS_LANGUAGES
+    // 註解)—— 淨係喺呢一步過濾,唔改 `langs`/`langCandidates.length` 嘅計法,
+    // 所以「兒童」依然照舊佔一個 lang slot、攞返佢嗰份 budget(下面
+    // `perGroup`),淨係嗰份 budget 而家淨會揀中文兒童團體,唔會漏俾第二個
+    // 頂層語言(粵語/國語成人桶完全獨立,冇被呢個過濾掂到)。
+    if (lang === '兒童') {
+      candidates = candidates.filter((g) => !PAUSED_KIDS_LANGUAGES.has(g.kidsLang));
+    }
     if (!candidates.length) continue;
     candidates.sort((a, b) => (artistCounts.get(a.name) || 0) - (artistCounts.get(b.name) || 0)
       || Math.random() - 0.5);

@@ -209,6 +209,15 @@ mode 一定要順序捱以下幾關（`growLibrary.js` `discoverFromGroup()`，�
 **尚未做嘅（Eric 拍板「之後再講」）**：語義層 —— 用 LLM 逐個判斷 curated 標題似
 唔似歌名，補機械 filter（片長/blocklist/標題 allowlist）都睇唔出嘅 edge case。
 
+**2026-07-28 Eric 拍板：兒童詩歌暫停英文，主力中文（粵/國）。** `growLibrary.js`
+新增 `PAUSED_KIDS_LANGUAGES`（唔可以同 `PAUSED_LANGUAGES` 撈埋 —— 前者管緊
+`group.lang`＝頂層語言桶（粵/國/英/兒童），後者管緊 `group.kidsLang`＝兒童桶
+入面幼細嘅語言，兩個維度分開）。兒童呢個頂層桶依然照舊佔一個 lang slot、攞
+返佢嗰份 discover budget，淨係嗰份 budget 而家淨會揀 `kidsLang!=='英文'`
+嘅團體（讚美之泉兒童/ACM兒童詩歌/基恩敬拜祈禱仔/Giggles and Tunes）——
+粵語/國語**成人**桶完全獨立，冇受影響。**暫停唔係刪除**：已收錄嘅英文兒童歌
+唔郁，想恢復刪走 `PAUSED_KIDS_LANGUAGES` 入面嘅 `'英文'` 就得。
+
 ### 2.10 EAS Update（OTA，2026-07-27 落地）
 
 跟 `EAS-UPDATE-PLAN.md` 落地：`expo-updates` 已裝，`app.json` 加咗
