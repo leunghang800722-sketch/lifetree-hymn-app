@@ -24,6 +24,15 @@
     <dict>
         <key>PATH</key>
         <string>/opt/homebrew/bin:/opt/homebrew/sbin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+        <!-- JWT_SECRET (MEMBERSHIP-PLAN §5.1) is REQUIRED — server.js refuses to
+             boot without it (backend/lib/authSecret.js). DO NOT put the real
+             value here — this file is committed to git. Set it only in the
+             INSTALLED copy at ~/Library/LaunchAgents/com.hymnapp.backend.plist,
+             which lives outside the repo. Generate with:
+               node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+        -->
+        <key>JWT_SECRET</key>
+        <string>REPLACE-WITH-YOUR-OWN-SECRET-DO-NOT-COMMIT-A-REAL-VALUE</string>
     </dict>
 
     <!-- Start at login. -->

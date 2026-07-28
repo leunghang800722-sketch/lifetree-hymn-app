@@ -39,8 +39,15 @@ yarn-debug.log*
 yarn-error.log*
 
 # Environment
+.env
 .env.local
 .env.*.local
+
+# 會員系統獨立 DB(MEMBERSHIP-PLAN §2.1)—— 含密碼 hash/電話/email,唔可以入 repo
+backend/users.db
+backend/users.db.tmp
+backend/users.db.lock
+backend/backups/
 
 # Backend specific
 backend/node_modules/

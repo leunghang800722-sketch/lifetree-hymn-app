@@ -15,6 +15,7 @@ import authRoutes from './routes/auth.js';
 import otpAuthRoutes from './routes/otpAuth.js';
 import streamRoutes from './routes/stream.js';
 import { resolveAudioUrl, refreshAudioUrl, preVerifyUrl, cache, anyStreaming, isStreaming } from './lib/resolveAudio.js';
+import { getUserDb } from './lib/userDb.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const DB_PATH = path.join(__dirname, 'hymns.db');
@@ -40,8 +41,10 @@ app.use('/api/search', searchRoutes);
 app.use('/api/category', categoryRoutes);
 app.use('/api/audio', audioRoutes);
 app.use('/api/stream', streamRoutes(getDb));
-authRoutes(app, getDb);
-otpAuthRoutes(app, getDb); // 電話 OTP 登入(PHONE-AUTH-PLAN;未有 TWILIO key 前回 503)
+// 用戶數據行獨立 users.db(MEMBERSHIP-PLAN §2.1)——唔搭 hymns.db 順風車,
+// 唔撞夜晚 grow/curate job 嘅 lock 協議;每次寫完即刻 atomic save 落碟。
+authRoutes(app, getUserDb);
+otpAuthRoutes(app, getUserDb); // 電話 OTP 登入(PHONE-AUTH-PLAN;未有 TWILIO key 前回 503)
 
 // Super simple APK download at root level
 app.get('/app.apk', (req, res) => {

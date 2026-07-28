@@ -10,8 +10,9 @@
 // 用 fetch 直駁 Twilio Verify REST API,前端零 SDK、backend 零新 dependency。
 
 import jwt from 'jsonwebtoken';
+import { JWT_SECRET } from '../lib/authSecret.js';
+import { saveUserDb } from '../lib/userDb.js';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'hymn-app-jwt-secret-2026';
 const TOKEN_EXPIRY = '30d';
 
 // Twilio 配置(Eric 之後喺 launchd env 補;冇就當「未配置」)
@@ -93,12 +94,7 @@ function clientIp(req) {
   return (req.headers['cf-connecting-ip'] || req.headers['x-forwarded-for'] || req.ip || '').split(',')[0].trim();
 }
 
-export default function otpAuthRoutes(app, getDb) {
-  // 遷移:users 加 phone。email/password_hash 保留,舊帳戶照登入。
-  async function ensurePhoneColumn(db) {
-    try { db.run('ALTER TABLE users ADD COLUMN phone TEXT'); } catch (_) {}
-  }
-
+export default function otpAuthRoutes(app, getUserDb) {
   app.post('/api/auth/otp/request', async (req, res) => {
     try {
       const phone = normalizePhone(req.body?.phone);
@@ -143,8 +139,7 @@ export default function otpAuthRoutes(app, getDb) {
         return res.status(401).json({ error: 'bad_code', message: '驗證碼唔啱或者過期' });
       }
 
-      const db = await getDb();
-      await ensurePhoneColumn(db);
+      const db = await getUserDb();
 
       // upsert:有 phone 就登入,冇就開新用戶(註冊登入合一)
       let user = null;
@@ -159,6 +154,7 @@ export default function otpAuthRoutes(app, getDb) {
         // email NOT NULL 舊 schema:俾個 placeholder 唯一 email,password_hash 亦要有值
         db.run('INSERT INTO users (username, email, password_hash, phone) VALUES (?, ?, ?, ?)',
           [null, `phone_${phone}@placeholder.local`, 'otp-no-password', phone]);
+        saveUserDb(db);
         const s2 = db.prepare('SELECT id, username, email, phone FROM users WHERE phone = ?');
         s2.bind([phone]); s2.step(); user = s2.getAsObject(); s2.free();
       }

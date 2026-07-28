@@ -1,0 +1,58 @@
+// lib/userDb.js — 會員系統獨立 DB(MEMBERSHIP-PLAN §2.1)
+//
+// 用戶數據唔搭 hymns.db 順風車:嗰邊有夜晚 grow/curate/lyrics job 嘅 lock
+// 協議,backend 對佢係「讀完唔 reload」;用戶數據就要日頭零散寫、即時
+// persist、得 server process 一個寫入者。分開兩個檔,兩邊互不干擾。
+//
+// 每次寫完即刻 atomic save(export → 寫 tmp → rename),抄 hymnDb.js 現成
+// 做法。用戶量細(幾十人),每次全量 export 冇壓力。
+
+import initSqlJs from 'sql.js';
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+export const USER_DB_PATH = path.join(__dirname, '..', 'users.db');
+
+function initSchema(db) {
+  db.run(`CREATE TABLE IF NOT EXISTS users (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    username TEXT,
+    email TEXT UNIQUE NOT NULL,
+    password_hash TEXT NOT NULL,
+    phone TEXT,
+    created_at TEXT DEFAULT (datetime('now'))
+  )`);
+  // 遷移:phone 欄位可能係舊版留低嘅(冇 UNIQUE),保持一致。
+  try { db.run('ALTER TABLE users ADD COLUMN phone TEXT'); } catch (_) {}
+}
+
+export function saveUserDb(db) {
+  const tmp = `${USER_DB_PATH}.tmp`;
+  fs.writeFileSync(tmp, Buffer.from(db.export()));
+  fs.renameSync(tmp, USER_DB_PATH);
+}
+
+let dbInstance = null;
+let dbPromise = null;
+
+// Lazy singleton, 同 server.js 個 getDb() 一樣嘅 pattern。第一次攞就順手
+// 建檔(冇 users.db 就開新嘅),之後全部操作行同一個 in-memory 實例 +
+// 每次寫完 saveUserDb() 落碟。
+export async function getUserDb() {
+  if (dbInstance) return dbInstance;
+  if (!dbPromise) {
+    dbPromise = (async () => {
+      const SQL = await initSqlJs();
+      const db = fs.existsSync(USER_DB_PATH)
+        ? new SQL.Database(fs.readFileSync(USER_DB_PATH))
+        : new SQL.Database();
+      initSchema(db);
+      saveUserDb(db); // 令 users.db 喺第一次 boot 即刻喺碟出現,唔使等第一個寫操作
+      dbInstance = db;
+      return db;
+    })();
+  }
+  return dbPromise;
+}
