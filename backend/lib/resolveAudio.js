@@ -110,6 +110,12 @@ function computeExpiresAt(url) {
   return Date.now() + DEFAULT_TTL_MS;
 }
 
+// ⚠️ 2026-07-28 Fable 5 診斷「神我屬祢」卡 loading 事故加嘅 logging(SUPERVISION-LOG
+// 條目):之前逐個 strategy `catch (_)` 靜吞,一條片喺 in-process 持續 resolve 失敗
+// 完全冇跡可尋(全 log grep 'All yt-dlp' = 0 條)。改一處(呢個 function 本身)就
+// 兩條調用路徑(下面 parallel/順序)自動受惠 —— 唔使逐個 call site 加。err.message
+// 通常帶埋 yt-dlp 嘅 stderr(例如「tv client formats skipped as DRM protected」),
+// 順手令呢類 YouTube 側實驗性擋法有得追蹤,唔使靠估。
 function runStrategy(youtubeId, strat) {
   return exec(
     `yt-dlp -f "${strat.fmt}" ${strat.extra} --get-url --no-playlist "https://www.youtube.com/watch?v=${youtubeId}"`,
@@ -118,6 +124,9 @@ function runStrategy(youtubeId, strat) {
     const url = stdout.trim();
     if (url && url.startsWith('http')) return url;
     throw new Error(`empty url (${strat.name})`);
+  }).catch((e) => {
+    console.warn(`⚠️ resolve strategy failed: strategy=${strat.name} id=${youtubeId} err=${e?.message || e}`);
+    throw e;
   });
 }
 
@@ -132,6 +141,7 @@ async function resolveViaYtDlp(youtubeId) {
       ]);
     } catch (_) {
       try { return await runStrategy(youtubeId, STRATEGIES[2]); } catch (_) {}
+      console.error(`❌ All yt-dlp strategies failed for ${youtubeId}`);
       throw new Error(`All yt-dlp strategies failed for ${youtubeId}`);
     }
   }
@@ -139,6 +149,7 @@ async function resolveViaYtDlp(youtubeId) {
   for (const strat of STRATEGIES) {
     try { return await runStrategy(youtubeId, strat); } catch (_) {}
   }
+  console.error(`❌ All yt-dlp strategies failed for ${youtubeId}`);
   throw new Error(`All yt-dlp strategies failed for ${youtubeId}`);
 }
 
@@ -223,4 +234,4 @@ export function bustCache(youtubeId) {
   failCache.delete(youtubeId);
 }
 
-export { cache };
+export { cache, failCache };

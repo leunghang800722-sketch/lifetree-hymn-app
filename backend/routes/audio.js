@@ -3,7 +3,7 @@
 // Otherwise, uses yt-dlp directly (for local/free-cloud usage)
 
 import { Router } from 'express';
-import { resolveAudioUrl, cache } from '../lib/resolveAudio.js';
+import { resolveAudioUrl, cache, failCache } from '../lib/resolveAudio.js';
 
 const router = Router();
 
@@ -75,8 +75,16 @@ router.get('/:youtubeId', async (req, res) => {
 });
 
 // GET /api/audio/cache/stats — debug endpoint
+// 2026-07-28 加 failCache 觀察口(Fable 5「神我屬祢」卡 loading 事故指示):
+// 呢個 in-memory 負面快取(15分鐘)之前完全冇得睇,「一條片 resolve 持續失敗、
+// failCache 唔斷重 arm」呢類狀況要重啟 backend 先發現得到。而家可以直接
+// curl 呢個 endpoint 睇邊啲 id 而家仲喺 failCache、幾時到期,唔使靠估。
 router.get('/cache/stats', (req, res) => {
-  res.json({ cacheSize: cache.size });
+  const now = Date.now();
+  const failing = [...failCache.entries()]
+    .filter(([, until]) => until > now)
+    .map(([id, until]) => ({ youtubeId: id, retryInSec: Math.round((until - now) / 1000) }));
+  res.json({ cacheSize: cache.size, failCacheSize: failing.length, failing });
 });
 
 export { cache };

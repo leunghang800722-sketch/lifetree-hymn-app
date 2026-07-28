@@ -691,3 +691,57 @@ Hillsong Kids2/Endless1/泥土1)**同 Fable 5 條數完全脗合**。
 
 **改動檔案:** `backend/lib/hymnDb.js`(isNonWorship 加關鍵字組)、`backend/hymns.db`
 (62 首 rejected)。未 commit,等指示。
+
+## 🟠 2026-07-28 「神我屬祢」卡loading — Fable 5 診斷+指示(派「夜晚慢速擴歌庫排程」/backend側即跟)
+
+**排除晒嘅嘢(全部實測):** 條片(58Dy7WtfLl0)生勾勾 —— public/473s,CLI yt-dlp 即刻 resolve 到;
+DB status=ok 冇錯;**唔使行 dead-link 流程**。App→backend `/api/stream/2364` 回 502
+"resolve failed",而且 0.003s 即彈 = 食緊 resolveAudio.js `failCache`(15 分鐘負面快取)。
+用同一份 code+同一環境開 fresh node process 行 `resolveAudioUrl('58Dy7WtfLl0')` **成功**
+—— 即係 code/環境/片都冇問題,係跑緊嗰個 backend process 內部 resolve 持續失敗+failCache
+不斷重 arm(Eric 個 App 好可能仲開住 loop retry)。
+
+**額外發現(根本問題):① resolve 失敗零記錄** —— `runStrategy` 逐個策略 `catch (_)` 靜吞,
+最終失敗都冇 log(全 log grep 'All yt-dlp' = 0 條),所以 in-process 死因無從稽考。
+**② tv client 對呢條片會撞 DRM**("tv client formats skipped as DRM protected"),策略1
+永遠 fail 靠 fallthrough 兜住 —— 如果 YouTube 呢個 DRM experiment 擴大,tv 策略會大面積
+失效,冇 log 嘅話我哋唔會知。
+
+**指示:**
+1. **即時解封(1 分鐘):** `launchctl kickstart -k gui/$(id -u)/com.hymnapp.backend` ——
+   清走 in-memory failCache,重載 disk cache(入面已經有我啱先 resolve 成功嘅 URL)。
+   完成後 curl `/api/stream/2364` 應回 200/206 有 bytes,再叫 Eric 試。
+2. **加 logging(細改,必做):** runStrategy 失敗 log 一行(`strategy=X id=Y err=Z`),
+   `All yt-dlp strategies failed` 都要 log 埋 youtubeId —— 下次先追到 in-process 死因。
+3. **加 failCache 觀察口(細改,建議):** `/api/audio/cache/stats` 加返 failCache size
+   +最近 fail 嘅 id 列表;方便日後唔使靠估。
+4. 修完照舊實測:curl 攞到音訊 bytes + Eric 部機播到先算完。
+
+---
+
+## ✅ 2026-07-28 執行 session(local_fa531849):四步全落地,已用真 bytes 驗證
+
+**第1步(優先,即刻做):** `launchctl kickstart` 完即刻 `curl -H "Range: bytes=0-65535"
+/api/stream/2364` —— 206 Partial Content,`content-type: audio/mp4`,`file` 命令確認
+真.ISO Media/MP4 音訊(唔淨係睇 HTTP status,實測攞到 bytes),`content-range` 顯示全長
+7.6MB 冇變。**即刻話俾 Eric 知可以再播。**
+
+**第2步(logging,已落地):** `resolveAudio.js` 嘅 `runStrategy()` 加 `.catch` log 一行
+(`strategy=X id=Y err=Z`),因為 `resolveViaYtDlp` 嘅 parallel/順序兩條調用路徑都經
+呢個 function,**改一處兩路都受惠**,唔使逐個 call site 加。`resolveViaYtDlp` 兩個
+「全部 strategy 都死」出口都加咗 `console.error` 埋 youtubeId。**用假 id(`AAAAAAAAAAA`)
+實測觸發:log 見到 3 條 strategy 失敗(逐個帶 err message,包括 yt-dlp 原始 stderr)+
+1 條 `All yt-dlp strategies failed` summary**,同期仲順手見到一條真實 keep-warm 請求
+(`wNV2lmnI1qU`)嘅 tv strategy 失敗都被記錄咗——證明呢個 logging 對日常真實流量都生效,
+唔淨係測試先見到。
+
+**第3步(failCache 觀察口,已落地):** `resolveAudio.js` export `failCache`(之前淨係
+export `cache`),`routes/audio.js` `/api/audio/cache/stats` 加 `failCacheSize`
++ `failing`(每條 youtubeId + 幾多秒後可以再試)。用假 id 觸發完即刻 curl 確認:
+`{"cacheSize":327,"failCacheSize":1,"failing":[{"youtubeId":"AAAAAAAAAAA","retryInSec":900}]}`
+——精確反映 15 分鐘 FAIL_TTL_MS。
+
+**第4步(驗證):** 全部用真.HTTP 請求 + 真.bytes 確認,冇淨係睇 log/code 就當完成。
+
+**改動檔案:** `backend/lib/resolveAudio.js`(runStrategy log + export failCache)、
+`backend/routes/audio.js`(cache/stats 加 failCache 觀察口)。未 commit,等指示。
