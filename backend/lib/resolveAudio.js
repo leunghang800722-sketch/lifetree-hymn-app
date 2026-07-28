@@ -34,8 +34,14 @@ const RESOLVE_TIMEOUT_MS = 12000;
 // **唔同 itag / bitrate / 檔案大細**。平行 race 邊個贏唔一定,所以同一首歌喺唔同時間
 // resolve 可能出唔同 format。一旦播緊途中要重 resolve(URL 過期 / keep-warm 續熱),
 // ExoPlayer 就會由 format A 嘅 byte offset 跳去 format B,byte 對唔上 → 播下停下。
-// 順序(tv 行先,tv 唔得先 default)= 同一首歌永遠出同一個 format,冇呢個問題
+// 順序固定(唔理邊個排先)= 同一首歌永遠出同一個 format,冇呢個問題
 // (= v238 之前嘅行為,嗰陣冇 stutter)。冷 resolve 慢返少少係可接受嘅代價。
+// ⚠️ 2026-07-29 Fable 5 診斷(SUPERVISION-LOG「tv client DRM experiment 全面化」
+// 條目):yt-dlp #12563 —— YouTube 對 tv client 有個 session 級 DRM 實驗,越來越多
+// 片嘅 tv 策略一律「DRM protected/format not available」,要靠 default fallback
+// 先收到,每首白蝕一次注定失敗嘅 tv 請求(~4s + 多打一次 YouTube)。原本 STRATEGIES
+// 次序 tv 行先,而家改做 **default 行先、tv 做後備**(下面陣列)——上面條 invariant
+// 淨係要求「次序固定」,唔理邊個排第一,呢個位換晒都唔會累到 stutter 個 fix。
 const RESOLVE_PARALLEL = process.env.RESOLVE_PARALLEL === '1';
 
 // ── 「而家播緊邊幾首」登記(止血用)──────────────────────────────
@@ -53,8 +59,8 @@ export function isStreaming(id) { return (streaming.get(id) || 0) > 0; }
 export function anyStreaming() { return streaming.size > 0; }
 
 const STRATEGIES = [
-  { name: 'youtube:player_client=tv', fmt: 'bestaudio[ext=m4a]/bestaudio', extra: '--extractor-args "youtube:player_client=tv"' },
   { name: 'default', fmt: 'bestaudio[ext=m4a]/bestaudio', extra: '' },
+  { name: 'youtube:player_client=tv', fmt: 'bestaudio[ext=m4a]/bestaudio', extra: '--extractor-args "youtube:player_client=tv"' },
   { name: 'default-any', fmt: 'bestaudio', extra: '' },
 ];
 

@@ -745,3 +745,168 @@ export `cache`),`routes/audio.js` `/api/audio/cache/stats` 加 `failCacheSize`
 
 **改動檔案:** `backend/lib/resolveAudio.js`(runStrategy log + export failCache)、
 `backend/routes/audio.js`(cache/stats 加 failCache 觀察口)。未 commit,等指示。
+
+## ✅ 2026-07-28 會員系統 Phase 0 Fable 5 獨立驗收 — PASS
+
+1. **JWT secret:** authSecret.js env-only、無 fallback、冇 secret 拒絕 boot;現行 code/ops
+   零殘留舊字串;installed plist 有 64 字元新 secret(驗證咗 ≠ 舊 leaked 值 ≠ repo
+   placeholder,冇 print 出嚟)。⚠️ 舊 secret 'hymn-app-jwt-secret-2026' 仍然喺 git
+   history(冇 filter-repo 拆唔走,已知 .git 750MB 問題同款),但已輪替 = 舊 token 全部
+   失效,無害。repo 只載 placeholder。
+2. **users.db 私隱:** .gitignore 齊 users.db/.tmp/.lock 三條,git ls-files 確認未被 track;
+   .env 類都冇 track。
+3. **重啟持久化(我親手做):** kickstart backend → 200 健康、users.db id:2(+85292881174)
+   原封不動、boot 冇 JWT 錯誤。
+4. **Commit 範圍:** fc9a31b 八個 file 全部屬 Phase 0 範圍,server.js diff 只係 auth routes
+   換 getUserDb,冇夾走其他 session 嘢。(順帶:dataVersion cache-bust 仲未落地,係另一單,
+   繼續等「全庫歌詞補齊規劃」。)
+**結論:可以話俾 Eric 知 Phase 0 搞掂。**
+
+**2026-07-28 16:40 ✅ dataVersion cache-bust 三件套已落地(2d470c2)——Dispatch 追派,由歌詞監督線接手完成。**
+- server.js(/api/version + envelope dataVersion)+ useCachedHymns(version 比對先決定 full fetch,
+  fail 就 fallback 舊行為)+ App.js 播放器 cur 改按 id 攞 live state(單一 hunk)。
+- Emulator 四項驗證全過(version 變→重拉;唔變→跳過;離線→MMKV 照畫;播放器 regression OK)。
+- ⚠️ 未出街:未推 OTA。要 Eric/dispatch 拍板先 eas update。18:00 嗰單 instruction 可以閂。
+
+**2026-07-28 19:20 check 過，正常（DB 1703／兒童 407／draft 102）＋一個要跟嘅趨勢。**
+- 器樂/教學片 delist 驗收 ✓(關鍵字掃描 0 首殘留,82090f0);英文兒童暫停(d324692)生效;
+  0 首歌收失敗,launchd 5 job 在位。
+- **趨勢警號(派「夜晚慢速擴歌庫排程」跟):tv client DRM experiment 全面化** ——
+  log 見連續多條片 tv 策略一律「DRM protected/format not available」,全靠 default
+  fallback 先收到。影響:①每首白蝕一次失敗 tv 請求(+~4s,YouTube call ×2);②係
+  yt-dlp #12563「session 級 DRM 實驗」訊號,萬一 default client 都中,成條線斷。
+  **建議:**resolveAudio.js STRATEGIES 次序改 default 行先、tv 做後備(甚至暫時拆走 tv)。
+  致穩定性註解嗰個「同一首歌永遠同一 format」invariant 唔受影響 —— 只要次序固定,
+  default-first 一樣滿足。順手繼續留意 e28e5b8 新加嘅 resolve 失敗 log 有冇 default
+  都 fail 嘅案例(有=紅色警報,即刻報 Eric)。
+- draft 102/verified 43 —— 覆核層仍然停滯(觀察項A 第三日),繼續催「全庫歌詞補齊規劃」。
+
+---
+
+**2026-07-28 20:50 ❌ W1+W2 會員同步 / ✅ 播放插播修復 —— 獨立驗收(Opus 5 驗收層)**
+
+驗收方法:自己開一個全新 test 帳號 `opus-verify@example.com`(user id 6),**冇**用其他
+session 個 `synctest1`;emulator 先 `pm clear` 洗乾淨,關咗 autofill service(避開之前
+記低嗰個「另一 session 測試帳號 autofill 彈窗」陷阱)。所有結論都有 server 端 curl 對數,
+唔淨係睇 app 畫面。
+
+**一、MineScreen.js 衝突 —— 其實冇衝突,已 reconcile(cce47e0)**
+兩個 session 改嘅係同一個 file 嘅唔同位:W2(3c3923c)改頂部同步狀態顯示 + phone-tail
+fallback,已 commit;插播嗰個 session 改 `renderItem` 嘅 onPress,一直留喺 working tree
+未 commit。兩者獨立,唔使揀邊邊,直接疊埋就啱。已 commit 做 cce47e0,內容:最愛列表撳歌
+由 `onPlayHymn(item)`(散歌 + 全庫隨機尾巴)改成 `{ explicit: true, playlist: favorites }`,
+同上面「播全部」一致。呢個改動係插播場景嘅前提 —— 冇佢就根本冇一個真.清單可以接返落去。
+
+**二、播放插播修復(53006b2 + cce47e0)—— ✅ 過,可以出**
+最愛「播全部 5 首」→ 詩歌庫撳「這一生最美的祝福」→ 即刻播嗰首;播放清單維持 **5**
+(= 新歌 + 餘低 4 首最愛,次序原封不動,唔係俾 1694 首詩歌庫換走);唔撳任何掣、
+拖到 4:17/4:33 讓佢自然播完 → 自動接「榮耀大君王」→ 再自然接「唯一的希望」。
+Sonnet 話「攞唔到乾淨端到端驗證」嗰part,而家補齊咗,截圖喺 session scratchpad
+(s17→s22)。
+
+**三、⚠️ 插播修復有個缺口(同一類 bug,另一個入口)—— 未修**
+`我的 → 自建清單 → 清單詳情頁` 播嘅清單,插播判斷**完全唔會生效**,成個清單照樣俾
+詩歌庫換走(實測:播放清單 33 → **1694**,清單消失)。
+- 位置:`frontend/hymn-app/App.js:869`,browseTap guard 入面嘅 `autoRadioFromRef.current == null`。
+- 因由:`PlaylistDetailSheet.js:77` 傳 `appendAutoplayTail: true` → `App.js:895` 會設
+  `autoRadioFrom = list.length`(非 null)→ guard 即刻 false → 唔插播,照換 queue。
+  只要「自動播放」開住(預設開),自建清單一定中。最愛「播全部」冇傳呢個 flag 所以冇事
+  —— 即係同一個 bug,用戶行另一條路一樣會撞返。
+- 附帶:guard 嗰句 `!curQ.some(...)` 係拎成條 queue(**連 30 首隨機尾巴**)嚟比,
+  撳中尾巴入面任何一首都會當「唔係第二個清單」而唔插播。修嗰陣一齊睇。
+
+**四、❌ W2 前端同步:最愛嘅逐次同步(outbox)完全推唔上 server —— P0,會蝕數據**
+- **根因:`frontend/hymn-app/src/sync/userSync.js:75`** ——
+  `const headers = { 'Content-Type': 'application/json', Authorization: ... }` 呢個 headers
+  俾晒所有 op 用,包括**冇 body** 嗰啲:`fav_add`(POST)、`fav_remove`(DELETE)、
+  `pl_delete`(DELETE)。後端 `server.js:54` 行 `express.json()`,收到「聲稱 json 但冇
+  body」就 throw SyntaxError → **HTTP 400**。`runOp` 見 `!r.ok` 就 return false,
+  `flush()` 一 fail 即停,條 outbox 永遠推唔郁。
+- **證據:**臨時喺 runOp 加 log,logcat 見 `'DBG fav_add resp', 400, false`;同一支
+  hymn id 用 curl(唔帶 Content-Type)打同一條 route 即刻 200。UI 亦見「4 項等緊同步」
+  一直卡住唔跌。
+- **驗過嘅修法:**冇 body 嘅 request 唔好落 `Content-Type`(净留 Authorization),
+  `pl_upsert` 先用帶 json 嘅 headers。臨時改完再測 → `'DBG fav_add resp', 200, true`,
+  outbox 即刻清空,server `/api/me/data` 見到首歌。(**呢個改動已 revert,working tree
+  乾淨,留返俾執行 session 正式落。**)
+- **點解 Sonnet 6 步驗證會全綠:**登入合併(`pushSync` POST 有 body)同 pull
+  (`pullData` GET)兩條路都冇踩到呢個 headers,所以「重裝→登入→數據攞返晒」的確過。
+  斷咗嘅係**登入之後逐次撳心心**嗰條 outbox 路,要對 server 數先睇得出。
+
+**五、❌ 連帶數據流失(比上面更惡)—— `App.js:1979-1988` onActive**
+`onActive` 係 `await flushOutbox()` 之後**唔理 flush 成功與否**,照 `pullData()` +
+`replaceAllFavorites(server 版)`。所以 flush 一 fail(而家係必 fail),前後台切一次就用
+server 舊資料**蓋走**本地未推上去嘅最愛。實測:app 內加 4 首最愛 → 切一次前後台 →
+最愛剩返 1 首(server 嗰首),4 首人間蒸發;再重開 app,登入合併行 `clearOutbox()`,
+連 outbox 嗰 4 條 op 都一併**永久掉咗**。
+即使修好第四點,呢度都應該加保護:outbox 未清空就唔好 pull-overwrite。
+
+**六、✅ 抽查過、確認冇事嘅部分**
+- 重裝模擬(`pm clear`)→ 登入 → 「已同步 5 首最愛」,5 首連 title/歌手全部返晒嚟。
+- 新帳戶第一次登入 = 「已同步 0 首最愛、0 個清單」,冇夾到其他帳戶數據。
+- 清單 server → client pull:curl PUT 整咗個「驗收清單」3 首落 server,app 切前後台後
+  「我嘅清單 1」即刻出現,入面 3 首次序啱。
+- 後端 W1 API 本身冇問題(favorites POST/DELETE、playlists PUT、/api/me/data、/api/me/sync
+  curl 全部 200,行為正確)—— 呢次全部係前端問題。
+
+**結論:插播修復(含 cce47e0)可以叫 Eric 試;W2 同步唔可以出街,要先修返 §4、§5,
+順手一齊修 §3。** 修完要用「登入 → 撳心心 → curl 對 server 數 → 切前後台 → 再對數」
+呢個流程重驗,唔可以淨係睇 app 畫面。
+
+**2026-07-28 22:20 check：例行正常（DB 1727／兒童 431／draft 102）＋「All strategies failed」批量現形，方案如下。**
+- 新 resolve logging(e28e5b8)現形咗 33 個 id 三策略全敗。抽樣 15 個:13 個=基恩敬拜
+  (紅線筆記 known「成批片死晒」現象,以前冇 log 睇唔到);TZO4fPE6TS8(SOP兒童)實測
+  web/ios/tv/default 四個 client 都「Only images available」= YouTube 只 serve storyboard
+  (SABR/PO-token 類),唔係 IP 全面被封(歌庫照 +24/3h,大多數 resolve 正常)。
+- **唔係紅色警報**,但兩個行動派「夜晚慢速擴歌庫排程」:
+  ① **yt-dlp 升級:** 而家 2026.06.09,brew stable 已有 2026.7.4 —— PO-token/SABR 類故障
+     正正係 point release 追住修嘅嘢。`brew upgrade yt-dlp` 後對呢 33 個 id re-probe,
+     預期一批會返生;記得四個 launchd job 全部用緊 /opt/homebrew/bin 同一支,升級一次
+     全部受惠,唔使改 plist。
+  ② 真死嗰批由現有 dead-link 機制(連續 3 日失敗先標 dead)自然收埋,唔使人手;
+     但如果入面有 curated=1 嘅歌,呢 3 日內用戶播會卡 loading(failCache 502)——
+     可以考慮對呢 33 個 id 行一次 targeted deadlink check 加速判定。
+- draft 102/verified 43,覆核層第三日停滯,繼續催。
+
+**2026-07-29 01:20 check 過，正常（DB 1744／兒童 448／draft 115）。**
++17/3h 增長,近 200 行 all-fail 只 1 條(基恩批次殘餘),5 job 在位。draft 102→115
+(有零星補批)。**未做:** yt-dlp 仍係 2026.06.09(升級指示未執行);覆核層 verified 仍 43。
+兩項照掛住催。
+
+**2026-07-29 04:20 check 過，正常（DB 1744／兒童 448／draft 141）。**
+- 3 個鐘零增長係**健康現象**:content-gate 片長帶(75-600s)已上線,log 實見逐條剔走
+  50-72s 鋼琴譜示範/宣傳短片(之前滲漏嗰類嘅新片,而家入唔到嚟);候選窗口自然消化中;
+  04:12 一次 lock skip 係 deadlinkcheck 04:00 例行。Job 生勾勾,0 斷路。
+- 逐策略 resolve log 亦上線(⚠️ strategy=X id=Y err=Z 格式)。draft 115→141。
+- 仍未做:yt-dlp 升級(2026.06.09)、覆核層(verified 43)。
+
+---
+
+## ✅ 2026-07-29 執行 session(local_fa531849):Eric 問「係咪卡住」→ 獨立驗證 + 兩個待辦落地
+
+Eric 見 1730→1739 覺得增長慢,問係咪卡住。**獨立查證(唔淨係信 Fable 5 04:20 個判斷):**
+launchd `growlibrary` job 健康(last exit code 0),log 每 15-16 分鐘一 tick,最新一 tick
+(20:43 UTC)實時處理緊粵語頻道(KEC Worship/悦雨音樂GRM),**唔係卡死**。19:50-20:43 UTC
+呢 53 分鐘 flat 喺 1739,查實係讚美之泉兒童呢一輪 listing 撞正一大批鋼琴譜示範/宣傳片
+(50-72s,片長 gate 同 isNonWorship 逐條剔走,log 歷歷在目),加埋僅有嘅真候選撞正
+DRM——**同 Fable 5 04:20 條目判斷一致:健康現象,唔係故障**。
+
+順手落地兩個 Fable 5 已經診斷、掛喺「派夜晚慢速擴歌庫排程」但未執行嘅待辦:
+1. **yt-dlp 升級:** `brew upgrade yt-dlp`(2026.6.9 → 2026.7.4)。**誠實匯報:**升級後
+   re-test 之前 33 個 all-strategies-failed 嗰批入面抽 5 條(WU0rXGXF8YM/Z6mFlmPhK68/
+   fLH9HNN9oYs/h7nBixcj6as/z2k8PLtr2ls),全部依然「Video unavailable」——即係話呢批
+   **唔係版本問題,係真.死鏈**(同 HANDOFF 已知「基恩敬拜/角聲使團批次死亡率高」
+   現象吻合,13/15 抽樣本身就係基恩敬拜)。升級冇即刻翻生呢 33 條,但對日後
+   SABR/PO-token 類新故障仍然有預防價值,值得做。Kickstart backend 後 `/api/health`
+   200、id 2364 stream 再驗 206,冇因為升級而壞咗任何嘢。
+2. **STRATEGIES 次序:tv 行先 → default 行先**(`resolveAudio.js`)。原本 tv 排第一,
+   而家 tv client DRM experiment(yt-dlp #12563)越嚟越多片中招,每首白蝕一次注定
+   失敗嘅 tv 請求先落去 default。「同一首歌永遠同一 format」invariant 淨係要求
+   **次序固定**(唔理邊個排第一),換咗都唔會累到 v238 之前嗰種 stutter。用直接
+   module 調用 + `/api/audio/:id` HTTP 驗證過重新 resolve 正常。
+
+**結論(答返 Eric 條問題):冇卡住,job 健康,今晚嘅慢係篩走緊之前滲漏嗰類內容嘅
+正常代價。**已順手清埋兩個 Fable 5 掛住嘅待辦,剩低嘅只有覆核層(verified 43)未跟。
+
+**改動檔案:** `backend/lib/resolveAudio.js`(STRATEGIES 次序)。yt-dlp 版本係系統層
+brew 套件,唔喺 git 追蹤範圍。未 commit,等指示。
