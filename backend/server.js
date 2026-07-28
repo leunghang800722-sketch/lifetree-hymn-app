@@ -13,6 +13,7 @@ import categoryRoutes from './routes/category.js';
 import audioRoutes from './routes/audio.js';
 import authRoutes from './routes/auth.js';
 import otpAuthRoutes from './routes/otpAuth.js';
+import meRoutes from './routes/me.js';
 import streamRoutes from './routes/stream.js';
 import { resolveAudioUrl, refreshAudioUrl, preVerifyUrl, cache, anyStreaming, isStreaming } from './lib/resolveAudio.js';
 import { getUserDb } from './lib/userDb.js';
@@ -60,6 +61,7 @@ app.use('/api/stream', streamRoutes(getDb));
 // 唔撞夜晚 grow/curate job 嘅 lock 協議;每次寫完即刻 atomic save 落碟。
 authRoutes(app, getUserDb);
 otpAuthRoutes(app, getUserDb); // 電話 OTP 登入(PHONE-AUTH-PLAN;未有 TWILIO key 前回 503)
+meRoutes(app); // 跨裝置同步 API(MEMBERSHIP-PHASE1-LOGIN-SYNC §1.3)
 
 // Super simple APK download at root level
 app.get('/app.apk', (req, res) => {

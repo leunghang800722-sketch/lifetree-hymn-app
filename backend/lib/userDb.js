@@ -26,6 +26,30 @@ function initSchema(db) {
   )`);
   // 遷移:phone 欄位可能係舊版留低嘅(冇 UNIQUE),保持一致。
   try { db.run('ALTER TABLE users ADD COLUMN phone TEXT'); } catch (_) {}
+  // requireAuth 順手記低最後活躍時間,舊 DB 冇呢欄就補一次(MEMBERSHIP-PHASE1 §1.2)。
+  try { db.run('ALTER TABLE users ADD COLUMN last_seen_at TEXT'); } catch (_) {}
+
+  // ── 會員系統 Phase 1:跨裝置同步(MEMBERSHIP-PHASE1-LOGIN-SYNC §1.1)──────
+  db.run(`CREATE TABLE IF NOT EXISTS favorites (
+    user_id    INTEGER NOT NULL,
+    hymn_id    INTEGER NOT NULL,
+    created_at TEXT DEFAULT (datetime('now')),
+    PRIMARY KEY (user_id, hymn_id)
+  )`);
+
+  // 清單 id 係 client 生成嘅 TEXT('pl_<timestamp>'),用 (user_id, id) 做 PK
+  // 令前端零遷移,唔使 server↔client id remap。songs 一舊過存 JSON,唔開
+  // playlist_songs 表(母 plan §2.2 嗰個表係俾將來分享/協作先需要)。
+  db.run(`CREATE TABLE IF NOT EXISTS playlists (
+    user_id    INTEGER NOT NULL,
+    id         TEXT NOT NULL,
+    name       TEXT NOT NULL,
+    position   INTEGER DEFAULT 0,
+    songs_json TEXT NOT NULL DEFAULT '[]',
+    updated_at TEXT NOT NULL,
+    deleted    INTEGER DEFAULT 0,
+    PRIMARY KEY (user_id, id)
+  )`);
 }
 
 export function saveUserDb(db) {
