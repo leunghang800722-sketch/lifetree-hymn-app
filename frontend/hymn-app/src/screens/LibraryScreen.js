@@ -183,9 +183,12 @@ export default function LibraryScreen({ hymns = [], onPlayHymn }) {
           // 隨機接續」嗰條路,睇落成個詩歌庫得 31 首。而家傳 explicit:true +
           // 而家顯示緊(已經行埋語言/搜尋/歌手 filter)嘅 `shown`,同「睇晒」
           // 個分類詳情頁一致:揀成個當前清單做隊列,由撳嗰首開始播。
+          // browseTap:true —— 呢度係「掃緊詩歌庫/搜尋」,唔係「揀緊一個清單」,
+          // 見 App.js handlePlayHymn 註解:如果而家有第二個清單(例如最愛)
+          // 播緊,撳呢度嘅歌會插播,唔會換走嗰個清單。
           <TouchableOpacity
             style={styles.row}
-            onPress={() => onPlayHymn && onPlayHymn(item, { explicit: true, playlist: shown })}
+            onPress={() => onPlayHymn && onPlayHymn(item, { explicit: true, playlist: shown, browseTap: true })}
             activeOpacity={0.7}
           >
             <Cover youtubeId={item.youtube_id} />

@@ -777,6 +777,21 @@ function PlayerProvider({ children }) {
   autoRadioFromRef.current = autoRadioFrom;
   async function playSingle(hymn, pool) {
     if (!hymn) return;
+    // 插播 —— 如果而家播緊一個「明確清單」(playQueue 直接開嗰種,冇自動尾巴,
+    // 即 Library/搜尋撳單曲以外嗰種:清單「播全部」/清單入面撳歌),
+    // 喺清單以外撳一首散歌唔應該換走成個清單:即刻播嗰首,播完接返落去
+    // 原本清單嘅下一首,唔使額外 resume 狀態 —— 淨係將呢首歌擺喺
+    // [新歌, ...原本清單餘低嗰截] 交返俾 playQueue,靠 native 自動接續。
+    const curQ = queueRef.current || [];
+    const curIdx = currentQueueIndexRef.current || 0;
+    const isExplicitQueue = autoRadioFromRef.current == null && curQ.length > 1;
+    const resumeRemainder = isExplicitQueue
+      ? curQ.slice(curIdx + 1).filter((s) => String(s.id) !== String(hymn.id))
+      : [];
+    if (resumeRemainder.length > 0) {
+      await playQueue([hymn, ...resumeRemainder], 0, { autoRadioFrom: null });
+      return;
+    }
     // 自動播放關咗 → 淨播嗰首,冇隨機尾巴(AUTOPLAY-MIX-PLAN:關咗就係關咗)
     if (!autoplayEnabledRef.current) {
       await playQueue([hymn], 0, { autoRadioFrom: null });
@@ -844,6 +859,25 @@ function PlayerProvider({ children }) {
 
   async function playQueue(list, startIndex = 0, opts = {}) {
     if (!Array.isArray(list) || list.length === 0) return;
+    // 插播(Eric 2026-07-28)—— 詩歌庫/搜尋(`opts.browseTap`)撳嘅歌唔算「揀咗
+    // 成個清單」,淨係「掃緊街見到一首想聽」。如果而家已經有第二個真.清單
+    // 播緊(唔係呢首歌本身所屬嗰個 `list`),就淨係插播嗰首,播完接返落去
+    // 嗰個清單嘅下一首,唔好成個清單換走。「播全部」/清單詳情頁/最愛清單
+    // 入面撳歌冇呢個 flag,一律照舊正常換 queue(§3 語義分界,見 handlePlayHymn)。
+    if (opts.browseTap) {
+      const tapped = list[startIndex];
+      const curQ = queueRef.current || [];
+      const curIdx = currentQueueIndexRef.current || 0;
+      const isDifferentExplicitQueue = autoRadioFromRef.current == null && curQ.length > 1
+        && tapped && !curQ.some((s) => String(s.id) === String(tapped.id));
+      const resumeRemainder = isDifferentExplicitQueue
+        ? curQ.slice(curIdx + 1).filter((s) => String(s.id) !== String(tapped.id))
+        : [];
+      if (resumeRemainder.length > 0) {
+        list = [tapped, ...resumeRemainder];
+        startIndex = 0;
+      }
+    }
     // BUG3(b) P0(Eric 實測)—— explicit 隊列(例如「我的」清單「播全部」/撳單曲)
     // 如果自動播放開住,都應該好似其他入口咁播晒之後有隨機尾巴接落去,唔係就
     // 死死哋停,同「⏭ 冇嘢跳」變死掣(見下面 hasNext)。
@@ -1954,7 +1988,9 @@ function AppContent() {
       const idx = Math.max(0, list.findIndex(s => s.id === h.id));
       // BUG3(b) — 淨係打晒標記嘅 caller(PlaylistDetailSheet)先會加自動播放
       // 尾巴,見 playQueue() 註解。
-      playQueue(list, idx, { appendAutoplayTail: !!opts.appendAutoplayTail });
+      // browseTap:true(詩歌庫/搜尋)—— 插播判斷邏輯喺 playQueue() 入面做
+      // (嗰度先有 queueRef 呢啲 player 內部 ref,呢個 component 冇)。
+      playQueue(list, idx, { appendAutoplayTail: !!opts.appendAutoplayTail, browseTap: !!opts.browseTap });
     } else {
       // 隨機接續一律由**全庫**抽,唔用 opts.playlist 做 pool ——「今日為你預備」
       // 之類得 6 首,攞嚟做 pool 就得 5 首尾巴,太短。全庫抽先夠似 Spotify。
