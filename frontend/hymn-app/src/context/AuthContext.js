@@ -2,6 +2,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { API_BASE } from '../config';
+import { setAuthToken, clearOutbox } from '../sync/userSync';
 
 const AUTH_KEY = '@hymn…uth';
 
@@ -26,6 +27,12 @@ export function AuthProvider({ children }) {
       setLoading(false);
     })();
   }, []);
+
+  // userSync 係獨立 lib(唔係 context),要靠呢度灌 token 落去先識打 /api/me/*
+  // (§2.1)。token 一變(登入/登出/loading 完成)即刻同步落去。
+  useEffect(() => {
+    setAuthToken(token);
+  }, [token]);
 
   const saveAuth = useCallback(async (token, user) => {
     setToken(token);
@@ -87,8 +94,12 @@ export function AuthProvider({ children }) {
     return data;
   }, [saveAuth]);
 
+  // §2.5 登出:本地最愛/清單保留(降返做訪客數據),但 outbox 要清——嗰啲操作
+  // 屬於舊帳戶,冇 token 之後亦推唔到,留低只會喺下次(可能係第二個人)登入
+  // 嗰陣做錯嘢。owner 唔郁,等下次登入判斷同一人定換咗人。
   const logout = useCallback(async () => {
     await clearAuth();
+    clearOutbox();
   }, [clearAuth]);
 
   const getToken = useCallback(() => token, [token]);

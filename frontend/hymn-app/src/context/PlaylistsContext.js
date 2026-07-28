@@ -9,6 +9,7 @@
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { MMKV } from 'react-native-mmkv';
+import { enqueue, flush, setStalePlaylistHandler } from '../sync/userSync';
 
 export const MAX_PLAYLIST_SONGS = 30;
 
@@ -45,6 +46,14 @@ export const PlaylistsProvider = ({ children }) => {
     try { store()?.set(KEY, JSON.stringify(next)); } catch (e) { console.warn('playlists persist:', e?.message); }
   }, []);
 
+  // 跨裝置同步(§2.2)—— 每個 mutation 之後推一個 pl_upsert(成個清單一舊)。
+  // updated_at 要喺呢度、本地一齊寫(LWW 用);position 用陣時嗰刻喺陣列入面
+  // 嘅 index,俾 server 排序用。
+  const syncUpsert = useCallback((pl, list) => {
+    enqueue({ op: 'pl_upsert', playlist: { ...pl, position: list.findIndex((p) => p.id === pl.id) } });
+    flush();
+  }, []);
+
   // firstSong:開新清單通常都係「想擺依家首歌入去」。一次過喺度加埋,
   // 唔好叫 caller 開完再 call addToPlaylist —— 嗰陣 setState 未 flush,
   // addToPlaylist 個 closure 仲未見到新清單,實 return missing。
@@ -52,14 +61,12 @@ export const PlaylistsProvider = ({ children }) => {
     const songs = firstSong?.id
       ? [{ id: firstSong.id, title: firstSong.title, artist: firstSong.artist, youtube_id: firstSong.youtube_id, lang: firstSong.lang }]
       : [];
-    const pl = { id: `pl_${Date.now()}`, name: name || '未命名清單', songs };
-    setPlaylists((prev) => {
-      const next = [...prev, pl];
-      try { store()?.set(KEY, JSON.stringify(next)); } catch (_) {}
-      return next;
-    });
+    const pl = { id: `pl_${Date.now()}`, name: name || '未命名清單', songs, updated_at: new Date().toISOString() };
+    const next = [...playlists, pl];
+    persist(next);
+    syncUpsert(pl, next);
     return pl;
-  }, []);
+  }, [playlists, persist, syncUpsert]);
 
   // 回傳 { ok, reason } 俾 UI 決定點出提示 —— 唔喺 context 入面直接彈 Alert,
   // 咁 context 先可以喺冇 UI 嘅地方(測試 / 背景)照用。
@@ -71,27 +78,63 @@ export const PlaylistsProvider = ({ children }) => {
     if (target.songs.length >= MAX_PLAYLIST_SONGS) return { ok: false, reason: 'full', playlist: target };
 
     const slim = { id: hymn.id, title: hymn.title, artist: hymn.artist, youtube_id: hymn.youtube_id, lang: hymn.lang };
-    persist(playlists.map((p) => (p.id === playlistId ? { ...p, songs: [...p.songs, slim] } : p)));
+    const updated = { ...target, songs: [...target.songs, slim], updated_at: new Date().toISOString() };
+    const next = playlists.map((p) => (p.id === playlistId ? updated : p));
+    persist(next);
+    syncUpsert(updated, next);
     return { ok: true, playlist: target };
-  }, [playlists, persist]);
+  }, [playlists, persist, syncUpsert]);
 
   // 改名:淨係改 name,songs 不動。空名直接唔理(UI 層有「未命名清單」fallback,
   // 但改名唔同開新清單 —— 改做空白多數係手滑,保留原名穩陣過改成 placeholder)。
   const renamePlaylist = useCallback((playlistId, name) => {
     const trimmed = (name || '').trim();
     if (!trimmed) return;
-    persist(playlists.map((p) => (p.id === playlistId ? { ...p, name: trimmed } : p)));
-  }, [playlists, persist]);
+    const target = playlists.find((p) => p.id === playlistId);
+    if (!target) return;
+    const updated = { ...target, name: trimmed, updated_at: new Date().toISOString() };
+    const next = playlists.map((p) => (p.id === playlistId ? updated : p));
+    persist(next);
+    syncUpsert(updated, next);
+  }, [playlists, persist, syncUpsert]);
 
   const removeFromPlaylist = useCallback((playlistId, hymnId) => {
-    persist(playlists.map((p) => (
-      p.id === playlistId ? { ...p, songs: p.songs.filter((s) => s.id !== hymnId) } : p
-    )));
-  }, [playlists, persist]);
+    const target = playlists.find((p) => p.id === playlistId);
+    if (!target) return;
+    const updated = { ...target, songs: target.songs.filter((s) => s.id !== hymnId), updated_at: new Date().toISOString() };
+    const next = playlists.map((p) => (p.id === playlistId ? updated : p));
+    persist(next);
+    syncUpsert(updated, next);
+  }, [playlists, persist, syncUpsert]);
 
   const deletePlaylist = useCallback((playlistId) => {
     persist(playlists.filter((p) => p.id !== playlistId));
+    enqueue({ op: 'pl_delete', id: playlistId });
+    flush();
   }, [playlists, persist]);
+
+  // 登入合併/pull(§2.3-2.4)、換帳戶保護(§2.5)用:server 全量覆蓋本地,
+  // 跟 server 嘅 position 排序。
+  const replaceAllPlaylists = useCallback((serverPlaylists) => {
+    const sorted = [...(serverPlaylists || [])].sort((a, b) => (a.position || 0) - (b.position || 0));
+    persist(sorted);
+  }, [persist]);
+
+  // pl_upsert 收到 stale:true(§2.1)→ userSync 呼叫呢個,用 server 版覆蓋本地
+  // 嗰個清單。用 functional setState,唔靠 closure 嘅 playlists(呢個 callback
+  // 隨時喺 flush 完成好耐之後先觸發)。
+  const applyServerPlaylist = useCallback((serverPl) => {
+    setPlaylists((prev) => {
+      const idx = prev.findIndex((p) => p.id === serverPl.id);
+      const next = idx >= 0 ? prev.map((p, i) => (i === idx ? { ...serverPl } : p)) : [...prev, { ...serverPl }];
+      try { store()?.set(KEY, JSON.stringify(next)); } catch (_) {}
+      return next;
+    });
+  }, []);
+
+  useEffect(() => {
+    setStalePlaylistHandler(applyServerPlaylist);
+  }, [applyServerPlaylist]);
 
   const isPlaylistFull = useCallback(
     (playlistId) => {
@@ -105,7 +148,7 @@ export const PlaylistsProvider = ({ children }) => {
     <PlaylistsCtx.Provider value={{
       playlists, createPlaylist, addToPlaylist, renamePlaylist,
       removeFromPlaylist, deletePlaylist, isPlaylistFull,
-      MAX_PLAYLIST_SONGS,
+      replaceAllPlaylists, MAX_PLAYLIST_SONGS,
     }}>
       {children}
     </PlaylistsCtx.Provider>

@@ -6,7 +6,7 @@
 // (主要用戶唔係長者),所以呢度冇字體大小設定。深淺色模式亦都跟 §5.4「深色為主,
 // 日後有餘力先考慮淺色」,所以而家淨係得帳戶相關。
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, FlatList, TouchableOpacity, StyleSheet, Image, Alert } from 'react-native';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { COLORS, TYPOGRAPHY } from '../theme/designSystem';
@@ -17,6 +17,19 @@ import { useAuth } from '../context/AuthContext';
 import { useAddToPlaylist } from '../components/AddToPlaylistSheet';
 import PlaylistDetailSheet from './PlaylistDetailSheet';
 import { getDisplayTitle } from '../utils/displayTitle';
+import { getOutboxLength } from '../sync/userSync';
+
+// 帳戶格副標題(已登入時):讀 outbox length 俾 Eric 肉眼驗證同步狀態
+// (MEMBERSHIP-PHASE1-LOGIN-SYNC §2.6——唔加任何 spinner/手動掣,全自動)。
+// 冇專用事件通知呢度「outbox 變咗」,poll 一下夠用,mount 先行有,唔會谷 CPU。
+function useOutboxLength() {
+  const [len, setLen] = useState(() => getOutboxLength());
+  useEffect(() => {
+    const t = setInterval(() => setLen(getOutboxLength()), 2000);
+    return () => clearInterval(t);
+  }, []);
+  return len;
+}
 
 function Cover({ youtubeId, size = 52 }) {
   const [failed, setFailed] = useState(false);
@@ -36,6 +49,7 @@ export default function MineScreen({ onPlayHymn, onOpenAuth, miniPlayer, hasMini
   const { playlists = [], deletePlaylist } = usePlaylists() || {};
   const { user, logout } = useAuth() || {};
   const { open: openAddToPlaylist, openCreate, openRename } = useAddToPlaylist();
+  const outboxLength = useOutboxLength();
   const [tab, setTab] = useState('favorites'); // favorites | playlists
   const [detailId, setDetailId] = useState(null); // 開緊邊個清單嘅詳情頁
 
@@ -81,8 +95,12 @@ export default function MineScreen({ onPlayHymn, onOpenAuth, miniPlayer, hasMini
           <MaterialIcons name={user ? 'person' : 'person-outline'} size={22} color={COLORS.accent} />
         </View>
         <View style={{ flex: 1, marginLeft: 12 }}>
-          <Text style={styles.accountTitle}>{user ? (user.username || user.email) : '未登入'}</Text>
-          <Text style={styles.accountSub}>{user ? '撳一下管理帳戶' : '登入後可以同步最愛同清單'}</Text>
+          <Text style={styles.accountTitle}>
+            {user ? (user.username || user.email || (user.phone ? `尾號 ${user.phone.slice(-4)}` : '未命名帳戶')) : '未登入'}
+          </Text>
+          <Text style={styles.accountSub}>
+            {user ? (outboxLength > 0 ? `${outboxLength} 項等緊同步` : '已同步') : '登入後可以同步最愛同清單'}
+          </Text>
         </View>
         <MaterialIcons name="chevron-right" size={22} color={COLORS.textSecondary} />
       </TouchableOpacity>

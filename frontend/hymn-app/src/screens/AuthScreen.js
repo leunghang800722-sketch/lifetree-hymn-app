@@ -60,11 +60,14 @@ export default function AuthScreen({ onClose }) {
             <MaterialIcons name="close" size={24} color="#F5F7F4" />
           </TouchableOpacity>
           <View style={styles.logoArea}>
+            {/* OTP 新用戶冇 username(§2.6)—— 用電話尾四位做顯示名,唔好出 `?` */}
             <View style={[styles.logoIcon, { backgroundColor: '#3DB389' }]}>
-              <Text style={[styles.avatarLetter, { fontSize: 28, fontWeight: '800' }]}>{(user.username || '?').charAt(0).toUpperCase()}</Text>
+              <Text style={[styles.avatarLetter, { fontSize: 28, fontWeight: '800' }]}>
+                {(user.username || user.phone?.slice(-4) || '?').charAt(0).toUpperCase()}
+              </Text>
             </View>
-            <Text style={styles.logoTitle}>{user.username}</Text>
-            <Text style={styles.logoSubtitle}>{user.email}</Text>
+            <Text style={styles.logoTitle}>{user.username || (user.phone ? `尾號 ${user.phone.slice(-4)}` : '未命名帳戶')}</Text>
+            <Text style={styles.logoSubtitle}>{user.email && !user.email.endsWith('@placeholder.local') ? user.email : user.phone}</Text>
           </View>
           <TouchableOpacity style={styles.submitBtn} onPress={() => { logout(); if (onClose) onClose(); }} activeOpacity={0.8}>
             <Text style={styles.submitText}>登出</Text>

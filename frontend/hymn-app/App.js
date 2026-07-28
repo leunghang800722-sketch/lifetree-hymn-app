@@ -18,11 +18,12 @@ import {
 } from 'react-native';
 import { COLORS } from './src/constants/theme';
 import { FavoritesProvider, useFavorites } from './src/context/FavoritesContext';
-import { PlaylistsProvider } from './src/context/PlaylistsContext';
+import { PlaylistsProvider, usePlaylists } from './src/context/PlaylistsContext';
 import { AddToPlaylistProvider, useAddToPlaylist } from './src/components/AddToPlaylistSheet';
 import { AuthProvider, useAuth } from './src/context/AuthContext';
 import AuthScreen from './src/screens/AuthScreen';
 import { PlaylistProvider } from './src/context/PlaylistContext';
+import { setAuthToken, pullData, pushSync, flush as flushOutbox, getOwner, setOwner, clearOutbox } from './src/sync/userSync';
 import { API_BASE } from './src/config.js';
 import { saveLastPlayed, getLastPlayed } from './src/lastPlayed';
 import { dailyPickBalanced } from './src/utils/dailyShuffle';
@@ -1895,6 +1896,98 @@ function AppContent() {
   const [activeTab, setActiveTab] = useState('Home');
   const [authVisible, setAuthVisible] = useState(false);
   const [hymnListVisible, setHymnListVisible] = useState(false);
+
+  // ── 會員系統 Phase 1 W2:登入合併 + 跨裝置同步(MEMBERSHIP-PHASE1-LOGIN-SYNC.md §2.3-2.5)──
+  const { user, token } = useAuth();
+  const { favorites, replaceAllFavorites } = useFavorites() || {};
+  const { playlists, replaceAllPlaylists } = usePlaylists() || {};
+  // 「最新值」ref pattern:登入/前後台 effect 唔想因為 favorites/playlists 每次
+  // 變動(用戶撳心心)都重新掛聽/拆聽,淨係要嗰一刻嘅最新值,喺 render 度直接
+  // 寫 ref 就夠(純賦值,冇副作用,strict-mode 重跑都冇問題)。
+  const favoritesRef = useRef(favorites);
+  favoritesRef.current = favorites;
+  const playlistsRef = useRef(playlists);
+  playlistsRef.current = playlists;
+  const allSongsRef = useRef(allSongs);
+  allSongsRef.current = allSongs;
+  const prevUserIdRef = useRef(null);
+  const pendingSyncRef = useRef(false); // merge/pull 失敗 → 等下次 app active 再試
+  // 防抖:app 前後台切幾下(或 login-transition effect 同 AppState listener 撞埋)
+  // 可以喺一個 merge 未做完之前又觸發多一次,唔加呢個 guard 會疊 call、疊出多個
+  // 「已同步」Alert(pushSync 本身冪等,唔會整壞數據,但體驗難睇)。
+  const syncInFlightRef = useRef(false);
+
+  const runLoginSync = useCallback(async () => {
+    if (!user || !token) return;
+    if (syncInFlightRef.current) return;
+    syncInFlightRef.current = true;
+    try {
+      setAuthToken(token); // 防 AuthContext 個 effect 未 run 到,呢度同步行呼叫前自己確保灌咗
+      const ownerId = getOwner();
+      const sameOwner = ownerId == null || String(ownerId) === String(user.id);
+
+      if (sameOwner) {
+        // §2.3 登入合併:推晒本地全量,response = 合併後全量,一次過 replaceAll。
+        const favIds = (favoritesRef.current || []).map((f) => f.id);
+        const plList = (playlistsRef.current || []).map((p, i) => ({
+          id: p.id,
+          name: p.name,
+          position: typeof p.position === 'number' ? p.position : i,
+          songs: p.songs || [],
+          updated_at: p.updated_at || '1970-01-01T00:00:00.000Z',
+        }));
+        const result = await pushSync(favIds, plList);
+        if (!result) { pendingSyncRef.current = true; return; }
+        replaceAllFavorites && replaceAllFavorites(result.favorites || [], allSongsRef.current);
+        replaceAllPlaylists && replaceAllPlaylists(result.playlists || []);
+        setOwner(user.id);
+        clearOutbox();
+        pendingSyncRef.current = false;
+        Alert.alert('已同步', `已同步 ${result.favorites?.length || 0} 首最愛、${result.playlists?.length || 0} 個清單`);
+      } else {
+        // §2.5 換帳戶保護:呢部機啲本地數據係上手用戶嘅,唔准 merge,靜靜哋
+        // 直接 pull 呢個新帳戶自己嘅 server 版覆蓋本地。
+        const data = await pullData();
+        if (!data) { pendingSyncRef.current = true; return; }
+        replaceAllFavorites && replaceAllFavorites(data.favorites || [], allSongsRef.current);
+        replaceAllPlaylists && replaceAllPlaylists(data.playlists || []);
+        setOwner(user.id);
+        clearOutbox();
+        pendingSyncRef.current = false;
+      }
+    } finally {
+      syncInFlightRef.current = false;
+    }
+  }, [user, token, replaceAllFavorites, replaceAllPlaylists]);
+
+  // 登入合併觸發點①:App.js 監察 user 由 null → 有(涵蓋開機讀返 saved token,
+  // 同真係撳「登入」兩種情況——兩種都要合併/pull,冪等,唔怕重複行)。
+  useEffect(() => {
+    const wasLoggedOut = !prevUserIdRef.current;
+    prevUserIdRef.current = user?.id || null;
+    if (user && token && wasLoggedOut) runLoginSync();
+  }, [user, token, runLoginSync]);
+
+  // 觸發點②③:app active 前後台切換——merge 未成功就 retry;成功咗就淨係
+  // flush outbox + pull 一次(§2.4 輕量版,唔使成個 /api/me/sync 再推一次)。
+  const lastPullRef = useRef(0);
+  useEffect(() => {
+    async function onActive() {
+      if (!user || !token) return;
+      if (pendingSyncRef.current) { await runLoginSync(); return; }
+      await flushOutbox();
+      const now = Date.now();
+      if (now - lastPullRef.current < 60000) return; // 節流:60 秒最多一次
+      lastPullRef.current = now;
+      const data = await pullData();
+      if (data) {
+        replaceAllFavorites && replaceAllFavorites(data.favorites || [], allSongsRef.current);
+        replaceAllPlaylists && replaceAllPlaylists(data.playlists || []);
+      }
+    }
+    const sub = AppState.addEventListener('change', (s) => { if (s === 'active') onActive(); });
+    return () => sub.remove();
+  }, [user, token, runLoginSync, replaceAllFavorites, replaceAllPlaylists]);
 
   // B7 修 —— 之前全 App 淨係得 FullScreenPlayerOverlay 入面嗰個 BackHandler
   // (見嗰邊,喺 anySheetOpen 先註冊,淨係管「收返 queue sheet」)。冇任何嘢
