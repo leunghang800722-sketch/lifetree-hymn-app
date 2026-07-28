@@ -143,7 +143,9 @@ export default function MineScreen({ onPlayHymn, onOpenAuth, miniPlayer, hasMini
             ) : null
           }
           renderItem={({ item }) => (
-            <TouchableOpacity style={styles.row} onPress={() => onPlayHymn && onPlayHymn(item)} activeOpacity={0.7}>
+            // 撳最愛入面一首歌 = 喺一個清單畫面度揀歌,同「播全部」/清單詳情頁一致
+            // 用 explicit + playlist(唔係散歌插播),照最愛次序接落去。
+            <TouchableOpacity style={styles.row} onPress={() => onPlayHymn && onPlayHymn(item, { explicit: true, playlist: favorites })} activeOpacity={0.7}>
               <Cover youtubeId={item.youtube_id} />
               <View style={styles.rowInfo}>
                 <Text style={styles.rowTitle} numberOfLines={2}>{getDisplayTitle(item)}</Text>
