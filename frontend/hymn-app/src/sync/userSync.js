@@ -72,19 +72,23 @@ let _onStalePlaylist = null;
 export function setStalePlaylistHandler(fn) { _onStalePlaylist = fn; }
 
 async function runOp(op) {
-  const headers = { 'Content-Type': 'application/json', Authorization: `Bearer ${_token}` };
+  // 冇 body 嗰啲(POST/DELETE 淨靠 URL)唔可以帶 Content-Type: application/json——
+  // 後端 express.json() 見到呢個 header 但冇 body 會 throw → 400,fav_add/
+  // fav_remove/pl_delete 永遠推唔郁(P0,Opus 驗收揪出)。
+  const authHeaders = { Authorization: `Bearer ${_token}` };
+  const jsonHeaders = { ...authHeaders, 'Content-Type': 'application/json' };
   try {
     if (op.op === 'fav_add') {
-      const r = await fetch(`${API_BASE}/api/me/favorites/${op.hymn_id}`, { method: 'POST', headers });
+      const r = await fetch(`${API_BASE}/api/me/favorites/${op.hymn_id}`, { method: 'POST', headers: authHeaders });
       return r.ok;
     }
     if (op.op === 'fav_remove') {
-      const r = await fetch(`${API_BASE}/api/me/favorites/${op.hymn_id}`, { method: 'DELETE', headers });
+      const r = await fetch(`${API_BASE}/api/me/favorites/${op.hymn_id}`, { method: 'DELETE', headers: authHeaders });
       return r.ok;
     }
     if (op.op === 'pl_upsert') {
       const r = await fetch(`${API_BASE}/api/me/playlists/${op.playlist.id}`, {
-        method: 'PUT', headers, body: JSON.stringify(op.playlist),
+        method: 'PUT', headers: jsonHeaders, body: JSON.stringify(op.playlist),
       });
       if (!r.ok) return false;
       const data = await r.json().catch(() => ({}));
@@ -92,7 +96,7 @@ async function runOp(op) {
       return true;
     }
     if (op.op === 'pl_delete') {
-      const r = await fetch(`${API_BASE}/api/me/playlists/${op.id}`, { method: 'DELETE', headers });
+      const r = await fetch(`${API_BASE}/api/me/playlists/${op.id}`, { method: 'DELETE', headers: authHeaders });
       return r.ok;
     }
     return true; // 未知 op:唔好卡死條隊,直接當完成掉咗佢
@@ -104,10 +108,14 @@ async function runOp(op) {
 let _flushing = false;
 let _pendingFlush = false;
 
+// 回傳 outbox 係咪真係推晒(drain 咗)——caller(App.js onActive)靠呢個先知
+// 安唔安全用 server pull 覆蓋本地(P0:flush 失敗都照樣覆蓋 = 蝕用戶數據)。
+// 撞正另一個 flush() 已經行緊嗰陣,唔知埋嗰邊實際推成點,保守答 false。
 export async function flush() {
-  if (!_token) return;
-  if (_flushing) { _pendingFlush = true; return; }
+  if (!_token) return false;
+  if (_flushing) { _pendingFlush = true; return false; }
   _flushing = true;
+  let drained = false;
   try {
     let queue = collapse(readOutbox());
     while (queue.length > 0) {
@@ -117,6 +125,7 @@ export async function flush() {
       queue = rest;
       writeOutbox(queue);
     }
+    drained = queue.length === 0;
   } finally {
     _flushing = false;
     if (_pendingFlush) {
@@ -124,6 +133,7 @@ export async function flush() {
       flush();
     }
   }
+  return drained;
 }
 
 export async function pullData() {

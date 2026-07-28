@@ -785,9 +785,13 @@ function PlayerProvider({ children }) {
     // [新歌, ...原本清單餘低嗰截] 交返俾 playQueue,靠 native 自動接續。
     const curQ = queueRef.current || [];
     const curIdx = currentQueueIndexRef.current || 0;
-    const isExplicitQueue = autoRadioFromRef.current == null && curQ.length > 1;
+    // headLen = 幾多首係用戶真係揀嘅(唔計自動接續尾巴)。PlaylistDetailSheet
+    // 播嘅清單而家都會加尾巴(autoRadioFrom = list.length,唔係 null),所以
+    // 唔可以再靠「autoRadioFrom == null」判斷係咪「明確清單」(P1,Opus 驗收揪出)。
+    const headLen = autoRadioFromRef.current != null ? autoRadioFromRef.current : curQ.length;
+    const isExplicitQueue = headLen > 1;
     const resumeRemainder = isExplicitQueue
-      ? curQ.slice(curIdx + 1).filter((s) => String(s.id) !== String(hymn.id))
+      ? curQ.slice(curIdx + 1, headLen).filter((s) => String(s.id) !== String(hymn.id))
       : [];
     if (resumeRemainder.length > 0) {
       await playQueue([hymn, ...resumeRemainder], 0, { autoRadioFrom: null });
@@ -869,10 +873,17 @@ function PlayerProvider({ children }) {
       const tapped = list[startIndex];
       const curQ = queueRef.current || [];
       const curIdx = currentQueueIndexRef.current || 0;
-      const isDifferentExplicitQueue = autoRadioFromRef.current == null && curQ.length > 1
-        && tapped && !curQ.some((s) => String(s.id) === String(tapped.id));
+      // headLen/explicitHead:同 playSingle() 果句一樣嘅道理——而家播緊嘅清單
+      // 可能已經加咗自動接續尾巴(PlaylistDetailSheet,autoRadioFrom != null),
+      // 「係咪同一個清單」呢個判斷淨係應該睇明確嗰截,唔可以連隨機尾巴嗰
+      // 30 首都攞嚟比對,唔係撳中尾巴任何一首都會誤判做「同一清單」而唔插播
+      // (P1,Opus 驗收揪出)。
+      const headLen = autoRadioFromRef.current != null ? autoRadioFromRef.current : curQ.length;
+      const explicitHead = curQ.slice(0, headLen);
+      const isDifferentExplicitQueue = headLen > 1
+        && tapped && !explicitHead.some((s) => String(s.id) === String(tapped.id));
       const resumeRemainder = isDifferentExplicitQueue
-        ? curQ.slice(curIdx + 1).filter((s) => String(s.id) !== String(tapped.id))
+        ? explicitHead.slice(curIdx + 1).filter((s) => String(s.id) !== String(tapped.id))
         : [];
       if (resumeRemainder.length > 0) {
         list = [tapped, ...resumeRemainder];
@@ -1975,7 +1986,11 @@ function AppContent() {
     async function onActive() {
       if (!user || !token) return;
       if (pendingSyncRef.current) { await runLoginSync(); return; }
-      await flushOutbox();
+      // P0(Opus 驗收揪出)—— flush 失敗(outbox 仲有嘢未推)就唔可以照樣
+      // pull+replaceAll:嗰啲未推嘅本地新增(例如啱啱撳嘅心心)會俾 server
+      // 舊版全部覆蓋、無聲無息永久蒸發。要 confirm 真係推晒先安全覆蓋本地。
+      const flushed = await flushOutbox();
+      if (!flushed) return;
       const now = Date.now();
       if (now - lastPullRef.current < 60000) return; // 節流:60 秒最多一次
       lastPullRef.current = now;
