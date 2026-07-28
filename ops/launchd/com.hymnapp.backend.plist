@@ -33,6 +33,18 @@
         -->
         <key>JWT_SECRET</key>
         <string>REPLACE-WITH-YOUR-OWN-SECRET-DO-NOT-COMMIT-A-REAL-VALUE</string>
+
+        <!-- Twilio Verify (ERIC-TODO-PHONE-AUTH.md §A2). Same rule as
+             JWT_SECRET: real values go ONLY in the installed copy at
+             ~/Library/LaunchAgents/com.hymnapp.backend.plist, never here.
+             otpAuth.js returns 503 "not_configured" until all three are set,
+             so it's safe to have some but not all of them present. -->
+        <key>TWILIO_ACCOUNT_SID</key>
+        <string>REPLACE-WITH-YOUR-OWN-TWILIO-ACCOUNT-SID</string>
+        <key>TWILIO_AUTH_TOKEN</key>
+        <string>REPLACE-WITH-YOUR-OWN-TWILIO-AUTH-TOKEN</string>
+        <key>TWILIO_VERIFY_SERVICE_SID</key>
+        <string>REPLACE-WITH-YOUR-OWN-TWILIO-VERIFY-SERVICE-SID</string>
     </dict>
 
     <!-- Start at login. -->
