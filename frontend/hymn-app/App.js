@@ -1345,7 +1345,19 @@ function FullScreenPlayerOverlay() {
     </View>
   ), [queueExpanded, queue.length, closeQueue, openQueue]);
 
-  const cur = player.currentHymn || { title: '', artist: '', youtube_id: '', id: null, lyrics: '' };
+  // dataVersion cache-bust 第 3 步(SUPERVISION-LOG 2026-07-27 16:50/18:00 條目)——
+  // player.currentHymn 係播放嗰刻由 queue 度攞落嚟嘅 snapshot(playQueue/
+  // PlaybackActiveTrackChanged 寫入,見 §3.5),之後 useCachedHymns 背景全量
+  // refresh 更新嘅係 player.hymns,唔會走返轉頭改呢個 snapshot —— 呢個就係
+  // 「認識你是祢」App 顯示舊歌詞事故嘅根源:首頁開住個播放器唔郁,refresh
+  // 完都仲係揸住開嗰刻嗰份舊 lyrics。修法:render 時按 id 喺 live 嘅
+  // player.hymns 度搵返最新版,搵到就用嗰份(歌詞/內容一定新);搵唔到
+  // (例如全庫都未載完)先 fallback 用返 snapshot。
+  const snapshotHymn = player.currentHymn || { title: '', artist: '', youtube_id: '', id: null, lyrics: '' };
+  const liveHymn = snapshotHymn.id != null
+    ? (player.hymns || []).find(h => String(h.id) === String(snapshotHymn.id))
+    : null;
+  const cur = liveHymn || snapshotHymn;
   // BUG1 P0 — 統一喺呢度轉一次,下面 hasLyrics 判斷同歌詞 Modal 顯示都食呢個
   // 已經拆好行嘅版本,唔再各自 trim() 原始「|」字串。
   const lyricsText = formatLyrics(cur.lyrics);

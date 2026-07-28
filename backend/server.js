@@ -20,6 +20,21 @@ import { getUserDb } from './lib/userDb.js';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const DB_PATH = path.join(__dirname, 'hymns.db');
 
+// dataVersion cache-bust(SUPERVISION-LOG 2026-07-27 18:00 條目)——
+// 24 小時內兩單「DB/API 一早啱,App 顯示 MMKV 舊 cache」事故都係同一個洞:
+// App 冇任何辦法知道自己個 MMKV 副本係咪已經過時。
+// 用 hymns.db 嘅檔案 mtime(ms)+ 檔案大小拼串,夠平夠唯一 —— sql.js 每次
+// process boot 淨係讀一份落記憶體(唔會 hot-reload),檔案要換咗再重啟先生效,
+// 所以喺 module 載入嗰一刻(即每次 boot)計一次就啱晒,唔使每個 request 都
+// stat 檔案。淨係讀檔案 metadata,唔讀 DB 內容。
+let dataVersion;
+try {
+  const stat = fs.statSync(DB_PATH);
+  dataVersion = `${stat.mtimeMs}-${stat.size}`;
+} catch (e) {
+  dataVersion = String(Date.now()); // DB 都讀唔到就用開機時間頂住,唔好爆
+}
+
 // Lazy-load DB on first request
 let dbPromise = null;
 async function getDb() {
@@ -75,6 +90,13 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'ok' });
 });
 
+// dataVersion cache-bust:超平嘅 endpoint,唔讀 DB,俾 App 開機時同 MMKV 存嗰個
+// version 對一對,唔同先做全量 fetch(見 useCachedHymns.js)。
+app.get('/api/version', (req, res) => {
+  console.log(`🔖 /api/version → ${dataVersion}`);
+  res.json({ dataVersion });
+});
+
 // 內部用:俾夜晚維護 script(growLibrary.js / checkDeadLinks.js)查詢「而家有冇
 // 真人聽緊歌」,實現「有真人用就縮」呢個開關(2026-07-21 Eric 拍板,暫時未開)。
 // 直接讀返 keep-warm tick 用緊嗰個 refcount(見上面 §206 anyStreaming),
@@ -98,7 +120,9 @@ app.get('/api/hymns', async (req, res) => {
     while (stmt.step()) {
       hymns.push(stmt.getAsObject());
     }
-    res.json({ data: hymns });
+    // dataVersion 隨 envelope 帶埋出去,向後兼容(舊 client 淨係讀 .data 唔受影響)。
+    console.log(`📚 /api/hymns full fetch → ${hymns.length} hymns, dataVersion=${dataVersion}`);
+    res.json({ data: hymns, dataVersion });
   } catch (err) {
     console.error('Failed to fetch hymns:', err.message);
     res.status(500).json({ error: 'Failed to fetch hymns' });

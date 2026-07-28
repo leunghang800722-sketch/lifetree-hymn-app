@@ -13,11 +13,30 @@ function getStorage() {
 async function fetchAllHymns() {
   try {
     const r = await fetch(`${API_BASE}/api/hymns`);
-    if (!r.ok) return [];
-    const d = (await r.json())?.data || r;
-    return Array.isArray(d) ? d : [];
+    if (!r.ok) return { hymns: [], dataVersion: null };
+    const body = await r.json();
+    const d = body?.data || body;
+    return { hymns: Array.isArray(d) ? d : [], dataVersion: body?.dataVersion ?? null };
   } catch (e) {
-    return [];
+    return { hymns: [], dataVersion: null };
+  }
+}
+
+// dataVersion cache-bust(SUPERVISION-LOG 2026-07-27 18:00)—— 24 小時內兩單
+// 「DB/API 一早啱,App 顯示 MMKV 舊 cache」事故都係因為:開 App 一路都係
+// 「照畫 cache + 背景全量 refresh」,冇辦法知 cache 係咪已經過時,亦冇壓力
+// 逼佢一定要 refresh。而家用 /api/version(超平,唔讀 DB)嚟判斷:
+// version 唔同(或者根本冇存過 version)先做全量 fetch;相同就跳過,慳返
+// 每次開 App 都全量拉嘅流量。/api/version 攞唔到(斷網/舊 backend 未部署呢個
+// endpoint)就 fallback 返舊行為 —— 無條件背景 refresh,唔可以行為變差。
+async function fetchVersion() {
+  try {
+    const r = await fetch(`${API_BASE}/api/version`);
+    if (!r.ok) return null;
+    const body = await r.json();
+    return body?.dataVersion ?? null;
+  } catch (e) {
+    return null;
   }
 }
 
@@ -29,6 +48,7 @@ export const useCachedHymns = () => {
    const s = getStorage();
 
    // Try MMKV cache first (non-blocking — even if MMKV fails, we show content)
+   let cachedVersion = null;
    if (s) {
      try {
        const cached = s.getString('allHymns');
@@ -39,18 +59,42 @@ export const useCachedHymns = () => {
            setLoading(false);
          }
        }
+       cachedVersion = s.getString('allHymnsVersion') || null;
      } catch (e) {}
    }
    // Ensure loading ends even if cache is empty
    setLoading(false);
 
-   // Background refresh from server
-   fetchAllHymns().then(fresh => {
+   async function refresh() {
+     const serverVersion = await fetchVersion();
+
+     if (serverVersion == null) {
+       // /api/version 攞唔到 → fallback 返舊行為:無條件全量 background refresh。
+       const { hymns: fresh } = await fetchAllHymns();
+       if (fresh && fresh.length > 0) {
+         if (s) s.set('allHymns', JSON.stringify(fresh));
+         setHymns(fresh);
+       }
+       return;
+     }
+
+     if (cachedVersion && serverVersion === cachedVersion) {
+       // 冇改過版,跳過全量 fetch —— 呢個先係慳流量嘅位。
+       return;
+     }
+
+     // version 唔同,或者根本未存過 cached version → 全量 fetch,寫返 data+version。
+     const { hymns: fresh, dataVersion } = await fetchAllHymns();
      if (fresh && fresh.length > 0) {
-       if (s) s.set('allHymns', JSON.stringify(fresh));
+       if (s) {
+         s.set('allHymns', JSON.stringify(fresh));
+         s.set('allHymnsVersion', dataVersion ?? serverVersion ?? '');
+       }
        setHymns(fresh);
      }
-   }).catch(() => {});
+   }
+
+   refresh().catch(() => {});
  }, []);
 
  return { hymns: hymns || [], loading };
