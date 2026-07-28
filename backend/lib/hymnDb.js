@@ -169,9 +169,23 @@ export function isCompilation(title = '') {
 // Bruno Mars / BTS dance tutorials). These pass every playability check, so
 // only a content rule keeps them out of a hymn library.
 const SECULAR_ARTISTS = ['grace wu詩歌', 'grace wu诗歌'];
+// 2026-07-28 Fable 5 方案(SUPERVISION-LOG「器樂教學片滲漏」條目):琴譜/伴奏/
+// 教學呢類器樂示範同課程片會播得到、標題又冇撞任何「合輯/講道」訊號,但唔係
+// 一首完整嘅敬拜歌 —— 全庫掃到 62 首(讚美之泉兒童 40/KEC Worship 11/鹹蛋 4/
+// 新心 3/Hillsong Kids 2/Endless 1/泥土 1),同一個頻道入面仲有大量真.MV 冇
+// 撞到(讚美之泉兒童 117 首入面淨係 40 首中招,其餘 77 首真 MV 完全冇受影響)。
+// ⚠️ 特登用完整詞組(「示範影片」/「琴譜」/「教學」呢類 2+字),唔用單字
+// 「譜」「示範」——執行 session 落地前用全庫 curated 1750 首獨立 regression
+// 過,單字會誤殺太多(「示範」可以出現喺敬拜示範現場片呢類正常歌名)。
+export const INSTRUMENTAL_TUTORIAL_PATTERNS_ZH = ['琴譜', '樂譜', '歌譜', '伴奏', '教學', '示範影片', '純音樂', '預告', '宣傳影片'];
+export const INSTRUMENTAL_TUTORIAL_PATTERNS_EN = ['tutorial', 'instrumental', 'sheet music', 'backing track', 'trailer', 'karaoke'];
 export function isNonWorship(title = '', artist = '') {
   if (SECULAR_ARTISTS.includes((artist || '').toLowerCase().trim())) return true;
-  return /(dance tutorial|dance choreograph|choreography|relay dance|dance cover)/i.test(title);
+  if (/(dance tutorial|dance choreograph|choreography|relay dance|dance cover)/i.test(title)) return true;
+  if (INSTRUMENTAL_TUTORIAL_PATTERNS_ZH.some((p) => title.includes(p))) return true;
+  const t = title.toLowerCase();
+  if (INSTRUMENTAL_TUTORIAL_PATTERNS_EN.some((p) => t.includes(p))) return true;
+  return false;
 }
 
 // discover mode 專用:用官方頻道 handle(或者 playlist?list=XXX)列片,

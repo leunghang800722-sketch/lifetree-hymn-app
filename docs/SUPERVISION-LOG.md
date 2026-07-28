@@ -606,3 +606,88 @@ backfill(discover 順手做)+ curate 自然增長令總數由 1461 升到 1561(�
 `backend/hymns.db`(20+83 首判 rejected、`hymns` view 重建)、`HANDOFF.md`
 (§2.4 新增「curated=0 唔算判死刑」硬規矩)。未 commit,等指示 push 定係就咁留低
 等執行 session 匯報後 Eric 確認。
+
+**2026-07-28 01:20 check：✅ P0(rejected狀態)驗收通過；例行全綠（DB 1612／兒童 347／draft 35）。**
+- P0 三項全落地實證:usablePool 有 rejected filter(:198);Redsea 0 curated/13 rejected、
+  SingforGod 0/7、KotM 4(真歌)/83 rejected;兩個壞 handle 已拆(channel:null+note)。
+  最後一次垃圾 re-verify 係 22:48(修復前),之後 ~10 個 cycle 零反彈 —— 翻生循環已斷。
+- fetchLyrics 有個 01:1x 進行中嘅 run(PID 44244,04:20 排程以外,應係執行 session 手動
+  補批;喺 00:00-09:00 窗口內+有鎖,冇問題),draft 26→35。
+- growLibrary 0 error;全庫 1612(淨化後回穩),粵 647/國 556/兒 347。
+
+**2026-07-28 04:20 check 過，正常（DB 1667／兒童 372／draft 62）。** rejected 零反彈(4/0/0),
+0 error;draft 35→62(補批持續);deadlinkcheck 04:00 例行跑緊,fetchLyrics 04:20 就開。
+
+**2026-07-28 07:20 check 過，正常（DB 1719／兒童 403／draft 102）＋兩個觀察項。**
+- fetchLyrics quota 已再加大(CC50+OCR40,plist 確認),尋晚 05:08-05:59 OCR 40/40 滿額,
+  窗口內完成。growLibrary +52/3h,0 error;兒童新增粵語頻道(童唱童樂)、ACM兒童改用
+  playlist 形式,rejected 零反彈。
+- **觀察項A(質素 backlog):** draft 102 但 verified 停喺 43 兩日 —— intake 加速咗但
+  draft→verified 覆核層冇跟上;抽查 3 首最新 draft 全部係現場片 OCR 噪音(教會名/器材
+  branding/UI字)。建議:①7-25 觀察項1 嘅 OCR 後 LLM 清洗層盡快落地;②或者覆核產能
+  跟唔上就考慮 OCR 額度回落,唔好俾垃圾 backlog 越滾越大。派「全庫歌詞補齊規劃」。
+- **觀察項B(YouTube 請求量):** OCR 40 首/晚=每晚落 40 條片+CC 50 次 probe,連同
+  growLibrary,對紅線 2.2「唔好爆發式打 YouTube」嘅 headroom 收窄緊。而家仍然
+  concurrency 1+jitter,未越線,但再加就應該同 Eric 確認風險。
+
+**2026-07-28 10:20 check 過，正常（DB 1747／兒童 431／draft 102）。** 0 error,rejected 零反彈,
+5 個 launchd job 在位。觀察項A(verified 停 43,draft backlog 102)未有動靜,繼續跟。
+
+## 🟠 2026-07-28 器樂教學片滲漏 — Fable 5 診斷+方案(派「夜晚慢速擴歌庫排程」)
+
+**Q1 實查:** 讚美之泉兒童 117 首**唔係**全部教學片 —— 實際 38-40 首器樂/教學(小提琴譜/
+鋼琴伴奏/示範影片)+ ~2 首宣傳片/專輯預告,其餘 ~77 首係真人唱嘅兒童敬拜 MV(【…】MV -
+讚美之泉兒童敬拜讚美 系列)。**淨係 delist 教學嗰批,真 MV 要留返。**
+
+**Q3 全庫掃描(同一組關鍵字):共 62 首滲漏,7 個頻道** —— 讚美之泉兒童 40、KEC Worship 11
+(「敬拜鋼琴基礎教學 第N課」成個系列)、鹹蛋 4、新心 3(鋼琴伴奏課程)、Hillsong Kids 2、
+Endless 1、泥土 1。眼證抽樣全部係真教學/課程片。
+
+**Q2 偵測層方案:** blocklist 加「器樂/教學/宣傳」關鍵字組(已對全庫 curated 做 regression
+query,**同真歌 MV 標記零重疊,冇誤殺**):
+中文:`琴譜/樂譜/歌譜/伴奏/教學/示範影片/純音樂/預告/宣傳影片`
+英文(lower):`tutorial/instrumental/sheet music/backing track/trailer/karaoke`
+落喺 isNonWorship(或新 isInstrumentalOrTutorial)—— 記住兩個位都要用:discover 嘅
+passesQuality + curate 嘅 usablePool filter 鏈(hymnDb.js 都有 isNonWorship,改一處兩邊受惠
+就最好)。⚠️ 唔好用單字「譜」「示範」(誤殺面太大),用上面完整詞組。
+
+**Q4 清污(照 KotM 做法):** 用鎖 →
+`UPDATE hymns_all SET curated=0, status='rejected' WHERE curated=1 AND (title LIKE '%琴譜%'
+OR … <上面成組關鍵字>);`(預期 62 行,執行前先 SELECT 齊份清單眼睇一次)→ saveDb →
+kickstart backend。**驗證:** 掃描 query 返 0;兩個 curate cycle 後冇反彈(rejected filter
+已在,應該穩);App 兒童分類抽查冇「示範影片」;真 MV(~77 首)冇被誤殺(count 對返)。
+
+---
+
+## ✅ 2026-07-28 執行 session(local_fa531849):器樂/教學片滲漏已落地,獨立 regression 覆核過
+
+冇等,即刻做。落地前**冇盲信 Fable 5 份 regression**,自己對成庫 1750 首 curated 獨立
+跑多一次 —— 結果 62 首、7 個頻道分佈(讚美之泉兒童40/KEC Worship11/鹹蛋4/新心3/
+Hillsong Kids2/Endless1/泥土1)**同 Fable 5 條數完全脗合**。
+
+1. **關鍵字落地:** `hymnDb.js` `isNonWorship()` 加咗 `INSTRUMENTAL_TUTORIAL_PATTERNS_ZH`
+   (琴譜/樂譜/歌譜/伴奏/教學/示範影片/純音樂/預告/宣傳影片)同 `_EN`(tutorial/
+   instrumental/sheet music/backing track/trailer/karaoke)。呢個 function 本身已經
+   俾 `growLibrary.js` 嘅 `usablePool()`(curate 路)同 `passesQuality()`(discover
+   路)兩路共用,**改一處自動兩邊生效**,冇再另開新 function。
+2. **62 首清污前眼睇:** 用 `isNonWorship()` 本身(唔係另一組獨立字串,避免兩套邏輯
+   唔同步)SELECT 咗全部 62 條 title 逐條睇 —— 全部係「XX 示範影片」「敬拜鋼琴基礎
+   教學 第N課」「XX 純音樂系列」「鋼琴伴奏課程」「XX 專輯預告/宣傳影片」呢類,**冇
+   一條夾雜真 MV**。用鎖 `UPDATE ... SET curated=0, status='rejected'` 逐 id(唔係
+   LIKE 批量,更準)→ saveDb → kickstart。
+3. **驗證:** rejected 由 103 升到 165(+62,精確)。兩個完整 curate cycle 之後:
+   - rejected 總數仍然 165,**冇一條反彈**(直接查返原 62 個 id,curated=1 count=0)。
+   - 讚美之泉兒童真 MV 由 77 首(reject 完即刻嘅數)兩個 cycle 之後**自然增長**到
+     83 首(discover 攞到新片,**同被 reject 嗰 40 首完全冇關**)——證明真 MV 冇被
+     連坐誤殺,反而仲可以繼續增長。KEC Worship 71 首都全部係 blocked-by-duration/
+     isCompilation 嘅其他篩選,冇再撞到新嘅教學片。
+
+**額外發現(冇喺方案範圍,記低唔即刻改):** cycle1 discover 讚美之泉兒童攞到一條
+「【家長學生見證】讚美之泉兒童敬拜創意學校」(id 2833)——學生/家長見證片,唔係歌,
+但都冇撞到今次任何一個關鍵字(見證/宣傳學校呢類同「教學/伴奏」係唔同詞彙)。同
+之前 Endless Worship「牧師」誤殺屬同一類「新 edge case 陸續有嚟」——`isNonWorship`
+/`isCompilation` 呢個純 blocklist 架構嘅共同限制,唔喺今次方案範圍,留俾下次關鍵字
+精準度 pass 或者 Q3 提過嘅語義層一齊睇。
+
+**改動檔案:** `backend/lib/hymnDb.js`(isNonWorship 加關鍵字組)、`backend/hymns.db`
+(62 首 rejected)。未 commit,等指示。
