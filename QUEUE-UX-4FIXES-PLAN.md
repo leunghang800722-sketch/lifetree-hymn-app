@@ -422,3 +422,70 @@ app 音樂即停、queue 即清,最徹底符合「退出就重新開始」。**�
 Opus 5 做獨立驗收,驗收清單照 §1.5/§2.5/§3.6/§4.5,**加多一條**:第 4 項驗收
 要新增「swipe 走 app(唔係撳 Home)→ mini player/notification 即刻消失、音樂
 即停」,同埋首頁確認「繼續收聽」卡已經完全唔見。
+
+---
+
+# 8. Opus 5 獨立驗收結果(2026-07-29,emulator 實測)
+
+驗收環境:Android emulator(Pixel,1080×2400,Android 16 / targetSdk 36),
+**debug build**(`android/app/build/outputs/apk/debug/app-debug.apk`)+ Metro
+dev bundle,即係跑緊 `feature/player-rebuild` working tree 嘅真 JS,唔係睇 code
+或者信執行者總結。全程用 adb 注入 tap/swipe + 截圖核對。
+
+## 8.1 逐項結果
+
+| 項 | 驗收點 | 結果 |
+|----|--------|------|
+| 1 | 8 首自訂清單「播全部」→ 隊列 = 8(自動播放 toggle **開住**),冇「自動播放：」分隔線 | ✅ |
+| 1 | 播到最後一首撳 ⏭ → 冇反應、唔報錯、唔 crash,原歌照播 | ✅ |
+| 2 | rename dialog 置中、鍵盤彈出後輸入框同「改名」掣完全喺鍵盤之上 | ✅ |
+| 2 | create dialog(「我的」＋新播放清單)同上 | ✅ |
+| 2 | 撳空白位(scrim)閂 dialog | ❌ → **已修**(見 8.2 B) |
+| 2 | 'add' mode 貼底 sheet 外觀/行為冇變 + 入面「＋新播放清單」鍵盤避讓 | ✅ |
+| 3 | 詩歌庫撳單曲插播 → index 0 係插播歌,下面一條「即將播放」分隔線,再落係原清單餘下 | ✅ |
+| 3 | 首頁「即刻揀歌」row 撳單曲插播(94acb23 入口)→ 同上 | ✅ |
+| 3 | 連續插第二首 → 舊插播歌唔見咗,新歌喺 index 0,分隔線仍然喺 index 1 | ✅ |
+| 3 | shuffle 之後分隔線消失 | ✅ |
+| 3 | 隊列拖曳排序之後分隔線消失 | ✅ |
+| 3 | 插播歌播完/撳 ⏭ 行過條線之後,分隔線仲喺度(鬼影) | ❌ → **已修**(見 8.2 A) |
+| 3 | 迴歸:playSingle 隨機接續(首頁「今日為你預備」卡)仍然有「自動播放：全部」分隔線(1+30=31 首) | ✅ |
+| 3 | 迴歸:browseTap/headLen 判斷邏輯(53006b2 / 7d1ee17 / 94acb23)一行冇改 | ✅ 核對過 diff,只加咗 `opts = {...opts, insertBoundary: 1}` 同註解 |
+| 4 | 播緊歌撳 Home/BACK 去背景 → 返前台 mini player 仲喺度、歌冇斷(§Eric #2 迴歸) | ✅ |
+| 4 | 手指 swipe 走 app → process 死、audio focus 放走、通知欄冇咗 God Music | ✅ |
+| 4 | 重開 app → 冇 mini player、冇殘留隊列,clean state | ✅ |
+| 4 | 首頁冇「繼續收聽」卡,「隨心聽」自己撐晒成行 | ✅ |
+
+## 8.2 驗收揪出嘅兩個 regression(已喺 5726bce 修好並複驗)
+
+**A. 鬼影分隔線(§3)** —— `insertBoundary` 淨係喺 `playQueue()` / `toggleShuffle` /
+`onDragEnd` 清,冇處理「播放位置行過咗條線」。實測:插播歌播完跳落一首,
+「即將播放」條線企咗喺**而家播緊嗰首**上面,插播歌反而喺線之上變咗「播完咗
+嘅嘢」。修法:`PlaybackActiveTrackChanged` 入面 `idx >= insertBoundary` 就清走
+(純 UI state 清理,§3.4 鐵律嗰啲判斷邏輯一行冇郁)。
+
+**B. 撳空白位閂唔到(§2)** —— 8ec6759 將 backdrop 由 `{flex:1}` 改做
+`StyleSheet.absoluteFillObject` 之後,實測嗰個 `TouchableOpacity` 收唔到 touch,
+**三個 mode 全部**(add / create / rename)撳 scrim 都閂唔到,連檔頭寫明凍結嘅
+'add' mode 都中招(同時違反 §2.5-3 同 add mode 凍結鐵律)。修法:backdrop 還原
+`flex:1`,置中效果改用「card 上下各一塊 `flex:1` backdrop」平分空間達成 ——
+兩塊都收得到 touch,`scrimCentered` 唔再需要。
+
+## 8.3 未能喺 emulator 定論、要留意嘅位
+
+1. **冷啟動「殘留隊列清場」分支**:`appKilledPlaybackBehavior` 改咗
+   `StopPlaybackAndRemoveNotification` 之後,swipe 走 = service 即刻死,
+   emulator 上再造唔到「service 生存但冇聲」嗰個窗口(試過
+   `am kill`,結果係成個 app 連 service 一齊死,行返 `getQueue` 空嗰條
+   early-return)。所以 §4.2 嗰個 reset 分支本身冇被實際觸發驗證過,
+   但佢係防守性代碼,冇觸發亦唔會有副作用。
+2. **兩次 native SIGSEGV**(`mqt_v_js` / `libreactnative.so`,冇 JS stack):
+   喺約 50 分鐘密集 adb 注入操作入面出現咗兩次,之後刻意重演(BACK 退出、
+   拖曳排序、快速切 tab)都再造唔返。跟住嗰次系統重啟 MusicService 撞到
+   Android 15+ 嘅 `ForegroundServiceStartNotAllowedException`,出咗一次
+   「God Music keeps stopping」。呢兩樣都係喺 **debug build** 度發生,而且
+   crash 位喺 RN 內部同 RNTP 嘅 service 重啟路徑(JS bundle 都未 load),
+   同今次五個 commit 嘅 JS 改動拉唔上關係。**唔當今次驗收唔過關**,但
+   建議 Eric 出 build 之後留意「有冇無故彈返 launcher」。
+3. **鍵盤高度跨機差異**:emulator 鍵盤佔畫面 ~37%,置中 dialog(佔中間 ~15%)
+   有充足空隙。真機 IME 更高嘅話理論上仲有得頂,但呢項一定要 Eric 部機
+   最終確認(§2.5-6 本來就係咁講)。
