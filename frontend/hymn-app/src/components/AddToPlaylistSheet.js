@@ -152,13 +152,15 @@ export function AddToPlaylistProvider({ children }) {
           sheet 同鍵盤之間漏一條罅,穿到落去見到後面畫面(玻璃海個 bug)。加呢個 prop
           令 Modal window 都變 edge-to-edge,同 activity 座標系對齊。 */}
       <Modal visible={visible} transparent animationType={isCentered ? 'fade' : 'slide'} onRequestClose={close} statusBarTranslucent navigationBarTranslucent>
-        <View style={[styles.scrim, isCentered && styles.scrimCentered]}>
-          {/* ⚠️ 呢個 backdrop 一定要用 absoluteFillObject,唔可以用 {flex:1} ——
-              flex:1 嘅 sibling 會自己食晒 justifyContent 分剩落嚟嘅空間(flexGrow
-              優先過 justifyContent),結果 centered dialog 照舊俾谷落底,同貼底
-              sheet 冇分別。改絕對定位就唔會參與 flex 分配,justifyContent 先真正
-              決定 card 擺喺中定底。 */}
-          <TouchableOpacity style={StyleSheet.absoluteFillObject} activeOpacity={1} onPress={close} />
+        <View style={styles.scrim}>
+          {/* ⚠️ backdrop 一定要 `{flex:1}`,唔可以用 absoluteFillObject ——
+              2026-07-29 Opus 5 驗收實測:改咗做絕對定位之後,呢個 TouchableOpacity
+              收唔到 touch,三個 mode(add/create/rename)「撳空白位閂」全部失靈
+              (連凍結咗嘅 'add' mode 都中招)。所以 backdrop 維持 flex:1;
+              「置中 dialog」改用「card 上下各一塊 flex:1 backdrop」嚟達成
+              (見下面 card 之後嗰塊),兩塊平分空間 = card 企正中,而且兩塊
+              都係實實在在收到 touch 嘅 backdrop,撳邊邊都閂得到。 */}
+          <TouchableOpacity style={{ flex: 1 }} activeOpacity={1} onPress={close} />
           {/* belt-and-braces 第二重保障(淨係貼底 sheet 先需要):實色補罅,貼實個 window
               底(絕對定位,唔參與 flex 排位,唔會逼 card 內容爆出畫面頂)。就算 marginBottom
               個計法有少少誤差,card 底同真.鍵盤之間都唔會再透出後面畫面 ——
@@ -226,6 +228,12 @@ export function AddToPlaylistProvider({ children }) {
               }}
             /> : null}
           </View>
+          {/* 置中 dialog 嘅下半塊 backdrop —— 同上面嗰塊一樣 flex:1,兩塊平分
+              剩餘空間,card 就會企喺畫面正中(唔使靠 justifyContent:'center',
+              亦唔使用收唔到 touch 嘅絕對定位)。'add' mode 冇呢塊,card 照舊貼底。 */}
+          {isCentered && (
+            <TouchableOpacity style={{ flex: 1 }} activeOpacity={1} onPress={close} />
+          )}
         </View>
       </Modal>
       {/* 建立/加入清單後嘅輕量提示 —— 非阻擋(唔使用戶撳掣打斷),1.8s 後自己收埋。 */}
@@ -243,9 +251,6 @@ export function AddToPlaylistProvider({ children }) {
 
 const styles = StyleSheet.create({
   scrim: { flex: 1, backgroundColor: 'rgba(0,0,0,0.55)', justifyContent: 'flex-end' },
-  // rename/create 置中 dialog(§2026-07-29 QUEUE-UX-4FIXES §2)—— 唔貼底,
-  // 垂直+水平居中,避開鍵盤覆蓋範圍(鍵盤淨係佔畫面下半部)。
-  scrimCentered: { justifyContent: 'center', alignItems: 'center' },
   // belt-and-braces keyboard 補罅板 —— 見上面 JSX 註解。絕對定位貼實 window 底,
   // 顏色同 card 一樣,萬一 marginBottom 計少咗都唔會透出後面畫面。
   keyboardScrim: {

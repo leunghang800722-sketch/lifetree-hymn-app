@@ -578,6 +578,15 @@ function PlayerProvider({ children }) {
         setCurrentQueueIndex(idx);
         const song = queueRef.current[idx];
         if (song) { setHymn(song); setCurrentHymn(song); }
+        // 2026-07-29 QUEUE-UX-4FIXES §3(Opus 5 驗收補漏)—— 插播歌播完(或者
+        // 用戶自己撳咗過去),播放位置一行過條分隔線,「即將播放」就唔再係
+        // 「即將」:線下面嗰首已經係播緊嗰首,插播歌反而喺線上面變咗「播完咗
+        // 嘅嘢」,睇落就係鬼影分隔線。行到 boundary(或者更後)就清走。
+        // 純粹清 UI state,唔掂 browseTap/headLen 任何判斷邏輯(§3.4 鐵律)。
+        if (insertBoundaryRef.current != null && idx >= insertBoundaryRef.current) {
+          insertBoundaryRef.current = null;
+          setInsertBoundary(null);
+        }
         // §3a playLog:聽夠 30 秒先算一次(skip 唔算)。換咗歌就取消上一個計時器,
         // 開一個新嘅;30 秒後如果仲係播緊同一首,先記錄。
         if (playLogTimerRef.current) clearTimeout(playLogTimerRef.current);
