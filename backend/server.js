@@ -15,7 +15,7 @@ import authRoutes from './routes/auth.js';
 import otpAuthRoutes from './routes/otpAuth.js';
 import meRoutes from './routes/me.js';
 import streamRoutes from './routes/stream.js';
-import { resolveAudioUrl, refreshAudioUrl, preVerifyUrl, cache, anyStreaming, isStreaming } from './lib/resolveAudio.js';
+import { resolveAudioUrl, refreshAudioUrl, preVerifyUrl, cache, failCache, anyStreaming, isStreaming } from './lib/resolveAudio.js';
 import { getUserDb } from './lib/userDb.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -220,6 +220,25 @@ app.listen(PORT, async () => {
 // resolve,平均每分鐘 0.4 次,**永遠單線程**。對比被 ban 嗰次係「開機 1518 首 ×
 // concurrency 4」爆發式。呢個係細水長流。仍然有:①時段窗口 ②每分鐘最多 1 首
 // ③每日熔斷上限 ④env 總掣。
+//
+// ⚠️ 2026-07-29 Eric 報「新歌要 load 十幾秒」根因:開機
+// PRECACHE_MAX=200 淨係 `ORDER BY id LIMIT 200`,永遠鎖住最舊嗰 200 首(id 1-226)。
+// growLibrary 呢排狂加歌(539→1744),curated 庫 id 去到 2886,新歌全部喺 226 之後,
+// 永遠冇被 precache/keep-warm 摸過 —— 每次撳新歌都係第一次 cold resolve(resolve
+// ~2-6s + 上游 googlevideo 冇 preVerify 過、首個連線去 CDN 冷點,實測會不定時卡
+// 到 ~11s 先 502)。ExoPlayer 8s connect timeout 通常喺 backend 都仲未回應之前就
+// 先爆,觸發 App 已有嘅「retry 一次」邏輯,retry 嗰次因為 resolve 已經 cache 咗
+// 所以好快 —— 8s(timeout)+ 幾秒(retry 成功)合埋就係 Eric 見到嘅「十幾秒」。
+// 之前冇咁慢係因為嗰陣成個 curated 庫都喺 200 首以內,精 precache 已經蓋晒;而家
+// 庫大咗成 8 倍,精 precache 冇跟大,缺口越來越闊。
+//
+// 修法:下面加返第二個獨立 timer(warmColdBacklog)專門追落後 —— 揾「成庫入面
+// 從未 resolve 過」嘅 curated 歌暖佢。刻意唔同 refresh timer 共用同一個 tick/
+// budget:實測(2026-07-29)248 首已暖嘅 URL 好多都係同一批(開機精 precache)
+// 一齊 resolve 落嚟,佢哋嘅 4-5 小時 TTL 會埋堆一齊到期,連續好多個 tick 都畀
+// 「就嚟過期」嗰批霸晒,cold 追落後分支輪唔到轉,等於冇修到。獨立 timer + 獨立
+// 節流(逐分鐘、逐日上限)= 兩份工都唔會停,唔會加大成體流量(單首 resolve 嘅
+// yt-dlp 成本一樣,淨係邊個攞嚟做嘅分別)。
 function startKeepWarm() {
   if (process.env.URL_KEEPWARM === '0') {
     console.log('🌡️  URL keep-warm 停用 (URL_KEEPWARM=0)');
@@ -268,5 +287,73 @@ function startKeepWarm() {
       console.warn('keep-warm tick error:', e?.message);
     }
   }, 60 * 1000);
+  if (timer.unref) timer.unref();
+
+  warmColdBacklog();
+}
+
+// 追落後 timer —— 獨立於上面嘅 refresh timer,專責「成庫入面從未 resolve 過」
+// 嘅 curated 歌。每 90 秒一首,唔會同 refresh 撞流量(見上面大註解釋點解要分開
+// 兩個 timer)。ORDER BY id 從頭掃一次,已暖嘅 O(1) 跳過,無記名進度指標 ——
+// 下次 tick 自然接住上次跳過嘅位繼續(因為之前果啲已經喺 cache 度)。
+//
+// ⚠️ 2026-07-29 Opus 5 覆核呢個 timer 揪出嘅數學問題:上面 refresh timer 每日
+// 上限 800、URL 壽命封頂 5 小時(30 分鐘前續)= 每首歌大約需要 4.5 小時續一次
+// = 800/day 淨係夠養 **~150 首**長期保持新鮮(800 ÷ (24/4.5))。而家單係開機
+// precache 已經 200 首,即係未計呢個 timer 都已經超出「800/day 養得起」嘅上限
+// ——呢個 timer 如果照原本諗法(冚成個 1744 首庫)追落去,只會不斷加更多歌入
+// cache 度爭緊嗰 800/day 嘅續熱額度,攤薄晒全部人(包括開機精 precache 嗰
+// 「應該最穩陣」嗰 226 首),幾日後可能連而家播開好地地嘅歌都變返冷。
+// 修法:加個總量上限(CACHE_SIZE_CEILING),追到就停,唔再冚落去——留返個
+// 安全邊際俾 refresh timer 養得起嘅範圍。長尾(呢個 timer 追唔到嘅新歌)靠
+// routes/stream.js 而家加咗嘅「冷連線失敗就 bust+重 resolve+re-fetch 一次」
+// 頂住(呢個先係 Eric 個「十幾秒」嘅真正根因同真正修法,見嗰邊嘅大註),
+// 唔再單靠呢個 timer 嘅覆蓋率。
+const CACHE_SIZE_CEILING = 300;
+
+function warmColdBacklog() {
+  const MAX_PER_DAY = Number(process.env.KEEPWARM_BACKLOG_MAX_PER_DAY || 150);
+  let day = new Date().toDateString();
+  let usedToday = 0;
+  console.log(`🧯 keep-warm 追落後啟動:07:00-23:59,每 90 秒最多暖 1 首從未 resolve 過嘅歌,每日上限 ${MAX_PER_DAY},總量封頂 ${CACHE_SIZE_CEILING}`);
+
+  const timer = setInterval(async () => {
+    try {
+      const today = new Date().toDateString();
+      if (today !== day) { day = today; usedToday = 0; }
+      const hr = new Date().getHours();
+      if (hr < 7) return;
+      if (usedToday >= MAX_PER_DAY) return;
+      if (cache.size >= CACHE_SIZE_CEILING) return; // 已經追到安全上限,唔再攤薄
+      if (anyStreaming()) return; // 同上:用戶聽緊就唔好爭頻寬
+
+      const now = Date.now();
+      let target = null;
+      try {
+        const db = await getDb();
+        const stmt = db.prepare('SELECT id, youtube_id FROM hymns ORDER BY id');
+        while (stmt.step()) {
+          const row = stmt.getAsObject();
+          if (!row.youtube_id || cache.has(row.youtube_id)) continue;
+          const failedUntil = failCache.get(row.youtube_id);
+          if (failedUntil && failedUntil > now) continue;
+          target = row.youtube_id;
+          break;
+        }
+        stmt.free();
+      } catch (_) {}
+      if (!target) return; // 全庫已經暖晒,或者暫時攞唔到 DB
+
+      usedToday++;
+      try {
+        const url = await resolveAudioUrl(target);
+        await preVerifyUrl(target, url);
+      } catch (_) {
+        // resolveAudioUrl 本身已經寫咗 failCache(死鏈),呢度冇嘢再做。
+      }
+    } catch (e) {
+      console.warn('keep-warm 追落後 tick error:', e?.message);
+    }
+  }, 90 * 1000);
   if (timer.unref) timer.unref();
 }

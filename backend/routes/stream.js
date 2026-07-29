@@ -54,7 +54,8 @@ export default function streamRoutes(getDb) {
     let url;
     try {
       url = await resolveAudioUrl(hymn.youtube_id);
-    } catch (_) {
+    } catch (e) {
+      console.warn(`⚠️ stream resolve failed: id=${id} yt=${hymn.youtube_id} err=${e?.message || e}`);
       return res.status(502).json({ error: 'resolve failed' });
     }
 
@@ -85,20 +86,58 @@ export default function streamRoutes(getDb) {
       signal: controller.signal,
     });
 
-    let upstream;
-    try {
-      upstream = await doFetch(url);
-      if (upstream.status === 403 || upstream.status === 410) {
-        bustCache(hymn.youtube_id);
-        url = await resolveAudioUrl(hymn.youtube_id);
-        upstream = await doFetch(url);
+    // ⚠️ 2026-07-29 Eric「新歌十幾秒」診斷(Opus 5 覆核揪出):真正撞 ExoPlayer 8s
+    // timeout 嘅位唔係 resolve 慢(嗰截通常 2-6s),係呢度——冷歌第一次連去
+    // googlevideo 個 CDN edge,實測有時會頂唔順、成 10s 先 502(冷 edge 冇做過
+    // TLS/未定位過檔案)。舊碼淨係 403/410(URL 過期)先會 bust+重試,呢種「連線
+    // 本身失敗/其他壞 status」一律直接 502,冇得救,亦冇 log,完全飛盲。而家
+    // 統一晒:唔理邊種失敗,一律 log(先至知係邊個 branch 中招)+ bust cache +
+    // 重新 resolve + 再試一次先死心——換條新 URL 好多時等於換咗個 CDN edge,
+    // 好返嘅機會好高。
+    async function attemptFetch(u) {
+      try {
+        const r = await doFetch(u);
+        if (r.status === 200 || r.status === 206) return r;
+        console.warn(`⚠️ stream upstream bad status: id=${id} yt=${hymn.youtube_id} status=${r.status}`);
+        // 唔consume嘅 body 喺 undici 底下會揸住個連線直到 GC——呢個分支而家
+        // 觸發得比之前(淨係 403/410)密好多,要即刻放手,唔留手尾。
+        try { r.body?.cancel(); } catch (_) {}
+        return null;
+      } catch (e) {
+        if (controller.signal.aborted) throw e; // 客戶端自己走咗,唔使 retry/log
+        console.warn(`⚠️ stream upstream fetch threw: id=${id} yt=${hymn.youtube_id} err=${e?.message || e}`);
+        return null;
       }
-    } catch (_) {
-      return res.status(502).json({ error: 'upstream fetch failed' });
     }
 
-    if (!(upstream.status === 200 || upstream.status === 206)) {
-      return res.status(502).json({ error: `upstream ${upstream.status}` });
+    // 分開兩個 try/catch:attemptFetch 拋出嘅淨係「客戶端自己 abort 咗」(見上面
+    // 個判斷),retry 路徑嘅 resolveAudioUrl 拋出就係另一回事(死鏈/resolve
+    // 失敗)——之前混埋一個 catch 會將後者都當做「upstream fetch aborted」,
+    // 唔止個錯誤訊息報錯,仲完全冇 log,同「呢次改動係為咗唔再飛盲」自相矛盾。
+    let upstream;
+    try {
+      upstream = await attemptFetch(url);
+    } catch (_) {
+      return res.status(502).json({ error: 'upstream fetch aborted' });
+    }
+
+    if (!upstream) {
+      bustCache(hymn.youtube_id);
+      try {
+        url = await resolveAudioUrl(hymn.youtube_id);
+      } catch (e) {
+        console.warn(`⚠️ stream retry resolve failed: id=${id} yt=${hymn.youtube_id} err=${e?.message || e}`);
+        return res.status(502).json({ error: 'resolve failed (retry)' });
+      }
+      try {
+        upstream = await attemptFetch(url);
+      } catch (_) {
+        return res.status(502).json({ error: 'upstream fetch aborted' });
+      }
+    }
+
+    if (!upstream) {
+      return res.status(502).json({ error: 'upstream fetch failed after retry' });
     }
 
     // Forward pass-through headers. content-range is only meaningful when the
