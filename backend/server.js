@@ -309,7 +309,15 @@ function startKeepWarm() {
 // routes/stream.js 而家加咗嘅「冷連線失敗就 bust+重 resolve+re-fetch 一次」
 // 頂住(呢個先係 Eric 個「十幾秒」嘅真正根因同真正修法,見嗰邊嘅大註),
 // 唔再單靠呢個 timer 嘅覆蓋率。
-const CACHE_SIZE_CEILING = 300;
+//
+// ⚠️ 2026-07-29 STREAM-403-FGS-CRASH-PLAN §1.2 發現:上面呢段推論冇錯,但
+// 300 呢個具體數值訂錯咗——訂嘅時候冇對過現存 disk cache 已經有幾多條。
+// 詩歌庫 1744 首,disk cache 開機已經 300+ 條、cache.size 長期 ≥300,即係
+// 呢個 timer 由第一個 tick 開始就見「cache.size >= CACHE_SIZE_CEILING」
+// 即刻 return,實際暖咗 0 首,完全冇行過。改做 1800(> 庫存 1744),等
+// timer 真係可以以 MAX_PER_DAY 嘅速度追落去;每日上限冇郁,唔會多打
+// YouTube,純粹修返「上限訂到細過現存 cache」呢個 bug。
+const CACHE_SIZE_CEILING = 1800;
 
 function warmColdBacklog() {
   const MAX_PER_DAY = Number(process.env.KEEPWARM_BACKLOG_MAX_PER_DAY || 150);

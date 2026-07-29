@@ -122,6 +122,19 @@ export default function streamRoutes(getDb) {
     }
 
     if (!upstream) {
+      // 2026-07-29 STREAM-403-FGS-CRASH-PLAN §1.4:即刻重試好大機會撞返同一個
+      // 節流窗口(prod log 7 次失敗 5 次都係 403 retry 中招)。加 2 秒 backoff
+      // 先至 bust+重 resolve,等節流窗口過返先。已經 abort 咗嘅客戶端唔使陪佢
+      // 等(慳返 2 秒),但 bust+resolve 本身唔可以因為 abort 而唔做——
+      // resolveAudioUrl 唔綁 controller,resolve 完結果照落 cache,app 端嗰下
+      // TrackPlayer.retry() 返嚟就食到 warm cache,呢個接力係而家架構本身嘅
+      // 優點,唔好破壞(即係:client abort 之後唔好 short-circuit 個 resolve)。
+      if (!controller.signal.aborted) {
+        await new Promise((resolve) => {
+          const t = setTimeout(resolve, 2000);
+          controller.signal.addEventListener('abort', () => { clearTimeout(t); resolve(); }, { once: true });
+        });
+      }
       bustCache(hymn.youtube_id);
       try {
         url = await resolveAudioUrl(hymn.youtube_id);
