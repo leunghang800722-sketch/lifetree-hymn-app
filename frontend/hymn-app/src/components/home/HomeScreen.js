@@ -294,7 +294,7 @@ export default function HomeScreen({ hymns = [], onPlayHymn, onOpenList }) {
               <View key={`${activeChip.id}-${i}`} style={styles.page}>
                 {rows.map((h) => (
                   <TouchableOpacity key={h.id} style={styles.songRow} activeOpacity={0.7}
-                    onPress={() => play(h, activeChip.songs, true)}>
+                    onPress={() => onPlayHymn && onPlayHymn(h, { explicit: true, playlist: activeChip.songs, browseTap: true })}>
                     <Thumb youtubeId={h.youtube_id} size={40} />
                     <View style={styles.rowTextWrap}>
                       {/* numberOfLines stays 1 here — ROW_H (64px) is a hand-tuned
