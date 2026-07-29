@@ -68,5 +68,10 @@ backend/hymns.db.tmp
 # resolve URL cache (URLs only, not audio) — PERF-FAST-START-PLAN §1a
 backend/cache/
 
+# yt-dlp cookies — 之前 commit 咗落 git 但 resolveAudio.js 完全冇用,純風險
+# 冇好處(STREAM-403-FGS-CRASH-PLAN §1.2/§1.4)。舊 commit 仲留住呢個檔案,
+# 當佢已經洩露處理。
+backend/cookies.txt
+
 # Claude agent auto-memory — belongs to the local session, not the project repo
 memory/
