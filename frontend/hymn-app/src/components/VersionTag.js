@@ -17,7 +17,7 @@ function formatHKTime(dateLike) {
   return `${get('month')}-${get('day')} ${get('hour')}:${get('minute')}`;
 }
 
-function buildLabel() {
+export function buildLabel() {
   const appVersion = Constants.expoConfig?.version || '—';
   let otaPart = '內置包';
   try {

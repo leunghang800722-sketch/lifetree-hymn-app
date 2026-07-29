@@ -6,7 +6,7 @@
 // (主要用戶唔係長者),所以呢度冇字體大小設定。深淺色模式亦都跟 §5.4「深色為主,
 // 日後有餘力先考慮淺色」,所以而家淨係得帳戶相關。
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { View, Text, FlatList, TouchableOpacity, StyleSheet, Image, Alert } from 'react-native';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { COLORS, TYPOGRAPHY } from '../theme/designSystem';
@@ -17,19 +17,7 @@ import { useAuth } from '../context/AuthContext';
 import { useAddToPlaylist } from '../components/AddToPlaylistSheet';
 import PlaylistDetailSheet from './PlaylistDetailSheet';
 import { getDisplayTitle } from '../utils/displayTitle';
-import { getOutboxLength } from '../sync/userSync';
-
-// 帳戶格副標題(已登入時):讀 outbox length 俾 Eric 肉眼驗證同步狀態
-// (MEMBERSHIP-PHASE1-LOGIN-SYNC §2.6——唔加任何 spinner/手動掣,全自動)。
-// 冇專用事件通知呢度「outbox 變咗」,poll 一下夠用,mount 先行有,唔會谷 CPU。
-function useOutboxLength() {
-  const [len, setLen] = useState(() => getOutboxLength());
-  useEffect(() => {
-    const t = setInterval(() => setLen(getOutboxLength()), 2000);
-    return () => clearInterval(t);
-  }, []);
-  return len;
-}
+import { useOutboxLength } from '../hooks/useOutboxLength';
 
 function Cover({ youtubeId, size = 52 }) {
   const [failed, setFailed] = useState(false);
@@ -47,7 +35,7 @@ function Cover({ youtubeId, size = 52 }) {
 export default function MineScreen({ onPlayHymn, onOpenAuth, miniPlayer, hasMiniPlayer }) {
   const { favorites = [], toggleFavorite } = useFavorites() || {};
   const { playlists = [], deletePlaylist } = usePlaylists() || {};
-  const { user, logout } = useAuth() || {};
+  const { user } = useAuth() || {};
   const { open: openAddToPlaylist, openCreate, openRename } = useAddToPlaylist();
   const outboxLength = useOutboxLength();
   const [tab, setTab] = useState('favorites'); // favorites | playlists
@@ -76,27 +64,24 @@ export default function MineScreen({ onPlayHymn, onOpenAuth, miniPlayer, hasMini
     <View style={[styles.container, { paddingTop: insets.top + 8 }]}>
       <Text style={styles.header}>我的</Text>
 
-      {/* 帳戶 */}
+      {/* 帳戶 —— 登入後撳開帳戶頁(AccountScreen),唔再彈 Alert(§2) */}
       <TouchableOpacity
-        style={styles.account}
+        style={[styles.account, !user && styles.accountCta]}
         activeOpacity={0.7}
-        onPress={() => {
-          if (user) {
-            Alert.alert('帳戶', user.email || user.username || '', [
-              { text: '取消', style: 'cancel' },
-              { text: '登出', style: 'destructive', onPress: () => logout && logout() },
-            ]);
-          } else {
-            onOpenAuth && onOpenAuth();
-          }
-        }}
+        onPress={() => onOpenAuth && onOpenAuth()}
       >
-        <View style={styles.avatar}>
-          <MaterialIcons name={user ? 'person' : 'person-outline'} size={22} color={COLORS.accent} />
+        <View style={[styles.avatar, user && styles.avatarLetterWrap]}>
+          {user ? (
+            <Text style={styles.avatarLetterText}>
+              {(user.username || user.phone?.slice(-4) || '?').charAt(0).toUpperCase()}
+            </Text>
+          ) : (
+            <MaterialIcons name="person-outline" size={22} color={COLORS.accent} />
+          )}
         </View>
         <View style={{ flex: 1, marginLeft: 12 }}>
           <Text style={styles.accountTitle}>
-            {user ? (user.username || user.email || (user.phone ? `尾號 ${user.phone.slice(-4)}` : '未命名帳戶')) : '未登入'}
+            {user ? (user.username || (user.phone ? `尾號 ${user.phone.slice(-4)}` : '未命名帳戶')) : '登入 / 註冊'}
           </Text>
           <Text style={styles.accountSub}>
             {user ? (outboxLength > 0 ? `${outboxLength} 項等緊同步` : '已同步') : '登入後可以同步最愛同清單'}
@@ -231,6 +216,11 @@ const styles = StyleSheet.create({
     width: 40, height: 40, borderRadius: 20,
     backgroundColor: COLORS.cardLight, alignItems: 'center', justifyContent: 'center',
   },
+  // 登入後首字母頭像(§2.1)——同 AccountScreen 同一條 fallback 鏈,兩邊視覺扣到
+  avatarLetterWrap: { backgroundColor: COLORS.accent },
+  avatarLetterText: { fontSize: 18, fontWeight: '800', color: COLORS.background },
+  // 未登入卡加 1px 邊做 CTA 感(§2.3),唔好成塊變 accent 色
+  accountCta: { borderWidth: 1, borderColor: COLORS.border },
   accountTitle: { ...TYPOGRAPHY.body, fontWeight: '600' },
   accountSub: { ...TYPOGRAPHY.artist, marginTop: 2 },
   segment: { flexDirection: 'row', paddingHorizontal: 16, marginBottom: 12 },

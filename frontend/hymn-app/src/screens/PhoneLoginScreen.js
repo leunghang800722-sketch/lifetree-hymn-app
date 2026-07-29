@@ -4,7 +4,7 @@
 // 呢度顯示「用電郵」提示。
 
 import React, { useState, useRef, useCallback, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, ActivityIndicator, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, ActivityIndicator, KeyboardAvoidingView, Platform, Image } from 'react-native';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { COLORS } from '../theme/designSystem';
 import { useAuth } from '../context/AuthContext';
@@ -20,6 +20,7 @@ export default function PhoneLoginScreen({ onClose, onUseEmail }) {
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState('');
   const [cooldown, setCooldown] = useState(0);
+  const [focused, setFocused] = useState(false);
   const timerRef = useRef(null);
 
   useEffect(() => () => { if (timerRef.current) clearInterval(timerRef.current); }, []);
@@ -56,7 +57,7 @@ export default function PhoneLoginScreen({ onClose, onUseEmail }) {
       </TouchableOpacity>
 
       <View style={styles.inner}>
-        <MaterialIcons name="smartphone" size={40} color={COLORS.accent} style={{ alignSelf: 'center', marginBottom: 12 }} />
+        <Image source={require('../../assets/android-icon-foreground.png')} style={styles.brandLogoImg} />
         <Text style={styles.title}>{step === 'phone' ? '電話登入' : '輸入驗證碼'}</Text>
         <Text style={styles.sub}>
           {step === 'phone' ? '會用 WhatsApp 或短訊寄一個 6 位驗證碼俾你' : `驗證碼已寄去 ${phone}`}
@@ -65,9 +66,10 @@ export default function PhoneLoginScreen({ onClose, onUseEmail }) {
         {step === 'phone' ? (
           <>
             <TextInput
-              style={styles.input} value={phone} onChangeText={setPhone}
+              style={[styles.input, focused && styles.inputFocused]} value={phone} onChangeText={setPhone}
               keyboardType="phone-pad" placeholder="+852 1234 5678"
               placeholderTextColor={COLORS.textSecondary} autoFocus
+              onFocus={() => setFocused(true)} onBlur={() => setFocused(false)}
             />
             {!!err && <Text style={styles.err}>{err}</Text>}
             <TouchableOpacity style={styles.btn} onPress={send} disabled={busy} activeOpacity={0.85}>
@@ -77,9 +79,10 @@ export default function PhoneLoginScreen({ onClose, onUseEmail }) {
         ) : (
           <>
             <TextInput
-              style={[styles.input, styles.codeInput]} value={code} onChangeText={setCode}
+              style={[styles.input, styles.codeInput, focused && styles.inputFocused]} value={code} onChangeText={setCode}
               keyboardType="number-pad" placeholder="______" placeholderTextColor={COLORS.border}
               maxLength={8} autoFocus
+              onFocus={() => setFocused(true)} onBlur={() => setFocused(false)}
             />
             {!!err && <Text style={styles.err}>{err}</Text>}
             <TouchableOpacity style={styles.btn} onPress={verify} disabled={busy} activeOpacity={0.85}>
@@ -109,16 +112,19 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.background },
   close: { position: 'absolute', right: 20, zIndex: 10, padding: 8 },
   inner: { flex: 1, paddingHorizontal: 24, justifyContent: 'center' },
+  brandLogoImg: { width: 72, height: 72, alignSelf: 'center', marginBottom: 12, resizeMode: 'contain' },
   title: { fontSize: 26, fontWeight: '800', color: COLORS.textPrimary, textAlign: 'center' },
   sub: { fontSize: 14, color: COLORS.textSecondary, textAlign: 'center', marginTop: 8, marginBottom: 28 },
   input: {
-    backgroundColor: COLORS.card, borderRadius: 12, paddingHorizontal: 16, paddingVertical: 14,
+    backgroundColor: COLORS.card, borderRadius: 12, height: 52, paddingHorizontal: 16,
     color: COLORS.textPrimary, fontSize: 17, borderWidth: 1, borderColor: COLORS.border,
+    textAlignVertical: 'center',
   },
+  inputFocused: { borderColor: COLORS.accent },
   codeInput: { textAlign: 'center', letterSpacing: 8, fontSize: 24 },
-  err: { color: '#E8896D', fontSize: 13, marginTop: 10, textAlign: 'center' },
-  btn: { backgroundColor: COLORS.accent, borderRadius: 12, paddingVertical: 15, alignItems: 'center', marginTop: 18 },
+  err: { color: COLORS.danger, fontSize: 13, marginTop: 10, textAlign: 'center' },
+  btn: { backgroundColor: COLORS.accent, borderRadius: 26, height: 52, justifyContent: 'center', alignItems: 'center', marginTop: 18 },
   btnText: { color: COLORS.background, fontSize: 16, fontWeight: '700' },
-  link: { color: COLORS.accent, fontSize: 14, textAlign: 'center', fontWeight: '600' },
-  linkDim: { color: COLORS.textSecondary, fontSize: 14, textAlign: 'center' },
+  link: { color: COLORS.accent, fontSize: 14, textAlign: 'center', fontWeight: '600', paddingVertical: 10 },
+  linkDim: { color: COLORS.textSecondary, fontSize: 14, textAlign: 'center', paddingVertical: 10 },
 });
