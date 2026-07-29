@@ -1,0 +1,84 @@
+diff --git a/node_modules/react-native-track-player/android/src/main/java/com/doublesymmetry/trackplayer/service/MusicService.kt b/node_modules/react-native-track-player/android/src/main/java/com/doublesymmetry/trackplayer/service/MusicService.kt
+index afa6b0f..c422206 100644
+--- a/node_modules/react-native-track-player/android/src/main/java/com/doublesymmetry/trackplayer/service/MusicService.kt
++++ b/node_modules/react-native-track-player/android/src/main/java/com/doublesymmetry/trackplayer/service/MusicService.kt
+@@ -30,6 +30,7 @@ import com.doublesymmetry.trackplayer.module.MusicEvents.Companion.METADATA_PAYL
+ import com.doublesymmetry.trackplayer.utils.BundleUtils
+ import com.doublesymmetry.trackplayer.utils.BundleUtils.setRating
+ import com.facebook.react.HeadlessJsTaskService
++import com.facebook.react.ReactApplication
+ import com.facebook.react.bridge.Arguments
+ import com.facebook.react.jstasks.HeadlessJsTaskConfig
+ import com.facebook.react.modules.core.DeviceEventManagerModule
+@@ -96,7 +97,14 @@ class MusicService : HeadlessJsTaskService() {
+     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+         startTask(getTaskConfig(intent))
+         startAndStopEmptyNotificationToAvoidANR()
+-        return START_STICKY
++        // STREAM-403-FGS-CRASH-PLAN §2.3 Patch B: appKilledPlaybackBehavior is
++        // StopPlaybackAndRemoveNotification, so swiping the app away always
++        // fully tears down playback — there is no scenario where the OS
++        // resurrecting this service in the background is useful. START_STICKY
++        // was the trigger for background respawns that hit the crash this
++        // patch fixes below. Revisit if appKilledPlaybackBehavior ever changes
++        // to ContinuePlayback.
++        return START_NOT_STICKY
+     }
+ 
+     /**
+@@ -120,9 +128,28 @@ class MusicService : HeadlessJsTaskService() {
+             notificationBuilder.foregroundServiceBehavior = NotificationCompat.FOREGROUND_SERVICE_IMMEDIATE
+         }
+         val notification = notificationBuilder.build()
+-        startForeground(EMPTY_NOTIFICATION_ID, notification)
+-        @Suppress("DEPRECATION")
+-        stopForeground(true)
++        // STREAM-403-FGS-CRASH-PLAN §2.3 Patch A: this startForeground call had
++        // no try/catch, unlike startForegroundIfNecessary() below which already
++        // guards against ForegroundServiceStartNotAllowedException. On Android
++        // 12+, hitting this while the app is backgrounded (e.g. service
++        // respawn) threw uncaught and crashed the process ("keeps stopping").
++        // Swallowing it here is safe: this whole function is a start-then-
++        // immediately-stop ANR workaround, so failing to briefly foreground
++        // has no user-visible effect.
++        try {
++            startForeground(EMPTY_NOTIFICATION_ID, notification)
++            @Suppress("DEPRECATION")
++            stopForeground(true)
++        } catch (error: Exception) {
++            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S &&
++                error is ForegroundServiceStartNotAllowedException
++            ) {
++                Timber.e(
++                    "ForegroundServiceStartNotAllowedException: App tried to start a foreground Service when it was not allowed to do so.",
++                    error
++                )
++            }
++        }
+     }
+ 
+     @MainThread
+@@ -741,17 +768,21 @@ class MusicService : HeadlessJsTaskService() {
+ 
+     @MainThread
+     private fun emit(event: String, data: Bundle? = null) {
+-        reactNativeHost.reactInstanceManager.currentReactContext
++        // Use reactHost.currentReactContext (Bridgeless/New Architecture)
++        // instead of reactNativeHost.reactInstanceManager (Old Architecture)
++        val context = (application as ReactApplication).reactHost?.currentReactContext
++        context
+             ?.getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter::class.java)
+             ?.emit(event, data?.let { Arguments.fromBundle(it) })
+     }
+ 
+     @MainThread
+     private fun emitList(event: String, data: List<Bundle> = emptyList()) {
++        val context = (application as ReactApplication).reactHost?.currentReactContext
+         val payload = Arguments.createArray()
+         data.forEach { payload.pushMap(Arguments.fromBundle(it)) }
+ 
+-        reactNativeHost.reactInstanceManager.currentReactContext
++        context
+             ?.getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter::class.java)
+             ?.emit(event, payload)
+     }
