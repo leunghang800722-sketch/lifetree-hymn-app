@@ -9,6 +9,7 @@ import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { COLORS } from '../theme/designSystem';
 import { useAuth } from '../context/AuthContext';
 import { useInsets } from '../hooks/useInsets';
+import VersionTag from '../components/VersionTag';
 
 export default function PhoneLoginScreen({ onClose, onUseEmail }) {
   const { requestOtp, verifyOtp } = useAuth();
@@ -98,6 +99,7 @@ export default function PhoneLoginScreen({ onClose, onUseEmail }) {
             <Text style={styles.linkDim}>用電郵/密碼登入</Text>
           </TouchableOpacity>
         )}
+        <VersionTag style={{ marginTop: 20 }} />
       </View>
     </KeyboardAvoidingView>
   );

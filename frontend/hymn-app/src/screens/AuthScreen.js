@@ -18,6 +18,7 @@ import { COLORS } from '../theme/designSystem';
 import { useAuth } from '../context/AuthContext';
 import { PHONE_AUTH_ENABLED } from '../config';
 import PhoneLoginScreen from './PhoneLoginScreen';
+import VersionTag from '../components/VersionTag';
 
 export default function AuthScreen({ onClose }) {
   // edge-to-edge:個 X 掣本來寫死 top:50,喺唔同機頂到狀態列(見 useInsets.js)
@@ -72,6 +73,7 @@ export default function AuthScreen({ onClose }) {
           <TouchableOpacity style={styles.submitBtn} onPress={() => { logout(); if (onClose) onClose(); }} activeOpacity={0.8}>
             <Text style={styles.submitText}>登出</Text>
           </TouchableOpacity>
+          <VersionTag style={{ marginTop: 16 }} />
         </View>
       </View>
     );
@@ -157,6 +159,7 @@ export default function AuthScreen({ onClose }) {
             <Text style={styles.toggleText}>改用電話登入</Text>
           </TouchableOpacity>
         )}
+        <VersionTag style={{ marginTop: 20 }} />
       </View>
     </KeyboardAvoidingView>
   );

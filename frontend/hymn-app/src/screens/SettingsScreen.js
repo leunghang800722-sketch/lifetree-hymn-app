@@ -7,11 +7,7 @@ import {
   StyleSheet,
   Linking,
 } from 'react-native';
-import Constants from 'expo-constants';
-
-// app.json 嘅 "version" 係單一事實來源(同 android/app/build.gradle versionName 對齊),
-// 唔好再喺呢度寫死版本號,咪學返 v1.0 咁一改就走樣。
-const APP_VERSION = Constants.expoConfig?.version || '—';
+import VersionTag from '../components/VersionTag';
 
 export default function SettingsScreen() {
   return (
@@ -26,7 +22,7 @@ export default function SettingsScreen() {
           <Text style={styles.sectionTitle}>應用程式</Text>
           <View style={styles.settingItem}>
             <Text style={styles.settingLabel}>God Music</Text>
-            <Text style={styles.settingValue}>v{APP_VERSION}</Text>
+            <VersionTag />
           </View>
           <View style={styles.settingItem}>
             <Text style={styles.settingLabel}>詩歌數量</Text>
