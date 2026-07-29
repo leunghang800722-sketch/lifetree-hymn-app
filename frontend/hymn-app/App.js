@@ -890,12 +890,15 @@ function PlayerProvider({ children }) {
         startIndex = 0;
       }
     }
-    // BUG3(b) P0(Eric 實測)—— explicit 隊列(例如「我的」清單「播全部」/撳單曲)
-    // 如果自動播放開住,都應該好似其他入口咁播晒之後有隨機尾巴接落去,唔係就
-    // 死死哋停,同「⏭ 冇嘢跳」變死掣(見下面 hasNext)。
-    // 淨係 opts.appendAutoplayTail 嘅 caller 先會加尾巴(目前得 PlaylistDetailSheet)——
-    // 「睇晒 N 首」分類詳情頁 / 「隨心聽」/ 首頁「即刻揀歌」呢啲本身已經係
-    // 「成個分類/成個庫」嘅清單,冇傳呢個 flag,行為完全冇變(播晒就完)。
+    // BUG3(b) P0(Eric 實測,已於 2026-07-29 推翻)—— 呢個分支曾經俾
+    // PlaylistDetailSheet 傳 opts.appendAutoplayTail 觸發,令自訂清單播晒之後
+    // (自動播放開住)接一條隨機尾巴,唔係就死死哋停、「⏭ 冇嘢跳」變死掣。
+    // 2026-07-29 Eric 明確要求推翻:「如果我按清單就唔好加其他野」——而家已經
+    // 冇任何 caller 傳呢個 flag(PlaylistDetailSheet.js 刪咗),分支自然唔會行,
+    // 自訂清單播晒就停,最尾一首 ⏭ 冇反應係預期行為,唔算 regression
+    // (QUEUE-UX-4FIXES-PLAN §1/§7-1)。**刻意保留**呢段分支同判斷邏輯:
+    // 唔係第時邊個 caller 想要「播完接隨機尾巴」呢個機關仲喺度,冇 caller
+    // 傳就係死碼、唔會意外觸發。
     let finalList = list;
     let autoRadioFrom = opts.autoRadioFrom ?? null;
     if (opts.appendAutoplayTail && autoplayEnabledRef.current) {
@@ -2094,8 +2097,9 @@ function AppContent() {
     if (opts.explicit && opts.playlist?.length) {
       const list = opts.playlist;
       const idx = Math.max(0, list.findIndex(s => s.id === h.id));
-      // BUG3(b) — 淨係打晒標記嘅 caller(PlaylistDetailSheet)先會加自動播放
-      // 尾巴,見 playQueue() 註解。
+      // BUG3(b)(2026-07-29 推翻,見 playQueue() 註解)—— opts.appendAutoplayTail
+      // 而家冇任何 caller 傳(PlaylistDetailSheet.js 刪咗),pass-through 刻意留低
+      // 做死碼機關,唔會意外觸發。
       // browseTap:true(詩歌庫/搜尋)—— 插播判斷邏輯喺 playQueue() 入面做
       // (嗰度先有 queueRef 呢啲 player 內部 ref,呢個 component 冇)。
       playQueue(list, idx, { appendAutoplayTail: !!opts.appendAutoplayTail, browseTap: !!opts.browseTap });

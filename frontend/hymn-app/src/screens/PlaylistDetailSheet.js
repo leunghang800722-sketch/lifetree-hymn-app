@@ -69,12 +69,13 @@ export default function PlaylistDetailSheet({ playlistId, onClose, onPlayHymn, m
 
   // 播歌後要閂埋自己:播放器 overlay 係主 view hierarchy 嘅嘢(zIndex 999),
   // 畫喺 native Modal **後面**—— Modal 唔閂,用戶會以為撳咗冇反應(emulator 實測)。
-  // BUG3(b) P0(Eric 實測)——之前呢度 explicit 隊列播完就完全停,自動播放開住
-  // 都冇尾巴接落去,同其他入口(睇晒/隨心聽/首頁即刻揀歌)嘅體驗唔一致。
-  // `appendAutoplayTail: true` 話俾 App.js handlePlayHymn/playQueue 知:呢個
-  // explicit 隊列播晒之後,自動播放開住就照樣加條隨機尾巴,冇開就同以前一樣停。
+  // BUG3(b) P0(Eric 實測,已於 2026-07-29 推翻)——之前呢度加咗
+  // `appendAutoplayTail: true`,令 explicit 隊列播晒之後自動播放開住會接一條
+  // 隨機尾巴。2026-07-29 Eric 明確要求推翻:「如果我按清單就唔好加其他野」——
+  // 自訂清單播晒就停,最尾一首 ⏭ 冇反應係預期行為(QUEUE-UX-4FIXES-PLAN §1/§7-1),
+  // 唔算 regression,唔好又加返呢個 flag。
   const play = (hymn) => {
-    onPlayHymn && onPlayHymn(hymn, { explicit: true, playlist: songs, appendAutoplayTail: true });
+    onPlayHymn && onPlayHymn(hymn, { explicit: true, playlist: songs });
     onClose && onClose();
   };
 
