@@ -56,6 +56,8 @@ export function AddToPlaylistProvider({ children }) {
   const [toast, setToast] = useState(''); // 建立清單後嘅輕量非阻擋提示(唔用 Alert —— 黑底 UI 唔啱擺白色系統對話框)
   const toastTimer = useRef(null);
   const visible = !!mode;
+  // §2026-07-29 QUEUE-UX-4FIXES §2(a):rename/create 改置中 dialog,'add' 保持貼底 sheet。
+  const isCentered = mode === 'create' || mode === 'rename';
 
   const showToast = useCallback((msg) => {
     setToast(msg);
@@ -149,22 +151,35 @@ export function AddToPlaylistProvider({ children }) {
           (跟住鍵盤高度計)喺呢個「較矮」嘅座標系入面計,會俾導航列高度咁多 —— 即係
           sheet 同鍵盤之間漏一條罅,穿到落去見到後面畫面(玻璃海個 bug)。加呢個 prop
           令 Modal window 都變 edge-to-edge,同 activity 座標系對齊。 */}
-      <Modal visible={visible} transparent animationType="slide" onRequestClose={close} statusBarTranslucent navigationBarTranslucent>
-        <View style={styles.scrim}>
-          <TouchableOpacity style={{ flex: 1 }} activeOpacity={1} onPress={close} />
-          {/* belt-and-braces 第二重保障:實色補罅,貼實個 window 底(絕對定位,
-              唔參與 flex 排位,唔會逼 card 內容爆出畫面頂)。就算 marginBottom
+      <Modal visible={visible} transparent animationType={isCentered ? 'fade' : 'slide'} onRequestClose={close} statusBarTranslucent navigationBarTranslucent>
+        <View style={[styles.scrim, isCentered && styles.scrimCentered]}>
+          {/* ⚠️ 呢個 backdrop 一定要用 absoluteFillObject,唔可以用 {flex:1} ——
+              flex:1 嘅 sibling 會自己食晒 justifyContent 分剩落嚟嘅空間(flexGrow
+              優先過 justifyContent),結果 centered dialog 照舊俾谷落底,同貼底
+              sheet 冇分別。改絕對定位就唔會參與 flex 分配,justifyContent 先真正
+              決定 card 擺喺中定底。 */}
+          <TouchableOpacity style={StyleSheet.absoluteFillObject} activeOpacity={1} onPress={close} />
+          {/* belt-and-braces 第二重保障(淨係貼底 sheet 先需要):實色補罅,貼實個 window
+              底(絕對定位,唔參與 flex 排位,唔會逼 card 內容爆出畫面頂)。就算 marginBottom
               個計法有少少誤差,card 底同真.鍵盤之間都唔會再透出後面畫面 ——
               呢張色板保證俾真.系統鍵盤(topmost surface)蓋晒,冇代價可以留大啲。
-              先於 card 畫(render order 排喺 card 之前),所以 card 一定疊喺上面。 */}
-          {kbHeight > 0 && (
+              先於 card 畫(render order 排喺 card 之前),所以 card 一定疊喺上面。
+              置中 dialog(create/rename)唔靠貼底,唔需要呢個補罅。 */}
+          {!isCentered && kbHeight > 0 && (
             <View pointerEvents="none" style={styles.keyboardScrim} />
           )}
-          {/* 鍵盤彈出時 card 抬起鍵盤咁高(kbHeight + 細細個安全邊);鍵盤收埋
-              先用返 safe-area inset 墊底。belt-and-braces 嘅第二重保障喺
-              keyboardScrim(上面),就算呢個數計錯咗都唔會透出後面畫面。 */}
-          <View style={[styles.card, { marginBottom: kbHeight > 0 ? kbHeight + KB_SAFETY_BUFFER : 0, paddingBottom: kbHeight > 0 ? 12 : 8 + insets.bottom }]}>
-            <View style={styles.handle} />
+          {/* §2026-07-29 QUEUE-UX-4FIXES §2:rename/create 呢兩個 mode 冇 FlatList,
+              淨係「標題 + 一行輸入框」,根本唔需要貼底 sheet ——改置中 dialog 之後,
+              鍵盤只會佔畫面下半部,常規手機螢幕唔會遮到置中嘅內容,成套 kbHeight
+              計法對呢兩個 mode 唔再係生死攸關(唔使再靠 marginBottom 抬高)。
+              'add' mode(有 FlatList,真係 sheet)貼底行為/外觀完全維持原狀。 */}
+          <View style={[
+            styles.card,
+            isCentered
+              ? styles.cardCentered
+              : { marginBottom: kbHeight > 0 ? kbHeight + KB_SAFETY_BUFFER : 0, paddingBottom: kbHeight > 0 ? 12 : 8 + insets.bottom },
+          ]}>
+            {!isCentered && <View style={styles.handle} />}
             <Text style={styles.title}>
               {mode === 'create' ? '新播放清單' : mode === 'rename' ? '改清單名' : '加入到清單'}
             </Text>
@@ -228,6 +243,9 @@ export function AddToPlaylistProvider({ children }) {
 
 const styles = StyleSheet.create({
   scrim: { flex: 1, backgroundColor: 'rgba(0,0,0,0.55)', justifyContent: 'flex-end' },
+  // rename/create 置中 dialog(§2026-07-29 QUEUE-UX-4FIXES §2)—— 唔貼底,
+  // 垂直+水平居中,避開鍵盤覆蓋範圍(鍵盤淨係佔畫面下半部)。
+  scrimCentered: { justifyContent: 'center', alignItems: 'center' },
   // belt-and-braces keyboard 補罅板 —— 見上面 JSX 註解。絕對定位貼實 window 底,
   // 顏色同 card 一樣,萬一 marginBottom 計少咗都唔會透出後面畫面。
   keyboardScrim: {
@@ -237,6 +255,12 @@ const styles = StyleSheet.create({
   card: {
     maxHeight: '65%', backgroundColor: COLORS.card,
     borderTopLeftRadius: 20, borderTopRightRadius: 20, overflow: 'hidden', paddingBottom: 8,
+  },
+  // rename/create 置中 dialog(§2026-07-29 QUEUE-UX-4FIXES §2)—— 冇 FlatList,
+  // 唔使貼底,窄啲、四角全圓,睇落似 dialog 唔似 sheet。
+  cardCentered: {
+    alignSelf: 'center', width: '86%', maxWidth: 420,
+    borderRadius: 20, marginBottom: 0, paddingBottom: 14,
   },
   handle: { width: 40, height: 5, borderRadius: 3, backgroundColor: COLORS.textSecondary, alignSelf: 'center', marginTop: 8, marginBottom: 6 },
   title: { color: COLORS.textPrimary, fontSize: 18, fontWeight: '600', paddingHorizontal: 20, paddingVertical: 12 },
