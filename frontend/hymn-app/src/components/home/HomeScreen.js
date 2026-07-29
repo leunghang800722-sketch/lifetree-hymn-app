@@ -24,7 +24,6 @@ import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Image, Dimensions
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { COLORS, TYPOGRAPHY } from '../../theme/designSystem';
 import DailyVerseCard from './DailyVerseCard';
-import { getLastPlayed } from '../../lastPlayed';
 import { getHomeChip, saveHomeChip } from '../../homePrefs';
 import { dailyPick, dailyPickBalanced, randomShuffle } from '../../utils/dailyShuffle';
 import { useFavorites } from '../../context/FavoritesContext';
@@ -128,8 +127,6 @@ function SongCard({ hymn, onPress }) {
 }
 
 export default function HomeScreen({ hymns = [], onPlayHymn, onOpenList }) {
-  const last = getLastPlayed();
-
   // 有歌先計嘢。冇歌(未 load / 冇網)整頁一個狀態,唔好五個區塊各自閃 loading(§2.7)
   const hasData = Array.isArray(hymns) && hymns.length > 0;
 
@@ -227,21 +224,14 @@ export default function HomeScreen({ hymns = [], onPlayHymn, onOpenList }) {
       <DailyVerseFetcher />
 
       {/* ===== 2. 快速開播列 =====
-          服務「我唔想揀,求其播啲好嘢」呢個最大宗嘅心情。兩個掣任何情況都喺度;
-          新用戶冇播放紀錄時「隨心聽」自己撐晒成行 —— 由開 App 到出聲一下手指。 */}
+          服務「我唔想揀,求其播啲好嘢」呢個最大宗嘅心情。
+          2026-07-29 QUEUE-UX-4FIXES §4/§7-3:「繼續收聽」卡已剷——Eric 決定
+          「關 app 後播放頁的清單重新開始唔會有記憶」,依張卡(靠 lastPlayed.js
+          記低最後一首)同呢條新規矩正面衝突,連 lastPlayed.js 呢個 module 都
+          一齊刪咗(App.js 亦已移除寫入/預熱呼叫)。而家「隨心聽」自己撐晒成行。 */}
       <View style={styles.quickRow}>
-        {last?.id && (
-          <TouchableOpacity style={[styles.quickBtn, styles.quickBtnHalf]} activeOpacity={0.85}
-            onPress={() => play(last)}>
-            <MaterialIcons name="play-circle-filled" size={26} color={COLORS.accent} />
-            <View style={styles.quickTextWrap}>
-              <Text style={styles.quickTitle} numberOfLines={1}>繼續收聽</Text>
-              <Text style={styles.quickSub} numberOfLines={1}>{getDisplayTitle(last)}</Text>
-            </View>
-          </TouchableOpacity>
-        )}
         <TouchableOpacity
-          style={[styles.quickBtn, last?.id ? styles.quickBtnHalf : styles.quickBtnFull]}
+          style={[styles.quickBtn, styles.quickBtnFull]}
           activeOpacity={0.85}
           onPress={playShuffleAll}
         >
@@ -400,7 +390,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14, paddingVertical: 10,
     borderWidth: 1, borderColor: COLORS.border,
   },
-  quickBtnHalf: { flex: 1, marginHorizontal: 4 },
   quickBtnFull: { flex: 1, marginHorizontal: 4 },
   quickTextWrap: { flex: 1, marginLeft: 10 },
   quickTitle: { fontSize: 15, fontWeight: '700', color: COLORS.textPrimary },

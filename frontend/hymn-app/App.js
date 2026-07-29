@@ -25,7 +25,6 @@ import AuthScreen from './src/screens/AuthScreen';
 import { PlaylistProvider } from './src/context/PlaylistContext';
 import { setAuthToken, pullData, pushSync, flush as flushOutbox, getOwner, setOwner, clearOutbox } from './src/sync/userSync';
 import { API_BASE } from './src/config.js';
-import { saveLastPlayed, getLastPlayed } from './src/lastPlayed';
 import { dailyPickBalanced } from './src/utils/dailyShuffle';
 import { buildAutoplayTail, FLAVORS, poolSize } from './src/utils/autoplay';
 import { getPlayLog, getRecentIds, recordPlay } from './src/playLog';
@@ -427,8 +426,14 @@ function PlayerProvider({ children }) {
           importance: 1,
         },
         icon: require('./assets/notification-icon.png'),
-        // §3.2 — keep playing when the user swipes the app away from recents
-        android: { appKilledPlaybackBehavior: AppKilledPlaybackBehavior.ContinuePlayback },
+        // 2026-07-29 QUEUE-UX-4FIXES §4/§7-2、Eric 明確要求(推翻 §3.2 舊決定):
+        // 手指 swipe 走成個 app,音樂要即刻停,連 mini player bar／通知欄都要
+        // 一齊取消 —— 唔係之前「背景繼續播」嗰個情境(嗰個係用戶撳 Home
+        // 掣去背景,app process 冇死,唔受呢個設定影響,見下面 resyncFromNative
+        // 嘅 AppState 'active' 分支)。原本 ContinuePlayback 令 swipe 走之後
+        // service 仲生存、繼續出聲,同「swipe 走要停」呢個新要求正面衝突,
+        // 所以改用 StopPlaybackAndRemoveNotification。
+        android: { appKilledPlaybackBehavior: AppKilledPlaybackBehavior.StopPlaybackAndRemoveNotification },
       });
     } catch (e) {
       console.warn('updateOptions (ignored):', e?.message);
@@ -640,11 +645,19 @@ function PlayerProvider({ children }) {
 
   // §Eric #2 —— app resume / 重開 之後同 native TrackPlayer 對返數。
   // Android 低記憶體會殺咗個 JS(Activity),但 TrackPlayer 個 foreground service
-  // 靠 AppKilledPlaybackBehavior.ContinuePlayback 仲喺度播 → 用戶返嚟見到 mini
-  // player 唔見咗(currentHymn 係 null)但實際上有歌播緊。呢度讀返 native 嘅
-  // queue / 而家播緊嗰首 / 播放狀態,補返 JS 嘅 UI state。只讀 + set state,
-  // 唔會郁到 native 播緊嗰首。
-  const resyncFromNative = useCallback(async () => {
+  // 仲喺度播 → 用戶返嚟見到 mini player 唔見咗(currentHymn 係 null)但實際上
+  // 有歌播緊。呢度讀返 native 嘅 queue / 而家播緊嗰首 / 播放狀態,補返 JS 嘅
+  // UI state。只讀 + set state,唔會郁到 native 播緊嗰首。
+  //
+  // 2026-07-29 QUEUE-UX-4FIXES §4/§7-3:Eric 要求「重開 App 播放頁嘅清單重新
+  // 開始,唔會有記憶」。唔可以簡單剷走呢個 function(§Eric #2 仲要靠佢處理
+  // 「背景播緊歌、用戶返前台」嗰個正常場景),要按**冷啟動 vs 返前台**同
+  // **native 係咪真係播緊**分流:冷啟動(isColdStart=true)嗰陣,如果 native
+  // 唔係 Playing/Buffering(即係上次退出留低嘅殘留隊列,例如啱啱喺 notification
+  // 撳咗暫停就 swipe 走),就 TrackPlayer.reset() 清晒 native queue + 收埋
+  // notification,唔補任何 JS state,App 以 clean state 開始。返前台
+  // (isColdStart=false)呢條路一行都冇變,先唔會令 §Eric #2 翻發。
+  const resyncFromNative = useCallback(async (isColdStart = false) => {
     try {
       await lazyEnsurePlayer(); // 確保呢個 JS instance 連到 native service(idempotent)
       const [q, idxRaw, stateRaw] = await Promise.all([
@@ -653,6 +666,13 @@ function PlayerProvider({ children }) {
         TrackPlayer.getPlaybackState().catch(() => null),
       ]);
       const stateVal = typeof stateRaw === 'object' && stateRaw != null ? stateRaw.state : stateRaw;
+      const isActuallyPlaying = stateVal === TPState.Playing || stateVal === TPState.Buffering;
+      if (isColdStart && Array.isArray(q) && q.length > 0 && !isActuallyPlaying) {
+        // 殘留隊列(service 未死但冇聲)—— 清場,唔補 JS state。
+        try { await TrackPlayer.reset(); } catch (_) {}
+        setTrackState(TPState.None);
+        return;
+      }
       if (stateVal != null) setTrackState(stateVal);
       if (!Array.isArray(q) || q.length === 0) return; // native 冇嘢播,唔使補
       // native track → hymn 物件:優先由 allSongs 攞齊資料;冇就由 track 砌返
@@ -686,9 +706,10 @@ function PlayerProvider({ children }) {
   }, [lazyEnsurePlayer]);
 
   useEffect(() => {
-    // 開機一次(俾 native service 少少時間重連)+ 每次返前台
-    const t = setTimeout(() => { resyncFromNative(); }, 800);
-    const sub = AppState.addEventListener('change', (s) => { if (s === 'active') resyncFromNative(); });
+    // 開機一次(isColdStart=true,俾 native service 少少時間重連;冇播緊就清場)
+    // + 每次返前台(isColdStart=false,照舊 resync,唔清場)。
+    const t = setTimeout(() => { resyncFromNative(true); }, 800);
+    const sub = AppState.addEventListener('change', (s) => { if (s === 'active') resyncFromNative(false); });
     return () => { clearTimeout(t); sub.remove(); };
   }, [resyncFromNative]);
 
@@ -923,7 +944,6 @@ function PlayerProvider({ children }) {
     setQueue(finalList);
     originalQueueRef.current = finalList;
     setIsShuffled(false);
-    saveLastPlayed(finalList[startIndex] || finalList[0]); // §2.3 繼續收聽
     try {
       await lazyEnsurePlayer();
       await TrackPlayer.reset();
@@ -2060,15 +2080,14 @@ function AppContent() {
     fetch(`${API_BASE}/api/health`).catch(() => {});
   }, []);
 
-  // §3b①:歌單一 load 好就預熱「繼續收聽」嗰首 + 「今日為你預備」6 首
-  // (同 HomeScreen 個算法一致),令開 App 後頭幾下撳落去都係 warm。只做一次。
+  // §3b①:歌單一 load 好就預熱「今日為你預備」6 首(同 HomeScreen 個算法
+  // 一致),令開 App 後頭幾下撳落去都係 warm。只做一次。
+  // 2026-07-29 QUEUE-UX-4FIXES §4/§7-3:「繼續收聽」已剷,呢度唔再預熱嗰首。
   const bootWarmedRef = useRef(false);
   useEffect(() => {
     if (bootWarmedRef.current || !allSongs?.length) return;
     bootWarmedRef.current = true;
     const ids = [];
-    const last = getLastPlayed();
-    if (last?.id) ids.push(last.id);
     try {
       const featured = allSongs.filter((h) => h.featured === 1);
       const pool = featured.length >= 6 ? featured : allSongs;
@@ -2122,8 +2141,8 @@ function AppContent() {
   //
   // 呢兩個畫面唔喺 App.js 度(HymnListScreen 喺呢度,PlaylistDetailSheet
   // 就係由 MineScreen.js 開嘅),為咗唔好將 MiniPlayer 呢個組件抄多份
-  // (或者由嗰啲畫面 import 返 App.js,製造返 lastPlayed.js 個註解講嘅
-  // circular import 問題),做法係喺呢度起**一個** MiniPlayer 嘅 React
+  // (或者由嗰啲畫面 import 返 App.js,製造返 circular import 問題),
+  // 做法係喺呢度起**一個** MiniPlayer 嘅 React
   // element,包埋佢自己嘅底部 safe-area padding(mini player 企喺呢兩個
   // Modal 度冇 TabBar 陪住,要自己頂住導航列),再用 props 派落去。
   // MiniPlayer 本身喺冇 currentHymn 就 return null,唔會喺冇歌播嗰陣佔位。
