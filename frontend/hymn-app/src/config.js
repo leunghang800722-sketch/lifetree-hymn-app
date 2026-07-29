@@ -12,7 +12,6 @@
 // ⚠️ backend 仍然係跑喺開發者部 Mac 度，部機要開住 + 有網，App 先用到。
 export const API_BASE = 'https://api.god-music.com';
 
-// 電話 OTP 登入(PHONE-AUTH-PLAN)。⚠️ 預設 false —— 等 Eric 開好 Twilio +
-// 後端補 TWILIO_* env 之後先改 true。false 時登入頁維持現有 email/password,
-// 唔會俾用戶見到一個未通嘅電話登入。
-export const PHONE_AUTH_ENABLED = false;
+// 電話 OTP 登入(PHONE-AUTH-PLAN)。2026-07-29 三條 Twilio key 已齊,
+// `/api/auth/otp/status` 確認 configured:true 先開(MEMBERSHIP-PHASE1-LOGIN-SYNC.md W3)。
+export const PHONE_AUTH_ENABLED = true;
