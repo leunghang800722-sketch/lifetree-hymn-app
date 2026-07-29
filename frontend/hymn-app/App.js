@@ -349,8 +349,9 @@ function PlayerProvider({ children }) {
       queueRef.current = newQ;
       setQueue(newQ);
       // 洗完牌之後,「邊度開始係自動接續」呢個 index 已經冇意義,清走條分隔線,
-      // 唔好留條線喺個完全唔同嘅位度呃人。
+      // 唔好留條線喺個完全唔同嘅位度呃人。插播分隔線同理(§3.2)。
       setAutoRadioFrom(null);
+      setInsertBoundary(null);
       currentQueueIndexRef.current = 0;
       setCurrentQueueIndex(0);
       await TrackPlayer.reset();
@@ -797,6 +798,12 @@ function PlayerProvider({ children }) {
   const [autoRadioFrom, setAutoRadioFrom] = useState(null); // queue 由邊個 index 開始係自動接續
   const autoRadioFromRef = useRef(null);
   autoRadioFromRef.current = autoRadioFrom;
+  // 2026-07-29 QUEUE-UX-4FIXES §3:插播歌視覺分隔——queue 頭幾多首係插播歌,
+  // null = 冇插播。同 autoRadioFrom 一樣平行機關,喺 playQueue() 統一
+  // set/clear(見下面),唔逐個 caller 執,避免漏清變鬼影分隔線。
+  const [insertBoundary, setInsertBoundary] = useState(null);
+  const insertBoundaryRef = useRef(null);
+  insertBoundaryRef.current = insertBoundary;
   async function playSingle(hymn, pool) {
     if (!hymn) return;
     // 插播 —— 如果而家播緊一個「明確清單」(playQueue 直接開嗰種,冇自動尾巴,
@@ -815,7 +822,9 @@ function PlayerProvider({ children }) {
       ? curQ.slice(curIdx + 1, headLen).filter((s) => String(s.id) !== String(hymn.id))
       : [];
     if (resumeRemainder.length > 0) {
-      await playQueue([hymn, ...resumeRemainder], 0, { autoRadioFrom: null });
+      // insertBoundary: 1 —— 插播歌恆企喺 index 0,§3.3:插播永遠一首,
+      // 邊個時候都係固定 1(唔使做動態數值)。
+      await playQueue([hymn, ...resumeRemainder], 0, { autoRadioFrom: null, insertBoundary: 1 });
       return;
     }
     // 自動播放關咗 → 淨播嗰首,冇隨機尾巴(AUTOPLAY-MIX-PLAN:關咗就係關咗)
@@ -909,6 +918,10 @@ function PlayerProvider({ children }) {
       if (resumeRemainder.length > 0) {
         list = [tapped, ...resumeRemainder];
         startIndex = 0;
+        // §3.3:插播恆企 index 0——再插第二首時呢個分支會用而家隊列重新砌
+        // [新插播歌, ...explicitHead 餘下],上一首插播歌(嗰陣 curIdx=0,
+        // slice(curIdx+1) 由 1 開始)自然唔會帶落新隊列,唔使動態 boundary。
+        opts = { ...opts, insertBoundary: 1 };
       }
     }
     // BUG3(b) P0(Eric 實測,已於 2026-07-29 推翻)—— 呢個分支曾經俾
@@ -934,6 +947,9 @@ function PlayerProvider({ children }) {
       }
     }
     setAutoRadioFrom(autoRadioFrom);
+    // §3.2:同 autoRadioFrom 並排統一 set/clear——正常換 queue(opts 冇傳
+    // insertBoundary)就自動歸零,唔使逐個 caller 執,避免漏清變鬼影分隔線。
+    setInsertBoundary(opts.insertBoundary ?? null);
     setIsLoading(true);
     // Set the ref synchronously alongside the state (same reason as
     // toggleShuffle): TrackPlayer events fire during the add/play below and
@@ -993,6 +1009,8 @@ function PlayerProvider({ children }) {
     const playing = queueRef.current[currentQueueIndexRef.current];
     queueRef.current = newData;
     setQueue(newData);
+    // 拖曳排序之後,插播分隔線嘅 index 已經冇意義(§3.2,同 shuffle 同一道理)。
+    setInsertBoundary(null);
     // 冇 shuffle 時 original order = 顯示緊嘅次序;shuffle 開住就唔郁 original
     // (熄 shuffle 會還原返未拖之前嗰個原始次序,呢個係合理嘅)。
     if (!isShuffledRef.current) originalQueueRef.current = newData;
@@ -1073,7 +1091,7 @@ function PlayerProvider({ children }) {
       repeatMode, isShuffled, setIsShuffled,
       currentQueueIndex, setCurrentQueueIndex, queue,
       overlayExpanded, queueReady, isLoading, getPlayMode,
-      playQueue, playSingle, autoRadioFrom,
+      playQueue, playSingle, autoRadioFrom, insertBoundary,
       cmd_play, cmd_pause, togglePlayPause,
       skipToQueueIndex, reorderQueue, handleNextTrack, handlePrevTrack,
       autoplayEnabled, autoplayFlavor, applyAutoplayEnabled, applyAutoplayFlavor,
@@ -1687,6 +1705,19 @@ function FullScreenPlayerOverlay() {
                     <View style={fsStyles.radioDividerLine} />
                     <MaterialIcons name="shuffle" size={14} color={ACCENT_COLOR} style={{ marginHorizontal: 8 }} />
                     <Text style={fsStyles.radioDividerText}>自動播放：{player.autoplayFlavor || '全部'}</Text>
+                    <View style={fsStyles.radioDividerLine} />
+                  </View>
+                )}
+                {/* 2026-07-29 QUEUE-UX-4FIXES §3/§7-4:插播歌分隔線——插播歌
+                    永遠企喺 index 0(§3.3),分隔線畫喺 index 1 之前,即插播歌
+                    同「原本清單餘下」交界。文案「即將播放」係 Eric 拍板
+                    (§7-4,推翻咗規劃文件暫定嘅「接返原本清單」)。樣式直接
+                    重用 radioDivider 三件套,淨係換 icon/文字/顏色作區分。 */}
+                {index === player.insertBoundary && (
+                  <View style={fsStyles.radioDivider}>
+                    <View style={fsStyles.radioDividerLine} />
+                    <MaterialIcons name="playlist-play" size={14} color={ACCENT_COLOR} style={{ marginHorizontal: 8 }} />
+                    <Text style={fsStyles.radioDividerText}>即將播放</Text>
                     <View style={fsStyles.radioDividerLine} />
                   </View>
                 )}
