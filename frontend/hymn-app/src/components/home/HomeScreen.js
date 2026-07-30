@@ -190,12 +190,11 @@ export default function HomeScreen({ hymns = [], onPlayHymn, onOpenList }) {
   // 第三個參數係**明確標記**,唔好用「hymn 係咪 list[0]」嚟猜 —— 撳「今日為你預備」
   // 第一張卡就啱啱好等於 todayPicks[0],咁猜會撞錯。
   //
-  // BUG3(a) P0(Eric 實測):「即刻揀歌」入面撳一行歌之前冇傳 explicit,
-  // 就跌落「單曲 + 自動接續」嗰條路,結果隊列淨係 [嗰首, ...30 首隨機尾巴]，
-  // 完全睇唔到嗰個分類仲有幾多首——同「睇晒 N 首」個分類詳情頁次序播晒成個
-  // 分類唔一致。而家改咗做 explicit=true,同「睇晒」/「隨心聽」同一條路:
-  // 揀成個 activeChip.songs 做隊列,由撳嗰首開始播。「今日為你預備」/
-  // 「最近加入」嗰兩行卡**冇改**——嗰兩個原本就係設計成單曲 + 隨機接續。
+  // 2026-07-30 Eric 三場景規格(QUEUE-BEHAVIOR-3-SCENARIOS-PLAN)推翻
+  // BUG3(a):瀏覽撳歌 = 單曲 + 30 首類似尾巴(playSingle 條路);想聽成個
+  // 分類用「播晒 N 首」掣或者「睇晒」頁。播緊清單時撳呢度依然係插播——
+  // 由 playSingle 自己嘅插播分支處理,唔再需要 browseTap flag。「今日為你
+  // 預備」/「最近加入」嗰兩行卡一直都係單曲 + 隨機接續,冇改過。
   const play = useCallback((hymn, list, explicit) => {
     if (onPlayHymn && hymn) onPlayHymn(hymn, list ? { playlist: list, explicit: !!explicit } : undefined);
   }, [onPlayHymn]);
@@ -284,7 +283,7 @@ export default function HomeScreen({ hymns = [], onPlayHymn, onOpenList }) {
               <View key={`${activeChip.id}-${i}`} style={styles.page}>
                 {rows.map((h) => (
                   <TouchableOpacity key={h.id} style={styles.songRow} activeOpacity={0.7}
-                    onPress={() => onPlayHymn && onPlayHymn(h, { explicit: true, playlist: activeChip.songs, browseTap: true })}>
+                    onPress={() => onPlayHymn && onPlayHymn(h)}>
                     <Thumb youtubeId={h.youtube_id} size={40} />
                     <View style={styles.rowTextWrap}>
                       {/* numberOfLines stays 1 here — ROW_H (64px) is a hand-tuned

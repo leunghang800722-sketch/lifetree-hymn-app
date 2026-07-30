@@ -935,11 +935,16 @@ function PlayerProvider({ children }) {
 
   async function playQueue(list, startIndex = 0, opts = {}) {
     if (!Array.isArray(list) || list.length === 0) return;
-    // 插播(Eric 2026-07-28)—— 詩歌庫/搜尋(`opts.browseTap`)撳嘅歌唔算「揀咗
-    // 成個清單」,淨係「掃緊街見到一首想聽」。如果而家已經有第二個真.清單
-    // 播緊(唔係呢首歌本身所屬嗰個 `list`),就淨係插播嗰首,播完接返落去
-    // 嗰個清單嘅下一首,唔好成個清單換走。「播全部」/清單詳情頁/最愛清單
-    // 入面撳歌冇呢個 flag,一律照舊正常換 queue(§3 語義分界,見 handlePlayHymn)。
+    // 插播(Eric 2026-07-28)—— 原意係詩歌庫/搜尋(`opts.browseTap`)撳嘅歌唔算
+    // 「揀咗成個清單」,淨係「掃緊街見到一首想聽」。如果而家已經有第二個真.
+    // 清單播緊(唔係呢首歌本身所屬嗰個 `list`),就淨係插播嗰首,播完接返
+    // 落去嗰個清單嘅下一首,唔好成個清單換走。
+    // 2026-07-30 更新(QUEUE-BEHAVIOR-3-SCENARIOS-PLAN §3.4):Eric 三場景規格
+    // 推翻 BUG3(a) 之後,詩歌庫/即刻揀歌已經 revert 返行 playSingle() 條路
+    // (唔再傳 opts),插播改由 playSingle() 自己嗰個分支處理(§3.3)。而家
+    // **冇任何 caller 再傳 `browseTap`**——呢個分支照 `appendAutoplayTail`
+    // 先例刻意保留做死碼機關,第時有 explicit 入口需要插播行為就用得返,
+    // 唔好順手剷。分支本身邏輯冇改過一行。
     if (opts.browseTap) {
       const tapped = list[startIndex];
       const curQ = queueRef.current || [];
