@@ -15,6 +15,7 @@ import {
   View, Text, ScrollView, TouchableOpacity, StyleSheet,
   ActivityIndicator, StatusBar, Image, Platform, Alert, AppState,
   Modal, Dimensions, FlatList, Animated, Linking, Share, BackHandler,
+  PermissionsAndroid,
 } from 'react-native';
 import { COLORS } from './src/constants/theme';
 import { FavoritesProvider, useFavorites } from './src/context/FavoritesContext';
@@ -401,6 +402,15 @@ function PlayerProvider({ children }) {
   const lazyEnsurePlayer = useCallback(async () => {
     if (playerReadyRef.current) return;
     playerReadyRef.current = true;
+    // Android 13+(API 33)POST_NOTIFICATIONS 一定要 runtime request,淨係喺
+    // manifest 度宣告唔會自動有——冇request過就一直當用戶拒絕,post唔到
+    // RNTP 個背景播放通知,離開App之後個mini player就會「唔見咗」但歌照播
+    // (2026-07-30 Eric 實測 + STREAM-403-FGS-CRASH-PLAN 已知缺口)。
+    if (Platform.OS === 'android' && Platform.Version >= 33) {
+      try {
+        await PermissionsAndroid.request(PermissionsAndroid.PERMISSIONS.POST_NOTIFICATIONS);
+      } catch (e) { console.warn('POST_NOTIFICATIONS request (ignored):', e?.message); }
+    }
     try {
       await TrackPlayer.setupPlayer({ waitForBuffer: true });
     } catch (e) {
@@ -1399,11 +1409,46 @@ function FullScreenPlayerOverlay() {
   // 收埋成個播放器。(add picker 係獨立 Modal,佢自己 onRequestClose 處理返回鍵。)
   const queueOpenRef = useRef(false);
   const [anySheetOpen, setAnySheetOpen] = useState(false);
+  // 2026-07-30 Eric 實測:大分類(例如兒童 476 首)撳歌之後開「播放清單」,
+  // 個 list 由頭(index 0)開始 render,而家播緊嗰首坐喺隊列中間某個 index,
+  // 用戶淨係見到一堆完全睇唔出邊首正播緊嘅歌,以為個queue俾成個分類換晒
+  // (其實 queueItemActive 高亮同 §3.4 嘅 browseTap 插播邏輯本身冇壞,單純
+  // 冇 scroll 過去)。呢度補返「開全屏 sheet 就自動 scroll 去而家播緊嗰行」。
+  const queueListRef = useRef(null);
+  // ⚠️ 2026-07-30 實測教訓:第一版冇 getItemLayout,scrollToIndex 喺 476 首
+  // 嘅大 queue 度量唔到目標 row,觸發 onScrollToIndexFailed → scrollToOffset
+  // → 再 scrollToIndex → 又失敗 → 又觸發……冇上限咁循環,直接 ANR 咗個 app。
+  // 依家用固定估計行高做 getItemLayout,scrollToIndex 唔使量、一步到位,
+  // 根本唔會撞落 failure 嗰條路。行高唔係定值(標題有一/兩行),呢個淨係
+  // 估計,scroll 落點容許有少少誤差,但保證唔會再撞 ANR。
+  const QUEUE_ROW_EST_H = 70;
+  const getQueueItemLayout = useCallback((data, index) => (
+    { length: QUEUE_ROW_EST_H, offset: QUEUE_ROW_EST_H * index, index }
+  ), []);
+  const scrollQueueToCurrent = useCallback(() => {
+    const idx = player.currentQueueIndexRef?.current || 0;
+    if (idx <= 0) return;
+    requestAnimationFrame(() => {
+      try {
+        queueListRef.current?.scrollToIndex({ index: idx, animated: false, viewPosition: 0.3 });
+      } catch (e) { /* getItemLayout 已經俾夠資訊,理論上唔會再失敗 */ }
+    });
+  }, [player.currentQueueIndexRef]);
+  // 淨係做一次性 fallback(唔會再連鎖觸發 scrollToIndex),避免重蹈 ANR 覆轍。
+  const onQueueScrollToIndexFailed = useCallback((info) => {
+    queueListRef.current?.scrollToOffset({ offset: info.averageItemLength * info.index, animated: false });
+  }, []);
   const onQueueChange = useCallback((i) => {
     queueOpenRef.current = i >= 1;
     setQueueExpanded(i >= 1);
     setAnySheetOpen(i >= 1);
   }, []);
+  // DraggableFlatList 淨係喺 queueExpanded 先 mount(下面 §Eric #3/#6),喺
+  // onQueueChange 嗰刻即刻 scroll 會執行喺 mount 之前。用 effect 等佢真係
+  // mount 咗先 scroll,唔使賭 requestAnimationFrame 嘅時序。
+  useEffect(() => {
+    if (queueExpanded) scrollQueueToCurrent();
+  }, [queueExpanded, scrollQueueToCurrent]);
 
   useEffect(() => {
     if (!anySheetOpen) return undefined;
@@ -1646,10 +1691,13 @@ function FullScreenPlayerOverlay() {
             自動播放控制 + 佇列 list 只喺 sheet 全開先 render。 */}
         {queueExpanded && (
         <DraggableFlatList
+          ref={queueListRef}
           data={queue}
           keyExtractor={(item) => String(item.id)}
+          getItemLayout={getQueueItemLayout}
           contentContainerStyle={{ paddingBottom: 40 }}
           activationDistance={12}
+          onScrollToIndexFailed={onQueueScrollToIndexFailed}
           onDragEnd={({ data, from, to }) => player.reorderQueue(data, from, to)}
           // §Eric #1:自動播放控制放喺 ListHeaderComponent(唔係做 sibling)——
           // DraggableFlatList 拖曳嗰陣會 translate 佢個 content,sibling 會俾佢一齊拖郁;

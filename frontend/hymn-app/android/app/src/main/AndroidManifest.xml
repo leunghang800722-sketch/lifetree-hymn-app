@@ -1,5 +1,9 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android" xmlns:tools="http://schemas.android.com/tools">
   <uses-permission android:name="android.permission.INTERNET"/>
+  <!-- Android 13+(API 33)冇呢個 permission 就post唔到任何notification,包括
+       react-native-track-player 個背景播放媒體控制通知——冧咗個離開App後嘅
+       mini player(2026-07-30 Eric 實測,STREAM-403-FGS-CRASH-PLAN 已知問題)。 -->
+  <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
   <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="32" tools:replace="android:maxSdkVersion"/>
   <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW"/>
   <uses-permission android:name="android.permission.VIBRATE"/>
