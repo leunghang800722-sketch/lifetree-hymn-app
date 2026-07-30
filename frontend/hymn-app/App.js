@@ -882,31 +882,53 @@ function PlayerProvider({ children }) {
       if (autoRadioFromRef.current == null) await rebuildTail(true);
       else await rebuildTail();
     } else {
-      // 由開變關:剪走尾巴,淨返而家播緊 + 之前用戶揀嗰段
+      // 由開變關:淨係剪走自動尾巴,用戶自己揀嗰個清單(explicit head)要原封不動。
       if (autoRadioFromRef.current == null) return;
       try {
+        const curQ = queueRef.current || [];
+        const curIdx = currentQueueIndexRef.current || 0;
+        const head = curQ.slice(0, autoRadioFromRef.current);
         await TrackPlayer.removeUpcomingTracks();
-        const keep = queueRef.current.slice(0, (currentQueueIndexRef.current || 0) + 1);
-        queueRef.current = keep; setQueue(keep);
+        // removeUpcomingTracks 會連 head 喺 curIdx 之後嗰截一齊剷埋(native queue
+        // 淨返 [0..curIdx]),所以要 add 返落去,唔係 JS queue 同 native 會對唔上。
+        const rest = head.slice(curIdx + 1);
+        if (rest.length) await TrackPlayer.add(rest.map(toTrack));
+        queueRef.current = head; setQueue(head);
         setAutoRadioFrom(null);
       } catch (e) { console.warn('autoplay off error:', e?.message); }
     }
   }
   async function rebuildTail(force) {
     try {
+      const curQ = queueRef.current || [];
       const curIdx = currentQueueIndexRef.current || 0;
-      const cur = queueRef.current[curIdx];
+      const cur = curQ[curIdx];
       if (!cur) return;
-      const libr = (hymnsRef.current && hymnsRef.current.length) ? hymnsRef.current : queueRef.current;
+      // ⚠️ 2026-07-30 Opus 5 驗收揪出:舊寫法用 slice(0, curIdx + 1) 做 head,即係
+      // 當「而家播緊嗰首之後全部都係可以剷嘅尾巴」。呢個假設淨係喺 playSingle
+      // 嗰種「單曲 + 尾巴」先成立;分類「播全部」/「睇晒」/隨心聽 build 出嚟嘅
+      // explicit queue 一樣係 autoRadioFrom == null,結果撳一下「自動播放」toggle
+      // 就會將用戶揀咗嗰個清單剩低嗰截直接剷走(實測:兒童 476 首播到第 396 首
+      // 撳開自動播放 → 隊列淨返 426,尾嗰 80 首無聲無息冇咗)。同 playSingle()/
+      // playQueue() 一樣用 headLen 分辨「明確清單嗰截」先啱。
+      const headLen = autoRadioFromRef.current != null ? autoRadioFromRef.current : curQ.length;
+      const head = curQ.slice(0, headLen);
+      const libr = (hymnsRef.current && hymnsRef.current.length) ? hymnsRef.current : curQ;
+      // 尾巴要避開 head 已經有嘅歌:queue list 個 keyExtractor 用 id,重複 id 會
+      // 令 React 出 "two children with the same key" warning,「而家播緊」個高亮
+      // 同時著兩行,而且撳第二行嗰陣 queue.findIndex() 會跳返第一行嗰個 index、
+      // skip 去錯歌(2026-07-30 實測 logcat 見到 warning)。
+      const headIds = new Set(head.map((s) => String(s.id)));
       const tail = buildAutoplayTail(autoplayFlavorRef.current, cur, libr, {
         playLog: getPlayLog(), recentIds: getRecentIds(),
-      });
+      }).filter((s) => !headIds.has(String(s.id)));
       await TrackPlayer.removeUpcomingTracks();
-      if (tail.length) await TrackPlayer.add(tail.map(toTrack));
-      const keep = queueRef.current.slice(0, curIdx + 1);
-      const newQ = [...keep, ...tail];
+      // native queue 而家淨返 [0..curIdx],所以 head 剩低嗰截同新尾巴都要 add 返。
+      const rest = [...head.slice(curIdx + 1), ...tail];
+      if (rest.length) await TrackPlayer.add(rest.map(toTrack));
+      const newQ = [...head, ...tail];
       queueRef.current = newQ; setQueue(newQ);
-      setAutoRadioFrom(tail.length ? curIdx + 1 : null);
+      setAutoRadioFrom(tail.length ? headLen : null);
     } catch (e) { console.warn('rebuildTail error:', e?.message); }
   }
 
