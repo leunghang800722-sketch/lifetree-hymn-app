@@ -88,6 +88,13 @@ export function isCompilation(title = '') {
     // 條片本身係學院課程。收窄做「線上學院」,先啱得返原本想擋嘅
     // 「天國文化線上學院」呢類真.網課。
     '牧師', '傳道', '講座', '會長', '師母', '線上學院',
+    // 2026-07-30 追加(Fable 5「假枯竭審計」方案,SUPERVISION-LOG 07-30 條目):
+    // Asia for JESUS/台北復興堂嘅漏網候選大部分係研習會/線上課程/Q&A,原本方案
+    // 仲提到「異象」「年度」,但落地前對全庫 1750+ 首 curated 做 regression 揪出
+    // 呢兩個**唔可以用**——「異象」bare word 撞正 5 首正牌詩歌(包括「成為我異象
+    // Be Thou My Vision」呢首全球知名嘅聖詩!),「年度」太廣義,零可靠訊號。
+    // 「講座」上面已經有(唔使重複加)。淨係加返查證過零誤殺嘅三個:
+    '研習會', '解惑', '線上研習',
     // 2026-07-27 追加(discover 基恩敬拜祈禱仔 playlist 實測踩過):「花絮」/
     // 「專輯介紹」/「課程回顧」呢類非歌 title 格式 —— 幕後花絮片、專輯宣傳
     // 介紹片、課程/事工回顧片,冇歌名。特登揀窄嘅完整詞組(唔加淨係
@@ -96,6 +103,20 @@ export function isCompilation(title = '') {
     // 「專輯介紹」「課程回顧」零命中,「花絮」命中嘅 5 首本身已經係
     // 誤收嘅幕後花絮片(唔係真歌),確認呢個關鍵字精準。
     '花絮', '專輯介紹', '課程回顧',
+    // 2026-07-30 追加(backfillFromList.js 對同心圓敬拜嘅欠收清單實測踩過):
+    // 「回顧」/「宣傳片」呢兩個之前冇加(對比返 2026-07-27 已有嘅「課程回顧」
+    // 「宣傳影片」係窄詞組,漏咗「精彩回顧」「敬拜回顧」「宣傳片」呢啲變體)。
+    // 落地前對全庫 curated regression:「回顧」4 中 4 全部係回顧片/合輯(2025
+    // 青吶特會回顧影片/台北復興堂回顧影片/Facing GOD精彩回顧/鹹蛋2019敬拜回顧),
+    // 「宣傳片」2 中 2 全部係活動宣傳片,零誤殺。⚠️ 冇加「特會」(太廣義,
+    // 好多正牌歌都掛住「XX特會主題曲」,樣本細唔夠代表性)。
+    '回顧', '宣傳片',
+    // 2026-07-30 追加(新心音樂事工欠收清單實測踩過,方案原文都提到考慮呢個
+    // 系列):「迎接聖誕十二天」係 12 集 devotional 系列(第一天…第十二天),
+    // 唔係歌,但用嘅係「第N天」唔係現有 episode regex 撞嘅「第N集」,漏網。
+    // 用完整專屬劇名做關鍵字(唔係泛用「第N天」regex),窄而準,查過現時
+    // 全庫 0 個 curated=1 撞到,零誤殺。
+    '迎接聖誕十二天',
     // Asia for JESUS「WE R ONE Worship｜Revival X Radical｜Alleluia、
     // Shout For Freedom、10000 Armies…」呢類係大型特會現場全場敬拜
     // 錄影(一條片入面連唱幾首),用返佢哋自己嘅活動品牌名做訊號
@@ -222,8 +243,13 @@ export async function listChannelVideos(channelHandle, limit) {
 // 全部跌喺呢個帶入面,而節目/講道/合輯普遍遠超 600s。
 export const SONG_DURATION_MIN = 75;
 export const SONG_DURATION_MAX = 600;
-export function isInSongDurationBand(seconds) {
-  return seconds != null && seconds >= SONG_DURATION_MIN && seconds <= SONG_DURATION_MAX;
+// 2026-07-30 Eric 拍板:@611worship 嘅 13-31 分鐘 live worship set(多首歌連做一條
+// 片嗰種,例如「聖靈 我們歡迎祢降臨｜聖靈我們歡迎祢｜充滿在這裡｜611 Worship」)
+// 要全收,唔跟標準片長上限。淨係俾**呢一個頻道**用 `maxOverride`(worshipGroups.js
+// 個 `durationCapSec` 傳落嚟),全局預設完全冇郁。
+export function isInSongDurationBand(seconds, maxOverride) {
+  const max = maxOverride ?? SONG_DURATION_MAX;
+  return seconds != null && seconds >= SONG_DURATION_MIN && seconds <= max;
 }
 
 // duration 欄現存資料用 "m:ss"(例如 "4:32")顯示格式,前端直接讀嚟顯示
@@ -244,6 +270,56 @@ export function formatDuration(seconds) {
 // 好多集數本身都啱啱好跌喺 75-600s 帶入面,淨靠片長唔夠)。
 export function passesTitlePositiveSignal(title = '') {
   return /♫|lyrics?\b|\bsong\b|worship|dance|sing[\s-]?along|\bmv\b|official|\bcover\b/i.test(title);
+}
+
+// ── discover 候選負面快取(2026-07-30 Fable 5「假枯竭審計」方案)────────
+// TZO4fPE6TS8(SOP兒童「小門徒」)因為 YouTube SABR/PO-token 故障持續 resolve
+// 唔到,但 discover 嘅「fresh 候選」判斷淨係睇「未入 DB」,冇睇「試過幾多次」
+// ——結果 log 見到同一條片被連環 retry 咗 848 次,夜夜燒晒時間落一條注定失敗
+// 嘅片。呢個負面快取獨立於 `resolveAudio.js` 嗰個 15 分鐘 `failCache`(嗰個
+// 係短暫、俾單一 process 用嚟避免重複打 YouTube;呢個係跨 run 持久化落碟、
+// 以「累計失敗次數」判斷,少過 3 次可能係暫時性故障唔算數,夠 3 次先冷卻 7 日)。
+const DISCOVER_FAIL_CACHE_PATH = path.join(__dirname, '..', 'cache', 'discover-fail-cache.json');
+const DISCOVER_FAIL_THRESHOLD = 3;
+const DISCOVER_FAIL_COOLDOWN_MS = 7 * 24 * 60 * 60 * 1000; // 7 日
+
+function loadDiscoverFailCache() {
+  try {
+    return JSON.parse(fs.readFileSync(DISCOVER_FAIL_CACHE_PATH, 'utf8'));
+  } catch (_) {
+    return {};
+  }
+}
+let discoverFailCache = loadDiscoverFailCache();
+
+function saveDiscoverFailCache() {
+  try {
+    fs.mkdirSync(path.dirname(DISCOVER_FAIL_CACHE_PATH), { recursive: true });
+    fs.writeFileSync(DISCOVER_FAIL_CACHE_PATH, JSON.stringify(discoverFailCache), 'utf8');
+  } catch (e) {
+    console.warn('discover-fail-cache 寫入失敗:', e?.message);
+  }
+}
+
+export function isDiscoverCoolingDown(youtubeId) {
+  const rec = discoverFailCache[youtubeId];
+  return !!(rec && rec.coolUntil && rec.coolUntil > Date.now());
+}
+
+export function recordDiscoverFailure(youtubeId) {
+  const rec = discoverFailCache[youtubeId] || { count: 0, coolUntil: 0 };
+  rec.count += 1;
+  if (rec.count >= DISCOVER_FAIL_THRESHOLD) rec.coolUntil = Date.now() + DISCOVER_FAIL_COOLDOWN_MS;
+  discoverFailCache[youtubeId] = rec;
+  saveDiscoverFailCache();
+}
+
+// 死鏈驗證成功就清返(反映咗現況,而唔係谷住個舊嘅失敗記錄)。
+export function clearDiscoverFailure(youtubeId) {
+  if (discoverFailCache[youtubeId]) {
+    delete discoverFailCache[youtubeId];
+    saveDiscoverFailCache();
+  }
 }
 
 // The DB has 208 groups of duplicate youtube_ids (same video under different

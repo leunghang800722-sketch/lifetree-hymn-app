@@ -45,6 +45,7 @@ import {
   openDb, saveDb, query, sleep, isCompilation, isNonWorship, dedupeByYoutubeId,
   acquireDbLock, releaseDbLock, listChannelVideos, formatDuration,
   isInSongDurationBand, passesTitlePositiveSignal,
+  isDiscoverCoolingDown, recordDiscoverFailure, clearDiscoverFailure,
 } from '../lib/hymnDb.js';
 import { resolveAudioUrl } from '../lib/resolveAudio.js';
 import { ACTIVE_GROUPS } from '../data/worshipGroups.js';
@@ -385,7 +386,10 @@ async function discoverFromGroup(db, group, budget) {
       return { added: 0, tried: 0 };
     }
     if (!listing.length) { log('    呢個頻道搵唔到片,可能 handle 舊咗'); return { added: 0, tried: 0 }; }
-    fresh = listing.filter((v) => v.id && !existing.has(v.id));
+    // ⚠️ 2026-07-30 Fable 5 方案:「未入 DB」唔夠,重試夠 3 次嘅候選要一齊
+    // 剔走(見 hymnDb.js `isDiscoverCoolingDown` 註解)——TZO4fPE6TS8 之前
+    // 因為冇呢層過濾,同一條注定死嘅片俾連環 retry 咗 848 次。
+    fresh = listing.filter((v) => v.id && !existing.has(v.id) && !isDiscoverCoolingDown(v.id));
     if (fresh.length > 0) break;
     log(`    淺層(${depth} 條)全部見過,加深搜尋…`);
   }
@@ -434,8 +438,8 @@ async function discoverFromGroup(db, group, budget) {
     // 2a. Layer 1 片長帶 gate(全局,零成本)—— 2026-07-27 Fable 5 方案。
     // duration 攞唔到(flat-playlist 罕見冚咗)就唔攔,留返俾下面嘅
     // 分類/標題/死鏈幾關判斷,唔好因為冇資料就誤殺。
-    if (v.duration != null && !isInSongDurationBand(v.duration)) {
-      log(`    ⏭ [片長] 「${v.title}」${Math.round(v.duration)}s 出咗 75-600s 帶,跳過`);
+    if (v.duration != null && !isInSongDurationBand(v.duration, group.durationCapSec)) {
+      log(`    ⏭ [片長] 「${v.title}」${Math.round(v.duration)}s 出咗 75-${group.durationCapSec || 600}s 帶,跳過`);
       continue;
     }
 
@@ -461,6 +465,7 @@ async function discoverFromGroup(db, group, budget) {
     const alive = await verifyPlayable(v.id);
     if (!alive) {
       streak++;
+      recordDiscoverFailure(v.id); // 2026-07-30:累計失敗,夠 3 次冷卻 7 日(見上面)
       log(`      ✗ 拎唔到音訊,跳過 (連續失敗 ${streak})`);
       if (streak >= 3) {
         log('    連續 3 次失敗 —— discover 風險本身已經比 curate 高,呢個團體今次收工唔博。');
@@ -470,6 +475,7 @@ async function discoverFromGroup(db, group, budget) {
       continue;
     }
     streak = 0;
+    clearDiscoverFailure(v.id); // 拎到就即刻清返舊嘅失敗記錄(反映現況)
 
     // 4. 四關全過,先至寫入 —— 呢一步先真正成為歌庫一部份。
     // display_title 喺插入嗰刻就計埋(唔使再靠人手隔幾耐先補一次 batch),

@@ -103,7 +103,13 @@ export const GROUPS = [
   // ShareHymns 一樣嘅原因:一個永遠 404 嘅壞 channel 會卡死成個國語
   // discover slot,擋住 611 Worship / 新心音樂事工 冇機會攞 budget)。
   { name: 'City Harvest Church', aliases: ['City Harvest'],        lang: '國語', priority: 2, inPool: false, channel: null,            est: 100, note: '2026-07-23 拆走壞handle,等搵到先補' },
-  { name: '611 Worship',      aliases: ['611 Worship', '611敬拜'],  lang: '國語', priority: 2, inPool: false, channel: '@611worship',   est: 80 },
+  // 2026-07-30 Eric 拍板全收(SUPERVISION-LOG「611 worship 敬拜全量入庫」條目):
+  // 頻道 13-31 分鐘嘅 live worship set(多首歌連做一條片,例如「聖靈 我們歡迎祢
+  // 降臨｜聖靈我們歡迎祢｜充滿在這裡｜611 Worship」)實測**冇撞任何 isCompilation
+  // 關鍵字**,純粹俾標準 600s 片長上限擋住。`durationCapSec` 淨係呢個頻道生效
+  // (見 hymnDb.js `isInSongDurationBand` maxOverride 註解),1900s(~31.7分鐘)
+  // 留少少 margin 過實測嘅 31 分鐘,全局預設 600s 完全冇郁。
+  { name: '611 Worship',      aliases: ['611 Worship', '611敬拜'],  lang: '國語', priority: 2, inPool: false, channel: '@611worship',   est: 80, durationCapSec: 1900, note: '2026-07-30 Eric拍板全收,連13-31分鐘live worship set都要,呢個頻道專屬片長上限1900s' },
   // 2026-07-24:Eric 完整清單追加嘅 3 個,逐個用 yt-dlp 實測過先落:
   // 2026-07-27 auditChannel.js 全庫回溯(SUPERVISION-LOG 10:40 條目 Q3):
   // 60 條 sample,歌片長帶 36.7%、blocklist 命中 60%——GATE 級(30-60%)。

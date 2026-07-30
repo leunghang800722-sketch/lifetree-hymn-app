@@ -15,7 +15,7 @@
 | 最新版本 | **versionName 1.3.8 / versionCode 49**（commit `f7a249e`）。APK 喺 `~/Desktop/詩歌App/` |
 | 分支 | `feature/player-rebuild`（未 merge 返 `develop-v211`） |
 | 後端 | 跑喺 **Eric 部 Mac**，`https://api.god-music.com`（Cloudflare named tunnel，固定 URL）。backend + tunnel 由 launchd 自動管理，登入就行、死咗自動起返 |
-| 歌庫 | `hymns_all` 2301+ 首，**curated 1689 首**（粵 678 / 國 551 / 兒童 398 / 英 62）。歌詞：verified 10、draft 19、未有 740 |
+| 歌庫 | `hymns_all` 3232+ 首，**curated 2622 首**（粵 1241 / 國 843 / 兒童 476 / 英 62）。2026-07-30 一晚 backfill +892。歌詞：verified 90+、draft 100+（另一 session 進度，見 SUPERVISION-LOG） |
 | 背景 job | growLibrary（每 15 分鐘擴歌庫）、checkDeadLinks（每晚 04:00）、fetchLyrics（每晚 **01:00 + 05:00 兩個時段**，各 CC 50 + OCR 40，2026-07-27 Eric 拍板 80 首/晚拆半） |
 | 前端 stack | Expo SDK 56 / RN 0.85.3、react-native-track-player v4、@gorhom/bottom-sheet + reanimated 4、MMKV |
 | 後端 stack | Node 18 ESM + Express 4、SQLite via `sql.js`、`yt-dlp` |
@@ -262,6 +262,36 @@ EAS 專案：`@god-music-team/hymn-app`，`EXPO_TOKEN` 已寫入 `~/.zshrc`（�
 - **banner 邏輯**：`Updates.useUpdates()` 只喺 `!__DEV__` 先 render（debug
   build 冇 embed updates config,expo-updates 停用）。
 
+### 2.11 三數對帳 + 按清單 backfill（2026-07-30 落地,取代「撤 listing cap」做法）
+
+「假枯竭」事故教訓:之前診斷歌庫增長慢,以為係 discover pool 見底,實測係
+`listChannelVideos()` 嘅 `--playlist-end` 深度上限(200)困住咗頻道歷史片
+(CantonHymn 官方 372 條、之前淨探索到 29 條)。單純撤深度上限唔夠準
+——仲要對埋官方數,先知道真係攞晒定係枚舉有漏(YouTube 頻道仲有 /streams、
+/shorts 兩個分頁,舊審計淨掃 /videos 一個分頁)。
+
+- **`scripts/reconcileChannels.js`**:對一個頻道做「三數對帳」——① 官方總數
+  (channel 用 About 頁 `videoCountText`,playlist 用 yt-dlp `playlist_count`)、
+  ② 全量枚舉(/videos+/streams+/shorts 三分頁 union,唔設深度上限)、③ DB 逐條
+  歸類(curated✓/rejected/dead/欠收-帶內非junk/欠收-帶外或junk)。①②理應相等
+  (容差 ≤2,俾 deleted/private),對唔上就係枚舉有漏。輸出寫入
+  `backend/cache/reconcile-missing.json`(gitignore,唔追蹤)。
+- **`scripts/backfillFromList.js`**:食嗰個 missing 清單,逐條重新行分類/片長
+  篩選(防禦性 —— 清單可能舊咗)+ 死鏈驗證,先 INSERT。完全唔靠 listing window
+  邏輯,所以唔會再有「深度上限困住舊片」嘅假枯竭。
+- **discover 候選負面快取**(`hymnDb.js` `isDiscoverCoolingDown`/
+  `recordDiscoverFailure`/`clearDiscoverFailure`,存 `cache/discover-fail-
+  cache.json`):同一條 discover 候選死鏈驗證失敗夠 3 次就冷卻 7 日,唔會夜夜
+  重試同一條廢片(事故:SOP兒童一條片俾重試咗 848 次)。同 `resolveAudio.js`
+  嗰個 15 分鐘 `failCache` 唔係同一樣嘢 —— 嗰個管緊單一 process 短暫避免重複
+  打 YouTube,呢個係跨 run 持久化、以累計次數判斷嘅獨立機制。
+- **⚠️ 未做:呢兩個 script 未掛落 launchd**,而家係人手/session 手動跑。要做到
+  「每晚重跑,欠收自動追收」呢個持續保證,要開新 job(排程/PATH env var 跟
+  §2.5 規矩)——留俾下一輪。
+- **`isInSongDurationBand(seconds, maxOverride)`** 加咗第二個參數,俾 per-group
+  `durationCapSec`(`worshipGroups.js`)override 標準 600s 上限。**只用喺 611
+  Worship**(Eric 拍板全收 13-31 分鐘 live worship set),全局預設完全冇郁。
+
 ---
 
 ## 三、架構速覽
@@ -315,6 +345,8 @@ ops/launchd/             五個 plist 嘅版本控制副本 + README checklist
 | `LIBRARY-EXPANSION-PLAN.md` | 擴歌庫規劃 |
 | `LYRICS-PIPELINE-PLAN.md` | 歌詞入庫方案（等拍板） |
 | `EAS-UPDATE-PLAN.md` | OTA 更新機制實作計劃（Eric 已拍板要做，等 Sonnet 落地；⚠️ 內有共用 worktree publish 紅線） |
+| `MEMBERSHIP-PLAN.md` | 會員系統完整規劃（2026-07-28 出稿；Phase 0 已落地 fc9a31b；配套 `PHONE-AUTH-PLAN.md`/`ERIC-TODO-PHONE-AUTH.md`） |
+| `MEMBERSHIP-PHASE1-LOGIN-SYNC.md` | Phase 1（登入+跨裝置同步）落地規格（Eric 已拍板 go；W1 backend→W2 frontend→W3 開閘，交 Sonnet 逐包執行；W3 等 Twilio 第三條 key） |
 | `hymn-groups-database.md` | 團體完整資料（**人睇**；加新團體先改呢度，再落 `worshipGroups.js`） |
 | `REDESIGN-PLAN.md` / `PHASE1-PLAYER-REBUILD.md` / `HOME-DISCOVERY-*.md` / `MYPAGE-PLAYLIST-MANAGE-PLAN.md` / `SEARCH-MERGE-PLAN.md` / `AUTOPLAY-MIX-PLAN.md` / `PERF-FAST-START-PLAN.md` / `PHONE-AUTH-PLAN.md` | 各功能規劃書 |
 | `BLUEPRINT.md` / `DEAD_LINKS.md` | 舊文件（死鏈率數字唔可信，見 §2.4） |

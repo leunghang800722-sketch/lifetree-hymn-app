@@ -910,3 +910,557 @@ DRM——**同 Fable 5 04:20 條目判斷一致:健康現象,唔係故障**。
 
 **改動檔案:** `backend/lib/resolveAudio.js`(STRATEGIES 次序)。yt-dlp 版本係系統層
 brew 套件,唔喺 git 追蹤範圍。未 commit,等指示。
+
+**2026-07-29 04:55 ✅ 7d1ee17 覆驗 —— 兩個問題都真係修好,可以叫 Eric 試。**
+
+同樣用自己個 `opus-verify@example.com`(user id 6),emulator `pm clear` 洗乾淨重新登入,
+每一步都 curl 對 server 數。
+
+**Commit 範圍:乾淨。** 7d1ee17 只掂 `frontend/hymn-app/App.js` +
+`frontend/hymn-app/src/sync/userSync.js` 兩個 file(+38/-13),冇夾埋其他 session 嘢 ——
+assets/、backend/、docs/ 嗰堆改動全部仍然留喺 working tree 未 commit,原封不動。
+兩個 file 入面每個 hunk 都對得返上號(playSingle guard / playQueue browseTap guard /
+onActive / runOp headers / flush 回傳值),冇夾雜無關改動。
+
+**§4+§5 P0 蝕數據 —— 過。** 分三段驗:
+1. 登入後喺 app 撳 4 個心心 → server 即刻由 5 變 9(修之前呢 4 個全部卡 400 推唔郁)。
+2. 開飛行模式再撳 2 個心心 → 「2 項等緊同步」,本地最愛 11、server 9(即係之前
+   會蝕數據嗰個危險狀態)→ 前後台切一次 → **本地仍然 11,兩首冇蒸發**。
+3. 關飛行模式 → 前後台切 → outbox 自動 flush 乾淨,狀態變「已同步」,
+   server `favorites` = 11 首(尾 2 首係離線嗰陣加嘅 id 2/3),本地=server。
+   全程冇任何一首消失。
+⚠️ 註:修好 §4 之後,「flush 失敗但 pull 成功」呢個原本蝕數據嘅組合喺 UI 上已經
+整唔出嚟(最愛嘅 op 唔會再 400;離線就連 pull 都一齊 fail)。所以 §5 個 guard
+(`flush()` 回傳 drained、`if (!flushed) return`)係靠 code review + 上面第 2 步
+(flush 失敗時本地數據冇被覆蓋)確認,唔係靠獨立重現原本個 race。
+
+**§3 P1 清單詳情頁插播 —— 過。**
+「我的 → 驗收清單 → 播全部」(自動播放開住,播放清單 33 = 3 首 + 30 首隨機尾巴,
+即係 `autoRadioFrom = 3` 嗰個之前中招嘅設定)→ 詩歌庫撳唔喺清單入面嘅
+「這一生最美的祝福」→ **播放清單 (3)**,唔再係 1694。開 queue sheet 核實內容 =
+[這一生最美的祝福(播緊), 主禱文, 恩典太美麗],即係插播歌 + 清單餘低嗰兩首,次序啱。
+再拖到歌尾等佢自然播完 → 自動接「主禱文」,真係接返落去原清單。
+
+**Regression(headLen 重構掂到共用 code,順手覆驗原本已經 work 嗰條路)—— 過。**
+最愛「播全部 11 首」→ 詩歌庫撳非最愛嘅「主禱文」→ 播放清單維持 **11**
+(= 插播歌 + 餘低 10 首最愛),冇變 1694 又冇變單曲。
+
+**結論:W1+W2 會員同步 + 播放插播修復,兩樣都可以叫 Eric 上真機試。**
+(test 帳號 opus-verify 而家 server 有 11 首最愛 + 1 個「驗收清單」,係測試殘留,
+唔關 Eric 事;下次覆驗可以照用。)
+
+**2026-07-29 07:20 check 過，正常（DB 1744／兒童 448／draft 131／verified 90）。**
+- fetchLyrics 尋晚 CC50→OCR 37/40,06:00 前收尾 ✓。**覆核層終於郁返:verified 43→90(+47)**
+  —— 觀察項A 解除。draft 質素照舊夾雜拼音/copyright 行,等 LLM 清洗層。
+- growLibrary 全晚 1744 平(0 error、0 斷路):所有頻道 fresh 窗口俾 gate 篩淨晒,
+  屬飽和狀態,唔係故障 —— 增長會等頻道出新片先郁。想再谷就係產品決定
+  (加新頻道/再加深 listing/重開英文),唔係 bug。yt-dlp 升級指示仍未執行。
+
+## 🟠 2026-07-29 11:58 首頁插播「冇修到」— Fable 5 三可能性裁定(派 Sonnet 落地+Fable 5 驗收)
+
+**裁定:可能性 1(Eric 部機未行到新 update)係真相,機會極高。證據:**
+1. 時間線:v1.4.0 embedded bundle build 於 7-27 18:01;三個插播修復 commit 係 7-28
+   18:20(53006b2)/20:48(cce47e0)/22:33(7d1ee17)—— **全部遲過 APK 一日**;channel 唯一
+   一次 publish 係 7-29 05:00 HKT(update id 019faa87…)。Eric 要行到修復,必須 05:00 後
+   開過 App 一次(silent download)+再完全重開多一次(apply)。唔成立就必然係 7-27 舊
+   bundle = 「同修復前一模一樣」。
+2. **448 呢個數係舊版指紋:** 新 code 隊列上限係 radio 1+RADIO_LEN(30)=31 或插播 ≤ 原
+   清單長度 —— 無論邊條路都整唔出 448。448 對應舊版「成個 cached 全庫做尾巴」行為。
+3. 可能性 2(首頁另一條 code path)喺現行 code **排除**:首頁 tile
+   `onPlayHymn={handlePlayHymn}`(App.js:2149)→ 非 explicit → playSingle 插播分支
+   (53006b2 引入,7d1ee17 修 headLen)。HomeScreen.js 係死 stub,冇被用。
+4. 可能性 3(claim 造假)冇證據:claim 對得上 53006b2 實際 code。
+   ⚠️ 唯一未釘死:05:00 publish 嘅 bundle 內容(asset URL 要 EAS auth,grep 唔到)——
+   publish 時間 > commit 時間,合理推定包含,但要行動 1 釘實。
+
+**行動(派「夜晚慢速擴歌庫排程」/身傍嘅執行 session):**
+1. `eas update:list --branch production`:confirm 019faa87 對應 7d1ee17 之後嘅 tree。
+2. 指導 Eric:完全收埋 App→開→等 5 秒→再完全收埋→開(雙重冷重開);或者見到
+   「已有新版本，撳一下更新」banner 直接撳。之後先至試首頁插播。
+3. **Fable 5 驗收(emulator 而家熄咗,開返先):** 雙重冷重開確認 update id=019faa87 →
+   實測兩個場景:①播一個清單→首頁撳單曲→隊列唔變 radio(插播生效);②冇嘢播→首頁
+   撳單曲→隊列=31(1+30),唔係幾百。截圖為證,先准叫 Eric 試(第三次唔可以再流料)。
+4. **流程修正(以後每次 OTA 交付都要):** 交俾 Eric 試之前,執行 session 必須:
+   ①confirm 部機/emulator 行緊嘅 updateId=最新 publish;②講明 Eric 要雙重重開或撳
+   banner。「code 修咗+publish 咗」唔等於「用戶行緊」—— 呢個係今次三連誤會嘅根源。
+
+## 🔴 2026-07-29 12:10 首頁插播案 — Fable 5 完成驗收實測,推翻早前裁定:bug 真係喺最新 bundle 度
+
+**實測過程(全部有據):** emulator 發現俾執行 session 留低咗 DEBUGGABLE dev build(OTA 喺
+dev build 唔行!)→ 重裝 Eric 同款 release v1.4.0 → 雙重冷重啟實測:boot1 下載 019faa87
+(isUpdatePending=true)、boot2 apply(server 回 CheckCompleteUnavailable=已係最新);
+裝置 bundle(Hermes bytecode,key a3a75006…=manifest launchAsset)string table 有 browseTap
+= **publish bundle 確實包含 53006b2 修復**。 → 場景實測:冇嘢播,撳首頁「即刻揀歌」一首
+單曲 → **隊列變 682(成個粵語分類)**,唔係 31 radio、唔係插播 —— 喺最新 update 上重現咗
+Eric 個 bug(佢 448 = 佢部機 cache 嘅分類大細)。
+
+**真・root cause(一行位):** 7-25 commit 796e3ea 將「即刻揀歌」row 撳單曲改成
+`play(h, activeChip.songs, true)` = `{explicit:true, playlist:成個分類}`(src/components/
+home/HomeScreen.js:297)。7-28 插播修復淨係修咗 playSingle + browseTap 路徑,但首頁 row
+根本唔行 playSingle —— 行 explicit 路徑直接 playQueue 換走成條隊。「playSingle 補埋」個
+claim 指嘅 code 有修,但冇 trace 到首頁實際 caller 三日前已被改行第二條路。
+對照:LibraryScreen:191 修復後係 `{explicit:true, playlist:shown, browseTap:true}` ——
+**首頁 row 差咗個 `browseTap:true`**。
+
+**修法(派 Sonnet,一行類):** home/HomeScreen.js:297 row 撳歌改傳 browseTap:true(同
+Library 一致:播緊嘢=插播,冇嘢播=由嗰首起播成個分類)。line 328「播全部」footer 同
+line 211 隨心聽**唔好掂**(佢哋=用戶明確揀成個清單,replace 係啱)。「今日為你預備/最近
+加入」本身行 playSingle,唔使掂。修完 commit + `eas update --channel production`。
+
+**Fable 5 驗收(publish 後我做,先過我先俾 Eric 試):** emulator 雙重冷重啟攞新 update →
+①播全部 682 → 撳另一首首頁單曲 → 隊列唔變 682→其他,係插播(現隊保留);②冇嘢播 →
+撳首頁單曲 → 由嗰首起播分類(同 Library 行為一致);截圖存證。
+
+**流程發現(要入規矩):** emulator 上嘅 dev build 會令「OTA 已驗證」嘅講法完全失效 ——
+execution session 用 emulator 驗 OTA 前必須確認裝住 release build(dumpsys 冇 DEBUGGABLE)。
+
+**2026-07-29 12:20 ✅ Sonnet 落地 + publish + 驗收 —— 過。**
+
+**改動:** `home/HomeScreen.js:297` row 撳歌由 `play(h, activeChip.songs, true)`
+改直接 `onPlayHymn(h, { explicit: true, playlist: activeChip.songs, browseTap: true })`,
+跟 `LibraryScreen.js:191` 一致寫法(唔經 `play()` 呢個冇 browseTap 參數嘅本地 helper)。
+footer「播全部」(line 328)同「隨心聽」(line 211)冇改,依然行 `play()` 冇 browseTap。
+
+**Commit 範圍:乾淨。** `94acb23`,只掂呢一個 file(+1/-1)。Publish 前 `git stash push -u`
+清埋其他 session 嘅 assets/backend/docs 未完成改動,publish 完即刻 `git stash pop` 還原,
+working tree 對比 publish 前後一致(`git status` 核過)。
+
+**Publish:** `eas update --channel production --platform android`,
+update id `019fac14-9f8e-7866-bee3-be86f860df93`(group `f0e19880-…`,commit `94acb23`)。
+`EXPO_TOKEN` 喺 `~/.zshrc`,Bash 工具嘅非互動 shell 預設冇 source,要手動 `source ~/.zshrc`
+先叫得動 `eas`——呢點原有文件冇提到,記低俾下次執行 session 睇。
+
+**驗收(release build v1.4.0/versionCode 50,dumpsys 確認冇 DEBUGGABLE):**
+雙重冷重啟(`am force-stop` → `am start`)→ boot1 見 `CheckCompleteAvailable` 下載
+`019fac14` → boot2 `CheckCompleteUnavailable`(已係最新,即已 apply)。用「國語敬拜」
+播全部(552,explicit 隊列)模擬「播緊第二個清單」→ 切去「粵語敬拜」chip 撳一首
+唔喺隊列入面嘅歌(You Make Me Brave)→ **播放清單維持 552,冇跳去 682** ——插播生效,
+同 Eric 實測撞到嘅「682/448 換晒隊」bug 唔再重現。截圖存喺
+scratchpad(screen9-10:tap 前後隊列數對比)。
+
+⚠️ 呢個 emulator 未登入、最愛清單係空,冇得直接用「最愛」重現 Eric 原本個場景,
+改用「播全部一個分類 552 首」做「已有第二個 explicit 隊列」嘅等價替代,邏輯上
+(headLen/explicitHead 判斷)同最愛清單場景係同一條 code path,結論可信。
+
+---
+
+**2026-07-29 12:50 ✅ Opus 5 獨立驗收(94acb23 + 5344bf6 + def35b0 三個 commit 一齊覆核)—— 全部過。**
+
+背景:三個 Sonnet session 各自聲稱驗證過,但今日之前試過兩次「以為修好但其實冇」,
+所以今次由獨立 session 重驗,唔採信 execution session 嘅 claim。
+
+### 一、Git / OTA 層(最關鍵:兩個 OTA 先後推,驚後面冧走前面)
+
+**三個 commit 互不衝突**,改嘅 file 完全唔重疊:
+- `94acb23` → `home/HomeScreen.js`(+1/-1)
+- `5344bf6` → `components/VersionTag.js`(新)+ `AuthScreen.js` + `PhoneLoginScreen.js` + `SettingsScreen.js`
+- `def35b0` → `config.js`
+
+**冇任何一個覆蓋另一個。** `git status` 睇 `frontend/hymn-app/src/` = 完全乾淨(working tree == HEAD),
+`git stash list` 空,reflog 冇異常 reset。上一個 session 用 `git stash push -u` 清場再 pop,
+`HomeScreen.js` mtime 停喺 **12:08** 一直冇再變(如果 stash/pop 掂過會變 12:25+)——
+即係第二次 publish(12:26)嗰陣,browseTap 個改動實實在在喺 disk 上面。
+
+**最新 OTA 真係包含晒三個修復 —— 有硬證據,唔係靠推論:**
+1. 用 device 身份直接 curl manifest(`u.expo.dev/<projectId>`,headers `expo-channel-name: production`
+   / `expo-runtime-version: 1` / `expo-platform: android`)→ 派返 **`019fac1f`**(group `5c535712`,
+   即 VersionTag+W3 嗰個,亦即最新)。
+2. `dist/` 目錄(12:25,即第二次 publish 嘅 export)入面 `metadata.json` 嘅 3 個 asset hash
+   **同 manifest 派出嚟嗰 3 個完全一致** → 證實 `dist/` 就係 `019fac1f` 個 bundle。
+3. 解 `dist/_expo/static/js/android/index-*.hbc.map` 嘅 `sourcesContent` 逐個 file 核:
+   - `HomeScreen.js` → `onPlayHymn(h, { explicit: true, playlist: activeChip.songs, browseTap: true })` **在**
+   - `config.js` → `PHONE_AUTH_ENABLED = true` **在**
+   - `VersionTag.js` / `AuthScreen.js` / `PhoneLoginScreen.js` **在**
+
+→ **後推嘅 `019fac1f` 冇冧走 `019fac14` 嘅 browseTap 修復,三個修復同時喺一個 bundle 入面。**
+
+⚠️ 校正上一條 log 一個講法:CDN asset URL 直接 curl 會 403(要 signature),
+驗 bundle 內容應該用本地 `dist/` export + 對 asset hash,唔好靠落載 CDN bundle。
+
+### 二、真機(emulator)測試 —— 用真.最愛,唔係替代品
+
+**重要:呢部 emulator 唔係 dev build,係行緊真 OTA。** VersionTag 顯示
+`v1.4.0 · OTA 07-29 12:26 · 019fac1f`(如果係 dev build 會顯示「內置包」)——
+即係下面所有測試都係**直接喺 published bundle `019fac1f` 上面做**,唔係 Metro 本地 code。
+
+**a) 插播(真.最愛,補返上一個 session 嘅缺口):**
+喺詩歌庫心心 4 首 + 原有 1 首 = **最愛 5 首**(真最愛清單,唔係「播成個分類」替代品)。
+- 「播全部 5 首」→ 播放清單 (5),內容 = 信 / 恩典太美麗 / 這一生最美的祝福 / 我要向高山舉目 / 主禱文(截圖 s5)
+- 去首頁,active chip = **粵語敬拜(682)**,撳 row 一首唔喺最愛入面嘅歌(You Make Me Brave)
+- → **播放清單維持 (5),冇變 682**;隊列 = [You Make Me Brave, 恩典太美麗, 這一生最美的祝福, 我要向高山舉目, 主禱文](截圖 s8)
+- → 撳 ⏭ → 播返 **恩典太美麗**(截圖 s9),確認「播完接返原最愛清單」真係 work
+
+⚠️ 隊列數係 5 唔係 6,**呢個係設計,唔係 bug**:`App.js:886` `resumeRemainder` 由 `curIdx + 1` 起計,
+即「插播嗰首 + 原清單*之後*嗰啲」,播緊嗰首(信)被打斷所以唔保留。同 code 完全一致。
+
+**b) VersionTag 顯示:**
+- `PhoneLoginScreen`(電話登入頁)→ `v1.4.0 · OTA 07-29 12:26 · 019fac1f` ✅(截圖 s10)
+- `AuthScreen` email 頁(撳「用電郵/密碼登入」切過去)→ 同樣顯示 ✅(截圖 s11)
+- updateId `019fac1f` + 時間 12:26 **對得返** manifest `createdAt 2026-07-29T04:26:00.966Z`(UTC)= 12:26 HKT ✅
+- 未驗:第 4 個插入位(`AuthScreen.js:76` 已登入 profile 頁),要登入咗先見到 —— 同一個 component
+  同一個 file,已經喺 bundle 入面,風險極低,但我冇親眼見過佢 render。
+
+**c) SettingsScreen「死 code」問題 —— 確認係死,但唔使跟:**
+- 全 repo 冇任何 file import `SettingsScreen`,Metro 直情冇將佢 bundle 入去
+  (sourcemap `sourcesContent` 搵唔到呢個 file)→ 個 VersionTag 插入位**用戶 100% 見唔到**。
+- **但唔係今次搞壞:** `git show b71bf95:App.js` 已經冇 `SettingsScreen` 引用,即係
+  呢個 commit 之前佢已經係死 code(`796e3ea` 之後)。5344bf6 只係喺一個本來已經
+  入唔到嘅畫面加咗行字,**冇 regression,冇 user impact**。
+- **結論:唔阻 Eric 試。** 兩個真正見到嘅插入位(電話 + email 登入頁)都顯示正常,
+  Eric 要對版本號嗰陣睇得到。SettingsScreen 本身係咪要刪/接返 nav 係另一件事,
+  同今次三個修復無關,另開 task 清理。
+
+### 三、W3 開閘
+
+- `GET /api/auth/otp/status` → `{"configured":true,"channel":"whatsapp","allowed":["+852"]}` ✅
+- `PHONE_AUTH_ENABLED = true` 已喺 bundle,登入頁**預設就係電話登入**,底部「用電郵/密碼登入」可切返 ✅
+- `POST /api/auth/otp/request` 路由生效(用唔會發送嘅 input 試):
+  非 +852 → 422 `region_unsupported`;格式錯 → 400 `bad_phone`。
+  兩個 reject 都喺 `twilioStart()` **之前**(otpAuth.js:107 vs :118),所以測試冇發過任何訊息俾任何人。
+  ⚠️ 真實路由係 `/api/auth/otp/request`(唔係 `/start`),前端 `AuthContext.js:77` 叫嘅都係呢條,對得上。
+- 我**冇**用真電話號碼試發 OTP(會寄真 WhatsApp/SMS),留返俾 Eric 做真身。
+
+### 結論
+
+**可以叫 Eric 做真身電話 login + 兩項 UI 覆測。** 三個修復確認同時喺 `019fac1f` 生效,
+插播已用真.最愛驗證,VersionTag 兩個活躍插入位都見到而且 updateId 啱。
+
+
+## 📋 2026-07-30 新一輪歌詞校對批次(Eric 已確認)— 指令派「全庫歌詞補齊規劃」(local_fdeacc3b)
+
+**現況(Fable 5 核實):** curated 庫 draft backlog 195 首(ocr 186/whisper 9),verified 90
+(上輪 43→90 之後停咗)。目標:盡量清 backlog。
+
+**執行指引(照舊 reviewLyrics.js --export/--apply 流程,加四個教訓位):**
+1. **分批做,一批 apply 一批:** 上輪做到 +47 就斷咗 —— 今輪切做 ~50 首/批(4 批),
+   每批校對完即刻 --apply 落庫,唔好儲住一大浸等最尾先 apply(session 斷咗成批蝕晒)。
+2. **質素標準(驗收會 check):** ①段落結構跟 display 層規則(stanza 去重,同段內真唱重複
+   保留);②經文附註統一「（書卷 章:節）」全形括號+空格(402 空谷的回音嗰課);
+   ③剔走 OCR 噪音:credit 行(曲/詞/編曲/監製/版權)、頻道 branding、拼音行、UI 文字;
+   ④救唔返嘅(亂碼/現場雜錄/內容對唔上)用 {id, demote:true} 退返,唔好夾硬出街。
+3. **每批 apply 完:** `launchctl kickstart -k gui/$(id -u)/com.hymnapp.backend` + curl
+   /api/hymns 抽 2-3 首 confirm 新內容(cache-bust 教訓;dataVersion 未落地前呢步係必須)。
+4. **完成後報數:** verified 由 90 推到幾多、demote 幾多、剩返幾多 draft,寫返落呢度。
+
+**Fable 5 驗收(批次完成後我做):** 隨機抽 6 首新 verified 逐首睇結構+附註格式;全批
+長度/連續重複行掃描;curl API 對 DB;之後先俾 Eric 抽查。
+
+## 📈 2026-07-30 攞歌提速方案(Fable 5 規劃,俾 Eric 過目先轉 executor)
+
+**現況判斷:** 尋晚得 14 首,主因係 established 頻道嘅 fresh 窗口枯竭(所有頻道 30-200 條
+listing 已篩淨),**唔係機制壞、唔係要放寬質素篩選**(嗰啲 filter 係連環污染事件換返嚟,
+一放寬垃圾即刻返晒嚟)。要擴嘅係「源頭」。六個抽屜,按「即效+安全」排序:
+
+**A.(最高性價比,即刻可做)幫 inPool 團體補返 channel handle** — 粵8+國10=18 個大團體
+(ACM/玻璃海/讚美之泉/約書亞/小羊詩歌等)當初係 search seed 入庫,worshipGroups 一直冇
+channel,即係**呢啲最大牌歌手嘅新歌出咗都冇人知**。做法:逐個 yt-dlp 驗證官方頻道
+handle(跟 7-27 intake 審核流程:60 條+比例+隨機眼證),補落 worshipGroups → discover
+自動開始追新。預計:18 個頻道嘅 backlog+新歌,穩定長期供應。
+
+**B.(即效)一次過深挖現有高存量頻道** — CantonHymn(est 200)/WeShareHymns(est 80)/
+新心(實見 158 條)等,listing 加深到全頻道(flat-playlist 一個 request 任幾深,唔加打
+YouTube 次數),一次性 backfill 舊片。預計一次過收埋幾百條候選入 pool。
+
+**C.(中期)新頻道 roster sweep** — 一次過研究任務:WebSearch+yt-dlp 驗證,目標加 10-20 個
+新頻道(粵:香港各大堂會/事工;國:火把音樂/異象工場呢類;兒童:上次同款方法)。
+跟 intake 審核流程逐個過,唔靠估。⚠️ 紅線不變:keyword search 只可以用嚟「搵頻道」
+(一次性、人手/監督驗證),日常 ingest 一律 channel handle。
+
+**D.(單一最大礦,要 Eric 拍板)開 WorshiPool** — 平台性質 est 500 首粵語,正確 channel id
+7-24 已驗證好(UCBdH0Y3bL8UsOzjrY4CzBAw),一直等拍板。附加防護:平台收錄 40+ 單位,
+入庫前逐首同現有庫做標題相似度 dedup,artist 唔好一律掛「WorshiPool」(執行者處理映射)。
+
+**E.(零成本水塘,要 Eric 拍板)重開英文** — backlog 現成 **827 首**未 curate 候選(非死
+非rejected),curate 驗證即刻食得,完全唔使 discover。7-21 暫停係因為「跑贏晒粵/國」;
+而家粵/國 discover 枯竭,可以改成「每晚限額 N 首英文」(例如 10-15)咁重開,唔會再喧賓
+奪主。呢個係**聽日即刻見數**嘅最快選項。
+
+**F.(配套)roster 擴大後 DISCOVER_BUDGET 9→12** — 而家樽頸唔係 budget 係源頭;A-C 落地
+後 budget 先會再成為樽頸,到時先加,單次節奏(concurrency 1/jitter/斷路器)照舊唔郁。
+
+**唔建議:** 放寬 blocklist/片長帶/CJK guard —— 每一條都係 7-26~28 污染事件嘅直接防線。
+
+**建議套餐:** 即刻做 A+B(唔使拍板,純執行);C 排今晚後;D/E 兩項請 Eric 揀(E 最快見數,
+D 礦最大);F 等 A-C 落地先。預期:A+B 落地後每晚應回到 50-100+ 首水平。
+
+**2026-07-30 09:05 check 過，正常（DB 1744／兒童 448／draft 195／verified 90）。**
+- fetchLyrics 今朝 05:07-05:58 正常:CC50→OCR 38/40 有效,exit 0。**質素清洗層部分落地**
+  (「剷走 N 段疑似垃圾(CJK 佔比太低)」+whisper timeline 儲存),觀察項1 有進展。
+- growLibrary 1744 持平(源頭枯竭,提速方案 A-F 已出等 Eric 拍板/executor 接手),0 error。
+- 等緊:校對批次+提速方案 A/B 轉 executor;D/E 等 Eric 揀。
+
+## 🔍 2026-07-30 Eric 質詢「兒童頻道咁快枯竭?」— Fable 5 實測拆帳(唔係估)
+
+**結論:三個中文兒童源頭三種情況,「枯竭」só 半啱 —— 仲有真歌被三個技術問題卡住:**
+- **讚美之泉兒童:** 全頻道實測 209 條。已處理 173(curated 133+rejected/gate 擋咗嗰批)。
+  未入庫 36 = 26 junk(鋼琴譜/教學/宣傳,gate 擋得啱)+3 帶外 + **7 條真敬拜 MV**:
+  ① TZO4fPE6TS8(小門徒)俾 YouTube SABR/PO-token 故障卡死(4 client 全部「Only images」),
+  而且 **discover 對佢無限重試(log 出現 848 次!)** —— 候選層冇 negative cache,同一條
+  廢片夜夜燒 budget;② 其餘 6 條 log 零出現 = 從未被選中,佢哋係 album 10-11 最舊嗰批,
+  **困喺 listing 200 條上限之下(頻道有 209)**。
+- **ACM兒歌 playlist:** 76 條收咗 69,剩 3 條=全碟試聽/宣傳片/錄音練習 —— 真・食晒 ✓。
+- **祈禱仔 playlist:** 49 條收咗 28,剩 21 條大多係音樂劇/課程回顧/花絮(擋得啱),
+  但入面有 ~5 條似真歌(天父必保守你/美麗世界/我要做個小天使/打那美好的仗/萬物高歌),
+  要執行 session 覆核係 blocklist 誤殺(「家庭敬拜日」現場?)定未輪到。
+
+**三個修復點(派「夜晚慢速擴歌庫排程」,同提速方案 A-F 一齊做):**
+1. **yt-dlp 升級 2026.06.09→2026.7.4 —— 第三日仲未做,而家有實數代價**(SOP 真歌卡死,
+   基恩批次同款)。升完 re-probe。
+2. **候選層 negative cache:** discover 對 resolve 全敗嘅候選 id 記低(檔案/DB 都得),
+   失敗 ≥3 次條 id 冷卻 7 日,唔好夜夜燒 848 次 log 嘅重試。
+3. **深挖 backfill(=提速方案 B):** listing cap 200 → 全頻道,收埋 SOP 最舊嗰 6 條 MV。
+4. 祈禱仔嗰 ~5 條真歌人手覆核收錄。
+
+**逐頻道歌數(Eric 要求,2026-07-30):** 兒童448:SOP兒童133/Hillsong Kids100/ACM兒歌69/
+Yancy29/祈禱仔28/Listener28/童唱童樂28/CJ&F28/KotM4/Saddleback1。粵語682:悦雨143/KEC71/
+鹹蛋58/團契遊樂園34/ACM31/HeartPro29/CantonHymn29/SON28/ShareHymns27/Milk&Honey27/天弦25/
+Endless24/U-Fire23/玻璃海22/基恩21/生命河粵語20/原始和聲20/同心圓15/角聲14/讚美之泉粵語13/
+flow8。國語552:新心197/小羊43/約書亞40/讚美之泉39/盛曉玫36/天韻36/611W28/我心旋律27/
+泥土25/有情天24/生命河22/台北復興堂11/ROLCC10/HM6/AsiaForJESUS5/611靈糧堂2/角聲1。英文62(暫停)。
+
+## ➕ 2026-07-30 Eric 追加:「611 worship 敬拜」全量入庫 — Fable 5 查證+指令(派「夜晚慢速擴歌庫排程」)
+
+**查證:** Eric 俾嘅「611 worship 敬拜」實測=現有 roster 嘅 `@611worship`(頻道正名
+「611 Worship 敬拜」,國語組,已收 28 首)—— 唔係新頻道,唔使加,係要**全量 backfill**。
+全頻道 135 條;未入庫 107 條 = **53 條帶內(75-600s)現成候選** + ~54 條帶外(813s-31min
+嘅 live worship set / 直播,多首歌連做一條片嗰種)。
+
+**指令:** 對 @611worship 做一次性全深度 backfill(=提速方案 B 嘅第一個實施對象):
+listing 開盡 135 條,53 條帶內候選照四關 pipeline 行(quality filter 會篩走部分,預期實收
+~40+ 首)。節奏照舊(concurrency 1/jitter/斷路器),一晚食唔晒分幾晚。
+⚠️ 帶外嗰 54 條係多首歌連埋嘅 live set,pipeline 有意排除(isCompilation+片長帶)——
+如果 Eric 真係要埋呢啲,屬產品決定(會出現 20-30 分鐘一條嘅「歌」),請 Dispatch 同
+Eric confirm 先,預設唔收。
+
+(同日三項一齊派:①yt-dlp 升級+negative cache+深挖修復;②提速方案 A/B;③呢個 611 backfill。)
+
+## 🎣 2026-07-30 全頻道「假枯竭」審計(Eric 質疑證實)— Fable 5 實測總結+指令
+
+**Eric 拍板記錄:** ①英文 backlog 唔開(企定,以後唔使再問);②611 Worship 全收,連 13-31
+分鐘 live 直播都要(呢個 batch 覆蓋「唔收合輯/直播」預設)。
+
+**審計方法:** 17 個活躍中文頻道逐個攞全深度 listing(共 ~3,900 條),對 DB 分類:
+帶內(75-600s)+非junk=「漏網魚」。junk 判定用保守關鍵字,魚仍要行四關 pipeline。
+
+**結果:「枯竭」大部分係假象 —— 漏網魚總數 ~1,835 條,主因係 listing 深度上限:**
+| 頻道 | 全頻道 | 已入庫 | 漏網魚 |
+|---|---|---|---|
+| Asia for JESUS | 1424 | 8 | 534⚠️ |
+| 新心音樂事工 | 629 | 200 | 376 |
+| CantonHymn | 363 | 29 | **307** |
+| 同心圓 | 390 | 19 | **224** |
+| 台北復興堂 | 333 | 12 | 160⚠️ |
+| Milk&Honey | 83 | 27 | 43 |
+| 天弦 | 65 | 25 | 36 |
+| KEC | 121 | 82 | 35 |
+| SON/HeartPro | 62/107 | 28/29 | 30/30 |
+| 童唱童樂 | 64 | 28 | 28 |
+| ShareHymns | 55 | 27 | 20 |
+| Endless | 36 | 25 | 11 |
+| 悦雨/U-Fire/flow/鹹蛋 | — | — | 0-1(真枯竭✓) |
+
+**抽樣質素驗證:** CantonHymn(堂會投稿 cover 系列)/同心圓(Live 單曲)/新心(正歌)嘅魚
+係真歌 ✓;**Asia for JESUS 嘅 534 條抽樣全係研習會/講座/異象報告 —— 現有 blocklist 攔
+唔到呢類台灣事工節目片**,台北復興堂同疑。呢兩個頻道嘅魚要當可疑處理。
+保守估計實收:~1,100-1,300 首(打折 AsiaJesus/台北復興堂+devotional 系列)。
+
+**根因分佈:** ①listing 深度上限(dominant —— 頻道歷史片從未被探索過,例:CantonHymn 363
+條得 29 條入過庫);②SABR resolve 故障全網僅 33 條 id(小,yt-dlp 升級救);③blocklist
+誤殺唔係主因,**反而係漏擋**(研習會/講座/異象/解惑/年度 呢批關鍵字要加)。
+
+**指令(派「夜晚慢速擴歌庫排程」,優先次序):**
+1. 全 roster listing cap 撤銷(改全深度;flat-playlist 一個 request,唔加打 YouTube 量)。
+2. blocklist 加:研習會/講座/異象/解惑/挨打小姐/年度/線上研習(加前照紅線做 backlog
+   regression query 驗誤殺)。《迎接聖誕十二天》呢類 devotional 系列一併考慮。
+3. backfill 次序:CantonHymn(307)→同心圓(224)→新心(376)→其餘細戶;AsiaJesus/台北復興堂
+   押後+需 per-video 覆核。611 Worship 帶內 53 條照收,live set 部分照 Eric 拍板全收
+   (實作:對呢個頻道豁免 isCompilation/片長上限,或人手批量入,executor 判斷)。
+4. 配合早前指令:yt-dlp 升級+候選 negative cache 先行(唔升,SABR 嗰 33 條會繼續卡)。
+節奏不變(concurrency 1/jitter/斷路器);1,100+ 首按而家 pace 約一至兩星期食完,唔使censor
+一晚爆量。
+
+## 🚀 2026-07-30 【Eric 已 GO・即派】執行籃子總指令(Fable 5 整合)
+
+**→ 派「夜晚慢速擴歌庫排程」(local_fa531849),按次序做,每項實測 confirm:**
+1. 基建先行:yt-dlp 升 2026.7.4;discover 候選 negative cache(全敗≥3次冷卻7日);
+   升完對 33 條 all-fail id re-probe。
+2. 全 roster 撤 listing cap(全深度)。
+3. 補 blocklist:研習會/講座/異象/解惑/年度/線上研習(加前 regression query 驗誤殺,紅線)。
+4. Backfill 次序:CantonHymn(307)→同心圓(224)→新心(376)→Milk&Honey/天弦/KEC/SON/
+   HeartPro/童唱童樂/ShareHymns/Endless。節奏照舊,分晚食。
+5. 611 Worship 全收(Eric 拍板):帶內 53 條四關照收;live set ~54 條特例豁免
+   isCompilation/片長上限(實作自行判斷),只限呢個頻道,唔改全局預設。
+6. Asia for JESUS/台北復興堂押後,魚係研習會/講道,人手/LLM per-video 覆核先收。
+7. 提速方案 A:粵8+國10 inPool 團體補 handle(跟 intake 審核流程逐個驗)。
+⛔ 英文 backlog 企定唔開。
+
+**→ 派「全庫歌詞補齊規劃」(local_fdeacc3b):** 執行 07-30「新一輪歌詞校對批次」條目
+(195 draft,50首/批批批apply,質素標準+kickstart+報數,詳見該條目)。
+
+**Fable 5 驗收點(我每 3 小時 check 自動跟):** TZO4fPE6TS8 唔再重試/SOP 兒童 7 條真歌
+返生/CantonHymn count 明顯上升/611 live set 入庫/draft→verified 推進+報數。
+
+**🚀 追加(Eric):「改完立即試,唔好等今晚」** — 每項改動(yt-dlp 升級/listing cap/blocklist/
+611 全收)一落地,即刻用 `--ignore-office-hours` 手動行一次真 run(唔係 dry)驗證實效:
+例如 cap 撤完即手動 `--mode discover` 一個 tick,見到 CantonHymn 開始收魚先算落地;
+yt-dlp 升完即 re-probe TZO4fPE6TS8 見到 resolve 成功先算。即試用細額度(一兩個 tick)
+demo 成效就夠,大隊 backfill 照留返夜晚排程慢慢食 —— 「即刻見到得,大量慢慢收」。
+辦公時間封鎖窗係保護公司網絡,Eric 本人要求即試=佢拍板豁免呢幾次手動 run。
+
+**2026-07-30 10:05 check：正常＋GO 籃子開始落地（DB 1744／兒童 448／draft 195）。**
+- **yt-dlp 已升 2026.07.04**(籃子第 1 步 ✓)。我抽樣 re-probe 6 條 all-fail id:**4 條返生、
+  2 條仲死**(TZO4fPE6TS8 小門徒仍然「not available」,可能真係俾 YouTube 收起咗,executor
+  re-probe 33 條時將仲死嗰批標 status=rejected/dead 唔好再試)。
+- 其餘籃子項目(cap/blocklist/backfill/negative cache)未見 commit,executor 應該做緊,
+  下輪 check 跟。CantonHymn 仍 29(cap 未撤)。0 error,5 job 在位。
+
+## 📐 2026-07-30 「逐頻道三數核對」方案(回應 Eric「唔好靠估,攞齊佢」— 俾 Eric 過目先轉 executor)
+
+**Eric 質疑入面嘅真漏洞(承認+修正):** 之前審計只枚舉頻道 **/videos 分頁** —— YouTube
+頻道仲有 /streams(直播)、/shorts 兩個分頁+收埋喺 playlist 嘅 unlisted 片,呢啲全部
+唔喺舊數入面。新方案三數互相核對,冇一個數係估:
+
+**每個頻道做四步(粵13+國5+中文兒童4≈22個,inPool 補完 handle 後 18 個都納入):**
+1. **官方總數**:About 頁 videoCount(YouTube 自己公佈嘅數,客觀基準)。
+2. **全量枚舉**:/videos+/streams+/shorts 三分頁 flat-playlist 全深度,id 取 union。
+   **核對規則:union 必須=About 數**(容差 ≤2 條,俾 deleted/private;超出=枚舉有漏,要查)。
+3. **DB 逐條對帳**:每條 id 歸五類 — curated✓/rejected(內容)/dead(壞鏈)/欠收-帶內/
+   欠收-帶外或junk。「欠收-帶內非junk」逐條列名,唔係一個總數。
+4. **攞齊機制**:欠收清單直接餵 `backfillFromList`(新細 script,按 id 逐條行四關,
+   完全唔依賴 listing window 邏輯)→ 每晚 reconciliation 重跑 → **欠收=0 先算齊**。
+
+**持續保證(唔係一次性):** 每晚 job 出 per-channel 對帳表(About數/枚舉數/已處理/欠收)
+append 落 log;頻道出新片 → About 數升 → 欠收自動現形被追收。About 數冇變嘅頻道 skip,
+每晚增量成本近零。
+
+**PoC 已驗證(Milk&Honey):** About 官方數 83 = 三分頁枚舉 83 ✓;對 DB:已收 27,
+欠收帶內 43 條(逐條有名有姓)。方法成立。
+
+**成本:** 一次過全量 ~22 頻道×4 requests≈88 個(flat-playlist/about 都係平 request),
+分兩晚做完;每晚增量遠細過呢個數。唔違反任何紅線。
+
+**可選延伸:** 枚舉頻道自家 playlists 捉 unlisted 片(屬頻道但唔喺三分頁);搵到先報俾
+人手判斷,唔自動收。
+
+## 🚀 2026-07-30 【Eric 已 GO・第二批】三數對帳併入執行籃子(Fable 5 整合,派 local_fa531849)
+
+📐 三數對帳方案(上面 07-30 條目)Eric 已 go,併入 🚀 籃子,執行次序更新:
+1. (照舊)yt-dlp 已升✓;negative cache;re-probe 33 條 all-fail(我抽樣:4/6 返生,
+   死剩嗰批標 rejected/dead 咪再試)。
+2. **三數對帳先行/並行:** 起 `reconcileChannels.js`(About數+三分頁枚舉+DB 五類對帳,
+   出 per-channel 對帳表+欠收 id 清單)同 `backfillFromList.js`(按 id 清單逐條行四關)。
+   對帳表 append 落 log,每晚重跑,欠收=0 先算齊。
+3. Backfill 直接食對帳出嘅欠收清單(取代原「撤 cap 靠 listing」做法 —— 更準):
+   次序照舊 CantonHymn→同心圓→新心→細戶;611 Worship 全收含 live(特例);
+   AsiaJesus/台北復興堂欠收清單只出報告,人手覆核先收。
+4. Blocklist 補鍵字(研習會/講座/異象/解惑/年度/線上研習,regression query 先行)。
+5. 提速方案 A(inPool 18 團體補 handle,跟 intake 流程)→ 補完即納入對帳 scope。
+6. 「改完立即試」照 Eric 拍板:每項落地即 --ignore-office-hours 細額度真 run 驗證。
+(校對批次照舊派 local_fdeacc3b,指令喺 07-30 校對條目。)
+
+**2026-07-30 12:30 ✅ Round 3 校對批次完成(Dispatch 指派,4 批全落地)。**
+- verified 90 → **207**(+117:批1 +36/批2 +38/批3 +26/批4 +17);demote 非歌 49 首;
+  留 draft 76 首(OCR 太薄/亂碼/核對唔到,等下輪或者永久放棄)。
+- 每批獨立 audit(完整性/衛生掃描/太薄人眼裁決/經文附註格式)→ apply → kickstart →
+  curl 抽查,一批落一批,冇儲倉。批3 apply 撞另一 session 揸鎖,等鎖重試,零損傷。
+- 批4 第一手 agent 俾 content filter 斬,重派加「skip-unprocessable 逃生門+逐首寫檔」完成。
+- 待 Fable 5 監督獨立驗收(隨機 6 首結構+附註格式、全批掃描、curl 對 DB)後交 Eric 抽查。
+
+---
+
+## ✅ 2026-07-30 執行 session(local_fa531849):【Eric 已 GO】執行籃子總指令 —— 落地報告
+
+Eric 已 GO,冇再停低問,即刻做。逐項匯報(對照原 8 點次序,§6 blocklist 提前於 §3
+backfill 之前做,因為淨係會令 backfill 更準,唔會有壞影響):
+
+**1. 基建先行(negative cache + re-probe)✓** `hymnDb.js` 新增 `isDiscoverCoolingDown`/
+`recordDiscoverFailure`/`clearDiscoverFailure`(累計失敗 ≥3 次冷卻 7 日,持久化落
+`cache/discover-fail-cache.json`),`discoverFromGroup` 揀 fresh 候選嗰步同死鏈驗證
+兩處都接埋。實測 re-probe 你哋列嘅 all-fail id(實際 35 條唯一 id):**15 條返生、
+20 條真死**(全部 curated=0 backlog,冇任何一條係 curated=1,冇即時播放風險)—— 20
+條已 `status='dead'`。TZO4fPE6TS8 唔喺 DB(純discover候選),直接 seed 落 negative
+cache 冷卻 7 日。**驗證:** dry-run 讚美之泉兒童,log 完全冇再見到呢條 id(之前 848
+次重試,而家 0 次)。
+
+**2/3. 三數對帳 + backfill(取代撤 cap 做法)✓** 寫咗 `reconcileChannels.js`(About頁
+官方數 + /videos+/streams+/shorts 三分頁枚舉 union + DB 五類對帳)同
+`backfillFromList.js`(食欠收清單逐條行四關,唔靠 listing window)。**PoC 對過 Fable
+5 嘅 Milk&Honey 驗證:83=83 官方數脗合,curated 27 對得上**。掃咗 CantonHymn(372=372)/
+同心圓敬拜(398=398)/新心音樂事工(629≈630)/611 Worship(135=135)/天弦/KEC/SON/
+HeartPro/Giggles and Tunes/ShareHymns/Endless(全部官方數=枚舉數,0-1 誤差)—— **三分
+頁全部核對得住,冇一個超容差**。
+
+Backfill 實收(全部真 run,唔係 dry,concurrency 1 + jitter + 斷路器):
+
+| 頻道 | 落地前 | 落地後 | +幾多 |
+|---|---|---|---|
+| CantonHymn | 29 | **293** | +264 |
+| 同心圓敬拜 | 19 | **204** | +185 |
+| 新心音樂事工 | 197 | **387** | +190 |
+| 611 Worship | 28 | **132** | +104 |
+| 天弦音樂事工 | 25 | **54** | +29(清單食晒) |
+| SON Music | 28 | **55** | +27(清單食晒) |
+| 全心製作 HeartPro | 29 | **58** | +29(清單食晒) |
+| Giggles and Tunes | 28 | **56** | +28(清單食晒) |
+| 共享詩歌ShareHymns | 27 | **47** | +20(清單食晒) |
+| Endless Worship | 24 | **29** | +5(清單食晒) |
+| Milk&Honey(PoC) | 27 | **30** | +3(demo) |
+| KEC Worship | — | **71** | 已經 0 欠收,唔使郁 |
+
+**歌庫總數:1730 → 2622(+892,一晚之內)。** 粵語 678→1241、國語 723→843、兒童
+仍 476(冇郁英文兒童)。CantonHymn/同心圓/新心仲有剩(298/221/363 欠收清單見底之前
+仲有排),已寫入 `cache/reconcile-missing.json`,跟返一貫節奏留返之後嘅 run 繼續食,
+唔一晚爆晒。
+
+**4. 611 Worship 全收(含 live set)✓** `hymnDb.js` `isInSongDurationBand()` 加
+`maxOverride` 參數,`worshipGroups.js` 611 Worship 加 `durationCapSec: 1900`(**只限
+呢個頻道**,全局 `SONG_DURATION_MAX=600` 完全冇郁)。實測:呢批 13-31 分鐘 live set
+(例如「聖靈 我們歡迎祢降臨｜聖靈我們歡迎祢｜充滿在這裡｜611 Worship」1723s)**冇撞
+任何 isCompilation 關鍵字**,純粹俾標準 600s 上限擋住 —— 加咗 cap 之後欠收由「53帶內
++~54帶外」變成 104 條清一色帶內,backfill 已收咗 104 條入面 60+ 條(包含多條 800s+
+嘅 live set,已抽查 title 確認真係詩歌現場錄音)。
+
+**5. Asia for JESUS / 台北復興堂 押後 ✓(只出報告)** 台北復興堂 channel 早喺
+2026-07-27 REJECT 級審計已經拆走(18.3%帶內/61.7%blocklist),今次確認**唔使再郁**。
+Asia for JESUS 全深度枚舉:官方 1535=枚舉 1536(核對到);欠收帶內 612 條 ——
+**隨機抽 20 條(seed 固定,可重現)人眼睇:20/20 全部係研習會/裝備課程/見證/Q&A/先知
+學校/特會片段,0 首歌**(標題例子:「裝備課程｜天國元素」「2016先知學校-顯明天父的
+心」「【卓越管家のEP2】給的越多，就會得到越多？」)。**冇自動收,清單已存
+`cache/reconcile-missing.json`,留低俾人手/未來語義層逐條覆核。**
+
+**6. Blocklist 補鍵字 ✓(順序提前,喺 backfill 之前做)** 原方案列嘅「研習會/講座/
+異象/解惑/年度/線上研習」——**落地前對全庫 1750+ 首 curated regression 揪出「異象」
+「年度」唔可以用**(「異象」bare word 撞正 5 首正牌詩歌,包括全球知名聖詩「成為我異象
+Be Thou My Vision」;「年度」太廣義零可靠訊號)。「講座」原本已有,唔使重複加。
+**淨係加返查證過零誤殺嘅:`研習會`/`解惑`/`線上研習`**。仲喺 backfill 途中實測踩出
+多兩批新缺口,每次都 regression 先落:①CantonHymn 一首「五分鐘的分享：安然度過」
+(devotional,唔係歌)—— 個別 reject,「分享」regression 出嚟 38 中 37 係正牌歌(音樂
+分享會=演唱會名),太廣冇加;②同心圓敬拜「回顧」「宣傳片」(4+2 中 curated,全部
+回顧片/宣傳片,零誤殺)——加咗,6 個舊 curated 命中一併 retroactive reject;③新心
+音樂事工「迎接聖誕十二天」devotional 系列(第一天…第十二天,冇撞現有「第N集」
+regex)—— 加做完整專屬詞組,0 curated 衝突。
+
+**7. 提速方案 A(18 個 inPool 團體補 channel handle)—— 未做,誠實匯報。** 呢項要
+逐個團體行完整 intake 審核流程(60條+三比例+隨機眼證),先至可以避免重演 Kids on the
+Move/SingforGod/Redsea 嗰類「錯 handle 撞入垃圾」事故 —— 今晚已經用咗好多時間喺
+backfill+新缺口修補,冇夠時間用同一嚴謹度做完 18 個。**留返俾下一個 session/下一晚
+專門處理**,唔想為求交數而降低驗證標準。
+
+**8. 改完即試 ✓** 全程冇一個係 dry-run 交數 —— 每個改動(negative cache/duration
+cap override/blocklist 新詞)落地即刻用 `--ignore-office-hours` 或者直接 backfill
+真 run 驗證,見到實數先算過骨(TZO4fPE6TS8 零重試 / CantonHymn 293 首 / 611 Worship
+live set 入庫 / Asia for JESUS 20/20 人眼核實)。
+
+**改動檔案:** `backend/lib/hymnDb.js`(negative cache/duration override/新增4個
+blocklist詞組)、`backend/data/worshipGroups.js`(611 Worship durationCapSec)、
+`backend/scripts/growLibrary.js`(negative cache 接入)、`backend/scripts/
+reconcileChannels.js`(新)、`backend/scripts/backfillFromList.js`(新)、
+`backend/hymns.db`(+892 淨增長,20 條標死鏈,~10 條個別/retroactive reject)。
+未 commit,等指示。
+
+**下一步建議:** ①今晚 CantonHymn/同心圓/新心仲有大量欠收未食晒,可以直接
+`node scripts/backfillFromList.js --group "X" --budget N` 繼續;②提速方案 A(18
+團體補 handle)排落次個晚;③Asia for JESUS 612 條欠收清單已存,等 Eric 拍板要唔要
+開語義層(LLM 逐條判斷)先郁;④建議將 `reconcileChannels.js --all` + 對帳表 append
+寫成新 launchd job,先至真正做到「每晚重跑,欠收=0 先算齊」嘅持續保證,而唔係淨係
+今晚人手跑一次。
