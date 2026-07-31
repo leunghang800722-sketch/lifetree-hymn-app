@@ -40,9 +40,37 @@ async function fetchVersion() {
   }
 }
 
+// Admin 寫入完成即刻刷新用(MEMBERSHIP-PHASE2-ADMIN-PLAN §3.7)——admin API
+// response 已經帶埋新 dataVersion,唔使再問一次 /api/version。呢個 Set 存住
+// 每個掛緊嘅 useCachedHymns() hook 嘅 setHymns,寫入完 call notifyHymnsChanged()
+// 就即刻攞新資料、更新 MMKV、再通知晒全部掛緊嘅 hook 更新 UI(改完自己部機即時
+// 見到;其他裝置跟現有 pull-on-open 機制下次開 app 見到)。
+const hymnsListeners = new Set();
+
+export function notifyHymnsChanged(serverDataVersion) {
+  (async () => {
+    const s = getStorage();
+    const cachedVersion = s ? s.getString('allHymnsVersion') : null;
+    if (serverDataVersion != null && cachedVersion === serverDataVersion) return; // 冇改
+    const { hymns: fresh, dataVersion } = await fetchAllHymns();
+    if (fresh && fresh.length > 0) {
+      if (s) {
+        s.set('allHymns', JSON.stringify(fresh));
+        s.set('allHymnsVersion', dataVersion ?? serverDataVersion ?? '');
+      }
+      hymnsListeners.forEach((fn) => fn(fresh));
+    }
+  })().catch(() => {});
+}
+
 export const useCachedHymns = () => {
  const [hymns, setHymns] = useState(null);
  const [loading, setLoading] = useState(true);
+
+ useEffect(() => {
+   hymnsListeners.add(setHymns);
+   return () => { hymnsListeners.delete(setHymns); };
+ }, []);
 
  useEffect(() => {
    const s = getStorage();

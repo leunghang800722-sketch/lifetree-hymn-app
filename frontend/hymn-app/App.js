@@ -23,6 +23,8 @@ import { PlaylistsProvider, usePlaylists } from './src/context/PlaylistsContext'
 import { AddToPlaylistProvider, useAddToPlaylist } from './src/components/AddToPlaylistSheet';
 import { AuthProvider, useAuth } from './src/context/AuthContext';
 import AuthScreen from './src/screens/AuthScreen';
+import AdminAddHymnScreen from './src/screens/AdminAddHymnScreen';
+import { AdminEditHymnProvider } from './src/components/AdminEditHymnSheet';
 import { PlaylistProvider } from './src/context/PlaylistContext';
 import { setAuthToken, pullData, pushSync, flush as flushOutbox, getOwner, setOwner, clearOutbox } from './src/sync/userSync';
 import { API_BASE } from './src/config.js';
@@ -2170,6 +2172,11 @@ function AppContent() {
 
   const openAuth = useCallback(() => setAuthVisible(true), []);
   const closeAuth = useCallback(() => setAuthVisible(false), []);
+  // Admin「貼連結加歌」畫面(MEMBERSHIP-PHASE2-ADMIN-PLAN §3.7)—— 同 Auth Modal
+  // 一樣做法:slide-in 全螢幕 Modal,由 MineScreen 個入口開。
+  const [adminAddVisible, setAdminAddVisible] = useState(false);
+  const openAdminAdd = useCallback(() => setAdminAddVisible(true), []);
+  const closeAdminAdd = useCallback(() => setAdminAddVisible(false), []);
   const [hymnListData, setHymnListData] = useState({ hymns: [], title: '' });
 
   const showHymnList = (hymns, title) => {
@@ -2291,7 +2298,7 @@ function AppContent() {
           <LibraryScreen hymns={allSongs || []} onPlayHymn={handlePlayHymn} />
         </View>
         <View style={[pageStyles.screenWrap, { display: activeTab === 'Mine' ? 'flex' : 'none' }]}>
-          <MineScreen onPlayHymn={handlePlayHymn} onOpenAuth={openAuth}
+          <MineScreen onPlayHymn={handlePlayHymn} onOpenAuth={openAuth} onOpenAdminAdd={openAdminAdd}
             miniPlayer={miniPlayerNode} hasMiniPlayer={hasMiniPlayer} />
         </View>
       </View>
@@ -2300,6 +2307,13 @@ function AppContent() {
       {authVisible && (
         <Modal visible animationType="slide" onRequestClose={closeAuth}>
           <AuthScreen onClose={closeAuth} />
+        </Modal>
+      )}
+
+      {/* Admin「貼連結加歌」Modal(MEMBERSHIP-PHASE2-ADMIN-PLAN §3.7) */}
+      {adminAddVisible && (
+        <Modal visible animationType="slide" onRequestClose={closeAdminAdd}>
+          <AdminAddHymnScreen onClose={closeAdminAdd} />
         </Modal>
       )}
 
@@ -2385,9 +2399,9 @@ export default function App() {
   // BottomSheetModalProvider:加返佢就會走返 v228 嗰條 portal 路,個 hosting
   // container 冇 zIndex,又會俾 zIndex:999 嘅播放器 overlay 蓋住。詳見檔頭註解。
   const tree = (
-    <AuthProvider><FavoritesProvider><PlaylistsProvider><AddToPlaylistProvider><PlayerProvider><PlaylistProvider>
+    <AuthProvider><AdminEditHymnProvider><FavoritesProvider><PlaylistsProvider><AddToPlaylistProvider><PlayerProvider><PlaylistProvider>
       <AppContent />
-    </PlaylistProvider></PlayerProvider></AddToPlaylistProvider></PlaylistsProvider></FavoritesProvider></AuthProvider>
+    </PlaylistProvider></PlayerProvider></AddToPlaylistProvider></PlaylistsProvider></FavoritesProvider></AdminEditHymnProvider></AuthProvider>
   );
   const inner = SafeAreaProvider ? <SafeAreaProvider>{tree}</SafeAreaProvider> : tree;
   return <GestureHandlerRootView style={{ flex: 1 }}>{inner}</GestureHandlerRootView>;

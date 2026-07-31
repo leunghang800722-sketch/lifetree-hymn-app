@@ -13,6 +13,8 @@ import { COLORS, TYPOGRAPHY } from '../theme/designSystem';
 import { useInsets } from '../hooks/useInsets';
 import { useFavorites } from '../context/FavoritesContext';
 import { useAddToPlaylist } from '../components/AddToPlaylistSheet';
+import { useAdminEditHymn } from '../components/AdminEditHymnSheet';
+import { useAuth } from '../context/AuthContext';
 import { getDisplayTitle } from '../utils/displayTitle';
 
 const LANGS = ['全部', '粵語', '國語', '英文', '兒童'];
@@ -102,6 +104,10 @@ export default function LibraryScreen({ hymns = [], onPlayHymn }) {
   // 令結果空,「清除篩選」掣照用(已經識埋 lang+artist 一齊清)。
   const filterLabel = [lang !== '全部' ? lang : null, artist].filter(Boolean).join(' · ');
   const { open: openAddToPlaylist } = useAddToPlaylist();
+  // admin long-press 入口(MEMBERSHIP-PHASE2-ADMIN-PLAN §3.7)—— member 冇呢個
+  // onLongPress prop,UI 層面完全見唔到(API 有 requireAdmin 403 兜底)。
+  const { isAdmin } = useAuth() || {};
+  const { open: openAdminEdit } = useAdminEditHymn();
 
   // edge-to-edge:唔加 top inset 個大字標題會同狀態列時間疊埋(見 useInsets.js)
   const insets = useInsets();
@@ -186,6 +192,7 @@ export default function LibraryScreen({ hymns = [], onPlayHymn }) {
           <TouchableOpacity
             style={styles.row}
             onPress={() => onPlayHymn && onPlayHymn(item)}
+            onLongPress={isAdmin ? () => openAdminEdit(item) : undefined}
             activeOpacity={0.7}
           >
             <Cover youtubeId={item.youtube_id} />

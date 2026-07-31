@@ -22,6 +22,8 @@ import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { COLORS, TYPOGRAPHY } from '../theme/designSystem';
 import { useFavorites } from '../context/FavoritesContext';
 import { useAddToPlaylist } from '../components/AddToPlaylistSheet';
+import { useAdminEditHymn } from '../components/AdminEditHymnSheet';
+import { useAuth } from '../context/AuthContext';
 import { useInsets } from '../hooks/useInsets';
 import { getDisplayTitle } from '../utils/displayTitle';
 
@@ -73,6 +75,8 @@ function Heart({ hymn }) {
 
 export default function HymnListScreen({ hymns = [], title, onPlayHymn, hasMiniPlayer = false }) {
   const { open: openAddToPlaylist } = useAddToPlaylist();
+  const { isAdmin } = useAuth() || {};
+  const { open: openAdminEdit } = useAdminEditHymn();
   const handlePlayHymn = (hymn) => {
     if (onPlayHymn) onPlayHymn(hymn);
   };
@@ -103,6 +107,7 @@ export default function HymnListScreen({ hymns = [], title, onPlayHymn, hasMiniP
           <TouchableOpacity
             style={styles.row}
             onPress={() => handlePlayHymn(item)}
+            onLongPress={isAdmin ? () => openAdminEdit(item) : undefined}
             activeOpacity={0.7}
           >
             <Cover youtubeId={item.youtube_id} />

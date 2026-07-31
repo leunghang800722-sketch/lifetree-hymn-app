@@ -32,10 +32,10 @@ function Cover({ youtubeId, size = 52 }) {
   return <Image source={{ uri }} style={[styles.cover, { width: size, height: size }]} onError={() => setFailed(true)} />;
 }
 
-export default function MineScreen({ onPlayHymn, onOpenAuth, miniPlayer, hasMiniPlayer }) {
+export default function MineScreen({ onPlayHymn, onOpenAuth, onOpenAdminAdd, miniPlayer, hasMiniPlayer }) {
   const { favorites = [], toggleFavorite } = useFavorites() || {};
   const { playlists = [], deletePlaylist } = usePlaylists() || {};
-  const { user } = useAuth() || {};
+  const { user, isAdmin } = useAuth() || {};
   const { open: openAddToPlaylist, openCreate, openRename } = useAddToPlaylist();
   const outboxLength = useOutboxLength();
   const [tab, setTab] = useState('favorites'); // favorites | playlists
@@ -89,6 +89,15 @@ export default function MineScreen({ onPlayHymn, onOpenAuth, miniPlayer, hasMini
         </View>
         <MaterialIcons name="chevron-right" size={22} color={COLORS.textSecondary} />
       </TouchableOpacity>
+
+      {/* Admin 專用:貼連結加歌(MEMBERSHIP-PHASE2-ADMIN-PLAN §3.7)——member/
+          未登入完全見唔到,純 UI 清潔(API 有 requireAdmin 403 兜底)。 */}
+      {isAdmin && (
+        <TouchableOpacity style={styles.adminAddRow} activeOpacity={0.7} onPress={() => onOpenAdminAdd && onOpenAdminAdd()}>
+          <MaterialIcons name="add-circle-outline" size={20} color={COLORS.accent} />
+          <Text style={styles.adminAddText}>貼連結加歌</Text>
+        </TouchableOpacity>
+      )}
 
       {/* 最愛 / 清單 切換 */}
       <View style={styles.segment}>
@@ -223,6 +232,13 @@ const styles = StyleSheet.create({
   accountCta: { borderWidth: 1, borderColor: COLORS.border },
   accountTitle: { ...TYPOGRAPHY.body, fontWeight: '600' },
   accountSub: { ...TYPOGRAPHY.artist, marginTop: 2 },
+  // Admin「貼連結加歌」— 視覺照 AddToPlaylistSheet 嘅 newRow/newText
+  adminAddRow: {
+    flexDirection: 'row', alignItems: 'center',
+    marginHorizontal: 16, marginBottom: 12, paddingVertical: 10, paddingHorizontal: 14,
+    backgroundColor: COLORS.card, borderRadius: 10,
+  },
+  adminAddText: { color: COLORS.accent, marginLeft: 8, fontSize: 14, fontWeight: '700' },
   segment: { flexDirection: 'row', paddingHorizontal: 16, marginBottom: 12 },
   segItem: {
     flexDirection: 'row', alignItems: 'center',

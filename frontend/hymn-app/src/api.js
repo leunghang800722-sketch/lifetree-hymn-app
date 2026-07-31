@@ -151,3 +151,65 @@ export async function removeHymnFromPlaylist(playlistId, hymnId) {
   if (!json.success) throw new Error(json.error);
   return json;
 }
+
+// ── Admin APIs(MEMBERSHIP-PHASE2-ADMIN-PLAN §3.7)──────────────────────
+// ⚠️ 呢五個 call 唔用呢個檔頭上面嗰個 authHeaders()/getToken()——嗰套
+// AsyncStorage(@hymn_app_token)同真正登入流程用嘅 AuthContext(@hymn…uth)
+// 係兩份唔同嘅存儲,實際登入唔會寫入呢邊。Admin call 一律由 caller(有
+// useAuth() 嘅畫面/sheet)傳 token 落嚟,行 AuthContext.getToken() 嗰條真.路。
+function adminAuthHeaders(token, withJson = false) {
+  const headers = { Authorization: `Bearer ${token}` };
+  if (withJson) headers['Content-Type'] = 'application/json';
+  return headers;
+}
+
+async function adminJson(res, fallbackMsg) {
+  const json = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    const err = new Error(json.message || json.error || fallbackMsg);
+    err.code = json.error;
+    throw err;
+  }
+  return json;
+}
+
+export async function adminGetHymn(token, id) {
+  const res = await fetch(`${API_BASE}/api/admin/hymns/${id}`, { headers: adminAuthHeaders(token) });
+  const json = await adminJson(res, '讀取失敗');
+  return json.hymn;
+}
+
+export async function adminPatchHymn(token, id, fields) {
+  const res = await fetch(`${API_BASE}/api/admin/hymns/${id}`, {
+    method: 'PATCH',
+    headers: adminAuthHeaders(token, true),
+    body: JSON.stringify(fields),
+  });
+  return adminJson(res, '儲存失敗'); // { ok, hymn, dataVersion }
+}
+
+export async function adminPreviewHymn(token, url) {
+  const res = await fetch(`${API_BASE}/api/admin/hymns/preview`, {
+    method: 'POST',
+    headers: adminAuthHeaders(token, true),
+    body: JSON.stringify({ url }),
+  });
+  return adminJson(res, '查詢失敗'); // { exists|relistable|youtube_id..., ... }
+}
+
+export async function adminAddHymn(token, fields) {
+  const res = await fetch(`${API_BASE}/api/admin/hymns`, {
+    method: 'POST',
+    headers: adminAuthHeaders(token, true),
+    body: JSON.stringify(fields),
+  });
+  return adminJson(res, '入庫失敗'); // { ok, hymn, dataVersion }
+}
+
+export async function adminDelistHymn(token, id) {
+  const res = await fetch(`${API_BASE}/api/admin/hymns/${id}/delist`, {
+    method: 'POST',
+    headers: adminAuthHeaders(token),
+  });
+  return adminJson(res, '落架失敗'); // { ok, hymn, dataVersion }
+}
