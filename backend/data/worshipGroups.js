@@ -119,12 +119,23 @@ export const GROUPS = [
   // 訊號淨係 10%)。現有 Layer1 片長 + isCompilation blocklist 已經擋走
   // 大部分講座/研習會內容,剩低嗰批留俾人手/未來語義層覆核,唔係機械
   // gate 增強能解決,暫時照舊(0 curated,冇急切性)。
-  { name: 'Asia for JESUS',   aliases: ['Asia for JESUS', '國度豐收協會'], lang: '國語', priority: 2, inPool: false, channel: '@asiaforjesusasia', est: 50, note: '約書亞樂團旗下協會channel;titles多為live worship set + 名人講座,四關pipeline自然篩走唔啱格式嗰啲;2026-07-27 audit:帶內36.7%/blocklist60%/正面10%,GATE級但中文唔設Layer2,留俾人手/語義層覆核' },
+  // 2026-07-31 18:05 緊急(Fable 5):Tier1 選台修復解凍咗呢個頻道之後,即刻
+  // 用「清單多者先」揀中(612 條全庫最大戶),4 條 junk(年度異象/青吶特會
+  // workshop)漏網滲入。四關 pipeline 本身冇壞,但呢個頻道嘅內容太雜(研習會/
+  // 見證/工作坊,題目式標題冇固定 pattern),`missing-inband` 清單質素太低,
+  // 唔啱做 Tier1 自動食——加 `tier1Exclude:true` 令 Tier1 選台跳過呢個頻道
+  // (見 growLibrary.js runDiscoverAll),留返俾人手/未來語義層逐條覆核先收,
+  // 唔畀 unattended 自動化夜夜滲垃圾。
+  { name: 'Asia for JESUS',   aliases: ['Asia for JESUS', '國度豐收協會'], lang: '國語', priority: 2, inPool: false, channel: '@asiaforjesusasia', est: 50, tier1Exclude: true, note: '約書亞樂團旗下協會channel;titles多為live worship set + 名人講座,四關pipeline自然篩走唔啱格式嗰啲;2026-07-27 audit:帶內36.7%/blocklist60%/正面10%,GATE級但中文唔設Layer2;2026-07-31 加tier1Exclude,漏網4條已reject,留俾人手/語義層覆核' },
   // 2026-07-27 auditChannel.js 全庫回溯:60 條 sample,歌片長帶淨係 18.3%、
   // blocklist 命中 61.7%——REJECT 級(<30%),同 Kids on the Move 一樣嘅
   // 「頻道本質係節目台」問題。0 curated(discover 從未成功過),拆走
   // channel 唔好再試,免得夜夜嘥 discover budget。
-  { name: '台北復興堂',        aliases: ['台北復興堂', 'Taipei Revival Church'], lang: '國語', priority: 2, inPool: false, channel: null, est: 50, note: '官方channel,已驗證有內容,但夾雜住大量講道/名人講座;2026-07-27 audit:帶內18.3%/blocklist61.7%,REJECT級,已拆走channel(0 curated,discover從未成功過)' },
+  // 2026-07-31 18:05 Fable 5:channel 已經係 null(discover/Tier1/Tier2 全部
+  // 摸唔到),但仲係補埋 tier1Exclude:true 做防禦性文檔——如果將來有 session
+  // 手快快補返個 channel handle,呢個 flag 都會提醒唔好畀 Tier1 直接自動食
+  // 呢個頻道(同 Asia for JESUS 同一原因:內容太雜,要人手/語義層先收)。
+  { name: '台北復興堂',        aliases: ['台北復興堂', 'Taipei Revival Church'], lang: '國語', priority: 2, inPool: false, channel: null, est: 50, tier1Exclude: true, note: '官方channel,已驗證有內容,但夾雜住大量講道/名人講座;2026-07-27 audit:帶內18.3%/blocklist61.7%,REJECT級,已拆走channel(0 curated,discover從未成功過)' },
   // ⚠️ 「611靈糧堂」搵到嘅係「台北611靈糧堂」,實測內容幾乎全部係
   // 晨禱/晚禱/生命見證(冇歌名,淨係傳道/牧師名+日期),同上面已有嘅
   // 「611 Worship」(先係真正嘅敬拜歌頻道,已驗證粵國語都有)唔同源。

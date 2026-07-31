@@ -1638,3 +1638,79 @@ backfillCore.js`(新,共用 backfill 邏輯)、`backend/lib/reconcileCore.js`(�
 /`reconcileChannels.js`(簡化做 CLI wrapper,call 共用 lib)、`backend/hymns.db`
 (測試期間嘅少量真實 backfill)。全部 `node --check` 過、真 run 驗證過。
 未 commit,等指示。
+
+## ⚠️ 2026-07-31 兩級制落地(da8e535)Fable 5 正式驗收 — 有條件通過:機制正確,揪出一個必修缺口
+
+**五條標準逐條:**
+① Tier 1 由大戶欠收清單收歌 — **PASS(DB 實證)**:CantonHymn 292→325/同心圓 204→231/
+  新心 385→411(今日 +86)。log 未見 Tier1 痕跡係因為辦公時間封鎖窗+即試 run 嘅 stdout
+  喺執行 session 度;今晚 18:30 後 /tmp log 會補實。
+② 零收穫冷卻 — 機制已 live(channel-cooldown.json 記緊 zeroStreak,祈禱仔/童唱童樂
+  streak 6,未夠 8 未觸發)— **今晚實戰先完全驗到,暫 PASS(機制層)**。
+③ 每日自動 reconcile — 已掛 main()(growLibrary.js:723 maybeRunDailyReconcile,00:xx
+  tick)— code 層 PASS,聽朝 00:xx log 補實。
+④ 欠收總數下降 — baseline 已記:1775(AsiaJesus 612/新心 363/CantonHymn 298/同心圓 221/
+  611W 104),聽日對比。
+⑤ 0 error、節奏不變 — PASS。
+
+**🔴 揪出一個必修缺口(今晚 18:30 解封前要落):Tier 1 冇實施「AsiaJesus/台北復興堂
+押後人手覆核」排除** —— AsiaJesus 欠收 612 條係全庫最大戶,「清單多者先」令佢第一個
+被自動開採,今日已收 4 條**全部係 junk**(年度異象 vision 片/青吶特會 workshop「我們
+戀愛吧」),而且「年度」「異象」應該喺新 blocklist 但冇擋到(executor 話落咗 3 個詞,
+我方案係 6 個 —— 邊 3 個要 confirm)。**修法:①worshipGroups 加 per-group
+`tier1Exclude:true`(AsiaJesus/台北復興堂),Tier 1 跳過;②嗰 4 條 junk curated=0+
+status='rejected';③補返漏咗嘅 blocklist 詞(異象/特會 regression 後落)。唔修今晚
+Tier 1 會繼續攞 AsiaJesus 612 條嚟慢慢滲垃圾。**
+
+**Push 裁決:da8e535 可以 push**(機制本身正確,launchd 行 working tree,push 與否唔影響
+運行);但上面排除 patch 要今晚 18:30 前落地,唔好俾 unattended 時段掛住個窿行成晚。
+
+## 🔴 2026-07-31 18:05 緊急:Tier1 排除 patch 未落地,18:30 死線爆緊
+
+18:03 快查:`tier1Exclude` 未出現喺任何檔案,AsiaJesus 4 條 junk 仍然 curated。
+18:30 解封後,unattended Tier 1 會按「清單多者先」繼續開採 AsiaJesus(612 條,全庫最大戶),
+按今日漏網率一晚可能滲入 20-50 條研習會/特會片。
+**一分鐘止血法(俾任何有權改嘢嘅 session):** 唔使等完整 patch —— 直接喺
+`backend/cache/reconcile-missing.json` 刪走 "Asia for JESUS" 同 "台北復興堂" 兩個 entry
+(Tier 1 讀呢個檔做菜單,冇 entry 就唔會掂;聽朝 00:xx reconcile 會重新生成,所以完整
+patch(tier1Exclude flag+reject 4 條 junk+補 blocklist 詞)今晚內都要跟上)。
+如果 18:30 前冇人處理:靠三重 gate(片長/blocklist/四關)兜住,滲入嘅會喺聽朝我 check
+時清算+reject,冇永久損害(rejected 機制 7-27 起已 terminal),但係嘥 budget 嘥請求。
+
+---
+
+## ✅ 2026-07-31 執行 session(local_fa531849):18:05 緊急 patch 已全部落地,18:30 死線前搞掂
+
+**一分鐘止血(即刻做):** `cache/reconcile-missing.json` 刪走 "Asia for JESUS" entry
+("台北復興堂" 本身冇 entry,channel 早已係 null)。Tier1 即刻讀唔到菜單。
+
+**完整 patch 三步跟埋(唔止 6 個詞入面嘅 3 個,講清楚邊 3 個 + 點解):**
+
+1. **`tier1Exclude:true`**(`worshipGroups.js`,Asia for JESUS + 台北復興堂)+
+   `growLibrary.js` `runDiscoverAll()` 加一行 filter。⚠️ 範圍**唔止 Tier1**——
+   Tier2 嘅 `discoverFromGroup` 用緊同一套四關 pipeline,對呢類題目式標題冇固定
+   pattern 嘅雜頻道一樣冇免疫力,所以呢個 flag 令佢**完全**唔入 Tier1/Tier2 任何
+   自動候選,唔係淨係跳 Tier1。實測:兩個獨立 tick(`--budget 12`)log 入面
+   「Asia for JESUS」**0 次出現**,國語 Tier1 候選數由 3 跌到 2。
+
+2. **4 條 junk `curated=0, status='rejected'`**(id 3869/3870/3872/3873:年度異象
+   vision片 + 3 條青吶特會 workshop/講員分享)+ kickstart。查證:`curated=1`
+   跌返 0,`rejected` 由 5→9。
+
+3. **補漏咗嘅 blocklist 詞 —— 落地前 regression,confirm 你原方案嘅「異象/特會」
+   bare word 兩個都唔可以用:**
+   - `特會`(bare):12 中 7 個 curated=1 命中,7 個全部係**同心圓敬拜**嘅正牌歌
+     (「敬拜音樂特會」演唱會現場錄音,例如《城裡哀歌》TWS「HEART」特會2018)——
+     同「異象」bare word 一模一樣嘅陷阱,加落去會誤殺尋晚先狂 backfill 返嚟嗰批。
+   - 改用完整詞組:**`青吶特會`**(4 中 0 curated 誤殺)+ **`年度異象`**(2 中 0,
+     補完「異象片」呢個舊詞漏咗嘅「年度異象｜」變體——冇「片」字直接跟住嗰種)。
+   落地後 regression:curated=1 總 blocklist 命中數維持 5(baseline 不變,冇新
+   誤殺)。
+
+**改完即試(冇淨係改 code 就當完):** kickstart backend,dry-run + 真 run 各行一次
+`--budget 12` discover tick,確認 Asia for JESUS 完全消失於候選列印(2/2 次 0 命中)。
+
+**改動檔案:** `backend/cache/reconcile-missing.json`(止血,gitignore 唔入 git)、
+`backend/data/worshipGroups.js`(tier1Exclude ×2)、`backend/lib/hymnDb.js`
+(青吶特會/年度異象)、`backend/scripts/growLibrary.js`(tier1Exclude filter)、
+`backend/hymns.db`(4 條 reject)。18:30 死線前完成,未 commit,等指示。

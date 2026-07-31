@@ -546,6 +546,14 @@ async function runDiscoverAll(db, totalBudget) {
     // 零收穫冷卻(見 hymnDb.js `isChannelCoolingDown` 註解)—— 連續 8 個 tick
     // 都試唔到、收唔到嘅頻道,24 小時內唔再入選,唔畀佢哋夜夜燒晒個 slot。
     candidates = candidates.filter((g) => !isChannelCoolingDown(g.name));
+    // ⚠️ 2026-07-31 18:05 緊急(Fable 5):`tier1Exclude:true`(worshipGroups.js)
+    // ——內容太雜(研習會/見證/工作坊,題目式標題冇固定 pattern)嘅頻道,四關
+    // pipeline 都會偶爾漏網。Tier1 選台一解凍呢類頻道(Asia for JESUS)就即刻
+    // 用「清單多者先」揀中佢(全庫最大戶,612 條),一晚滲咗 4 條 junk。加呢個
+    // flag 令佢完全唔入 Tier1**同**Tier2 嘅自動候選(唔止 Tier1——Tier2 嘅
+    // `discoverFromGroup` 用緊同一套四關,對呢類雜頻道一樣冇免疫力),留返
+    // 俾人手/未來語義層逐條覆核先收。
+    candidates = candidates.filter((g) => !g.tier1Exclude);
     if (!candidates.length) continue;
 
     const tier1 = candidates.filter((g) => missingCache[g.name]?.missing?.length > 0);

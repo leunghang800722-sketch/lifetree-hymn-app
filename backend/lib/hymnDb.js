@@ -246,7 +246,15 @@ export const INSTRUMENTAL_TUTORIAL_PATTERNS_EN = ['tutorial', 'instrumental', 's
 // 查過(見上面 2026-07-30 第一輪嗰段)撞正「成為我異象 Be Thou My Vision」
 // 呢類正牌歌名,「異象片」加咗「片」字先窄到得返呢類促銷/介紹片。
 // 三個都對全庫 curated=1 regression 過,零誤殺。
-export const NON_SONG_FORMAT_PATTERNS_ZH = ['創意教室', '創意學校', '家長學生見證', '工作坊', '異象片', '優勢好好玩'];
+// 2026-07-31 緊急追加(Fable 5 18:05 條目,Tier1 解凍 Asia for JESUS 之後即刻
+// 漏網咗 4 條:「年度異象｜全新季節｜Vision 2024」+ 三條「青吶特會」workshop/
+// 講員分享片)。⚠️ 落地前查證:bare「特會」12 中 7 個 curated=1 命中,7 個全部
+// 係同心圓敬拜嘅正牌歌(「敬拜音樂特會」演唱會現場錄音,例如「《城裡哀歌》TWS
+// 敬拜者使團「HEART」敬拜音樂特會2018」)——同「異象」bare word 一樣嘅陷阱,
+// 唔可以用。「異象片」已經有(見上面),但「年度異象｜」呢個變體(冇「片」字
+// 直接跟住)漏網。用返完整詞組「青吶特會」/「年度異象」,兩個都 0 個
+// curated=1 誤殺(青吶特會 4 中 0、年度異象 2 中 0)。
+export const NON_SONG_FORMAT_PATTERNS_ZH = ['創意教室', '創意學校', '家長學生見證', '工作坊', '異象片', '優勢好好玩', '青吶特會', '年度異象'];
 export const NON_SONG_FORMAT_PATTERNS_EN = ['word absurd', 'song story'];
 export function isNonWorship(title = '', artist = '') {
   if (SECULAR_ARTISTS.includes((artist || '').toLowerCase().trim())) return true;
