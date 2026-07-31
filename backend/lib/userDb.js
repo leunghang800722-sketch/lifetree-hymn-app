@@ -28,6 +28,10 @@ function initSchema(db) {
   try { db.run('ALTER TABLE users ADD COLUMN phone TEXT'); } catch (_) {}
   // requireAuth 順手記低最後活躍時間,舊 DB 冇呢欄就補一次(MEMBERSHIP-PHASE1 §1.2)。
   try { db.run('ALTER TABLE users ADD COLUMN last_seen_at TEXT'); } catch (_) {}
+  // 管理員角色(MEMBERSHIP-PHASE2-ADMIN-PLAN §2.1)—— 冇任何 HTTP API 寫得,
+  // 唯一途徑係 scripts/setAdmin.js。SQLite ADD COLUMN 帶 DEFAULT 對舊行都生效,
+  // 但讀嗰邊一律再兜底 `row.role || 'member'`,唔賭 driver 行為。
+  try { db.run("ALTER TABLE users ADD COLUMN role TEXT DEFAULT 'member'"); } catch (_) {}
 
   // ── 會員系統 Phase 1:跨裝置同步(MEMBERSHIP-PHASE1-LOGIN-SYNC §1.1)──────
   db.run(`CREATE TABLE IF NOT EXISTS favorites (

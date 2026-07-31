@@ -143,7 +143,7 @@ export default function otpAuthRoutes(app, getUserDb) {
 
       // upsert:有 phone 就登入,冇就開新用戶(註冊登入合一)
       let user = null;
-      const sel = db.prepare('SELECT id, username, email, phone FROM users WHERE phone = ?');
+      const sel = db.prepare('SELECT id, username, email, phone, role FROM users WHERE phone = ?');
       sel.bind([phone]);
       if (sel.step()) user = sel.getAsObject();
       sel.free();
@@ -155,12 +155,12 @@ export default function otpAuthRoutes(app, getUserDb) {
         db.run('INSERT INTO users (username, email, password_hash, phone) VALUES (?, ?, ?, ?)',
           [null, `phone_${phone}@placeholder.local`, 'otp-no-password', phone]);
         saveUserDb(db);
-        const s2 = db.prepare('SELECT id, username, email, phone FROM users WHERE phone = ?');
+        const s2 = db.prepare('SELECT id, username, email, phone, role FROM users WHERE phone = ?');
         s2.bind([phone]); s2.step(); user = s2.getAsObject(); s2.free();
       }
 
       const token = jwt.sign({ id: user.id, username: user.username }, JWT_SECRET, { expiresIn: TOKEN_EXPIRY });
-      res.json({ token, user: { id: user.id, username: user.username, phone: user.phone }, isNew });
+      res.json({ token, user: { id: user.id, username: user.username, phone: user.phone, role: user.role || 'member' }, isNew });
     } catch (e) {
       console.error('otp/verify error:', e?.message);
       res.status(500).json({ error: 'server_error' });

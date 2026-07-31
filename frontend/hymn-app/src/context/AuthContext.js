@@ -104,8 +104,14 @@ export function AuthProvider({ children }) {
 
   const getToken = useCallback(() => token, [token]);
 
+  // MEMBERSHIP-PHASE2-ADMIN-PLAN §2.3:UI 遮罩用,唔係安全邊界(API 有
+  // requireAdmin 每 request 由 DB 核實兜底)。role 跟現有 user object 持久化,
+  // 零新機制;App 而家開機冇 call /api/auth/me 刷新 user,所以褫奪要等用戶
+  // 下次重新登入先喺 UI 反映——冇安全後果(admin API 一早 403 咗)。
+  const isAdmin = user?.role === 'admin';
+
   return (
-    <AuthContext.Provider value={{ user, token, loading, register, login, logout, getToken, requestOtp, verifyOtp }}>
+    <AuthContext.Provider value={{ user, token, loading, isAdmin, register, login, logout, getToken, requestOtp, verifyOtp }}>
       {children}
     </AuthContext.Provider>
   );
