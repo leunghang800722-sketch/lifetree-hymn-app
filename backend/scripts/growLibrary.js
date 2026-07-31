@@ -41,15 +41,19 @@
 //   node scripts/growLibrary.js --status          # 淨係報告進度,唔改嘢
 //   node scripts/growLibrary.js --ignore-window   # 手動測試用,繞過時段檢查(而家預設已經冇時段限制)
 
+import fs from 'fs';
 import {
   openDb, saveDb, query, sleep, isCompilation, isNonWorship, dedupeByYoutubeId,
   acquireDbLock, releaseDbLock, listChannelVideos, formatDuration,
   isInSongDurationBand, passesTitlePositiveSignal,
   isDiscoverCoolingDown, recordDiscoverFailure, clearDiscoverFailure,
+  isChannelCoolingDown, recordChannelYield, clearChannelCooldown,
 } from '../lib/hymnDb.js';
 import { resolveAudioUrl } from '../lib/resolveAudio.js';
 import { ACTIVE_GROUPS } from '../data/worshipGroups.js';
 import { cleanDisplayTitle } from '../lib/displayTitle.js';
+import { backfillGroupFromList } from '../lib/backfillCore.js';
+import { reconcileGroupIncremental, loadMissingCache, saveMissingCache, MISSING_CACHE_PATH } from '../lib/reconcileCore.js';
 
 const arg = (f, d) => { const i = process.argv.indexOf(f); return i > -1 && process.argv[i + 1] ? process.argv[i + 1] : d; };
 const MODE = arg('--mode', 'curate');
@@ -152,6 +156,14 @@ const PAUSED_KIDS_LANGUAGES = new Set(['英文']);
 const today = () => new Date().toISOString().slice(0, 10);
 const stamp = () => new Date().toISOString().replace('T', ' ').slice(0, 19);
 const log = (...a) => console.log(`[${stamp()}]`, ...a);
+
+// 2026-07-31 Fable 5 結構性修復:每日一次自動 reconcile 嘅「今日做過未」marker,
+// 存喺 cache 旁邊一個純文字檔(格式 YYYY-MM-DD,本機時區)。
+const LAST_RECONCILE_MARKER = MISSING_CACHE_PATH.replace(/reconcile-missing\.json$/, 'last-reconcile-date.txt');
+function todayLocal() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
 
 function inWindow() {
   const h = new Date().getHours();
@@ -502,77 +514,126 @@ async function discoverFromGroup(db, group, budget) {
 // 因為粵語有 17 個未吸納團體排喺前面),兒童 13 個團體會排到好後,一直冇
 // 機會郁。而家逐個未暫停語言都揀返「該語言優先度最高嗰一個未吸納團體」,
 // 平均分 budget,一個 run 入面粵/國/兒童一齊有進度。
+//
+// ⚠️ 2026-07-31 Fable 5 結構性修復(SUPERVISION-LOG「選台邏輯+自動循環」
+// 條目)—— 承接 Eric 質疑「成晚冇攞到歌」查證出嚟嘅根因:「已收錄最少優先」
+// 淨係睇 count 做選台訊號,喺 backfill 時代已經失效:count 高 ≠ 冇嘢收
+// (CantonHymn backfill 完 293 首,但 `cache/reconcile-missing.json` 仲有
+// 幾百首欠收);count 低 ≠ 有嘢收(flow music/Asia for JESUS/基恩敬拜祈禱仔
+// 啲剩餘候選結構性過唔到片長/分類關,永遠 0 收穫但因為 count 最細永遠贏中
+// 選)。**修訊號,唔係修排序**——兩級制:
+//   Tier 1:呢個頻道喺 reconcile-missing.json 有非空欠收清單 → 直接用
+//     `backfillGroupFromList()`(同 `backfillFromList.js` 呢個人手工具**同一份**
+//     code,見 `lib/backfillCore.js`)食清單,唔理 count 幾多。清單多者先
+//     (貼近 Eric「攞齊」目標)。
+//   Tier 2:冇 reconcile 數據(未 reconcile 過/新頻道)嘅頻道 → fallback 用返
+//     舊「已收錄最少優先」邏輯,搵 listing window 之內嘅新片(`discoverFromGroup`)。
 async function runDiscoverAll(db, totalBudget) {
   const langs = [...new Set(ACTIVE_GROUPS.map((g) => g.lang))].filter((l) => !PAUSED_LANGUAGES.has(l));
+  const missingCache = loadMissingCache();
 
-  // ⚠️ 2026-07-23 Eric 拍板:「所有團體/歌手都唔設上限,淨係用『邊個收錄
-  // 最少就優先』做多樣性」—— discover mode 揀邊個未吸納團體都跟返呢條原則,
-  // 唔係死跟 priority。原因:一個語言入面通常有成十幾個未吸納團體(兒童
-  // 13 個入面 7 個有 channel),死跟 priority 會令永遠都係嗰一個團體攞晒
-  // budget,個 channel 攞晒先會輪到第二個,13 個團體實際上會變成「得一個
-  // 郁」。而家逐次都揀返「已經幫佢收錄最少」嗰個,自然輪流晒。
   const artistCounts = new Map();
   for (const r of query(db, `SELECT artist, COUNT(*) c FROM hymns_all WHERE curated=1 GROUP BY artist`)) {
     artistCounts.set(r.artist, r.c);
   }
-  // ⚠️ 2026-07-24 修:打和(例如兒童 4 個團體啱啱好全部 1 首)嗰陣,`.sort()`
-  // 係 stable sort,而 `a.priority - b.priority` 喺**同一語言**入面永遠係
-  // 0(同語言嘅團體 priority 值全部一樣,呢個 tiebreak 從來冇真正生效過)
-  // —— 結果打和永遠揀返陣列排第一嗰個。實測踩過:Saddleback Kids 排
-  // 兒童組第一,4 個團體打和 1 首之後,佢個頻道現有 listing 已經攞晒
-  // (試極都 0 條),但因為「打和揀第一」佢仍然每次贏,其他 3 個永遠冚
-  // 唔到棚。同 curate mode 嗰個「唔可以用固定次序,要隨機」(見
-  // `pickNextCandidate`)係同一個坑。改用隨機 tiebreak,打和嗰陣每個
-  // 團體機會均等,唔會再被同一個(尤其係已經攞晒嘅)團體長開霸位。
+
   const langCandidates = [];
   for (const lang of langs) {
     let candidates = ACTIVE_GROUPS.filter((g) => g.lang === lang && !g.inPool && g.channel);
-    // 2026-07-28 Eric 拍板:兒童呢個桶入面,暫停英文(見 PAUSED_KIDS_LANGUAGES
-    // 註解)—— 淨係喺呢一步過濾,唔改 `langs`/`langCandidates.length` 嘅計法,
-    // 所以「兒童」依然照舊佔一個 lang slot、攞返佢嗰份 budget(下面
-    // `perGroup`),淨係嗰份 budget 而家淨會揀中文兒童團體,唔會漏俾第二個
-    // 頂層語言(粵語/國語成人桶完全獨立,冇被呢個過濾掂到)。
     if (lang === '兒童') {
       candidates = candidates.filter((g) => !PAUSED_KIDS_LANGUAGES.has(g.kidsLang));
     }
+    // 零收穫冷卻(見 hymnDb.js `isChannelCoolingDown` 註解)—— 連續 8 個 tick
+    // 都試唔到、收唔到嘅頻道,24 小時內唔再入選,唔畀佢哋夜夜燒晒個 slot。
+    candidates = candidates.filter((g) => !isChannelCoolingDown(g.name));
     if (!candidates.length) continue;
-    candidates.sort((a, b) => (artistCounts.get(a.name) || 0) - (artistCounts.get(b.name) || 0)
+
+    const tier1 = candidates.filter((g) => missingCache[g.name]?.missing?.length > 0);
+    const tier2 = candidates.filter((g) => !(missingCache[g.name]?.missing?.length > 0));
+    // Tier 1 內部:欠收清單多者先。Tier 2 內部:沿用返舊邏輯(已收錄最少優先
+    // + 隨機 tiebreak——打和唔可以用固定次序,見底下歷史教訓)。
+    tier1.sort((a, b) => missingCache[b.name].missing.length - missingCache[a.name].missing.length);
+    tier2.sort((a, b) => (artistCounts.get(a.name) || 0) - (artistCounts.get(b.name) || 0)
       || Math.random() - 0.5);
-    langCandidates.push(candidates);
+
+    langCandidates.push({ lang, tier1, tier2 });
   }
-  if (!langCandidates.length) { log('冇未吸納、又有官方頻道、又未暫停嘅團體'); return 0; }
+  if (!langCandidates.length) { log('冇未吸納、又有官方頻道、又未暫停、又未冷卻嘅團體'); return 0; }
 
   const perGroup = Math.max(1, Math.floor(totalBudget / langCandidates.length));
   log(`mode=discover(all-languages) 未吸納語言 ${langCandidates.length} 個,每個 budget=${perGroup}:` +
-      langCandidates.map((cs) => `${cs[0].name}(${cs[0].lang},已收錄${artistCounts.get(cs[0].name) || 0})`).join('、'));
+      langCandidates.map(({ lang, tier1, tier2 }) => `${lang}(Tier1×${tier1.length}/Tier2×${tier2.length})`).join('、'));
 
-  // ⚠️ 2026-07-24 修:「已收錄最少優先」對**永遠零產出**嘅頻道冇免疫力 ——
-  // 404 handle、全講道頻道(台北611靈糧堂/Saddleback Kids 實測)、現有
-  // listing 攞晒,呢啲頻道乜都收唔到,個 count 永遠最細,永遠贏個 slot,
-  // 成個語言嘅 discover 就咁卡死(2026-07-23 夜晚實測:三個語言 slot
-  // 全部卡晒,由 23:24 到朝早成晚 0 首)。而家一個頻道連「試」都試唔到
-  // 一條(listing 失敗/冇新片/全部俾分類篩走)—— 即係 budget 一啖都未
-  // 使過 —— 就即場跳去同語言下一個團體。有真.試過(唔理收唔收到)先算
-  // 用咗個 slot,唔會加大對 YouTube 嘅實際請求量。
-  // ⚠️ 2026-07-26 追加修:原本硬寫死「最多試 3 個」,但國語得 5 個候選、
-  // 兒童得 4 個 ——實測 Eric 問「點解全日 0 增長」揪出嚟:粵/國/兒童三個
-  // 語言嘅「已收錄最少」bottom-3 剛好全部係持續低產嘅頻道(611靈糧堂/
-  // Asia for JESUS/台北復興堂;Saddleback/Listener/Hillsong Kids),
-  // 3 個試晒都仲係 0,但 3 已經係國語/兒童成個候選名單嘅六成幾,冚唔到
-  // 剩低嗰 1-2 個健康候選(611 Worship/新心音樂事工;Kids on the Move)。
-  // 改做「呢個語言有幾多候選就試幾多」(冇上限跳過任何一個),確保一定
-  // 唔會漏低仲有嘢俾嘅團體。粵語 15 個團體全試都係 15 次列表 call,
-  // 一樣平,唔會加大 resolve 呼叫量(淨係試唔到嘅唔算 resolve)。
+  // ⚠️ 2026-07-24 修(Tier 2 沿用):「已收錄最少優先」對永遠零產出嘅頻道
+  // 冇免疫力,一個頻道連「試」都試唔到一條就即場跳去同語言下一個候選,
+  // 唔會加大對 YouTube 嘅實際請求量。2026-07-26 追加修:唔設「最多試 N 個」
+  // 上限,呢個語言有幾多候選就試幾多,確保唔會漏低仲有嘢俾嘅團體。
   let added = 0;
-  for (const candidates of langCandidates) {
-    for (const group of candidates) {
+  for (const { tier1, tier2 } of langCandidates) {
+    let doneThisTick = false;
+
+    for (const group of tier1) {
+      const entry = missingCache[group.name];
+      log(`  Tier1 backfill:${group.name}(${group.lang},欠收${entry.missing.length}條),額度 ${perGroup}`);
+      const r = await backfillGroupFromList(db, group, entry.missing, perGroup, { delayMs: DELAY_MS, dry: DRY, log });
+      added += r.added;
+      recordChannelYield(group.name, r.added, r.tried);
+      if (r.tried > 0) { doneThisTick = true; break; }
+      log(`    「${group.name}」Tier1 今次一條都試唔到,跳去下一個候選`);
+    }
+    if (doneThisTick) continue;
+
+    for (const group of tier2) {
       const r = await discoverFromGroup(db, group, perGroup);
       added += r.added;
+      recordChannelYield(group.name, r.added, r.tried);
       if (r.tried > 0) break;
-      log(`    「${group.name}」今次一條都試唔到,budget 原封不動,跳去同語言下一個團體`);
+      log(`    「${group.name}」Tier2 今次一條都試唔到,budget 原封不動,跳去同語言下一個團體`);
     }
   }
   return added;
+}
+
+// ⚠️ 2026-07-31 Fable 5 結構性修復:每日一次自動 reconcile,「冇人手跟就
+// 停產」嘅缺口正式閂埋——欠收清單自動生成+自動消化(Tier 1),唔使等人手
+// 記得手動跑 reconcileChannels.js。Incremental:淨係攞官方數(平)同上次
+// 已知嘅比,冇變就 skip,增量成本近零。淨係 00:xx 嗰個鐘做一次(避開
+// checkDeadLinks 04:00),同一日內第二次 tick 見 marker 已經係今日就即刻
+// return,唔會夜夜/次次都做。
+async function maybeRunDailyReconcile(db) {
+  const now = new Date();
+  if (now.getHours() !== 0) return;
+  let lastDate = '';
+  try { lastDate = fs.readFileSync(LAST_RECONCILE_MARKER, 'utf8').trim(); } catch (_) {}
+  if (lastDate === todayLocal()) return;
+
+  log('每日自動 reconcile 開始(incremental,About 數冇變嘅頻道 skip)…');
+  const targets = ACTIVE_GROUPS.filter((g) => g.priority <= 4 && g.channel && g.lang !== '英文'
+    && !(g.lang === '兒童' && g.kidsLang === '英文'));
+  const missingCache = loadMissingCache();
+  let changed = 0, skipped = 0, errored = 0;
+  for (const g of targets) {
+    try {
+      const cachedCount = missingCache[g.name]?.officialCount ?? null;
+      const r = await reconcileGroupIncremental(db, g, cachedCount);
+      if (!r) { skipped++; continue; }
+      changed++;
+      missingCache[g.name] = {
+        updatedAt: new Date().toISOString(), channel: g.channel, lang: g.lang,
+        officialCount: r.official, missing: r.missing.map((v) => ({ id: v.id, title: v.title, duration: v.duration })),
+      };
+      // 官方數變咗、有新欠收 = 真係有新片,即刻解凍(唔使等 24 小時 cooldown 過期)。
+      if (r.missing.length > 0) clearChannelCooldown(g.name);
+      log(`  reconcile:${g.name} 官方${r.official} 枚舉${r.enumerated} 欠收${r.missing.length}`);
+    } catch (e) {
+      errored++;
+      log(`  ⚠ reconcile ${g.name} 出錯:${e?.message || e}`);
+    }
+    await sleep(jitter(1500));
+  }
+  saveMissingCache(missingCache);
+  fs.writeFileSync(LAST_RECONCILE_MARKER, todayLocal(), 'utf8');
+  log(`每日自動 reconcile 完成:${changed} 個頻道有變(已更新清單)、${skipped} 個冇變(skip)、${errored} 個出錯`);
 }
 
 // 自測:摸擬唔同「星期幾 + 幾點」組合,唔使等真實時鐘行到嗰個時間先驗證。
@@ -655,6 +716,12 @@ async function main() {
 
     const db = await openDb();
     report(db);
+
+    // ⚠️ 2026-07-31 Fable 5 結構性修復:排程正常路徑先做(手動 --mode discover
+    // 測試唔做,唔想每次手動驗證都拖埋成個 reconcile)。淨係一日一次(00:xx),
+    // incremental,冇變嘅頻道即刻 skip,唔會拖慢正常 tick。
+    if (MODE !== 'discover') await maybeRunDailyReconcile(db);
+
     let added;
     if (MODE === 'discover') {
       // 手動測試/明確指定 discover:用返成個 --budget,唔使夾埋 curate。

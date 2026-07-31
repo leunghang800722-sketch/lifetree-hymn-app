@@ -1535,3 +1535,106 @@ script,要麼修 `runDiscoverAll()` 嘅選台邏輯(唔好淨係睇 count,都要
 **改動檔案:** `backend/lib/hymnDb.js`(新增「簡介」「—介紹」關鍵字)、
 `backend/hymns.db`(補收 90 首 + retroactive reject 7 首)。已 commit `f90980c`,
 等指示 push。
+
+## 🔧 2026-07-31 選台邏輯+自動循環 結構性修復方案(Fable 5,派 local_fa531849 落地)
+
+**根因定性(承接上面執行 session 查證):** 「已收錄最少優先」用 count 做選台訊號,喺
+backfill 時代已經失效 —— count 高≠冇嘢收(CantonHymn 293 首但欠收清單仲有幾百),
+count 低≠有嘢收(flow/AsiaJesus/祈禱仔啲剩餘候選結構性過唔到 gate,永遠 0 收穫但
+永遠贏中選)。7-24 fallthrough 修嘅係「一個頻道卡死個 slot」;今次係「成個候選池
+排序都指錯方向」。修訊號,唔係修排序。
+
+**方案(三件,一齊落地先算完):**
+
+**1. 選台改兩級制(runDiscoverAll):**
+- **Tier 1(有欠收清單先食):** `cache/reconcile-missing.json` 有非空欠收清單嘅頻道,
+  直接由清單攞 id 行 backfillFromList 嘅四關邏輯(code path 合一,唔好維護兩套)。
+  排序用欠收數多者先(或 round-robin,executor 判斷)。呢個直接對應 Eric「攞齊」目標。
+- **Tier 2(fallback):** 冇欠收數據嘅頻道(未 reconcile/新頻道)先用返「已收錄最少+
+  隨機 tiebreak」舊邏輯搵新片。
+- **零收穫冷卻(補完 7-24 fallthrough):** per-channel persist「連續 0 tried 0 added
+  嘅 tick 數」,連續 ≥8 個 tick 零收穫 → 冷卻 24 小時唔入候選。flow/AsiaJesus/祈禱仔
+  呢類結構性零收穫戶即刻唔再夜夜燒 budget;佢哋出新片後 About 數變,reconcile 會
+  自動再納入。
+
+**2. reconcile 掛落自動循環(唔開新 launchd job,併入現有 15 分鐘 tick):**
+- 每晚第一個 04:0x 之後嘅 tick(或 00:0x,避開 deadlink 04:00,executor 揀)自動重跑
+  reconcileChannels 更新欠收清單;About 數冇變嘅頻道 skip(增量近零成本)。
+- 每個 tick 嘅 Tier 1 自動消化清單 → 「冇人手跟就停產」缺口正式閂埋:
+  清單自動生成+自動消化,欠收=0 先會全面退返 Tier 2。
+- backfillFromList.js 保留做人手工具,但唔再係唯一通道。
+
+**3. Layer2「song」盲點(執行者自己揪出,一齊修):** title allowlist 單字 `song` 太闊
+(「Song Story」中招),改精確組合(sing-along/lyric video/worship song/official audio
+等),照紅線 regression query 驗完先落。
+
+**驗證標準(我 loop 逐項驗):** ①落地後 6 個 tick 內 log 見 Tier 1 由 CantonHymn/同心圓/
+新心欠收清單收歌;②flow/AsiaJesus/祈禱仔入冷卻後唔再每 tick 現身;③聽晚 04:0x 自動
+reconcile 有 log;④欠收清單總數逐晚下降直至 0;⑤全程 0 error、節奏不變。
+
+**另:commit f90980c 可以 push**(內容我睇過:blocklist 兩詞+DB 補收,冇夾其他 session 嘢)。
+
+**2026-07-31 09:15 check 過，正常（DB 2680／兒童 453／draft 148／verified 207）。**
+- growLibrary 尋晚 +83(粵1301/國864),0 error。**🔧 兩級制選台方案未落地**(log 冇 Tier1/
+  冷卻痕跡,tick 仍行舊邏輯)—— 執行 session 未接手,繼續等;期間靠人手 backfill 頂住。
+- fetchLyrics 尋晚 CC50→OCR 40/40 滿額 ✓,draft 69→148(新收歌入隊+OCR 出貨)。
+
+---
+
+## ✅ 2026-07-31 執行 session(local_fa531849):結構性修復方案三件全部落地+實測
+
+跟返一貫「改完即試」,逐項落地並用真 run 驗證(唔淨係改 code 就當完):
+
+**1. 選台改兩級制** —— `growLibrary.js` `runDiscoverAll()` 重寫。實際邏輯搬咗去
+`lib/backfillCore.js`(`backfillGroupFromList`),`growLibrary.js` 嘅自動 Tier 1
+同 `backfillFromList.js` 呢個人手工具而家**同一份** code path(方案原文要求
+「code path合一，唔好維護兩套」)。同理,`reconcileChannels.js` 嘅三數對帳邏輯
+搬咗去 `lib/reconcileCore.js`,俾 growLibrary.js 嘅每日自動 reconcile(第2項)
+共用。
+
+**實測結果 —— 即刻解凍咗俾卡死 13 個鐘嘅 Asia for JESUS:**
+```
+Tier1 backfill:CantonHymn(粵語,欠收298條) → ✓收錄×2(真.INSERT,唔係dry)
+Tier1 backfill:Asia for JESUS(國語,欠收612條) → ✓收錄×2
+```
+Asia for JESUS 之前查證嗰陣「已收錄0」、每 tick 都撞正「WE R ONE」medley 全部
+擋晒,連環 13 個鐘 0 收穫;而家由 reconcile 出嚟嘅 612 條欠收清單直接餵,即刻
+有真收穫(0→2,查 DB 確認)。CantonHymn 同期 322→324。兒童組(Giggles and
+Tunes Tier1 0 試 → 跌落 Tier2 基恩敬拜祈禱仔/ACM兒童詩歌/讚美之泉兒童,全部
+0 試)—— fallback 邏輯行為正確,清單真係見底就落返 Tier2,唔係卡死。
+
+**2. 零收穫冷卻** —— `hymnDb.js` `isChannelCoolingDown`/`recordChannelYield`/
+`clearChannelCooldown`,存 `cache/channel-cooldown.json`。用真實 8-tick 模擬
+(`recordChannelYield('flow music', 0, 0)` × 8)確認第 8 次先觸發 cooldown、
+之前 7 次都唔觸發;確認生效後嗰個頻道即刻喺 `runDiscoverAll` 嘅候選名單度
+消失(粵語 Tier2 由 5 個跌到 4 個)。已清返呢次純測試整出嚟嘅假 cooldown
+記錄,唔留低污染真實狀態。
+
+**3. reconcile 掛落自動循環** —— `growLibrary.js` `maybeRunDailyReconcile()`,
+每日 00:xx 嗰個 tick 先行一次,`reconcileGroupIncremental()` 兩條分支都直接
+調用驗證過:官方數冇變 → 傳返 `null`(skip,增量成本近零);強制傳一個假舊
+數(999)→ 觸發完整三分頁枚舉,傳返完整 report。呢個係之前「未掛落 launchd」
+缺口嘅正式修復——欠收清單而家會自動生成,唔使人手記得手動跑。
+
+**4. Layer2「song」盲點 —— 冇跟 Fable 5 原文字面做,原因有數據支持:**
+獨立 regression 查過,bare 移除 `\bsong\b` 會令 30 個真.正牌歌 title 跌出
+Layer2 allowlist(其中 8 個已經 curated=1,例如「Easter song for kids」
+「Memory Verse Song」),損失遠大過收益。**查清楚先發現「song story」問題
+其實已經俾第二個 session(Eric 親自喺兒童分類撳到)用更精準嘅做法解決咗**——
+`hymnDb.js` `NON_SONG_FORMAT_PATTERNS_EN` 已經有 `'word absurd'`/`'song story'`
+兩個負面詞組(用嚟擋,唔係窄化正面 allowlist),獨立驗證兩個詞組全庫 0
+curated=1 誤殺。**冇再郁 Layer2**,避免修一個已經修好嘅嘢仲順手整壞第二樣。
+
+**5. 意外事故(順手修埋):** 測試期間 `checkDeadLinks.js --help` 探測意外觸發
+咗一個真.死鏈檢查 run(佢冇 `--help` 呢個 flag,會當正常 run 落去),kill 咗
+之後留低一個 `hymns.db.lock` 殘留檔(pid 已死但未夠 20 分鐘 stale threshold,
+會鎖住之後 ~20 分鐘嘅正常 tick)。已確認鎖內容真係嗰個俾我 kill 咗嘅 pid
+先手動刪走,唔係亂咁刪。
+
+**改動檔案:** `backend/lib/hymnDb.js`(channel-cooldown 機制)、`backend/lib/
+backfillCore.js`(新,共用 backfill 邏輯)、`backend/lib/reconcileCore.js`(新,
+共用 reconcile 邏輯 + incremental 版)、`backend/scripts/growLibrary.js`
+(Tier1/Tier2 選台 + 每日自動 reconcile)、`backend/scripts/backfillFromList.js`
+/`reconcileChannels.js`(簡化做 CLI wrapper,call 共用 lib)、`backend/hymns.db`
+(測試期間嘅少量真實 backfill)。全部 `node --check` 過、真 run 驗證過。
+未 commit,等指示。

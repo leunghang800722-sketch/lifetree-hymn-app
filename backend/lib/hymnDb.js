@@ -372,6 +372,65 @@ export function clearDiscoverFailure(youtubeId) {
   }
 }
 
+// ── per-頻道零收穫冷卻(2026-07-31 Fable 5 結構性修復方案)──────────────
+// 事故:「已收錄最少優先」淨係睇 count,對「結構性零收穫」嘅頻道(fresh 候選
+// 永遠得果幾條、永遠過唔到片長/分類關,例如 flow music 得一條 92 分鐘
+// busking 片、基恩敬拜祈禱仔得一條「專輯介紹」)冇免疫力——呢批頻道會
+// 夜夜贏中選但貢獻 0,冚住健康頻道(尤其係 backfill 完之後 count 谷高咗
+// 嘅 CantonHymn/同心圓/新心)嘅 slot。連續 8 個 tick(約 2 個鐘)都
+// tried=0 且 added=0,就冷卻 24 小時唔再入選;頻道出新片(reconcile 見到
+// 官方數變/有新欠收)會自動解凍(見 `reconcileChannels.js`)。
+const CHANNEL_COOLDOWN_PATH = path.join(__dirname, '..', 'cache', 'channel-cooldown.json');
+const ZERO_YIELD_THRESHOLD = 8;
+const ZERO_YIELD_COOLDOWN_MS = 24 * 60 * 60 * 1000; // 24 小時
+
+function loadChannelCooldown() {
+  try {
+    return JSON.parse(fs.readFileSync(CHANNEL_COOLDOWN_PATH, 'utf8'));
+  } catch (_) {
+    return {};
+  }
+}
+let channelCooldown = loadChannelCooldown();
+
+function saveChannelCooldown() {
+  try {
+    fs.mkdirSync(path.dirname(CHANNEL_COOLDOWN_PATH), { recursive: true });
+    fs.writeFileSync(CHANNEL_COOLDOWN_PATH, JSON.stringify(channelCooldown), 'utf8');
+  } catch (e) {
+    console.warn('channel-cooldown 寫入失敗:', e?.message);
+  }
+}
+
+export function isChannelCoolingDown(groupName) {
+  const rec = channelCooldown[groupName];
+  return !!(rec && rec.cooldownUntil && rec.cooldownUntil > Date.now());
+}
+
+// 每次一個頻道試完(唔理係 Tier 1 定 Tier 2),call 呢個記低今次嘅收成。
+// 連續 8 次「一條都試唔到、一首都冇收」先算數,中間但凡有一次 tried>0
+// 或者 added>0 都即刻重設(唔想一時三刻嘅波動就誤冷卻仲有嘢俾嘅頻道)。
+export function recordChannelYield(groupName, added, tried) {
+  const rec = channelCooldown[groupName] || { zeroStreak: 0, cooldownUntil: 0 };
+  if (added === 0 && tried === 0) {
+    rec.zeroStreak = (rec.zeroStreak || 0) + 1;
+    if (rec.zeroStreak >= ZERO_YIELD_THRESHOLD) rec.cooldownUntil = Date.now() + ZERO_YIELD_COOLDOWN_MS;
+  } else {
+    rec.zeroStreak = 0;
+    rec.cooldownUntil = 0;
+  }
+  channelCooldown[groupName] = rec;
+  saveChannelCooldown();
+}
+
+// reconcile 見到官方數變(即係話真係有新片)就解凍,唔使等 24 小時。
+export function clearChannelCooldown(groupName) {
+  if (channelCooldown[groupName]) {
+    delete channelCooldown[groupName];
+    saveChannelCooldown();
+  }
+}
+
 // The DB has 208 groups of duplicate youtube_ids (same video under different
 // ids). Keep the lowest id of each group as canonical.
 export function dedupeByYoutubeId(rows) {

@@ -15,7 +15,7 @@
 | 最新版本 | **versionName 1.3.8 / versionCode 49**（commit `f7a249e`）。APK 喺 `~/Desktop/詩歌App/` |
 | 分支 | `feature/player-rebuild`（未 merge 返 `develop-v211`） |
 | 後端 | 跑喺 **Eric 部 Mac**，`https://api.god-music.com`（Cloudflare named tunnel，固定 URL）。backend + tunnel 由 launchd 自動管理，登入就行、死咗自動起返 |
-| 歌庫 | `hymns_all` 3232+ 首，**curated 2622 首**（粵 1241 / 國 843 / 兒童 476 / 英 62）。2026-07-30 一晚 backfill +892。歌詞：verified 90+、draft 100+（另一 session 進度，見 SUPERVISION-LOG） |
+| 歌庫 | `hymns_all` 3292+ 首，**curated 2682 首**（粵 1300 / 國 867 / 兒童 453 / 英 62）。2026-07-30 一晚 backfill +892,7-31 選台邏輯結構性修復後續有增長。歌詞：verified 90+、draft 100+（另一 session 進度，見 SUPERVISION-LOG） |
 | 背景 job | growLibrary（每 15 分鐘擴歌庫）、checkDeadLinks（每晚 04:00）、fetchLyrics（每晚 **01:00 + 05:00 兩個時段**，各 CC 50 + OCR 40，2026-07-27 Eric 拍板 80 首/晚拆半） |
 | 前端 stack | Expo SDK 56 / RN 0.85.3、react-native-track-player v4、@gorhom/bottom-sheet + reanimated 4、MMKV |
 | 後端 stack | Node 18 ESM + Express 4、SQLite via `sql.js`、`yt-dlp` |
@@ -285,12 +285,46 @@ EAS 專案：`@god-music-team/hymn-app`，`EXPO_TOKEN` 已寫入 `~/.zshrc`（�
   重試同一條廢片(事故:SOP兒童一條片俾重試咗 848 次)。同 `resolveAudio.js`
   嗰個 15 分鐘 `failCache` 唔係同一樣嘢 —— 嗰個管緊單一 process 短暫避免重複
   打 YouTube,呢個係跨 run 持久化、以累計次數判斷嘅獨立機制。
-- **⚠️ 未做:呢兩個 script 未掛落 launchd**,而家係人手/session 手動跑。要做到
-  「每晚重跑,欠收自動追收」呢個持續保證,要開新 job(排程/PATH env var 跟
-  §2.5 規矩)——留俾下一輪。
 - **`isInSongDurationBand(seconds, maxOverride)`** 加咗第二個參數,俾 per-group
   `durationCapSec`(`worshipGroups.js`)override 標準 600s 上限。**只用喺 611
   Worship**(Eric 拍板全收 13-31 分鐘 live worship set),全局預設完全冇郁。
+
+#### 2.11.1 選台邏輯結構性修復(2026-07-31,「成晚冇攞到歌」事故之後)
+
+**事故根因:** §2.11 落地當晚,backfill 將 CantonHymn/同心圓敬拜/新心音樂事工
+谷到 293/204/387 首,`runDiscoverAll()` 嘅「已收錄最少優先」選台邏輯**永遠
+唔會再揀佢哋**(count 太高輸晒)——即使佢哋喺 `reconcile-missing.json` 仲有
+幾百首合法欠收,`backfillFromList.js` 又未掛落自動循環,每個自動 tick 都轉去
+揀 flow music/Asia for JESUS/基恩敬拜祈禱仔呢類「count 最細」但**剩餘候選
+結構性過唔到片長/分類關**嘅頻道,連續 13 個鐘、每 tick 都揀中呢 3 個、每次
+0 收穫。教訓:**count 高≠冇嘢收,count 低≠有嘢收**,呢個訊號喺 backfill
+時代已經失效。
+
+**修法:選台改兩級制,唔改排序,改訊號:**
+- **Tier 1**(有欠收清單先食):`ACTIVE_GROUPS` 入面喺 `reconcile-missing.json`
+  有非空 `missing` 清單嘅頻道,直接用 `lib/backfillCore.js`
+  `backfillGroupFromList()`(同 `backfillFromList.js` 呢個人手工具**同一份**
+  code)食清單,唔理 count 幾多,清單多者先。
+- **Tier 2**(fallback):冇 reconcile 數據嘅頻道,用返舊「已收錄最少優先」
+  邏輯(`discoverFromGroup`)搵 listing window 之內嘅新片。
+- **零收穫冷卻**(`hymnDb.js` `isChannelCoolingDown`/`recordChannelYield`/
+  `clearChannelCooldown`,存 `cache/channel-cooldown.json`):per-頻道 persist
+  連續零收穫(`tried=0 且 added=0`)嘅 tick 數,連續 ≥8 次(約 2 個鐘)就冷卻
+  24 小時唔再入選,唔畀結構性零收穫戶夜夜燒晒 slot。頻道有新片(reconcile
+  見到官方數變)自動解凍,唔使等 24 小時過期。
+
+**⚠️ 之前「未掛落 launchd」嘅缺口已閂:** `growLibrary.js` `main()` 而家每日
+00:xx 嗰個 tick 自動行一次 `maybeRunDailyReconcile()`(incremental —— 淨係
+攞官方數,冇變就 skip,增量成本近零;有變先做貴嘅三分頁全深度枚舉),
+自動更新 `reconcile-missing.json` 俾 Tier 1 食。`backfillFromList.js`/
+`reconcileChannels.js` 兩個 script 保留做人手工具(一次性大額度/新頻道
+驗證用),但唔再係唯一通道。
+
+**驗證(2026-07-31 實測):** Tier1 backfill 即刻解凍咗被卡死 13 個鐘、
+「已收錄0」嘅 Asia for JESUS(0→2,真.INSERT,唔係 dry);CantonHymn 322→324
+一齊郁。零收穫冷卻用真實 8-tick 模擬確認生效(`isChannelCoolingDown` 前後
+對比),生效後嗰個頻道即刻喺候選名單度消失。Incremental reconcile 兩個分支
+(官方數冇變 skip / 有變全量枚舉)都直接調用驗證過。
 
 ---
 
