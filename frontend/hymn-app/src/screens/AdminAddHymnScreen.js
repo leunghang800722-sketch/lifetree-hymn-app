@@ -14,7 +14,7 @@ import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { useInsets } from '../hooks/useInsets';
 import { COLORS } from '../theme/designSystem';
 import { useAuth } from '../context/AuthContext';
-import { adminPreviewHymn, adminAddHymn } from '../api';
+import { adminPreviewHymn, adminAddHymn, adminErrorMessage } from '../api';
 import { notifyHymnsChanged } from '../hooks/useCachedHymns';
 
 const CATEGORY_SUGGESTIONS = ['詩歌', '粵語', '國語', '兒童'];
@@ -76,8 +76,7 @@ export default function AdminAddHymnScreen({ onClose }) {
     } catch (e) {
       if (e.code === 'bad_url') setError('唔係有效嘅 YouTube 連結');
       else if (e.code === 'metadata_failed') setError('攞唔到片段資料,可能已下架或者連結唔啱');
-      else if (e.code === 'rate_limited') setError('查得太密,等一陣先');
-      else setError(e.message || '查詢失敗');
+      else setError(adminErrorMessage(e, '查詢失敗'));
     }
     setChecking(false);
   }, [url, getToken, reset]);
@@ -104,10 +103,9 @@ export default function AdminAddHymnScreen({ onClose }) {
       notifyHymnsChanged(dataVersion);
       setSuccess(true);
     } catch (e) {
-      if (e.code === 'db_busy') setError('背景維護行緊,一陣再試');
-      else if (e.code === 'resolve_failed') setError('拎唔到音訊,呢條片可能有問題');
+      if (e.code === 'resolve_failed') setError('拎唔到音訊,呢條片可能有問題');
       else if (e.code === 'already_curated') setError('已經喺庫,唔使再加');
-      else setError(e.message || '入庫失敗');
+      else setError(adminErrorMessage(e, '入庫失敗'));
     }
     setSubmitting(false);
   }, [preview, getToken]);

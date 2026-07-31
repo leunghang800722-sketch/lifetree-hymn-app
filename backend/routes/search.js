@@ -26,23 +26,27 @@ async function queryDb(sql, params = []) {
   return results;
 }
 
-// 1. 全維度搜尋 — 搜尋 title, artist, lyrics, album
+// 1. 全維度搜尋 — 搜尋 title, display_title, artist, lyrics, album
+// ⚠️ display_title 要撞得到——Phase 2 admin 改歌名改嘅正正係呢個欄位(唔係
+// 原始 title),漏咗呢個欄位就會出現「改咗個名之後用新名反而搵唔到」
+// (Opus 5 驗收 MEMBERSHIP-PHASE2-ADMIN-PLAN 揪出)。
 router.get('/all', async (req, res) => {
   const { q } = req.query;
   if (!q) return res.status(400).json({ error: 'Missing query parameter: q' });
   try {
     const results = await queryDb(
       `SELECT * FROM hymns
-       WHERE title LIKE ? OR artist LIKE ? OR lyrics LIKE ? OR album LIKE ?
+       WHERE title LIKE ? OR display_title LIKE ? OR artist LIKE ? OR lyrics LIKE ? OR album LIKE ?
        ORDER BY
          CASE
            WHEN title LIKE ? THEN 1
+           WHEN display_title LIKE ? THEN 1
            WHEN artist LIKE ? THEN 2
            WHEN lyrics LIKE ? THEN 3
            ELSE 4
          END
        LIMIT 50`,
-      [`%${q}%`, `%${q}%`, `%${q}%`, `%${q}%`, `%${q}%`, `%${q}%`, `%${q}%`]
+      [`%${q}%`, `%${q}%`, `%${q}%`, `%${q}%`, `%${q}%`, `%${q}%`, `%${q}%`, `%${q}%`, `%${q}%`]
     );
     res.json(results);
   } catch (error) {
@@ -50,14 +54,14 @@ router.get('/all', async (req, res) => {
   }
 });
 
-// 2. 歌名搜尋
+// 2. 歌名搜尋(包 display_title——理由同 /all)
 router.get('/title', async (req, res) => {
   const { q } = req.query;
   if (!q) return res.status(400).json({ error: 'Missing query parameter: q' });
   try {
     const results = await queryDb(
-      'SELECT * FROM hymns WHERE title LIKE ? LIMIT 50',
-      [`%${q}%`]
+      'SELECT * FROM hymns WHERE title LIKE ? OR display_title LIKE ? LIMIT 50',
+      [`%${q}%`, `%${q}%`]
     );
     res.json(results);
   } catch (error) {

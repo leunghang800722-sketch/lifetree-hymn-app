@@ -128,8 +128,12 @@ export async function insertHymn(fields) {
       [fields.title, fields.display_title, fields.artist, fields.category, fields.youtube_id, fields.lang,
         fields.album || '', fields.title_en || '', today, durationFormatted]
     );
-    saveDb(db);
+    // ⚠️ last_insert_rowid() 一定要喺 saveDb() 之前攞——saveDb() 入面嘅
+    // db.export() 會 close+reopen sql.js 個 connection,令 last_insert_rowid()
+    // 歸零(Opus 5 驗收揪出:貼全新未入庫嘅歌 500,relist 舊歌測唔到,因為
+    // 嗰條分支冇用呢個 function)。
     const insertedId = query(db, 'SELECT last_insert_rowid() as id')[0].id;
+    saveDb(db);
     const hymn = getOneById(db, insertedId);
     reloadDb();
     return { before: null, after: { id: insertedId, youtube_id: fields.youtube_id }, hymn, relisted: false };

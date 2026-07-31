@@ -22,9 +22,15 @@ const AUDIT_LOG_PATH = path.join(__dirname, '..', 'logs', 'admin-audit.log');
 
 // audit log(§3.5)—— 逐個寫操作一行 JSON。寫入失敗淨係 console.error,唔 fail
 // 個 request(得 Eric 一個 admin,audit 係追溯用,可用性行先)。
+//
+// ⚠️ Opus 5 驗收揪出:logs/ 開出嚟預設 755,§4 安全考量表明講「backups/ 同
+// logs/ 都喺 .gitignore,目錄 700」——同 backupUsersDb.js 一致做法(mkdirSync
+// 帶 mode 淨係對「新建」有效,已經存在嘅目錄 mode 唔會變,所以要額外
+// chmodSync 一次先保證到 700,唔理呢個目錄係咪已經以錯誤 mode 開咗)。
 function appendAudit(entry) {
   try {
-    fs.mkdirSync(path.dirname(AUDIT_LOG_PATH), { recursive: true });
+    fs.mkdirSync(path.dirname(AUDIT_LOG_PATH), { recursive: true, mode: 0o700 });
+    fs.chmodSync(path.dirname(AUDIT_LOG_PATH), 0o700);
     fs.appendFileSync(AUDIT_LOG_PATH, JSON.stringify(entry) + '\n');
   } catch (e) {
     console.error('admin-audit 寫入失敗:', e?.message);
@@ -229,6 +235,13 @@ export default function adminRoutes(app) {
 
     try {
       const { before, after, hymn, relisted } = await insertHymn(fields);
+      // 防呆(Opus 5 驗收揪出嗰個 500 嘅根因已經喺 adminHymns.js 修咗,但呢度
+      // 都加多重 null 檢查——寧願回清楚嘅 500 俾前端顯示錯誤,都好過 `hymn.id`
+      // 拋 TypeError 冧成個 request,累個寫入本身成功咗但用戶完全唔知。
+      if (!hymn) {
+        console.error('admin POST hymns: insertHymn 冇回 hymn(寫入可能已成功但讀唔返)');
+        return res.status(500).json({ error: 'server_error', message: '入庫可能已成功,但讀唔返資料,請檢查詩歌庫' });
+      }
       audit(req, relisted ? 'relist' : 'add', hymn.id, before, after);
       res.json({ ok: true, hymn, dataVersion: getDataVersion() });
     } catch (e) {

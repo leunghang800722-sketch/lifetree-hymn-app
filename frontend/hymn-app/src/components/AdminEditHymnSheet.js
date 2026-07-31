@@ -19,7 +19,7 @@ import {
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { COLORS } from '../theme/designSystem';
 import { useAuth } from '../context/AuthContext';
-import { adminGetHymn, adminPatchHymn, adminDelistHymn } from '../api';
+import { adminGetHymn, adminPatchHymn, adminDelistHymn, adminErrorMessage } from '../api';
 import { notifyHymnsChanged } from '../hooks/useCachedHymns';
 
 const Ctx = createContext(null);
@@ -68,7 +68,7 @@ export function AdminEditHymnProvider({ children }) {
         title_en: full.title_en || '',
       });
     } catch (e) {
-      setError(e.message || '讀取失敗');
+      setError(adminErrorMessage(e, '讀取失敗'));
     }
     setLoading(false);
   }, [isAdmin, getToken]);
@@ -92,7 +92,7 @@ export function AdminEditHymnProvider({ children }) {
       notifyHymnsChanged(dataVersion);
       close();
     } catch (e) {
-      setError(e.message || '儲存失敗');
+      setError(adminErrorMessage(e, '儲存失敗'));
     }
     setSaving(false);
   }, [original, form, getToken, close]);
@@ -114,7 +114,7 @@ export function AdminEditHymnProvider({ children }) {
               notifyHymnsChanged(dataVersion);
               close();
             } catch (e) {
-              setError(e.message || '落架失敗');
+              setError(adminErrorMessage(e, '落架失敗'));
               setSaving(false);
             }
           },

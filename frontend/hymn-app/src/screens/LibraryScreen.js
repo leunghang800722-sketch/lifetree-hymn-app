@@ -69,8 +69,11 @@ export default function LibraryScreen({ hymns = [], onPlayHymn }) {
   // 撳鍵都行 5 個 regex 會拖慢),之後搜尋淨係一個字串 includes。
   const augmented = useMemo(() => hymns.map((h) => ({
     ...h,
-    // 每欄 || '' 兜底:離線舊 cache 可能未有 album/title_en(SEARCH-MERGE-PLAN §5)
-    _searchBlob: norm(h.title) + norm(h.title_en) + norm(h.artist) + norm(h.album) + norm(h.lyrics),
+    // 每欄 || '' 兜底:離線舊 cache 可能未有 album/title_en(SEARCH-MERGE-PLAN §5)。
+    // display_title 一定要包——admin 改歌名(MEMBERSHIP-PHASE2-ADMIN-PLAN)改嘅
+    // 正正係呢個欄位(唔係原始 title),漏咗就會出現「改咗個名之後用新名反而
+    // 搵唔到」(Opus 5 驗收揪出)。
+    _searchBlob: norm(h.title) + norm(h.display_title) + norm(h.title_en) + norm(h.artist) + norm(h.album) + norm(h.lyrics),
   })), [hymns]);
 
   // Filter 鏈:全庫 → 語言 chip → 搜尋字串 → 歌手 chip(AND)。

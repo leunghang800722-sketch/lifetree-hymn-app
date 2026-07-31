@@ -173,6 +173,26 @@ async function adminJson(res, fallbackMsg) {
   return json;
 }
 
+// 通用錯誤碼 → 用戶睇得明嘅文案(Opus 5 驗收揪出:編輯 sheet 之前淨係將
+// backend 錯誤碼原字咁彈出嚟,冇 §3.2 講嘅「背景維護行緊,一陣再試」呢類
+// 翻譯,AdminEditHymnSheet/AdminAddHymnScreen 兩邊共用同一套 mapping。
+// 個別 route 專屬嘅碼(preview 嘅 bad_url/metadata_failed、confirm 入庫嘅
+// resolve_failed/already_curated)由 caller 自己揀先過呢個 fallback。
+export function adminErrorMessage(e, fallback) {
+  switch (e?.code) {
+    case 'db_busy': return '背景維護行緊,一陣再試';
+    case 'forbidden': return '冇權限做呢個操作';
+    case 'rate_limited': return '操作太密,等一陣先';
+    case 'not_found': return '搵唔到呢首歌,可能已經被人改咗';
+    case 'field_not_allowed':
+    case 'bad_field_value':
+    case 'no_fields':
+      return '資料格式唔啱';
+    case 'server_error': return '伺服器出錯,請再試';
+    default: return e?.message || fallback;
+  }
+}
+
 export async function adminGetHymn(token, id) {
   const res = await fetch(`${API_BASE}/api/admin/hymns/${id}`, { headers: adminAuthHeaders(token) });
   const json = await adminJson(res, '讀取失敗');
