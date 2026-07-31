@@ -1464,3 +1464,74 @@ reconcileChannels.js`(新)、`backend/scripts/backfillFromList.js`(新)、
 開語義層(LLM 逐條判斷)先郁;④建議將 `reconcileChannels.js --all` + 對帳表 append
 寫成新 launchd job,先至真正做到「每晚重跑,欠收=0 先算齊」嘅持續保證,而唔係淨係
 今晚人手跑一次。
+
+## ✅ 2026-07-31 兩session交貨 Fable 5 獨立驗收 — 雙雙 PASS
+
+**growLibrary(local_fa531849)PASS:** 全庫實測 2597(粵1244/國838/兒453/英62;報告 2622,
+差額=之後 49 首非歌 demote/delist+deadlink drift,合理)。四大戶:CantonHymn 292/同心圓 204/
+新心 385/611W 132 ✓。611 live set 實錘入庫(31:00/28:51 multi-song set)✓。TZO4fPE6TS8
+喺 commit 3254be8(13:29)後零重試 —— negative cache(hymnDb recordDiscoverFailure,3敗冷卻
+7日)生效 ✓。reconcileChannels.js/backfillFromList.js 存在 ✓。污染抽查:新收 12 首隨機全
+正常,non-CJK 比例零可疑頻道 ✓。未做:提速方案A(18 handle)如實申報留下一晚,收貨。
+**歌詞(local_fdeacc3b)PASS:** verified 207 ✓(90→207,+117)/draft 69(報76,再清咗幾首)/
+demote 49 非歌。全批掃描:零空白、零 3+ 連續重複、長度 40-1748 正常。隨機 6 首
+(53/281/2183/765/2658/2398)逐首結構+附註全過;curl API=DB 3/3 ✓(kickstart 有做)。
+1882/2841 拼音重砌:結構正常可收貨,混語 interjection 位建議 Eric 聽住歌對一次。
+「演唱會單曲vs全場錄影」裁決線:屬產品口味,留 Eric 表態,現行判法冇發現錯收。
+
+**2026-07-30 19:20 check 過，正常（DB 2597／兒童 453／draft 69／verified 207）。**
+Backfill 後穩定狀態,0 error,job 4 分鐘前正常行(discover fallthrough 運作中)。
+等緊:提速方案A(18 handle,executor 留咗下一晚做)。
+
+---
+
+## 🔴 2026-07-31 執行 session(local_fa531849):Eric 質疑「成晚冇攞到歌」—— 查證結果(有真憑實據)
+
+Eric 唔信「跌返少少」呢個未經證實嘅講法,要求逐條查清楚。冇靠估,逐項用 query/log 對證:
+
+**1. 即時 query 實數:** `hymns_all` 3776 行,`curated=1` **2597**(粵1244/國838/兒童453/
+英62),`status='rejected'` 202,`status='dead'` 21。
+
+**2. 2622→2597 嘅 -25(其實 raw curated flag 跌咗 30)分兩個真相:**
+- ~5 係 report 口徑差(`usablePool()` 過濾咗少少已 curated 但撞 blocklist 嘅舊行,
+  呢個 gap 由之前已經存在,同今次事件無關)。
+- **真.30 首(`rejected` 172→202)係一個獨立、正確嘅內容覆核 pass 揪出嚟,唔係
+  我流失數據。** 逐條查 `last_checked`,大部分係 `2026-07-30`,標題係鐵證:
+  **20 條 Hillsong Kids**(`id 2102/2156/2260/2498/2515`...)全部係「X - Song Story
+  | Hillsong Kids」(講「呢首歌背後故事」嘅片,唔係首歌本身,淨係因為標題有
+  「song」呢個字先撞得過我自己 Layer2 嘅 allowlist)或者「Word Absurd Ep. N」
+  (trivia 迷你劇集)。**Hillsong Kids 係一個我尋晚完全冇碰過嘅頻道**——證明呢批
+  唔係我個 backfill job 出錯,而係第二個獨立覆核揪出嘅真.漏網(順手揭穿咗我自己
+  Layer2 title-positive-signal 嘅一個盲點:「song」呢個字太闊)。
+
+**3. Job 有冇繼續行、有冇停/hang/俾rate limit:** **冇停,冇 hang,`hr<7` 呢類時段
+限制喺呢份 code 根本唔存在。** launchd log 確認每 15-16 分鐘一 tick,持續到查證嗰刻
+前 13 分鐘先仲有記錄。但**連續 13 個鐘,每個 tick 都揀返完全相同 3 個頻道,0 收穫**:
+```
+discover:flow music(粵語,已收錄8) → 頻道9條,1條未收錄過 → 片長超標,跳過(每 tick 一樣)
+discover:Asia for JESUS(國語,已收錄0) → 22條未收錄過 → 全部WE R ONE多首連播medley,擋晒
+discover:基恩敬拜祈禱仔(兒童,已收錄28) → 1條未收錄過 → 專輯介紹,片長擋咗
+```
+**根因:我尋晚自己個 backfill 整死咗 `runDiscoverAll()` 嘅「已收錄最少優先」
+選台邏輯。** 呢個邏輯本身設計啱(保多樣性),但 CantonHymn/同心圓敬拜/新心音樂事工
+俾我谷到 293/204/387 首之後,永遠贏唔到「最少」呢個比較,自動 discover **永遠唔會
+再揀佢哋**——即使佢哋喺 `cache/reconcile-missing.json` 入面仲有幾百首合法欠收歌,
+淨係我嘅 `backfillFromList.js`(未掛落 15 分鐘自動循環)先攞得到。同期,而家「最少」
+嗰 3 個頻道嘅剩餘候選全部結構性通唔過(片長/分類擋),永遠 0 收穫但永遠贏中選,
+夜夜燒晒 budget。
+
+**4. 即刻補救,唔淨係講:** 手動重跑 `backfillFromList.js` 對返 CantonHymn/同心圓敬拜/
+新心音樂事工,**10 分鐘內 2597→2687,100% 成功率**(同尋晚一樣)。過程中順手再揪出
+2 個新漏網:「簡介」(課程/事工簡介,7 中 7 正確)加落 blocklist、bare「介紹」
+regression 揪出 9 中 7 係「【介紹返】系列」真.歌曲系列名,**冇加**(會誤殺)。
+7 首已 curated 嘅舊行(簡介/—介紹撞到)retroactive reject。最終穩定喺 **2675**。
+
+**未修嘅結構性問題(下一步):** `reconcileChannels.js`/`backfillFromList.js` 兩個
+script 未掛落 launchd,依家淨係人手跑先會郁 —— 今晚呢單「13 個鐘冇人手跟就完全
+停產」正正就係呢個缺口嘅代價。**下一個 session 必須做:要麼開新 job 排程呢兩個
+script,要麼修 `runDiscoverAll()` 嘅選台邏輯(唔好淨係睇 count,都要睇下個頻道
+仲有冇已知欠收清單)。** 淨係識人手重跑唔係長遠解法。
+
+**改動檔案:** `backend/lib/hymnDb.js`(新增「簡介」「—介紹」關鍵字)、
+`backend/hymns.db`(補收 90 首 + retroactive reject 7 首)。已 commit `f90980c`,
+等指示 push。
