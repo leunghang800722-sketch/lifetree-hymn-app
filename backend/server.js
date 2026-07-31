@@ -15,37 +15,12 @@ import authRoutes from './routes/auth.js';
 import otpAuthRoutes from './routes/otpAuth.js';
 import meRoutes from './routes/me.js';
 import streamRoutes from './routes/stream.js';
+import adminRoutes from './routes/admin.js';
 import { resolveAudioUrl, refreshAudioUrl, preVerifyUrl, cache, failCache, anyStreaming, isStreaming } from './lib/resolveAudio.js';
 import { getUserDb } from './lib/userDb.js';
+import { getDb, getDataVersion, DB_PATH } from './lib/serverDb.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const DB_PATH = path.join(__dirname, 'hymns.db');
-
-// dataVersion cache-bust(SUPERVISION-LOG 2026-07-27 18:00 條目)——
-// 24 小時內兩單「DB/API 一早啱,App 顯示 MMKV 舊 cache」事故都係同一個洞:
-// App 冇任何辦法知道自己個 MMKV 副本係咪已經過時。
-// 用 hymns.db 嘅檔案 mtime(ms)+ 檔案大小拼串,夠平夠唯一 —— sql.js 每次
-// process boot 淨係讀一份落記憶體(唔會 hot-reload),檔案要換咗再重啟先生效,
-// 所以喺 module 載入嗰一刻(即每次 boot)計一次就啱晒,唔使每個 request 都
-// stat 檔案。淨係讀檔案 metadata,唔讀 DB 內容。
-let dataVersion;
-try {
-  const stat = fs.statSync(DB_PATH);
-  dataVersion = `${stat.mtimeMs}-${stat.size}`;
-} catch (e) {
-  dataVersion = String(Date.now()); // DB 都讀唔到就用開機時間頂住,唔好爆
-}
-
-// Lazy-load DB on first request
-let dbPromise = null;
-async function getDb() {
-  if (!dbPromise) {
-    const SQL = await initSqlJs();
-    const buffer = fs.readFileSync(DB_PATH);
-    dbPromise = new SQL.Database(buffer);
-  }
-  return dbPromise;
-}
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -62,6 +37,7 @@ app.use('/api/stream', streamRoutes(getDb));
 authRoutes(app, getUserDb);
 otpAuthRoutes(app, getUserDb); // 電話 OTP 登入(PHONE-AUTH-PLAN;未有 TWILIO key 前回 503)
 meRoutes(app); // 跨裝置同步 API(MEMBERSHIP-PHASE1-LOGIN-SYNC §1.3)
+adminRoutes(app); // 管理員功能(MEMBERSHIP-PHASE2-ADMIN-PLAN §3.4)
 
 // Super simple APK download at root level
 app.get('/app.apk', (req, res) => {
@@ -95,6 +71,7 @@ app.get('/api/health', (req, res) => {
 // dataVersion cache-bust:超平嘅 endpoint,唔讀 DB,俾 App 開機時同 MMKV 存嗰個
 // version 對一對,唔同先做全量 fetch(見 useCachedHymns.js)。
 app.get('/api/version', (req, res) => {
+  const dataVersion = getDataVersion();
   console.log(`🔖 /api/version → ${dataVersion}`);
   res.json({ dataVersion });
 });
@@ -123,6 +100,7 @@ app.get('/api/hymns', async (req, res) => {
       hymns.push(stmt.getAsObject());
     }
     // dataVersion 隨 envelope 帶埋出去,向後兼容(舊 client 淨係讀 .data 唔受影響)。
+    const dataVersion = getDataVersion();
     console.log(`📚 /api/hymns full fetch → ${hymns.length} hymns, dataVersion=${dataVersion}`);
     res.json({ data: hymns, dataVersion });
   } catch (err) {

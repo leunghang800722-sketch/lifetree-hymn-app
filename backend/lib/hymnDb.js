@@ -525,9 +525,12 @@ export function lockIsStealable(content, age) {
 // 合法持有緊嘅鎖**都刪走 —— 直接整翻返呢個鎖本身想解決嘅 race condition。
 // 有 token 校對之後,call 錯都只會係安全 no-op(唔啱身唔會刪),唔會再有
 // 呢種「累鄰居」嘅可能性。
-export async function acquireDbLock(owner = `pid${process.pid}`) {
+// maxWaitMs:HTTP 用嘅 admin 寫入(routes/admin.js)唔可以死等 5 分鐘,傳
+// 短啲嘅上限(例如 10_000)—— 攞唔到就回 null,由 caller 決定點回應(503)。
+// 預設維持 LOCK_MAX_WAIT_MS,夜晚 script 嘅行為零改動。
+export async function acquireDbLock(owner = `pid${process.pid}`, maxWaitMs = LOCK_MAX_WAIT_MS) {
   const token = `${owner}:${process.pid}:${Date.now()}:${Math.random().toString(36).slice(2, 8)}`;
-  const deadline = Date.now() + LOCK_MAX_WAIT_MS;
+  const deadline = Date.now() + maxWaitMs;
   for (;;) {
     try {
       fs.writeFileSync(LOCK_PATH, `${token}\n${new Date().toISOString()}\n`, { flag: 'wx' });

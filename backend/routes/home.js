@@ -2,28 +2,15 @@
 // Uses ES module syntax + sql.js (matching server.js pattern)
 
 import { Router } from 'express';
-import initSqlJs from 'sql.js';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { getDb } from '../lib/serverDb.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const BIBLE_VERSES_PATH = path.join(__dirname, '..', 'data', 'bible-verses.json');
 
-const DB_PATH = path.join(__dirname, '..', 'hymns.db');
-
 const router = Router();
-
-// Lazy-load DB helper (same pattern as server.js)
-let dbPromise = null;
-async function getDb() {
-  if (!dbPromise) {
-    const SQL = await initSqlJs();
-    const buffer = fs.readFileSync(DB_PATH);
-    dbPromise = new SQL.Database(buffer);
-  }
-  return dbPromise;
-}
 
 // Helper: execute query and return array of objects
 async function queryAll(sql, params = []) {
