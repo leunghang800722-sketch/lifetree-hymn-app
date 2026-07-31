@@ -117,6 +117,13 @@ export function isCompilation(title = '') {
     // 用完整專屬劇名做關鍵字(唔係泛用「第N天」regex),窄而準,查過現時
     // 全庫 0 個 curated=1 撞到,零誤殺。
     '迎接聖誕十二天',
+    // 2026-07-31 追加(Eric 質疑「成晚冇攞到歌」查證期間,重新手動 backfill 果批
+    // 實測踩過):「簡介」(課程/事工簡介)同「—介紹」(em dash + 介紹,devotional
+    // 集介紹片)。⚠️ 唔可以加**bare「介紹」**——regression 揪出 9 中 7 個係
+    // 「【介紹返】系列」,一個真.歌曲系列名(「感恩有祢 // 介紹返系列 // 余幸蓓」
+    // 呢類全部係正牌歌),bare「介紹」會誤殺呢 7 首。「簡介」查過 7 中 7 全部係
+    // 課程/事工/機構簡介,零誤殺。
+    '簡介', '—介紹',
     // Asia for JESUS「WE R ONE Worship｜Revival X Radical｜Alleluia、
     // Shout For Freedom、10000 Armies…」呢類係大型特會現場全場敬拜
     // 錄影(一條片入面連唱幾首),用返佢哋自己嘅活動品牌名做訊號
@@ -200,12 +207,55 @@ const SECULAR_ARTISTS = ['grace wu詩歌', 'grace wu诗歌'];
 // 過,單字會誤殺太多(「示範」可以出現喺敬拜示範現場片呢類正常歌名)。
 export const INSTRUMENTAL_TUTORIAL_PATTERNS_ZH = ['琴譜', '樂譜', '歌譜', '伴奏', '教學', '示範影片', '純音樂', '預告', '宣傳影片'];
 export const INSTRUMENTAL_TUTORIAL_PATTERNS_EN = ['tutorial', 'instrumental', 'sheet music', 'backing track', 'trailer', 'karaoke'];
+// 2026-07-30 追加(Eric 喺兒童詩歌分類度親手撳到三條非歌內容,實測 whisper 轉錄
+// +yt-dlp description 逐條 confirm):
+//   ·「Word Absurd Ep. N」= Hillsong Kids 嘅 zoom 式聖經問答清談節目(自己
+//     description 講明"a zoom style gameshow...Ridiculous questions"),全庫
+//     8集全部中招、全部 curated=1,片長 7-8 分鐘啱啱好跌喺 SONG_DURATION 帶
+//     入面,純靠片長攔唔到。
+//   ·「Song Story」= Hillsong Kids 自家嘅「幕後訪談」franchise(description
+//     講明"Interview with Kids Pastor...behind the scenes"),7 條全部中招。
+//   ·「創意教室」= 讚美之泉兒童嘅「創意課室」小段——聽落似歌(标题帶歌名+
+//     專輯名),實測全部 4 條 whisper 轉錄出嚟都係對白/講故仔/背經文,冇
+//     一句係唱歌(例如「天上的家」嗰條係兩個角色講天堂盼望+讀約翰福音14:2-3,
+//     「日日夜夜」嗰條係獨白式勸勉+讀以賽亞書54:10)。
+//   ·「家長學生見證」/「創意學校」= 讚美之泉兒童敬拜創意學校嘅家長/學生見證
+//     訪談片,唔係歌。
+// ⚠️ 落地前對全庫 curated regression 驗證過,以下兩個「睇落啱」嘅字眼特登
+// **冚咗唔用**,因為誤殺率太高:
+//   · 淨「見證」bare word:10 個 curated=1 命中,得返 1 個(呢次目標嗰條)係
+//     真.非歌,其餘 9 個係正牌歌名入面帶「見證」兩字(「見證信望愛」「雲彩
+//     般的見證」「見證 親愛主」等)——同 2026-07-30 之前查過「異象」bare word
+//     一樣嘅陷阱,唔可以用。
+//   · 「Ep.」/「Episode N」縮寫格式:23 個 curated=1 命中,得返 8 個(Word
+//     Absurd 本身)係非歌,其餘 19 個係鹹蛋音樂事工/悅雨音樂/角聲使團等頻道
+//     用「EP.N」標自己單曲/MV 發行序號(例如「重生EP.1」「Racson's One-man
+//     Project Ep.1」全部係真.官方 MV/cover),bare 「Ep.」規則會血洗呢批。
+// 所以淨用查證過零誤殺嘅完整詞組/品牌名做訊號。
+// 2026-07-30 追加(第二輪,Eric 再送4個非歌+1個要求聽真啲嘅例子):
+//   ·「優勢好好玩」= Asia for JESUS 自製蓋洛普優勢教練清談節目(EP7 description
+//     自己講"探索自己,發現獨特"、時間軸列晒訪談重點),唔係歌。
+//   ·「工作坊」/「異象片」= 同一個頻道(Asia for JESUS)另外兩條:「領袖優勢
+//     工作坊」係培訓工作坊(description:"兩位蓋洛普全球認證優勢教練教學與
+//     引導...培訓...開課需求"),「約書亞樂團...年度異象片」係樂團年度使命/
+//     歷史介紹片(description 純敘述 1998 年成立至今嘅歷程,冇歌詞),兩條都
+//     喺 8 條入面之前已用「we r one」/「academy」/「回顧」擋咗 3 條,呢 3
+//     條係漏網嘅第 4-6-7 條——即係話呢個頻道 DB 入面得返嘅 8 條,原來全部
+//     8 條都唔啱做詩歌收錄,一條真歌都冇。
+// ⚠️ 特登用「異象片」完整詞組,唔用淨「異象」——「異象」bare word 之前已經
+// 查過(見上面 2026-07-30 第一輪嗰段)撞正「成為我異象 Be Thou My Vision」
+// 呢類正牌歌名,「異象片」加咗「片」字先窄到得返呢類促銷/介紹片。
+// 三個都對全庫 curated=1 regression 過,零誤殺。
+export const NON_SONG_FORMAT_PATTERNS_ZH = ['創意教室', '創意學校', '家長學生見證', '工作坊', '異象片', '優勢好好玩'];
+export const NON_SONG_FORMAT_PATTERNS_EN = ['word absurd', 'song story'];
 export function isNonWorship(title = '', artist = '') {
   if (SECULAR_ARTISTS.includes((artist || '').toLowerCase().trim())) return true;
   if (/(dance tutorial|dance choreograph|choreography|relay dance|dance cover)/i.test(title)) return true;
   if (INSTRUMENTAL_TUTORIAL_PATTERNS_ZH.some((p) => title.includes(p))) return true;
+  if (NON_SONG_FORMAT_PATTERNS_ZH.some((p) => title.includes(p))) return true;
   const t = title.toLowerCase();
   if (INSTRUMENTAL_TUTORIAL_PATTERNS_EN.some((p) => t.includes(p))) return true;
+  if (NON_SONG_FORMAT_PATTERNS_EN.some((p) => t.includes(p))) return true;
   return false;
 }
 
