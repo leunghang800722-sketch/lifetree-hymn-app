@@ -91,6 +91,15 @@ function validateField(key, value) {
   return v;
 }
 
+// kids:TAXONOMY-5D-PLAN.md §8 C2 觀察②——獨立 int 欄(0/1),唔係 string,
+// 所以要獨立驗證,唔可以行 validateField 嗰套。接受 0/1 或者 boolean
+// (前端 Switch 送 boolean/number 都兼容)。回 null = 唔啱格式。
+function validateKidsField(value) {
+  if (value === 0 || value === 1) return value;
+  if (typeof value === 'boolean') return value ? 1 : 0;
+  return null;
+}
+
 export default function adminRoutes(app) {
   const router = Router();
 
@@ -123,6 +132,12 @@ export default function adminRoutes(app) {
 
     const fields = {};
     for (const k of keys) {
+      if (k === 'kids') {
+        const v = validateKidsField(body[k]);
+        if (v === null) return res.status(400).json({ error: 'bad_field_value', field: k });
+        fields[k] = v;
+        continue;
+      }
       const v = validateField(k, body[k]);
       if (v === null) return res.status(400).json({ error: 'bad_field_value', field: k });
       fields[k] = v;
@@ -220,13 +235,21 @@ export default function adminRoutes(app) {
       fields[k] = v;
     }
     // org:TAXONOMY-5D-PLAN.md §3.5,選填——冇填 insertHymn() 會 fallback 做
-    // artist。前端 AdminAddHymnScreen.js 而家未加呢個輸入欄(C1 範圍淨係
+    // artist(fresh insert)或者保留現有 org(relist,觀察①)。前端
+    // AdminAddHymnScreen.js 而家未加呢個輸入欄(C1 範圍淨係
     // AdminEditHymnSheet.js),但 route/lib 層先行支援,方便日後補 UI。
     for (const k of ['album', 'title_en', 'org']) {
       if (body[k] === undefined) continue;
       const v = validateField(k, body[k]);
       if (v === null) return res.status(400).json({ error: 'bad_field_value', field: k });
       fields[k] = v;
+    }
+    // kids:§8 C2 觀察②,選填——冇填 insertHymn() fresh insert 預設 0、relist
+    // 保留現有值,唔再由 lang==='兒童' 推斷。
+    if (body.kids !== undefined) {
+      const v = validateKidsField(body.kids);
+      if (v === null) return res.status(400).json({ error: 'bad_field_value', field: 'kids' });
+      fields.kids = v;
     }
     if (Number.isFinite(body.duration)) fields.duration = body.duration;
 

@@ -14,7 +14,7 @@
 import React, { createContext, useContext, useState, useCallback } from 'react';
 import {
   Modal, View, Text, TextInput, TouchableOpacity, ScrollView,
-  StyleSheet, Alert, Keyboard, KeyboardAvoidingView, Platform,
+  StyleSheet, Alert, Keyboard, KeyboardAvoidingView, Platform, Switch,
 } from 'react-native';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { COLORS } from '../theme/designSystem';
@@ -51,7 +51,8 @@ export function AdminEditHymnProvider({ children }) {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [original, setOriginal] = useState(null); // GET 返嚟嘅原始行(俾 PATCH diff 用)
-  const [form, setForm] = useState({ display_title: '', artist: '', org: '', performer: '', category: '', lang: '粵語', album: '', title_en: '' });
+  // kids:TAXONOMY-5D-PLAN.md §8 C2 觀察②——顯式開關,唔再由 lang==='兒童' 推。
+  const [form, setForm] = useState({ display_title: '', artist: '', org: '', performer: '', category: '', lang: '粵語', album: '', title_en: '', kids: false });
 
   const close = useCallback(() => {
     setVisible(false); setOriginal(null); setError('');
@@ -73,6 +74,7 @@ export function AdminEditHymnProvider({ children }) {
         lang: full.lang || '粵語',
         album: full.album || '',
         title_en: full.title_en || '',
+        kids: Number(full.kids) === 1,
       });
     } catch (e) {
       setError(adminErrorMessage(e, '讀取失敗'));
@@ -90,6 +92,9 @@ export function AdminEditHymnProvider({ children }) {
     for (const key of ['display_title', 'artist', 'org', 'performer', 'category', 'lang', 'album', 'title_en']) {
       if ((form[key] || '') !== (original[key] || '')) changed[key] = form[key];
     }
+    // kids:顯式 int 開關,唔好同其他 string 欄一齊用 `|| ''` 比較(§8 C2 觀察②)。
+    const kidsVal = form.kids ? 1 : 0;
+    if (kidsVal !== (Number(original.kids) || 0)) changed.kids = kidsVal;
     if (!Object.keys(changed).length) { close(); return; }
 
     setSaving(true); setError('');
@@ -167,8 +172,21 @@ export function AdminEditHymnProvider({ children }) {
 
                 {row('display_title')}
                 {row('artist')}
-                {row('org', { placeholder: '例:泥土音樂(留空跟「團體(舊欄)」)' })}
+                {/* org 唔准留空(後端會 400)——觀察③:文案改到同行為一致 */}
+                {row('org', { placeholder: '例:泥土音樂(必填,唔可以留空)' })}
                 {row('performer', { placeholder: '例:盛曉玫(可留空,UI 會 fallback 顯示團體)' })}
+
+                <View style={styles.fieldRow}>
+                  <View style={styles.switchRow}>
+                    <Text style={styles.fieldLabel}>兒童詩歌</Text>
+                    <Switch
+                      value={form.kids}
+                      onValueChange={(v) => setField('kids', v)}
+                      trackColor={{ false: COLORS.border, true: COLORS.accent }}
+                      thumbColor={COLORS.card}
+                    />
+                  </View>
+                </View>
 
                 <View style={styles.fieldRow}>
                   <Text style={styles.fieldLabel}>分類</Text>
@@ -241,6 +259,7 @@ const styles = StyleSheet.create({
   originalTitleText: { color: COLORS.textPrimary, fontSize: 14 },
   fieldRow: { marginBottom: 14 },
   fieldLabel: { color: COLORS.textSecondary, fontSize: 13, marginBottom: 6, fontWeight: '600' },
+  switchRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   fieldInput: {
     backgroundColor: COLORS.background, borderRadius: 10,
     paddingHorizontal: 14, paddingVertical: 10, color: COLORS.textPrimary, fontSize: 15,

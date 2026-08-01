@@ -21,7 +21,9 @@ const ADMIN_LOCK_WAIT_MS = 10_000;
 // PATCH 白名單(§3.4)——喺呢度(唔淨係 route 層)都做多一重防禦:呢個 module
 // 用欄位名做動態 SQL(`${key} = ?`),絕對唔可以照單全收 caller 傳落嚟嘅 key。
 // org/performer:TAXONOMY-5D-PLAN.md §4.4 —— admin 編輯五維分類嘅團體/歌手。
-export const EDITABLE_FIELDS = ['title', 'display_title', 'artist', 'category', 'lang', 'album', 'title_en', 'org', 'performer'];
+// kids:TAXONOMY-5D-PLAN.md §8 C2 觀察②——升做顯式 editable 欄位(0/1),UPDATE/
+// INSERT 唔准再由 lang==='兒童' 推斷(C4 換血後兒童歌 lang 係真語言)。
+export const EDITABLE_FIELDS = ['title', 'display_title', 'artist', 'category', 'lang', 'album', 'title_en', 'org', 'performer', 'kids'];
 
 function dbBusyError() { const e = new Error('db_busy'); e.code = 'db_busy'; return e; }
 function notFoundError() { const e = new Error('not_found'); e.code = 'not_found'; return e; }
@@ -124,14 +126,17 @@ export async function insertHymn(fields) {
 
     const today = new Date().toISOString().slice(0, 10);
     const durationFormatted = Number.isFinite(fields.duration) ? formatDuration(fields.duration) : null;
-    // TAXONOMY-5D-PLAN.md §3.5/§4.4:admin 路徑 org = admin 填嘅值,冇就跟
-    // artist;kids 冇 worshipGroups priority 概念,跟 lang==='兒童' 判斷
-    // (admin add 表單嘅語言 chips 本身就有「兒童」呢個選項)。performer 呢
-    // 兩條路徑都唔填,留俾 backfillMeta 夜晚補(§3.5)。
-    const orgVal = (fields.org && fields.org.trim()) || fields.artist;
-    const kidsVal = fields.lang === '兒童' ? 1 : 0;
+    // TAXONOMY-5D-PLAN.md §8 C2 觀察②:kids 唔再由 lang==='兒童' 推斷(C4 換血
+    // 後兒童歌 lang 係真語言,靠推會將 kids 打返 0)。冇明確傳就唔郁呢個欄。
+    const kidsProvided = Object.prototype.hasOwnProperty.call(fields, 'kids');
 
     if (existing) {
+      // 觀察①:relist 冇明確填 org 就保留 row 現有 org,唔准 fallback artist
+      // 冚走合併結果(例:relist 一首 artist='盛曉玫' 嘅歌,org 要維持
+      // 「泥土音樂」,唔可以俾冚返做「盛曉玫」)。
+      const orgVal = (fields.org && fields.org.trim()) || existing.org || fields.artist;
+      // 觀察②:relist 冇明確傳 kids 就保留 row 現有 kids(唔再靠 lang 推)。
+      const kidsVal = kidsProvided ? fields.kids : (Number(existing.kids) || 0);
       const before = { curated: existing.curated, status: existing.status };
       db.run(
         `UPDATE hymns_all SET title = ?, display_title = ?, artist = ?, category = ?, lang = ?,
@@ -146,6 +151,12 @@ export async function insertHymn(fields) {
       reloadDb();
       return { before, after: { curated: 1, status: 'ok' }, hymn, relisted: true };
     }
+
+    // 全新 INSERT:冇 existing row 可以保留,org fallback artist 一如以往;
+    // kids 冇 worshipGroups priority 概念,admin 冇明確傳就預設 0(唔再推
+    // lang——admin add 表單嘅語言 chips 有「兒童」選項純係語言值,唔代表 kids)。
+    const orgVal = (fields.org && fields.org.trim()) || fields.artist;
+    const kidsVal = kidsProvided ? fields.kids : 0;
 
     db.run(
       `INSERT INTO hymns_all (title, display_title, artist, category, youtube_id, lang, album, title_en, curated, status, last_checked, fail_streak, duration, org, kids)
