@@ -97,13 +97,18 @@ export default function authRoutes(app, getUserDb) {
       const decoded = jwt.verify(token, JWT_SECRET);
 
       const db = await getUserDb();
-      const stmt = db.prepare('SELECT id, username, email, role FROM users WHERE id = ?');
+      const stmt = db.prepare('SELECT id, username, email, phone, role, gender, birth_year FROM users WHERE id = ?');
       stmt.bind([decoded.id]);
 
       if (!stmt.step()) { stmt.free(); return res.status(404).json({ error: 'User not found' }); }
 
       const user = stmt.getAsObject(); stmt.free();
-      res.json({ user: { id: user.id, username: user.username, email: user.email, role: user.role || 'member' } });
+      res.json({
+        user: {
+          id: user.id, username: user.username, email: user.email, phone: user.phone,
+          role: user.role || 'member', gender: user.gender || null, birthYear: user.birth_year || null,
+        },
+      });
     } catch (err) {
       if (err.name === 'JsonWebTokenError' || err.name === 'TokenExpiredError') {
         return res.status(401).json({ error: 'Invalid or expired token' });

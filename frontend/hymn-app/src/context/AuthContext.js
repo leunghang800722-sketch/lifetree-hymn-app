@@ -83,13 +83,47 @@ export function AuthProvider({ children }) {
     return data;
   }, []);
 
-  const verifyOtp = useCallback(async (phone, code) => {
-    const resp = await fetch(`${API_BASE}/api/auth/otp/verify`, {
+  // ── 電話+密碼登入(PHONE-PASSWORD-AUTH-PLAN §5.1)──────────────────
+  // 統一錯誤形狀:e.message 係俾用戶睇嘅文案,e.code 係 server 回嘅 error
+  // 短碼(如 already_registered/no_account/password_not_set),俾畫面
+  // 用嚟分流(例如撳「返去登入」/「去註冊」)。
+  async function postAuth(path, body) {
+    const resp = await fetch(`${API_BASE}${path}`, {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ phone, code }),
+      body: JSON.stringify(body),
     });
     const data = await resp.json().catch(() => ({}));
-    if (!resp.ok) throw new Error(data.message || data.error || '驗證失敗');
+    if (!resp.ok) {
+      const e = new Error(data.message || data.error || '請求失敗');
+      e.code = data.error;
+      throw e;
+    }
+    return data;
+  }
+
+  // ②輸入驗證碼 → 換一個 10 分鐘 ticket,證明「呢一刻控制住呢個電話」
+  // (註冊/忘記密碼共用)。唔會 saveAuth——呢步仲未有 session token。
+  const verifyOtpTicket = useCallback(async (phone, code) => {
+    return postAuth('/api/auth/otp/verify-ticket', { phone, code });
+  }, []);
+
+  // ③一版過填密碼+姓名+性別+出生年份,連同 ticket 換 session token
+  const registerPhone = useCallback(async ({ ticket, password, username, gender, birthYear }) => {
+    const data = await postAuth('/api/auth/register-phone', { ticket, password, username, gender, birthYear });
+    await saveAuth(data.token, data.user);
+    return data;
+  }, [saveAuth]);
+
+  // 日常登入:電話 + 密碼
+  const loginPhone = useCallback(async (phone, password) => {
+    const data = await postAuth('/api/auth/login-phone', { phone, password });
+    await saveAuth(data.token, data.user);
+    return data;
+  }, [saveAuth]);
+
+  // 忘記密碼:ticket + 新密碼,順便補完 profile(得 NULL 嘅欄先寫得入)
+  const resetPassword = useCallback(async (ticket, password, extra = {}) => {
+    const data = await postAuth('/api/auth/reset-password', { ticket, password, ...extra });
     await saveAuth(data.token, data.user);
     return data;
   }, [saveAuth]);
@@ -111,7 +145,10 @@ export function AuthProvider({ children }) {
   const isAdmin = user?.role === 'admin';
 
   return (
-    <AuthContext.Provider value={{ user, token, loading, isAdmin, register, login, logout, getToken, requestOtp, verifyOtp }}>
+    <AuthContext.Provider value={{
+      user, token, loading, isAdmin, register, login, logout, getToken,
+      requestOtp, verifyOtpTicket, registerPhone, loginPhone, resetPassword,
+    }}>
       {children}
     </AuthContext.Provider>
   );

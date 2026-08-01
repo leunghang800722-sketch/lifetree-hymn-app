@@ -102,6 +102,20 @@ export default function AccountScreen({ onClose }) {
           ]}
         />
 
+        {/* 性別/出生年份(PHONE-PASSWORD-AUTH-PLAN §5.3)—— display-only,冇編輯
+            功能(想改搵下期)。淨係註冊/忘記密碼補完過先有值,舊帳戶會冇呢個組。 */}
+        {(user.gender || user.birthYear) && (
+          <>
+            <Text style={styles.groupTitle}>個人資料</Text>
+            <GroupCard
+              rows={[
+                user.gender && { key: 'gender', icon: 'wc', label: '性別', value: user.gender === 'male' ? '男' : '女' },
+                user.birthYear && { key: 'birthYear', icon: 'cake', label: '出生年份', value: String(user.birthYear) },
+              ].filter(Boolean)}
+            />
+          </>
+        )}
+
         <Text style={styles.groupTitle}>一般</Text>
         <GroupCard
           rows={[
