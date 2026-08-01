@@ -1,20 +1,24 @@
 #!/usr/bin/env node
-// backfillMeta.js — TAXONOMY-5D-PLAN.md §3.2/§3.3/§8 C5:performer(歌手)+
+// backfillMeta.js — TAXONOMY-5D-PLAN.md §3.2/§3.3/§8 C5+C5b:performer(歌手)+
 // album(專輯) backfill。每首歌一次 `yt-dlp -J --no-playlist` 攞 title+
-// description,waterfall 三層推斷 performer,同一次 call 順手 parse album。
+// description+structured artist/album/track,waterfall 四層推斷 performer,
+// 同一次 call 順手 parse album。
 //
-// ── Waterfall(§3.2)──────────────────────────────────────────────
-//   Layer D(description):regex 搵「主唱/演唱/獻唱/Vocal(s)?/Singer/Sung by」
-//     行 → performer_source='description'
+// ── Waterfall(§3.2,C5b 加咗 Layer M)───────────────────────────────
+//   Layer M(metadata):yt-dlp JSON 嘅結構化 `artist` 欄(Topic 式上載/YT Music
+//     metadata 有填)→ performer_source='metadata'。放喺 D 之前——呢層係
+//     平台自己標嘅結構化資料,比 regex 撞 description 準。
+//   Layer D(description):regex 搵「主唱/演唱/獻唱/歌手/和聲/領唱/Vocal(s)?/
+//     Singer/Sung by」行 → performer_source='description'
 //   Layer T(title):對照 `data/knownPerformers.js` seed 名單 → 'title'
-//   Layer A(AI):D/T 都落空嘅存做一個 batch,用 `claude -p`(headless)一次
+//   Layer A(AI):M/D/T 都落空嘅存做一個 batch,用 `claude -p`(headless)一次
 //     過推斷,strict JSON 輸出;有把握先填,判斷純音樂就寫「純音樂」→ 'ai'
-//   三層都空 → performer 留 ''(下次照樣重試,唔標記——同 fetchLyrics cc:miss
+//   四層都空 → performer 留 ''(下次照樣重試,唔標記——同 fetchLyrics cc:miss
 //     嗰種「泊住等下一層」唔同,呢度冇下一層,純粹留返做手動/日後 AI 進步)
 //
-// album(§3.3):description 嘅「Album (專輯): XXX」/「專輯:XXX」行、title 嘅
-// 「專輯 N:XXX」pattern。**唔准 AI 估**——parse 唔到就留空。現有 album 有值
-// 嘅唔重寫(保護規則)。
+// album(§3.3):Layer M 嘅結構化 `album` 欄 → description 嘅「Album (專輯): XXX」/
+// 「專輯:XXX」行 → title 嘅「專輯 N:XXX」pattern。**唔准 AI 估**——parse 唔到
+// 就留空。現有 album 有值嘅唔重寫(保護規則)。
 //
 // ── 保護規則 ────────────────────────────────────────────────────
 //   * performer_source='manual' 嘅 row 一律 skip(admin 手動改過/Lullaby 13 條)
@@ -22,19 +26,29 @@
 //   * 斷點續跑:candidate 揀 `performer_source=''`,寫完即刻非空,下次自動跳過
 //   * 寫 DB 用 acquireDbLock(fetchLyrics 嗰個「慢工序唔揸鎖,即攞即放」pattern)
 //
-// ── Pilot(C5,§8)────────────────────────────────────────────────
-// 淨跑 `--org 泥土音樂 --status ok`(現實資料:85 條,唔係方案原稿講嘅 89——
-// 差額係 curated=0 pool 24 首 + status='dead'/'rejected' 唔跌入呢個 filter,
-// 詳見 pilot 報告)。跑完出 `backend/data/backfill-meta-pilot.md`。
+// ── C5b(Opus 5 三個硬條件 + 順手項,TAXONOMY-5D-PLAN.md §8 C5)──────────
+//   ① DESC_PERFORMER_RE 加「歌手」(+和聲/領唱)——「歌手 (Singer):」呢類寫法
+//     原本漏網,3 條(857/886/1194)客席主唱錯標盛曉玫。
+//   ② 候選輪換 + 每晚 budget:唔准淨係 ORDER BY id ASC(死症 row 會塞住隊頭)。
+//     加 `last_meta_attempt` 欄,每次嘗試(唔理揾唔揾到)寫 timestamp,候選
+//     `ORDER BY last_meta_attempt IS NOT NULL, last_meta_attempt ASC`(未試過
+//     先行,試過耐先重試)。`--limit` 預設 160。
+//   ③ 逐條即寫:D/T/M 層命中即刻寫 DB(每條跟 acquireDbLock 節奏),唔准成晚
+//     積到 run 尾先寫;Layer A batch 結果照最尾補寫(要成個 batch call 完先
+//     知邊條有答案)。
+//   順手:Layer M(above)、多人分隔符 normalize「、」、專輯異體字(脚步→腳步)、
+//   suspected-nonsong side-output(唔改 DB,純 flag list 交 Eric 簽)。
 //
-// ⚠️ 呢個 script **唔開夜晚排程**——C5 只做 pilot,排程等 Opus 5 抽查通過先
-// (TAXONOMY-5D-PLAN.md §8 C5 明文)。
+// ── 排程(C5b 後開)───────────────────────────────────────────────
+// 排程模式掃全庫 `performer_source=''`(冇 --org 限制),同 fetchLyrics 錯開
+// 時段。現有 4000+ 首清完之後呢個排程照留低,自動接住每晚新收嘅歌。
 //
 // Usage:
 //   node scripts/backfillMeta.js --org 泥土音樂 --status ok           # pilot 正式跑
 //   node scripts/backfillMeta.js --org 泥土音樂 --status ok --dry     # 唔寫 DB
 //   node scripts/backfillMeta.js --org 泥土音樂 --status ok --limit 5 # 測試少量
 //   node scripts/backfillMeta.js --org 泥土音樂 --status ok --no-ai   # 唔叫 claude -p
+//   node scripts/backfillMeta.js --limit 160                          # 排程用:全庫掃
 
 import { execFile as execFileCb } from 'child_process';
 import { promisify } from 'util';
@@ -50,23 +64,27 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const arg = (f, d) => { const i = process.argv.indexOf(f); return i > -1 && process.argv[i + 1] ? process.argv[i + 1] : d; };
 const ORG = arg('--org', null);
 const STATUS = arg('--status', 'ok');
-const LIMIT = Number(arg('--limit', 0)) || null; // 0/未傳 = 冇上限(全部候選)
+const LIMIT = Number(arg('--limit', 160)) || 160; // C5b②:預設每晚 budget 160
 const DELAY_MS = Number(arg('--delay', 3500));
 const AI_BATCH_SIZE = Number(arg('--ai-batch-size', 25));
 const DRY = process.argv.includes('--dry');
 const NO_AI = process.argv.includes('--no-ai');
 const REPORT_PATH = arg('--report', path.join(__dirname, '..', 'data', 'backfill-meta-pilot.md'));
+const NONSONG_PATH = path.join(__dirname, '..', 'data', 'suspected-nonsong.md');
 
 const stamp = () => new Date().toISOString().replace('T', ' ').slice(0, 19);
 const log = (...a) => console.log(`[${stamp()}]`, ...a);
 const jitter = (base) => Math.round(base * (0.7 + Math.random() * 0.9));
 
-// ── Layer D:description 主唱/演唱/獻唱/Vocal(s)/Singer/Sung by ─────────
+// ── Layer D:description 主唱/演唱/獻唱/歌手/和聲/領唱/Vocal(s)/Singer/Sung by ─
 // 括號註解可選(跟 album regex 同一個教訓:呢個 org 嘅 description template
 // 有時會用「中文標籤 (英文標籤):」或者反過來嘅次序,例如 album 嗰行實測撞過
 // 「專輯 ( Album ): XXX」——即使呢個 pilot 冇撞到 Vocal/主唱 呢類行,都預先
 // 用同一個容錯 pattern,唔使下次先再補一次同類 fix)。
-const DESC_PERFORMER_RE = /^(?:主唱|演唱|獻唱|vocals?|singer|sung\s*by)\s*(?:[\(（][^)）]*[\)）]\s*)?[:：]\s*(.+)$/im;
+// ⚠️ C5b①(Opus 5 硬條件):原本冇「歌手」——泥土音樂實測有片用
+// 「歌手 (Singer) : 郭小晗 Raven Guo」template,漏網跌落 Layer T 錯標盛曉玫
+// (857/886/1194,6.1% 錯標率)。順手加「和聲」「領唱」(同類客席/伴唱標籤)。
+const DESC_PERFORMER_RE = /^(?:主唱|演唱|獻唱|歌手|和聲|領唱|vocals?|singer|sung\s*by)\s*(?:[\(（][^)）]*[\)）]\s*)?[:：]\s*(.+)$/im;
 function matchDescriptionPerformer(description) {
   if (!description) return null;
   const m = description.match(DESC_PERFORMER_RE);
@@ -76,6 +94,43 @@ function matchDescriptionPerformer(description) {
   name = name.replace(/^[:：\s]+|[,，、\s]+$/g, '').trim();
   if (!name || name.length > 40) return null;
   return name;
+}
+
+// ── Layer M:yt-dlp JSON 結構化 artist/album 欄(C5b 順手項)───────────────
+// Topic 式上載/YT Music 有填 metadata 嘅片,`info.artist` 通常係
+// 「廠牌/事工名, 歌手名」(例:「泥土音樂, 盛曉玫」),要清走 org 名先淨返
+// 歌手。淨用「呢條 row 自己嘅 org」做清走目標(唔靠 worshipGroups 全表估估
+// 吓,更準、亦唔會夾到第二個團體個名)。
+function extractMetaPerformer(rawArtist, rowOrg) {
+  if (!rawArtist || typeof rawArtist !== 'string') return null;
+  const parts = rawArtist.split(/[,，、]/).map((s) => s.trim()).filter(Boolean);
+  if (!parts.length) return null;
+  const filtered = rowOrg ? parts.filter((p) => p !== rowOrg) : parts;
+  const use = filtered.length ? filtered : parts; // 成串都係 org 名時,寧願用原值都好過乜都冇
+  const name = use.join('、');
+  if (!name || name.length > 40) return null;
+  return name;
+}
+function extractMetaAlbum(rawAlbum) {
+  if (!rawAlbum || typeof rawAlbum !== 'string') return null;
+  return sanitizeAlbum(rawAlbum);
+}
+
+// ── 多人分隔符 normalize(§2.2:performer 多人用「、」分隔)───────────────
+// 寫入前一律過呢個 filter,唔理邊層(M/D/T/A)出嚟嘅值。
+const SEPARATOR_RE = /\s*(?:&amp;|&|feat\.?|,|，)\s*/gi;
+function normalizeSeparators(name) {
+  if (!name) return name;
+  return name.replace(SEPARATOR_RE, '、').replace(/、{2,}/g, '、').replace(/^、+|、+$/g, '').trim();
+}
+
+// ── 專輯異體字 canonical(C5b 順手項)──────────────────────────────────
+// known pair:「脚步」(日文/簡寫異體字)→「腳步」(正體)。之後撞到第二個
+// pair 就加落呢個 map。
+const ALBUM_CANONICAL = { 脚步: '腳步' };
+function canonicalizeAlbum(album) {
+  if (!album) return album;
+  return ALBUM_CANONICAL[album] || album;
 }
 
 // ── album:description「Album (專輯): XXX」/「專輯:XXX」、title「專輯 N:XXX」──
@@ -104,7 +159,7 @@ function sanitizeAlbum(raw) {
   if (cutIdx > 0) s = s.slice(0, cutIdx).trim();
   if (!s || s.length > 12) return null;
   if (/(發行|最新|下載|購買|支持|訂閱|album)/i.test(s)) return null;
-  return s;
+  return canonicalizeAlbum(s);
 }
 // ⚠️ 實測踩過第二個坑(id=856「盛曉玫詩歌 有一天」呢類「XX詩歌」重上載版本):
 // description 用嘅係**反轉次序**「專輯 ( Album ): 有一天」,唔係最初樣本
@@ -125,7 +180,41 @@ function extractAlbumFromTitle(title) {
   return pickAlbumFromCandidate(title);
 }
 
-// ── yt-dlp -J:攞 title+description(唔落載,--skip-download) ─────────────
+// ── suspected-nonsong side-output(C5b 順手項,唔改 DB)──────────────────
+// title 撞呢批 pattern = 疑似唔係一首完整歌(歌譜/教學/訪談/組曲/花絮等),
+// 純粹 flag 落 backend/data/suspected-nonsong.md 等 C6 前交 Eric 簽,同
+// K-C-triage.md 同一款做法。用 id 去重,唔會同一條片夜夜重複 append。
+const NONSONG_TITLE_RE = /歌譜|教學|訪談|組曲|花絮|連續播放|\d+分鐘|的故事|發行|一次聽|完整版/;
+function loadFlaggedNonsongIds() {
+  try {
+    const content = fs.readFileSync(NONSONG_PATH, 'utf8');
+    const ids = new Set();
+    for (const m of content.matchAll(/^\|\s*(\d+)\s*\|/gm)) ids.add(Number(m[1]));
+    return ids;
+  } catch (_) {
+    return new Set();
+  }
+}
+function appendSuspectedNonsong(rows) {
+  if (!rows.length) return;
+  const exists = fs.existsSync(NONSONG_PATH);
+  const lines = [];
+  if (!exists) {
+    lines.push('# suspected-nonsong —— backfillMeta.js title regex flag 清單');
+    lines.push('');
+    lines.push('> TAXONOMY-5D-PLAN.md §8 C5b 順手項。純 flag list,唔改 DB。C6 開閘前');
+    lines.push('> 要交 Eric 簽(剔走/留低),同 K-C-triage.md 同一款做法。');
+    lines.push('');
+    lines.push('| id | youtube_id | title | 撞中 pattern | 發現時間 |');
+    lines.push('|---|---|---|---|---|');
+  }
+  for (const r of rows) {
+    lines.push(`| ${r.id} | ${r.youtube_id} | ${mdEscape(r.title)} | ${r.hit} | ${stamp()} |`);
+  }
+  fs.appendFileSync(NONSONG_PATH, `${lines.join('\n')}\n`, 'utf8');
+}
+
+// ── yt-dlp -J:攞 title+description+structured artist/album(唔落載)──────
 async function fetchYtMeta(youtubeId) {
   try {
     const { stdout } = await execFile(
@@ -134,15 +223,46 @@ async function fetchYtMeta(youtubeId) {
       { timeout: 30000, maxBuffer: 10 * 1024 * 1024 }
     );
     const info = JSON.parse(stdout);
-    return { title: info.title || '', description: info.description || '' };
+    return {
+      title: info.title || '',
+      description: info.description || '',
+      artist: info.artist || null,
+      album: info.album || null,
+    };
   } catch (e) {
     return null;
   }
 }
 
+// ── 欄位 migration(idempotent,C5b②)───────────────────────────────────
+function hasColumn(db, table, col) {
+  const stmt = db.prepare(`PRAGMA table_info(${table})`);
+  const cols = [];
+  while (stmt.step()) cols.push(stmt.getAsObject().name);
+  stmt.free();
+  return cols.includes(col);
+}
+async function ensureLastMetaAttemptColumn() {
+  const token = await acquireDbLock('backfillMeta-migrate');
+  if (!token) { log('⚠ 攞唔到 DB 鎖去加 last_meta_attempt 欄,收工'); process.exit(1); }
+  try {
+    const db = await openDb();
+    if (!hasColumn(db, 'hymns_all', 'last_meta_attempt')) {
+      log('ALTER TABLE hymns_all ADD COLUMN last_meta_attempt TEXT');
+      db.run('ALTER TABLE hymns_all ADD COLUMN last_meta_attempt TEXT');
+      saveDb(db);
+    }
+  } finally {
+    releaseDbLock(token);
+  }
+}
+
 // ── DB 寫入(帶鎖,即攞即放——跟 fetchLyrics.js writeLyricsRow 一致 pattern)──
+// C5b③:D/T/M 命中即刻 call 呢個(唔准成晚積到 run 尾)。DRY 模式唔真係寫,
+// 但都要清楚噉話俾人知係咪真係寫咗(修埋 C5b⑧嗰個誤導 log)。
 async function writeRow(id, fields) {
   if (!Object.keys(fields).length) return true;
+  if (DRY) return true; // dry:淨係話你知會寫咩,唔真係碰 DB
   const token = await acquireDbLock('backfillMeta');
   if (!token) {
     log(`    ⚠ 攞唔到 DB 鎖,id=${id} 呢首寫唔到(下次再嚟)`);
@@ -163,17 +283,21 @@ async function writeRow(id, fields) {
 }
 
 // ── candidate 揀選:performer_source='' 先揀(斷點續跑 + manual 保護一齊達成,
-// 因為 admin 改過嘅 row performer_source='manual' != '') ────────────────
+// 因為 admin 改過嘅 row performer_source='manual' != '')。
+// C5b②:唔准淨係 ORDER BY id ASC——三層皆空嘅死症 row 會永遠塞住隊頭,
+// budget 一到就每晚重跑同一批。改用 last_meta_attempt 輪換:未試過(NULL)
+// 先行,試過嘅耐先重試。─────────────────────────────────────────────
 function pickCandidates(db) {
   const conds = ["performer_source = ''"];
   const params = [];
   if (ORG) { conds.push('org = ?'); params.push(ORG); }
   if (STATUS) { conds.push('status = ?'); params.push(STATUS); }
-  return query(db, `SELECT id, youtube_id, title, artist, org, album, performer_source
-                    FROM hymns_all WHERE ${conds.join(' AND ')} ORDER BY id ASC`, params);
+  return query(db, `SELECT id, youtube_id, title, artist, org, album, performer_source, last_meta_attempt
+                    FROM hymns_all WHERE ${conds.join(' AND ')}
+                    ORDER BY last_meta_attempt IS NOT NULL, last_meta_attempt ASC`, params);
 }
 
-// ── Layer A:claude -p headless 批量推斷(D/T 都落空嘅先入呢層)───────────
+// ── Layer A:claude -p headless 批量推斷(M/D/T 都落空嘅先入呢層)─────────
 async function checkClaudeCliAvailable() {
   try {
     await execFile('claude', ['-p', '回覆得返一個字:ok'], { timeout: 30000 });
@@ -244,23 +368,31 @@ async function runAiBatch(items) {
 }
 
 async function main() {
-  if (!ORG) { console.error('要傳 --org(pilot 用 --org 泥土音樂)'); process.exit(1); }
-  log(`backfillMeta pilot:org=${ORG} status=${STATUS} dry=${DRY} no-ai=${NO_AI}`);
+  log(`backfillMeta:org=${ORG || '(全庫)'} status=${STATUS} limit=${LIMIT} dry=${DRY} no-ai=${NO_AI}`);
+
+  await ensureLastMetaAttemptColumn();
 
   const db = await openDb();
   let cands = pickCandidates(db);
-  log(`候選(performer_source='' AND org='${ORG}' AND status='${STATUS}'):${cands.length} 首`);
+  log(`候選(performer_source=''${ORG ? ` AND org='${ORG}'` : ''}${STATUS ? ` AND status='${STATUS}'` : ''},last_meta_attempt 輪換排序):${cands.length} 首`);
   if (LIMIT) cands = cands.slice(0, LIMIT);
+  log(`本次 budget 取:${cands.length} 首`);
+
+  const flaggedNonsongIds = loadFlaggedNonsongIds();
+  const newNonsongFlags = [];
 
   const ytCache = new Map(); // youtube_id -> meta(或 null=fetch失敗) —— 同一片多個 row 共用,慳 API
-  const results = []; // { row, meta, performer, performerSource, album, fetchFailed }
-  const aiCandidates = []; // D/T 都落空,入 AI batch
+  const results = []; // { row, meta, performer, performerSource, album, fetchFailed, writtenImmediately }
+  const aiCandidates = []; // M/D/T 都落空,入 AI batch
+
+  let immediateWriteCount = 0;
 
   for (let i = 0; i < cands.length; i++) {
     const row = cands[i];
     log(`  [${i + 1}/${cands.length}] id=${row.id} ${row.youtube_id} 「${row.title}」`);
     let meta = ytCache.get(row.youtube_id);
-    if (meta === undefined) {
+    let alreadyFetched = meta !== undefined;
+    if (!alreadyFetched) {
       meta = await fetchYtMeta(row.youtube_id);
       ytCache.set(row.youtube_id, meta);
       if (i < cands.length - 1) await sleep(jitter(DELAY_MS));
@@ -270,30 +402,67 @@ async function main() {
 
     if (!meta) {
       log('    ⚠ yt-dlp -J 攞唔到 metadata,skip(下次再試)');
+      // C5b②:fetch 失敗都要蓋 last_meta_attempt,唔係就會同「死症」row 一樣
+      // 永遠塞喺候選隊頭,夜夜重試同一批壞片。
+      await writeRow(row.id, { last_meta_attempt: stamp() });
       results.push({ row, fetchFailed: true });
       continue;
     }
 
-    const descPerformer = matchDescriptionPerformer(meta.description);
-    const titlePerformer = descPerformer ? null : matchTitlePerformer(meta.title || row.title);
-    const albumFromDesc = extractAlbumFromDescription(meta.description);
-    const albumFromTitle = albumFromDesc ? null : extractAlbumFromTitle(meta.title || row.title);
+    // suspected-nonsong flag(唔改 DB,純側寫)
+    const checkTitle = meta.title || row.title;
+    const nonsongHit = checkTitle.match(NONSONG_TITLE_RE);
+    if (nonsongHit && !flaggedNonsongIds.has(row.id)) {
+      newNonsongFlags.push({ id: row.id, youtube_id: row.youtube_id, title: checkTitle, hit: nonsongHit[0] });
+      flaggedNonsongIds.add(row.id);
+    }
 
-    const performer = descPerformer || titlePerformer || null;
-    const performerSource = descPerformer ? 'description' : (titlePerformer ? 'title' : null);
-    const album = albumFromDesc || albumFromTitle || null;
+    // ── waterfall:Layer M → D → T ──────────────────────────────────
+    const metaPerformerRaw = extractMetaPerformer(meta.artist, row.org);
+    const descPerformerRaw = metaPerformerRaw ? null : matchDescriptionPerformer(meta.description);
+    const titlePerformerRaw = (metaPerformerRaw || descPerformerRaw) ? null : matchTitlePerformer(meta.title || row.title);
+
+    const performerRaw = metaPerformerRaw || descPerformerRaw || titlePerformerRaw || null;
+    const performerSource = metaPerformerRaw ? 'metadata' : (descPerformerRaw ? 'description' : (titlePerformerRaw ? 'title' : null));
+    const performer = performerRaw ? normalizeSeparators(performerRaw) : null;
+
+    const metaAlbum = extractMetaAlbum(meta.album);
+    const albumFromDesc = metaAlbum ? null : extractAlbumFromDescription(meta.description);
+    const albumFromTitle = (metaAlbum || albumFromDesc) ? null : extractAlbumFromTitle(meta.title || row.title);
+    const album = metaAlbum || albumFromDesc || albumFromTitle || null;
 
     const result = { row, meta, performer, performerSource, album };
     results.push(result);
-    if (!performer) aiCandidates.push({ youtube_id: row.youtube_id, title: meta.title, description: meta.description, result });
 
-    log(`    D/T:performer=${performer || '(空)'} source=${performerSource || '-'} album=${album || '(空)'}`);
+    log(`    M/D/T:performer=${performer || '(空)'} source=${performerSource || '-'} album=${album || '(空)'}`);
+
+    // ── C5b③:M/D/T 命中即刻寫,唔留到 run 尾 ──────────────────────────
+    const fields = { last_meta_attempt: stamp() };
+    if (performer && performerSource) {
+      fields.performer = performer;
+      fields.performer_source = performerSource;
+    }
+    if (album && !(row.album && row.album.trim())) {
+      fields.album = album;
+    }
+    const hasRealUpdate = Boolean(fields.performer || fields.album);
+    await writeRow(row.id, fields);
+    result.writtenImmediately = true;
+    if (hasRealUpdate) immediateWriteCount++;
+
+    if (!performer) aiCandidates.push({ youtube_id: row.youtube_id, title: meta.title, description: meta.description, result });
+  }
+
+  if (newNonsongFlags.length) {
+    appendSuspectedNonsong(newNonsongFlags);
+    log(`suspected-nonsong:新增 ${newNonsongFlags.length} 條 flag → ${NONSONG_PATH}`);
   }
 
   // ── Layer A ──────────────────────────────────────────────────────
   let aiCliAvailable = null;
+  let aiWriteCount = 0;
   if (!NO_AI && aiCandidates.length) {
-    log(`Layer A:${aiCandidates.length} 首 D/T 都落空,check claude CLI 可用性…`);
+    log(`Layer A:${aiCandidates.length} 首 M/D/T 都落空,check claude CLI 可用性…`);
     aiCliAvailable = await checkClaudeCliAvailable();
     if (!aiCliAvailable) {
       log('  ⚠ claude CLI 行唔到(未登入/唔喺 PATH/出錯)——Layer A 呢次留 stub,呢批 row performer 留空');
@@ -304,12 +473,17 @@ async function main() {
         log(`  AI batch [${i + 1}-${i + batch.length}/${aiCandidates.length}]`);
         const out = await runAiBatch(batch);
         if (out === null) { aiCliAvailable = false; log('  ⚠ batch 中途 CLI 出錯,之後嘅 batch 一律當 CLI 唔可用'); break; }
+        // C5b③:Layer A 要成個 batch call 完先知邊條有答案,冇辦法逐條即寫,
+        // 但一 call 完即刻補寫(唔等成個 script 跑晒先寫)。
         for (const it of batch) {
           const v = out[it.youtube_id];
           if (v) {
-            it.result.performer = v;
+            const normalized = normalizeSeparators(v);
+            it.result.performer = normalized;
             it.result.performerSource = 'ai';
-            log(`    ✓ AI: ${it.youtube_id} → ${v}`);
+            await writeRow(it.result.row.id, { performer: normalized, performer_source: 'ai' });
+            aiWriteCount++;
+            log(`    ✓ AI: ${it.youtube_id} → ${normalized}`);
           }
         }
         if (i + AI_BATCH_SIZE < aiCandidates.length) await sleep(jitter(1500));
@@ -319,35 +493,19 @@ async function main() {
     log('--no-ai:跳過 Layer A');
   }
 
-  // ── 寫 DB(protect:album 已有值唔重寫;performer 冇命中就完全唔寫呢個 row)──
-  let written = 0;
-  for (const r of results) {
-    if (r.fetchFailed) continue;
-    const fields = {};
-    if (r.performer && r.performerSource) {
-      fields.performer = r.performer;
-      fields.performer_source = r.performerSource;
-    }
-    if (r.album && !(r.row.album && r.row.album.trim())) {
-      fields.album = r.album;
-    }
-    if (Object.keys(fields).length) {
-      if (!DRY) await writeRow(r.row.id, fields);
-      written++;
-    }
-  }
-  log(`寫入完成:${written}/${results.length} 首有更新${DRY ? '(--dry,實際冇寫)' : ''}`);
+  const totalWritten = immediateWriteCount + aiWriteCount;
+  log(`寫入完成:${totalWritten}/${results.length} 首有 performer/album 更新${DRY ? '(--dry,實際冇寫,以上為模擬計數)' : ''}(M/D/T 即寫 ${immediateWriteCount} + AI 補寫 ${aiWriteCount})`);
 
   writeReport(results, { aiCliAvailable, dry: DRY });
 }
 
 function writeReport(results, { aiCliAvailable, dry }) {
-  const bySource = { description: 0, title: 0, ai: 0, empty: 0, fetchFailed: 0 };
+  const bySource = { metadata: 0, description: 0, title: 0, ai: 0, empty: 0, fetchFailed: 0 };
   let albumHit = 0;
   const lines = [];
-  lines.push(`# backfillMeta pilot 報告 —— org=${ORG} status=${STATUS}`);
+  lines.push(`# backfillMeta 報告 —— org=${ORG || '(全庫)'} status=${STATUS}`);
   lines.push('');
-  lines.push(`> TAXONOMY-5D-PLAN.md §3.2/§3.3/§8 C5 pilot。生成時間:${stamp()}${dry ? '(--dry,DB 未寫入)' : ''}`);
+  lines.push(`> TAXONOMY-5D-PLAN.md §3.2/§3.3/§8 C5+C5b。生成時間:${stamp()}${dry ? '(--dry,DB 未寫入)' : ''}`);
   lines.push('');
   lines.push('| youtube_id | title | performer | source | album |');
   lines.push('|---|---|---|---|---|');
@@ -368,20 +526,21 @@ function writeReport(results, { aiCliAvailable, dry }) {
   lines.push('');
   const total = results.length;
   lines.push(`- 總數:${total}`);
+  lines.push(`- Layer M(metadata)命中:${bySource.metadata}`);
   lines.push(`- Layer D(description)命中:${bySource.description}`);
   lines.push(`- Layer T(title)命中:${bySource.title}`);
   lines.push(`- Layer A(AI)命中:${bySource.ai}`);
-  lines.push(`- 三層都空:${bySource.empty}`);
+  lines.push(`- 四層都空:${bySource.empty}`);
   lines.push(`- yt-dlp 攞唔到 metadata:${bySource.fetchFailed}`);
   lines.push(`- album 命中(含原有值):${albumHit}/${total}`);
   lines.push('');
   lines.push('## AI batch(Layer A)執行狀況');
   lines.push('');
   if (aiCliAvailable === null) {
-    lines.push('冇觸發 Layer A(D/T 已經覆蓋晒所有候選,或者 --no-ai)。');
+    lines.push('冇觸發 Layer A(M/D/T 已經覆蓋晒所有候選,或者 --no-ai)。');
   } else if (aiCliAvailable === false) {
     lines.push('⚠️ `claude -p` headless CLI 呢部機行唔到(未登入 `/login`,或者其他 exec 錯誤)——');
-    lines.push('Layer A 留 stub,呢批 D/T 落空嘅 row performer 維持空白,等有登入嘅環境再補跑。');
+    lines.push('Layer A 留 stub,呢批 M/D/T 落空嘅 row performer 維持空白,等有登入嘅環境再補跑。');
   } else {
     lines.push('`claude -p` 可用,已跑完批量推斷(見上表 source=ai 嘅列)。');
   }
