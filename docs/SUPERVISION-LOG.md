@@ -1714,3 +1714,63 @@ patch(tier1Exclude flag+reject 4 條 junk+補 blocklist 詞)今晚內都要跟�
 `backend/data/worshipGroups.js`(tier1Exclude ×2)、`backend/lib/hymnDb.js`
 (青吶特會/年度異象)、`backend/scripts/growLibrary.js`(tier1Exclude filter)、
 `backend/hymns.db`(4 條 reject)。18:30 死線前完成,未 commit,等指示。
+
+## 🗓️ 2026-08-01 執行 session:TAXONOMY-5D-PLAN §8 C3 落地 + 暫停 growLibrary 排程開波 staging 重攞
+
+**範圍:** TAXONOMY-5D-PLAN.md §3.4/§8 C3(唔掂 prod 數據)。前置 C1(`e96fc6a`)、
+C2(`1774359`+`1687608`)已落地。
+
+**Commit A(`7746886`):** 將 growLibrary.js `discoverFromGroup()` 嘅頻道掃描
++ 收錄關卡①②③(淺/深層 listing fallback、channel-level 語言 sanity check、
+片長帶+分類/品質+contentGate+死鏈驗證嘅斷路器)抽出做 `backend/lib/channelScan.js`
+共用 module,growLibrary.js 改 import,`node --check` 過,行為冇變(淨係第
+④步「寫邊個表」留喺各自 caller)。新 script `backend/scripts/refetchKids.js`
+實作 §3.4 K-A(快照)+ K-B(staging 重攞):
+- K-A:dump 現有 619 首 lang='兒童' 去 `backend/data/kids-refetch/old-snapshot.json`
+  (對數用)+ `.sql`(rollback 用)—— 已經跑真,619 首落地。
+- K-B:staging 表 `kids_refetch`(hymns.db 入面新表,唔郁 hymns_all 任何 row);
+  逐團體行 8 個有 channel/playlist 嘅兒童團體(讚美之泉兒童/Hillsong Kids/
+  ACM兒童詩歌/Giggles and Tunes/基恩敬拜祈禱仔/Yancy/Listener Kids/CJ and
+  Friends);dedup 對照成個 hymns_all,但排除而家嘅 471 首兒童 cohort(唔係
+  就乜都攞唔返),148 首 rejected 墓碑刻意留喺 blocklist 攔垃圾翻生;雙值
+  kidsLang 守衛(C1 驗收觀察④)—— insert 前 lang 必須 ∈ {粵語,國語,英文},
+  611 Kids Worship 呢類雙值團體(而家 channel:null 行唔到)逐首憑粵語書面
+  虛詞判斷,判唔到就 flag='lang-unresolved' 唔 insert;KotM(4)+Saddleback
+  Kids(1)行 youtube_id allowlist 分支。DB 寫入用 acquireDbLock + 每次寫先
+  重新 openDb()(網絡操作喺鎖外做,跟 fetchLyrics.js 協議),避免揸鎖成粒鐘
+  阻住 fetchLyrics/admin。支援 `--group`/`--dry`/`--status`/`--report-only`
+  斷點續跑,每次跑完自動出 `backend/data/kids-refetch/K-C-report.md`。落地前
+  用 `--dry --group Yancy` 真.smoke test 一個團體(200條listing,片長/標題
+  gate、resolve 驗證全部行得通冇異常先收工)。
+
+**Commit B(`b300ff2`):** LibraryScreen.js C2 驗收觀察 Ⓑ(kids sub-chip 消失
+時 reset `kidsSubLang`,加 useEffect)+ Ⓒ(清走 `hasChipFilter` 恆真死碼)。
+**OTA 未推 —— 兩個阻塞:** ① `eas whoami` 顯示 `Not logged in`,呢個 session
+冇 Eric 嘅 Expo 帳號登入資料,唔會代為輸入帳密(安全規矩);② 就算登入咗,
+`frontend/hymn-app/` working tree 而家仲有另一個 session 未 commit 嘅
+rebrand icon 改動(android-icon-*/favicon/icon/splash-icon.png 等),要跟
+EAS-UPDATE-PLAN 紅線 stash 埋先可以 publish,唔可以夾埋人哋未完成嘅嘢出街。
+**Ⓑ Ⓒ 呢兩個 fix 已經 commit 但未 OTA,C4 開閘前提「C2 OTA 已推」暫時未達
+標** —— 要 Eric 先 `eas login` 先可以補推(唔止呢次,連 C2 本身嘅 OTA 都仲
+係得 emulator 驗過、未確認真機 adoption,見 C2 落地記錄)。
+
+**暫停 growLibrary 排程 + 開波 staging 重攞:**
+1. `launchctl unload ~/Library/LaunchAgents/com.hymnapp.growlibrary.plist`
+   —— 已確認 `launchctl list | grep growlibrary` 冧晒(冇再出現)。fetchLyrics
+   排程完全冇郁。C4 完成後要記得 `launchctl load` 返呢個 plist 恢復排程。
+2. `nohup node scripts/refetchKids.js --delay 5000 > data/kids-refetch/run.log
+   2>&1 < /dev/null & disown`,PID 29231。已驗證真正 detach:`ps -o ppid=`
+   顯示 PPID=1(launchd 接管,唔再掛住呢個 session 嘅 shell),log 持續有新
+   entry(讚美之泉兒童/國語 開始跑),唔係淨係起咗個 process 就當完事。
+3. 預計:8 個團體 + 5 首 allowlist,共約 470+ 條逐條 resolveAudioUrl 驗證
+   (含 jitter delay ~5s 基數),粗估 1-2 個鐘一輪掃完全部團體(視乎每個
+   頻道 fresh 候選幾多、有冇撞斷路器),跑完自動出 K-C 報告。**唔使等佢跑
+   完**,收工前已確認開波跑穩。
+
+**紅線核對:** 全程冇 DELETE/UPDATE hymns_all 任何 row,冇掂 lang 值/墓碑/
+users.db;`git add -p` 揀走 growLibrary.js 入面另一個 session 未 commit 嘅
+DISCOVER_BUDGET 9→12 改動(SUPERVISION-LOG 上面「org/performer維度落地」
+條目嗰段),冇夾埋落我嘅 commit;hymns.db/users.db 冇 commit;worshipGroups.js
+/package.json/alignLyrics.js/BRAND-GODMUSIC-PLAN.md/rebrand icon assets 等
+其他 session 嘅未完成改動全部冇郁、冇 add。C4(原子對換)未做,等 K-C 報告
+出咗、Eric 簽走漏清單、OTA 補推完先開閘。
