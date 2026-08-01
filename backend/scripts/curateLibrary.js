@@ -60,7 +60,11 @@ async function main() {
   const pool = dedupeByYoutubeId(all)
     .filter((r) => !isCompilation(r.title))
     .filter((r) => !isNonWorship(r.title, r.artist))
-    .filter((r) => r.status !== 'dead');
+    .filter((r) => r.status !== 'dead')
+    // 2026-08-01 Opus 5 揪出:同 growLibrary.js usablePool() 一樣要剔走
+    // 'rejected'(admin 落架/內容清理判死嘅終態),否則呢個手動 script 一樣會
+    // 將判死咗嘅內容重新 curate 返。
+    .filter((r) => r.status !== 'rejected');
 
   console.log(`pool after exclusions: ${pool.length} (from ${all.length})`);
   console.log(`target ${TARGET}, artist cap ${CAP}, quota ${JSON.stringify(QUOTA)}\n`);

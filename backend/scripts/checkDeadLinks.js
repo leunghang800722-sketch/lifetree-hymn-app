@@ -87,18 +87,29 @@ async function runCheck() {
       alive = false;
     }
 
+    // ⚠️ 2026-08-01 Opus 5 驗收 MEMBERSHIP-PHASE2-ADMIN-PLAN 揪出嘅範圍性問題:
+    // 呢個 job 每晚 4 點行、按 last_checked 由舊到新輪替全庫,之前完全冇理
+    // status='rejected'——成功分支硬寫 'ok'、失敗分支硬寫 'unchecked'/'dead',
+    // 兩條路都會將 admin 落架 / 內容清理判死嘅歌洗走翻生(同 growLibrary.js
+    // usablePool() 嗰單一樣嘅根因,但呢度影響全庫現有 213 行 rejected——
+    // 7/27+7/30 兩輪 Eric 叫人做嘅內容清理成果,唔淨係 Phase2 新落架嘅歌)。
+    // 'rejected' 係內容判死嘅終態,同「條鏈生唔生」係兩件獨立事,checkDeadLinks
+    // 淨係負責後者——條鏈生死點都好,rejected 都要維持 rejected。
+    const preserveRejected = t.status === 'rejected';
     if (alive) {
       ok++;
       if (t.status === 'dead') { revived++; console.log(`  ♻️  revived: ${t.id} ${t.title}`); }
-      // One success is enough — clear the streak and mark alive.
-      db.run(`UPDATE hymns_all SET status='ok', fail_streak=0, last_checked=? WHERE id=?`, [today(), t.id]);
+      // One success is enough — clear the streak and mark alive(rejected 除外)。
+      db.run(`UPDATE hymns_all SET status=?, fail_streak=0, last_checked=? WHERE id=?`,
+             [preserveRejected ? 'rejected' : 'ok', today(), t.id]);
     } else {
       failed++;
       const streak = (t.fail_streak || 0) + 1;
       const dead = streak >= DEAD_AFTER;
-      if (dead && t.status !== 'dead') { newlyDead++; console.log(`  ☠️  dead (${streak} strikes): ${t.id} ${t.title}`); }
+      if (dead && t.status !== 'dead' && !preserveRejected) { newlyDead++; console.log(`  ☠️  dead (${streak} strikes): ${t.id} ${t.title}`); }
+      const newStatus = preserveRejected ? 'rejected' : (dead ? 'dead' : (t.status === 'dead' ? 'dead' : 'unchecked'));
       db.run(`UPDATE hymns_all SET status=?, fail_streak=?, last_checked=? WHERE id=?`,
-             [dead ? 'dead' : (t.status === 'dead' ? 'dead' : 'unchecked'), streak, today(), t.id]);
+             [newStatus, streak, today(), t.id]);
     }
 
     await sleep(DELAY_MS);
