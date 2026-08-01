@@ -6,7 +6,7 @@
 // (backend 個 `hymns` view 已經幫我哋隱藏咗死鏈同非 curated 嘅歌),
 // 所以呢度收到咩就顯示咩,唔使前端再過濾一次。
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { View, Text, TextInput, FlatList, TouchableOpacity, StyleSheet, Image, Keyboard } from 'react-native';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { COLORS, TYPOGRAPHY } from '../theme/designSystem';
@@ -95,6 +95,18 @@ export default function LibraryScreen({ hymns = [], onPlayHymn }) {
     return KIDS_SUB_LANGS.filter((l) => counts[l] > 0).map((l) => [l, counts[l]]);
   }, [kidsBase]);
 
+  // C2 驗收觀察Ⓑ(TAXONOMY-5D-PLAN §8 C3):sub-chips 係按實際數據動態生成,
+  // 揀緊嘅 kidsSubLang 有可能因為數據變動(例如 C4 換血改咗 real_lang 分佈)
+  // 而喺 kidsSubLangs 度消失 —— 冇呢個 effect 嘅話 kidsSubLang 會變成一個
+  // 隱形篩選(UI 冇粒 chip 顯示揀緊,但 `searched` 仍然用緊佢嗰個舊值 filter,
+  // 用戶會見到「莫名其妙」少咗結果)。一發現揀緊嘅值唔喺現有 sub-chip 集合
+  // 入面就重置返「全部」。
+  useEffect(() => {
+    if (kidsSubLang !== '全部' && !kidsSubLangs.some(([l]) => l === kidsSubLang)) {
+      setKidsSubLang('全部');
+    }
+  }, [kidsSubLangs, kidsSubLang]);
+
   // Filter 鏈(§4.2):全庫 → 語言 chip(兒童讀 kids 兼容分支)→ 兒童 sub-lang
   // (real_lang)→ 搜尋字串 → 團體 chip(AND)。團體 chip 嘅計數 base 跟埋
   // 語言+sub-lang+搜尋重算,所以搜尋層放喺團體層之前。
@@ -127,7 +139,10 @@ export default function LibraryScreen({ hymns = [], onPlayHymn }) {
   }, [searched, org]);
 
   const hasQuery = query.trim().length > 0;
-  const hasChipFilter = lang !== '全部' || !!org || (lang === '兒童' && kidsSubLang !== '全部');
+  // C2 驗收觀察Ⓒ(TAXONOMY-5D-PLAN §8 C3):原本仲有 `|| (lang==='兒童' &&
+  // kidsSubLang!=='全部')` 一截,但 lang==='兒童' 本身已經令 `lang!=='全部'`
+  // 成立,呢截係恆真嘅死碼,冚咗唔改行為,淨係清走。
+  const hasChipFilter = lang !== '全部' || !!org;
   // B11 修 —— 之前唔理 hasChipFilter,搜尋撞 0 個結果一律話「搵唔到「Chris」/
   // 試下其他關鍵字」,但歌手 chip(例如「ACM 21」)已經 scroll 出咗畫面,用戶
   // 見唔到仲揀緊邊個歌手,以為個關鍵字真係冇貨(其實清埋篩選就有 12 首)。
