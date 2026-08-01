@@ -15,9 +15,9 @@ import { useFavorites } from '../context/FavoritesContext';
 import { usePlaylists } from '../context/PlaylistsContext';
 import { useAuth } from '../context/AuthContext';
 import { useAddToPlaylist } from '../components/AddToPlaylistSheet';
+import AvatarButton from '../components/AvatarButton';
 import PlaylistDetailSheet from './PlaylistDetailSheet';
 import { getDisplayTitle } from '../utils/displayTitle';
-import { useOutboxLength } from '../hooks/useOutboxLength';
 
 function Cover({ youtubeId, size = 52 }) {
   const [failed, setFailed] = useState(false);
@@ -37,7 +37,6 @@ export default function MineScreen({ onPlayHymn, onOpenAuth, onOpenAdminAdd, min
   const { playlists = [], deletePlaylist } = usePlaylists() || {};
   const { user, isAdmin } = useAuth() || {};
   const { open: openAddToPlaylist, openCreate, openRename } = useAddToPlaylist();
-  const outboxLength = useOutboxLength();
   const [tab, setTab] = useState('favorites'); // favorites | playlists
   const [detailId, setDetailId] = useState(null); // 開緊邊個清單嘅詳情頁
 
@@ -62,33 +61,31 @@ export default function MineScreen({ onPlayHymn, onOpenAuth, onOpenAdminAdd, min
 
   return (
     <View style={[styles.container, { paddingTop: insets.top + 8 }]}>
-      <Text style={styles.header}>我的</Text>
+      {/* PHONE-PASSWORD-AUTH-PLAN §5.4:右上角會員掣,同首頁/詩歌庫一致。 */}
+      <View style={styles.headerRow}>
+        <Text style={styles.header}>我的</Text>
+        <AvatarButton onPress={onOpenAuth} />
+      </View>
 
-      {/* 帳戶 —— 登入後撳開帳戶頁(AccountScreen),唔再彈 Alert(§2) */}
-      <TouchableOpacity
-        style={[styles.account, !user && styles.accountCta]}
-        activeOpacity={0.7}
-        onPress={() => onOpenAuth && onOpenAuth()}
-      >
-        <View style={[styles.avatar, user && styles.avatarLetterWrap]}>
-          {user ? (
-            <Text style={styles.avatarLetterText}>
-              {(user.username || user.phone?.slice(-4) || '?').charAt(0).toUpperCase()}
-            </Text>
-          ) : (
+      {/* 未登入 CTA(§5.4):登入後呢張卡收埋(右上角頭像係入口,同步狀態
+          搬咗去 AccountScreen 顯示),但未登入時保留做登入入口,避免新
+          用戶搵唔到「我的」頁點樣登入。 */}
+      {!user && (
+        <TouchableOpacity
+          style={[styles.account, styles.accountCta]}
+          activeOpacity={0.7}
+          onPress={() => onOpenAuth && onOpenAuth()}
+        >
+          <View style={styles.avatar}>
             <MaterialIcons name="person-outline" size={22} color={COLORS.accent} />
-          )}
-        </View>
-        <View style={{ flex: 1, marginLeft: 12 }}>
-          <Text style={styles.accountTitle}>
-            {user ? (user.username || (user.phone ? `尾號 ${user.phone.slice(-4)}` : '未命名帳戶')) : '登入 / 註冊'}
-          </Text>
-          <Text style={styles.accountSub}>
-            {user ? (outboxLength > 0 ? `${outboxLength} 項等緊同步` : '已同步') : '登入後可以同步最愛同清單'}
-          </Text>
-        </View>
-        <MaterialIcons name="chevron-right" size={22} color={COLORS.textSecondary} />
-      </TouchableOpacity>
+          </View>
+          <View style={{ flex: 1, marginLeft: 12 }}>
+            <Text style={styles.accountTitle}>登入 / 註冊</Text>
+            <Text style={styles.accountSub}>登入後可以同步最愛同清單</Text>
+          </View>
+          <MaterialIcons name="chevron-right" size={22} color={COLORS.textSecondary} />
+        </TouchableOpacity>
+      )}
 
       {/* Admin 專用:貼連結加歌(MEMBERSHIP-PHASE2-ADMIN-PLAN §3.7)——member/
           未登入完全見唔到,純 UI 清潔(API 有 requireAdmin 403 兜底)。 */}
@@ -215,7 +212,8 @@ export default function MineScreen({ onPlayHymn, onOpenAuth, onOpenAdminAdd, min
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.background },
-  header: { ...TYPOGRAPHY.title, paddingHorizontal: 16, marginBottom: 12 },
+  headerRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, marginBottom: 12 },
+  header: { ...TYPOGRAPHY.title },
   account: {
     flexDirection: 'row', alignItems: 'center',
     marginHorizontal: 16, marginBottom: 16, padding: 12,
@@ -225,9 +223,6 @@ const styles = StyleSheet.create({
     width: 40, height: 40, borderRadius: 20,
     backgroundColor: COLORS.cardLight, alignItems: 'center', justifyContent: 'center',
   },
-  // 登入後首字母頭像(§2.1)——同 AccountScreen 同一條 fallback 鏈,兩邊視覺扣到
-  avatarLetterWrap: { backgroundColor: COLORS.accent },
-  avatarLetterText: { fontSize: 18, fontWeight: '800', color: COLORS.background },
   // 未登入卡加 1px 邊做 CTA 感(§2.3),唔好成塊變 accent 色
   accountCta: { borderWidth: 1, borderColor: COLORS.border },
   accountTitle: { ...TYPOGRAPHY.body, fontWeight: '600' },

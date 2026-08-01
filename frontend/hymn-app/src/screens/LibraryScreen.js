@@ -15,6 +15,7 @@ import { useFavorites } from '../context/FavoritesContext';
 import { useAddToPlaylist } from '../components/AddToPlaylistSheet';
 import { useAdminEditHymn } from '../components/AdminEditHymnSheet';
 import { useAuth } from '../context/AuthContext';
+import AvatarButton from '../components/AvatarButton';
 import { getDisplayTitle } from '../utils/displayTitle';
 
 const LANGS = ['全部', '粵語', '國語', '英文', '兒童'];
@@ -60,7 +61,7 @@ function Cover({ youtubeId, size = 52 }) {
   return <Image source={{ uri }} style={[styles.cover, { width: size, height: size }]} onError={() => setFailed(true)} />;
 }
 
-export default function LibraryScreen({ hymns = [], onPlayHymn }) {
+export default function LibraryScreen({ hymns = [], onPlayHymn, onOpenAuth }) {
   const [lang, setLang] = useState('全部');
   const [org, setOrg] = useState(null);
   // 兒童 tab 內語言 sub-chips(TAXONOMY-5D-PLAN §4.2)—— 淨喺 lang==='兒童' 時生效。
@@ -166,7 +167,12 @@ export default function LibraryScreen({ hymns = [], onPlayHymn }) {
 
   return (
     <View style={[styles.container, { paddingTop: insets.top + 8 }]}>
-      <Text style={styles.header}>詩歌庫</Text>
+      {/* PHONE-PASSWORD-AUTH-PLAN §5.4:右上角加會員掣,同首頁/我的頁一致;
+          搜尋欄/chips 佈局唔郁,淨係標題呢行變成 row。 */}
+      <View style={styles.headerRow}>
+        <Text style={styles.header}>詩歌庫</Text>
+        <AvatarButton onPress={onOpenAuth} />
+      </View>
       <Text style={styles.count}>{shown.length} 首</Text>
 
       {/* 搜尋欄(SEARCH-MERGE-PLAN §3)— 喺固定 header 區內,自動 pinned 唔跟 scroll */}
@@ -332,7 +338,8 @@ export default function LibraryScreen({ hymns = [], onPlayHymn }) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.background },
-  header: { ...TYPOGRAPHY.title, paddingHorizontal: 16 },
+  headerRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16 },
+  header: { ...TYPOGRAPHY.title },
   count: { ...TYPOGRAPHY.artist, paddingHorizontal: 16, marginTop: 2, marginBottom: 10 },
   // 搜尋欄 — 樣式跟舊 SearchScreen 嘅藥丸形睇齊
   searchWrap: {

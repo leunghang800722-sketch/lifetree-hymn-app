@@ -1315,6 +1315,7 @@ import HomeSections from './src/components/home/HomeScreen';
 import HymnListScreen from './src/screens/HymnListScreen';
 import LibraryScreen from './src/screens/LibraryScreen'; // §2.2 詩歌庫(2026-07 併入搜尋欄,SEARCH-MERGE-PLAN)
 import MineScreen from './src/screens/MineScreen';        // §2.2 我的(新,合併 最愛+清單+帳戶)
+import AvatarButton from './src/components/AvatarButton'; // PHONE-PASSWORD-AUTH-PLAN §5.4:三頁右上角共用會員掣
 // 舊 tab 畫面(Category / Playlist / Favorites / Search)已由上面新畫面取代。
 // 檔案暫時保留喺 src/screens/ 未刪(等 Phase 3 收尾一次過清 legacy;
 // SearchScreen.js + services/searchApi.js 同樣唔再 import,一齊等清)。
@@ -1324,7 +1325,6 @@ import MineScreen from './src/screens/MineScreen';        // §2.2 我的(新,�
 // ================================================================
 function HomeScreen({ hymns, activeCategory, onCategoryChange, onPlayHymn, onOpenAuth, onOpenList }) {
   const homeInsets = typeof useSafeAreaInsets === 'function' ? useSafeAreaInsets() : { top: 0 };
-  const { user } = useAuth();
   return (
     <View style={{ flex: 1, backgroundColor: COLORS.bg }}>
       {/* Header — God Music 品牌 + 通知 + 頭像 */}
@@ -1338,13 +1338,9 @@ function HomeScreen({ hymns, activeCategory, onCategoryChange, onPlayHymn, onOpe
         {/* B13 —— 舊嘅通知鐘掣冇 onPress(App 未有通知功能),撳落去零反應。
             一個死掣好過冇掣,而家直接拆走,將來真係有通知功能先加返。 */}
         <View style={hs.iconWrap}>
-          <TouchableOpacity style={hs.avatarBtn} onPress={onOpenAuth}>
-            {user ? (
-              <Text style={hs.avatarText}>{(user.username || '?').charAt(0).toUpperCase()}</Text>
-            ) : (
-              <MaterialIcons name="person-outline" size={20} color={TEXT_PRIMARY} />
-            )}
-          </TouchableOpacity>
+          {/* PHONE-PASSWORD-AUTH-PLAN §5.4:抽做共用 AvatarButton,三頁(首頁/
+              詩歌庫/我的)右上角一致,唔再喺呢度 inline 寫顯示邏輯。 */}
+          <AvatarButton onPress={onOpenAuth} />
         </View>
       </View>
       <HomeSections hymns={hymns} onPlayHymn={onPlayHymn} onOpenList={onOpenList} />
@@ -1385,19 +1381,8 @@ const hs = StyleSheet.create({
     alignItems: 'center',
     gap: 12,
   },
-  avatarBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: DesignColors.accent,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  avatarText: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: MAIN_BG_COLOR,
-  },
+  // avatarBtn/avatarText 搬咗去 src/components/AvatarButton.js(§5.4,三頁
+  // 共用),呢度唔再需要。
 });
 
 // ================================================================
@@ -2295,7 +2280,7 @@ function AppContent() {
             onOpenList={showHymnList} />
         </View>
         <View style={[pageStyles.screenWrap, { display: activeTab === 'Library' ? 'flex' : 'none' }]}>
-          <LibraryScreen hymns={allSongs || []} onPlayHymn={handlePlayHymn} />
+          <LibraryScreen hymns={allSongs || []} onPlayHymn={handlePlayHymn} onOpenAuth={openAuth} />
         </View>
         <View style={[pageStyles.screenWrap, { display: activeTab === 'Mine' ? 'flex' : 'none' }]}>
           <MineScreen onPlayHymn={handlePlayHymn} onOpenAuth={openAuth} onOpenAdminAdd={openAdminAdd}
