@@ -9,12 +9,16 @@
 // 郁 `lyrics`/`lyrics_status`,已出街嘅 verified 歌詞內容完全唔受影響。
 //
 // ── 安全機制(同 fetchLyrics.js 一致,唔好行返轉頭)────────────────
-//   * 只喺 00:00-09:00 窗口行(--ignore-window 手動測試先可以跳過)。
+//   * 2026-08-01 起窗口係 18:40 起夜晚跨到朝早 09:00(--ignore-window 手動測試
+//     先可以跳過)。
 //   * budget 預設 60(59 首存貨一晚做晒有突)、jitter delay。
 //   * DB 寫入鎖:慢工序(落載/whisper)唔攞鎖,淨係每首寫嗰一刻先攞鎖 + 重新
 //     openDb()(見 fetchLyrics.js `writeLyricsRow` 註解,同一個 P0 教訓)。
 //   * 連續 3 次 exec 失敗 → 用已知有 CC 嘅片做對照探測,分清「俾擋」定
 //     「呢批片本身有事」。
+//   * 死片放棄(2026-08-01 Eric 拍板):單首落載失敗就喺 lyrics_timeline.alignFails
+//     加一,累計 ≥3 次就寫 whisper:{failed:'dead-video'} 永久標走,唔會再入
+//     `pickCandidates` 嘅隊(見底下 `hasWhisperTimeline`/`recordAlignFail`)。
 //   * temp 音訊喺 mkdtemp 目錄,一首處理完即刪(唔理成功定失敗)。
 //
 // Usage:
@@ -31,6 +35,7 @@ import os from 'os';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { openDb, saveDb, query, sleep, acquireDbLock, releaseDbLock } from '../lib/hymnDb.js';
+import { detectWhisperLang, runWhisperJson as runWhisperJsonShared, DEFAULT_WHISPER_MODEL_NAME } from '../lib/whisperTranscribe.js';
 
 const exec = promisify(execCb);
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -39,12 +44,17 @@ const arg = (f, d) => { const i = process.argv.indexOf(f); return i > -1 && proc
 const BUDGET = Number(arg('--budget', 60));
 const DELAY_MS = Number(arg('--delay', 5000));
 const SINGLE_ID = arg('--id', null);
-const MODEL_NAME = arg('--model', 'small');
+// 2026-07-27 STAGE 3 對齊修:model 一律用 medium(small 唔可靠,見 lib/whisperTranscribe.js
+// 頭註解)。--model 淨係留返俾測試用,唔好喺正常路徑改返 small。
+const MODEL_NAME = arg('--model', DEFAULT_WHISPER_MODEL_NAME);
 const IGNORE_WINDOW = process.argv.includes('--ignore-window');
 const STATUS_ONLY = process.argv.includes('--status');
 const DRY = process.argv.includes('--dry');
 
-const WINDOW_START = 0, WINDOW_END = 9;
+// 2026-08-01 由「06:50 開波、00:00-09:00 窗」改做「18:40 開波」(Eric 拍板,
+// 配合 fetchLyrics 8 輪新排程挪位,見 ops/launchd/com.hymnapp.alignbackfill.plist
+// 註解):窗口對應改做 h>=18 或者 h<9(18:40 呢輪 h=18 ✓ 準行)。
+const NIGHT_START = 18, WINDOW_END = 9;
 const PROBE_VIDEO = 'gF-eDlXq3II'; // 同 fetchLyrics.js 一致嘅對照探測片
 const WHISPER_BIN = 'whisper-cli';
 const WHISPER_MODEL = path.join(__dirname, '..', 'models', `ggml-${MODEL_NAME}.bin`);
@@ -52,24 +62,41 @@ const WHISPER_MODEL = path.join(__dirname, '..', 'models', `ggml-${MODEL_NAME}.b
 const stamp = () => new Date().toISOString().replace('T', ' ').slice(0, 19);
 const log = (...a) => console.log(`[${stamp()}]`, ...a);
 const jitter = (base) => Math.round(base * (0.7 + Math.random() * 0.9));
-const inWindow = () => { const h = new Date().getHours(); return h >= WINDOW_START && h < WINDOW_END; };
+const inWindow = () => { const h = new Date().getHours(); return h >= NIGHT_START || h < WINDOW_END; };
 
 // ── 候選:draft/verified、source!=manual,而家仲未有 whisper timeline 嘅歌 ──
+// ⚠️ 2026-08-01 死片放棄機制加咗之後,`t.whisper` 唔再只得兩種可能(冇 / array)——
+// 仲有第三種:{failed:'dead-video'} 呢個 object,代表落載連續失敗 ≥3 次已經
+// 放棄咗嘅片(見底下 recordAlignFail)。呢種一樣要當「已經有 timeline」處理
+// (return true),先可以喺 pickCandidates 度俾 filter 走,唔會夜夜重排隊白試。
+// 漏咗呢個分支嘅話,dead-video marker 淨係一個冇 length 嘅 object,
+// `Array.isArray` 會係 false,反而變咗「仲未有 timeline」繼續入隊——同放棄機制
+// 原意相反,一定要小心。
 function hasWhisperTimeline(raw) {
   if (!raw) return false;
   try {
     const t = JSON.parse(raw);
-    return Array.isArray(t.whisper) && t.whisper.length > 0;
+    if (Array.isArray(t.whisper) && t.whisper.length > 0) return true;
+    if (t.whisper && typeof t.whisper === 'object' && !Array.isArray(t.whisper) && t.whisper.failed) return true;
+    return false;
   } catch (_) { return false; }
 }
 
 function pickCandidates(db) {
-  const rows = query(db, `SELECT id, youtube_id, title, artist, lang, lyrics_timeline FROM hymns_all
+  const rows = query(db, `SELECT id, youtube_id, title, artist, lang, lyrics_draft, lyrics_timeline FROM hymns_all
                           WHERE curated=1 AND status!='dead'
                             AND lyrics_status IN ('draft','verified')
                             AND (lyrics_source IS NULL OR lyrics_source != 'manual')
                           ORDER BY RANDOM()`);
   return rows.filter((r) => !hasWhisperTimeline(r.lyrics_timeline));
+}
+
+// 判斷呢首歌叫 whisper 應該用邊個語言:優先用 lyrics_draft(OCR/CC 已有嘅文字,
+// 最準),搵唔到就 fallback 用 DB 嘅 lang 欄位('英文' → en,其他(國語/粵語/
+// 兒童)→ zh)。
+function songWhisperLang(row) {
+  if (row.lyrics_draft && row.lyrics_draft.trim()) return detectWhisperLang(row.lyrics_draft);
+  return row.lang === '英文' ? 'en' : 'zh';
 }
 
 function report(db) {
@@ -93,26 +120,6 @@ async function toWav(audioPath, dir) {
   const wavPath = path.join(dir, 'audio.wav');
   await exec(`ffmpeg -i "${audioPath}" -vn -ar 16000 -ac 1 -y "${wavPath}"`, { timeout: 120000 });
   return wavPath;
-}
-
-// whisper-cli -oj:JSON 輸出帶 offsets(ms)。轉做 { t0, t1, text }(秒,trim 咗嘅文字)。
-async function runWhisperJson(wavPath) {
-  const outBase = wavPath.replace(/\.wav$/, '');
-  await exec(
-    `${WHISPER_BIN} -m "${WHISPER_MODEL}" -f "${wavPath}" -l auto -oj -of "${outBase}" -np`,
-    { timeout: 420000 }
-  );
-  const jsonPath = `${outBase}.json`;
-  if (!fs.existsSync(jsonPath)) return [];
-  const parsed = JSON.parse(fs.readFileSync(jsonPath, 'utf8'));
-  const segs = parsed?.transcription || [];
-  return segs
-    .map((s) => ({
-      t0: Math.round((s.offsets?.from ?? 0) / 10) / 100,
-      t1: Math.round((s.offsets?.to ?? 0) / 10) / 100,
-      text: (s.text || '').trim(),
-    }))
-    .filter((s) => s.text);
 }
 
 let _whisperReadyCache = null;
@@ -151,6 +158,7 @@ async function writeTimeline(id, whisperSegs) {
     timeline.whisper = whisperSegs;
     timeline.model = MODEL_NAME;
     timeline.updatedAt = new Date().toISOString();
+    timeline.alignFails = 0; // 成功咗,清返之前(如果有)嘅落載失敗計數
     freshDb.run(`UPDATE hymns_all SET lyrics_timeline=? WHERE id=?`, [JSON.stringify(timeline), id]);
     saveDb(freshDb);
     return true;
@@ -159,8 +167,41 @@ async function writeTimeline(id, whisperSegs) {
   }
 }
 
+// ── 死片放棄機制(2026-08-01 Eric 拍板)──────────────────────────────
+// 有啲片一路 403 / 已下架,每晚落載都失敗、留喺隊入面比下一晚再試,白費
+// budget(實測:id=246 呢類片,連續多晚 0 收穫)。落載失敗一次就喺
+// lyrics_timeline.alignFails 加一;累計 ≥3 次就寫 whisper:{failed:'dead-video'},
+// 靠 hasWhisperTimeline(見上面)將佢當「已經有 timeline」濾走,令呢首歌永久
+// 離隊、唔會再排隊白試。同 writeTimeline 一樣行鎖 pattern(即攞即放)。
+async function recordAlignFail(id) {
+  const token = await acquireDbLock('alignBackfill');
+  if (!token) {
+    log('    ⚠ 攞唔到 DB 鎖,呢次落載失敗冇記到(下次再嚟)');
+    return;
+  }
+  try {
+    const freshDb = await openDb();
+    const rows = query(freshDb, `SELECT lyrics_timeline FROM hymns_all WHERE id=?`, [id]);
+    let timeline = {};
+    try { timeline = JSON.parse(rows[0]?.lyrics_timeline || '{}') || {}; } catch (_) { timeline = {}; }
+    const fails = (timeline.alignFails || 0) + 1;
+    timeline.alignFails = fails;
+    if (fails >= 3) {
+      timeline.whisper = { failed: 'dead-video' };
+      log(`    放棄(死片,累計${fails}次)`);
+    } else {
+      log(`    落載失敗計數 alignFails=${fails}(未到3次,留隊下次再試)`);
+    }
+    freshDb.run(`UPDATE hymns_all SET lyrics_timeline=? WHERE id=?`, [JSON.stringify(timeline), id]);
+    saveDb(freshDb);
+  } finally {
+    releaseDbLock(token);
+  }
+}
+
 async function processOne(c) {
-  log(`  [${c.artist}] ${c.title} (id=${c.id}, lang=${c.lang})`);
+  const whisperLang = songWhisperLang(c);
+  log(`  [${c.artist}] ${c.title} (id=${c.id}, lang=${c.lang}, whisper -l ${whisperLang})`);
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'hymnalign-'));
   try {
     let audioPath;
@@ -168,10 +209,13 @@ async function processOne(c) {
       audioPath = await downloadBestAudio(c.youtube_id, dir);
     } catch (e) {
       log(`    ⚠ 落載失敗:${e?.message || e}`);
+      if (!DRY) await recordAlignFail(c.id);
       return { ok: false, downloadFailed: true };
     }
     const wav = await toWav(audioPath, dir);
-    const segs = await runWhisperJson(wav);
+    const { segs, garbageDropped, failed } = await runWhisperJsonShared(wav, WHISPER_MODEL, whisperLang);
+    if (garbageDropped) log(`    ⚠ 剷走 ${garbageDropped} 段疑似垃圾(CJK 佔比太低)`);
+    if (failed) { log('    · whisper 出嚟嘅嘢大部分係垃圾,當轉錄失敗,skip 唔寫'); return { ok: false, garbage: true }; }
     log(`    whisper 出咗 ${segs.length} 段`);
     if (!segs.length) { log('    · whisper 冇轉到嘢(可能純音樂/失敗),skip 唔寫'); return { ok: false, empty: true }; }
     if (!DRY) await writeTimeline(c.id, segs);
@@ -190,7 +234,7 @@ async function main() {
 
   if (SINGLE_ID) {
     if (!inWindow() && !IGNORE_WINDOW) { log(`而家 ${new Date().getHours()} 點,唔喺窗口內,加 --ignore-window 先可以測試單首。`); return; }
-    const rows = query(db, `SELECT id, youtube_id, title, artist, lang FROM hymns_all WHERE id=?`, [Number(SINGLE_ID)]);
+    const rows = query(db, `SELECT id, youtube_id, title, artist, lang, lyrics_draft FROM hymns_all WHERE id=?`, [Number(SINGLE_ID)]);
     if (!rows.length) { log(`搵唔到 id=${SINGLE_ID}`); return; }
     const result = await processOne(rows[0]);
     log(result.ok ? '✓ 完成' : '✗ 冇寫入');
@@ -198,7 +242,7 @@ async function main() {
   }
 
   if (!inWindow() && !IGNORE_WINDOW) {
-    log(`而家 ${new Date().getHours()} 點,唔喺 ${WINDOW_START}:00-${WINDOW_END}:00,唔做嘢。`);
+    log(`而家 ${new Date().getHours()} 點,唔喺 ${NIGHT_START}:00-${WINDOW_END}:00(隔夜)窗口內,唔做嘢。`);
     return;
   }
   report(db);

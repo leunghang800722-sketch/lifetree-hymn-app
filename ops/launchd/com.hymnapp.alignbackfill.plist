@@ -11,7 +11,10 @@
          片,輕好多)→ whisper 轉錄(帶 timestamp)→ 存 lyrics_timeline.whisper →
          即刪 audio。純寫 timeline 元資料,唔郁 `lyrics`/`lyrics_status`,已出街
          verified 歌詞內容完全唔受影響。budget 預設 60,59 首存貨一晚做晒有突;
-         做完之後(候選清空)呢個 job 之後每晚都係幾秒鐘 no-op,唔使停用佢。 -->
+         做完之後(候選清空)呢個 job 之後每晚都係幾秒鐘 no-op,唔使停用佢。
+         2026-08-01 加咗「死片放棄」機制(見 alignBackfill.js 頭註解):落載連續
+         失敗 ≥3 次嘅片(例如俾 YouTube 403 嘅舊片)會永久標走,唔會夜夜留喺
+         隊入面白試蝕晒 budget。 -->
     <key>ProgramArguments</key>
     <array>
         <string>/opt/homebrew/bin/node</string>
@@ -34,27 +37,24 @@
         <string>/opt/homebrew/bin:/opt/homebrew/sbin:/usr/bin:/bin:/usr/sbin:/sbin</string>
     </dict>
 
-    <!-- 時序理由(2026-07-27 STAGE 3 上線時排定):
-         · checkDeadLinks 04:00-04:25 一早做完,鎖一早放咗。
-         · fetchLyrics 05:00 slot(CC50+OCR40,而家每首 OCR 順手加咗 whisper)
-           實測預計比舊版(冇 whisper)耗多每首 ~15-30 秒 CPU,40 首 OCR 大概
-           加多 10-20 分鐘,原本 05:00 slot 預計 ~55-70 分鐘(~06:10 完)延到
-           ~06:10-06:40 左右完。
-         · 06:50 開波,05:00 slot 一定做完晒(50-40 分鐘緩衝),DB 鎖一早放低。
-           呢個 job 用 hymnDb.js 嘅 acquireDbLock/releaseDbLock 即攞即放(同
-           fetchLyrics.js 一致嘅 pattern),就算偶然重疊都唔會撞崩,但擺定
-           緩衝好過夜夜靠鎖 retry 頂。
-         · budget=60,每首 bestaudio(冇video,輕)+whisper 實測(golden test
-           141/48/1725)~15-25 秒(small model)/~20-25 秒(medium),60 首 x
-           ~25 秒 + jitter delay ~5 秒 ≈ 30 分鐘,06:50 到 09:00 窗口尾仲有
-           成 2 個鐘,夠鬆有突。59 首存貨一晚應該做晒,之後呢個 job 每晚幾秒
-           no-op(候選清空),唔使停用。 -->
+    <!-- 2026-08-01 由 06:50 改做 18:40(Eric 拍板,配合 fetchLyrics 8 輪新排程
+         挪位):
+         · 18:40 擺喺 fetchLyrics 首輪 19:00 之前、growLibrary 辦公封鎖窗
+           (平日 10:30-18:30)完結之後 10 分鐘 —— 呢個 job 一路揸 hymnDb.js
+           嘅 acquireDbLock/releaseDbLock 即攞即放,同 growLibrary/fetchLyrics
+           理論上唔會撞崩,但擺喺呢個窗一早就冇人爭鎖,乾淨企埋一邊。
+         · 呢條隊而家好細(候選幾乎清晒,2026-08-01 實測淨返 1 首死片候選),
+           ~15 分鐘內做完,18:40 到 19:00 fetchLyrics 開波仲有 20 分鐘緩衝,
+           唔會撞埋。
+         · budget=60,每首 bestaudio(冇video,輕)+whisper(medium model)實測
+           ~15-25 秒(small model)/~20-25 秒(medium),存貨清咗之後每晚都係
+           幾秒 no-op,唔使停用。 -->
     <key>StartCalendarInterval</key>
     <dict>
         <key>Hour</key>
-        <integer>6</integer>
+        <integer>18</integer>
         <key>Minute</key>
-        <integer>50</integer>
+        <integer>40</integer>
     </dict>
 
     <key>RunAtLoad</key>

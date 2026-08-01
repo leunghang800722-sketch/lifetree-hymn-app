@@ -9,22 +9,28 @@
          行兩層 —— CC 字幕層(平,處理新收錄嘅歌)先,跟住 OCR 層(主力,
          落片+抽frame+Vision OCR+需要時 whisper 後備,一首幾分鐘)。
          CC 揾唔到嘅歌(source='cc:miss')先會入 OCR 隊,唔會夜夜重 CC。
-         2026-07-27 Eric 再拍板加速:每晚 80 首草稿,拆兩個時段(01:00 +
-         05:00)各 CC 50 + OCR 40 —— 即係每晚合共 CC 100 / OCR 80。
-         拆兩個時段係攤薄同一個住宅 IP 嘅流量 pattern(唔好一口氣連續
-         兩個幾鐘狂撞 YouTube),兩個 slot 都係同一條命令、同一份 budget。
+         2026-07-27 Eric 拍板加速:每晚 80 首草稿,拆兩個時段(01:00 + 05:00)
+         各 CC 50 + OCR 40。
+         2026-08-01 Eric 再拍板:8 輪 × 20 首 OCR(CC 25,維持 5:4 餵飽比例,
+         cc:miss 存貨要夠 OCR 食),每晚合共 CC 200 / OCR 160,拆做 19:00 /
+         21:00 / 23:00 / 01:00 / 03:00 / 05:00 / 07:00 / 08:40 八個時間點——
+         梅花間竹噉分佈成晚(每兩個鐘一輪),攤薄同一個住宅 IP 嘅流量
+         pattern,唔好一口氣連續狂撞 YouTube。尾輪擺 08:40(唔擺 09:00 正)
+         係刻意避開 09:00 呢個窗口牆——inWindow() 用 h<9 判斷,09:00 開波
+         嗰刻已經係 h=9,唔准行;08:40 開波 h=8,啱啱好喺窗入面,跑足
+         20 分鐘都仲喺窗內。
          ⚠️ CC budget 一定要 ≥ OCR budget:cc:miss 存貨係 OCR 嘅糧,CC 實測
          命中率 ~0%,即係每晚 OCR 食幾多就要 CC 產幾多,細過佢 OCR 會斷糧。
-         每個 slot 實測預計 ~55-70 分鐘(OCR 平均 ~57 秒/首 + 落載失敗
-         每次最多蝕 3 分鐘 timeout),詳見底下時段註解。 -->
+         每輪 20 首 OCR 預計 ~25-30 分鐘(OCR 平均 ~57 秒/首 + 落載失敗每次
+         最多蝕 3 分鐘 timeout),輪與輪之間相隔至少 1 個鐘,唔會撞埋。 -->
     <key>ProgramArguments</key>
     <array>
         <string>/opt/homebrew/bin/node</string>
         <string>/Users/macbookpro/.openclaw/workspace/hymn-app/backend/scripts/fetchLyrics.js</string>
         <string>--cc-budget</string>
-        <string>50</string>
+        <string>25</string>
         <string>--ocr-budget</string>
-        <string>40</string>
+        <string>20</string>
         <string>--delay</string>
         <string>4000</string>
     </array>
@@ -41,35 +47,58 @@
         <string>/opt/homebrew/bin:/opt/homebrew/sbin:/usr/bin:/bin:/usr/sbin:/sbin</string>
     </dict>
 
-    <!-- 2026-07-25 由 04:20 改做 05:00(Fable 5 監督 session 診斷咗琴晚
-         2026-07-25 04:20 個 run 0 首落地嘅 root cause 之後拍板)——
-         checkDeadLinks 04:00 開波,150 首 x 3 秒一首,實測成個 run 要
-         ~20-25 分鐘(遠超落 04:00+8min 個估算),佢揸住 hymnDb.js 個
-         DB 寫入鎖直到 saveDb() 嗰刻(即成個 run 尾)先放。04:20 開波
-         啱啱好撞正佢揸緊鎖嗰段中間,fetchLyrics 嘅 writeLyricsRow 會
-         attempt 攞鎖,就算 acquireDbLock 而家已經修好唔會再錯誤咁搶走
-         生勾勾嘅鎖(見 hymnDb.js 嘅 pid-alive 檢查),都只會乖乖等到
-         checkDeadLinks 放先攞到,即係 CC 層前面幾首基本上係喺度空等。
-         05:00 開波,checkDeadLinks 04:00-04:25 一定完咗、鎖一早放咗,
-         唔使等。20 首 OCR 預計 40-90 分鐘,05:00 到 09:00 窗口尾仲有
-         成 4 個鐘,夠鬆有突。 -->
-    <!-- 2026-07-27 起兩個時段(Eric 拍板 80 首/晚拆半):
-         01:00 slot:CC50+OCR40 ~55-70 分鐘,02:10 左右完(最壞 ~02:40),
-                    離 checkDeadLinks 04:00 開波仲有成粒鐘以上,冇機會撞。
-         05:00 slot:checkDeadLinks 04:00-04:25 一定完晒、鎖一早放咗;
-                    ~06:10 完(最壞 ~06:40),離 09:00 窗口尾好遠。
+    <!-- 2026-08-01 八輪時序(Eric 拍板,取代舊版 01:00/05:00 兩輪):
+         19:00 —— 辦公封鎖窗(平日 10:30-18:30,growLibrary 專用)一早解封
+                  咗成粒鐘,首輪開波。
+         21:00 / 23:00 —— 夜晚中段,同上一輪相隔 2 個鐘,跑完(~25-30分鐘)
+                  離下一輪仲有大把緩衝。
+         01:00 —— 深宵輪,離 checkDeadLinks 04:00 開波仲有 3 個鐘,冇機會撞。
+         03:00 —— 跑完(~03:30 完)離 checkDeadLinks 04:00 開波仲有半個鐘
+                  以上緩衝,04:00-04:25 個鎖期都冇撞正。
+         05:00 —— checkDeadLinks 04:00-04:25 一早做完、鎖一早放咗,唔使等。
+         07:00 —— 朝早輪,跑完仲有成粒鐘先到 08:40 尾輪。
+         08:40 —— 尾輪,刻意唔擺 09:00 正(inWindow() h<9,09:00 已經係
+                  窗口牆嗰刻),20 首跑足都仲喺 09:00 前收工。
+         時段唔係封鎖因素(見底下 fetchLyrics.js inWindow() 註解:growLibrary
+         已經 24 小時行咗十日零事,封鎖跟總量唔跟時鐘),八個時段全部都
+         已經避開咗 growLibrary 專用嘅辦公封鎖窗(平日 10:30-18:30)。
+         deadlink 04:00-04:25 同 03:00 呢輪(~03:30 完)冇碰撞。
          growLibrary 每 15 分鐘一個 slot 照行,靠 hymnDb.js 嘅 DB 鎖互斥
          (fetchLyrics 每首歌只喺寫入嗰一刻揸鎖,毫秒級,已實戰驗證)。
-         launchd 嘅 StartCalendarInterval 可以係 array,兩個 dict = 兩個時間點。 -->
+         launchd 嘅 StartCalendarInterval 可以係 array,每個 dict = 一個時間點。 -->
     <key>StartCalendarInterval</key>
     <array>
+        <dict>
+            <key>Hour</key><integer>19</integer>
+            <key>Minute</key><integer>0</integer>
+        </dict>
+        <dict>
+            <key>Hour</key><integer>21</integer>
+            <key>Minute</key><integer>0</integer>
+        </dict>
+        <dict>
+            <key>Hour</key><integer>23</integer>
+            <key>Minute</key><integer>0</integer>
+        </dict>
         <dict>
             <key>Hour</key><integer>1</integer>
             <key>Minute</key><integer>0</integer>
         </dict>
         <dict>
+            <key>Hour</key><integer>3</integer>
+            <key>Minute</key><integer>0</integer>
+        </dict>
+        <dict>
             <key>Hour</key><integer>5</integer>
             <key>Minute</key><integer>0</integer>
+        </dict>
+        <dict>
+            <key>Hour</key><integer>7</integer>
+            <key>Minute</key><integer>0</integer>
+        </dict>
+        <dict>
+            <key>Hour</key><integer>8</integer>
+            <key>Minute</key><integer>40</integer>
         </dict>
     </array>
 

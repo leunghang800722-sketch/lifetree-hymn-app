@@ -40,10 +40,11 @@
 // 會自動重入 CC 隊,self-healing。
 //
 // ── 安全機制(全部沿用 growLibrary,唔好行返轉頭)────────────────
-//   * 只喺 00:00-09:00 窗口行(script 自己 double check);排程排 04:20(growLibrary
-//     跳過 4 點、deadlink 04:00 做完 ~4:07,呢個 gap 冇人爭 → 唔會同佢哋撞 YouTube
-//     或者撞 DB 寫入)。concurrency=1、每首之間 jitter delay。
-//   * budget 分兩級:CC 平,預設 12 首;OCR 重(落片+抽frame+OCR),預設 6 首。
+//   * 2026-08-01 起窗口係 19:00 起夜晚跨到朝早 09:00(見底下 inWindow() 註解);
+//     排程拆做八輪(19/21/23/01/03/05/07/08:40),詳見 ops/launchd/
+//     com.hymnapp.fetchlyrics.plist 嘅時序註解。concurrency=1、每首之間 jitter delay。
+//   * budget 分兩級:CC 平,預設 12 首(排程實際用 --cc-budget 25);OCR 重
+//     (落片+抽frame+OCR),預設 6 首(排程實際用 --ocr-budget 20)。
 //   * 連續 3 次「exec 失敗」(唔係「冇字幕/冇夠字」——嗰啲係正常 miss)→ 用一首
 //     已知有 CC 嘅歌做對照探測,分清「俾 YouTube 擋」定「呢批片本身有問題」。
 //   * 落載嘅片/抽出嚟嘅 frame/wav 全部喺 os.tmpdir() 嘅 mkdtemp 目錄,一首處理
@@ -65,6 +66,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { openDb, saveDb, query, sleep, acquireDbLock, releaseDbLock } from '../lib/hymnDb.js';
 import { normCompare, bigramDice } from '../lib/textSimilarity.js';
+import { detectWhisperLang, runWhisperJson as runWhisperJsonShared, DEFAULT_WHISPER_MODEL_NAME } from '../lib/whisperTranscribe.js';
 
 const exec = promisify(execCb);
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -77,7 +79,13 @@ const STATUS_ONLY = process.argv.includes('--status');
 const IGNORE_WINDOW = process.argv.includes('--ignore-window');
 const DRY = process.argv.includes('--dry');
 
-const WINDOW_START = 0, WINDOW_END = 9;
+// 2026-08-01 Eric 拍板 8 輪 × 20 首(見 ops/launchd/com.hymnapp.fetchlyrics.plist
+// 註解):窗口由「00:00-09:00 一段」改做「19:00 起夜晚跨到朝早 09:00」——
+// h>=19(19:00-23:59)或者 h<9(00:00-08:59)先准行,08:40 呢輪 h=8 ✓ 準行。
+// 時段本身唔係封鎖因素:growLibrary 已經 24 小時行咗十日都零事(封鎖靠總量
+// 唔靠時鐘),呢個窗口淨係想避開一日入面人流/流量最密嗰段,同 growLibrary
+// 專用嘅辦公封鎖窗(平日 10:30-18:30)完全兩回事、亦已經全部避開咗。
+const NIGHT_START = 19, WINDOW_END = 9;
 // 對照探測片:LYRICS-PIPELINE-PLAN §0 記錄小羊詩歌精選有 zh-CN 人手字幕軌。
 const PROBE_VIDEO = 'gF-eDlXq3II';
 // 想收嘅字幕語言(人手軌;auto-generated 唔算)
@@ -91,7 +99,7 @@ const today = () => new Date().toISOString().slice(0, 10);
 const stamp = () => new Date().toISOString().replace('T', ' ').slice(0, 19);
 const log = (...a) => console.log(`[${stamp()}]`, ...a);
 const jitter = (base) => Math.round(base * (0.7 + Math.random() * 0.9));
-const inWindow = () => { const h = new Date().getHours(); return h >= WINDOW_START && h < WINDOW_END; };
+const inWindow = () => { const h = new Date().getHours(); return h >= NIGHT_START || h < WINDOW_END; };
 const charCount = (s) => (s || '').replace(/\s/g, '').length;
 
 function report(db) {
@@ -140,12 +148,21 @@ function pickCandidates(db) {
                     ORDER BY RANDOM()`);
 }
 
-// OCR 候選:CC 試過冇(source='cc:miss')嘅歌。
+// OCR 候選:CC 試過冇(source='cc:miss')嘅歌。攞埋 lang 俾 whisper 語言判斷做
+// fallback(OCR 讀唔到字嗰陣冇文字可以判斷 CJK 比例,就靠呢個欄位)。
 function pickOcrCandidates(db) {
-  return query(db, `SELECT id, youtube_id, title, artist FROM hymns_all
+  return query(db, `SELECT id, youtube_id, title, artist, lang FROM hymns_all
                     WHERE curated=1 AND status!='dead'
                       AND lyrics_status='none' AND lyrics_source='cc:miss'
                     ORDER BY RANDOM()`);
+}
+
+// 判斷呢首歌叫 whisper 應該用邊個語言:優先用 OCR 啱啱讀到嘅文字(最準,見
+// detectWhisperLang),OCR 乜都讀唔到就 fallback 用 DB 嘅 lang 欄位('英文' →
+// en,其他(國語/粵語/兒童)→ zh)。
+function whisperLangFor(ocrText, langCol) {
+  if (ocrText && ocrText.trim()) return detectWhisperLang(ocrText);
+  return langCol === '英文' ? 'en' : 'zh';
 }
 
 // yt-dlp --list-subs：返「有邊啲**人手**字幕軌」。auto-generated 唔算。
@@ -264,8 +281,10 @@ async function runCC(db, budget) {
 // 合併去重 → draft(ocr)。OCR 唔夠字先撞 whisper(用返同一條片嘅音軌,零額外 request)。
 
 const OCRFRAME_BIN = path.join(__dirname, '..', 'tools', 'ocrframe');
+// 2026-07-27 STAGE 3 對齊修:small 唔可靠(見 lib/whisperTranscribe.js 頭註解),
+// 一律用 medium,同 alignBackfill.js 對齊一致。
 const WHISPER_BIN = 'whisper-cli';
-const WHISPER_MODEL = path.join(__dirname, '..', 'models', 'ggml-small.bin');
+const WHISPER_MODEL = path.join(__dirname, '..', 'models', `ggml-${DEFAULT_WHISPER_MODEL_NAME}.bin`);
 
 // 落低清片(video+audio 埋一齊,俾 whisper 之後攞音軌用,唔使再落多次)。
 // bestvideo+bestaudio 先(ffmpeg merge),先 fallback 去 combined best —— 純
@@ -420,29 +439,18 @@ async function checkWhisperAvailable() {
   return _whisperReadyCache;
 }
 
-// 用返任務1已經落載嗰條片嘅音軌轉錄 —— 零額外 YouTube request。small model,
-// -l auto 自動偵測語言(粵/國/英都食到)。
+// 用返任務1已經落載嗰條片嘅音軌轉錄 —— 零額外 YouTube request。medium model,
+// 語言由 OCR 已經讀到嘅文字判斷(見 lib/whisperTranscribe.js detectWhisperLang),
+// 唔再用 -l auto —— auto 語言偵測俾前奏/純音樂段搞到亂偵測(2026-07-27 監督
+// 診斷 id=402:成首歌轉錄變晒僧伽羅文/希臘文亂碼),仲會加中文 initial prompt
+// 防拼音幻覈、做垃圾段偵測(見 runWhisperJson 實作)。
 // ⚠️ 2026-07-27 STAGE 3 改用 -oj(JSON,帶 timestamp)代替舊版 -otxt -nt(淨文字,
 // 冇時間) —— alignLyrics.js 對齊演算法要 whisper 嘅逐段時間做「實際演唱」ground
 // truth,冇 timestamp 就做唔到。回傳 [{t0,t1,text}](秒),plainText() 幫手 join
 // 返純文字俾 OCR 唔夠字嗰種 fallback(舊行為,直接寫 lyrics_draft)用。
-async function runWhisperTranscribe(wavPath) {
-  const outBase = wavPath.replace(/\.wav$/, '');
-  await exec(
-    `${WHISPER_BIN} -m "${WHISPER_MODEL}" -f "${wavPath}" -l auto -oj -of "${outBase}" -np`,
-    { timeout: 300000 }
-  );
-  const jsonPath = `${outBase}.json`;
-  if (!fs.existsSync(jsonPath)) return [];
-  const parsed = JSON.parse(fs.readFileSync(jsonPath, 'utf8'));
-  const segs = parsed?.transcription || [];
-  return segs
-    .map((s) => ({
-      t0: Math.round((s.offsets?.from ?? 0) / 10) / 100,
-      t1: Math.round((s.offsets?.to ?? 0) / 10) / 100,
-      text: (s.text || '').trim(),
-    }))
-    .filter((s) => s.text);
+async function runWhisperTranscribe(wavPath, lang) {
+  const { segs, garbageDropped, failed } = await runWhisperJsonShared(wavPath, WHISPER_MODEL, lang, { timeout: 300000 });
+  return { segs, lang, garbageDropped, failed };
 }
 const whisperPlainText = (segs) => segs.map((s) => s.text).join(' ').trim();
 
@@ -505,8 +513,12 @@ async function runOcr(db, budget) {
       if (whisperReady) {
         try {
           const wav = await extractAudioWav(videoPath, dir);
-          whisperSegs = await runWhisperTranscribe(wav);
-          log(`    whisper 出咗 ${whisperSegs.length} 段(存 timeline,俾將來對齊用)`);
+          const whisperLang = whisperLangFor(ocrText, c.lang);
+          const result = await runWhisperTranscribe(wav, whisperLang);
+          whisperSegs = result.segs;
+          if (result.garbageDropped) log(`    ⚠ 剷走 ${result.garbageDropped} 段疑似垃圾(CJK 佔比太低)`);
+          if (result.failed) log('    · whisper 出嚟嘅嘢大部分係垃圾,當轉錄失敗,唔存入 timeline');
+          log(`    whisper(-l ${whisperLang})出咗 ${whisperSegs.length} 段(存 timeline,俾將來對齊用)`);
         } catch (e) {
           whisperError = e;
           log(`    ⚠ whisper 轉錄出錯(唔阻 OCR draft):${e?.message || e}`);
@@ -549,7 +561,7 @@ async function main() {
   const db = await openDb();
   if (STATUS_ONLY) { report(db); return; }
   if (!inWindow() && !IGNORE_WINDOW) {
-    log(`而家 ${new Date().getHours()} 點,唔喺 ${WINDOW_START}:00-${WINDOW_END}:00,唔做嘢。`);
+    log(`而家 ${new Date().getHours()} 點,唔喺 ${NIGHT_START}:00-${WINDOW_END}:00(隔夜)窗口內,唔做嘢。`);
     return;
   }
   report(db);
