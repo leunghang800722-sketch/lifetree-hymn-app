@@ -32,6 +32,10 @@ function initSchema(db) {
   // 唯一途徑係 scripts/setAdmin.js。SQLite ADD COLUMN 帶 DEFAULT 對舊行都生效,
   // 但讀嗰邊一律再兜底 `row.role || 'member'`,唔賭 driver 行為。
   try { db.run("ALTER TABLE users ADD COLUMN role TEXT DEFAULT 'member'"); } catch (_) {}
+  // 電話+密碼登入(PHONE-PASSWORD-AUTH-PLAN §4)——純加欄,零破壞。舊行兩個
+  // 新欄係 NULL,所有讀嗰邊都要容忍 NULL(username 一早已經係咁)。
+  try { db.run('ALTER TABLE users ADD COLUMN gender TEXT'); } catch (_) {}
+  try { db.run('ALTER TABLE users ADD COLUMN birth_year INTEGER'); } catch (_) {}
 
   // ── 會員系統 Phase 1:跨裝置同步(MEMBERSHIP-PHASE1-LOGIN-SYNC §1.1)──────
   db.run(`CREATE TABLE IF NOT EXISTS favorites (

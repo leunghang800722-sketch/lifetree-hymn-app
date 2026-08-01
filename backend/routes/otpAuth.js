@@ -10,10 +10,15 @@
 // 用 fetch 直駁 Twilio Verify REST API,前端零 SDK、backend 零新 dependency。
 
 import jwt from 'jsonwebtoken';
+import bcrypt from 'bcryptjs';
 import { JWT_SECRET } from '../lib/authSecret.js';
 import { saveUserDb } from '../lib/userDb.js';
+import { ipLoginLimiter, phoneLoginLimiter, clientIp } from '../lib/loginRateLimit.js';
 
 const TOKEN_EXPIRY = '30d';
+const TICKET_EXPIRY = '10m';
+const SALT_ROUNDS = 10;
+const SENTINEL_HASH = 'otp-no-password';
 
 // Twilio 配置(Eric 之後喺 launchd env 補;冇就當「未配置」)
 const TW_SID = process.env.TWILIO_ACCOUNT_SID;
@@ -90,8 +95,70 @@ async function twilioCheck(phone, code) {
   return { ok: r.ok, status: r.status, data: await r.json().catch(() => ({})) };
 }
 
-function clientIp(req) {
-  return (req.headers['cf-connecting-ip'] || req.headers['x-forwarded-for'] || req.ip || '').split(',')[0].trim();
+// ── 密碼登入欄位驗證(PHONE-PASSWORD-AUTH-PLAN §3.5)──────────────────
+const CURRENT_YEAR = new Date().getFullYear();
+
+function validatePassword(password) {
+  if (typeof password !== 'string') return false;
+  if (password.length < 6) return false;
+  if (Buffer.byteLength(password, 'utf8') > 72) return false; // bcrypt 截斷位
+  return true;
+}
+function validateUsername(username) {
+  if (typeof username !== 'string') return false;
+  const t = username.trim();
+  return t.length >= 1 && t.length <= 30;
+}
+function validateGender(gender) {
+  return gender === 'male' || gender === 'female';
+}
+function validateBirthYear(birthYear) {
+  const y = Number(birthYear);
+  return Number.isInteger(y) && y >= 1900 && y <= CURRENT_YEAR;
+}
+
+// ── Ticket(「電話已驗證」短期憑證,§3.2)────────────────────────────
+// 用 JWT 自簽,唔使 server-side store。payload 冇 id,攞去撞 requireAuth
+// 會因為 decoded.id undefined 查唔到用戶而 401——但唔靠呢個巧合,
+// register-phone/reset-password 一律顯式驗 purpose claim。
+function signTicket(phone) {
+  return jwt.sign({ phone, purpose: 'phone_verified' }, JWT_SECRET, { expiresIn: TICKET_EXPIRY });
+}
+
+// 回 { error } 俾 route 直接 res.status(401).json(...);冇拋錯,call 位睇返回值。
+function verifyTicket(ticket) {
+  try {
+    const decoded = jwt.verify(ticket, JWT_SECRET);
+    if (decoded?.purpose !== 'phone_verified' || !decoded?.phone) {
+      return { error: 'ticket_invalid' };
+    }
+    return { phone: decoded.phone };
+  } catch (e) {
+    if (e.name === 'TokenExpiredError') return { error: 'ticket_expired' };
+    return { error: 'ticket_invalid' };
+  }
+}
+
+// 統一 user object 形狀(§3.3):{ id, username, phone, email, role, gender, birthYear }
+function toUserObject(row) {
+  return {
+    id: row.id,
+    username: row.username,
+    phone: row.phone,
+    email: row.email,
+    role: row.role || 'member',
+    gender: row.gender || null,
+    birthYear: row.birth_year || null,
+  };
+}
+
+function findUserByPhone(db, phone) {
+  const stmt = db.prepare('SELECT id, username, email, phone, role, gender, birth_year, password_hash FROM users WHERE phone = ?');
+  stmt.bind([phone]);
+  const found = stmt.step();
+  const row = found ? stmt.getAsObject() : null;
+  stmt.free();
+  return row;
 }
 
 export default function otpAuthRoutes(app, getUserDb) {
@@ -127,6 +194,8 @@ export default function otpAuthRoutes(app, getUserDb) {
     }
   });
 
+  // ⚠️ 舊 endpoint,PHONE-PASSWORD-AUTH-PLAN §2.4 改行為:唔再 upsert 開新戶。
+  // 已有 phone 嘅存量用戶(舊 client)照樣登入,新 phone 一律引導去新流程。
   app.post('/api/auth/otp/verify', async (req, res) => {
     try {
       const phone = normalizePhone(req.body?.phone);
@@ -140,29 +209,182 @@ export default function otpAuthRoutes(app, getUserDb) {
       }
 
       const db = await getUserDb();
+      const user = findUserByPhone(db, phone);
 
-      // upsert:有 phone 就登入,冇就開新用戶(註冊登入合一)
-      let user = null;
-      const sel = db.prepare('SELECT id, username, email, phone, role FROM users WHERE phone = ?');
-      sel.bind([phone]);
-      if (sel.step()) user = sel.getAsObject();
-      sel.free();
-
-      let isNew = false;
       if (!user) {
-        isNew = true;
-        // email NOT NULL 舊 schema:俾個 placeholder 唯一 email,password_hash 亦要有值
-        db.run('INSERT INTO users (username, email, password_hash, phone) VALUES (?, ?, ?, ?)',
-          [null, `phone_${phone}@placeholder.local`, 'otp-no-password', phone]);
-        saveUserDb(db);
-        const s2 = db.prepare('SELECT id, username, email, phone, role FROM users WHERE phone = ?');
-        s2.bind([phone]); s2.step(); user = s2.getAsObject(); s2.free();
+        // 唔再 upsert 開新戶(§2.4)——舊 client 嘅新用戶要更新 app 行新註冊流程。
+        return res.status(422).json({ error: 'use_new_flow', message: '請更新 app 再註冊' });
       }
 
       const token = jwt.sign({ id: user.id, username: user.username }, JWT_SECRET, { expiresIn: TOKEN_EXPIRY });
-      res.json({ token, user: { id: user.id, username: user.username, phone: user.phone, role: user.role || 'member' }, isNew });
+      res.json({ token, user: toUserObject(user), isNew: false });
     } catch (e) {
       console.error('otp/verify error:', e?.message);
+      res.status(500).json({ error: 'server_error' });
+    }
+  });
+
+  // ── verify-ticket(新,§3.3)────────────────────────────────────────
+  // 驗完 Twilio code 之後發一個短期 ticket,證明「呢一刻控制住呢個電話」。
+  // 對「已註冊」定「未註冊」嘅 phone 都發 ticket(payload 一樣)——由
+  // register-phone / reset-password 兩個 endpoint 自己分流(§2.3)。
+  app.post('/api/auth/otp/verify-ticket', async (req, res) => {
+    try {
+      const phone = normalizePhone(req.body?.phone);
+      const code = String(req.body?.code || '').trim();
+      if (!phone || !/^\d{4,8}$/.test(code)) return res.status(400).json({ error: 'bad_input' });
+      if (!otpConfigured()) return res.status(503).json({ error: 'not_configured' });
+
+      const chk = await twilioCheck(phone, code);
+      if (!(chk.ok && chk.data?.status === 'approved')) {
+        return res.status(401).json({ error: 'bad_code', message: '驗證碼唔啱或者過期' });
+      }
+
+      const db = await getUserDb();
+      const user = findUserByPhone(db, phone);
+      const registered = !!user;
+      const profileComplete = registered
+        ? !!(user.username && user.gender && user.birth_year)
+        : false;
+
+      const ticket = signTicket(phone);
+      res.json({ ticket, registered, profileComplete });
+    } catch (e) {
+      console.error('otp/verify-ticket error:', e?.message);
+      res.status(500).json({ error: 'server_error' });
+    }
+  });
+
+  // ── register-phone(新,§2.1/§3.3)────────────────────────────────
+  app.post('/api/auth/register-phone', async (req, res) => {
+    try {
+      const { ticket, password, username, gender, birthYear } = req.body || {};
+      if (typeof ticket !== 'string') return res.status(401).json({ error: 'ticket_invalid' });
+
+      const tv = verifyTicket(ticket);
+      if (tv.error) return res.status(401).json({ error: tv.error });
+      const phone = tv.phone; // 一律信 ticket 入面嘅 phone,body 冇送呢個欄
+
+      if (!validatePassword(password)) return res.status(400).json({ error: 'weak_password' });
+      if (!validateUsername(username)) return res.status(400).json({ error: 'bad_username' });
+      if (!validateGender(gender)) return res.status(400).json({ error: 'bad_gender' });
+      if (!validateBirthYear(birthYear)) return res.status(400).json({ error: 'bad_birth_year' });
+
+      const db = await getUserDb();
+      const existing = findUserByPhone(db, phone);
+      if (existing) return res.status(422).json({ error: 'already_registered', message: '呢個號碼已註冊,請直接登入' });
+
+      const hash = await bcrypt.hash(password, SALT_ROUNDS);
+      const trimmedUsername = username.trim();
+      db.run(
+        'INSERT INTO users (username, email, password_hash, phone, gender, birth_year) VALUES (?, ?, ?, ?, ?, ?)',
+        [trimmedUsername, `phone_${phone}@placeholder.local`, hash, phone, gender, Number(birthYear)]
+      );
+      saveUserDb(db);
+
+      const user = findUserByPhone(db, phone);
+      const token = jwt.sign({ id: user.id, username: user.username }, JWT_SECRET, { expiresIn: TOKEN_EXPIRY });
+      res.json({ token, user: toUserObject(user) });
+    } catch (e) {
+      console.error('register-phone error:', e?.message);
+      res.status(500).json({ error: 'server_error' });
+    }
+  });
+
+  // ── login-phone(新,§2.2/§3.4)────────────────────────────────────
+  app.post('/api/auth/login-phone', async (req, res) => {
+    const ip = clientIp(req);
+    try {
+      const phone = normalizePhone(req.body?.phone);
+      const password = req.body?.password;
+      if (!phone || typeof password !== 'string' || !password) {
+        return res.status(400).json({ error: 'bad_input' });
+      }
+
+      if (ipLoginLimiter.isLocked(ip)) {
+        return res.status(429).json({ error: 'too_many_attempts', message: '太多次失敗,請15分鐘後再試' });
+      }
+      if (phoneLoginLimiter.isLocked(phone)) {
+        return res.status(429).json({ error: 'too_many_attempts', message: '太多次失敗,請15分鐘後再試,或者用忘記密碼' });
+      }
+
+      const db = await getUserDb();
+      const user = findUserByPhone(db, phone);
+
+      if (!user) {
+        ipLoginLimiter.recordFail(ip);
+        phoneLoginLimiter.recordFail(phone);
+        return res.status(401).json({ error: 'bad_credentials', message: '電話或密碼唔啱' });
+      }
+
+      // sentinel(§6):冇任何輸入 compare 得過,唔算「密碼估錯」,引導去忘記密碼。
+      if (user.password_hash === SENTINEL_HASH) {
+        return res.status(422).json({ error: 'password_not_set', message: '呢個帳戶未設密碼,請用「忘記密碼」設定' });
+      }
+
+      const valid = await bcrypt.compare(password, user.password_hash);
+      if (!valid) {
+        ipLoginLimiter.recordFail(ip);
+        phoneLoginLimiter.recordFail(phone);
+        return res.status(401).json({ error: 'bad_credentials', message: '電話或密碼唔啱' });
+      }
+
+      ipLoginLimiter.clear(ip);
+      phoneLoginLimiter.clear(phone);
+      const token = jwt.sign({ id: user.id, username: user.username }, JWT_SECRET, { expiresIn: TOKEN_EXPIRY });
+      res.json({ token, user: toUserObject(user) });
+    } catch (e) {
+      console.error('login-phone error:', e?.message);
+      res.status(500).json({ error: 'server_error' });
+    }
+  });
+
+  // ── reset-password(新,§2.3/§3.3)─────────────────────────────────
+  app.post('/api/auth/reset-password', async (req, res) => {
+    try {
+      const { ticket, password, username, gender, birthYear } = req.body || {};
+      if (typeof ticket !== 'string') return res.status(401).json({ error: 'ticket_invalid' });
+
+      const tv = verifyTicket(ticket);
+      if (tv.error) return res.status(401).json({ error: tv.error });
+      const phone = tv.phone;
+
+      if (!validatePassword(password)) return res.status(400).json({ error: 'weak_password' });
+      // 呢三個係 optional 補完欄——冇送就唔驗;有送就要合規,先至寫得入去。
+      if (username !== undefined && username !== null && !validateUsername(username)) {
+        return res.status(400).json({ error: 'bad_username' });
+      }
+      if (gender !== undefined && gender !== null && !validateGender(gender)) {
+        return res.status(400).json({ error: 'bad_gender' });
+      }
+      if (birthYear !== undefined && birthYear !== null && !validateBirthYear(birthYear)) {
+        return res.status(400).json({ error: 'bad_birth_year' });
+      }
+
+      const db = await getUserDb();
+      const existing = findUserByPhone(db, phone);
+      if (!existing) return res.status(422).json({ error: 'no_account', message: '呢個號碼未註冊' });
+
+      const hash = await bcrypt.hash(password, SALT_ROUNDS);
+      db.run('UPDATE users SET password_hash = ? WHERE id = ?', [hash, existing.id]);
+
+      // 補完 profile(§2.3):只喺該欄目前係 NULL 先寫入,有值一律唔覆蓋。
+      if (!existing.username && username !== undefined && username !== null && validateUsername(username)) {
+        db.run('UPDATE users SET username = ? WHERE id = ?', [username.trim(), existing.id]);
+      }
+      if (!existing.gender && gender !== undefined && gender !== null && validateGender(gender)) {
+        db.run('UPDATE users SET gender = ? WHERE id = ?', [gender, existing.id]);
+      }
+      if (!existing.birth_year && birthYear !== undefined && birthYear !== null && validateBirthYear(birthYear)) {
+        db.run('UPDATE users SET birth_year = ? WHERE id = ?', [Number(birthYear), existing.id]);
+      }
+      saveUserDb(db);
+
+      const user = findUserByPhone(db, phone);
+      const token = jwt.sign({ id: user.id, username: user.username }, JWT_SECRET, { expiresIn: TOKEN_EXPIRY });
+      res.json({ token, user: toUserObject(user) });
+    } catch (e) {
+      console.error('reset-password error:', e?.message);
       res.status(500).json({ error: 'server_error' });
     }
   });
