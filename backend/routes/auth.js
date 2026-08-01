@@ -97,6 +97,12 @@ export default function authRoutes(app, getUserDb) {
 
       const token = authHeader.split(' ')[1];
       const decoded = jwt.verify(token, JWT_SECRET);
+      // 簽名啱但冇 id claim(例如 PHONE-PASSWORD-AUTH-PLAN §3.2 嗰個 ticket)——
+      // 一定要喺呢度截,唔好 bind(undefined) 落 sql.js,否則變 500 而唔係 401。
+      // requireAuth.js 靠 try/catch 兜到 401,呢度冇,要顯式擋。
+      if (decoded?.id === undefined || decoded?.id === null) {
+        return res.status(401).json({ error: 'Invalid or expired token' });
+      }
 
       const db = await getUserDb();
       const stmt = db.prepare('SELECT id, username, email, phone, role, gender, birth_year FROM users WHERE id = ?');
