@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.hymnapp.usersbackup</string>
+
+    <!-- 每日備份 users.db(MEMBERSHIP-PHASE2-ADMIN-PLAN §1)。淨係 fs.copyFileSync
+         + sql.js 完整性 check,唔掂 hymns.db,唔攞 acquireDbLock,同 growlibrary/
+         deadlinkcheck 完全唔會撞。 -->
+    <key>ProgramArguments</key>
+    <array>
+        <string>/opt/homebrew/bin/node</string>
+        <string>/Users/macbookpro/.openclaw/workspace/hymn-app/backend/scripts/backupUsersDb.js</string>
+    </array>
+
+    <key>WorkingDirectory</key>
+    <string>/Users/macbookpro/.openclaw/workspace/hymn-app/backend</string>
+
+    <!-- 同其他 hymnapp.* job 一樣嘅 PATH 陷阱:launchd 預設 PATH 冇 /opt/homebrew/bin。
+         呢個 script 本身唔叫 yt-dlp,但保持一致方便維護。 -->
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>PATH</key>
+        <string>/opt/homebrew/bin:/opt/homebrew/sbin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+    </dict>
+
+    <!-- 每日 03:30 —— deadlinkcheck 04:00 之前、避開 backend 重啟時段;其實同
+         邊個撞都冇所謂(呢個 job 唔攞 hymns.db 鎖),純粹揀個半夜靜嘅鐘數。 -->
+    <key>StartCalendarInterval</key>
+    <dict>
+        <key>Hour</key>
+        <integer>3</integer>
+        <key>Minute</key>
+        <integer>30</integer>
+    </dict>
+
+    <!-- 一次性 job:唔准 KeepAlive,否則 launchd 會不停重開。 -->
+    <key>RunAtLoad</key>
+    <false/>
+    <key>KeepAlive</key>
+    <false/>
+
+    <key>StandardOutPath</key>
+    <string>/tmp/hymn_usersbackup.log</string>
+    <key>StandardErrorPath</key>
+    <string>/tmp/hymn_usersbackup.log</string>
+</dict>
+</plist>

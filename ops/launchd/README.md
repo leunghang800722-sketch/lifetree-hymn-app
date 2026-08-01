@@ -10,6 +10,8 @@
 | `com.hymnapp.growlibrary.plist` | **每 15 分鐘一次、24 小時**（2026-07-21 由夜間 00:07-08:07 改，見下面），慢速擴歌庫（見 `HANDOFF.md` 三之九、`LIBRARY-EXPANSION-PLAN.md`） |
 | `com.hymnapp.fetchlyrics.plist` | 每晚 01:00 + 05:00,歌詞入庫（CC/OCR/whisper draft，見 `LYRICS-PIPELINE-PLAN.md`） |
 | `com.hymnapp.alignbackfill.plist` | 每晚 06:50,STAGE 3 音訊次序驗證層——補舊歌嘅 whisper timeline（`scripts/alignBackfill.js`，見底下時序理由） |
+| `com.hymnapp.backfillmeta.plist` | 每晚 17:30,performer(歌手)+album(專輯) backfill（`scripts/backfillMeta.js`，見 `TAXONOMY-5D-PLAN.md` §8 C5/C5b/C5c） |
+| `com.hymnapp.usersbackup.plist` | 每日 03:30,`users.db` 備份（`scripts/backupUsersDb.js`，見 `MEMBERSHIP-PHASE2-ADMIN-PLAN.md` §1）——**呢個 job 由另一 session 起**,補呢份檔淨係補齊版本控制,唔算越界 |
 
 ## 安裝
 ```bash
@@ -20,6 +22,8 @@ launchctl load -w ~/Library/LaunchAgents/com.hymnapp.deadlinkcheck.plist
 launchctl load -w ~/Library/LaunchAgents/com.hymnapp.growlibrary.plist
 launchctl load -w ~/Library/LaunchAgents/com.hymnapp.fetchlyrics.plist
 launchctl load -w ~/Library/LaunchAgents/com.hymnapp.alignbackfill.plist
+launchctl load -w ~/Library/LaunchAgents/com.hymnapp.backfillmeta.plist
+launchctl load -w ~/Library/LaunchAgents/com.hymnapp.usersbackup.plist
 launchctl list | grep -iE "cloudflare|hymnapp"   # 第 2 欄 exit code，0 = 正常
 ```
 **唔使 sudo。**

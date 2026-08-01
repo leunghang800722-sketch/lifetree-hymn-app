@@ -32,7 +32,7 @@
 //   ② 候選輪換 + 每晚 budget:唔准淨係 ORDER BY id ASC(死症 row 會塞住隊頭)。
 //     加 `last_meta_attempt` 欄,每次嘗試(唔理揾唔揾到)寫 timestamp,候選
 //     `ORDER BY last_meta_attempt IS NOT NULL, last_meta_attempt ASC`(未試過
-//     先行,試過耐先重試)。`--limit` 預設 160。
+//     先行,試過耐先重試)。`--limit` 預設 300(C5c followup③調高,見底下)。
 //   ③ 逐條即寫:D/T/M 層命中即刻寫 DB(每條跟 acquireDbLock 節奏),唔准成晚
 //     積到 run 尾先寫;Layer A batch 結果照最尾補寫(要成個 batch call 完先
 //     知邊條有答案)。
@@ -48,7 +48,7 @@
 //   node scripts/backfillMeta.js --org 泥土音樂 --status ok --dry     # 唔寫 DB
 //   node scripts/backfillMeta.js --org 泥土音樂 --status ok --limit 5 # 測試少量
 //   node scripts/backfillMeta.js --org 泥土音樂 --status ok --no-ai   # 唔叫 claude -p
-//   node scripts/backfillMeta.js --limit 160                          # 排程用:全庫掃
+//   node scripts/backfillMeta.js --limit 300                          # 排程用:全庫掃
 
 import { execFile as execFileCb } from 'child_process';
 import { promisify } from 'util';
@@ -64,7 +64,12 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const arg = (f, d) => { const i = process.argv.indexOf(f); return i > -1 && process.argv[i + 1] ? process.argv[i + 1] : d; };
 const ORG = arg('--org', null);
 const STATUS = arg('--status', 'ok');
-const LIMIT = Number(arg('--limit', 160)) || 160; // C5b②:預設每晚 budget 160
+// C5c followup③:預設 160→300(Opus 實測評估 300 安全,16-21 分鐘完場仍有
+// 30 分鐘水位先到 18:40 alignBackfill)。原本 `Number(...) || 160` 有 falsy
+// bug——`--limit 0`(意圖:無限量,見底下 `if (LIMIT)` slice 邏輯)會俾 `||`
+// 打番做 160,表達唔到「0=無限」。改用 Number.isFinite 判斷。
+const limitArgRaw = Number(arg('--limit', 300));
+const LIMIT = Number.isFinite(limitArgRaw) ? limitArgRaw : 300;
 const DELAY_MS = Number(arg('--delay', 3500));
 const AI_BATCH_SIZE = Number(arg('--ai-batch-size', 25));
 const DRY = process.argv.includes('--dry');
@@ -101,13 +106,20 @@ function matchDescriptionPerformer(description) {
 // 「廠牌/事工名, 歌手名」(例:「泥土音樂, 盛曉玫」),要清走 org 名先淨返
 // 歌手。淨用「呢條 row 自己嘅 org」做清走目標(唔靠 worshipGroups 全表估估
 // 吓,更準、亦唔會夾到第二個團體個名)。
+// C5c followup②:org-strip 收貨修正。(a) 全部 parts 都係 org 時,原本回退
+// 寫 org 名做 performer——而家改成回退 null(留空好過寫 org,唔好鎖死呢條
+// row,留返俾下次/Layer A 補)。(b) exact 比對兜唔到 `artist='Stream of
+// Praise 讚美之泉'` vs `org='讚美之泉'` 呢種 org 名做前綴/後綴嘅寫法——strip
+// 條件放寬做「part 包含 org 或 org 包含 part」。
 function extractMetaPerformer(rawArtist, rowOrg) {
   if (!rawArtist || typeof rawArtist !== 'string') return null;
   const parts = rawArtist.split(/[,，、]/).map((s) => s.trim()).filter(Boolean);
   if (!parts.length) return null;
-  const filtered = rowOrg ? parts.filter((p) => p !== rowOrg) : parts;
-  const use = filtered.length ? filtered : parts; // 成串都係 org 名時,寧願用原值都好過乜都冇
-  const name = use.join('、');
+  const filtered = rowOrg
+    ? parts.filter((p) => !(p === rowOrg || p.includes(rowOrg) || rowOrg.includes(p)))
+    : parts;
+  if (!filtered.length) return null; // (a) 成串都係 org 名 → 留空,唔好寫 org
+  const name = filtered.join('、');
   if (!name || name.length > 40) return null;
   return name;
 }
@@ -423,8 +435,11 @@ async function main() {
     const titlePerformerRaw = (metaPerformerRaw || descPerformerRaw) ? null : matchTitlePerformer(meta.title || row.title);
 
     const performerRaw = metaPerformerRaw || descPerformerRaw || titlePerformerRaw || null;
-    const performerSource = metaPerformerRaw ? 'metadata' : (descPerformerRaw ? 'description' : (titlePerformerRaw ? 'title' : null));
-    const performer = performerRaw ? normalizeSeparators(performerRaw) : null;
+    let performerSource = metaPerformerRaw ? 'metadata' : (descPerformerRaw ? 'description' : (titlePerformerRaw ? 'title' : null));
+    let performer = performerRaw ? normalizeSeparators(performerRaw) : null;
+    // C5c followup②(c):保險——任何層寫 performer 前,同 row.org 完全一樣
+    // 就當空(留空好過寫返個 org 名做「歌手」)。
+    if (performer && row.org && performer === row.org) { performer = null; performerSource = null; }
 
     const metaAlbum = extractMetaAlbum(meta.album);
     const albumFromDesc = metaAlbum ? null : extractAlbumFromDescription(meta.description);
@@ -478,12 +493,16 @@ async function main() {
         for (const it of batch) {
           const v = out[it.youtube_id];
           if (v) {
-            const normalized = normalizeSeparators(v);
-            it.result.performer = normalized;
-            it.result.performerSource = 'ai';
-            await writeRow(it.result.row.id, { performer: normalized, performer_source: 'ai' });
-            aiWriteCount++;
-            log(`    ✓ AI: ${it.youtube_id} → ${normalized}`);
+            let normalized = normalizeSeparators(v);
+            // C5c followup②(c):同一重保險套用落 Layer A。
+            if (normalized && it.result.row.org && normalized === it.result.row.org) normalized = null;
+            if (normalized) {
+              it.result.performer = normalized;
+              it.result.performerSource = 'ai';
+              await writeRow(it.result.row.id, { performer: normalized, performer_source: 'ai' });
+              aiWriteCount++;
+              log(`    ✓ AI: ${it.youtube_id} → ${normalized}`);
+            }
           }
         }
         if (i + AI_BATCH_SIZE < aiCandidates.length) await sleep(jitter(1500));
