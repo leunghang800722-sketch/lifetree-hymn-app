@@ -20,7 +20,8 @@ const ADMIN_LOCK_WAIT_MS = 10_000;
 
 // PATCH 白名單(§3.4)——喺呢度(唔淨係 route 層)都做多一重防禦:呢個 module
 // 用欄位名做動態 SQL(`${key} = ?`),絕對唔可以照單全收 caller 傳落嚟嘅 key。
-export const EDITABLE_FIELDS = ['title', 'display_title', 'artist', 'category', 'lang', 'album', 'title_en'];
+// org/performer:TAXONOMY-5D-PLAN.md §4.4 —— admin 編輯五維分類嘅團體/歌手。
+export const EDITABLE_FIELDS = ['title', 'display_title', 'artist', 'category', 'lang', 'album', 'title_en', 'org', 'performer'];
 
 function dbBusyError() { const e = new Error('db_busy'); e.code = 'db_busy'; return e; }
 function notFoundError() { const e = new Error('not_found'); e.code = 'not_found'; return e; }
@@ -57,6 +58,14 @@ export async function updateHymn(id, fields) {
       after[key] = fields[key];
       setClauses.push(`${key} = ?`);
       params.push(fields[key]);
+    }
+    // TAXONOMY-5D-PLAN.md §2.2/§4.4:admin 人手改過 performer 嘅永不被
+    // backfillMeta 夜晚 job 重寫,靠 performer_source='manual' 標記。
+    if (Object.prototype.hasOwnProperty.call(fields, 'performer')) {
+      before.performer_source = existing.performer_source;
+      after.performer_source = 'manual';
+      setClauses.push('performer_source = ?');
+      params.push('manual');
     }
     if (!setClauses.length) throw notFoundError(); // 理論上唔會到呢度,route 層已擋「最少一個欄位」
 
@@ -115,16 +124,22 @@ export async function insertHymn(fields) {
 
     const today = new Date().toISOString().slice(0, 10);
     const durationFormatted = Number.isFinite(fields.duration) ? formatDuration(fields.duration) : null;
+    // TAXONOMY-5D-PLAN.md §3.5/§4.4:admin 路徑 org = admin 填嘅值,冇就跟
+    // artist;kids 冇 worshipGroups priority 概念,跟 lang==='兒童' 判斷
+    // (admin add 表單嘅語言 chips 本身就有「兒童」呢個選項)。performer 呢
+    // 兩條路徑都唔填,留俾 backfillMeta 夜晚補(§3.5)。
+    const orgVal = (fields.org && fields.org.trim()) || fields.artist;
+    const kidsVal = fields.lang === '兒童' ? 1 : 0;
 
     if (existing) {
       const before = { curated: existing.curated, status: existing.status };
       db.run(
         `UPDATE hymns_all SET title = ?, display_title = ?, artist = ?, category = ?, lang = ?,
          album = ?, title_en = ?, curated = 1, status = 'ok', last_checked = ?, fail_streak = 0,
-         duration = COALESCE(?, duration)
+         duration = COALESCE(?, duration), org = ?, kids = ?
          WHERE id = ?`,
         [fields.title, fields.display_title, fields.artist, fields.category, fields.lang,
-          fields.album || '', fields.title_en || '', today, durationFormatted, existing.id]
+          fields.album || '', fields.title_en || '', today, durationFormatted, orgVal, kidsVal, existing.id]
       );
       saveDb(db);
       const hymn = getOneById(db, existing.id);
@@ -133,10 +148,10 @@ export async function insertHymn(fields) {
     }
 
     db.run(
-      `INSERT INTO hymns_all (title, display_title, artist, category, youtube_id, lang, album, title_en, curated, status, last_checked, fail_streak, duration)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1, 'ok', ?, 0, ?)`,
+      `INSERT INTO hymns_all (title, display_title, artist, category, youtube_id, lang, album, title_en, curated, status, last_checked, fail_streak, duration, org, kids)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1, 'ok', ?, 0, ?, ?, ?)`,
       [fields.title, fields.display_title, fields.artist, fields.category, fields.youtube_id, fields.lang,
-        fields.album || '', fields.title_en || '', today, durationFormatted]
+        fields.album || '', fields.title_en || '', today, durationFormatted, orgVal, kidsVal]
     );
     // ⚠️ last_insert_rowid() 一定要喺 saveDb() 之前攞——saveDb() 入面嘅
     // db.export() 會 close+reopen sql.js 個 connection,令 last_insert_rowid()

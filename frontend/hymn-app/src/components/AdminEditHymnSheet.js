@@ -31,9 +31,14 @@ export const useAdminEditHymn = () => useContext(Ctx) || { open: () => {} };
 const CATEGORY_SUGGESTIONS = ['詩歌', '粵語', '國語', '兒童'];
 const LANG_OPTIONS = ['粵語', '國語', '英文', '兒童'];
 
+// org/performer:TAXONOMY-5D-PLAN.md §2.2/§4.4 五維分類——「團體」(org)同
+// 「歌手」(performer)。artist 欄保留舊意義唔郁(§2.1 additive-only),
+// 呢兩個係新增獨立輸入欄。
 const FIELD_LABELS = {
   display_title: '顯示歌名',
-  artist: '團體',
+  artist: '團體(舊欄)',
+  org: '團體',
+  performer: '歌手',
   category: '分類',
   album: '專輯',
   title_en: '英文名',
@@ -46,7 +51,7 @@ export function AdminEditHymnProvider({ children }) {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [original, setOriginal] = useState(null); // GET 返嚟嘅原始行(俾 PATCH diff 用)
-  const [form, setForm] = useState({ display_title: '', artist: '', category: '', lang: '粵語', album: '', title_en: '' });
+  const [form, setForm] = useState({ display_title: '', artist: '', org: '', performer: '', category: '', lang: '粵語', album: '', title_en: '' });
 
   const close = useCallback(() => {
     setVisible(false); setOriginal(null); setError('');
@@ -62,6 +67,8 @@ export function AdminEditHymnProvider({ children }) {
       setForm({
         display_title: full.display_title || '',
         artist: full.artist || '',
+        org: full.org || '',
+        performer: full.performer || '',
         category: full.category || '',
         lang: full.lang || '粵語',
         album: full.album || '',
@@ -80,7 +87,7 @@ export function AdminEditHymnProvider({ children }) {
     // 淨係送有改過嘅欄位——PATCH 白名單 + 「最少一個欄位」由後端把關,
     // 但前端唔使亂送一大堆冇變化嘅欄位。
     const changed = {};
-    for (const key of ['display_title', 'artist', 'category', 'lang', 'album', 'title_en']) {
+    for (const key of ['display_title', 'artist', 'org', 'performer', 'category', 'lang', 'album', 'title_en']) {
       if ((form[key] || '') !== (original[key] || '')) changed[key] = form[key];
     }
     if (!Object.keys(changed).length) { close(); return; }
@@ -160,6 +167,8 @@ export function AdminEditHymnProvider({ children }) {
 
                 {row('display_title')}
                 {row('artist')}
+                {row('org', { placeholder: '例:泥土音樂(留空跟「團體(舊欄)」)' })}
+                {row('performer', { placeholder: '例:盛曉玫(可留空,UI 會 fallback 顯示團體)' })}
 
                 <View style={styles.fieldRow}>
                   <Text style={styles.fieldLabel}>分類</Text>

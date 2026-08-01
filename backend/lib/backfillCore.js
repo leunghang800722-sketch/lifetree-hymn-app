@@ -48,10 +48,13 @@ export async function backfillGroupFromList(db, group, list, budget, opts = {}) 
     clearDiscoverFailure(v.id);
 
     if (!dry) {
+      // TAXONOMY-5D-PLAN.md §3.5:同 growLibrary.js discover 路徑一致嘅
+      // org/kids/kidsLang 規則(呢個 function 係 Tier1 自動 backfill +
+      // backfillFromList.js 人手工具共用嘅同一條 code path)。
       db.run(
-        `INSERT INTO hymns_all (title, display_title, artist, category, youtube_id, lang, curated, status, last_checked, fail_streak, duration)
-         VALUES (?, ?, ?, ?, ?, ?, 1, 'ok', ?, 0, ?)`,
-        [v.title, cleanDisplayTitle(v.title, group.name), group.name, group.lang, v.id, group.lang, today(), formatDuration(v.duration)]
+        `INSERT INTO hymns_all (title, display_title, artist, category, youtube_id, lang, curated, status, last_checked, fail_streak, duration, org, kids)
+         VALUES (?, ?, ?, ?, ?, ?, 1, 'ok', ?, 0, ?, ?, ?)`,
+        [v.title, cleanDisplayTitle(v.title, group.name), group.name, group.lang, v.id, group.kidsLang || group.lang, today(), formatDuration(v.duration), group.org ?? group.name, group.priority === 4 ? 1 : 0]
       );
       saveDb(db);
     }

@@ -80,7 +80,9 @@ function extractVideoId(url) {
 
 // 驗證:string、trim 後(album/title_en 可以清空,其他唔准)、≤200 字元、
 // strip 控制字元(同 §5.6 display_name 一致)。回 null = 唔啱格式。
-const OPTIONAL_EMPTY_FIELDS = new Set(['album', 'title_en']);
+// performer:TAXONOMY-5D-PLAN.md §2.2「搵唔到留空 ''」,准清空;org 一定
+// 要有值(P1 驗證 `org=''` 必須=0),唔加入呢個 set。
+const OPTIONAL_EMPTY_FIELDS = new Set(['album', 'title_en', 'performer']);
 function validateField(key, value) {
   if (typeof value !== 'string') return null;
   const v = value.replace(/[\x00-\x1F\x7F-\x9F]/g, '').trim();
@@ -217,7 +219,10 @@ export default function adminRoutes(app) {
       if (v === null) return res.status(400).json({ error: 'bad_field_value', field: k });
       fields[k] = v;
     }
-    for (const k of ['album', 'title_en']) {
+    // org:TAXONOMY-5D-PLAN.md §3.5,選填——冇填 insertHymn() 會 fallback 做
+    // artist。前端 AdminAddHymnScreen.js 而家未加呢個輸入欄(C1 範圍淨係
+    // AdminEditHymnSheet.js),但 route/lib 層先行支援,方便日後補 UI。
+    for (const k of ['album', 'title_en', 'org']) {
       if (body[k] === undefined) continue;
       const v = validateField(k, body[k]);
       if (v === null) return res.status(400).json({ error: 'bad_field_value', field: k });

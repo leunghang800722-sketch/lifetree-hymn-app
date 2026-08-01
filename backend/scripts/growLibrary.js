@@ -493,10 +493,14 @@ async function discoverFromGroup(db, group, budget) {
     // display_title 喺插入嗰刻就計埋(唔使再靠人手隔幾耐先補一次 batch),
     // 新歌一入庫 UI 即刻見到乾淨嘅版本。
     if (!DRY) {
+      // TAXONOMY-5D-PLAN.md §3.5:org/kids 即時填,兒童團體(有 kidsLang)寫
+      // 真語言落 lang 唔准再寫「兒童」(category 保留 group.lang 原封不動,
+      // 歷史遺留欄唔郁,見 §2.3)。611 Kids Worship 嘅 kidsLang 係「粵語/國語」
+      // 雙值——channel:null 永遠去唔到呢度,暫時唔使特殊處理(§8 C1 註明)。
       db.run(
-        `INSERT INTO hymns_all (title, display_title, artist, category, youtube_id, lang, curated, status, last_checked, fail_streak, duration)
-         VALUES (?, ?, ?, ?, ?, ?, 1, 'ok', ?, 0, ?)`,
-        [v.title, cleanDisplayTitle(v.title, group.name), group.name, group.lang, v.id, group.lang, today(), formatDuration(v.duration)]
+        `INSERT INTO hymns_all (title, display_title, artist, category, youtube_id, lang, curated, status, last_checked, fail_streak, duration, org, kids)
+         VALUES (?, ?, ?, ?, ?, ?, 1, 'ok', ?, 0, ?, ?, ?)`,
+        [v.title, cleanDisplayTitle(v.title, group.name), group.name, group.lang, v.id, group.kidsLang || group.lang, today(), formatDuration(v.duration), group.org ?? group.name, group.priority === 4 ? 1 : 0]
       );
       saveDb(db);
     }
