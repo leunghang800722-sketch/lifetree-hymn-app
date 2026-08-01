@@ -1,0 +1,77 @@
+{
+  "generatedAt": "2026-08-01 16:32:33",
+  "favRemapped": [
+    {
+      "user_id": 2,
+      "oldId": 1835,
+      "newId": 4225
+    },
+    {
+      "user_id": 2,
+      "oldId": 1951,
+      "newId": 4237
+    },
+    {
+      "user_id": 2,
+      "oldId": 2420,
+      "newId": 4254
+    },
+    {
+      "user_id": 2,
+      "oldId": 2718,
+      "newId": 4384
+    }
+  ],
+  "favDropped": [
+    {
+      "user_id": 2,
+      "oldId": 2015
+    }
+  ],
+  "playlistChanges": [
+    {
+      "user_id": 2,
+      "playlist_id": "pl_1785302478757",
+      "name": "兒童詩歌",
+      "remapped": [
+        {
+          "youtube_id": "LUtYcmIqek0",
+          "oldId": 1951,
+          "newId": 4237,
+          "title": "【今天是神所定的日子 This Is the Day (That Our God Has Made) 】兒童敬拜MV - 讚美之泉兒童敬拜讚美 (14)"
+        },
+        {
+          "youtube_id": "d3Z19vi0VfI",
+          "oldId": 2865,
+          "newId": 4334,
+          "title": "彩虹 Rainbow  -《讚美之泉兒童敬拜讚美台北現場LIVE》"
+        },
+        {
+          "youtube_id": "Kc4qY08oooA",
+          "oldId": 2718,
+          "newId": 4384,
+          "title": "飛得更高 - ACM 齊唱兒歌4 (官方完整CD版)"
+        },
+        {
+          "youtube_id": "iW3b9Su9ZxA",
+          "oldId": 2808,
+          "newId": 4283,
+          "title": "【是為了愛  It’s All For Love 】兒童聖誕歡慶版｜讚美之泉兒童敬拜讚美"
+        },
+        {
+          "youtube_id": "R439SvTJUrM",
+          "oldId": 2420,
+          "newId": 4254,
+          "title": "【小王子、小公主 Princes And Princesses】官方歌詞MV - 讚美之泉兒童敬拜讚美 (13)"
+        },
+        {
+          "youtube_id": "1xdtEgylEyo",
+          "oldId": 1835,
+          "newId": 4225,
+          "title": "【唱出耶穌的偉大 I Will Sing of Your Greatness】舞蹈版MV - 讚美之泉兒童敬拜讚美(14)"
+        }
+      ],
+      "dropped": []
+    }
+  ]
+}

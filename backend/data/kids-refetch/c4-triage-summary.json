@@ -1,0 +1,373 @@
+{
+  "step1": {
+    "before": 617,
+    "after": 559,
+    "deleted": 58,
+    "listCount": 58,
+    "foundInStaging": 58
+  },
+  "step2": {
+    "rescued": [
+      {
+        "youtube_id": "puyEbKSn_ZM",
+        "title": "Running - Music Video | Hillsong Kids",
+        "org": "Hillsong Kids",
+        "lang": "英文",
+        "performer": ""
+      },
+      {
+        "youtube_id": "ke2fuJmKW1A",
+        "title": "God Is Great - Actions Video | Hillsong Kids",
+        "org": "Hillsong Kids",
+        "lang": "英文",
+        "performer": ""
+      },
+      {
+        "youtube_id": "7OU6j5QU27k",
+        "title": "All Day - Actions Video | Hillsong Kids",
+        "org": "Hillsong Kids",
+        "lang": "英文",
+        "performer": ""
+      },
+      {
+        "youtube_id": "HOwbGSKAe9g",
+        "title": "Let It Shine (This Little Light Of Mine)",
+        "org": "Hillsong Kids",
+        "lang": "英文",
+        "performer": ""
+      },
+      {
+        "youtube_id": "fVhAdf_JMY0",
+        "title": "1 Thessalonians 5:16-18 Always Be Joyful",
+        "org": "Hillsong Kids",
+        "lang": "英文",
+        "performer": ""
+      },
+      {
+        "youtube_id": "gYF6x_2Ohug",
+        "title": "Proverbs 4:2-23 - Listen Closely | Hillsong Kids",
+        "org": "Hillsong Kids",
+        "lang": "英文",
+        "performer": ""
+      },
+      {
+        "youtube_id": "cz5pUFYO7AE",
+        "title": "Hebrews 10:35-36 - Keep On Being Brave | Hillsong Kids",
+        "org": "Hillsong Kids",
+        "lang": "英文",
+        "performer": ""
+      },
+      {
+        "youtube_id": "x9LQACXhS-U",
+        "title": "Psalm 92:13 - Planted | Hillsong Kids",
+        "org": "Hillsong Kids",
+        "lang": "英文",
+        "performer": ""
+      },
+      {
+        "youtube_id": "XC4_Vbhf_PY",
+        "title": "Romans 1:16 - Not Ashamed | Hillsong Kids",
+        "org": "Hillsong Kids",
+        "lang": "英文",
+        "performer": ""
+      },
+      {
+        "youtube_id": "b5iHR4i8gUE",
+        "title": "2 Peter 3:18 -  Grow in the Grace and Knowledge",
+        "org": "Hillsong Kids",
+        "lang": "英文",
+        "performer": ""
+      },
+      {
+        "youtube_id": "xrQPoVZR5Go",
+        "title": "1 Corinthians 15:58 - Stand Strong | Hillsong Kids",
+        "org": "Hillsong Kids",
+        "lang": "英文",
+        "performer": ""
+      },
+      {
+        "youtube_id": "iwaJ3qh8PZc",
+        "title": "Born Is The King (It’s Christmas!) - Sing-A-Long Video | Hillsong Kids",
+        "org": "Hillsong Kids",
+        "lang": "英文",
+        "performer": ""
+      },
+      {
+        "youtube_id": "P-nn0enSmsU",
+        "title": "Born Is The King (It’s Christmas!) - Music Video | Hillsong Kids",
+        "org": "Hillsong Kids",
+        "lang": "英文",
+        "performer": ""
+      },
+      {
+        "youtube_id": "IKibVqq5G8k",
+        "title": "God Is So Good - Visualiser | Hillsong Kids",
+        "org": "Hillsong Kids",
+        "lang": "英文",
+        "performer": ""
+      },
+      {
+        "youtube_id": "zs9G6tLQJfg",
+        "title": "That's The Power - Visualiser | Hillsong Kids",
+        "org": "Hillsong Kids",
+        "lang": "英文",
+        "performer": ""
+      },
+      {
+        "youtube_id": "AuX_kmBxXDU",
+        "title": "Thank You Jesus - Visualiser | Hillsong Kids",
+        "org": "Hillsong Kids",
+        "lang": "英文",
+        "performer": ""
+      },
+      {
+        "youtube_id": "9aMP1VNV8iY",
+        "title": "Thank You Jesus - New Worship from Hillsong Kids",
+        "org": "Hillsong Kids",
+        "lang": "英文",
+        "performer": ""
+      },
+      {
+        "youtube_id": "eYH89HZPghA",
+        "title": "God Is Great - Visualiser | Hillsong Kids",
+        "org": "Hillsong Kids",
+        "lang": "英文",
+        "performer": ""
+      },
+      {
+        "youtube_id": "Tc_T8cQG-KE",
+        "title": "No One But You - Visualiser | Hillsong Kids",
+        "org": "Hillsong Kids",
+        "lang": "英文",
+        "performer": ""
+      },
+      {
+        "youtube_id": "iajTbrnZ4lM",
+        "title": "All Day - Visualiser | Hillsong Kids",
+        "org": "Hillsong Kids",
+        "lang": "英文",
+        "performer": ""
+      },
+      {
+        "youtube_id": "ALkrFFIu9dg",
+        "title": "Jesus Loves Me (This I Know) | Hillsong Kids",
+        "org": "Hillsong Kids",
+        "lang": "英文",
+        "performer": ""
+      },
+      {
+        "youtube_id": "BmG3FHKZBnw",
+        "title": "Easter song for kids - \"Alive Alive My Jesus Is Alive\"",
+        "org": "Listener Kids",
+        "lang": "英文",
+        "performer": ""
+      },
+      {
+        "youtube_id": "AQF-J2FXLN4",
+        "title": "Children Go Where I Send Thee - Christian Christmas video for kids",
+        "org": "Listener Kids",
+        "lang": "英文",
+        "performer": ""
+      },
+      {
+        "youtube_id": "gpufCaVKWw4",
+        "title": "Angels We Have Heard on High - Christian Christmas songs for kids!",
+        "org": "Listener Kids",
+        "lang": "英文",
+        "performer": ""
+      },
+      {
+        "youtube_id": "RHoIByQlCow",
+        "title": "Dem Bones Gonna Walk Around by Listener Kids",
+        "org": "Listener Kids",
+        "lang": "英文",
+        "performer": ""
+      },
+      {
+        "youtube_id": "Bmq5NveA6vY",
+        "title": "Oh How I Love Jesus (new version)",
+        "org": "Listener Kids",
+        "lang": "英文",
+        "performer": ""
+      },
+      {
+        "youtube_id": "PlcXDrOGiKk",
+        "title": "Go Tell It On The Mountain - Christian Praise by Listener Kids - Celebrate the birth of Jesus",
+        "org": "Listener Kids",
+        "lang": "英文",
+        "performer": ""
+      },
+      {
+        "youtube_id": "xNb6vMkAIOQ",
+        "title": "I Am a C-H-R-I-S-T-I-A-N - (SURPRISE ENDING) - Praise fun for Kids",
+        "org": "Listener Kids",
+        "lang": "英文",
+        "performer": ""
+      },
+      {
+        "youtube_id": "b0VUiK50pgU",
+        "title": "His Banner Over Me is Love - by Listener Kids",
+        "org": "Listener Kids",
+        "lang": "英文",
+        "performer": ""
+      },
+      {
+        "youtube_id": "lzW9nZGdgmg",
+        "title": "One Way | Acoustic Kids Worship Sing-Along 🎸✨ #worship #singwithme #onewayjesus #hillsong",
+        "org": "CJ and Friends",
+        "lang": "英文",
+        "performer": ""
+      },
+      {
+        "youtube_id": "MIc5WiThn0U",
+        "title": "【極大的聲音 Praise You with My Everything】敬拜MV - 讚美之泉兒童敬拜讚美 (10)",
+        "org": "讚美之泉兒童",
+        "lang": "國語",
+        "performer": ""
+      },
+      {
+        "youtube_id": "9fDQBnHVdyU",
+        "title": "【天上的家 My Heavenly Home】敬拜MV - 讚美之泉兒童敬拜讚美 (10)",
+        "org": "讚美之泉兒童",
+        "lang": "國語",
+        "performer": ""
+      },
+      {
+        "youtube_id": "SzGYYf0K8CY",
+        "title": "【無止境 No Bounds】敬拜MV - 讚美之泉兒童敬拜讚美 (10)",
+        "org": "讚美之泉兒童",
+        "lang": "國語",
+        "performer": ""
+      },
+      {
+        "youtube_id": "O2Fv0XPu0Yo",
+        "title": "【I Believe [我相信]】敬拜MV - 讚美之泉兒童敬拜讚美 (10)",
+        "org": "讚美之泉兒童",
+        "lang": "國語",
+        "performer": ""
+      },
+      {
+        "youtube_id": "vWMePsOFMkU",
+        "title": "【全然美麗 Beautiful】敬拜MV - 讚美之泉兒童敬拜讚美 (10)",
+        "org": "讚美之泉兒童",
+        "lang": "國語",
+        "performer": ""
+      },
+      {
+        "youtube_id": "bfFZf7uwTV8",
+        "title": "【快快地聽 Quick to Listen】敬拜MV - 讚美之泉兒童敬拜讚美 (10)",
+        "org": "讚美之泉兒童",
+        "lang": "國語",
+        "performer": ""
+      },
+      {
+        "youtube_id": "aDgup4D-oyo",
+        "title": "Piano Lullabies (Great I AM) | Hillsong Kids",
+        "org": "Hillsong Kids",
+        "lang": "英文",
+        "performer": "純音樂"
+      },
+      {
+        "youtube_id": "x2aO_jw7tlw",
+        "title": "Blown Away - Piano Lullaby | Hillsong Kids",
+        "org": "Hillsong Kids",
+        "lang": "英文",
+        "performer": "純音樂"
+      },
+      {
+        "youtube_id": "q3uluBF4vhc",
+        "title": "Worthy Is The Lamb - Piano Lullaby | Hillsong Kids",
+        "org": "Hillsong Kids",
+        "lang": "英文",
+        "performer": "純音樂"
+      },
+      {
+        "youtube_id": "RSa8vzVjsw0",
+        "title": "The Potter's Hand - Piano Lullaby | Hillsong Kids",
+        "org": "Hillsong Kids",
+        "lang": "英文",
+        "performer": "純音樂"
+      },
+      {
+        "youtube_id": "nK01D21WspE",
+        "title": "Freedom Is Here - Piano Lullaby | Hillsong Kids",
+        "org": "Hillsong Kids",
+        "lang": "英文",
+        "performer": "純音樂"
+      },
+      {
+        "youtube_id": "_siBAyiLZTk",
+        "title": "Mighty To Save - Piano Lullaby | Hillsong Kids",
+        "org": "Hillsong Kids",
+        "lang": "英文",
+        "performer": "純音樂"
+      },
+      {
+        "youtube_id": "Yu4qwj6aIrM",
+        "title": "Turn Your Eyes Upon Jesus - Piano Lullaby | Hillsong Kids",
+        "org": "Hillsong Kids",
+        "lang": "英文",
+        "performer": "純音樂"
+      },
+      {
+        "youtube_id": "S-cbTaS2RMU",
+        "title": "Jesus, What A Beautiful Name - Piano Lullaby | Hillsong Kids",
+        "org": "Hillsong Kids",
+        "lang": "英文",
+        "performer": "純音樂"
+      },
+      {
+        "youtube_id": "KJY12sBt5dQ",
+        "title": "You Are My World - Piano Lullaby | Hillsong Kids",
+        "org": "Hillsong Kids",
+        "lang": "英文",
+        "performer": "純音樂"
+      },
+      {
+        "youtube_id": "HOgTCt7ECaM",
+        "title": "Carry Me - Piano Lullaby | Hillsong Kids",
+        "org": "Hillsong Kids",
+        "lang": "英文",
+        "performer": "純音樂"
+      },
+      {
+        "youtube_id": "CWROHzC5p8o",
+        "title": "Give Thanks - Piano Lullaby | Hillsong Kids",
+        "org": "Hillsong Kids",
+        "lang": "英文",
+        "performer": "純音樂"
+      },
+      {
+        "youtube_id": "3q9JuUtLgF0",
+        "title": "Eagle's Wings - Piano Lullaby | Hillsong Kids",
+        "org": "Hillsong Kids",
+        "lang": "英文",
+        "performer": "純音樂"
+      },
+      {
+        "youtube_id": "44PBPsIDDmU",
+        "title": "Magnificent - Piano Lullaby | Hillsong Kids",
+        "org": "Hillsong Kids",
+        "lang": "英文",
+        "performer": "純音樂"
+      }
+    ],
+    "fail": [],
+    "alreadyStaged": []
+  },
+  "finalCount": 608,
+  "langDist": [
+    {
+      "lang": "國語",
+      "c": 134
+    },
+    {
+      "lang": "粵語",
+      "c": 163
+    },
+    {
+      "lang": "英文",
+      "c": 311
+    }
+  ]
+}
