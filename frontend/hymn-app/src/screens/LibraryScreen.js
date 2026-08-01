@@ -18,6 +18,8 @@ import { useAuth } from '../context/AuthContext';
 import { getDisplayTitle } from '../utils/displayTitle';
 
 const LANGS = ['全部', '粵語', '國語', '英文', '兒童'];
+// 兒童 tab 內語言 sub-chips 嘅顯示次序(TAXONOMY-5D-PLAN §4.2,Eric 補充拍板)。
+const KIDS_SUB_LANGS = ['粵語', '國語', '英文'];
 
 // 搜尋 normalize —— 剩返字母/數字/CJK,咁「神, 我屬祢!」呢類標點先唔會拆散
 // query 同歌名嘅比對(Eric 實測「神我屬」搵唔到,SUPERVISION-LOG 2026-07-27 17:30)。
@@ -60,7 +62,9 @@ function Cover({ youtubeId, size = 52 }) {
 
 export default function LibraryScreen({ hymns = [], onPlayHymn }) {
   const [lang, setLang] = useState('全部');
-  const [artist, setArtist] = useState(null);
+  const [org, setOrg] = useState(null);
+  // 兒童 tab 內語言 sub-chips(TAXONOMY-5D-PLAN §4.2)—— 淨喺 lang==='兒童' 時生效。
+  const [kidsSubLang, setKidsSubLang] = useState('全部');
   // SEARCH-MERGE-PLAN:搜尋欄併入本頁,本地即時 filter,同 chip AND 夾用
   const [query, setQuery] = useState('');
   const [focused, setFocused] = useState(false);
@@ -69,43 +73,73 @@ export default function LibraryScreen({ hymns = [], onPlayHymn }) {
   // 撳鍵都行 5 個 regex 會拖慢),之後搜尋淨係一個字串 includes。
   const augmented = useMemo(() => hymns.map((h) => ({
     ...h,
-    // 每欄 || '' 兜底:離線舊 cache 可能未有 album/title_en(SEARCH-MERGE-PLAN §5)。
+    // 每欄 || '' 兜底:離線舊 cache 可能未有 album/title_en/performer(SEARCH-MERGE-PLAN §5、
+    // TAXONOMY-5D-PLAN §4.2 同一鐵律)。
     // display_title 一定要包——admin 改歌名(MEMBERSHIP-PHASE2-ADMIN-PLAN)改嘅
     // 正正係呢個欄位(唔係原始 title),漏咗就會出現「改咗個名之後用新名反而
     // 搵唔到」(Opus 5 驗收揪出)。
-    _searchBlob: norm(h.title) + norm(h.display_title) + norm(h.title_en) + norm(h.artist) + norm(h.album) + norm(h.lyrics),
+    _searchBlob: norm(h.title) + norm(h.display_title) + norm(h.title_en) + norm(h.artist) + norm(h.album) + norm(h.lyrics) + norm(h.performer),
   })), [hymns]);
 
-  // Filter 鏈:全庫 → 語言 chip → 搜尋字串 → 歌手 chip(AND)。
-  // 歌手 chip 嘅計數 base 跟埋語言+搜尋重算,所以搜尋層放喺歌手層之前。
+  // 兒童分類嘅底庫(唔理搜尋/團體篩選)——兼容讀法:kids===1 或者舊 client 冇
+  // kids 欄時嘅 lang==='兒童' 分支(§4.2)。用嚟計 sub-chips 動態出現同計數。
+  const kidsBase = useMemo(
+    () => augmented.filter((h) => h.kids === 1 || h.lang === '兒童'),
+    [augmented]
+  );
+  const kidsSubLangs = useMemo(() => {
+    const counts = {};
+    kidsBase.forEach((h) => {
+      if (KIDS_SUB_LANGS.includes(h.real_lang)) counts[h.real_lang] = (counts[h.real_lang] || 0) + 1;
+    });
+    return KIDS_SUB_LANGS.filter((l) => counts[l] > 0).map((l) => [l, counts[l]]);
+  }, [kidsBase]);
+
+  // Filter 鏈(§4.2):全庫 → 語言 chip(兒童讀 kids 兼容分支)→ 兒童 sub-lang
+  // (real_lang)→ 搜尋字串 → 團體 chip(AND)。團體 chip 嘅計數 base 跟埋
+  // 語言+sub-lang+搜尋重算,所以搜尋層放喺團體層之前。
   const searched = useMemo(() => {
-    let base = lang === '全部' ? augmented : augmented.filter((h) => h.lang === lang);
+    let base;
+    if (lang === '兒童') {
+      base = kidsBase;
+      if (kidsSubLang !== '全部') base = base.filter((h) => h.real_lang === kidsSubLang);
+    } else if (lang === '全部') {
+      base = augmented;
+    } else {
+      base = augmented.filter((h) => h.lang === lang);
+    }
     const nq = norm(query);
     if (!nq) return base;
     return base.filter((h) => h._searchBlob.includes(nq));
-  }, [augmented, lang, query]);
+  }, [augmented, kidsBase, lang, kidsSubLang, query]);
 
-  const artists = useMemo(() => {
+  // 第二行 chips:歌手 → 團體(拍板 ✓)。data source h.org || h.artist——離線舊
+  // cache 冇 org 欄就兜底用返 artist(§4.2)。
+  const orgs = useMemo(() => {
     const counts = {};
-    searched.forEach((h) => { const a = h.artist || '未知'; counts[a] = (counts[a] || 0) + 1; });
+    searched.forEach((h) => { const o = h.org || h.artist || '未知'; counts[o] = (counts[o] || 0) + 1; });
     return Object.entries(counts).sort((a, b) => b[1] - a[1]);
   }, [searched]);
 
   const shown = useMemo(() => {
-    if (!artist) return searched;
-    return searched.filter((h) => (h.artist || '未知') === artist);
-  }, [searched, artist]);
+    if (!org) return searched;
+    return searched.filter((h) => (h.org || h.artist || '未知') === org);
+  }, [searched, org]);
 
   const hasQuery = query.trim().length > 0;
-  const hasChipFilter = lang !== '全部' || !!artist;
+  const hasChipFilter = lang !== '全部' || !!org || (lang === '兒童' && kidsSubLang !== '全部');
   // B11 修 —— 之前唔理 hasChipFilter,搜尋撞 0 個結果一律話「搵唔到「Chris」/
   // 試下其他關鍵字」,但歌手 chip(例如「ACM 21」)已經 scroll 出咗畫面,用戶
   // 見唔到仲揀緊邊個歌手,以為個關鍵字真係冇貨(其實清埋篩選就有 12 首)。
   // 呢個 App 嘅 chip 本身設計成同搜尋 AND 埋一齊用(`shown` = searched 再過
-  // 一次 artist),所以唔改做「打字就自動清 chip」(方案 a)—— 咁樣就同 chip
-  // 原本「揀個歌手嘅範圍再搵」嘅意圖相反。改用方案 b:老實話明係邊個篩選
-  // 令結果空,「清除篩選」掣照用(已經識埋 lang+artist 一齊清)。
-  const filterLabel = [lang !== '全部' ? lang : null, artist].filter(Boolean).join(' · ');
+  // 一次 org),所以唔改做「打字就自動清 chip」(方案 a)—— 咁樣就同 chip
+  // 原本「揀個團體嘅範圍再搵」嘅意圖相反。改用方案 b:老實話明係邊個篩選
+  // 令結果空,「清除篩選」掣照用(已經識埋 lang+org+kidsSubLang 一齊清)。
+  const filterLabel = [
+    lang !== '全部' ? lang : null,
+    lang === '兒童' && kidsSubLang !== '全部' ? kidsSubLang : null,
+    org,
+  ].filter(Boolean).join(' · ');
   const { open: openAddToPlaylist } = useAddToPlaylist();
   // admin long-press 入口(MEMBERSHIP-PHASE2-ADMIN-PLAN §3.7)—— member 冇呢個
   // onLongPress prop,UI 層面完全見唔到(API 有 requireAdmin 403 兜底)。
@@ -147,7 +181,7 @@ export default function LibraryScreen({ hymns = [], onPlayHymn }) {
           <TouchableOpacity
             key={l}
             style={[styles.chip, lang === l && styles.chipActive]}
-            onPress={() => { setLang(l); setArtist(null); }}
+            onPress={() => { setLang(l); setOrg(null); setKidsSubLang('全部'); }}
             activeOpacity={0.7}
           >
             <Text style={[styles.chipText, lang === l && styles.chipTextActive]}>{l}</Text>
@@ -155,21 +189,45 @@ export default function LibraryScreen({ hymns = [], onPlayHymn }) {
         ))}
       </View>
 
-      {/* 歌手篩選(橫向) */}
+      {/* 兒童 tab 內語言 sub-chips(§4.2,Eric 補充拍板)—— 按實際數據動態生成,
+          C4 換血前 real_lang 全部係「兒童」,呢排一粒都唔會出(預期行為)。 */}
+      {lang === '兒童' && kidsSubLangs.length > 0 && (
+        <View style={styles.chipRow}>
+          <TouchableOpacity
+            style={[styles.chip, kidsSubLang === '全部' && styles.chipActive]}
+            onPress={() => setKidsSubLang('全部')}
+            activeOpacity={0.7}
+          >
+            <Text style={[styles.chipText, kidsSubLang === '全部' && styles.chipTextActive]}>全部</Text>
+          </TouchableOpacity>
+          {kidsSubLangs.map(([l, n]) => (
+            <TouchableOpacity
+              key={l}
+              style={[styles.chip, kidsSubLang === l && styles.chipActive]}
+              onPress={() => setKidsSubLang(l)}
+              activeOpacity={0.7}
+            >
+              <Text style={[styles.chipText, kidsSubLang === l && styles.chipTextActive]}>{l} {n}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+      )}
+
+      {/* 團體篩選(橫向,拍板 ✓ 由「歌手」改做「團體」)*/}
       <View style={styles.artistWrap}>
         <FlatList
           horizontal
           showsHorizontalScrollIndicator={false}
-          data={[['全部歌手', shown.length], ...artists]}
+          data={[['全部團體', shown.length], ...orgs]}
           keyExtractor={(item) => String(item[0])}
           renderItem={({ item }) => {
             const [name, n] = item;
-            const isAll = name === '全部歌手';
-            const active = isAll ? !artist : artist === name;
+            const isAll = name === '全部團體';
+            const active = isAll ? !org : org === name;
             return (
               <TouchableOpacity
                 style={[styles.artistChip, active && styles.artistChipActive]}
-                onPress={() => setArtist(isAll ? null : name)}
+                onPress={() => setOrg(isAll ? null : name)}
                 activeOpacity={0.7}
               >
                 <Text style={[styles.artistChipText, active && styles.artistChipTextActive]} numberOfLines={1}>
@@ -201,7 +259,13 @@ export default function LibraryScreen({ hymns = [], onPlayHymn }) {
             <Cover youtubeId={item.youtube_id} />
             <View style={styles.rowInfo}>
               <Text style={styles.rowTitle} numberOfLines={2}>{getDisplayTitle(item)}</Text>
-              <Text style={styles.rowArtist} numberOfLines={1}>{item.artist || '未知'} · {item.lang}</Text>
+              {/* §4.2:有 performer 就顯示「歌手 · 團體」,冇就「團體 · 真語言」
+                  (org/real_lang 離線舊 cache 未必有,逐個兜底)。 */}
+              <Text style={styles.rowArtist} numberOfLines={1}>
+                {item.performer
+                  ? `${item.performer} · ${item.org || item.artist || '未知'}`
+                  : `${item.org || item.artist || '未知'} · ${item.real_lang ?? item.lang ?? ''}`}
+              </Text>
             </View>
             {/* ≡♪ 加入到清單 + 心心 —— 同 HymnListScreen / 播放清單 sheet 行尾一致;
                 成行撳落去照舊播歌,所以唔再需要裝飾性 play-arrow */}
@@ -236,7 +300,11 @@ export default function LibraryScreen({ hymns = [], onPlayHymn }) {
             )}
             {/* 有 chip filter 生效時俾個掣一撳重置,免得用戶唔知係 chip 累事 */}
             {hasChipFilter && (
-              <TouchableOpacity style={styles.clearFilterBtn} onPress={() => { setLang('全部'); setArtist(null); }} activeOpacity={0.7}>
+              <TouchableOpacity
+                style={styles.clearFilterBtn}
+                onPress={() => { setLang('全部'); setOrg(null); setKidsSubLang('全部'); }}
+                activeOpacity={0.7}
+              >
                 <Text style={styles.clearFilterText}>清除篩選</Text>
               </TouchableOpacity>
             )}
