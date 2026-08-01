@@ -223,9 +223,27 @@ async function processGroup(group, tracking) {
     return;
   }
 
+  // 即搵即寫入 staging(onCandidate callback,lib/channelScan.js 支援)——
+  // 唔等成個頻道嘅 fresh(可能 150+ 條)跑晒先一次過插,萬一 process 中途
+  // 死咗都唔會冧走呢個頻道已經驗證咗嘅嘢,亦令 staging 進度即時可見。
+  let inserted = 0;
+  const onCandidate = async (v) => {
+    const { lang, flag } = resolveKidsLang(group, v.title);
+    if (!VALID_LANGS.has(lang)) {
+      log(`    ⚠ [語言守衛] 「${v.title}」雙值團體判唔到真語言,唔 insert,留返俾人手斷(flag=lang-unresolved)`);
+      tracking.unresolvedLang.push({ group: group.name, id: v.id, title: v.title });
+      return;
+    }
+    const ok = await insertStagingRow({
+      title: v.title, youtube_id: v.id, duration: formatDuration(v.duration),
+      lang, org: group.name, source_group: group.name, flag,
+    });
+    if (ok) inserted++;
+  };
+
   const budget = Math.max(fresh.length, 1);
   const { candidates, tried, outcomes, circuitBroken } = await validateChannelCandidates(
-    group, fresh, budget, { delayMs: DELAY_MS, log }
+    group, fresh, budget, { delayMs: DELAY_MS, log, onCandidate }
   );
   tracking.outcomesByGroup[group.name] = Object.fromEntries(outcomes);
 
@@ -240,20 +258,6 @@ async function processGroup(group, tracking) {
     log('  對照探測拎到音訊 → 唔係俾擋,係呢個頻道呢批片本身死咗,繼續下一個團體。');
   }
 
-  let inserted = 0;
-  for (const v of candidates) {
-    const { lang, flag } = resolveKidsLang(group, v.title);
-    if (!VALID_LANGS.has(lang)) {
-      log(`    ⚠ [語言守衛] 「${v.title}」雙值團體判唔到真語言,唔 insert,留返俾人手斷(flag=lang-unresolved)`);
-      tracking.unresolvedLang.push({ group: group.name, id: v.id, title: v.title });
-      continue;
-    }
-    const ok = await insertStagingRow({
-      title: v.title, youtube_id: v.id, duration: formatDuration(v.duration),
-      lang, org: group.name, source_group: group.name, flag,
-    });
-    if (ok) inserted++;
-  }
   log(`  ${group.name}:試咗 ${tried} 條,驗證通過 ${candidates.length} 條,實際入 staging ${inserted} 條`);
   return 'OK';
 }

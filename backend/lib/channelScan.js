@@ -80,8 +80,13 @@ export function channelLanguageSanityCheck(group, listing, opts = {}) {
 //                 'skip-quality' / 'skip-title-signal' / 'skip-dead-link' /
 //                 'not-reached-budget' / 'not-reached-circuit-broken'
 //   circuitBroken — 連續 3 次死鏈,呢個頻道今次未行完 fresh 就收工
+//
+// opts.onCandidate(可選,async):搵到一條生存候選就即刻 call(唔使等成個
+// fresh 跑晒先攞到 candidates 陣列)。refetchKids.js 用嚟做「即搵即寫入
+// staging」,避免一個頻道 150+ 條先至一次過插(process 中途死咗會冧晒
+// 嗰個頻道已經驗證咗嘅嘢);growLibrary.js 唔傳呢個 opt,行為完全冇變。
 export async function validateChannelCandidates(group, fresh, budget, opts = {}) {
-  const { delayMs = 4000, log = () => {} } = opts;
+  const { delayMs = 4000, log = () => {}, onCandidate = null } = opts;
   const candidates = [];
   const outcomes = new Map();
   let tried = 0, streak = 0, circuitBroken = false;
@@ -138,6 +143,7 @@ export async function validateChannelCandidates(group, fresh, budget, opts = {})
 
     candidates.push(v);
     outcomes.set(v.id, 'candidate');
+    if (onCandidate) await onCandidate(v);
     if (tried < budget) await sleep(jitter(delayMs));
   }
 
