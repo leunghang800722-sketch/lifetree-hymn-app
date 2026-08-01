@@ -401,58 +401,122 @@ function PlayerProvider({ children }) {
 
   // Lazy TrackPlayer initialization — runs on first play, not on mount
   const playerReadyRef = useRef(false);
-  const lazyEnsurePlayer = useCallback(async () => {
-    if (playerReadyRef.current) return;
-    playerReadyRef.current = true;
-    // Android 13+(API 33)POST_NOTIFICATIONS 一定要 runtime request,淨係喺
-    // manifest 度宣告唔會自動有——冇request過就一直當用戶拒絕,post唔到
-    // RNTP 個背景播放通知,離開App之後個mini player就會「唔見咗」但歌照播
-    // (2026-07-30 Eric 實測 + STREAM-403-FGS-CRASH-PLAN 已知缺口)。
-    if (Platform.OS === 'android' && Platform.Version >= 33) {
+  const optionsAppliedRef = useRef(false);
+  const initInFlightRef = useRef(null);
+
+  // RNTP 嘅播放器選項(capabilities / 媒體通知 / swipe 走行為)。抽做一個
+  // function 係因為佢而家要可以**重試**同**返前台時重新 apply**,唔再係
+  // 一次性。詳見下面 applyPlayerOptions 個註解。
+  const buildPlayerOptions = useCallback(() => ({
+    capabilities: [
+      TPCapability.Play,
+      TPCapability.Pause,
+      TPCapability.SkipToNext,
+      TPCapability.SkipToPrevious,
+      TPCapability.SeekTo,
+      TPCapability.Stop,
+    ],
+    compactCapabilities: [
+      TPCapability.Play,
+      TPCapability.Pause,
+      TPCapability.SkipToNext,
+    ],
+    notificationChannel: {
+      id: 'hymn-app',
+      name: '詩歌播放',
+      importance: 1,
+    },
+    icon: require('./assets/notification-icon.png'),
+    // 2026-07-29 QUEUE-UX-4FIXES §4/§7-2、Eric 明確要求(推翻 §3.2 舊決定):
+    // 手指 swipe 走成個 app,音樂要即刻停,連 mini player bar／通知欄都要
+    // 一齊取消 —— 唔係之前「背景繼續播」嗰個情境(嗰個係用戶撳 Home
+    // 掣去背景,app process 冇死,唔受呢個設定影響,見下面 resyncFromNative
+    // 嘅 AppState 'active' 分支)。原本 ContinuePlayback 令 swipe 走之後
+    // service 仲生存、繼續出聲,同「swipe 走要停」呢個新要求正面衝突,
+    // 所以改用 StopPlaybackAndRemoveNotification。
+    android: { appKilledPlaybackBehavior: AppKilledPlaybackBehavior.StopPlaybackAndRemoveNotification },
+  }), []);
+
+  // ⚠️ 2026-08-01 regression 修復(OTA-MEDIA-NOTIFICATION)——
+  // 舊寫法係 `try { await TrackPlayer.updateOptions(...) } catch { console.warn }`,
+  // 而且 lazyEnsurePlayer 一入嚟就 `playerReadyRef.current = true`。兩樣夾埋,
+  // updateOptions 一失敗就:(a) 冇人知(淨係一句吞咗嘅 warn),(b) 一世唔會再試
+  // (ref 已經 latch 咗)。後果係 RNTP 個 NotificationConfig 由頭到尾未 apply 過
+  // → **完全冇媒體通知**(左上角 mini player 冇咗、通知欄冇播放卡),但 ExoPlayer
+  // 照播;連 appKilledPlaybackBehavior 都返返預設 ContinuePlayback(swipe 走
+  // 唔會停)。2026-08-01 喺 local update server harness 上面確認咗 production
+  // OTA bundle 真係踩中呢個狀態。
+  //
+  // 而家:失敗會重試(指數退避),而且會記住「未 apply 成功」,返前台/開始播歌
+  // 之前都會再 apply 一次。updateOptions 本身係 idempotent,重覆 call 安全。
+  const applyPlayerOptions = useCallback(async ({ retries = 3 } = {}) => {
+    for (let attempt = 0; attempt <= retries; attempt++) {
       try {
-        await PermissionsAndroid.request(PermissionsAndroid.PERMISSIONS.POST_NOTIFICATIONS);
-      } catch (e) { console.warn('POST_NOTIFICATIONS request (ignored):', e?.message); }
+        await TrackPlayer.updateOptions(buildPlayerOptions());
+        optionsAppliedRef.current = true;
+        return true;
+      } catch (e) {
+        // 唔好靜靜吞咗——最少要留低一條可以喺 logcat 見到嘅記錄,
+        // 而且要講明係第幾次、仲會唔會再試。
+        console.warn(
+          `[player] updateOptions failed (attempt ${attempt + 1}/${retries + 1}):`,
+          e?.message || e,
+        );
+        if (attempt < retries) {
+          await new Promise((r) => setTimeout(r, 250 * Math.pow(2, attempt)));
+        }
+      }
     }
+    optionsAppliedRef.current = false;
+    return false;
+  }, [buildPlayerOptions]);
+
+  // 未成功 apply 過就再試一次(平時 no-op,所以放喺熱路徑都唔貴)。
+  const ensurePlayerOptions = useCallback(async () => {
+    if (optionsAppliedRef.current) return true;
+    return applyPlayerOptions({ retries: 2 });
+  }, [applyPlayerOptions]);
+
+  const lazyEnsurePlayer = useCallback(async () => {
+    if (playerReadyRef.current) return ensurePlayerOptions();
+    // 同一時間有幾個 caller(resyncFromNative + handlePlayHymn)就共用同一個
+    // in-flight promise,唔好各自行一次 setupPlayer。
+    if (initInFlightRef.current) return initInFlightRef.current;
+
+    const run = (async () => {
+      // Android 13+(API 33)POST_NOTIFICATIONS 一定要 runtime request,淨係喺
+      // manifest 度宣告唔會自動有——冇request過就一直當用戶拒絕,post唔到
+      // RNTP 個背景播放通知,離開App之後個mini player就會「唔見咗」但歌照播
+      // (2026-07-30 Eric 實測 + STREAM-403-FGS-CRASH-PLAN 已知缺口)。
+      if (Platform.OS === 'android' && Platform.Version >= 33) {
+        try {
+          await PermissionsAndroid.request(PermissionsAndroid.PERMISSIONS.POST_NOTIFICATIONS);
+        } catch (e) { console.warn('POST_NOTIFICATIONS request (ignored):', e?.message); }
+      }
+      let setupOk = true;
+      try {
+        await TrackPlayer.setupPlayer({ waitForBuffer: true });
+      } catch (e) {
+        // setupPlayer 喺「player 已經 set 過」嗰陣都會 reject(code
+        // player_already_initialized,見 MusicModule.kt),嗰個唔算失敗;
+        // 真係失敗就唔好 latch playerReadyRef,留返俾下次重試。
+        const msg = String(e?.message || e);
+        setupOk = e?.code === 'player_already_initialized' || /already been initialized/i.test(msg);
+        if (!setupOk) console.warn('[player] setupPlayer failed:', msg);
+      }
+      await applyPlayerOptions();
+      // 只有 setupPlayer 真係 OK 先當 ready;唔係就下次 call 會再行一次。
+      playerReadyRef.current = setupOk;
+      setQueueReady(true);
+    })();
+
+    initInFlightRef.current = run;
     try {
-      await TrackPlayer.setupPlayer({ waitForBuffer: true });
-    } catch (e) {
-      console.warn('setupPlayer (ignored):', e?.message);
+      await run;
+    } finally {
+      initInFlightRef.current = null;
     }
-    try {
-      await TrackPlayer.updateOptions({
-        capabilities: [
-          TPCapability.Play,
-          TPCapability.Pause,
-          TPCapability.SkipToNext,
-          TPCapability.SkipToPrevious,
-          TPCapability.SeekTo,
-          TPCapability.Stop,
-        ],
-        compactCapabilities: [
-          TPCapability.Play,
-          TPCapability.Pause,
-          TPCapability.SkipToNext,
-        ],
-        notificationChannel: {
-          id: 'hymn-app',
-          name: '詩歌播放',
-          importance: 1,
-        },
-        icon: require('./assets/notification-icon.png'),
-        // 2026-07-29 QUEUE-UX-4FIXES §4/§7-2、Eric 明確要求(推翻 §3.2 舊決定):
-        // 手指 swipe 走成個 app,音樂要即刻停,連 mini player bar／通知欄都要
-        // 一齊取消 —— 唔係之前「背景繼續播」嗰個情境(嗰個係用戶撳 Home
-        // 掣去背景,app process 冇死,唔受呢個設定影響,見下面 resyncFromNative
-        // 嘅 AppState 'active' 分支)。原本 ContinuePlayback 令 swipe 走之後
-        // service 仲生存、繼續出聲,同「swipe 走要停」呢個新要求正面衝突,
-        // 所以改用 StopPlaybackAndRemoveNotification。
-        android: { appKilledPlaybackBehavior: AppKilledPlaybackBehavior.StopPlaybackAndRemoveNotification },
-      });
-    } catch (e) {
-      console.warn('updateOptions (ignored):', e?.message);
-    }
-    setQueueReady(true);
-  }, []);
+  }, [applyPlayerOptions, ensurePlayerOptions]);
 
   // 同步 ref 俾 event handler 用
   repeatModeRef.current = repeatMode;
@@ -731,9 +795,18 @@ function PlayerProvider({ children }) {
     // 開機一次(isColdStart=true,俾 native service 少少時間重連;冇播緊就清場)
     // + 每次返前台(isColdStart=false,照舊 resync,唔清場)。
     const t = setTimeout(() => { resyncFromNative(true); }, 800);
-    const sub = AppState.addEventListener('change', (s) => { if (s === 'active') resyncFromNative(false); });
+    const sub = AppState.addEventListener('change', (s) => {
+      if (s !== 'active') return;
+      resyncFromNative(false);
+      // OTA-MEDIA-NOTIFICATION:每次返前台都重新 apply 一次播放器選項。
+      // 唔淨係「未成功過先試」——MusicService 有機會俾系統殺咗再起返
+      // (START_STICKY),嗰陣 RNTP 會重新 setupPlayer 但**唔會**自動用返
+      // latestOptions,個媒體通知就會啞晒。updateOptions 係 idempotent,
+      // KotlinAudio 見到 buttons 冇變會 skip 重建,所以重覆 call 好平。
+      applyPlayerOptions({ retries: 1 });
+    });
     return () => { clearTimeout(t); sub.remove(); };
-  }, [resyncFromNative]);
+  }, [resyncFromNative, applyPlayerOptions]);
 
   // Progress — poll TrackPlayer.getProgress() directly instead of useProgress hook
   // This avoids the hook being mounted before TrackPlayer is ready
