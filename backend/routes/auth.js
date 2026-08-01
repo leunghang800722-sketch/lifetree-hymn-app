@@ -3,41 +3,18 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { JWT_SECRET } from '../lib/authSecret.js';
 import { saveUserDb } from '../lib/userDb.js';
+import { ipLoginLimiter, clientIp } from '../lib/loginRateLimit.js';
 
 const TOKEN_EXPIRY = '30d';
 const SALT_ROUNDS = 10;
 
 // ── 登入限速(MEMBERSHIP-PLAN §5.3)──────────────────────────────────
-// 每 IP 每 15 分鐘 10 次失敗即 429。in-memory 夠用(單機 backend,同
-// otpAuth.js 嘅防濫用做法一致),reset 靠重啟,對登入限速嚟講可接受。
-const LOGIN_FAIL_WINDOW_MS = 15 * 60 * 1000;
-const LOGIN_FAIL_MAX = 10;
-const loginFailsByIp = new Map(); // ip -> { count, windowStart }
-
-function clientIp(req) {
-  return (req.headers['cf-connecting-ip'] || req.headers['x-forwarded-for'] || req.ip || '').split(',')[0].trim();
-}
-
-function isLoginLocked(ip) {
-  const rec = loginFailsByIp.get(ip);
-  if (!rec) return false;
-  if (Date.now() - rec.windowStart > LOGIN_FAIL_WINDOW_MS) { loginFailsByIp.delete(ip); return false; }
-  return rec.count >= LOGIN_FAIL_MAX;
-}
-
-function recordLoginFail(ip) {
-  const now = Date.now();
-  const rec = loginFailsByIp.get(ip);
-  if (!rec || now - rec.windowStart > LOGIN_FAIL_WINDOW_MS) {
-    loginFailsByIp.set(ip, { count: 1, windowStart: now });
-  } else {
-    rec.count++;
-  }
-}
-
-function clearLoginFails(ip) {
-  loginFailsByIp.delete(ip);
-}
+// 每 IP 每 15 分鐘 10 次失敗即 429。抽咗做共用 lib/loginRateLimit.js
+// (PHONE-PASSWORD-AUTH-PLAN §3.4),login-phone 用埋同一個 limiter 實例,
+// 呢度行為不變。
+function isLoginLocked(ip) { return ipLoginLimiter.isLocked(ip); }
+function recordLoginFail(ip) { ipLoginLimiter.recordFail(ip); }
+function clearLoginFails(ip) { ipLoginLimiter.clear(ip); }
 
 export default function authRoutes(app, getUserDb) {
   app.post('/api/auth/register', async (req, res) => {
