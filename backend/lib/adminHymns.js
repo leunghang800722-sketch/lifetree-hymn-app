@@ -70,24 +70,34 @@ export async function updateHymn(id, fields) {
 }
 
 // POST /api/admin/hymns/:id/delist
+//
+// ⚠️ 2026-07-31 Opus 5 驗收清場時揪出:淨係 `curated=0` 唔夠——growLibrary.js
+// `usablePool()`(curate mode 嘅候選池)一直將 `curated=0` 冧曬做「未上架
+// backlog 候選」,冇任何「內容已判死刑」嘅終態,隔晚就會逐首 re-verify 翻生
+// 返(2026-07-27 22:30 已經記錄過同一單事故:Kids on the Move/Redsea Music/
+// SingforGod 薪火敬拜全部俾翻生返,見 growLibrary.js:217 附近註解)。
+// `status='rejected'` 先係真.終態,`usablePool()` 已經識剔走(同 `status=
+// 'dead'` 分開——嗰個係 deadlink checker 專用嘅「條鏈死咗」語義,呢度千其
+// 唔可以撈亂,一定要用 'rejected' 唔係 'dead')。
 export async function delistHymn(id) {
   return withLock(async () => {
     const db = await openDb();
     const existing = getOneById(db, id);
     if (!existing) throw notFoundError();
 
-    // 已經 curated=0 → 冪等,唔重複 UPDATE/log,直接回 ok。
-    if (Number(existing.curated) === 0) {
-      return { before: { curated: 0 }, after: { curated: 0 }, hymn: existing, idempotent: true };
+    // 冪等要驗埋 status——淨驗 curated=0 唔夠,舊資料可能 curated=0 但 status
+    // 仲係 'ok'(呢個 fix 之前落嘅架、或者本身未 curate 過嘅 backlog 候選),
+    // 呢種情況要照跑落去補返 status='rejected',唔可以當已經落咗架咁跳過。
+    if (Number(existing.curated) === 0 && existing.status === 'rejected') {
+      return { before: { curated: 0, status: 'rejected' }, after: { curated: 0, status: 'rejected' }, hymn: existing, idempotent: true };
     }
 
-    // 唔掂 status ——'dead' 係 deadlink checker 嘅語義,admin 落架同「條鏈死咗」
-    // 係兩回事,混咗會搞亂夜晚 job 嘅簿記。curated=0 已經足夠令 view 剔走佢。
-    db.run('UPDATE hymns_all SET curated = 0 WHERE id = ?', [id]);
+    const before = { curated: existing.curated, status: existing.status };
+    db.run("UPDATE hymns_all SET curated = 0, status = 'rejected' WHERE id = ?", [id]);
     saveDb(db);
     const hymn = getOneById(db, id);
     reloadDb();
-    return { before: { curated: existing.curated }, after: { curated: 0 }, hymn };
+    return { before, after: { curated: 0, status: 'rejected' }, hymn };
   });
 }
 
