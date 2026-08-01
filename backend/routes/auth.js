@@ -38,7 +38,9 @@ export default function authRoutes(app, getUserDb) {
         return res.status(409).json({ error: 'Email already registered' });
       }
 
-      const hash = bcrypt.hashSync(password, SALT_ROUNDS);
+      // async(唔用 hashSync)—— cost 10 sync 會 block 成個 event loop
+      // ~80-100ms,呢個 process 仲要同時撐緊音頻/API 其他 request。
+      const hash = await bcrypt.hash(password, SALT_ROUNDS);
       db.run('INSERT INTO users (username, email, password_hash) VALUES (?, ?, ?)', [username, email, hash]);
       saveUserDb(db);
 
@@ -74,7 +76,7 @@ export default function authRoutes(app, getUserDb) {
       if (!stmt.step()) { stmt.free(); recordLoginFail(ip); return res.status(401).json({ error: 'Invalid email or password' }); }
 
       const user = stmt.getAsObject(); stmt.free();
-      const valid = bcrypt.compareSync(password, user.password_hash);
+      const valid = await bcrypt.compare(password, user.password_hash);
       if (!valid) { recordLoginFail(ip); return res.status(401).json({ error: 'Invalid email or password' }); }
 
       clearLoginFails(ip);
