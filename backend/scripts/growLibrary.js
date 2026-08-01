@@ -44,9 +44,7 @@
 import fs from 'fs';
 import {
   openDb, saveDb, query, sleep, isCompilation, isNonWorship, dedupeByYoutubeId,
-  acquireDbLock, releaseDbLock, listChannelVideos, formatDuration,
-  isInSongDurationBand, passesTitlePositiveSignal,
-  isDiscoverCoolingDown, recordDiscoverFailure, clearDiscoverFailure,
+  acquireDbLock, releaseDbLock, formatDuration,
   isChannelCoolingDown, recordChannelYield, clearChannelCooldown,
 } from '../lib/hymnDb.js';
 import { resolveAudioUrl } from '../lib/resolveAudio.js';
@@ -54,6 +52,10 @@ import { ACTIVE_GROUPS } from '../data/worshipGroups.js';
 import { cleanDisplayTitle } from '../lib/displayTitle.js';
 import { backfillGroupFromList } from '../lib/backfillCore.js';
 import { reconcileGroupIncremental, loadMissingCache, saveMissingCache, MISSING_CACHE_PATH } from '../lib/reconcileCore.js';
+// TAXONOMY-5D-PLAN.md §8 C3 Commit A:頻道掃描 + 收錄關卡①②③搬去
+// lib/channelScan.js,同 refetchKids.js 共用同一份 pipeline,唔好
+// copy-paste 兩份。呢度淨係留返 discover 專屬嘅④(INSERT hymns_all)。
+import { scanChannelListing, channelLanguageSanityCheck, validateChannelCandidates } from '../lib/channelScan.js';
 
 const arg = (f, d) => { const i = process.argv.indexOf(f); return i > -1 && process.argv[i + 1] ? process.argv[i + 1] : d; };
 const MODE = arg('--mode', 'curate');
@@ -278,17 +280,10 @@ function pickNextCandidate(pool, skip = new Set(), benched = new Set()) {
 //   4. 寫入 —— 淨係四關都過咗嘅先 UPDATE curated=1(curate)或者 INSERT(discover)
 // 分類擺喺死鏈驗證之前:純字串判斷唔使成本,死鏈驗證要行 yt-dlp、要撞 YouTube,
 // 應該留俾已經睇落似啱嘅候選先用。
-function passesQuality(title, artist) {
-  return !isCompilation(title) && !isNonWorship(title, artist);
-}
-
-async function verifyPlayable(youtubeId) {
-  try {
-    return !!(await resolveAudioUrl(youtubeId));
-  } catch (_) {
-    return false;
-  }
-}
+// discover mode 嘅②③兩關(分類/品質 + 死鏈)搬咗去 lib/channelScan.js 嘅
+// `validateChannelCandidates()`(TAXONOMY-5D-PLAN §8 C3 Commit A,同
+// refetchKids.js 共用),呢度唔再需要 `passesQuality()`/`verifyPlayable()`
+// 呢兩個 wrapper。
 
 // curate mode 嘅四關對應:① 搜尋 = usablePool()(候選已經喺 hymns_all);
 // ② 分類/品質篩選 = usablePool() 入面嘅 isCompilation/isNonWorship(呢批歌原始
@@ -378,59 +373,22 @@ async function runCurate(db) {
 async function discoverFromGroup(db, group, budget) {
   log(`  discover:${group.name}(${group.lang},${group.channel}),額度 ${budget}`);
 
-  // 1. 搜尋:攞多過 budget 幾倍嘅候選,因為之後仲有幾關會刷走一批。
-  // ⚠️ 唔可以淨係 budget*5(budget 細嗰陣得 5 條)—— `--playlist-end` 每次
-  // 都係由頭攞嗰個頻道**最新**嗰幾條,budget 細嘅話,dedup 幾次之後
-  // 呢幾條片就會全部見過,之後永遠 fresh.length=0,睇落好似個團體「攞晒」
-  // 但其實個頻道仲有排片喺後面攞唔到。攞多啲(至少 30)確保有得揀好幾晚。
-  // ⚠️ 2026-07-26 Fable 5 診斷兒童組卡死:淺層(30)都唔夠 —— Listener
-  // Kids/Hillsong Kids/Kids on the Move 各有成百條舊片,--flat-playlist
-  // 淺層淨係攞到最新嗰 30,dedup 幾晚就全部見過。而家淺層 fresh=0 先
-  // 加深到 200 先放棄(唔係每次都攞 200 —— 平時淺層已經夠嘅頻道唔使
-  // 加大 YouTube 請求量,淨係真係「攞晒」嘅先加深)。
+  // 1. 搜尋:攞多過 budget 幾倍嘅候選,因為之後仲有幾關會刷走一批(見
+  // lib/channelScan.js `scanChannelListing()` 嘅淺層/深層 fallback 註解)。
   const existing = new Set(query(db, `SELECT youtube_id FROM hymns_all`).map((r) => r.youtube_id));
-  let listing = [], fresh = [];
-  for (const depth of [Math.max(budget * 5, 30), 200]) {
-    try {
-      listing = await listChannelVideos(group.channel, depth);
-    } catch (e) {
-      log(`    頻道列表攞唔到:${e?.message || e}`);
-      return { added: 0, tried: 0 };
-    }
-    if (!listing.length) { log('    呢個頻道搵唔到片,可能 handle 舊咗'); return { added: 0, tried: 0 }; }
-    // ⚠️ 2026-07-30 Fable 5 方案:「未入 DB」唔夠,重試夠 3 次嘅候選要一齊
-    // 剔走(見 hymnDb.js `isDiscoverCoolingDown` 註解)——TZO4fPE6TS8 之前
-    // 因為冇呢層過濾,同一條注定死嘅片俾連環 retry 咗 848 次。
-    fresh = listing.filter((v) => v.id && !existing.has(v.id) && !isDiscoverCoolingDown(v.id));
-    if (fresh.length > 0) break;
-    log(`    淺層(${depth} 條)全部見過,加深搜尋…`);
-  }
+  const { listing, fresh } = await scanChannelListing(group.channel, budget, existing, { log });
+  if (!listing.length) return { added: 0, tried: 0 };
   log(`    頻道列出 ${listing.length} 條,${fresh.length} 條未收錄過`);
 
-  // ⚠️ 2026-07-26 P1 方案(SUPERVISION-LOG 10:30 條目)步驟③:channel-level
-  // 語言 sanity check。實測踩過:`@singforgod`(私人家庭片頻道)、
-  // `@redseamusic`(巴西葡語翻唱頻道)兩個壞 handle 撞入嚟 20 首垃圾,全部
-  // 誤標粵語 —— 「已收錄最少優先」嘅揀法對呢類壞 handle 冇免疫力,個頻道
-  // listing 出嚟嘅片全部行得通(死鏈驗證過關),純粹內容語言唔啱。
-  // 用 channel-level(唔係 per-video)判斷:成個 listing 入面**一條都冇**
-  // 中文字先當疑似錯 handle —— 唔可以 per-video 判(粵語歌可以有純英文
-  // 名,per-video 會誤殺正常候選),但一個真.粵語/國語詩歌頻道嘅 30+ 條
-  // 片入面連一條都冇中文字幾乎唔可能。兒童組同樣邏輯,但淨係 kidsLang
-  // 唔係英文嘅先查(英文兒童頻道本身就應該全英文,唔屬呢個訊號)。
-  const isChineseGroup = group.lang === '粵語' || group.lang === '國語'
-    || (group.lang === '兒童' && group.kidsLang && group.kidsLang !== '英文');
-  if (isChineseGroup && listing.length >= 10) {
-    const cjkHits = listing.filter((v) => /[一-鿿㐀-䶿]/.test(v.title)).length;
-    if (cjkHits === 0) {
-      log(`    ⚠ [語言] listing ${listing.length} 條全部冇撞到中文字,懷疑「${group.name}」個 handle 錯咗,今次唔試呢個頻道`);
-      return { added: 0, tried: 0 };
-    }
-  }
+  // 2. channel-level 語言 sanity check(lib/channelScan.js `channelLanguageSanityCheck()`)。
+  if (!channelLanguageSanityCheck(group, listing, { log })) return { added: 0, tried: 0 };
 
   // ⚠️ 2026-07-27 Fable 5 方案(SUPERVISION-LOG 10:40 條目)Q1:順手用呢次
   // 已經攞緊嘅 listing 幫「已收錄但 duration 仲空白」嘅舊歌 backfill duration
   // —— 唔加額外 request,flat-playlist 本身就帶埋呢個欄位,之前淨係揀
-  // fresh 果批嚟用,`existing` 嗰批嘅 duration 一直冚埋喺度冇用過。
+  // fresh 果批嚟用,`existing` 嗰批嘅 duration 一直冚埋喺度冇用過。呢個係
+  // hymns_all 專屬嘅順手優化,唔屬於「頻道掃描 + 收錄關卡」嘅共用部分,
+  // 留喺呢度(refetchKids.js 冇對應需要 —— 兒童歌全部即將 delete+重攞)。
   if (!DRY) {
     let backfilled = 0;
     for (const v of listing) {
@@ -443,55 +401,14 @@ async function discoverFromGroup(db, group, budget) {
     if (backfilled > 0) { saveDb(db); log(`    ⏪ 順手 backfill duration ${backfilled} 首(免額外 request)`); }
   }
 
-  let added = 0, tried = 0, streak = 0;
-  for (const v of fresh) {
-    if (tried >= budget) break;
+  // 3. 分類/品質篩選 + 死鏈驗證(lib/channelScan.js `validateChannelCandidates()`)。
+  const { candidates, tried } = await validateChannelCandidates(group, fresh, budget, { delayMs: DELAY_MS, log });
 
-    // 2a. Layer 1 片長帶 gate(全局,零成本)—— 2026-07-27 Fable 5 方案。
-    // duration 攞唔到(flat-playlist 罕見冚咗)就唔攔,留返俾下面嘅
-    // 分類/標題/死鏈幾關判斷,唔好因為冇資料就誤殺。
-    if (v.duration != null && !isInSongDurationBand(v.duration, group.durationCapSec)) {
-      log(`    ⏭ [片長] 「${v.title}」${Math.round(v.duration)}s 出咗 75-${group.durationCapSec || 600}s 帶,跳過`);
-      continue;
-    }
-
-    // 2b. 分類 / 品質篩選 —— 平嘅一關,喺呢度做完先至值得使錢做第 3 關。
-    if (!passesQuality(v.title, group.name)) {
-      log(`    ⏭ [分類] 「${v.title}」睇個標題係合輯/世俗歌,唔驗證直接跳過`);
-      continue;
-    }
-
-    // 2c. Layer 2 標題正面訊號(選擇性,淨係 contentGate='duration+title'
-    // 嘅頻道開)—— 2026-07-27 Fable 5 方案:全局 allowlist 對中文歌誤殺率
-    // 高,但英文兒童頻道嘅歌片標題慣例穩定,用嚟擋題目式教學集數
-    // (Kids on the Move 嗰類,片長帶都可能啱啱好喺 75-600s 入面)。
-    if (group.contentGate === 'duration+title' && !passesTitlePositiveSignal(v.title)) {
-      log(`    ⏭ [標題] 「${v.title}」冇撞到歌訊號(♫/lyric/worship/cover等),跳過`);
-      continue;
-    }
-
-    tried++;
-    log(`    驗證中 [${group.lang}] ${group.name} — ${v.title}`);
-
-    // 3. 死鏈驗證。
-    const alive = await verifyPlayable(v.id);
-    if (!alive) {
-      streak++;
-      recordDiscoverFailure(v.id); // 2026-07-30:累計失敗,夠 3 次冷卻 7 日(見上面)
-      log(`      ✗ 拎唔到音訊,跳過 (連續失敗 ${streak})`);
-      if (streak >= 3) {
-        log('    連續 3 次失敗 —— discover 風險本身已經比 curate 高,呢個團體今次收工唔博。');
-        break;
-      }
-      if (tried < budget) await sleep(jitter(DELAY_MS));
-      continue;
-    }
-    streak = 0;
-    clearDiscoverFailure(v.id); // 拎到就即刻清返舊嘅失敗記錄(反映現況)
-
-    // 4. 四關全過,先至寫入 —— 呢一步先真正成為歌庫一部份。
-    // display_title 喺插入嗰刻就計埋(唔使再靠人手隔幾耐先補一次 batch),
-    // 新歌一入庫 UI 即刻見到乾淨嘅版本。
+  // 4. 四關全過,先至寫入 —— 呢一步先真正成為歌庫一部份。
+  // display_title 喺插入嗰刻就計埋(唔使再靠人手隔幾耐先補一次 batch),
+  // 新歌一入庫 UI 即刻見到乾淨嘅版本。
+  let added = 0;
+  for (const v of candidates) {
     if (!DRY) {
       // TAXONOMY-5D-PLAN.md §3.5:org/kids 即時填,兒童團體(有 kidsLang)寫
       // 真語言落 lang 唔准再寫「兒童」(category 保留 group.lang 原封不動,
@@ -506,7 +423,6 @@ async function discoverFromGroup(db, group, budget) {
     }
     added++;
     log(`      ✓ 收錄 (累計 +${added})`);
-    if (tried < budget) await sleep(jitter(DELAY_MS));
   }
 
   log(`    今次(discover,${group.name}):頻道有 ${fresh.length} 條新片,試咗 ${tried} 條,收錄 ${added} 首`);
