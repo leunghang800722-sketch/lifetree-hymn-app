@@ -54,13 +54,17 @@ export function AdminEditHymnProvider({ children }) {
   // kids:TAXONOMY-5D-PLAN.md §8 C2 觀察②——顯式開關,唔再由 lang==='兒童' 推。
   const [form, setForm] = useState({ display_title: '', artist: '', org: '', performer: '', category: '', lang: '粵語', album: '', title_en: '', kids: false });
 
+  // saving 一定要喺呢度清返:落架成功嗰條路徑只係 close(),如果 close 唔清
+  // saving,下次 open 返個 sheet 就會帶住 saving=true 開,儲存/落架兩個掣
+  // 都 disabled={saving},撳落去毫無反應(第二首歌落唔到架嘅 bug)。
   const close = useCallback(() => {
-    setVisible(false); setOriginal(null); setError('');
+    setVisible(false); setOriginal(null); setError(''); setSaving(false);
   }, []);
 
   const open = useCallback(async (hymn) => {
     if (!isAdmin || !hymn?.id) return;
-    setVisible(true); setLoading(true); setError('');
+    // open 都清多次——就算將來有邊條路徑漏咗經 close(),都唔會開住個死咗嘅 sheet。
+    setVisible(true); setLoading(true); setError(''); setSaving(false);
     try {
       const token = getToken();
       const full = await adminGetHymn(token, hymn.id);
@@ -225,10 +229,12 @@ export function AdminEditHymnProvider({ children }) {
 
                 {!!error && <Text style={styles.errText}>{error}</Text>}
 
-                <TouchableOpacity style={styles.saveBtn} onPress={save} disabled={saving} activeOpacity={0.8}>
+                {/* disabled 一定要睇得出——舊版兩個掣 disabled 完全冇視覺變化,
+                    saving 卡死咗都好似撳得,睇落就係「撳唔郁」。 */}
+                <TouchableOpacity style={[styles.saveBtn, saving && styles.btnDisabled]} onPress={save} disabled={saving} activeOpacity={0.8}>
                   <Text style={styles.saveBtnText}>{saving ? '儲存緊…' : '儲存'}</Text>
                 </TouchableOpacity>
-                <TouchableOpacity style={styles.delistBtn} onPress={confirmDelist} disabled={saving} activeOpacity={0.8}>
+                <TouchableOpacity style={[styles.delistBtn, saving && styles.btnDisabled]} onPress={confirmDelist} disabled={saving} activeOpacity={0.8}>
                   <MaterialIcons name="delete-outline" size={18} color={COLORS.danger} />
                   <Text style={styles.delistBtnText}>落架呢首</Text>
                 </TouchableOpacity>
@@ -285,4 +291,5 @@ const styles = StyleSheet.create({
     paddingVertical: 14, marginTop: 8,
   },
   delistBtnText: { color: COLORS.danger, fontWeight: '600', fontSize: 15, marginLeft: 6 },
+  btnDisabled: { opacity: 0.5 },
 });
