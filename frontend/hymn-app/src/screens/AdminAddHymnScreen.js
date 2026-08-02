@@ -99,7 +99,13 @@ export default function AdminAddHymnScreen({ onClose }) {
     try {
       const token = getToken();
       const items = await adminListAddedHymns(token);
-      setAdded(items || []);
+      // ⚠️ Opus 5 驗收揪出:audit log 有啲 hymn_id 已經俾 cleanup script(C4
+      // 換血、非歌內容清理)直接剷咗行,hymns_all 搵唔到,backend join 會回
+      // `hymn:null`。呢啲淨係喺前端 filter 走——特登唔喺 backend 度改(改咗
+      // routes/admin.js 要行 deploy gate 重啟先生效,呢個純顯示問題唔值得
+      // 開多次 gate),漏咗嘅 row 冇 youtube_id 都冚埋 render 唔到嘢、仲會
+      // 觸發 <Image> 嘅 `source.uri should not be an empty string` warning。
+      setAdded((items || []).filter((it) => it.hymn));
     } catch (e) {
       // 讀「我加過嘅歌」失敗唔阻主流程(貼 link 加歌),靜靜哋保留舊資料。
     }

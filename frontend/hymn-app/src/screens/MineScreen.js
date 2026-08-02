@@ -19,6 +19,7 @@ import AvatarButton from '../components/AvatarButton';
 import PlaylistDetailSheet from './PlaylistDetailSheet';
 import { getDisplayTitle } from '../utils/displayTitle';
 import { adminListDelistedHymns } from '../api';
+import { useCachedHymns } from '../hooks/useCachedHymns';
 
 function Cover({ youtubeId, size = 52 }) {
   const [failed, setFailed] = useState(false);
@@ -45,6 +46,12 @@ export default function MineScreen({ onPlayHymn, onOpenAuth, onOpenAdminAdd, min
   // chip,簡單 useState 夠用,唔使成個 context。
   const [delisted, setDelisted] = useState([]);
   const [delistedLoading, setDelistedLoading] = useState(false);
+  // ⚠️ Opus 5 驗收揪出:喺已下架 tab relist 完一首歌、close URL加歌 modal,
+  // tab 仲係舊資料,要切走再切返先見到。訂閱現有 notifyHymnsChanged() 機制
+  // (useCachedHymns.js)——confirm/relist 成功已經會 call 佢,呢度攞返
+  // cachedHymns 個 reference 落 dep array,佢一變(代表歌庫改咗)就即刻
+  // refetch,唔使開新 context。
+  const { hymns: cachedHymns } = useCachedHymns();
   useEffect(() => {
     if (tab !== 'delisted' || !isAdmin) return;
     let cancelled = false;
@@ -54,7 +61,7 @@ export default function MineScreen({ onPlayHymn, onOpenAuth, onOpenAdminAdd, min
       .catch(() => { if (!cancelled) setDelisted([]); })
       .finally(() => { if (!cancelled) setDelistedLoading(false); });
     return () => { cancelled = true; };
-  }, [tab, isAdmin, getToken]);
+  }, [tab, isAdmin, getToken, cachedHymns]);
 
   // 清單行 ⋯ 掣:得兩個選項,native Alert 夠用,唔使另開 action sheet
   // (同下面帳戶卡登出一致做法)。
@@ -106,8 +113,18 @@ export default function MineScreen({ onPlayHymn, onOpenAuth, onOpenAdminAdd, min
       {/* 最愛 / 清單 切換,admin 多兩粒:URL加歌(action chip,冇 active 態,
           撳落即開 modal)、已下架(真 tab)(MYPAGE-ADMIN-CHIPS-PLAN §4.2)。
           四粒可能爆闊度,外層改 ScrollView horizontal——non-admin 得兩粒,
-          冇得撥都冇視覺差異。 */}
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.segment}>
+          冇得撥都冇視覺差異。
+          ⚠️ Opus 5 驗收揪出嘅 regression:ScrollView 預設 flexGrow:1/
+          flexShrink:1,唔加 style 覆蓋就會同隔籬 FlatList 爭剩餘垂直空間——
+          列表短就將呢行撐到成 600px 高、登入 CTA 卡食位就將呢行壓扁切一半。
+          `style` 鎖死 flexGrow:0/flexShrink:0(令呢個 ScrollView 淨係貼住
+          內容高度),padding/margin 淨係擺喺 contentContainerStyle。 */}
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        style={styles.segmentScroll}
+        contentContainerStyle={styles.segment}
+      >
         {[
           { k: 'favorites', label: `最愛 ${favorites.length}`, icon: 'favorite', kind: 'tab' },
           { k: 'playlists', label: `我嘅清單 ${playlists.length}`, icon: 'queue-music', kind: 'tab' },
@@ -274,6 +291,9 @@ const styles = StyleSheet.create({
   accountCta: { borderWidth: 1, borderColor: COLORS.border },
   accountTitle: { ...TYPOGRAPHY.body, fontWeight: '600' },
   accountSub: { ...TYPOGRAPHY.artist, marginTop: 2 },
+  // flexGrow:0/flexShrink:0 —— 蓋過 ScrollView 預設嘅 {flexGrow:1,flexShrink:1},
+  // 唔係就會同隔籬 FlatList 爭垂直空間(Opus 5 驗收揪出嘅 regression)。
+  segmentScroll: { flexGrow: 0, flexShrink: 0 },
   segment: { flexDirection: 'row', paddingHorizontal: 16, marginBottom: 12 },
   segItem: {
     flexDirection: 'row', alignItems: 'center',
