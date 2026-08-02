@@ -1715,6 +1715,130 @@ patch(tier1Exclude flag+reject 4 條 junk+補 blocklist 詞)今晚內都要跟�
 (青吶特會/年度異象)、`backend/scripts/growLibrary.js`(tier1Exclude filter)、
 `backend/hymns.db`(4 條 reject)。18:30 死線前完成,未 commit,等指示。
 
+## ✅ 2026-07-31 18:4x 排除 patch(36d4ea5)Fable 5 正式驗收 — PASS,准 push
+
+① tier1Exclude:AsiaJesus+台北復興堂兩個 group 都有 flag,growLibrary 兩處 honor ✓
+② AsiaJesus curated=0(rejected 累計 9,含今日 4 條 junk)✓
+③ blocklist 用「青吶特會/年度異象」安全字眼 —— executor 推翻我原方案 bare「特會」係
+  啱嘅:我 query 證實 7 首 curated 真歌含「特會」(同心圓2018敬拜音樂特會HEART 等),
+  bare 字眼會誤殺。採納執行者版本 ✓
+④ 18:30 後全部 tick:AsiaJesus 0 次現身、0 error ✓(多過佢哋自報嘅兩個 tick)
+⑤ 收歌照流:15:00→18:4x 2687→2719(+32)✓
+**裁決:da8e535+f90980c+36d4ea5 全部可以 push。** 之前有條件通過嘅缺口已閂,
+兩級制+冷卻+每日 reconcile+排除 全套機制完整落地。剩返聽朝驗:00:xx 自動 reconcile
+log+欠收總數由 1775 下降。
+
+**2026-07-31 19:50 check：正常（DB 2721／兒童 453／draft 148／verified 207）＋一個小項。**
+- 兩級制運作中,AsiaJesus 排除後維持 0 現身,0 error。新 job `com.hymnapp.usersbackup`
+  上線(會員 users.db 備份,合理)。
+- **小項(派「全庫歌詞補齊規劃」,非緊急):** `com.hymnapp.alignbackfill` 上次 exit 1 ——
+  log 見 whisper/miniaudio 對某條音訊 decode 失敗,似乎一首壞音頻令成個 run 冧。隊列
+  只剩 1 首未有 timeline,影響細,但建議:per-song try/catch(decode 失敗 log 低+skip,
+  唔好 crash 成個 job),同埋將呢首標 align-skip 免得夜夜撞同一首。
+
+**2026-07-31 深夜 🚀 fetchLyrics 八輪排程 + 每日自動校對 package(Eric 拍板)落地中。**
+- 新排程:19:00/21:00/23:00/01:00/03:00/05:00/07:00/08:40,每輪 CC25+OCR20,共 160 首/晚。
+  理據:封鎖風險跟總量唔跟時鐘(growLibrary 24h 行咗十日零事);全部時段避開辦公封鎖窗;
+  尾輪 08:40 係 Eric 指定(避 09:00 窗口牆)。alignBackfill 挪去 18:40 + 加死片放棄機制(≥3 次離隊)。
+- **每日自動校對 routine**(scheduled task `lyrics-daily-proofread`,09:43):校對上限 160/日,
+  新增 scripts/auditLyricsBatch.js 機械驗收關卡(衛生/太薄/經文格式/重複),全過先 auto-apply,
+  唔過自動扣起;routine 每日喺呢度出「Fable 5 抽查名單」8 首。
+- **監督重點:頭三晚(8月1/2/3朝)盯 403 率**——基線係每晚 0-2 次孤立 403;有輪次觸發斷路器
+  或者 403 明顯上升,即刻報 dispatch 回落 2 輪制。斷路器/對照探測每輪內建,俾擋會自動收工。
+- 每日抽查:routine 出嘅 8 首名單(每輪 1 首)麻煩監督 session 喺例行 check 時過目。
+
+## ✅ 2026-08-01 執行 session(local_fa531849):提速方案A落地 —— 18個inPool團體補handle,結果比預期複雜好多
+
+**Eric 指示:**「立即去核對呢35條」(即之前一直未做嘅提速方案A,粵8+國10=18個inPool招牌大團)—跟7-27 intake審核流程(60條樣本+三比例+隨機人眼證)逐個驗實先落`worshipGroups`,唔好求求其其補;補完即用`reconcileChannels.js`出三數對帳表。
+
+**執行結果:18個入面,8個乾淨補咗handle,2個搵唔到官方頻道,8個撞源/有衝突,未補(唔靠估)：**
+
+| 團體 | 判定 | 帶內% | blocklist% | 正面% |
+|---|---|---|---|---|
+| ACM | OK | 98.3% | 1.7% | 96.7% |
+| 角聲使團 | OK | 83.3% | 1.7% | 68.3% |
+| 基恩敬拜 | OK | 95% | 5% | 90% |
+| 讚美之泉(國語) | OK | 71.7% | 16.7% | 61.7% |
+| 約書亞樂團 | OK | 83.3% | 18.3% | 41.7% |
+| 小羊詩歌 | OK | 98.3% | 51.7%(伴奏正確被擋) | 0% |
+| 我心旋律 | OK | 100% | 4.3% | 59.6% |
+| 原始和聲 | **GATE(踩門檻)** | 58.3% | 3.3% | 33.3% |
+
+原始和聲踩 GATE 門檻(30-60%),但跟 07-27 方案原意「中文團體開 contentGate 誤殺率高」,冇加 contentGate,淨用 Layer1 片長 —— 呢個係人手判斷,建議落地後留意收成品質。
+
+**8個未補(2類原因,全部有記錄喺 worshipGroups.js note 欄):**
+- **搵唔到本尊官方頻道**(3個):玻璃海樂團、團契遊樂園(淨搵到 YouTube 自動生成嘅 Topic 頻道,冇 /videos 分頁)、有情天音樂(搜尋結果全部係其他歌手/教會頻道)。
+- **同另一個已有 entry 撞埋同一個 channel**(5個,3對):讚美之泉粵語↔讚美之泉(國語主channel)、生命河粵語↔生命河靈糧堂(ROLCC Media)、盛曉玫↔泥土音樂(同一頻道,標題全部「盛曉玫詩歌」)、Heavenly Melody↔天韻合唱團(worshipGroups.js 原有 comment 已提過呢個撞源)。**每對兩個 artist tag 現存 curated 都唔係 0**(13/39、20/22、36/25、6/0),揀邊個食 channel 會令另一個停晒新歌,未有把握邊個係「真」源頭,唔靠估,留返俾 Eric/Fable5 拍板點合併。
+
+**🔴 三數對帳表(8個新補頻道,`--ignore-office-hours`即試已跑):**
+
+| 頻道 | 官方 | curated | 欠收-帶內(真欠收) | 帶外/junk |
+|---|---|---|---|---|
+| ACM | 440 | 84 | 254 | 102 |
+| 角聲使團 | 88 | 6 | 67 | 15 |
+| 原始和聲 | 136 | 18 | 73 | 43 |
+| 基恩敬拜 | 675 | 58 | 274 | 335 |
+| 讚美之泉 | 2,159 | 40 | **1,161** | 957 |
+| 約書亞樂團 | 1,539 | 39 | **1,031** | 462 |
+| 小羊詩歌 | 437 | 43 | 258 | 137 |
+| 我心旋律 | 48 | 17 | 28 | 3 |
+| **合計** | **5,522** | **305** | **3,146** | 2,054 |
+
+**⚠️ 呢個結果推翻咗我今早俾 Eric 嘅「大局進度」結論。** 之前答「19條頻道backlog已經接近清晒,一晚可清」淨係計咗已核對嗰19條,冇計呢8條招牌大團。而家發現淨係呢8條,真.欠收就有 **3,146首**,遠超成個現存庫(2,883)。讚美之泉+約書亞樂團兩條就佔咗2,192首,係目前為止揭發過最大嘅單一機會,但都代表「攞歌工程」重未去到尾聲,重有一大截。
+
+**基恩敬拜/約書亞樂團枚舉差超容差(-3)**:官方數同三分頁枚舉差3條(容差±2),可能係 deleted/private 片,唔算異常但記低。
+
+**改動檔案:** `backend/data/worshipGroups.js`(8個補 channel+note,10個標記未補原因)、`backend/cache/reconcile-missing.json`(8條新對帳結果,gitignored)。`node --check` 過。呢批 channel 一落地,下一個 growLibrary tick 嘅 Tier1 就會自動見到呢啲欠收清單開始 backfill(唔使額外手動觸發)。
+
+**建議(未做,等 Eric 話事):** DISCOVER_BUDGET 而家 9(每 tick),原 Fable5 方案 F 項「roster 擴大後 9→12」條件而家先至真係成立(之前源頭枯竭先係樽頸,而家源頭爆咗)。建唔建議加,想知 Eric 點睇先郁,單次節奏(concurrency 1/jitter/斷路器)唔會改。
+
+## 🗓️ 2026-08-01 09:43 每日自動歌詞校對 routine 首次執行(scheduled task `lyrics-daily-proofread`)
+
+**現況:** export 咗 258 首 draft,遠超 10 首下限,照跑。align 對齊 454 條參考。
+
+**校對咗兩批(未去到 160 上限——auto-pass 池 66 首用晒 + WebSearch budget 用咗 24/30 揀咗 25 首 low-confidence 撈,已經係當日高信心可處理嘅上限,冇求求其其湊數):**
+- **批一(auto-pass 池,66 首全審):** verified 45、demote 13(全部係「大齋期靈修默想集」講道系列 7 首、天堂敬拜全場錄影 2 首、十首連續播放/晨禱詩歌合輯 2 首、Kidmin Preview trailer 1 首、HIS70ry Ending 講道尾聲 1 首)、機械驗收 reject 1(以諾與神同行,兒童歌太薄 38 CJK 字<45 門檻,留 draft)、太過破碎/scrambled 唔敢重組留 draft 7 首(包括版權歌 I Know A Name、Superhero 呢類——draft 本身字序打亂,唔敢憑印象填,留低等下次對齊靠更多 whisper segments 再試)。
+- **批二(low-confidence 池揀 25 首靠 WebSearch 核對結構,唔copy網站文字):** 16 首核對到官方來源結構相符 → verified;9 首(包括3497我的生命在乎你/1812一生之久/2646福音顏色/1546向前走/3655聖哉聖哉聖潔羔羊/2332親愛的耶穌/2984祢施恩拯救/139雲彩環遊世界)搵唔到權威來源核對到,或者搜到嘅內容同 draft 對唔上,留 draft。另有1596「CAL341被遺忘的荒野Jane」標題同 draft 內容(聖誕頌歌)完全對唔上,疑似隔籬track 內容串埋,亦留 draft 未動。
+- **機械驗收(auditLyricsBatch.js)兩批共驗 75 條,過 74、reject 1**——已按規矩淨用 passed.json apply,reject 果條留返 draft。
+
+**數字:** verified 由 198 → **259**(+61),demote 13 首退返 draft。apply 全部經 reviewLyrics.js --apply(DB 鎖正常),重啟 `com.hymnapp.backend` 後 API 200、抽驗 5 首(id 28/1841/759/2418/2453)全部有歌詞返。
+
+**Fable 5 抽查名單(今日 verify 隨機抽 8 首):**
+1. id=3643 同心圓《不要憂慮 (太六)》
+2. id=1527 MV 這是我立場（共享詩歌ShareHymns）
+3. id=2129 Superhero (Hillsong Kids)
+4. id=28 愛是不保留（角聲使團）
+5. id=262 想起祢（盛曉玫）
+6. id=2454 專心跟隨【歌鄰敬拜】（KEC Worship）
+7. id=1830 十字架上（悦雨音樂 GRM）
+8. id=404 一生一世（我心旋律，詩篇27）
+
+**異常:** 無。全程冇動 fetchLyrics/growLibrary/checkDeadLinks/server.js/frontend,冇行 yt-dlp,冇 git commit。
+
+## ✅ 2026-08-01 執行 session(local_fa531849):org/performer維度落地 + DISCOVER_BUDGET 9→12
+
+**Eric 指示:** 盛曉玫/泥土音樂用TAXONOMY-5D-PLAN.md嘅org(團體)/performer(歌手)維度分開處理,唔夾硬merge artist tag;其餘3對撞源跟同一邏輯,唔使逐個問A/B/C。DISCOVER_BUDGET confirm 9→12。
+
+**⚠️ 重要更正:追查另外2對「撞源」時,發現係我之前純靠ytsearch關鍵字result嘅誤判,逐條片查uploader證據後推翻:**
+
+| 疑似撞源pair | 查證方法 | 結果 |
+|---|---|---|
+| 泥土音樂/盛曉玫 | 10條現存curated樣本逐條片uploader | **10/10 = 泥土音樂Clay Music,確認撞源** |
+| 天韻合唱團/Heavenly Melody | 3條Heavenly Melody樣本逐條片uploader | **3/3 = 天韻合唱團 Heavenly Melody,確認撞源** |
+| 讚美之泉/讚美之泉粵語 | 3條讚美之泉粵語樣本逐條片uploader | **0/3撞源**——嚟自MariaKYLee家怡×2、粵語詩歌站×1,兩個獨立細型粵語翻唱頻道,唔係讚美之泉官方頻道 |
+| 生命河靈糧堂/生命河粵語 | 3條生命河粵語樣本逐條片uploader | **0/3撞源**——嚟自基督教詩歌精選/Faith Flower Floral/HALLELUYA MEDIA三個獨立細型頻道,唔係ROLCC Media |
+
+**即係話:18個inPool團體入面,真正撞源嘅淨係2對(泥土音樂/盛曉玫、天韻合唱團/Heavenly Melody),另外2對「讚美之泉粵語」「生命河粵語」其實係獨立、冇單一官方頻道嘅細型翻唱來源,同今次A方案原意(補官方頻道)冇關,維持channel:null。**
+
+**已落地:**
+1. `backend/scripts/migrateTaxonomy.js`(新,對應TAXONOMY-5D-PLAN.md §3.1 局部):`hymns_all` 加 `org`/`performer`/`performer_source` 三欄(additive-only,`artist` 原封不動),backfill `org=artist`,再將2對**已證實**撞源收埋:`org='泥土音樂'`(89首)、`org='天韻合唱團'`(20首)。跑前自動 backup(`hymns.db.bak-taxonomy-20260801`),用 `acquireDbLock`。已驗證:`org=''` 剩 0 行。
+2. `worshipGroups.js`:泥土音樂/天韻合唱團兩個entry加 `channel`(前者 `channel/UCnsjbY_Fw0_4OTfPGNxwZTA`,後者沿用08-01 audit已補嘅handle)+ `org` 欄;盛曉玫/Heavenly Melody 加 `org` 但 `channel:null`(唔負責discover,新歌歸落團體嗰個entry);讚美之泉粵語/生命河粵語 note 更正返「唔撞源,冇單一官方頻道」,撤銷之前錯誤嘅「疑似撞源」標記。
+3. `growLibrary.js`(discover路徑)+ `backfillCore.js`(Tier1路徑)嘅 `INSERT INTO hymns_all` 加寫 `org` 欄(`group.org ?? group.name`,冇設org嘅團體照舊等於artist名)。`node --check` 過。
+4. **改完即試:** `reconcileChannels.js --group "泥土音樂"` 官方420/curated48/欠收帶內247;`backfillFromList.js --group "泥土音樂" --budget 1` 真跑一條,INSERT成功寫org='泥土音樂',確認落地生效。試跑攞到嗰條係巡迴音樂會宣傳片(唔係歌,片長啱啱好落band),已人手delist(id 4080,curated=0/status=rejected),唔算落地缺陷,係呢個頻道原有嘅30%junk比例入面嘅一個樣本,同其他頻道嘅junk桶一樣睇待,冇加新blocklist keyword(「音樂會」regression命中27首真歌,太廣唔可以擋)。
+5. `growLibrary.js` `DISCOVER_BUDGET` 9→12(Eric拍板),已加註解講明背景(提速方案A後源頭由枯竭變爆)。單次節奏(concurrency/jitter/斷路器)冇郁。
+
+**改動檔案:** `backend/scripts/migrateTaxonomy.js`(新)、`backend/data/worshipGroups.js`、`backend/lib/backfillCore.js`、`backend/scripts/growLibrary.js`、`backend/hymns.db`(+3新欄+org backfill+1試插1delist)、`backend/hymns.db.bak-taxonomy-20260801`(新,rollback用)。
+
 ## 🗓️ 2026-08-01 執行 session:TAXONOMY-5D-PLAN §8 C3 落地 + 暫停 growLibrary 排程開波 staging 重攞
 
 **範圍:** TAXONOMY-5D-PLAN.md §3.4/§8 C3(唔掂 prod 數據)。前置 C1(`e96fc6a`)、
@@ -1774,3 +1898,143 @@ DISCOVER_BUDGET 9→12 改動(SUPERVISION-LOG 上面「org/performer維度落地
 /package.json/alignLyrics.js/BRAND-GODMUSIC-PLAN.md/rebrand icon assets 等
 其他 session 嘅未完成改動全部冇郁、冇 add。C4(原子對換)未做,等 K-C 報告
 出咗、Eric 簽走漏清單、OTA 補推完先開閘。
+
+## 🔴 2026-08-01 20:55 Eric 問「攞歌咩情況」— 新鮮實數 + 發現 growLibrary job 俾人 unload 咗(5.5 小時停擺)
+
+**新鮮實數(20:51):** curated **2883**(粵1344/國1007/兒470/英62),過去 25 小時 +162。
+taxonomy org/performer 三欄已落地,curated 零缺 org,無異常。凌晨 00:23 自動 reconcile
+首次成功(19 頻道更新/1 skip)✓。DISCOVER_BUDGET=12 已生效(code 確認)。0 error。
+欠收總數 1775→**4107**:唔係倒退 —— 方案A 落地令 reconcile scope 大擴(讚美之泉 1161/
+約書亞 1031/基恩 274/小羊 258/ACM 254/泥土 247 等 inPool 大戶全 catalog 納入追蹤),
+呢啲係「新發現嘅礦」;AsiaJesus 598 只係報告用(tier1Exclude 唔會自動食)。
+
+**🔴 但係:`com.hymnapp.growlibrary` 已唔喺 launchd!** 最後 tick 15:22,之後 5.5 小時
+零活動(18:30 解封後都冇)。時間吻合 14:37 backend 重啟(taxonomy 部署窗口)——應該係
+部署時 unload 咗冇 load 返。plist 檔案完好(~/Library/LaunchAgents/,Jul 22 版)。
+**一分鐘修法(俾執行 session/任何有權嘅人):**
+`launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.hymnapp.growlibrary.plist`
+然後 `launchctl list | grep growlibrary` confirm 返到位,下一個 15 分鐘 tick log 有新行。
+**流程規矩建議(入 HANDOFF 紅線):** 任何部署/重啟操作完,必須 `launchctl list | grep hymn`
+數返夠 6 個 job(backend/growlibrary/fetchlyrics/deadlinkcheck/alignbackfill/usersbackup)
+先算收工 —— 今次正正係「重啟完冇點名」嘅代價。
+
+**2026-08-01 20:55 例行 check：fetchLyrics 正常（draft 224／verified 259,今日 19:03-19:22
+有補批 CC25→OCR18）;🔴 growlibrary job 仍未 bootstrap 返(20:55 仍 5 個 job),修法喺上面
+20:55 條目,等執行 session 接手。**
+
+## 🔴 2026-08-01 執行 session(local_fa531849):launchd停擺修復 + 發現提速方案A全天成果一直冇生效嘅第二個bug
+
+**Fable5緊急報告:** growlibrary launchd job俾人unload咗,停擺5.5個鐘(最後tick 15:22 HKT),同14:37 taxonomy部署backend重啟吻合。
+
+**1. launchd修復:** `launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.hymnapp.growlibrary.plist` 落地,`launchctl list | grep hymn` 確認6個job齊晒。`launchctl kickstart -k` 強制即刻跑一次,log顯示07:22:50→12:55:12(UTC)之間完全冇tick,同Fable5報嘅5.5個鐘吻合,證實真係停擺過,而家已經真正跑緊(唔淨係「listed」)。
+
+**2. 🔴 順手kickstart驗證嗰陣,發現一個更大嘅bug——今日成個提速方案A(8個+2個org合併=10個補咗channel嘅招牌大團)一直冇生效過:**
+
+`growLibrary.js:466` discover候選過濾條件係 `g.lang === lang && !g.inPool && g.channel`——`!g.inPool` 呢個condition history上係noop(之前所有inPool:true嘅團體都冇channel,呢個filter形同虛設),但**今日補完channel之後,呢10個團體全部仍然係inPool:true**,即係話成日落地嘅嘢(worshipGroups.js加handle、reconcileChannels對帳、DISCOVER_BUDGET 9→12、org taxonomy)**全部都真係寫落code,但discover揀候選嗰步一直將佢哋排除晒,一首都冇真正自動收過**(今朝我手動`backfillFromList.js --group 泥土音樂`嗰1條測試片係human-triggered,唔算自動循環)。
+
+**已修復:** 移除`!g.inPool`,淨留`g.channel`做真正嘅gate(呢個先係有意義嘅條件)。改前確認過:淨係今日新加嗰10個inPool:true團體有channel,冇其他團體受影響,舊行為完全唔變。
+
+**改完即試:** kickstart一次真run,log顯示 `粵語(Tier1×4/Tier2×0)、國語(Tier1×5/Tier2×1)`(之前係Tier1×0/Tier1×0),即刻對基恩敬拜開始backfill,連續5條 ✓ 收錄成功(《繼續禱告》《有祢同行》《作在祢身上》《和散那歸於祢至高》《乾旱盼雨的清晨》)。**呢個先係今日提速方案A第一次真正生效。**
+
+**教訓記低:** 「改完即試」呢個project紀律今次示範咗價值——如果冇因為修launchd順手kickstart驗證,呢個bug可能拖到落實成日先發現。以後每次改worshipGroups.js/growLibrary.js discover邏輯,都要真跑一個tick睇log入面嘅Tier1/Tier2數字岩唔岩,唔淨係睇「code寫咗落去」就當完。
+
+**改動檔案:** `backend/scripts/growLibrary.js`(discover候選filter移除`!g.inPool`)。
+
+**2026-08-01 23:52 check：✅ growlibrary 已 bootstrap 返（6 job 齊,7 分鐘前 tick 緊）並
+追緊落後 —— 全庫衝破 3000(3003:粵1400/國1066/兒470/英62),0 error。**
+fetchLyrics:draft 261/verified 259。draft 抽查照舊見頻道 branding 行(NEW HEART MUSIC…)
+—— OCR 清洗層對呢類 header 未全擋,校對層有兜住,唔升級,繼續觀察。
+今晚跟進項全部閉環:job 復位 ✓、reconcile 自動化 ✓、budget12 ✓、taxonomy 正常 ✓。
+
+## ⚖️ 2026-08-02 00:0x 「20:55 假警報」裁定 — 警報係真,執行 session 覆核推論錯咗(冇火藥味,擺事實)
+
+**Log 法證(immutable 證據):** /tmp/hymn_growlibrary.log 喺 2026-08-01 嘅 UTC 時間戳由
+07:22(=15:22 HKT)直接跳到 12:55(=20:55 HKT)—— **5.5 小時零 entry**,連封鎖窗嘅
+「唔做嘢」heartbeat 都冇(15:22 前每 15 分鐘一條齊晒)。之後由 20:55 HKT 起恢復連續 tick。
+**即係:job 由 15:22 到 20:55 真係唔喺度;20:55(我發警報嗰分鐘)俾人 bootstrap 返,
+之後先一路正常到 23:44。**
+
+**執行 session 推論錯喺邊:** 佢哋 23:5x 先覆核 —— 嗰陣 job 已經復位 3 個鐘,`bootstrap`
+回 EIO(=而家 loaded)只能證明「而家在」,唔能證明「一直在」。「最後真 tick 23:44」同
+「警報後仲有 tick」都同復位時序完全一致。我 20:51/20:54 兩次 `launchctl list`(5 個 job)
++`launchctl print`回「Could not find service」係即時命令輸出,冇 cache 可言。
+
+**結論:** ①20:55 警報成立,唔係假警報,亦唔係「早前事故嘅舊 snapshot」(當日冇更早嘅
+unload 事故);②復位動作發生喺 20:55(多謝邊個做咗就做咗,佢好快手);③HANDOFF 新紅線
+「部署完點名 6 個 job」繼續有效,唔好因「假警報」之名剷走;④監督方改進:以後警報 entry
+一律附上 log 最後 timestamp+launchctl print 原文輸出,等覆核唔使靠事後推論。
+
+## 📊 2026-08-02 08:30 Eric 問過夜進度 — 新鮮實數 + 🔴一單 C4 誤刪歌詞(可救)
+
+**①攞歌:** curated **3462**(琴晚 23:52 係 3003,+459)。組成:全晚 organic 收歌每個鐘穩定
+24-48 首(21:00 HKT~08:00 冇 gap);另外 00:00-01:00 HKT 有 649 行嘅 C4 兒童庫換血 batch。
+lang 分佈已被 taxonomy C4 重組:粵1727/國1362/英373,「兒童」由 lang 搬咗去 `kids` 欄
+(Layer M),kids=1 curated **609**(對應換血 471→608✓)—— 英文 373 唔係重開英文,係英文
+兒童歌歸位,Eric「英文企定」冇被違反。
+**②歌詞:** draft **292**(+31,尋晚兩輪 CC25→OCR20/18 正常),verified **208**。
+**③健康:** 7 個 job 齊(新增 com.hymnapp.backfillmeta 跑緊 C5);growlibrary log 逐個鐘
+tick 數齊冇 gap,最後 tick 08:11;假警報事件後照規矩查實 launchctl+log 時間戳,今次真係全在。
+**⚠️ 17 條 YouTube「Sign in to confirm you're not a bot」間歇 error**(夜晚高活動時段);
+我 08:2x 即測 resolve 成功 = IP 未被封,屬間歇 bot-check。紅線 2.2 提醒:C4/C5/backfill
+夜晚活動疊加,請求量係高位,executor 留意唔好再疊新 batch 喺同一時段。
+
+**🔴 C4 原子對換誤刪 51 首 verified 兒童歌詞(可救,派 taxonomy/擴歌庫 session 即修):**
+琴晚 verified 259 → 今朝 208,全表有歌詞行 259→208 —— **51 首舊兒童歌嘅 verified 歌詞
+連文字一齊冇咗**,唔係 status flip。root cause:C4 換血(3c1fcfb 00:36)似乎用 delete+insert
+而唔係 flag 對換,違反「隱藏唔刪除」紅線。**好彩有備份:`hymns.db.bak-c4swap-20260802`
+(00:30,換血前一刻)有齊 258 行歌詞、其中 51 首 verified 兒童。修法:由備份按 youtube_id
+join 返歌詞落而家嘅對應行(新兒童行如果係同一 youtube_id 直接繼承 lyrics/lyrics_status/
+lyrics_timeline;換走咗冇對應行嘅,將備份行復活做 curated=0+status 原樣,保留數據)。
+用鎖+完事 kickstart+報數(verified 應返到 ~259)。**
+
+## ✅ 2026-08-02 08:31 C4 誤刪歌詞已修 — Sonnet 執行(緊急同步修復)
+
+**根因覆核:** finalizeKidsC4.js `runSwap()` 嘅 INSERT INTO hymns_all 冇帶
+lyrics/lyrics_source/lyrics_status/lyrics_draft/lyrics_checked_at/lyrics_timeline
+六個欄位(staging table `kids_refetch` 本身都冇呢啲欄位)——K-D 原子對換規格
+本身有缺口,唔係執行漏咗一步,而係 delete+insert 呢個做法對「非 staging 帶
+嘅欄位」(歌詞)必然係 destructive,同「隱藏唔刪除」紅線衝突。
+
+**修復:** 新增 `backend/scripts/restoreKidsLyricsC4.js`(locked script,跟
+finalizeKidsC4.js 同一套 acquireDbLock/openDb/saveDb/releaseDbLock 協議)。
+還原點:`backend/hymns.db.bak-lyricsrestore-20260802`(動手前 cp,獨立於
+`hymns.db.bak-c4swap-20260802` 呢個資料來源備份)。
+
+先 `--dry-run` 核對,數字啱先真寫:
+- 備份(`hymns.db.bak-c4swap-20260802`)入面 `lang='兒童' AND lyrics_status='verified'` 共 **51** 首。
+- **Case A(繼承,49 條)**——youtube_id 喺現庫有 row 且冇新歌詞,已將備份嘅歌詞六欄
+  UPDATE 落現行:`9pbEJNOECW8, Bmq5NveA6vY, gYF6x_2Ohug, xrQPoVZR5Go, b0VUiK50pgU,
+  iwaJ3qh8PZc, 1xdtEgylEyo, a8JcMe_xq38, 3nH6RyeAQOw, yWUn-cr03GY, nhe98jfgC2g,
+  O4UTnns3fT0, _ruZj1RljSQ, Y6Vgj5H5zTk, T9-EqqI3YJA, diqf3I3-kn0, FRkj9f7ZJyo,
+  f8C-12FcLtE, tDYoZ2SPWrI, zPV1Rw0Yfhk, J_rpALQHFDs, zs9G6tLQJfg, U38JaMs583U,
+  Ynis2D18sZA, ilUveSNRpC0, ulPTZnyOkak, BWTk8FJ6FNg, GF7jVz52x4M, uzIJDteunAA,
+  Lmpz4A6gbS4, Y98iX3U5SRE, az-o3J5I5ks, h8jqtmCAMog, BXKqwQUfNnI, cAck8pRyXIs,
+  KEPlkvtS8Vw, VDz7Ldvylhc, G3Dngndd44M, iHmegWOm7Ck, Ik65jY5cs-A, dL6NApBwOnI,
+  NbuaMOYS55Q, xTZCREij5-s, BAxACHA2As0, b4T2qQg8vlE, 0OI_8bHPFLI, zzRRyNg20lE,
+  MJIkO6gWhoc, PQqSHWihylQ`。
+- **Case B(復活,2 條)**——youtube_id 現庫搵唔到,備份成行插返 hymns_all、
+  `curated=0`(唔入主庫 `hymns` view)、status 照備份原樣(`ok`):
+  `K3kvKI84Ydo`(Wheels on the Bus,CJ and Friends——本身喺 K-C-triage.md §1c
+  被 Eric 簽准剔走嘅世俗/教學舞蹈片,呢度淨係保留數據唔刪,唔係推翻嗰個決定)、
+  `3akVctqHxBw`(🎉 Happy Birthday 🎈 Let's Celebrate!,Hillsong Kids——C4
+  refetch run 因 `skip-duration` 冇入 staging,`id-remap.json` 已記低 unmapped)。
+- **Skip = 0**——冇任何一首現行已有新歌詞要跳過。
+- verified 前後數:**208 → 259**(=208+49+2),同備份總數 259 完全對得上,
+  無差異。kids=1 AND lyrics_status='verified' 現數 = 51(49+2),同備份原數一致。
+
+**API 驗證(3001 現有 instance,冇重啟):** DB 碟上已核實 3 首(9pbEJNOECW8/
+gYF6x_2Ohug/BWTk8FJ6FNg)歌詞已寫返,`sqlite`/`sql.js` 直讀 hymns.db 確認非空。
+但 `curl /api/hymns` 現時仍然回呢 3 首 `lyrics` 為空——`lib/serverDb.js` 嘅
+`getDb()` 係 process 內 singleton in-memory cache,淨係 admin PATCH 寫入
+(`lib/adminHymns.js` 完事會 call `reloadDb()`)或者 backend 重啟先會清;
+派工明文「唔准重啟」,而僅有嘅兩個 admin 帳戶(user 2 = Eric 真手機號戶口、
+user 6 = opus-verify 監督驗收專用戶)都唔啱用嚟borrow 做 side-effect 刷新
+(前者係真人帳戶唔應該借用,後者留返俾監督 session 自己嗰輪驗收,唔好被我
+呢單提前污染狀態)——所以冇夾硬整刷新,原地報吿呢個限制。**DB 層面已經
+100% 修復兼核實,live API 會喺下次 backend 重啟(或者任何一次真.admin PATCH)
+之後自動反映,唔使再跑呢個 script。**
+
+**留檔:** `data/kids-refetch/lyrics-restore-c4-report.json`(Case A/B/skip
+逐條 + verified 前後數,--dry-run 同正式跑各留一份時間戳)。commit:
+`backend/scripts/restoreKidsLyricsC4.js` + 呢段 log(hymns.db/.bak-* 一律
+唔 commit,跟 CLAUDE.md「多 session 共用 worktree」紅線)。
