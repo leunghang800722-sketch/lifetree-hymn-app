@@ -4,10 +4,13 @@
 # 唯一合法嘅 OTA 推送路徑。順序:
 #   1. frontend/hymn-app working tree 必須完全乾淨(唔乾淨就 abort 並列出髒檔案)。
 #   2. HEAD 必須等於 approved.json 嘅 ota.sha(唔係就 abort 並印出未批准嘅 commit)。
-#   3. 全過 -> cd frontend/hymn-app && eas update --channel production --platform android --message "<message>"
+#   3. 全過 -> cd frontend/hymn-app && eas update(見 88 行實際 flags)
 #      (--platform android 係必須:唔帶預設 all platforms 會連 web 一齊 export,
 #      而 web bundle 因為 react-native-track-player 嘅 web backend 缺 shaka-player
-#      peer dep 會 export 失敗 —— 見 HANDOFF.md §2.10/EAS-UPDATE-PLAN.md §四)
+#      peer dep 會 export 失敗 —— 見 HANDOFF.md §2.10/EAS-UPDATE-PLAN.md §四;
+#      --non-interactive + --environment production 係必須:Claude Code session
+#      冇 TTY,eas-cli ≥19 non-interactive mode 唔帶 --environment 會直接炒
+#      "The --environment flag must be set when running in --non-interactive mode")
 #   4. 成功後 append deploy.log。
 #
 # --dry-run 行晒 1-2 但唔推,俾驗證用。
@@ -85,7 +88,7 @@ if [[ "$DRY_RUN" -eq 1 ]]; then
 fi
 
 cd "$REPO_ROOT/frontend/hymn-app"
-eas update --channel production --platform android --message "$MESSAGE"
+eas update --channel production --platform android --environment production --non-interactive --message "$MESSAGE"
 
 NOW="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
 mkdir -p "$DEPLOY_DIR"

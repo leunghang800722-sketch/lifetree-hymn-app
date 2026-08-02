@@ -247,16 +247,26 @@ EAS 專案：`@god-music-team/hymn-app`，`EXPO_TOKEN` 已寫入 `~/.zshrc`（�
      `ops/deploy/approve.sh ota <HEAD sha> --confirm`。
   2. **`ops/deploy/ota-publish.sh "<message>" [--dry-run]`** 係唯一合法推送
      路徑:自動檢查 `frontend/hymn-app` 乾淨 + HEAD == 已批准 sha,兩樣一過
-     先真係 `eas update --channel production --platform android`。冇乾淨/
+     先真係 `eas update --channel production --platform android
+     --environment production --non-interactive`。冇乾淨/
      未批准就 abort 並點名邊啲 commit/檔案有問題(唔再教你手動
      `git stash push -- <指定 file>`)。
   3. **`.claude/settings.json`(PreToolUse hook,`ops/deploy/guard-bash.sh`）
      會硬攔截直接跑 `eas update`**(deny,指去 ota-publish.sh)——
      連唔知情/順手跑錯命令都擋得住,唔止靠自律。
-     ⚠️ **hook 要重啟 session 先生效** —— 已經開緊嘅長命 session 唔會即刻受保護。
+     (2026-08-02 實測:hook 對**已經開緊嘅 session 都即時生效**,唔使重啟——
+     兩個落地前開嘅 session 嘅 Bash call 都即場俾 hook deny 過。副作用:任何
+     Bash 命令**字串**含 sensitive pattern 都會中,例如 grep 個 pattern 要避開。)
   4. `--platform android` 必帶(唔帶預設 all platforms 會連 web 一齊 export,
      而 web bundle 因為 `react-native-track-player` 嘅 web backend 缺
      `shaka-player` peer dep 會 export 失敗)——ota-publish.sh 內部已經固定咗呢個 flag。
+     🔴 **`--environment production` + `--non-interactive` 都必帶(2026-08-02 教訓)**:
+     Claude Code session 冇 TTY,eas-cli 會自動入 non-interactive mode,而
+     **eas-cli ≥19** non-interactive 之下唔帶 `--environment` 會直接炒
+     "The --environment flag must be set when running in --non-interactive mode"
+     ——首次真跑 ota-publish.sh 就係咁死咗一次,已修(兩個 flag 都固定咗入 script,
+     顯式 `--non-interactive` 順便保證冇隱藏 prompt 掛死長跑 script)。
+     注意呢個係 eas-cli ≥19 新行為,舊記錄「唔帶都推到」已經唔再成立。
   5. **backend restart 同一套機制**:`ops/deploy/backend-restart.sh [--dry-run]`
      檢查 HEAD == 已批准 `backend.sha` + `backend/` 乾淨(運行時檔案
      `hymns.db`/`users.db*`/`backend/data/`/`*.log`/`*.bak*`/`backend/public/`
