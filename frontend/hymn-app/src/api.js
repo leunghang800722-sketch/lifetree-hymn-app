@@ -233,3 +233,17 @@ export async function adminDelistHymn(token, id) {
   });
   return adminJson(res, '落架失敗'); // { ok, hymn, dataVersion }
 }
+
+// 「我加過嘅歌」/「已下架」(MYPAGE-ADMIN-CHIPS-PLAN §3.3)—— read-only,讀
+// audit log join hymns_all,回 { items: [{ hymn, in_library, listed, acted_at/delisted_at }] }
+export async function adminListAddedHymns(token) {
+  const res = await fetch(`${API_BASE}/api/admin/activity/added`, { headers: adminAuthHeaders(token) });
+  const json = await adminJson(res, '讀取失敗');
+  return json.items;
+}
+
+export async function adminListDelistedHymns(token) {
+  const res = await fetch(`${API_BASE}/api/admin/activity/delisted`, { headers: adminAuthHeaders(token) });
+  const json = await adminJson(res, '讀取失敗');
+  return json.items;
+}

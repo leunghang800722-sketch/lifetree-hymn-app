@@ -41,6 +41,61 @@ function whoOf(user) {
   return user.email || user.phone || `#${user.id}`;
 }
 
+// 讀 admin-audit.log(§二/§3.1 MYPAGE-ADMIN-CHIPS-PLAN)—— 「我加過嘅歌」「已下架」
+// 兩個 endpoint 共用。檔案唔存在(全新環境,冇 admin 操作過)回空 list;逐行
+// JSON.parse 包 try/catch,寫入途中中斷嘅壞行直接跳過,唔好累成個 endpoint 死。
+function readAuditLog() {
+  let raw;
+  try {
+    raw = fs.readFileSync(AUDIT_LOG_PATH, 'utf8');
+  } catch (e) {
+    if (e.code === 'ENOENT') return [];
+    throw e;
+  }
+  const out = [];
+  for (const line of raw.split('\n')) {
+    if (!line.trim()) continue;
+    try {
+      out.push(JSON.parse(line));
+    } catch {
+      // 壞行——跳過
+    }
+  }
+  return out;
+}
+
+// 按 hymn_id 淨留最新一條(按 ts 比較字串已經夠——ISO 格式天生可排序),
+// 新→舊排。
+function latestPerHymn(entries) {
+  const byHymn = new Map();
+  for (const e of entries) {
+    const prev = byHymn.get(e.hymn_id);
+    if (!prev || e.ts > prev.ts) byHymn.set(e.hymn_id, e);
+  }
+  return [...byHymn.values()].sort((a, b) => (a.ts < b.ts ? 1 : a.ts > b.ts ? -1 : 0));
+}
+
+// batch join hymns_all,衍生 in_library/listed flag(§一定義:listed 要跟足
+// `hymns` view 三個條件,唔可以淨係睇 curated)。entries 已經 dedupe 過。
+async function joinHymnActivity(entries, tsField) {
+  if (!entries.length) return [];
+  const db = await openDb();
+  const ids = entries.map((e) => e.hymn_id);
+  const placeholders = ids.map(() => '?').join(',');
+  const rows = query(
+    db,
+    `SELECT id, youtube_id, display_title, title, artist, curated, status FROM hymns_all WHERE id IN (${placeholders})`,
+    ids
+  );
+  const byId = new Map(rows.map((r) => [r.id, r]));
+  return entries.map((e) => {
+    const hymn = byId.get(e.hymn_id) || null;
+    const in_library = !!hymn;
+    const listed = !!hymn && Number(hymn.curated) === 1 && hymn.status !== 'dead' && hymn.status !== 'rejected';
+    return { hymn, in_library, listed, [tsField]: e.ts };
+  });
+}
+
 function audit(req, action, hymnId, before, after) {
   appendAudit({
     ts: new Date().toISOString(),
@@ -292,6 +347,38 @@ export default function adminRoutes(app) {
       if (e.code === 'not_found') return res.status(404).json({ error: 'not_found' });
       if (e.code === 'db_busy') return res.status(503).json({ error: 'db_busy' });
       console.error('admin delist error:', e.message);
+      res.status(500).json({ error: 'server_error' });
+    }
+  });
+
+  // GET /api/admin/activity/added —— 「我加過嘅歌」(§3.1)。⚠️ 路徑刻意唔用
+  // /hymns/added——現有 GET /hymns/:id 會食咗佢變 bad_id 400。純讀 audit log,
+  // read-only query 唔使攞 db lock(鎖規矩只管寫操作)。
+  router.get('/activity/added', async (req, res) => {
+    try {
+      const mine = readAuditLog().filter(
+        (e) => e.user_id === req.user.id && (e.action === 'add' || e.action === 'relist')
+      );
+      const items = (await joinHymnActivity(latestPerHymn(mine), 'acted_at')).slice(0, 100);
+      res.json({ items });
+    } catch (e) {
+      console.error('admin activity/added error:', e.message);
+      res.status(500).json({ error: 'server_error' });
+    }
+  });
+
+  // GET /api/admin/activity/delisted —— 「已下架」(§3.2)。同上讀 audit log,
+  // 分別:filter action==='delist',join 完之後只留現時 status==='rejected'
+  // 嘅(落完架又 relist 返嘅唔應該再喺呢度出現)。
+  router.get('/activity/delisted', async (req, res) => {
+    try {
+      const mine = readAuditLog().filter((e) => e.user_id === req.user.id && e.action === 'delist');
+      const items = (await joinHymnActivity(latestPerHymn(mine), 'delisted_at')).filter(
+        (it) => it.hymn && it.hymn.status === 'rejected'
+      );
+      res.json({ items });
+    } catch (e) {
+      console.error('admin activity/delisted error:', e.message);
       res.status(500).json({ error: 'server_error' });
     }
   });

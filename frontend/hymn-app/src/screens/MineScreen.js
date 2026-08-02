@@ -6,8 +6,8 @@
 // (主要用戶唔係長者),所以呢度冇字體大小設定。深淺色模式亦都跟 §5.4「深色為主,
 // 日後有餘力先考慮淺色」,所以而家淨係得帳戶相關。
 
-import React, { useState } from 'react';
-import { View, Text, FlatList, TouchableOpacity, StyleSheet, Image, Alert } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, FlatList, TouchableOpacity, StyleSheet, Image, Alert, ScrollView, ActivityIndicator } from 'react-native';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { COLORS, TYPOGRAPHY } from '../theme/designSystem';
 import { useInsets } from '../hooks/useInsets';
@@ -18,6 +18,7 @@ import { useAddToPlaylist } from '../components/AddToPlaylistSheet';
 import AvatarButton from '../components/AvatarButton';
 import PlaylistDetailSheet from './PlaylistDetailSheet';
 import { getDisplayTitle } from '../utils/displayTitle';
+import { adminListDelistedHymns } from '../api';
 
 function Cover({ youtubeId, size = 52 }) {
   const [failed, setFailed] = useState(false);
@@ -35,10 +36,25 @@ function Cover({ youtubeId, size = 52 }) {
 export default function MineScreen({ onPlayHymn, onOpenAuth, onOpenAdminAdd, miniPlayer, hasMiniPlayer }) {
   const { favorites = [], toggleFavorite } = useFavorites() || {};
   const { playlists = [], deletePlaylist } = usePlaylists() || {};
-  const { user, isAdmin } = useAuth() || {};
+  const { user, isAdmin, getToken } = useAuth() || {};
   const { open: openAddToPlaylist, openCreate, openRename } = useAddToPlaylist();
-  const [tab, setTab] = useState('favorites'); // favorites | playlists
+  const [tab, setTab] = useState('favorites'); // favorites | playlists | delisted
   const [detailId, setDetailId] = useState(null); // 開緊邊個清單嘅詳情頁
+
+  // 已下架 tab(MYPAGE-ADMIN-CHIPS-PLAN §4.3)—— 淨係 admin 先會撳到嗰粒
+  // chip,簡單 useState 夠用,唔使成個 context。
+  const [delisted, setDelisted] = useState([]);
+  const [delistedLoading, setDelistedLoading] = useState(false);
+  useEffect(() => {
+    if (tab !== 'delisted' || !isAdmin) return;
+    let cancelled = false;
+    setDelistedLoading(true);
+    adminListDelistedHymns(getToken ? getToken() : null)
+      .then((items) => { if (!cancelled) setDelisted(items || []); })
+      .catch(() => { if (!cancelled) setDelisted([]); })
+      .finally(() => { if (!cancelled) setDelistedLoading(false); });
+    return () => { cancelled = true; };
+  }, [tab, isAdmin, getToken]);
 
   // 清單行 ⋯ 掣:得兩個選項,native Alert 夠用,唔使另開 action sheet
   // (同下面帳戶卡登出一致做法)。
@@ -87,32 +103,33 @@ export default function MineScreen({ onPlayHymn, onOpenAuth, onOpenAdminAdd, min
         </TouchableOpacity>
       )}
 
-      {/* Admin 專用:貼連結加歌(MEMBERSHIP-PHASE2-ADMIN-PLAN §3.7)——member/
-          未登入完全見唔到,純 UI 清潔(API 有 requireAdmin 403 兜底)。 */}
-      {isAdmin && (
-        <TouchableOpacity style={styles.adminAddRow} activeOpacity={0.7} onPress={() => onOpenAdminAdd && onOpenAdminAdd()}>
-          <MaterialIcons name="add-circle-outline" size={20} color={COLORS.accent} />
-          <Text style={styles.adminAddText}>貼連結加歌</Text>
-        </TouchableOpacity>
-      )}
-
-      {/* 最愛 / 清單 切換 */}
-      <View style={styles.segment}>
+      {/* 最愛 / 清單 切換,admin 多兩粒:URL加歌(action chip,冇 active 態,
+          撳落即開 modal)、已下架(真 tab)(MYPAGE-ADMIN-CHIPS-PLAN §4.2)。
+          四粒可能爆闊度,外層改 ScrollView horizontal——non-admin 得兩粒,
+          冇得撥都冇視覺差異。 */}
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.segment}>
         {[
-          { k: 'favorites', label: `最愛 ${favorites.length}`, icon: 'favorite' },
-          { k: 'playlists', label: `我嘅清單 ${playlists.length}`, icon: 'queue-music' },
-        ].map((s) => (
-          <TouchableOpacity
-            key={s.k}
-            style={[styles.segItem, tab === s.k && styles.segItemActive]}
-            onPress={() => setTab(s.k)}
-            activeOpacity={0.7}
-          >
-            <MaterialIcons name={s.icon} size={16} color={tab === s.k ? COLORS.background : COLORS.textSecondary} />
-            <Text style={[styles.segText, tab === s.k && styles.segTextActive]}>{s.label}</Text>
-          </TouchableOpacity>
-        ))}
-      </View>
+          { k: 'favorites', label: `最愛 ${favorites.length}`, icon: 'favorite', kind: 'tab' },
+          { k: 'playlists', label: `我嘅清單 ${playlists.length}`, icon: 'queue-music', kind: 'tab' },
+          ...(isAdmin ? [
+            { k: 'admin-add', label: 'URL加歌', icon: 'add-link', kind: 'action', onPress: () => onOpenAdminAdd && onOpenAdminAdd() },
+            { k: 'delisted', label: '已下架', icon: 'visibility-off', kind: 'tab' },
+          ] : []),
+        ].map((s) => {
+          const active = s.kind === 'tab' && tab === s.k;
+          return (
+            <TouchableOpacity
+              key={s.k}
+              style={[styles.segItem, active && styles.segItemActive]}
+              onPress={s.kind === 'action' ? s.onPress : () => setTab(s.k)}
+              activeOpacity={0.7}
+            >
+              <MaterialIcons name={s.icon} size={16} color={active ? COLORS.background : COLORS.textSecondary} />
+              <Text style={[styles.segText, active && styles.segTextActive]}>{s.label}</Text>
+            </TouchableOpacity>
+          );
+        })}
+      </ScrollView>
 
       {tab === 'favorites' ? (
         <FlatList
@@ -160,6 +177,36 @@ export default function MineScreen({ onPlayHymn, onOpenAuth, onOpenAdminAdd, min
             </View>
           }
         />
+      ) : tab === 'delisted' ? (
+        delistedLoading ? (
+          <View style={styles.loadingWrap}>
+            <ActivityIndicator color={COLORS.accent} />
+          </View>
+        ) : (
+          <FlatList
+            data={delisted}
+            keyExtractor={(item) => String(item.hymn.id)}
+            contentContainerStyle={{ paddingBottom: 24 }}
+            renderItem={({ item }) => (
+              // 落咗架嘅歌唔俾撳播放(§4.3)——純顯示,唔用 TouchableOpacity。
+              <View style={styles.row}>
+                <Cover youtubeId={item.hymn.youtube_id} />
+                <View style={styles.rowInfo}>
+                  <Text style={styles.rowTitle} numberOfLines={2}>{getDisplayTitle(item.hymn)}</Text>
+                  <Text style={styles.rowArtist} numberOfLines={1}>{item.hymn.artist || '未知'}</Text>
+                  <Text style={styles.delistedDate}>{(item.delisted_at || '').slice(0, 10)} 落架</Text>
+                </View>
+              </View>
+            )}
+            ListEmptyComponent={
+              <View style={styles.empty}>
+                <MaterialIcons name="visibility-off" size={40} color={COLORS.textSecondary} />
+                <Text style={styles.emptyText}>未有落架嘅歌</Text>
+                <Text style={styles.emptyHint}>喺詩歌庫長按一首歌可以落架</Text>
+              </View>
+            }
+          />
+        )
       ) : (
         <FlatList
           data={playlists}
@@ -227,13 +274,6 @@ const styles = StyleSheet.create({
   accountCta: { borderWidth: 1, borderColor: COLORS.border },
   accountTitle: { ...TYPOGRAPHY.body, fontWeight: '600' },
   accountSub: { ...TYPOGRAPHY.artist, marginTop: 2 },
-  // Admin「貼連結加歌」— 視覺照 AddToPlaylistSheet 嘅 newRow/newText
-  adminAddRow: {
-    flexDirection: 'row', alignItems: 'center',
-    marginHorizontal: 16, marginBottom: 12, paddingVertical: 10, paddingHorizontal: 14,
-    backgroundColor: COLORS.card, borderRadius: 10,
-  },
-  adminAddText: { color: COLORS.accent, marginLeft: 8, fontSize: 14, fontWeight: '700' },
   segment: { flexDirection: 'row', paddingHorizontal: 16, marginBottom: 12 },
   segItem: {
     flexDirection: 'row', alignItems: 'center',
@@ -253,6 +293,9 @@ const styles = StyleSheet.create({
   empty: { alignItems: 'center', paddingTop: 60 },
   emptyText: { ...TYPOGRAPHY.body, color: COLORS.textSecondary, marginTop: 8 },
   emptyHint: { ...TYPOGRAPHY.artist, marginTop: 4, textAlign: 'center', lineHeight: 20 },
+  loadingWrap: { alignItems: 'center', paddingTop: 60 },
+  // 已下架 row 副行「幾時落架」
+  delistedDate: { ...TYPOGRAPHY.artist, marginTop: 2, fontSize: 12 },
   // ＋新播放清單(視覺照 AddToPlaylistSheet 嘅 newRow/newText)
   newRow: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12 },
   newText: { color: COLORS.accent, marginLeft: 8, fontSize: 15, fontWeight: '700' },
