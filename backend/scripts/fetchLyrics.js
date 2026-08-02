@@ -99,7 +99,16 @@ const today = () => new Date().toISOString().slice(0, 10);
 const stamp = () => new Date().toISOString().replace('T', ' ').slice(0, 19);
 const log = (...a) => console.log(`[${stamp()}]`, ...a);
 const jitter = (base) => Math.round(base * (0.7 + Math.random() * 0.9));
-const inWindow = () => { const h = new Date().getHours(); return h >= NIGHT_START || h < WINDOW_END; };
+// 2026-08-02 Eric 追加:**星期日全日都准行**(佢星期日唔使用電腦,冇資源
+// 衝突顧慮),星期一至六維持夜間窗口(19:00 跨夜到 09:00)。plist 對應加咗
+// Weekday=0 嘅日間班次(10:40/12:40/14:40/16:40),呢度個窗口檢查要一致放行,
+// 唔係 plist 準時開波都會俾自己擋(08:40 尾輪嗰課學過)。
+const inWindow = () => {
+  const now = new Date();
+  if (now.getDay() === 0) return true; // 星期日全日
+  const h = now.getHours();
+  return h >= NIGHT_START || h < WINDOW_END;
+};
 const charCount = (s) => (s || '').replace(/\s/g, '').length;
 
 function report(db) {

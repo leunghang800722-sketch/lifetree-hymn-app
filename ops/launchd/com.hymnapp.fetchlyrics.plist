@@ -66,8 +66,34 @@
          growLibrary 每 15 分鐘一個 slot 照行,靠 hymnDb.js 嘅 DB 鎖互斥
          (fetchLyrics 每首歌只喺寫入嗰一刻揸鎖,毫秒級,已實戰驗證)。
          launchd 嘅 StartCalendarInterval 可以係 array,每個 dict = 一個時間點。 -->
+    <!-- 2026-08-02 Eric 追加:星期日(Weekday=0)加四班日間場——10:40/12:40/
+         14:40/16:40,維持夜間嗰種兩小時一班節奏。分鐘揀 :40 係錯開 growLibrary
+         (每15分鐘,分鐘用:07系)嘅慣性位;16:40 班 ~17:10 收工,避開 17:30
+         taxonomy 連轆同 18:40 alignBackfill。冇 Weekday key 嘅八班照舊每日行
+         (包括星期日,即係星期日全日共 12 班)。fetchLyrics.js inWindow() 已
+         同步改(星期日全日放行),兩邊一齊改先行得通。 -->
     <key>StartCalendarInterval</key>
     <array>
+        <dict>
+            <key>Weekday</key><integer>0</integer>
+            <key>Hour</key><integer>10</integer>
+            <key>Minute</key><integer>40</integer>
+        </dict>
+        <dict>
+            <key>Weekday</key><integer>0</integer>
+            <key>Hour</key><integer>12</integer>
+            <key>Minute</key><integer>40</integer>
+        </dict>
+        <dict>
+            <key>Weekday</key><integer>0</integer>
+            <key>Hour</key><integer>14</integer>
+            <key>Minute</key><integer>40</integer>
+        </dict>
+        <dict>
+            <key>Weekday</key><integer>0</integer>
+            <key>Hour</key><integer>16</integer>
+            <key>Minute</key><integer>40</integer>
+        </dict>
         <dict>
             <key>Hour</key><integer>19</integer>
             <key>Minute</key><integer>0</integer>
