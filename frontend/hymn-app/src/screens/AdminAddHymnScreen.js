@@ -243,16 +243,30 @@ export default function AdminAddHymnScreen({ onClose }) {
       </View>
 
       <ScrollView contentContainerStyle={{ padding: 20, paddingBottom: insets.bottom + 24 }} keyboardShouldPersistTaps="handled">
-        <TextInput
-          style={styles.urlInput}
-          value={url}
-          onChangeText={setUrl}
-          placeholder="貼 YouTube 連結"
-          placeholderTextColor={COLORS.textSecondary}
-          autoCapitalize="none"
-          autoCorrect={false}
-          keyboardType="url"
-        />
+        <View style={styles.urlInputWrap}>
+          <TextInput
+            style={styles.urlInput}
+            value={url}
+            onChangeText={setUrl}
+            placeholder="貼 YouTube 連結"
+            placeholderTextColor={COLORS.textSecondary}
+            autoCapitalize="none"
+            autoCorrect={false}
+            keyboardType="url"
+          />
+          {/* 清除掣(Eric 加單)——撳咗 setUrl('') 就夠,url useEffect 本身
+              已經會 reset() + 清 firedIdRef + 取消 debounce,呢度唔使再加
+              邏輯。 */}
+          {!!url && (
+            <TouchableOpacity
+              style={styles.urlClearBtn}
+              onPress={() => setUrl('')}
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            >
+              <MaterialIcons name="cancel" size={20} color={COLORS.textSecondary} />
+            </TouchableOpacity>
+          )}
+        </View>
 
         {videoId && (
           <View style={styles.previewCard}>
@@ -403,10 +417,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16, paddingBottom: 12,
   },
   headerTitle: { color: COLORS.textPrimary, fontSize: 17, fontWeight: '700' },
+  urlInputWrap: { position: 'relative', justifyContent: 'center' },
   urlInput: {
-    backgroundColor: COLORS.card, borderRadius: 12, paddingHorizontal: 14, height: 48,
+    backgroundColor: COLORS.card, borderRadius: 12, paddingHorizontal: 14, paddingRight: 40, height: 48,
     color: COLORS.textPrimary, fontSize: 15, borderWidth: 1, borderColor: COLORS.border,
   },
+  urlClearBtn: { position: 'absolute', right: 12 },
   bigThumb: { width: '100%', aspectRatio: 16 / 9, borderRadius: 12, backgroundColor: COLORS.cardLight, marginBottom: 12 },
   bigThumbFallback: { alignItems: 'center', justifyContent: 'center' },
   loadingRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 8 },
