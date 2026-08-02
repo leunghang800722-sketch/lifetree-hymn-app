@@ -88,7 +88,9 @@ Zeabur 嘅 datacenter IP **已經被封死**（實測 5/5 全部 `Sign in to con
   用 view 係因為有 ~20 處 `SELECT FROM hymns` 散落各 route，漏改一個就會漏死歌出去；
   而且 `handlePlayHymn` 用 `findIndex` 對 `/api/hymns`，一首「首頁見到但唔喺 API 入面」嘅歌會
   findIndex 返 -1 → 變 index 0 → **靜靜哋播錯另一首歌**。
-- 改完 DB 要 `launchctl kickstart -k gui/$(id -u)/com.hymnapp.backend`（sql.js 開機先讀一次入記憶體）。
+- 改完 DB 要 restart backend(sql.js 開機先讀一次入記憶體)——2026-08-02 起
+  一律經 `ops/deploy/backend-restart.sh`(可以先 `--dry-run` 驗過先真跑),
+  唔再直接 `launchctl kickstart`,詳見 §2.10。
 - **DB 寫入鎖（`backend/lib/hymnDb.js`）三條規矩**（三次事故換返嚟）：
   1. `releaseDbLock(token)` 一定要 token 對得上先刪 lockfile，唔啱就 no-op（唔好刪走第二個 process 合法持有嘅鎖）。
   2. **慢工序唔准揸住個鎖**：無鎖 read → 慢慢 probe（結果放記憶體）→ 攞鎖 → **重開 fresh DB** → 逐行 UPDATE → save → 放鎖。
@@ -130,6 +132,14 @@ Zeabur 嘅 datacenter IP **已經被封死**（實測 5/5 全部 `Sign in to con
   named tunnel 咁行唔通，launchd 會 crash-loop、`api.god-music.com` 一路 530。已手加返
   `--config ... tunnel run hymn-api`；**再行一次 install 會覆蓋返，記得補**。
 - LaunchAgent = **登入之後**先行，唔係開機就行。部 Mac 停喺登入畫面 = 兩個都唔會行。
+- **🔴 部署/重啟完必須數齊 6 個 job（2026-08-01，growlibrary 部署期間俾人 unload
+  咗，同日發生過)：backend 重啟（bounce/reload）呢類操作有機會冇連帶 load
+  返其他背景 job（尤其 growlibrary）。任何部署/重啟操作完，一定要
+  `launchctl list | grep hymn` 數返夠 **6 個**(backend/growlibrary/
+  fetchlyrics/deadlinkcheck/alignbackfill/usersbackup)先算收工 ——
+  **淨係 confirm backend health 唔夠**，6個缺一都要即刻
+  `launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.hymnapp.<job>.plist`
+  補返先收工。
 
 ### 2.6 前端
 
@@ -218,7 +228,7 @@ mode 一定要順序捱以下幾關（`growLibrary.js` `discoverFromGroup()`，�
 粵語/國語**成人**桶完全獨立，冇受影響。**暫停唔係刪除**：已收錄嘅英文兒童歌
 唔郁，想恢復刪走 `PAUSED_KIDS_LANGUAGES` 入面嘅 `'英文'` 就得。
 
-### 2.10 EAS Update（OTA，2026-07-27 落地）
+### 2.10 EAS Update（OTA，2026-07-27 落地；2026-08-02 加咗部署批准 Gate）
 
 跟 `EAS-UPDATE-PLAN.md` 落地：`expo-updates` 已裝，`app.json` 加咗
 `runtimeVersion: "1"`（明文 string，唔用 policy）、`updates.url`、
@@ -228,19 +238,37 @@ mode 一定要順序捱以下幾關（`growLibrary.js` `discoverFromGroup()`，�
 EAS 專案：`@god-music-team/hymn-app`，`EXPO_TOKEN` 已寫入 `~/.zshrc`（任何 terminal
 自動有得用 `eas` 指令，唔使 `eas login`）。
 
-- **日常推 OTA**：`cd frontend/hymn-app && git status`（清場，見 §2.1）→
-  `eas update --channel production --platform android --message "..."`。
-  一定要帶 `--platform android`（唔帶預設 all platforms 會連 web 一齊 export，
-  而 web bundle 因為 `react-native-track-player` 嘅 web backend 缺
-  `shaka-player` peer dep 會 export 失敗）。
+- 🔴 **2026-08-02 起,OTA 一律經 `ops/deploy/ota-publish.sh` 推,唔再手動
+  `eas update`。** 背景:同日 3 次「未經 Eric 批准嘅 code 意外落 production」
+  事故(OTA 夾帶未批准 commit ×1、backend 被唔知情 session kickstart ×2),
+  詳見 `DEPLOY-GATE-PLAN.md`。機制:
+  1. **批准檔** `~/.hymn-deploy/approved.json` 記低 Eric 批准咗邊個 sha 出街
+     (`ota.sha`/`backend.sha`)。攞到 Eric go 先可以
+     `ops/deploy/approve.sh ota <HEAD sha> --confirm`。
+  2. **`ops/deploy/ota-publish.sh "<message>" [--dry-run]`** 係唯一合法推送
+     路徑:自動檢查 `frontend/hymn-app` 乾淨 + HEAD == 已批准 sha,兩樣一過
+     先真係 `eas update --channel production --platform android`。冇乾淨/
+     未批准就 abort 並點名邊啲 commit/檔案有問題(唔再教你手動
+     `git stash push -- <指定 file>`)。
+  3. **`.claude/settings.json`(PreToolUse hook,`ops/deploy/guard-bash.sh`）
+     會硬攔截直接跑 `eas update`**(deny,指去 ota-publish.sh)——
+     連唔知情/順手跑錯命令都擋得住,唔止靠自律。
+     ⚠️ **hook 要重啟 session 先生效** —— 已經開緊嘅長命 session 唔會即刻受保護。
+  4. `--platform android` 必帶(唔帶預設 all platforms 會連 web 一齊 export,
+     而 web bundle 因為 `react-native-track-player` 嘅 web backend 缺
+     `shaka-player` peer dep 會 export 失敗)——ota-publish.sh 內部已經固定咗呢個 flag。
+  5. **backend restart 同一套機制**:`ops/deploy/backend-restart.sh [--dry-run]`
+     檢查 HEAD == 已批准 `backend.sha` + `backend/` 乾淨(運行時檔案
+     `hymns.db`/`users.db*`/`backend/data/`/`*.log`/`*.bak*`/`backend/public/`
+     豁免),過咗先 `launchctl kickstart` + health check(`/api/health`)。
+     hook 同樣攔截直接 `launchctl kickstart|load|unload|stop|bootout|bootstrap`
+     命中 `com.hymnapp.backend`(查狀態用 `launchctl list | grep hymn` /
+     `launchctl print` 唔會被擋)。
+  6. 批准檔/gate script 詳細設計見 `DEPLOY-GATE-PLAN.md`；批准操作紀錄喺
+     `~/.hymn-deploy/deploy.log`(repo 外,免俾 git 操作誤傷)。
 - **OTA 定出新 APK？** 跟 `EAS-UPDATE-PLAN.md` §四嗰張表。灰色地帶一律當
-  native（出 APK + bump `app.json` 同 `android/app/build.gradle` 兩處
-  `versionCode`/`version(Name)`）。
-- 🔴 **每次都要 `git status` 清場先 publish**——`eas update` 係 export 當刻
-  working tree。2026-07-27 落地嗰陣，共用 worktree 有另一個 session 未
-  commit 嘅 icon/wordmark rebrand 改動,兩次 publish 前都用
-  `git stash push -- <指定 file>`（唔係 `git stash` 全部）擋開,publish
-  完即刻 `git stash pop` 還原,先冇夾埋人哋未完成嘅嘢。
+  native(出 APK + bump `app.json` 同 `android/app/build.gradle` 兩處
+  `versionCode`/`version(Name)`)。
 - **驗證流程**（emulator，release build，v1.4.0 已行過一次全套）：
   1. `adb uninstall` 舊版 → `adb install -r` 新 release APK → 冷啟動一次
      （背景 check+download，睇 logcat `dev.expo.updates` 有冇
@@ -378,7 +406,8 @@ ops/launchd/             五個 plist 嘅版本控制副本 + README checklist
 | `BRAND-GODMUSIC-PLAN.md` | 改名 God Music + logo（已拍板執行） |
 | `LIBRARY-EXPANSION-PLAN.md` | 擴歌庫規劃 |
 | `LYRICS-PIPELINE-PLAN.md` | 歌詞入庫方案（等拍板） |
-| `EAS-UPDATE-PLAN.md` | OTA 更新機制實作計劃（Eric 已拍板要做，等 Sonnet 落地；⚠️ 內有共用 worktree publish 紅線） |
+| `EAS-UPDATE-PLAN.md` | OTA 更新機制實作計劃（已落地；⚠️ OTA 一律經 `ops/deploy/ota-publish.sh`，見 §5 同 `DEPLOY-GATE-PLAN.md`） |
+| `DEPLOY-GATE-PLAN.md` | 部署批准 Gate 機制（2026-08-02 落地）：批准檔 `~/.hymn-deploy/approved.json` + `ops/deploy/{approve,ota-publish,backend-restart,guard-bash}.sh` + `.claude/settings.json` PreToolUse hook，硬攔截未經批准嘅 OTA/backend restart |
 | `MEMBERSHIP-PLAN.md` | 會員系統完整規劃（2026-07-28 出稿；Phase 0 已落地 fc9a31b；配套 `PHONE-AUTH-PLAN.md`/`ERIC-TODO-PHONE-AUTH.md`） |
 | `MEMBERSHIP-PHASE1-LOGIN-SYNC.md` | Phase 1（登入+跨裝置同步）落地規格（Eric 已拍板 go；W1 backend→W2 frontend→W3 開閘，交 Sonnet 逐包執行；W3 等 Twilio 第三條 key） |
 | `hymn-groups-database.md` | 團體完整資料（**人睇**；加新團體先改呢度，再落 `worshipGroups.js`） |
@@ -398,8 +427,14 @@ launchctl list | grep -iE "cloudflare|hymnapp"
 node backend/scripts/growLibrary.js --status
 tail -f /tmp/hymn_growlibrary.log /tmp/hymn_deadlink.log /tmp/hymn_backend.log
 
-# 改完 DB 要 reload backend
-launchctl kickstart -k gui/$(id -u)/com.hymnapp.backend
+# 改完 DB 要 reload backend —— 2026-08-02 起經 gate script（見 §2.10/§5）：
+ops/deploy/backend-restart.sh --dry-run   # 先驗
+ops/deploy/backend-restart.sh             # 真跑（HEAD 要係已批准 sha）
+# ⚠️ 直接 launchctl kickstart 已俾 .claude/settings.json 嘅 PreToolUse hook 硬攔截
+
+# 日常推 OTA —— 一律經 gate script（喺 repo root 跑，script 內部自己 cd）
+ops/deploy/ota-publish.sh "message" --dry-run   # 先驗
+ops/deploy/ota-publish.sh "message"             # 真推（frontend/hymn-app 要乾淨、HEAD 要係已批准 sha）
 ```
 
 ### ✅ 2026-07-25→26 兒童組增長卡死 — 已落地(local_fa531849)

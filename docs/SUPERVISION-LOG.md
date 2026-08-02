@@ -2038,3 +2038,114 @@ user 6 = opus-verify 監督驗收專用戶)都唔啱用嚟borrow 做 side-effect
 逐條 + verified 前後數,--dry-run 同正式跑各留一份時間戳)。commit:
 `backend/scripts/restoreKidsLyricsC4.js` + 呢段 log(hymns.db/.bak-* 一律
 唔 commit,跟 CLAUDE.md「多 session 共用 worktree」紅線)。
+
+## 2026-08-02 10:08 每日歌詞自動校對 — Sonnet 執行(lyrics-daily-proofread scheduled task)
+
+**現況:** export 咗 312 首 draft;`alignLyrics.js --all` 補跑,align 覆蓋 560 首
+(對比全庫 draft/verified,唔淨係今日呢 312)。
+
+**流程同判斷:**
+- 用 title 關鍵字(花絮/排練實況/訪問/點評/課程/教室/訓練營/Q&A/組曲/連續播放/
+  原聲帶/佈道會/頒獎禮/默想集/靈修音樂/【救贖的聲音】訪談系列/社區探訪 等)加人手
+  逐條核對,揪出 65 首非歌內容(合輯/講座/花絮/靈修默想集/週年賀詞/演唱會全場錄影/
+  HIS70ry 自傳紀錄片系列)。校對途中發現另外 2 首(讚美之泉《天堂敬拜》id=714/721)
+  雖然標題睇落似單曲,但 displayText 對齊全文後見到係成場敬拜會錄影(混咗講道+
+  轉幾首歌),追加落 demote,共 **67 首 demote**。
+- align 對齊數據(displayText/matchRate)揀出 44 首「auto-pass」(whisper 音訊完全
+  對得上)嘅真歌做底,配返 OCR draft 逐字修正、剷 credit 行/頻道浮水印雜訊、每段
+  淨顯示一次、經文附註轉全形括號格式。1 首(id=1660)display 內容係頻道浮水印亂碼
+  (audio 對齊咗個假陽性 match),同 3 首 OCR 太爛冇信心(id=1750/2537/2208)一律
+  留 draft 唔強做。
+- 另外由 low-confidence 池(203 首)入面揀 10 首作者/來源清晰(CantonHymn/讚美之泉/
+  小羊詩歌/Phil Wickham 等)嘅,WebSearch 核對到官方版本/結構存在(2 次搜尋:
+  CantonHymn《讚頌祢聖名》詞曲來源核實、Phil Wickham《Miracle Maker》段落結構
+  核實),但底稿全部由自己 OCR/whisper 輸出重組,冇照抄第三方網站文字。
+- 機械驗收(`auditLyricsBatch.js`):114 條入面 113 過、1 條 reject(id=63《只要耶穌》
+  ——天然短副歌,中文字數 34 < 45 門檻,依規矩冚唪唥 reject 留 draft,冇例外)。
+
+**Apply 結果:** verified(有歌詞)46 首、demote(退返 draft)67 首、skip 0 首。
+verified 前後數:**259 → 305**。重啟 `com.hymnapp.backend` 後 API 健康,DB 直查
+3 首(id=50/256/4947)歌詞已寫入、狀態正確;demote 嘅 4 首(714/721/2228/1660)
+狀態已退返 `draft`。
+
+**Fable 5 抽查名單(今日 verify 8 首隨機抽樣):**
+id=2921《祢永遠如此深愛著我》、id=1338《何等深情》、id=410《單單敬拜》、
+id=3245《與祢一起》、id=1414《CityAlight - He Will Be》、
+id=256《我真歡喜來讚美你》、id=125《唯獨恩主》、id=2292《獨白 Soliloquy》。
+
+**異常:** 無煞停,流程正常行完。
+
+**2026-08-02 14:58 即時實數（Eric 查詢）：✅ 51 首歌詞已確認救返。**
+①curated **3752**(08:23 之後 +290,星期日全日冇封鎖窗,節奏強勁);②verified **305**
+(救返 51 首 + 覆核繼續推進,超過預期 ~259;抽樣證實:迷路小孩等舊兒童 verified 返晒嚟;
+唯一 40 字嗰首係《誰造星星》童謠,本身就係咁短,唔係缺數據);draft 287;
+③7 job 齊,最後 tick 14:45(正常週期),近 150 行 0 error 0 bot-check。
+
+## ✅ 2026-08-02 15:08 部署批准 Gate 落地 — Sonnet 執行(DEPLOY-GATE-PLAN.md,Fable 5 出稿)
+
+**背景:** 同日發生 3 次「未經 Eric 批准嘅 code 意外落 production」事故(OTA 夾帶
+未批准 commit ×1、backend 被唔知情 session kickstart ×2)。Eric 拍板即刻做
+L1(批准檔+gate script)+L2(PreToolUse hook 硬攔截)。
+
+**落地交付物:**
+- `ops/deploy/approve.sh <ota|backend> <sha> [--confirm]` —— sha 必須明文
+  提供且等於當前 HEAD,印出會新包含嘅 commit,`--confirm` 先寫入批准檔。
+- `ops/deploy/ota-publish.sh "<message>" [--dry-run]` —— 檢查
+  `frontend/hymn-app` 乾淨 + HEAD == 已批准 `ota.sha`,全過先真推
+  `eas update --channel production --platform android`。
+- `ops/deploy/backend-restart.sh [--dry-run]` —— 檢查 HEAD == 已批准
+  `backend.sha` + `backend/` 乾淨(豁免 `hymns.db*`/`users.db*`/
+  `backend/data/`/`*.log`/`*.bak*`/`backend/public/` 呢啲運行時檔案),
+  全過先 `launchctl kickstart` + health check(`/api/health`,10 秒內 200)。
+- `ops/deploy/guard-bash.sh` —— PreToolUse hook,deny 直接 `eas update` /
+  `launchctl kickstart|load|unload|stop|bootout|bootstrap ... com.hymnapp.backend`
+  (查狀態 `launchctl print`/`list` 收窄放行,跟 PLAN §四.5 建議)。
+- `.claude/settings.json`(repo 內、shared、新檔)接住上面個 hook,絕對路徑
+  指去 `ops/deploy/guard-bash.sh`。
+- `~/.hymn-deploy/approved.json` 初始化:`ota.sha`/`backend.sha` 都係
+  `84b8f5725f57b3ec450ab7c56b89231cbe6f33f4`(2026-08-02 密碼登入部署後嘅
+  HEAD)。**OTA sha 攞唔到 EAS 記錄** —— `eas whoami` 顯示 `Not logged in`,
+  冇 `EXPO_TOKEN`,`eas update:list` 需要登入先攞到,故以當前 HEAD 起步
+  (note 已註明原因)。
+
+**6 項驗證(scratchpad 臨時 clone 度做,真 worktree 冇整測試 commit/reset,
+所有 script 用 `HYMN_DEPLOY_DIR` override 免污染真批准檔)—— 全部 PASS:**
+
+1. **夾帶模擬**:clone approve ota HEAD --confirm → `git commit --allow-empty
+   -m "unapproved test commit"` → `ota-publish.sh "test" --dry-run` →
+   ✅ abort,輸出點名 `19c76f3 unapproved test commit`。
+2. **髒 tree**:touch `frontend/hymn-app/App.js` → dry-run → ✅ abort 並列出
+   ` M frontend/hymn-app/App.js`。
+3. **backend 未批准**:approved.json 嘅 `backend.sha` 設做舊 commit
+   (`a372de7`)→ `backend-restart.sh --dry-run` → ✅ abort,指出
+   `git log a372de7..HEAD` 入面嘅未批准 commit。
+4. **運行時檔案豁免**:淨係 append bytes 落 `backend/hymns.db`(sha 啱)→
+   `backend-restart.sh --dry-run` → ✅ 全綠(額外 sanity:同一設定下改
+   `backend/server.js` 一行 → 正確被捕獲 abort,證明豁免 pattern 冇過闊)。
+5. **hook 攔截(unit test,pipe JSON 入 stdin)**:(a) `eas update --channel
+   production` → ✅ deny(JSON 含 `permissionDecision:"deny"`);
+   (b) `launchctl kickstart -k gui/501/com.hymnapp.backend` → ✅ deny;
+   (c) `launchctl list | grep hymn` → ✅ 放行(exit 0 冇輸出);
+   (d) `ls -la` → ✅ 放行;(e) `bash ops/deploy/ota-publish.sh "msg"` →
+   ✅ 放行;額外 (f) `launchctl print gui/501/com.hymnapp.backend` → ✅ 放行
+   (查狀態唔會誤中)。**意外收穫:** 測試過程中發現本 session 自己嘅
+   Bash 呼叫(命令字串入面碰巧含 `eas update` 呢個 substring,喺一句測試
+   JSON 入面)即場俾 hook deny 咗 —— 證實 hook 喺呢個已經開緊嘅 session
+   即時生效(冇等重啟),比 PLAN 假設嘅「舊 session 要重啟先受保護」更保守
+   (可能係好事,但唔排除係呢個 session 本身喺 hook 加咗之後先發嘅
+   command,冇進一步驗證係咪所有已開 session 都咁)。
+6. **正路全通**:clone approve 正確 sha(ota+backend)→ 兩個 script
+   `--dry-run` → ✅ 全綠。
+
+第 7 項(真身首次啟用)刻意留返俾下次真部署,今次冇跑真 `eas update` 或真
+`launchctl kickstart`。
+
+**同步更新:** `HANDOFF.md` §2.10(OTA 段落擴充部署 Gate 說明 + 改 §2.4/§六
+日常指令唔再教直接 `launchctl kickstart`)、`EAS-UPDATE-PLAN.md` §四/§五.1
+(唔再教手動 `git status`+`eas update`,一律指去兩個 gate script)。
+
+**偏離規格之處:** 冇。approve.sh 內部用 node 寫 JSON(用 `process.argv`
+傳參,避免字串插入 JS 源碼有 injection 風險)代替 jq(部機未必裝
+jq)——guard-bash.sh 本身有 jq/python3 雙路徑,approve/ota-publish/
+backend-restart 三個 script 統一用 node(backend 已有 node 依賴,唔加新
+外部依賴)。
