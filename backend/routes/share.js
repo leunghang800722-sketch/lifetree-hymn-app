@@ -30,8 +30,26 @@ const APK_SHA256_FINGERPRINT = 'FA:C6:17:45:DC:09:03:78:6F:B9:ED:E6:2A:96:2B:39:
 const RATE_WINDOW_MS = 15 * 60 * 1000;
 const RATE_MAX = 60;
 const hitsByIp = new Map();
+
+// Opus 5 驗收揪出:呢個 Map 冇 eviction——單一 IP check 嗰陣自己個窗口過期
+// 會覆寫(下面 isRateLimited 本身),但**只出現過一次就冇再嚟**嘅 IP(公開
+// endpoint,scraper 換 IP 好常見)永遠冇人再幫佢 check,個 entry 會留一世,
+// 長遠慢慢漏 memory。
+//
+// 修法:唔跟 loginRateLimit.js 加長駐 setInterval(嗰邊冧本身都冇用 timer,
+// 保持一致),淨係喺 Map 大到有意義先做一次全表過期掃(廉價、罕見觸發,
+// 唔會拖慢正常 request)。SWEEP_THRESHOLD 500 純粹「呢個規模先值得行一次
+// O(n) 掃描」嘅工程判斷,唔係業務數字。
+const SWEEP_THRESHOLD = 500;
+function sweepExpired(now) {
+  for (const [ip, rec] of hitsByIp) {
+    if (now - rec.windowStart > RATE_WINDOW_MS) hitsByIp.delete(ip);
+  }
+}
+
 function isRateLimited(ip) {
   const now = Date.now();
+  if (hitsByIp.size > SWEEP_THRESHOLD) sweepExpired(now);
   const rec = hitsByIp.get(ip);
   if (!rec || now - rec.windowStart > RATE_WINDOW_MS) {
     hitsByIp.set(ip, { count: 1, windowStart: now });
