@@ -6,6 +6,7 @@
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
+    "scheme": "godmusic",
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.hymnapp.praise"
@@ -19,7 +20,17 @@
         "backgroundImage": "./assets/android-icon-background.png",
         "backgroundColor": "#E3E8EE"
       },
-      "allowBackup": false
+      "allowBackup": false,
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "autoVerify": true,
+          "data": [
+            { "scheme": "https", "host": "api.god-music.com", "pathPrefix": "/p/" }
+          ],
+          "category": ["BROWSABLE", "DEFAULT"]
+        }
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png"
