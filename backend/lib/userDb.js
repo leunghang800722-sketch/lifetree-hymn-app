@@ -58,6 +58,19 @@ function initSchema(db) {
     deleted    INTEGER DEFAULT 0,
     PRIMARY KEY (user_id, id)
   )`);
+
+  // ── 會員系統 Phase 3:分享播放清單(MEMBERSHIP-PHASE3-SHARE-PLAN §1.1)──────
+  // token 係一個清單一條、永久有效(冇 expires_at)——失效途徑得兩條:清單
+  // 本身刪咗(playlists.deleted=1,GET 果邊 join 判斷)、或者呢度 revoked=1
+  // (今次唔出「取消分享」UI,DB/API 留後路)。冇任何 FOREIGN KEY 約束—— sql.js
+  // 唔逼 enforce,同 favorites/playlists 一致做法(靠 app 層驗 ownership)。
+  db.run(`CREATE TABLE IF NOT EXISTS playlist_shares (
+    token       TEXT PRIMARY KEY,
+    user_id     INTEGER NOT NULL,
+    playlist_id TEXT NOT NULL,
+    created_at  TEXT DEFAULT (datetime('now')),
+    revoked     INTEGER DEFAULT 0
+  )`);
 }
 
 export function saveUserDb(db) {
