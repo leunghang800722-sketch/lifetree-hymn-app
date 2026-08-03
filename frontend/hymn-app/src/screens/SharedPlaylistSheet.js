@@ -34,7 +34,7 @@ export default function SharedPlaylistSheet({ token, onClose, onPlayHymn, miniPl
   const { importPlaylist } = usePlaylists() || {};
   const insets = useInsets();
 
-  // state: 'loading' | 'ok' | 'gone' | 'error'
+  // state: 'loading' | 'ok' | 'gone' | 'error' | 'rate_limited'
   const [state, setState] = useState('loading');
   const [data, setData] = useState(null);
   const [saving, setSaving] = useState(false);
@@ -50,6 +50,9 @@ export default function SharedPlaylistSheet({ token, onClose, onPlayHymn, miniPl
       .then(async (r) => {
         if (cancelled) return;
         if (r.status === 410) { setState('gone'); return; }
+        // Opus 5 驗收揪出:429(限速)之前掉入「一般網絡錯」個桶,顯示「網絡錯」
+        // 誤導用戶(其實係打太密,唔係冇網)。獨立分支,自己嘅文案。
+        if (r.status === 429) { setState('rate_limited'); return; }
         if (!r.ok) { setState('error'); return; }
         const json = await r.json().catch(() => null);
         if (!json) { setState('error'); return; }
@@ -125,6 +128,13 @@ export default function SharedPlaylistSheet({ token, onClose, onPlayHymn, miniPl
           <View style={styles.centerState}>
             <MaterialIcons name="wifi-off" size={40} color={COLORS.textSecondary} />
             <Text style={styles.emptyText}>而家冇網,遲啲再試</Text>
+          </View>
+        )}
+
+        {state === 'rate_limited' && (
+          <View style={styles.centerState}>
+            <MaterialIcons name="hourglass-empty" size={40} color={COLORS.textSecondary} />
+            <Text style={styles.emptyText}>操作太密,唞一唞再試</Text>
           </View>
         )}
 

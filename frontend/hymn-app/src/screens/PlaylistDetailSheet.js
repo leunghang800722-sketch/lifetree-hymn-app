@@ -17,7 +17,7 @@ import { useInsets } from '../hooks/useInsets';
 import { usePlaylists, MAX_PLAYLIST_SONGS } from '../context/PlaylistsContext';
 import { useAddToPlaylist } from '../components/AddToPlaylistSheet';
 import { useAuth } from '../context/AuthContext';
-import { flush } from '../sync/userSync';
+import { flush, getOutboxLength } from '../sync/userSync';
 import { API_BASE } from '../config';
 import { getDisplayTitle } from '../utils/displayTitle';
 
@@ -58,8 +58,15 @@ export default function PlaylistDetailSheet({ playlistId, onClose, onPlayHymn, o
   const songs = pl.songs || [];
 
   // 分享流程(MEMBERSHIP-PHASE3-SHARE-PLAN §2.2)——
-  // 未登入 → 引導登入;空清單 → 擋;flush() 確保 server 係最新版先生成 token,
-  // 失敗(冇網)就唔出 sheet,唔嘗試離線排隊(排隊都生成唔到 URL,冇意義)。
+  // 未登入 → 引導登入;空清單 → 擋;flush() 確保 server 係最新版先生成 token。
+  //
+  // Opus 5 驗收揪出:flush() 撞正 App.js onActive 個背景 sync 都喺行緊(userSync
+  // 嘅 `_flushing` gate)會直接 return false,呢個唔代表冇網,淨係代表「有人
+  // 早咗一步喺推緊」。所以唔可以見到 flush()===false 就即刻彈「冇網」——要睇
+  // getOutboxLength() 分流:outbox 空 = 冇嘢等緊推,照出 share;outbox 有嘢就
+  // 等 ~800ms(俾嗰個進行緊嘅 flush 有時間做完)再試多一次,仲係推唔晒先至
+  // 真係當冇網。flush() 本身嘅語義唔可以郁——App.js onActive 靠佢個 return
+  // 決定 pull 覆蓋本地安唔安全。
   const handleShare = async () => {
     if (sharing) return;
     if (!user) {
@@ -75,16 +82,24 @@ export default function PlaylistDetailSheet({ playlistId, onClose, onPlayHymn, o
     }
     setSharing(true);
     try {
-      const drained = await flush();
-      if (!drained) {
-        Alert.alert('而家冇網,遲啲再試');
-        return;
+      let drained = await flush();
+      if (!drained && getOutboxLength() > 0) {
+        await new Promise((r) => setTimeout(r, 800));
+        drained = await flush();
+        if (!drained && getOutboxLength() > 0) {
+          Alert.alert('而家冇網,遲啲再試');
+          return;
+        }
       }
       const token = getToken ? getToken() : null;
       const resp = await fetch(`${API_BASE}/api/me/playlists/${pl.id}/share`, {
         method: 'POST',
         headers: { Authorization: `Bearer ${token}` },
       });
+      if (resp.status === 429) {
+        Alert.alert('操作太密,唞一唞再試');
+        return;
+      }
       const data = await resp.json().catch(() => ({}));
       if (!resp.ok || !data.url) {
         Alert.alert('分享失敗,遲啲再試');
@@ -99,10 +114,14 @@ export default function PlaylistDetailSheet({ playlistId, onClose, onPlayHymn, o
     }
   };
 
+  // Opus 5 驗收揪出:Android `Alert.alert` 最多得三粒掣(第四粒會冇顯示/迫走
+  // 「取消」),之前加咗「分享清單」變四粒就炒咗車。分享已經有 header 隔籬個
+  // 圓掣做主入口(足夠當眼,§2.1),呢度冚返三粒(改名/刪除/取消),唔好
+  // 再加第四粒落呢個 Alert——如果第日想加多個選項,要諗過用自訂 action sheet
+  // 代替原生 Alert,唔可以直接塞落嚟。
   const showMenu = () => {
     Alert.alert(pl.name, null, [
       { text: '改名', onPress: () => openRename && openRename(pl) },
-      { text: '分享清單', onPress: handleShare },
       {
         text: '刪除清單', style: 'destructive',
         onPress: () => Alert.alert('刪除清單', `「${pl.name}」同入面 ${songs.length} 首歌都會刪走。`, [
