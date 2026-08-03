@@ -10,12 +10,15 @@
 // 移除單曲**唔使二次確認**(re-add 好易,Spotify 同款);刪成個清單先要確認。
 
 import React, { useEffect, useState } from 'react';
-import { Modal, View, Text, FlatList, TouchableOpacity, StyleSheet, Image, Alert } from 'react-native';
+import { Modal, View, Text, FlatList, TouchableOpacity, StyleSheet, Image, Alert, Share } from 'react-native';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { COLORS, TYPOGRAPHY } from '../theme/designSystem';
 import { useInsets } from '../hooks/useInsets';
 import { usePlaylists, MAX_PLAYLIST_SONGS } from '../context/PlaylistsContext';
 import { useAddToPlaylist } from '../components/AddToPlaylistSheet';
+import { useAuth } from '../context/AuthContext';
+import { flush } from '../sync/userSync';
+import { API_BASE } from '../config';
 import { getDisplayTitle } from '../utils/displayTitle';
 
 // mqdefault = 真 16:9 冇黑邊(同 MineScreen / HymnListScreen 一致)
@@ -36,10 +39,12 @@ function Cover({ youtubeId, size = 52 }) {
 // App.js/MineScreen.js 嘅註解)。約數高度,留返空間唔好俾佢遮咗尾幾行歌。
 const MINI_PLAYER_H = 64;
 
-export default function PlaylistDetailSheet({ playlistId, onClose, onPlayHymn, miniPlayer, hasMiniPlayer = false }) {
+export default function PlaylistDetailSheet({ playlistId, onClose, onPlayHymn, onOpenAuth, miniPlayer, hasMiniPlayer = false }) {
   const { playlists = [], removeFromPlaylist, deletePlaylist } = usePlaylists() || {};
   const { openRename } = useAddToPlaylist();
+  const { user, getToken } = useAuth() || {};
   const insets = useInsets();
+  const [sharing, setSharing] = useState(false);
 
   const visible = !!playlistId;
   const pl = playlists.find((p) => p.id === playlistId);
@@ -52,9 +57,52 @@ export default function PlaylistDetailSheet({ playlistId, onClose, onPlayHymn, m
   if (!visible || !pl) return null;
   const songs = pl.songs || [];
 
+  // 分享流程(MEMBERSHIP-PHASE3-SHARE-PLAN §2.2)——
+  // 未登入 → 引導登入;空清單 → 擋;flush() 確保 server 係最新版先生成 token,
+  // 失敗(冇網)就唔出 sheet,唔嘗試離線排隊(排隊都生成唔到 URL,冇意義)。
+  const handleShare = async () => {
+    if (sharing) return;
+    if (!user) {
+      Alert.alert('登入先可以分享清單', null, [
+        { text: '取消', style: 'cancel' },
+        { text: '去登入', onPress: () => onOpenAuth && onOpenAuth() },
+      ]);
+      return;
+    }
+    if (!songs.length) {
+      Alert.alert('加咗歌先分享啦');
+      return;
+    }
+    setSharing(true);
+    try {
+      const drained = await flush();
+      if (!drained) {
+        Alert.alert('而家冇網,遲啲再試');
+        return;
+      }
+      const token = getToken ? getToken() : null;
+      const resp = await fetch(`${API_BASE}/api/me/playlists/${pl.id}/share`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await resp.json().catch(() => ({}));
+      if (!resp.ok || !data.url) {
+        Alert.alert('分享失敗,遲啲再試');
+        return;
+      }
+      // URL 直接擺入 message 度——RN Share.share 嘅 url field 係 iOS-only。
+      Share.share({ message: `【${pl.name}】詩歌清單(${songs.length} 首)\n${data.url}` }).catch(() => {});
+    } catch (_) {
+      Alert.alert('分享失敗,遲啲再試');
+    } finally {
+      setSharing(false);
+    }
+  };
+
   const showMenu = () => {
     Alert.alert(pl.name, null, [
       { text: '改名', onPress: () => openRename && openRename(pl) },
+      { text: '分享清單', onPress: handleShare },
       {
         text: '刪除清單', style: 'destructive',
         onPress: () => Alert.alert('刪除清單', `「${pl.name}」同入面 ${songs.length} 首歌都會刪走。`, [
@@ -107,12 +155,21 @@ export default function PlaylistDetailSheet({ playlistId, onClose, onPlayHymn, m
           style={{ flex: 1 }}
           contentContainerStyle={{ paddingBottom: 24 + insets.bottom + (hasMiniPlayer ? MINI_PLAYER_H : 0) }}
           ListHeaderComponent={
-            <TouchableOpacity
-              style={[styles.playAll, { opacity: songs.length ? 1 : 0.45 }]}
-              onPress={playAll} activeOpacity={0.8} disabled={!songs.length}>
-              <MaterialIcons name="play-arrow" size={22} color={COLORS.background} />
-              <Text style={styles.playAllText}>播全部</Text>
-            </TouchableOpacity>
+            <View style={styles.headerActions}>
+              <TouchableOpacity
+                style={[styles.playAll, { opacity: songs.length ? 1 : 0.45 }]}
+                onPress={playAll} activeOpacity={0.8} disabled={!songs.length}>
+                <MaterialIcons name="play-arrow" size={22} color={COLORS.background} />
+                <Text style={styles.playAllText}>播全部</Text>
+              </TouchableOpacity>
+              {/* 分享係 Phase 3 嘅主打動作,搬 Spotify 同款喺「播全部」隔籬加個
+                  獨立圓掣(§2.1)——收埋喺 ⋯ menu 入面唔夠當眼。 */}
+              <TouchableOpacity
+                style={[styles.shareBtn, { opacity: sharing ? 0.5 : 1 }]}
+                onPress={handleShare} activeOpacity={0.8} disabled={sharing}>
+                <MaterialIcons name="share" size={20} color={COLORS.textPrimary} />
+              </TouchableOpacity>
+            </View>
           }
           renderItem={({ item }) => (
             <TouchableOpacity style={styles.row} activeOpacity={0.7}
@@ -150,12 +207,17 @@ const styles = StyleSheet.create({
   headerText: { flex: 1, marginHorizontal: 12 },
   headerTitle: { ...TYPOGRAPHY.body, fontSize: 18, fontWeight: '700' },
   headerSub: { ...TYPOGRAPHY.artist, marginTop: 2 },
+  headerActions: { flexDirection: 'row', alignItems: 'center', marginHorizontal: 16, marginBottom: 12 },
   playAll: {
     flexDirection: 'row', alignItems: 'center', alignSelf: 'flex-start',
-    marginHorizontal: 16, marginBottom: 12, paddingHorizontal: 18, paddingVertical: 9,
+    paddingHorizontal: 18, paddingVertical: 9,
     backgroundColor: COLORS.accent, borderRadius: 20,
   },
   playAllText: { color: COLORS.background, fontWeight: '700', fontSize: 15, marginLeft: 4 },
+  shareBtn: {
+    width: 38, height: 38, borderRadius: 19, marginLeft: 10,
+    alignItems: 'center', justifyContent: 'center', backgroundColor: COLORS.cardLight,
+  },
   row: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 8 },
   rowAction: { paddingLeft: 14 },
   cover: { borderRadius: 6, backgroundColor: COLORS.cardLight },

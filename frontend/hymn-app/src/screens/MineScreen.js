@@ -269,7 +269,7 @@ export default function MineScreen({ onPlayHymn, onOpenAuth, onOpenAdminAdd, min
           由 App.js 傳落嚟(避免呢度反過來 import App.js 撞 circular import,
           見 App.js handleOpenFullScreen 上面嗰段註解)。 */}
       <PlaylistDetailSheet playlistId={detailId} onClose={() => setDetailId(null)} onPlayHymn={onPlayHymn}
-        miniPlayer={miniPlayer} hasMiniPlayer={hasMiniPlayer} />
+        onOpenAuth={onOpenAuth} miniPlayer={miniPlayer} hasMiniPlayer={hasMiniPlayer} />
     </View>
   );
 }

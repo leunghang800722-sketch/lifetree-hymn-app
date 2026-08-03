@@ -85,6 +85,23 @@ export const PlaylistsProvider = ({ children }) => {
     return { ok: true, playlist: target };
   }, [playlists, persist, syncUpsert]);
 
+  // 儲存分享清單嘅副本(MEMBERSHIP-PHASE3-SHARE-PLAN §2.4)—— 新 id、songs
+  // 照抄(slim object 原樣,收 link 嗰邊已經係 slim 格式;cap 30 係防禦性,
+  // 分享源頭本身 ≤30,但收嘅人揀「儲存」嗰下唔應該假設對方個 client 冇 bug)。
+  // 名照用原名,唔加「(分享)」後綴——id 唔同,同名唔會炒,想改名有現成
+  // 改名功能。儲存完即刻同原清單無關(zero live 連結),同 createPlaylist
+  // 一樣行返 persist + syncUpsert 現成路(登入自動同步、未登入純 MMKV)。
+  const importPlaylist = useCallback((name, songs) => {
+    const slimSongs = (Array.isArray(songs) ? songs : []).slice(0, MAX_PLAYLIST_SONGS).map((s) => ({
+      id: s.id, title: s.title, artist: s.artist, youtube_id: s.youtube_id, lang: s.lang,
+    }));
+    const pl = { id: `pl_${Date.now()}`, name: name || '未命名清單', songs: slimSongs, updated_at: new Date().toISOString() };
+    const next = [...playlists, pl];
+    persist(next);
+    syncUpsert(pl, next);
+    return pl;
+  }, [playlists, persist, syncUpsert]);
+
   // 改名:淨係改 name,songs 不動。空名直接唔理(UI 層有「未命名清單」fallback,
   // 但改名唔同開新清單 —— 改做空白多數係手滑,保留原名穩陣過改成 placeholder)。
   const renamePlaylist = useCallback((playlistId, name) => {
@@ -146,7 +163,7 @@ export const PlaylistsProvider = ({ children }) => {
 
   return (
     <PlaylistsCtx.Provider value={{
-      playlists, createPlaylist, addToPlaylist, renamePlaylist,
+      playlists, createPlaylist, addToPlaylist, importPlaylist, renamePlaylist,
       removeFromPlaylist, deletePlaylist, isPlaylistFull,
       replaceAllPlaylists, MAX_PLAYLIST_SONGS,
     }}>

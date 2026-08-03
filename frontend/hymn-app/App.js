@@ -24,6 +24,7 @@ import { AddToPlaylistProvider, useAddToPlaylist } from './src/components/AddToP
 import { AuthProvider, useAuth } from './src/context/AuthContext';
 import AuthScreen from './src/screens/AuthScreen';
 import AdminAddHymnScreen from './src/screens/AdminAddHymnScreen';
+import SharedPlaylistSheet from './src/screens/SharedPlaylistSheet';
 import { AdminEditHymnProvider } from './src/components/AdminEditHymnSheet';
 import { PlaylistProvider } from './src/context/PlaylistContext';
 import { setAuthToken, pullData, pushSync, flush as flushOutbox, getOwner, setOwner, clearOutbox } from './src/sync/userSync';
@@ -2092,6 +2093,30 @@ const fsStyles = StyleSheet.create({
 });
 
 // ===== AppContent =====
+// 分享清單 deep link(MEMBERSHIP-PHASE3-SHARE-PLAN §2.3)—— parse 兩款
+// URL:`https://api.god-music.com/p/<token>` 同 `godmusic://p/<token>`。
+// 呢個 handler 喺 §0.2 講嘅「舊 APK dormant code」前提下要極度防禦性:
+// 冇 scheme/intentFilter 嘅舊 APK 根本唔會有呢個 URL 走入嚟,但萬一將來
+// 有奇怪輸入(例如其他 app 亂 send intent),parse 唔到就靜靜哋 return null,
+// 唔可以拋錯累冧成個開機流程。
+const SHARE_TOKEN_RE = /^[A-Za-z0-9_-]{20,24}$/;
+function parseSharedToken(url) {
+  if (typeof url !== 'string' || !url) return null;
+  try {
+    let rest = null;
+    if (url.startsWith('https://api.god-music.com/p/')) {
+      rest = url.slice('https://api.god-music.com/p/'.length);
+    } else if (url.startsWith('godmusic://p/')) {
+      rest = url.slice('godmusic://p/'.length);
+    }
+    if (!rest) return null;
+    const token = rest.split(/[/?#]/)[0];
+    return SHARE_TOKEN_RE.test(token) ? token : null;
+  } catch (_) {
+    return null;
+  }
+}
+
 function AppContent() {
   const {
     hymns, setHymns, playQueue, playSingle, showPlayer, queueReady,
@@ -2246,6 +2271,27 @@ function AppContent() {
     setHymnListVisible(false);
   };
 
+  // 分享清單 deep link 接收(MEMBERSHIP-PHASE3-SHARE-PLAN §2.3)—— mount 時
+  // 揸實 getInitialURL()(cold start 由 link 開 app)+ 掛 'url' listener
+  // (app 已經開住,WhatsApp/瀏覽器再掟一個 link 過嚟)。中咗就 render
+  // SharedPlaylistSheet;parse 唔到(舊 APK 冇 scheme/intentFilter 根本唔會
+  // 觸發到呢度、或者將來奇怪輸入)就乜都唔做,唔影響現有啟動流程。
+  const [sharedToken, setSharedToken] = useState(null);
+  useEffect(() => {
+    let mounted = true;
+    Linking.getInitialURL().then((url) => {
+      if (!mounted) return;
+      const token = parseSharedToken(url);
+      if (token) setSharedToken(token);
+    }).catch(() => {});
+    const sub = Linking.addEventListener('url', ({ url }) => {
+      const token = parseSharedToken(url);
+      if (token) setSharedToken(token);
+    });
+    return () => { mounted = false; sub.remove(); };
+  }, []);
+  const closeSharedPlaylist = useCallback(() => setSharedToken(null), []);
+
   // Hymns loaded via useCachedHymns (MMKV cache + background refresh)
   // When fresh data arrives, update PlayerProvider's hymns
   useEffect(() => {
@@ -2373,6 +2419,13 @@ function AppContent() {
         <Modal visible animationType="slide" onRequestClose={closeAdminAdd}>
           <AdminAddHymnScreen onClose={closeAdminAdd} />
         </Modal>
+      )}
+
+      {/* 分享清單:撳 link 收到(MEMBERSHIP-PHASE3-SHARE-PLAN §2.3),獨立
+          native Modal,同 PlaylistDetailSheet 一樣要自己帶 mini player。 */}
+      {sharedToken && (
+        <SharedPlaylistSheet token={sharedToken} onClose={closeSharedPlaylist}
+          onPlayHymn={handlePlayHymn} miniPlayer={miniPlayerNode} hasMiniPlayer={hasMiniPlayer} />
       )}
 
       {!__DEV__ ? <UpdateBanner /> : null}
