@@ -63,8 +63,81 @@ const CLAUDE_TIMEOUT_MS = Number(arg('--claude-timeout', 600000));
 const REPORT_PATH = arg('--report', path.join(__dirname, '..', 'data', 'album-backfill', 'search-report.md'));
 const ALBUM_MAX_LEN = 40;
 
-const stamp = () => new Date().toISOString().replace('T', ' ').slice(0, 19);
+// 2026-08-04:toISOString() 係 UTC 同本機 HKT 差 8 個鐘(上次三個 script 嘅
+// 同款修正漏咗呢個),改本機時區。
+const stamp = () => {
+  const d = new Date();
+  const pad = (n) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+};
 const log = (...a) => console.log(`[${stamp()}]`, ...a);
+
+// ── 時間窗(2026-08-04 Eric 拍板排程):星期一至六淨係 18:30→翌朝 10:30 先准
+// 跑,即係封鎖一至六 10:30–18:30;星期日全日唔封。同 growLibrary.js 嘅
+// OFFICE_HOURS_BLOCK 同一套語義/同一款實現,方便日後一齊調。launchd 定點
+// 22:00 開跑本身已經喺窗內,呢個 guard 主要係兜 launchd 瞓醒 catch-up fire
+// /人手誤跑呢啲 edge case。──────────────────────────────────────────
+const IGNORE_OFFICE_HOURS = process.argv.includes('--ignore-office-hours');
+const OFFICE_HOURS_BLOCK = {
+  enforce: true,
+  blockedDays: [1, 2, 3, 4, 5, 6], // JS getDay():0=日 1=一...6=六。淨係唔包星期日。
+  startHour: 10, startMinute: 30,  // 10:30 起計入封鎖(inclusive)
+  endHour: 18, endMinute: 30,      // 18:30 起解封(exclusive)
+};
+function isBlockedByOfficeHours(now = new Date()) {
+  if (!OFFICE_HOURS_BLOCK.enforce) return false;
+  const day = now.getDay();
+  if (!OFFICE_HOURS_BLOCK.blockedDays.includes(day)) return false; // 星期日,唔封
+  const minutesNow = now.getHours() * 60 + now.getMinutes();
+  const startMin = OFFICE_HOURS_BLOCK.startHour * 60 + OFFICE_HOURS_BLOCK.startMinute;
+  const endMin = OFFICE_HOURS_BLOCK.endHour * 60 + OFFICE_HOURS_BLOCK.endMinute;
+  return minutesNow >= startMin && minutesNow < endMin;
+}
+
+// ── last_album_search_attempt 輪換欄(排程前置,C5b② 同一個教訓):唔准淨係
+// ORDER BY id ASC——「搜極都搵唔到」嘅死症 row 會永遠塞住隊頭,夜夜重搜同一
+// 批 30 首,budget 全蝕。每次嘗試(唔理搵唔搵到)都 stamp,候選未試過先行、
+// 試過耐先重試。獨立開新欄唔借用 last_meta_attempt——嗰個係 backfillMeta
+// 自己嘅輪換狀態,兩個 job 候選集有交集,共用會互相干擾對方嘅排隊次序。──
+function hasColumn(db, table, col) {
+  const stmt = db.prepare(`PRAGMA table_info(${table})`);
+  const cols = [];
+  while (stmt.step()) cols.push(stmt.getAsObject().name);
+  stmt.free();
+  return cols.includes(col);
+}
+async function ensureLastAlbumSearchAttemptColumn() {
+  const token = await acquireDbLock('backfillAlbumSearch-migrate');
+  if (!token) { log('⚠ 攞唔到 DB 鎖去加 last_album_search_attempt 欄,收工'); process.exit(1); }
+  try {
+    const db = await openDb();
+    if (!hasColumn(db, 'hymns_all', 'last_album_search_attempt')) {
+      log('ALTER TABLE hymns_all ADD COLUMN last_album_search_attempt TEXT');
+      db.run('ALTER TABLE hymns_all ADD COLUMN last_album_search_attempt TEXT');
+      saveDb(db);
+    }
+  } finally {
+    releaseDbLock(token);
+  }
+}
+// 每個 batch 搜完,冚唪唥 stamp 一次(一次鎖寫晒成個 batch,唔逐條攞鎖)。
+// 唔行 writeRow 嗰條路——writeRow 嘅 album guard 會擋咗「淨係想 stamp」嘅
+// miss row。DRY 都照 stamp?唔——dry 唔碰 DB,一致啲。
+async function stampAttempts(ids) {
+  if (DRY || !ids.length) return;
+  const token = await acquireDbLock('backfillAlbumSearch-stamp');
+  if (!token) { log('    ⚠ 攞唔到 DB 鎖 stamp attempt,呢個 batch 下次可能重複入隊'); return; }
+  try {
+    const freshDb = await openDb();
+    const ts = stamp();
+    for (const id of ids) {
+      freshDb.run('UPDATE hymns_all SET last_album_search_attempt = ? WHERE id = ?', [ts, id]);
+    }
+    saveDb(freshDb);
+  } finally {
+    releaseDbLock(token);
+  }
+}
 const jitter = (base) => Math.round(base * (0.7 + Math.random() * 0.9));
 
 function mdEscape(s) {
@@ -83,7 +156,7 @@ function pickCandidates(db) {
                           WHERE (album IS NULL OR trim(album) = '')
                             AND COALESCE(album_source,'') NOT IN ('manual','legacy')
                             AND status = 'ok'
-                          ORDER BY id ASC`);
+                          ORDER BY last_album_search_attempt IS NOT NULL, last_album_search_attempt ASC, id ASC`);
   return LIMIT ? rows.slice(0, LIMIT) : rows;
 }
 
@@ -201,6 +274,13 @@ async function writeRow(id, fields) {
 async function main() {
   log(`backfillAlbumSearch:limit=${LIMIT} dry=${DRY}(⚠️ Phase C —— 等 Phase A/B 清完先應該行呢個 script)`);
 
+  if (!IGNORE_OFFICE_HOURS && isBlockedByOfficeHours()) {
+    log('而家係辦公時間封鎖窗(一至六 10:30–18:30),收工唔跑(--ignore-office-hours 可越過)');
+    return;
+  }
+
+  await ensureLastAlbumSearchAttemptColumn();
+
   const db = await openDb();
   const candidates = pickCandidates(db);
   log(`候選(album 空):${candidates.length} 首`);
@@ -231,6 +311,8 @@ async function main() {
         results.push({ row, album: hit.album, sourceUrl: hit.source_url, written: ok });
       }
     }
+    // 輪換 stamp:成個 batch(唔理 hit/miss/CLI 出錯)都當「試過」,下次隊尾排。
+    await stampAttempts(batch.map((r) => r.id));
     if (i + BATCH_SIZE < candidates.length) await sleep(jitter(3500));
   }
 

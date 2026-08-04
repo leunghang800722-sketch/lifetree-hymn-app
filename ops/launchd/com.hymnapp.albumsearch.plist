@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.hymnapp.albumsearch</string>
+
+    <!-- Phase C album web search backfill 夜晚排程(ALBUM-BACKFILL-ACCEL-PLAN.md
+         §3 Phase C,2026-08-04 Eric 拍板方案A):headless `claude -p
+         --allowedTools WebSearch` 逐批搜殘餘歌嘅專輯,有真實出處(source_url)
+         先准填,album_source='search'。
+
+         時間窗(Eric 指定):星期一至六 18:30→翌朝 10:30 先准跑,星期日全日
+         可以——script 內置 isBlockedByOfficeHours guard(同 growLibrary
+         OFFICE_HOURS_BLOCK 同一套語義),launchd 瞓醒 catch-up fire 跌入
+         封鎖窗都會自己收工,唔使靠 plist 排程時間單邊把關。
+
+         ⚠️ 時段揀 22:00:實測每首 ~80s,--limit 30 ≈ 42 分鐘,22:00 開波
+         22:45 前完場——避開 backfillmeta(17:30)/alignbackfill(18:40)兩個
+         重頭 job,同 fetchlyrics 21:00/23:00 兩輪錯開(fetchlyrics 係
+         yt-dlp 向,呢個 job 係 claude CLI 向,資源 profile 唔同,真撞到
+         都係 DB 鎖層面互斥,acquireDbLock 攞唔到就跳過,唔會 lost-update)。
+         候選 last_album_search_attempt 輪換(C5b② 同一個教訓),搜唔到嘅
+         死症 row 唔會塞住隊頭夜夜重搜。
+
+         `--report /tmp/hymn_albumsearch-report.md`(跟 backfillmeta C5c
+         followup① 慣例):排程 report 唔寫落 backend/data/,唔好夜夜污糟
+         working tree;人手審計用嘅試批 report 先留 git。 -->
+    <key>ProgramArguments</key>
+    <array>
+        <string>/opt/homebrew/bin/node</string>
+        <string>/Users/macbookpro/.openclaw/workspace/hymn-app/backend/scripts/backfillAlbumSearch.js</string>
+        <string>--limit</string>
+        <string>30</string>
+        <string>--report</string>
+        <string>/tmp/hymn_albumsearch-report.md</string>
+    </array>
+
+    <key>WorkingDirectory</key>
+    <string>/Users/macbookpro/.openclaw/workspace/hymn-app/backend</string>
+
+    <!-- ⚠️ 一定要 set PATH:launchd 預設冇 /opt/homebrew/bin,呢個 job 要行
+         `claude` CLI(web search 主力)。唔 set 會 command-not-found、
+         checkClaudeCliAvailable() fail 之後靜靜哋收 0 首。 -->
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>PATH</key>
+        <string>/opt/homebrew/bin:/opt/homebrew/sbin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+    </dict>
+
+    <key>StartCalendarInterval</key>
+    <dict>
+        <key>Hour</key><integer>22</integer>
+        <key>Minute</key><integer>0</integer>
+    </dict>
+
+    <key>RunAtLoad</key>
+    <false/>
+    <key>KeepAlive</key>
+    <false/>
+
+    <key>StandardOutPath</key>
+    <string>/tmp/hymn_albumsearch.log</string>
+    <key>StandardErrorPath</key>
+    <string>/tmp/hymn_albumsearch.log</string>
+</dict>
+</plist>
