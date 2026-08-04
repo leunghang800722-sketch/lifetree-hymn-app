@@ -15,11 +15,15 @@
          OFFICE_HOURS_BLOCK 同一套語義),launchd 瞓醒 catch-up fire 跌入
          封鎖窗都會自己收工,唔使靠 plist 排程時間單邊把關。
 
-         ⚠️ 時段揀 22:00:實測每首 ~80s,--limit 30 ≈ 42 分鐘,22:00 開波
-         22:45 前完場——避開 backfillmeta(17:30)/alignbackfill(18:40)兩個
-         重頭 job,同 fetchlyrics 21:00/23:00 兩輪錯開(fetchlyrics 係
-         yt-dlp 向,呢個 job 係 claude CLI 向,資源 profile 唔同,真撞到
-         都係 DB 鎖層面互斥,acquireDbLock 攞唔到就跳過,唔會 lost-update)。
+         ⚠️ 節奏(2026-08-04 Eric 更正):**每 1 小時跑 20 首**,唔係每晚一轆。
+         plist 每小時 :15 fire(24 個觸發點),日頭跌入封鎖窗嗰啲俾 script
+         guard 自動收工——同 growlibrary「高頻 fire + 內部窗口 guard」同一套。
+         揀 :15 係避開 fetchlyrics 嘅 :00/:40 觸發點;18:15 嗰輪俾 guard 擋
+         (窗 18:30 先開),所以平日夜晚實際首輪係 19:15,自然避埋 alignbackfill
+         (18:40)個頭。每輪 20×~80s ≈ 27 分鐘,:15 開 :45 前完場,唔會疊到
+         下一輪(真係拖過鐘,DB 鎖層面互斥 + writeRow re-check,唔會 lost-update,
+         最多重複搜幾首)。fetchlyrics 係 yt-dlp 向、呢個 job 係 claude CLI 向,
+         資源 profile 唔同。
          候選 last_album_search_attempt 輪換(C5b② 同一個教訓),搜唔到嘅
          死症 row 唔會塞住隊頭夜夜重搜。
 
@@ -31,7 +35,7 @@
         <string>/opt/homebrew/bin/node</string>
         <string>/Users/macbookpro/.openclaw/workspace/hymn-app/backend/scripts/backfillAlbumSearch.js</string>
         <string>--limit</string>
-        <string>30</string>
+        <string>20</string>
         <string>--report</string>
         <string>/tmp/hymn_albumsearch-report.md</string>
     </array>
@@ -49,10 +53,104 @@
     </dict>
 
     <key>StartCalendarInterval</key>
-    <dict>
-        <key>Hour</key><integer>22</integer>
-        <key>Minute</key><integer>0</integer>
-    </dict>
+    <array>
+        <dict>
+            <key>Hour</key><integer>0</integer>
+            <key>Minute</key><integer>15</integer>
+        </dict>
+        <dict>
+            <key>Hour</key><integer>1</integer>
+            <key>Minute</key><integer>15</integer>
+        </dict>
+        <dict>
+            <key>Hour</key><integer>2</integer>
+            <key>Minute</key><integer>15</integer>
+        </dict>
+        <dict>
+            <key>Hour</key><integer>3</integer>
+            <key>Minute</key><integer>15</integer>
+        </dict>
+        <dict>
+            <key>Hour</key><integer>4</integer>
+            <key>Minute</key><integer>15</integer>
+        </dict>
+        <dict>
+            <key>Hour</key><integer>5</integer>
+            <key>Minute</key><integer>15</integer>
+        </dict>
+        <dict>
+            <key>Hour</key><integer>6</integer>
+            <key>Minute</key><integer>15</integer>
+        </dict>
+        <dict>
+            <key>Hour</key><integer>7</integer>
+            <key>Minute</key><integer>15</integer>
+        </dict>
+        <dict>
+            <key>Hour</key><integer>8</integer>
+            <key>Minute</key><integer>15</integer>
+        </dict>
+        <dict>
+            <key>Hour</key><integer>9</integer>
+            <key>Minute</key><integer>15</integer>
+        </dict>
+        <dict>
+            <key>Hour</key><integer>10</integer>
+            <key>Minute</key><integer>15</integer>
+        </dict>
+        <dict>
+            <key>Hour</key><integer>11</integer>
+            <key>Minute</key><integer>15</integer>
+        </dict>
+        <dict>
+            <key>Hour</key><integer>12</integer>
+            <key>Minute</key><integer>15</integer>
+        </dict>
+        <dict>
+            <key>Hour</key><integer>13</integer>
+            <key>Minute</key><integer>15</integer>
+        </dict>
+        <dict>
+            <key>Hour</key><integer>14</integer>
+            <key>Minute</key><integer>15</integer>
+        </dict>
+        <dict>
+            <key>Hour</key><integer>15</integer>
+            <key>Minute</key><integer>15</integer>
+        </dict>
+        <dict>
+            <key>Hour</key><integer>16</integer>
+            <key>Minute</key><integer>15</integer>
+        </dict>
+        <dict>
+            <key>Hour</key><integer>17</integer>
+            <key>Minute</key><integer>15</integer>
+        </dict>
+        <dict>
+            <key>Hour</key><integer>18</integer>
+            <key>Minute</key><integer>15</integer>
+        </dict>
+        <dict>
+            <key>Hour</key><integer>19</integer>
+            <key>Minute</key><integer>15</integer>
+        </dict>
+        <dict>
+            <key>Hour</key><integer>20</integer>
+            <key>Minute</key><integer>15</integer>
+        </dict>
+        <dict>
+            <key>Hour</key><integer>21</integer>
+            <key>Minute</key><integer>15</integer>
+        </dict>
+        <dict>
+            <key>Hour</key><integer>22</integer>
+            <key>Minute</key><integer>15</integer>
+        </dict>
+        <dict>
+            <key>Hour</key><integer>23</integer>
+            <key>Minute</key><integer>15</integer>
+        </dict>
+    </array>
 
     <key>RunAtLoad</key>
     <false/>
