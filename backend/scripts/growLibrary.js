@@ -156,7 +156,14 @@ const PAUSED_LANGUAGES = new Set(['英文']);
 const PAUSED_KIDS_LANGUAGES = new Set(['英文']);
 
 const today = () => new Date().toISOString().slice(0, 10);
-const stamp = () => new Date().toISOString().replace('T', ' ').slice(0, 19);
+// 2026-08-04:舊版用 toISOString()(UTC),同本機 HKT 差 8 個鐘,睇 log 好易
+// 誤判做「stall咗成8個鐘」。改用本機時區,寫法跟 todayLocal()。純改
+// log 顯示格式,唔影響 today() 呢啲寫落 DB 嘅邏輯(唔郁佢)。
+const stamp = () => {
+  const d = new Date();
+  const pad = (n) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+};
 const log = (...a) => console.log(`[${stamp()}]`, ...a);
 
 // 2026-07-31 Fable 5 結構性修復:每日一次自動 reconcile 嘅「今日做過未」marker,
