@@ -247,3 +247,74 @@ export async function adminListDelistedHymns(token) {
   const json = await adminJson(res, '讀取失敗');
   return json.items;
 }
+
+// ── 好友 / 邀請碼 APIs(MEMBERSHIP-PHASE4-FRIENDS-INVITES-PLAN)─────────────
+// 同 admin* 一樣:唔用檔頭嗰套 authHeaders()/getToken()(AsyncStorage 舊存
+// 儲,真正登入唔會寫入),caller 由 useAuth().getToken() 傳 token 落嚟。
+function meAuthHeaders(token, withJson = false) {
+  const headers = { Authorization: `Bearer ${token}` };
+  if (withJson) headers['Content-Type'] = 'application/json';
+  return headers;
+}
+
+async function meJson(res, fallbackMsg) {
+  const json = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    const err = new Error(json.message || json.error || fallbackMsg);
+    err.code = json.error;
+    throw err;
+  }
+  return json;
+}
+
+// { found, relation: 'none'|'self'|'friends'|'pending_out'|'pending_in' }
+export async function friendsLookup(token, phone) {
+  const res = await fetch(`${API_BASE}/api/friends/lookup`, {
+    method: 'POST', headers: meAuthHeaders(token, true), body: JSON.stringify({ phone }),
+  });
+  return meJson(res, '搵唔到');
+}
+
+// { ok, status: 'pending'|'accepted' }
+export async function friendsRequest(token, phone) {
+  const res = await fetch(`${API_BASE}/api/friends/request`, {
+    method: 'POST', headers: meAuthHeaders(token, true), body: JSON.stringify({ phone }),
+  });
+  return meJson(res, '發出請求失敗');
+}
+
+// { friends: [{user_id,username}], incoming: [{user_id,username,created_at}], outgoing: [{user_id,phone_tail,created_at}] }
+export async function friendsList(token) {
+  const res = await fetch(`${API_BASE}/api/friends`, { headers: meAuthHeaders(token) });
+  return meJson(res, '讀取失敗');
+}
+
+export async function friendsAccept(token, userId) {
+  const res = await fetch(`${API_BASE}/api/friends/${userId}/accept`, { method: 'POST', headers: meAuthHeaders(token) });
+  return meJson(res, '接受失敗');
+}
+
+// 一個 API 三用:拒絕請求 / 收回自己嘅請求 / 解除好友
+export async function friendsDelete(token, userId) {
+  const res = await fetch(`${API_BASE}/api/friends/${userId}`, { method: 'DELETE', headers: meAuthHeaders(token) });
+  return meJson(res, '操作失敗');
+}
+
+// { shares: [{ token, name, song_count }] }
+export async function friendsShares(token, userId) {
+  const res = await fetch(`${API_BASE}/api/friends/${userId}/shares`, { headers: meAuthHeaders(token) });
+  return meJson(res, '讀取失敗');
+}
+
+// 錯誤碼 → 用戶睇得明嘅文案(同 adminErrorMessage 一致 pattern)
+export function friendsErrorMessage(e, fallback) {
+  switch (e?.code) {
+    case 'rate_limited': return '操作太密,等一陣先';
+    case 'too_many_pending': return '未應嘅請求太多,等對方回應先';
+    case 'not_found': return '搵唔到呢個號碼';
+    case 'bad_phone': return '電話號碼格式唔啱';
+    case 'quota_full': return '未用嘅邀請碼已經用晒';
+    case 'server_error': return '伺服器出錯,請再試';
+    default: return e?.message || fallback;
+  }
+}

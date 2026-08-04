@@ -17,8 +17,11 @@ import { useAuth } from '../context/AuthContext';
 import { useAddToPlaylist } from '../components/AddToPlaylistSheet';
 import AvatarButton from '../components/AvatarButton';
 import PlaylistDetailSheet from './PlaylistDetailSheet';
+import SharedPlaylistSheet from './SharedPlaylistSheet';
+import AddFriendSheet from './AddFriendSheet';
+import FriendSharesSheet from './FriendSharesSheet';
 import { getDisplayTitle } from '../utils/displayTitle';
-import { adminListDelistedHymns } from '../api';
+import { adminListDelistedHymns, friendsList, friendsAccept, friendsDelete, friendsErrorMessage } from '../api';
 import { useCachedHymns } from '../hooks/useCachedHymns';
 
 function Cover({ youtubeId, size = 52 }) {
@@ -62,6 +65,58 @@ export default function MineScreen({ onPlayHymn, onOpenAuth, onOpenAdminAdd, min
       .finally(() => { if (!cancelled) setDelistedLoading(false); });
     return () => { cancelled = true; };
   }, [tab, isAdmin, getToken, cachedHymns]);
+
+  // ── 好友(MEMBERSHIP-PHASE4-FRIENDS-INVITES-PLAN §3.1/3.2)──────────────
+  // incoming>0 要喺 chip 度出紅點,所以登入即刻攞一次(唔淨係入咗 tab 先攞);
+  // 入返 tab 再攞多次做刷新(接受/拒絕完之後嗰啲操作已經自己更新本地
+  // state,呢個 refetch 純粹保底同步多裝置嘅改動)。
+  const [friendsData, setFriendsData] = useState({ friends: [], incoming: [], outgoing: [] });
+  const [friendsLoading, setFriendsLoading] = useState(false);
+  const [addFriendVisible, setAddFriendVisible] = useState(false);
+  const [sharesFor, setSharesFor] = useState(null); // 揀咗邊個好友睇緊佢分享清單
+  const [friendToken, setFriendToken] = useState(null); // 撳咗邊個分享 token,開 SharedPlaylistSheet
+
+  const loadFriends = React.useCallback(() => {
+    if (!user) return;
+    setFriendsLoading(true);
+    friendsList(getToken ? getToken() : null)
+      .then((r) => setFriendsData({ friends: r.friends || [], incoming: r.incoming || [], outgoing: r.outgoing || [] }))
+      .catch(() => {})
+      .finally(() => setFriendsLoading(false));
+  }, [user, getToken]);
+
+  useEffect(() => { loadFriends(); }, [user]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { if (tab === 'friends') loadFriends(); }, [tab]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const handleAccept = (friend) => {
+    friendsAccept(getToken ? getToken() : null, friend.user_id)
+      .then(loadFriends)
+      .catch((e) => Alert.alert('接受失敗', friendsErrorMessage(e, '請再試')));
+  };
+  // ✕(拒絕/收回)—— 靜靜刪行,對方唔知(§8 問題4);收回自己 outgoing 唔使確認,
+  // 拒絕 incoming 都唔使(對方冇通知,冇尷尬)。
+  const handleReject = (friend) => {
+    friendsDelete(getToken ? getToken() : null, friend.user_id)
+      .then(loadFriends)
+      .catch((e) => Alert.alert('操作失敗', friendsErrorMessage(e, '請再試')));
+  };
+  // 解除好友要二次確認(同刪清單一致做法,§3.2)
+  const handleUnfriend = (friend) => {
+    Alert.alert('解除好友', `同「${friend.username}」解除好友關係?`, [
+      { text: '取消', style: 'cancel' },
+      {
+        text: '解除', style: 'destructive',
+        onPress: () => friendsDelete(getToken ? getToken() : null, friend.user_id).then(loadFriends).catch((e) => Alert.alert('操作失敗', friendsErrorMessage(e, '請再試'))),
+      },
+    ]);
+  };
+  const showFriendMenu = (friend) => {
+    Alert.alert(friend.username, null, [
+      { text: '睇分享清單', onPress: () => setSharesFor(friend) },
+      { text: '解除好友', style: 'destructive', onPress: () => handleUnfriend(friend) },
+      { text: '取消', style: 'cancel' },
+    ]);
+  };
 
   // 清單行 ⋯ 掣:得兩個選項,native Alert 夠用,唔使另開 action sheet
   // (同下面帳戶卡登出一致做法)。
@@ -128,6 +183,9 @@ export default function MineScreen({ onPlayHymn, onOpenAuth, onOpenAdminAdd, min
         {[
           { k: 'favorites', label: `最愛 ${favorites.length}`, icon: 'favorite', kind: 'tab' },
           { k: 'playlists', label: `我嘅清單 ${playlists.length}`, icon: 'queue-music', kind: 'tab' },
+          // 好友(§3.1)—— 登入先顯示(未登入本身有 CTA 卡引導登入,唔使多個入口);
+          // incoming>0 帶紅點,唔出數字。
+          ...(user ? [{ k: 'friends', label: '好友', icon: 'group', kind: 'tab', badge: friendsData.incoming.length > 0 }] : []),
           ...(isAdmin ? [
             { k: 'admin-add', label: 'URL加歌', icon: 'add-link', kind: 'action', onPress: () => onOpenAdminAdd && onOpenAdminAdd() },
             { k: 'delisted', label: '已下架', icon: 'visibility-off', kind: 'tab' },
@@ -143,6 +201,7 @@ export default function MineScreen({ onPlayHymn, onOpenAuth, onOpenAdminAdd, min
             >
               <MaterialIcons name={s.icon} size={16} color={active ? COLORS.background : COLORS.textSecondary} />
               <Text style={[styles.segText, active && styles.segTextActive]}>{s.label}</Text>
+              {s.badge ? <View style={styles.segBadge} /> : null}
             </TouchableOpacity>
           );
         })}
@@ -224,6 +283,91 @@ export default function MineScreen({ onPlayHymn, onOpenAuth, onOpenAdminAdd, min
             }
           />
         )
+      ) : tab === 'friends' ? (
+        friendsLoading && !friendsData.friends.length && !friendsData.incoming.length && !friendsData.outgoing.length ? (
+          <View style={styles.loadingWrap}>
+            <ActivityIndicator color={COLORS.accent} />
+          </View>
+        ) : (
+          <FlatList
+            // §3.2:三段式,一個 FlatList 搞掂——攤平做一個 data array,靠 _type
+            // 分流 renderItem。段落次序:好友請求(有先出)/ 我嘅好友 / 等緊接受(有先出)。
+            data={[
+              ...(friendsData.incoming.length ? [
+                { _type: 'header', key: 'h-incoming', title: `好友請求(${friendsData.incoming.length})` },
+                ...friendsData.incoming.map((f) => ({ _type: 'incoming', ...f })),
+              ] : []),
+              ...(friendsData.friends.length ? [
+                { _type: 'header', key: 'h-friends', title: '我嘅好友' },
+                ...friendsData.friends.map((f) => ({ _type: 'friend', ...f })),
+              ] : []),
+              ...(friendsData.outgoing.length ? [
+                { _type: 'header', key: 'h-outgoing', title: '等緊對方接受' },
+                ...friendsData.outgoing.map((f) => ({ _type: 'outgoing', ...f })),
+              ] : []),
+            ]}
+            keyExtractor={(item, idx) => item.key || `${item._type}_${item.user_id ?? idx}`}
+            contentContainerStyle={{ paddingBottom: 24 }}
+            ListHeaderComponent={
+              <TouchableOpacity style={styles.newRow} onPress={() => setAddFriendVisible(true)} activeOpacity={0.7}>
+                <MaterialIcons name="person-add" size={22} color={COLORS.accent} />
+                <Text style={styles.newText}>加好友</Text>
+              </TouchableOpacity>
+            }
+            renderItem={({ item }) => {
+              if (item._type === 'header') return <Text style={styles.sectionHeader}>{item.title}</Text>;
+              const initial = (item.username || '?').charAt(0).toUpperCase();
+              if (item._type === 'incoming') {
+                return (
+                  <View style={styles.row}>
+                    <View style={styles.friendAvatar}><Text style={styles.friendAvatarText}>{initial}</Text></View>
+                    <View style={styles.rowInfo}>
+                      <Text style={styles.rowTitle} numberOfLines={1}>{item.username}</Text>
+                    </View>
+                    <TouchableOpacity onPress={() => handleAccept(item)} style={styles.pillBtn} activeOpacity={0.75}>
+                      <Text style={styles.pillBtnText}>接受</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity onPress={() => handleReject(item)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} style={styles.rowAction}>
+                      <MaterialIcons name="close" size={20} color={COLORS.textSecondary} />
+                    </TouchableOpacity>
+                  </View>
+                );
+              }
+              if (item._type === 'outgoing') {
+                return (
+                  <View style={styles.row}>
+                    <View style={styles.friendAvatar}><MaterialIcons name="person-outline" size={20} color={COLORS.textSecondary} /></View>
+                    <View style={styles.rowInfo}>
+                      <Text style={styles.rowTitle} numberOfLines={1}>尾號 {item.phone_tail}(等緊接受)</Text>
+                    </View>
+                    <TouchableOpacity onPress={() => handleReject(item)} style={styles.pillBtnOutline} activeOpacity={0.75}>
+                      <Text style={styles.pillBtnOutlineText}>收回</Text>
+                    </TouchableOpacity>
+                  </View>
+                );
+              }
+              // friend
+              return (
+                <TouchableOpacity style={styles.row} activeOpacity={0.7} onPress={() => setSharesFor(item)}>
+                  <View style={styles.friendAvatar}><Text style={styles.friendAvatarText}>{initial}</Text></View>
+                  <View style={styles.rowInfo}>
+                    <Text style={styles.rowTitle} numberOfLines={1}>{item.username}</Text>
+                  </View>
+                  <TouchableOpacity onPress={() => showFriendMenu(item)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} style={styles.rowAction}>
+                    <MaterialIcons name="more-vert" size={22} color={COLORS.textSecondary} />
+                  </TouchableOpacity>
+                </TouchableOpacity>
+              );
+            }}
+            ListEmptyComponent={
+              <View style={styles.empty}>
+                <MaterialIcons name="group" size={40} color={COLORS.textSecondary} />
+                <Text style={styles.emptyText}>仲未有好友</Text>
+                <Text style={styles.emptyHint}>撳上面「加好友」用電話號碼搵朋友</Text>
+              </View>
+            }
+          />
+        )
       ) : (
         <FlatList
           data={playlists}
@@ -270,6 +414,13 @@ export default function MineScreen({ onPlayHymn, onOpenAuth, onOpenAdminAdd, min
           見 App.js handleOpenFullScreen 上面嗰段註解)。 */}
       <PlaylistDetailSheet playlistId={detailId} onClose={() => setDetailId(null)} onPlayHymn={onPlayHymn}
         onOpenAuth={onOpenAuth} miniPlayer={miniPlayer} hasMiniPlayer={hasMiniPlayer} />
+
+      {/* 好友(§3.2)—— 加好友 sheet、好友分享清單列表、撳入去開現成 SharedPlaylistSheet */}
+      <AddFriendSheet visible={addFriendVisible} onClose={() => setAddFriendVisible(false)} onRequested={loadFriends} />
+      <FriendSharesSheet friend={sharesFor} onClose={() => setSharesFor(null)}
+        onOpenToken={(token) => { setSharesFor(null); setFriendToken(token); }} />
+      <SharedPlaylistSheet token={friendToken} onClose={() => setFriendToken(null)} onPlayHymn={onPlayHymn}
+        miniPlayer={miniPlayer} hasMiniPlayer={hasMiniPlayer} />
     </View>
   );
 }
@@ -326,4 +477,20 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.accent, borderRadius: 20,
   },
   playAllText: { color: COLORS.background, fontWeight: '700', fontSize: 15, marginLeft: 4 },
+  // 好友 chip 紅點(§3.1,incoming>0 先出,唔出數字)
+  segBadge: {
+    position: 'absolute', top: 4, right: 6,
+    width: 8, height: 8, borderRadius: 4, backgroundColor: COLORS.danger,
+  },
+  // 好友 tab(§3.2)
+  sectionHeader: { ...TYPOGRAPHY.artist, fontSize: 12, fontWeight: '700', color: COLORS.textSecondary, paddingHorizontal: 16, paddingTop: 14, paddingBottom: 6 },
+  friendAvatar: {
+    width: 40, height: 40, borderRadius: 20,
+    backgroundColor: COLORS.cardLight, alignItems: 'center', justifyContent: 'center',
+  },
+  friendAvatarText: { fontSize: 16, fontWeight: '700', color: COLORS.textPrimary },
+  pillBtn: { backgroundColor: COLORS.accent, borderRadius: 14, paddingHorizontal: 14, paddingVertical: 6, marginLeft: 8 },
+  pillBtnText: { color: COLORS.background, fontWeight: '700', fontSize: 13 },
+  pillBtnOutline: { borderWidth: 1, borderColor: COLORS.border, borderRadius: 14, paddingHorizontal: 14, paddingVertical: 6 },
+  pillBtnOutlineText: { color: COLORS.textSecondary, fontWeight: '700', fontSize: 13 },
 });
