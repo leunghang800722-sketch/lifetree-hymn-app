@@ -1,42 +1,20 @@
 # backfillAlbumFromCatalog 報告 —— Phase B(sop.org catalog)
 
-> ALBUM-BACKFILL-ACCEL-PLAN.md Commit 3。org=讚美之泉/讚美之泉兒童/讚美之泉粵語。生成時間:2026-08-04 05:19:00
+> ALBUM-BACKFILL-ACCEL-PLAN.md Commit 3。org=讚美之泉/讚美之泉兒童/讚美之泉粵語/讚美之泉 Stream Of Praise Music Ministries。生成時間:2026-08-04 14:34:55
 
-- 候選 row 總數:1397
-- match 到單一專輯且已寫(或 --dry 模擬):25
+- 候選 row 總數:1399
+- match 到單一專輯且已寫(或 --dry 模擬):2
 - match 到但撞多隻專輯(衝突,冇寫):170
-- match 到但 DB 已有 album(冇覆寫):454
-- catalog 搵唔到:748
+- match 到但 DB 已有 album(冇覆寫):468
+- match 到但 album_source=manual/legacy(受保護,冇覆寫):9
+- catalog 搵唔到:750
 
 ## 已寫(或 --dry 模擬)清單
 
 | id | youtube_id | title | album |
 |---|---|---|---|
-| 4229 | Locik5cCLIo | 今天是神所定的日子 This Is the Day (That Our God Has Made) | 唱出耶穌的偉大 |
-| 4232 | kdW2nYVU8OY | 唱出耶穌的偉大 I Will Sing of Your Greatness | 唱出耶穌的偉大 |
-| 4233 | IFk08np_3sY | 禱告！禱告！天父都知道 I Pray, I Pray, for He Knows My Heart | 唱出耶穌的偉大 |
-| 4234 | wptN5VPRU-A | 每天住在祢裡面 Each Day Abiding in You | 唱出耶穌的偉大 |
-| 4237 | LUtYcmIqek0 | 今天是神所定的日子 This Is the Day (That Our God Has Made) | 唱出耶穌的偉大 |
-| 4239 | 1JwrN_s6Tuc | 每天住在祢裡面 Each Day Abiding in You | 唱出耶穌的偉大 |
-| 4240 | wBBlIB0lG4w | 唱出耶穌的偉大 I Will Sing of Your Greatness | 唱出耶穌的偉大 |
-| 4250 | r0SRHwtAfn8 | 敬畏上帝的人有福 Happy Are Those Who Fear The Lord | 耶穌是我最好的朋友 |
-| 4252 | JzpzWnXC-lA | 耶穌是我最好的朋友 My Very Best Friend | 耶穌是我最好的朋友 |
-| 4253 | HgUebKzMuBI | 跟隨祢步伐 (向前向後、向左向右) Follow After You (To The Front And Back) | 耶穌是我最好的朋友 |
-| 4254 | R439SvTJUrM | 小王子、小公主 Princes And Princesses | 耶穌是我最好的朋友 |
-| 4257 | vt5jXALBpEM | 小王子、小公主 Princes And Princesses | 耶穌是我最好的朋友 |
-| 4259 | ulPTZnyOkak | 敬畏上帝的人有福 Happy Are Those Who Fear The Lord | 耶穌是我最好的朋友 |
-| 4262 | Ll2po8K89Ik | 跟隨祢步伐 (向前向後、向左向右) Follow After You (To The Front And Back) | 耶穌是我最好的朋友 |
-| 4264 | zWDZ7TSykgM | 耶穌是我最好的朋友 My Very Best Friend | 耶穌是我最好的朋友 |
-| 4265 | yGYSCEdz8N4 | 主耶穌，謝謝祢 My Jesus , Thank You | 耶穌是我最好的朋友 |
-| 4274 | PS0htQB9dwc | 萬物都來唱哈利路亞 All Creation Sings Hallelujah | 耶穌是我最好的朋友 |
-| 4992 | QU6JUsWSmb8 | 【聖誕特別單曲】榮耀歸於至高真神 All The Glory To The Most High | 聖誕EP特輯 |
-| 4998 | cyWZbe3RDS8 | 榮耀歸於至高真神 All The Glory To The Most High | 聖誕EP特輯 |
-| 5001 | a5P_6v5Fn6U | 愛的約定 The Promise Of Love | 聖誕EP特輯 |
-| 5066 | Jk3D7Arq8T0 | 【聖誕特別版】在至高之處 In the Highest | 我要看見 |
-| 5067 | VajFZVKyd48 | 【聖誕特別單曲】愛的約定 The Promise Of Love | 聖誕EP特輯 |
-| 5647 | VHmzXIMGvhc | 只需要祢 All I Need - SOP NEXT | High to the Sky |
-| 6536 | l1rHyDtS7eE | 生命的話語 | 最珍貴的角落 |
-| 6543 | BPwc-voAEpA | 耶和華我的磐石 | 不要放棄．滿有能力 |
+| 4982 | CiZG2oPGfko | 來歡呼讚美 Come and Worship | 沙漠中的讚美 |
+| 4984 | iCY_YB1jouY | 喜樂泉源 Fountain of Joy | 沙漠中的讚美 |
 
 ## 衝突清單(撞多隻專輯,人手覆核)
 
@@ -213,4 +191,5 @@
 | 6541 | Do7NwFKVpgw | 寶貴十架 | 寶貴十架 / 認識祢真好 |
 | 6542 | wh6WwSrlkhw | 恩典之路 | 不要放棄．滿有能力 / 新造的人 |
 
-(catalog 搵唔到嘅 748 首、DB 已有 album 冇覆寫嘅 454 首,唔逐條列,見上面統計數字。)
+(catalog 搵唔到嘅 750 首、DB 已有 album 冇覆寫嘅 468 首、
+album_source=manual/legacy 受保護嘅 9 首,唔逐條列,見上面統計數字。)

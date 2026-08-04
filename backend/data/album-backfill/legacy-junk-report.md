@@ -1,6 +1,6 @@
 # legacy album_source 垃圾值清理報告
 
-> ALBUM-BACKFILL-ACCEL-PLAN.md Opus 5 擴展批次驗收 followup①。生成時間:2026-08-04 14:26:14(--dry,DB 未寫入)
+> ALBUM-BACKFILL-ACCEL-PLAN.md Opus 5 擴展批次驗收 followup①。生成時間:2026-08-04 14:28:28(已真寫 DB)
 
 - album_source='legacy' 總數:259
 - (a) 完全垃圾,清空(album='' album_source=''):50
