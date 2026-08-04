@@ -76,7 +76,11 @@ const DELAY_MS = Number(arg('--delay', 4000));
 // 次 resolve/tick 跑咗成日都零事故,而家 curate 嗰 6 個額度完全冧咗出嚟
 // 冇用 —— 將 discover 拉到 9(3 per 語言),總 resolve 量都仲喺返嗰個
 // **已經證明穩陣咗幾日**嘅上限之內,唔係新嘅冒險。
-const DISCOVER_BUDGET = Number(arg('--discover-budget', 9));
+// 2026-08-01 Eric 拍板 9→12:提速方案A補完8個招牌大團channel後,單日發現
+// 真欠收3,146首(讚美之泉/約書亞樂團兩條就佔2,192),源頭第一次由「枯竭」
+// 變「爆」,Fable5原方案F項「roster擴大後先加budget」條件而家先至成立。
+// 單次節奏(concurrency 1/jitter/斷路器)完全冇郁,淨係加呢一個數。
+const DISCOVER_BUDGET = Number(arg('--discover-budget', 12));
 const STATUS_ONLY = process.argv.includes('--status');
 const IGNORE_WINDOW = process.argv.includes('--ignore-window');
 const IGNORE_OFFICE_HOURS = process.argv.includes('--ignore-office-hours');
@@ -466,7 +470,14 @@ async function runDiscoverAll(db, totalBudget) {
 
   const langCandidates = [];
   for (const lang of langs) {
-    let candidates = ACTIVE_GROUPS.filter((g) => g.lang === lang && !g.inPool && g.channel);
+    // 2026-08-01 修:原本 `!g.inPool` 諗住將discover同「已有代表嘅招牌團體」
+    // 分開(inPool:true=淨靠search seed,冇channel、discover幫唔到手)。但
+    // 提速方案A之後,有10個inPool:true團體(ACM/角聲使團/原始和聲/基恩敬拜/
+    // 讚美之泉/約書亞樂團/小羊詩歌/天韻合唱團/泥土音樂/我心旋律)第一次有
+    // 真channel——淨睇`g.channel`存唔存在先係真正有意義嘅gate,`inPool`
+    // 唔再係。舊行為完全冇變(之前inPool:true嘅團體本身冇一個有channel,
+    // 呢個filter係noop;而家先至第一次有實際分別)。
+    let candidates = ACTIVE_GROUPS.filter((g) => g.lang === lang && g.channel);
     if (lang === '兒童') {
       candidates = candidates.filter((g) => !PAUSED_KIDS_LANGUAGES.has(g.kidsLang));
     }
