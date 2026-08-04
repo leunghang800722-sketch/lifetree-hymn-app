@@ -4,6 +4,7 @@ import jwt from 'jsonwebtoken';
 import { JWT_SECRET } from '../lib/authSecret.js';
 import { saveUserDb } from '../lib/userDb.js';
 import { ipLoginLimiter, clientIp } from '../lib/loginRateLimit.js';
+import { REGISTRATION_MODE } from '../lib/registrationMode.js';
 
 const TOKEN_EXPIRY = '30d';
 const SALT_ROUNDS = 10;
@@ -18,6 +19,13 @@ function clearLoginFails(ip) { ipLoginLimiter.clear(ip); }
 
 export default function authRoutes(app, getUserDb) {
   app.post('/api/auth/register', async (req, res) => {
+    // ── 側門封(MEMBERSHIP-PHASE4-FRIENDS-INVITES-PLAN §2.5)─────────────
+    // invite mode 下呢條 email 通道(冇 OTP 冇限速)直接封,唔加邀請碼支援
+    // ——佢係 legacy 路,收埋碼等於留返個冇電話驗證嘅開戶後門。現有 email
+    // 帳戶(opus-verify 等)登入(下面 /api/auth/login)完全唔受影響。
+    if (REGISTRATION_MODE === 'invite') {
+      return res.status(422).json({ error: 'registration_closed', message: '而家要邀請碼註冊,請用電話註冊流程' });
+    }
     try {
       const { username, email, password } = req.body;
       if (!username || !email || !password) {

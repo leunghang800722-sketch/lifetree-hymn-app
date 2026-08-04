@@ -14,6 +14,8 @@ import bcrypt from 'bcryptjs';
 import { JWT_SECRET } from '../lib/authSecret.js';
 import { saveUserDb } from '../lib/userDb.js';
 import { ipLoginLimiter, phoneLoginLimiter, clientIp } from '../lib/loginRateLimit.js';
+import { REGISTRATION_MODE } from '../lib/registrationMode.js';
+import { appendAudit } from '../lib/auditLog.js';
 
 const TOKEN_EXPIRY = '30d';
 const TICKET_EXPIRY = '10m';
@@ -152,6 +154,13 @@ function toUserObject(row) {
   };
 }
 
+// 邀請碼輸入正規化(同 routes/invites.js normalizeCode 一樣嘅正則,兩個 file
+// 各自一份細 helper——照抄唔抽共用,同 normalizePhone 一致嘅取捨)。
+function normalizeInviteCode(raw) {
+  if (typeof raw !== 'string') return '';
+  return raw.replace(/[\s-]/g, '').toUpperCase();
+}
+
 function findUserByPhone(db, phone) {
   const stmt = db.prepare('SELECT id, username, email, phone, role, gender, birth_year, password_hash FROM users WHERE phone = ?');
   stmt.bind([phone]);
@@ -255,10 +264,10 @@ export default function otpAuthRoutes(app, getUserDb) {
     }
   });
 
-  // ── register-phone(新,§2.1/§3.3)────────────────────────────────
+  // ── register-phone(新,§2.1/§3.3;MEMBERSHIP-PHASE4 §2.4 加邀請碼閘)──
   app.post('/api/auth/register-phone', async (req, res) => {
     try {
-      const { ticket, password, username, gender, birthYear } = req.body || {};
+      const { ticket, password, username, gender, birthYear, inviteCode } = req.body || {};
       if (typeof ticket !== 'string') return res.status(401).json({ error: 'ticket_invalid' });
 
       const tv = verifyTicket(ticket);
@@ -274,15 +283,65 @@ export default function otpAuthRoutes(app, getUserDb) {
       const existing = findUserByPhone(db, phone);
       if (existing) return res.status(422).json({ error: 'already_registered', message: '呢個號碼已註冊,請直接登入' });
 
+      // ── 邀請碼閘(MEMBERSHIP-PHASE4-FRIENDS-INVITES-PLAN §2.4)────────
+      // 驗碼(存在、未用、未 revoked)要喺 INSERT user 之前,同開戶做同一個
+      // 邏輯批次(§0.6:預檢喺 invite-check,呢度先係真正消費)。§4 case 9:
+      // 舊 bundle 完全冇送 inviteCode 欄 → 當「請更新 app」處理,唔當「碼錯」。
+      let inviteRow = null;
+      if (REGISTRATION_MODE === 'invite') {
+        const normalized = normalizeInviteCode(inviteCode);
+        if (!normalized) return res.status(422).json({ error: 'invite_required', message: '請更新 app 再註冊' });
+        const stmt = db.prepare('SELECT code, created_by, used_by, revoked FROM invites WHERE code = ?');
+        stmt.bind([normalized]);
+        inviteRow = stmt.step() ? stmt.getAsObject() : null;
+        stmt.free();
+        // 唔存在/revoked 一律 invite_invalid(no oracle,同 invite-check 一致);
+        // 存在但已用 → invite_used(§2.4 流程圖,前端跳返⓪嘅分流靠呢個分開嘅碼)。
+        if (!inviteRow || inviteRow.revoked) {
+          return res.status(422).json({ error: 'invite_invalid', message: '邀請碼唔啱,請問返邀請你嗰位朋友' });
+        }
+        if (inviteRow.used_by !== null && inviteRow.used_by !== undefined) {
+          return res.status(422).json({ error: 'invite_used', message: '呢個邀請碼啱啱俾人用咗' });
+        }
+      }
+
       const hash = await bcrypt.hash(password, SALT_ROUNDS);
       const trimmedUsername = username.trim();
       db.run(
         'INSERT INTO users (username, email, password_hash, phone, gender, birth_year) VALUES (?, ?, ?, ?, ?, ?)',
         [trimmedUsername, `phone_${phone}@placeholder.local`, hash, phone, gender, Number(birthYear)]
       );
-      saveUserDb(db);
 
       const user = findUserByPhone(db, phone);
+
+      if (inviteRow) {
+        // 防雙擊/雙重放(§4 case 6):UPDATE 帶 used_by IS NULL 條件,再核實
+        // 真係改到先算數。單 process/單寫入者理論上呢個窗口開唔到,但呢個
+        // 檢查零成本,寧多做一步。
+        db.run('UPDATE invites SET used_by = ?, used_at = ? WHERE code = ? AND used_by IS NULL', [
+          user.id, new Date().toISOString(), inviteRow.code,
+        ]);
+        if (db.getRowsModified() > 0) {
+          // 邀請 = 自動好友(§2.6)—— accepted,唔使 confirm。
+          const lo = Math.min(user.id, inviteRow.created_by);
+          const hi = Math.max(user.id, inviteRow.created_by);
+          db.run(
+            'INSERT OR IGNORE INTO friendships (user_lo, user_hi, requested_by, status, responded_at) VALUES (?, ?, ?, ?, ?)',
+            [lo, hi, inviteRow.created_by, 'accepted', new Date().toISOString()]
+          );
+          appendAudit({
+            ts: new Date().toISOString(), user_id: inviteRow.created_by, who: `#${inviteRow.created_by}`,
+            action: 'invite_used', code: inviteRow.code, used_by: user.id,
+          });
+        } else {
+          // 極罕見(§4 case 6):兩個人同時撞正用同一個碼。已開嘅戶唔回滾,
+          // 淨係邀請關係冧咗——機率趨近零(單 process 寫入者),留 log 觀察。
+          console.warn('register-phone: invite race — code 已被搶用', inviteRow.code, 'new user id', user.id);
+        }
+      }
+
+      saveUserDb(db);
+
       const token = jwt.sign({ id: user.id, username: user.username }, JWT_SECRET, { expiresIn: TOKEN_EXPIRY });
       res.json({ token, user: toUserObject(user) });
     } catch (e) {
@@ -389,8 +448,10 @@ export default function otpAuthRoutes(app, getUserDb) {
     }
   });
 
-  // 前端可以問一問電話登入通唔通,決定登入頁預設顯示邊個
+  // 前端可以問一問電話登入通唔通,決定登入頁預設顯示邊個;registrationMode
+  // (MEMBERSHIP-PHASE4 §2.4)俾前端決定註冊流程使唔使顯示邀請碼步,將來切
+  // open 唔使再 OTA(§4 case 12)。
   app.get('/api/auth/otp/status', (req, res) => {
-    res.json({ configured: otpConfigured(), channel: PRIMARY_CHANNEL, allowed: ALLOWED_PREFIXES });
+    res.json({ configured: otpConfigured(), channel: PRIMARY_CHANNEL, allowed: ALLOWED_PREFIXES, registrationMode: REGISTRATION_MODE });
   });
 }

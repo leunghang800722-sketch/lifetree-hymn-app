@@ -86,6 +86,18 @@ function initSchema(db) {
     responded_at TEXT,
     PRIMARY KEY (user_lo, user_hi)
   )`);
+
+  // ── 會員系統 Phase 4:邀請碼(MEMBERSHIP-PHASE4-FRIENDS-INVITES-PLAN §2.1)──
+  // 一次性(used_by 一寫入即廢)、冇過期時間——防濫用靠一次性 + quota +
+  // admin revoke,唔靠時限。
+  db.run(`CREATE TABLE IF NOT EXISTS invites (
+    code       TEXT PRIMARY KEY,
+    created_by INTEGER NOT NULL,
+    used_by    INTEGER,
+    used_at    TEXT,
+    revoked    INTEGER DEFAULT 0,
+    created_at TEXT DEFAULT (datetime('now'))
+  )`);
 }
 
 export function saveUserDb(db) {
