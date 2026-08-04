@@ -267,7 +267,10 @@ export default function PhoneLoginScreen({ onClose, onUseEmail }) {
               value={inviteCode}
               // 自動大寫、容忍連字號/空格(§2.7)—— strip 交返俾 backend 嘅
               // normalizeCode 做,呢度淨係大寫化,唔好逼用戶自己刪連字號。
-              onChangeText={(t) => setInviteCode(t.toUpperCase())}
+              // 對齊 AddFriendSheet 現成做法:改緊輸入就清走上一次嘅錯誤訊息
+              // (Opus 5 驗收 2026-08-04 揪出:之前打字唔會清 err,舊錯誤訊息
+              // 一直賴喺度)。
+              onChangeText={(t) => { setInviteCode(t.toUpperCase()); setErr(''); }}
               placeholder="K7NM-WP4E" placeholderTextColor={COLORS.border}
               autoCapitalize="characters" autoFocus maxLength={12}
               onFocus={() => setFocused(true)} onBlur={() => setFocused(false)}

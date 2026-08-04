@@ -325,7 +325,7 @@ export function friendsErrorMessage(e, fallback) {
     case 'too_many_pending': return '未應嘅請求太多,等對方回應先';
     case 'not_found': return '搵唔到呢個號碼';
     case 'bad_phone': return '電話號碼格式唔啱';
-    case 'quota_full': return '未用嘅邀請碼已經用晒';
+    case 'quota_full': return '未用嘅碼用晒先可以再生成';
     case 'server_error': return '伺服器出錯,請再試';
     default: return e?.message || fallback;
   }

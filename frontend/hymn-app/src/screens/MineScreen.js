@@ -76,8 +76,12 @@ export default function MineScreen({ onPlayHymn, onOpenAuth, onOpenAdminAdd, min
   const [sharesFor, setSharesFor] = useState(null); // 揀咗邊個好友睇緊佢分享清單
   const [friendToken, setFriendToken] = useState(null); // 撳咗邊個分享 token,開 SharedPlaylistSheet
 
+  // ⚠️ Opus 5 驗收(2026-08-04)揪出:登出後「好友」tab 殘留上手帳戶嘅好友
+  // 名單 + 「加好友」掣照撳得開,私隱面問題。根因兩處:①呢度冇 user 就淨係
+  // return,冇清 friendsData;②下面 render 分支冇 `user &&` guard(chip 陣列
+  // 嗰邊有,兩邊唔一致)。修法:!user 就清空 friendsData(下面)。
   const loadFriends = React.useCallback(() => {
-    if (!user) return;
+    if (!user) { setFriendsData({ friends: [], incoming: [], outgoing: [] }); return; }
     setFriendsLoading(true);
     friendsList(getToken ? getToken() : null)
       .then((r) => setFriendsData({ friends: r.friends || [], incoming: r.incoming || [], outgoing: r.outgoing || [] }))
@@ -87,6 +91,28 @@ export default function MineScreen({ onPlayHymn, onOpenAuth, onOpenAdminAdd, min
 
   useEffect(() => { loadFriends(); }, [user]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => { if (tab === 'friends') loadFriends(); }, [tab]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // 登出要 reset tab(唔係就會卡喺一個而家已經睇唔到 chip 嘅 tab,底下
+  // render 分支冇 guard 就會殘留上手資料)+ 閂埋任何開緊嘅好友 sheet——
+  // 順手冚埋 admin 登出時卡喺「已下架」tab 嘅同類 latent 問題(Opus 5)。
+  useEffect(() => {
+    if (user) return;
+    setTab((t) => (t === 'friends' || t === 'delisted' ? 'favorites' : t));
+    setAddFriendVisible(false);
+    setSharesFor(null);
+    setFriendToken(null);
+  }, [user]);
+
+  // 發好友請求成功嘅輕量提示(§3.2「請求已發出」;抄 AddToPlaylistSheet 個
+  // toast pattern,呢度冇 Provider,就近喺 MineScreen 自己開一份細嘅)。
+  const [toast, setToast] = useState('');
+  const toastTimer = React.useRef(null);
+  const showToast = React.useCallback((msg) => {
+    setToast(msg);
+    if (toastTimer.current) clearTimeout(toastTimer.current);
+    toastTimer.current = setTimeout(() => setToast(''), 1800);
+  }, []);
+  useEffect(() => () => { if (toastTimer.current) clearTimeout(toastTimer.current); }, []);
 
   const handleAccept = (friend) => {
     friendsAccept(getToken ? getToken() : null, friend.user_id)
@@ -283,7 +309,7 @@ export default function MineScreen({ onPlayHymn, onOpenAuth, onOpenAdminAdd, min
             }
           />
         )
-      ) : tab === 'friends' ? (
+      ) : tab === 'friends' && user ? (
         friendsLoading && !friendsData.friends.length && !friendsData.incoming.length && !friendsData.outgoing.length ? (
           <View style={styles.loadingWrap}>
             <ActivityIndicator color={COLORS.accent} />
@@ -416,11 +442,22 @@ export default function MineScreen({ onPlayHymn, onOpenAuth, onOpenAdminAdd, min
         onOpenAuth={onOpenAuth} miniPlayer={miniPlayer} hasMiniPlayer={hasMiniPlayer} />
 
       {/* 好友(§3.2)—— 加好友 sheet、好友分享清單列表、撳入去開現成 SharedPlaylistSheet */}
-      <AddFriendSheet visible={addFriendVisible} onClose={() => setAddFriendVisible(false)} onRequested={loadFriends} />
+      <AddFriendSheet visible={addFriendVisible} onClose={() => setAddFriendVisible(false)}
+        onRequested={() => { loadFriends(); showToast('請求已發出'); }} />
       <FriendSharesSheet friend={sharesFor} onClose={() => setSharesFor(null)}
         onOpenToken={(token) => { setSharesFor(null); setFriendToken(token); }} />
       <SharedPlaylistSheet token={friendToken} onClose={() => setFriendToken(null)} onPlayHymn={onPlayHymn}
         miniPlayer={miniPlayer} hasMiniPlayer={hasMiniPlayer} />
+
+      {/* 發好友請求成功嘅輕量提示(§3.2)—— 非阻擋,1.8s 後自己收埋 */}
+      {toast ? (
+        <View pointerEvents="none" style={[styles.toastWrap, { bottom: insets.bottom + 24 }]}>
+          <View style={styles.toastBubble}>
+            <MaterialIcons name="check-circle" size={16} color={COLORS.accent} style={{ marginRight: 6 }} />
+            <Text style={styles.toastText} numberOfLines={1}>{toast}</Text>
+          </View>
+        </View>
+      ) : null}
     </View>
   );
 }
@@ -493,4 +530,13 @@ const styles = StyleSheet.create({
   pillBtnText: { color: COLORS.background, fontWeight: '700', fontSize: 13 },
   pillBtnOutline: { borderWidth: 1, borderColor: COLORS.border, borderRadius: 14, paddingHorizontal: 14, paddingVertical: 6 },
   pillBtnOutlineText: { color: COLORS.textSecondary, fontWeight: '700', fontSize: 13 },
+  // 輕量 toast(照 AddToPlaylistSheet 個 pattern)
+  toastWrap: { position: 'absolute', left: 0, right: 0, alignItems: 'center', zIndex: 999, elevation: 999 },
+  toastBubble: {
+    flexDirection: 'row', alignItems: 'center', maxWidth: '86%',
+    backgroundColor: COLORS.card, paddingHorizontal: 16, paddingVertical: 10, borderRadius: 24,
+    borderWidth: 1, borderColor: COLORS.border,
+    shadowColor: '#000', shadowOpacity: 0.3, shadowRadius: 8, shadowOffset: { width: 0, height: 2 },
+  },
+  toastText: { color: COLORS.textPrimary, fontSize: 14, fontWeight: '600' },
 });
