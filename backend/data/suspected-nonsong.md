@@ -76,3 +76,5 @@
 | 4993 | 4dH9gWfOlbY | 2019 讚美之泉兒童敬拜讚美專輯 (10) - 無止境 No Bounds 宣傳短片 | 宣傳短片(ALBUM-BACKFILL-ACCEL-PLAN Opus 5 驗收 followup) | 2026-08-04 13:38:01 |
 | 2868 | 4YdA0nh1pEQ | 【I Believe [我相信]】創意教室 - 讚美之泉兒童敬拜讚美專輯 (10) 無止境 No Bounds | 創意教室(ALBUM-BACKFILL-ACCEL-PLAN Opus 5 驗收 followup) | 2026-08-04 13:38:01 |
 | 712 | x-DysGdCg4k | 官方  - 讚美之泉敬拜讚美 | 非歌名/疑似素材檔名誤植(ALBUM-BACKFILL-ACCEL-PLAN Opus 5 驗收 followup) | 2026-08-04 13:38:01 |
+| 6064 | gqgD3BKNy9k | 角聲使團《源來有祢》 CD Promotional Video | CD宣傳片(ALBUM-BACKFILL-ACCEL-PLAN Opus 5 擴展批次驗收 followup) | 2026-08-04 14:26:26 |
+| 6055 | BEleyHJDPBE | 角聲使團 -《全能至聖者》@ 越南培靈佈道會 (with 詩班) | 佈道會現場(ALBUM-BACKFILL-ACCEL-PLAN Opus 5 擴展批次驗收 followup) | 2026-08-04 14:26:26 |
