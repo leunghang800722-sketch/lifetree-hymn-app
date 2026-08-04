@@ -1,7 +1,7 @@
 // 登入後帳戶頁 —— MEMBER-UI-REDESIGN-SPEC §1。跟 YouTube Music 帳戶頁骨架:
 // 頂部帳戶卡(首字母大頭像+名+電話/email+同步狀態 pill)+ 分組 list(帳戶/一般/登出)。
 // 由 AuthScreen.js 見到 user 就 render 呢個(原本齋齋一個頭像+登出掣個 profile 段搬咗嚟呢度)。
-import React from 'react';
+import React, { useState } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import Constants from 'expo-constants';
@@ -12,6 +12,7 @@ import { useFavorites } from '../context/FavoritesContext';
 import { usePlaylists } from '../context/PlaylistsContext';
 import { useOutboxLength } from '../hooks/useOutboxLength';
 import VersionTag, { buildLabel } from '../components/VersionTag';
+import InviteFriendsSheet from './InviteFriendsSheet';
 
 function Row({ icon, label, value, onPress, showChevron = true, tint }) {
   const Wrapper = onPress ? TouchableOpacity : View;
@@ -51,6 +52,7 @@ export default function AccountScreen({ onClose }) {
   const { favorites = [] } = useFavorites() || {};
   const { playlists = [] } = usePlaylists() || {};
   const outboxLength = useOutboxLength();
+  const [inviteVisible, setInviteVisible] = useState(false); // §2.7:邀請朋友 sheet
 
   if (!user) return null; // AuthScreen 淨係喺 user 存在先 render 呢頁
 
@@ -99,6 +101,9 @@ export default function AccountScreen({ onClose }) {
             { key: 'fav', icon: 'favorite', label: '我的最愛', value: String(favorites.length), onPress: onClose },
             { key: 'pl', icon: 'queue-music', label: '我嘅清單', value: String(playlists.length), onPress: onClose },
             { key: 'sync', icon: synced ? 'cloud-done' : 'cloud-queue', label: '同步狀態', value: synced ? '已同步' : `${outboxLength} 項等緊同步` },
+            // 邀請朋友加入(§2.7)—— 所有登入會員見到,擺帳戶動作呢組(唔加
+            // 「我的」頁 chip——chips 係內容 tab,邀請係帳戶動作)。
+            { key: 'invite', icon: 'card-giftcard', label: '邀請朋友加入', onPress: () => setInviteVisible(true) },
           ]}
         />
 
@@ -133,6 +138,8 @@ export default function AccountScreen({ onClose }) {
 
         <VersionTag style={{ marginTop: 32 }} />
       </ScrollView>
+
+      <InviteFriendsSheet visible={inviteVisible} onClose={() => setInviteVisible(false)} />
     </View>
   );
 }

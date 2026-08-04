@@ -107,9 +107,11 @@ export function AuthProvider({ children }) {
     return postAuth('/api/auth/otp/verify-ticket', { phone, code });
   }, []);
 
-  // ③一版過填密碼+姓名+性別+出生年份,連同 ticket 換 session token
-  const registerPhone = useCallback(async ({ ticket, password, username, gender, birthYear }) => {
-    const data = await postAuth('/api/auth/register-phone', { ticket, password, username, gender, birthYear });
+  // ③一版過填密碼+姓名+性別+出生年份,連同 ticket 換 session token;
+  // inviteCode(MEMBERSHIP-PHASE4-FRIENDS-INVITES-PLAN §2.7)—— mode=open 時
+  // 淨係送 undefined,backend 唔理呢個欄。
+  const registerPhone = useCallback(async ({ ticket, password, username, gender, birthYear, inviteCode }) => {
+    const data = await postAuth('/api/auth/register-phone', { ticket, password, username, gender, birthYear, inviteCode });
     await saveAuth(data.token, data.user);
     return data;
   }, [saveAuth]);
@@ -127,6 +129,24 @@ export function AuthProvider({ children }) {
     await saveAuth(data.token, data.user);
     return data;
   }, [saveAuth]);
+
+  // ── 邀請碼(MEMBERSHIP-PHASE4-FRIENDS-INVITES-PLAN §2.4/§2.7)────────────
+  // otp/status 加咗 registrationMode 欄,俾註冊流程決定使唔使顯示⓪邀請碼步;
+  // 呢兩條都係公開 GET/POST,唔使 token,唔行 postAuth() 嗰套(冇 saveAuth)。
+  const fetchOtpStatus = useCallback(async () => {
+    const resp = await fetch(`${API_BASE}/api/auth/otp/status`);
+    return resp.json().catch(() => ({}));
+  }, []);
+
+  const checkInviteCode = useCallback(async (code) => {
+    const resp = await fetch(`${API_BASE}/api/auth/invite-check`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ code }),
+    });
+    const data = await resp.json().catch(() => ({}));
+    if (!resp.ok) throw new Error(data.message || '檢查失敗,請再試');
+    return !!data.valid;
+  }, []);
 
   // §2.5 登出:本地最愛/清單保留(降返做訪客數據),但 outbox 要清——嗰啲操作
   // 屬於舊帳戶,冇 token 之後亦推唔到,留低只會喺下次(可能係第二個人)登入
@@ -148,6 +168,7 @@ export function AuthProvider({ children }) {
     <AuthContext.Provider value={{
       user, token, loading, isAdmin, register, login, logout, getToken,
       requestOtp, verifyOtpTicket, registerPhone, loginPhone, resetPassword,
+      fetchOtpStatus, checkInviteCode,
     }}>
       {children}
     </AuthContext.Provider>

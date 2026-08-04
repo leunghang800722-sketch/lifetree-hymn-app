@@ -306,6 +306,18 @@ export async function friendsShares(token, userId) {
   return meJson(res, '讀取失敗');
 }
 
+// { code: 'K7NM-WP4E' }
+export async function createInvite(token) {
+  const res = await fetch(`${API_BASE}/api/me/invites`, { method: 'POST', headers: meAuthHeaders(token) });
+  return meJson(res, '生成失敗');
+}
+
+// { invites: [{ code, used, used_by_name, created_at }] }
+export async function listMyInvites(token) {
+  const res = await fetch(`${API_BASE}/api/me/invites`, { headers: meAuthHeaders(token) });
+  return meJson(res, '讀取失敗');
+}
+
 // 錯誤碼 → 用戶睇得明嘅文案(同 adminErrorMessage 一致 pattern)
 export function friendsErrorMessage(e, fallback) {
   switch (e?.code) {

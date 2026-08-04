@@ -18,11 +18,13 @@ import VersionTag from '../components/VersionTag';
 const CURRENT_YEAR = new Date().getFullYear();
 
 export default function PhoneLoginScreen({ onClose, onUseEmail }) {
-  const { requestOtp, verifyOtpTicket, registerPhone, loginPhone, resetPassword } = useAuth();
+  const { requestOtp, verifyOtpTicket, registerPhone, loginPhone, resetPassword, fetchOtpStatus, checkInviteCode } = useAuth();
   const insets = useInsets();
 
-  // screen:'login' 係預設;'phone'/'code' 俾 register 同 forgot 共用(靠 flow
-  // 分邊個),'profile' 淨係 register 尾步,'newpass' 淨係 forgot 尾步。
+  // screen:'login' 係預設;'invite' 淨係 register 喺 invite mode 先有嘅⓪步
+  // (MEMBERSHIP-PHASE4-FRIENDS-INVITES-PLAN §2.7/§3.3);'phone'/'code' 俾
+  // register 同 forgot 共用(靠 flow 分邊個),'profile' 淨係 register 尾步,
+  // 'newpass' 淨係 forgot 尾步。
   const [screen, setScreen] = useState('login');
   const [flow, setFlow] = useState(null); // 'register' | 'forgot' | null
 
@@ -31,6 +33,18 @@ export default function PhoneLoginScreen({ onClose, onUseEmail }) {
   const [code, setCode] = useState('');
   const [ticket, setTicket] = useState(null);
   const [profileComplete, setProfileComplete] = useState(false);
+
+  // registrationMode(§2.4)—— mount 就攞,唔等用戶撳「註冊」先問(避免嗰刻
+  // 等 network)。null=未攞到,fail-closed 當要顯示⓪步(同 backend 冇設 env
+  // 就當 invite 一致嘅審慎取態);攞唔到都當要顯示,寧多一步唔少一步。
+  const [registrationMode, setRegistrationMode] = useState(null);
+  const [inviteCode, setInviteCode] = useState('');
+  useEffect(() => {
+    let cancelled = false;
+    fetchOtpStatus().then((d) => { if (!cancelled) setRegistrationMode(d?.registrationMode === 'open' ? 'open' : 'invite'); })
+      .catch(() => { if (!cancelled) setRegistrationMode('invite'); });
+    return () => { cancelled = true; };
+  }, [fetchOtpStatus]);
 
   // 註冊 ③ / 忘記密碼 ③ 共用嘅欄
   const [newPassword, setNewPassword] = useState('');
@@ -62,10 +76,12 @@ export default function PhoneLoginScreen({ onClose, onUseEmail }) {
   const goLogin = useCallback(() => {
     setScreen('login'); setFlow(null); resetStepState();
   }, []);
+  // registrationMode==='open' 一早由 otp/status 攞返嚟就跳過⓪步;null(仲未
+  // 攞到)都當要顯示(fail-closed,同 backend 冇設 env 一致嘅取態,§4 case 12)。
   const startRegister = useCallback(() => {
-    setScreen('phone'); setFlow('register'); resetStepState();
-    setNewPassword(''); setConfirmPassword(''); setUsername(''); setGender(null); setBirthYear('');
-  }, []);
+    setScreen(registrationMode === 'open' ? 'phone' : 'invite'); setFlow('register'); resetStepState();
+    setInviteCode(''); setNewPassword(''); setConfirmPassword(''); setUsername(''); setGender(null); setBirthYear('');
+  }, [registrationMode]);
   const startForgot = useCallback(() => {
     setScreen('phone'); setFlow('forgot'); resetStepState();
     setNewPassword(''); setConfirmPassword(''); setUsername(''); setGender(null); setBirthYear('');
@@ -82,6 +98,17 @@ export default function PhoneLoginScreen({ onClose, onUseEmail }) {
     } catch (e) { setErr(e.message || '登入失敗'); }
     finally { setBusy(false); }
   }, [phone, password, loginPhone, onClose]);
+
+  // ── ⓪邀請碼(register only,invite mode 先有,§2.7/§3.3)────────────
+  const handleCheckInvite = useCallback(async () => {
+    setErr(''); setBusy(true);
+    try {
+      const valid = await checkInviteCode(inviteCode);
+      if (!valid) { setErr('邀請碼唔啱,請問返邀請你嗰位朋友'); return; }
+      setScreen('phone');
+    } catch (e) { setErr(e.message || '檢查失敗,請再試'); }
+    finally { setBusy(false); }
+  }, [inviteCode, checkInviteCode]);
 
   // ── ①電話 → 發驗證碼(register/forgot 共用)──────────────────────
   const handleSendCode = useCallback(async () => {
@@ -131,14 +158,21 @@ export default function PhoneLoginScreen({ onClose, onUseEmail }) {
     try {
       await registerPhone({
         ticket, password: newPassword, username: username.trim(), gender, birthYear: Number(birthYear),
+        inviteCode: inviteCode || undefined,
       });
       onClose && onClose();
     } catch (e) {
       if (e.code === 'already_registered') setErr('呢個號碼已註冊,請直接登入');
       else if (e.code === 'ticket_expired' || e.code === 'ticket_invalid') { setErr('驗證過期,請重新攞驗證碼'); setScreen('phone'); }
+      // §4 case 6/9:碼喺⓪過檢之後先俾第二個人用咗,或者(理論上唔應該)冇碼——
+      // 跳返⓪,同 §3.3「跳返⓪」一致(唔淨係錯訊息,重新逼佢核實個碼)。
+      else if (e.code === 'invite_used' || e.code === 'invite_invalid' || e.code === 'invite_required') {
+        setErr(e.code === 'invite_used' ? '呢個邀請碼啱啱俾人用咗' : '邀請碼唔啱,請問返邀請你嗰位朋友');
+        setScreen('invite');
+      }
       else setErr(e.message || '註冊失敗');
     } finally { setBusy(false); }
-  }, [newPassword, confirmPassword, username, gender, birthYear, ticket, registerPhone, onClose]);
+  }, [newPassword, confirmPassword, username, gender, birthYear, ticket, inviteCode, registerPhone, onClose]);
 
   // ── 忘記密碼 ③:新密碼×2(冇齊 profile 先問埋姓名/性別/年份)──────
   const handleResetSubmit = useCallback(async () => {
@@ -163,6 +197,7 @@ export default function PhoneLoginScreen({ onClose, onUseEmail }) {
 
   const { title, sub } = useMemo(() => {
     if (screen === 'login') return { title: '電話登入', sub: '用電話號碼同密碼登入' };
+    if (screen === 'invite') return { title: '輸入邀請碼', sub: '而家要有邀請碼先註冊得,問返邀請你嗰位朋友' };
     if (screen === 'phone') return {
       title: flow === 'register' ? '註冊新帳戶' : '忘記密碼',
       sub: '會用 WhatsApp 或短訊寄一個 6 位驗證碼俾你',
@@ -222,6 +257,28 @@ export default function PhoneLoginScreen({ onClose, onUseEmail }) {
               <TouchableOpacity onPress={startRegister}><Text style={styles.link}>新用戶?註冊</Text></TouchableOpacity>
               <TouchableOpacity onPress={startForgot}><Text style={styles.link}>忘記密碼?</Text></TouchableOpacity>
             </View>
+          </>
+        )}
+
+        {screen === 'invite' && (
+          <>
+            <TextInput
+              style={[styles.input, styles.codeInput, focused && styles.inputFocused]}
+              value={inviteCode}
+              // 自動大寫、容忍連字號/空格(§2.7)—— strip 交返俾 backend 嘅
+              // normalizeCode 做,呢度淨係大寫化,唔好逼用戶自己刪連字號。
+              onChangeText={(t) => setInviteCode(t.toUpperCase())}
+              placeholder="K7NM-WP4E" placeholderTextColor={COLORS.border}
+              autoCapitalize="characters" autoFocus maxLength={12}
+              onFocus={() => setFocused(true)} onBlur={() => setFocused(false)}
+            />
+            {!!err && <Text style={styles.err}>{err}</Text>}
+            <TouchableOpacity style={styles.btn} onPress={handleCheckInvite} disabled={busy || !inviteCode.trim()} activeOpacity={0.85}>
+              {busy ? <ActivityIndicator color={COLORS.background} /> : <Text style={styles.btnText}>下一步</Text>}
+            </TouchableOpacity>
+            <TouchableOpacity onPress={goLogin} style={{ marginTop: 14 }}>
+              <Text style={styles.link}>返去登入</Text>
+            </TouchableOpacity>
           </>
         )}
 
