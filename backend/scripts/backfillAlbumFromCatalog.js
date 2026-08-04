@@ -67,6 +67,23 @@ function mdEscape(s) {
   return String(s || '').replace(/\|/g, '\\|').replace(/\n/g, ' ');
 }
 
+// ── 專輯名 canonical 對齊(2026-08-04 Fable 5 簽白名單時發現)────────────────
+// 同一隻專輯,sop.org CCLI 表同官方 YouTube playlist 嘅寫法唔一致(catalog 用
+// 全名/舊譯/唔同標點)。Phase A(playlist)先行已經用咗右邊嗰個名寫 DB,呢度
+// 一律對齊落 playlist 白名單嘅寫法,唔係同一隻專輯會喺 DB 出現兩個變體。
+// key=catalog 原文,value=canonical(以 讚美之泉-playlists.json approved 名為準)。
+const ALBUM_CANONICAL = {
+  'G.L.O.W. 差遣我': '差遣我',
+  'I Believe': '我相信',
+  '不要放棄・滿有能力': '不要放棄．滿有能力', // 中點「・」→ 全形「．」
+  '單單只為你': '單單只為祢',
+  '將天敞開．活著為要敬拜祢': '將天敞開', // series=敬拜讚美(17),同 playlist 專輯 17 同一隻
+  '我能給你什麼': '我能給你什麼？',
+};
+function canonicalizeAlbum(album) {
+  return ALBUM_CANONICAL[album] || album;
+}
+
 async function main() {
   if (!fs.existsSync(CATALOG_PATH)) {
     console.error(`搵唔到 catalog:${CATALOG_PATH},請先跑 node scripts/fetchSopCatalog.js`);
@@ -83,7 +100,7 @@ async function main() {
     const key = normalizeTitle(entry.title_zh);
     if (!key) continue;
     if (!catalogIndex.has(key)) catalogIndex.set(key, new Set());
-    catalogIndex.get(key).add(entry.album);
+    catalogIndex.get(key).add(canonicalizeAlbum(entry.album));
   }
   log(`catalog normalize 後 distinct 歌名:${catalogIndex.size}`);
 
