@@ -318,6 +318,15 @@ export async function listMyInvites(token) {
   return meJson(res, '讀取失敗');
 }
 
+// 已登入用戶輸入朋友派俾佢嘅邀請碼——兌換即刻自動加為好友。
+// { ok, alreadyFriends, friendUsername }
+export async function redeemInvite(token, code) {
+  const res = await fetch(`${API_BASE}/api/invites/redeem`, {
+    method: 'POST', headers: meAuthHeaders(token, true), body: JSON.stringify({ code }),
+  });
+  return meJson(res, '兌換失敗');
+}
+
 // 錯誤碼 → 用戶睇得明嘅文案(同 adminErrorMessage 一致 pattern)
 export function friendsErrorMessage(e, fallback) {
   switch (e?.code) {
@@ -326,6 +335,10 @@ export function friendsErrorMessage(e, fallback) {
     case 'not_found': return '搵唔到呢個號碼';
     case 'bad_phone': return '電話號碼格式唔啱';
     case 'quota_full': return '未用嘅碼用晒先可以再生成';
+    case 'bad_code': return '請輸入邀請碼';
+    case 'invite_invalid': return '邀請碼唔啱,請確認冇打錯';
+    case 'invite_used': return '呢個邀請碼已經用咗';
+    case 'invite_self': return '唔可以用自己派嘅邀請碼';
     case 'server_error': return '伺服器出錯,請再試';
     default: return e?.message || fallback;
   }

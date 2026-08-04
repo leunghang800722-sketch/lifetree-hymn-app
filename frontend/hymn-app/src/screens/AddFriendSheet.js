@@ -1,25 +1,33 @@
-// 加好友 sheet(MEMBERSHIP-PHASE4-FRIENDS-INVITES-PLAN §3.2)—— 輸入電話,
-// lookup 之後按 relation 顯示唔同文案/掣。置中 dialog(照 AddToPlaylistSheet
-// 嘅 create/rename 視覺,唔係貼底 sheet——呢度冇 FlatList,一格輸入夠晒)。
+// 加好友 sheet(MEMBERSHIP-PHASE4-FRIENDS-INVITES-PLAN §3.2 + 已登入用戶輸入
+// 邀請碼補漏)—— 兩種方式用 tab 分:搜電話(lookup 之後按 relation 顯示唔同
+// 文案/掣)/輸入邀請碼(朋友派俾自己嗰個碼,兌換即刻自動加為好友)。置中
+// dialog(照 AddToPlaylistSheet 嘅 create/rename 視覺,唔係貼底 sheet——呢度
+// 冇 FlatList,一格輸入夠晒)。
 import React, { useState, useCallback } from 'react';
 import { Modal, View, Text, TextInput, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { COLORS } from '../theme/designSystem';
 import { useAuth } from '../context/AuthContext';
-import { friendsLookup, friendsRequest, friendsErrorMessage } from '../api';
+import { friendsLookup, friendsRequest, redeemInvite, friendsErrorMessage } from '../api';
 
-export default function AddFriendSheet({ visible, onClose, onRequested }) {
+export default function AddFriendSheet({ visible, onClose, onRequested, onFriended }) {
   const { getToken } = useAuth() || {};
+  const [mode, setMode] = useState('phone'); // 'phone' | 'code'
   const [phone, setPhone] = useState('+852');
+  const [code, setCode] = useState('');
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState('');
-  const [result, setResult] = useState(null); // { relation } 之後先顯示第二步
+  const [result, setResult] = useState(null); // { relation } 之後先顯示第二步(淨係 phone mode 用)
 
   const reset = useCallback(() => {
-    setPhone('+852'); setBusy(false); setErr(''); setResult(null);
+    setMode('phone'); setPhone('+852'); setCode(''); setBusy(false); setErr(''); setResult(null);
   }, []);
 
   const close = useCallback(() => { reset(); onClose && onClose(); }, [reset, onClose]);
+
+  const switchMode = useCallback((m) => {
+    setMode(m); setErr(''); setResult(null); setBusy(false);
+  }, []);
 
   const handleLookup = useCallback(async () => {
     setErr(''); setBusy(true);
@@ -43,6 +51,18 @@ export default function AddFriendSheet({ visible, onClose, onRequested }) {
       setErr(friendsErrorMessage(e, '發出請求失敗'));
     } finally { setBusy(false); }
   }, [phone, getToken, onRequested, close]);
+
+  const handleRedeem = useCallback(async () => {
+    setErr(''); setBusy(true);
+    try {
+      const token = getToken ? getToken() : null;
+      const r = await redeemInvite(token, code.trim());
+      onFriended && onFriended(r.friendUsername, r.alreadyFriends);
+      close();
+    } catch (e) {
+      setErr(friendsErrorMessage(e, '兌換失敗'));
+    } finally { setBusy(false); }
+  }, [code, getToken, onFriended, close]);
 
   // relation → 文案 + 底部掣(§3.2)
   const relationView = () => {
@@ -86,20 +106,56 @@ export default function AddFriendSheet({ visible, onClose, onRequested }) {
               <MaterialIcons name="close" size={22} color={COLORS.textSecondary} />
             </TouchableOpacity>
           </View>
-          <Text style={styles.sub}>用電話號碼搵朋友(要對方電話已經註冊)</Text>
-          <TextInput
-            style={styles.input} value={phone}
-            onChangeText={(t) => { setPhone(t); setResult(null); setErr(''); }}
-            keyboardType="phone-pad" placeholder="+852 1234 5678" placeholderTextColor={COLORS.textSecondary}
-            autoComplete="tel" textContentType="telephoneNumber"
-          />
-          {!!err && <Text style={styles.err}>{err}</Text>}
-          {!result && (
-            <TouchableOpacity style={styles.confirmBtn} onPress={handleLookup} disabled={busy} activeOpacity={0.85}>
-              {busy ? <ActivityIndicator color={COLORS.background} /> : <Text style={styles.confirmBtnText}>搵吓</Text>}
+          <View style={styles.tabRow}>
+            <TouchableOpacity
+              style={[styles.tabBtn, mode === 'phone' && styles.tabBtnActive]}
+              onPress={() => switchMode('phone')} activeOpacity={0.8}
+            >
+              <Text style={[styles.tabText, mode === 'phone' && styles.tabTextActive]}>搜電話</Text>
             </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.tabBtn, mode === 'code' && styles.tabBtnActive]}
+              onPress={() => switchMode('code')} activeOpacity={0.8}
+            >
+              <Text style={[styles.tabText, mode === 'code' && styles.tabTextActive]}>輸入邀請碼</Text>
+            </TouchableOpacity>
+          </View>
+
+          {mode === 'phone' ? (
+            <>
+              <Text style={styles.sub}>用電話號碼搵朋友(要對方電話已經註冊)</Text>
+              <TextInput
+                style={styles.input} value={phone}
+                onChangeText={(t) => { setPhone(t); setResult(null); setErr(''); }}
+                keyboardType="phone-pad" placeholder="+852 1234 5678" placeholderTextColor={COLORS.textSecondary}
+                autoComplete="tel" textContentType="telephoneNumber"
+              />
+              {!!err && <Text style={styles.err}>{err}</Text>}
+              {!result && (
+                <TouchableOpacity style={styles.confirmBtn} onPress={handleLookup} disabled={busy} activeOpacity={0.85}>
+                  {busy ? <ActivityIndicator color={COLORS.background} /> : <Text style={styles.confirmBtnText}>搵吓</Text>}
+                </TouchableOpacity>
+              )}
+              {relationView()}
+            </>
+          ) : (
+            <>
+              <Text style={styles.sub}>朋友邀請你嗰個碼,輸入即刻自動加為好友</Text>
+              <TextInput
+                style={styles.input} value={code}
+                onChangeText={(t) => { setCode(t); setErr(''); }}
+                autoCapitalize="characters" autoCorrect={false}
+                placeholder="K7NM-WP4E" placeholderTextColor={COLORS.textSecondary}
+              />
+              {!!err && <Text style={styles.err}>{err}</Text>}
+              <TouchableOpacity
+                style={styles.confirmBtn} onPress={handleRedeem}
+                disabled={busy || !code.trim()} activeOpacity={0.85}
+              >
+                {busy ? <ActivityIndicator color={COLORS.background} /> : <Text style={styles.confirmBtnText}>兌換</Text>}
+              </TouchableOpacity>
+            </>
           )}
-          {relationView()}
         </View>
         <TouchableOpacity style={{ flex: 1 }} activeOpacity={1} onPress={close} />
       </View>
@@ -115,7 +171,15 @@ const styles = StyleSheet.create({
   },
   headerRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   title: { color: COLORS.textPrimary, fontSize: 18, fontWeight: '700' },
-  sub: { color: COLORS.textSecondary, fontSize: 13, marginTop: 6, marginBottom: 16 },
+  tabRow: {
+    flexDirection: 'row', backgroundColor: COLORS.background, borderRadius: 12,
+    padding: 3, marginTop: 14,
+  },
+  tabBtn: { flex: 1, paddingVertical: 8, borderRadius: 10, alignItems: 'center' },
+  tabBtnActive: { backgroundColor: COLORS.accent },
+  tabText: { color: COLORS.textSecondary, fontSize: 13, fontWeight: '600' },
+  tabTextActive: { color: COLORS.background },
+  sub: { color: COLORS.textSecondary, fontSize: 13, marginTop: 12, marginBottom: 16 },
   input: {
     backgroundColor: COLORS.background, borderRadius: 12, height: 48, paddingHorizontal: 14,
     color: COLORS.textPrimary, fontSize: 16, borderWidth: 1, borderColor: COLORS.border,

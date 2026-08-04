@@ -15,7 +15,7 @@ import { JWT_SECRET } from '../lib/authSecret.js';
 import { saveUserDb } from '../lib/userDb.js';
 import { ipLoginLimiter, phoneLoginLimiter, clientIp } from '../lib/loginRateLimit.js';
 import { REGISTRATION_MODE } from '../lib/registrationMode.js';
-import { appendAudit } from '../lib/auditLog.js';
+import { redeemInviteAndFriend } from '../lib/inviteRedeem.js';
 
 const TOKEN_EXPIRY = '30d';
 const TICKET_EXPIRY = '10m';
@@ -315,29 +315,10 @@ export default function otpAuthRoutes(app, getUserDb) {
       const user = findUserByPhone(db, phone);
 
       if (inviteRow) {
-        // 防雙擊/雙重放(§4 case 6):UPDATE 帶 used_by IS NULL 條件,再核實
-        // 真係改到先算數。單 process/單寫入者理論上呢個窗口開唔到,但呢個
-        // 檢查零成本,寧多做一步。
-        db.run('UPDATE invites SET used_by = ?, used_at = ? WHERE code = ? AND used_by IS NULL', [
-          user.id, new Date().toISOString(), inviteRow.code,
-        ]);
-        if (db.getRowsModified() > 0) {
-          // 邀請 = 自動好友(§2.6)—— accepted,唔使 confirm。
-          const lo = Math.min(user.id, inviteRow.created_by);
-          const hi = Math.max(user.id, inviteRow.created_by);
-          db.run(
-            'INSERT OR IGNORE INTO friendships (user_lo, user_hi, requested_by, status, responded_at) VALUES (?, ?, ?, ?, ?)',
-            [lo, hi, inviteRow.created_by, 'accepted', new Date().toISOString()]
-          );
-          appendAudit({
-            ts: new Date().toISOString(), user_id: inviteRow.created_by, who: `#${inviteRow.created_by}`,
-            action: 'invite_used', code: inviteRow.code, used_by: user.id,
-          });
-        } else {
-          // 極罕見(§4 case 6):兩個人同時撞正用同一個碼。已開嘅戶唔回滾,
-          // 淨係邀請關係冧咗——機率趨近零(單 process 寫入者),留 log 觀察。
-          console.warn('register-phone: invite race — code 已被搶用', inviteRow.code, 'new user id', user.id);
-        }
+        // 消費碼 + 自動加好友(§2.6)—— 共用邏輯喺 lib/inviteRedeem.js(同
+        // /api/invites/redeem 一份)。極罕見 race(§4 case 6:兩個人同時撞正用
+        // 同一個碼)已開嘅戶唔回滾,淨係邀請關係冧咗,function 內部有 log。
+        redeemInviteAndFriend(db, inviteRow, user.id);
       }
 
       saveUserDb(db);

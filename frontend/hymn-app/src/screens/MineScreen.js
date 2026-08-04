@@ -443,7 +443,11 @@ export default function MineScreen({ onPlayHymn, onOpenAuth, onOpenAdminAdd, min
 
       {/* 好友(§3.2)—— 加好友 sheet、好友分享清單列表、撳入去開現成 SharedPlaylistSheet */}
       <AddFriendSheet visible={addFriendVisible} onClose={() => setAddFriendVisible(false)}
-        onRequested={() => { loadFriends(); showToast('請求已發出'); }} />
+        onRequested={() => { loadFriends(); showToast('請求已發出'); }}
+        onFriended={(name, alreadyFriends) => {
+          loadFriends();
+          showToast(alreadyFriends ? '你哋已經係好友喇' : `已經同${name}做咗好友！`);
+        }} />
       <FriendSharesSheet friend={sharesFor} onClose={() => setSharesFor(null)}
         onOpenToken={(token) => { setSharesFor(null); setFriendToken(token); }} />
       <SharedPlaylistSheet token={friendToken} onClose={() => setFriendToken(null)} onPlayHymn={onPlayHymn}

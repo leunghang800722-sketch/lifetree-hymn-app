@@ -12,6 +12,7 @@ import requireAdmin from '../lib/requireAdmin.js';
 import { clientIp } from '../lib/loginRateLimit.js';
 import { appendAudit, whoOf } from '../lib/auditLog.js';
 import { REGISTRATION_MODE } from '../lib/registrationMode.js';
+import { redeemInviteAndFriend } from '../lib/inviteRedeem.js';
 
 // 8 字元,alphabet 去晒易撈亂字符(冇 0/O/1/I/L),31 字元 ≈ 39.6-bit(§2.1)。
 // crypto.randomBytes % 31 有極輕微 modulo bias,對呢個用途(防陌生人量產
@@ -151,6 +152,51 @@ export default function invitesRoutes(app) {
       res.json({ invites });
     } catch (err) {
       console.error('invites list error:', err);
+      res.status(500).json({ error: 'server_error' });
+    }
+  });
+
+  // ── 已登入用戶輸入邀請碼(MEMBERSHIP-PHASE4 補漏——之前邀請碼淨係開新戶
+  // 流程消費得到,已有 app 嘅用戶完全冇入口)。兌換 = 自動同派碼者做好友,
+  // 行為對齊 register-phone 消費完之後嘅結果,共用邏輯喺 lib/inviteRedeem.js。
+  app.post('/api/invites/redeem', requireAuth, async (req, res) => {
+    try {
+      const code = normalizeCode(req.body?.code);
+      if (!code) return res.status(400).json({ error: 'bad_code', message: '請輸入邀請碼' });
+
+      const db = await getUserDb();
+      const stmt = db.prepare('SELECT code, created_by, used_by, revoked FROM invites WHERE code = ?');
+      stmt.bind([code]);
+      const inviteRow = stmt.step() ? stmt.getAsObject() : null;
+      stmt.free();
+
+      // 唔存在/revoked 一律 invite_invalid(no oracle,同 invite-check 一致)。
+      if (!inviteRow || inviteRow.revoked) {
+        return res.status(422).json({ error: 'invite_invalid', message: '邀請碼唔啱,請確認冇打錯' });
+      }
+      if (inviteRow.used_by !== null && inviteRow.used_by !== undefined) {
+        return res.status(422).json({ error: 'invite_used', message: '呢個邀請碼已經用咗' });
+      }
+      // 唔可以兌換自己派嘅碼。
+      if (inviteRow.created_by === req.user.id) {
+        return res.status(422).json({ error: 'invite_self', message: '唔可以用自己派嘅邀請碼' });
+      }
+
+      const result = redeemInviteAndFriend(db, inviteRow, req.user.id);
+      if (!result.consumed) {
+        // race:兩個人同時撞正用同一個碼(§4 case 6 同款情況)。
+        return res.status(422).json({ error: 'invite_used', message: '呢個邀請碼啱啱俾人用咗' });
+      }
+      saveUserDb(db);
+
+      const u = db.prepare('SELECT username FROM users WHERE id = ?');
+      u.bind([inviteRow.created_by]);
+      const urow = u.step() ? u.getAsObject() : null;
+      u.free();
+
+      res.json({ ok: true, alreadyFriends: result.alreadyFriends, friendUsername: urow?.username || '用戶' });
+    } catch (err) {
+      console.error('invites redeem error:', err);
       res.status(500).json({ error: 'server_error' });
     }
   });

@@ -12,7 +12,9 @@ import { createInvite, listMyInvites, friendsErrorMessage } from '../api';
 const APK_URL = 'https://api.god-music.com/downloads/app.apk';
 
 function shareText(code) {
-  return `我邀請你用 God Music 詩歌 App 🎵\n下載(Android):${APK_URL}\n註冊時輸入邀請碼:${code}`;
+  return `我邀請你用 God Music 詩歌 App 🎵\n\n` +
+    `未裝 app?下載(Android):${APK_URL}\n開新戶時輸入邀請碼:${code}\n\n` +
+    `已經有 app?入「我的」→「加好友」→揀「輸入邀請碼」,打呢個碼即刻同我做好友:${code}`;
 }
 
 export default function InviteFriendsSheet({ visible, onClose }) {
@@ -60,7 +62,7 @@ export default function InviteFriendsSheet({ visible, onClose }) {
               <MaterialIcons name="close" size={22} color={COLORS.textSecondary} />
             </TouchableOpacity>
           </View>
-          <Text style={styles.sub}>邀請碼一次性,一個碼開一個新戶;用碼註冊嘅人會自動同你做好友</Text>
+          <Text style={styles.sub}>邀請碼一次性:未裝 app 嘅朋友用嚟開新戶;已經有 app 嘅朋友可以喺「加好友」揀「輸入邀請碼」打呢個碼——兩種情況都會自動同你做好友</Text>
 
           <TouchableOpacity style={styles.genBtn} onPress={handleGenerate} disabled={generating} activeOpacity={0.85}>
             {generating ? <ActivityIndicator color={COLORS.background} /> : (
