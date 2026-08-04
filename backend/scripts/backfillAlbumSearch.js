@@ -4,6 +4,9 @@
 // 可靠出處(source_url)先准填,唔肯定一律 null——同 backfillMeta.js §3.3
 // 「唔准 AI 估專輯」嘅精神唔矛盾,呢度係「AI 要引到出處先准填」)。
 //
+// ✅ 2026-08-04 Fable 5 已驗證:`claude -p --allowedTools WebSearch` headless
+// 正常觸發 web search,測試問《寶貴十架》出版年,答返 strict JSON 連真實
+// Apple Music source_url(年份 2006 同專輯 11P 對得上)。下面 TODO 留底做記錄。
 // ⚠️⚠️⚠️ TODO(落地前一定要驗證)—— headless `claude -p` 用唔用到 web search
 // 呢件事**未經實測**(brief 明文規定 Phase A/B 未清完之前唔准跑 Phase C,
 // 所以呢個 script 淨係寫結構,冇真係 call 過 `claude -p --allowedTools
@@ -65,10 +68,17 @@ function mdEscape(s) {
 }
 
 // ── candidate 揀選:album 空(見上面大註解,呢個時間點就係「A/B 都兜唔到」)
+// 2026-08-04 Fable 5 開跑前補兩個漏(同 Phase A/B 必修①同一套):
+//   · album_source='manual'/'legacy' 一律唔准做候選——admin 清空咗嘅 row
+//     (album='' + source='manual',例:id=735)係人手判定「冇專輯」,search
+//     層照揀就會重填,成個「清空」機制冇晒意思
+//   · 淨揀 status='ok'——soft-delete 咗嘅歌唔好嘥 web search budget
 function pickCandidates(db) {
   const rows = query(db, `SELECT id, youtube_id, title, display_title, org, album
                           FROM hymns_all
                           WHERE (album IS NULL OR trim(album) = '')
+                            AND COALESCE(album_source,'') NOT IN ('manual','legacy')
+                            AND status = 'ok'
                           ORDER BY id ASC`);
   return LIMIT ? rows.slice(0, LIMIT) : rows;
 }
@@ -167,9 +177,11 @@ async function writeRow(id, fields) {
   }
   try {
     const freshDb = await openDb();
-    // 鎖內重新確認 album 仲係空(防止 Phase A/B/search 之間第二個 job 寫咗)。
-    const fresh = query(freshDb, 'SELECT album FROM hymns_all WHERE id = ?', [id])[0];
+    // 鎖內重新確認 album 仲係空(防止 Phase A/B/search 之間第二個 job 寫咗),
+    // 兼 re-check album_source 冇變 manual/legacy(admin 啱啱清空都唔准填返)。
+    const fresh = query(freshDb, 'SELECT album, album_source FROM hymns_all WHERE id = ?', [id])[0];
     if (fresh && fresh.album && fresh.album.trim()) return false;
+    if (fresh && (fresh.album_source === 'manual' || fresh.album_source === 'legacy')) return false;
     const cols = Object.keys(fields);
     freshDb.run(
       `UPDATE hymns_all SET ${cols.map((c) => `${c}=?`).join(', ')} WHERE id=?`,
