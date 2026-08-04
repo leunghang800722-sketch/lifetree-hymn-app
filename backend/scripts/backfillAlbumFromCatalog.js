@@ -113,6 +113,7 @@ async function main() {
   const conflicts = []; // { row, normTitle, albums }
   const notFound = [];
   const alreadyHasAlbum = [];
+  const protectedRows = []; // 2026-08-04 Opus 5 驗收 followup 必修①:album_source 已經係 manual/legacy
 
   for (const row of rows) {
     const nameForMatch = (row.display_title && row.display_title.trim()) || row.title || '';
@@ -121,6 +122,10 @@ async function main() {
     if (!hit) { notFound.push(row); continue; }
     if (hit.size > 1) { conflicts.push({ row, normTitle: key, albums: [...hit] }); continue; }
     const album = [...hit][0];
+    // followup 必修①:淨睇 `row.album` 有冇值唔夠——admin 清空一個寫錯嘅
+    // album 之後(album='' + album_source='manual'),淨靠「album 空就可以
+    // 寫」guard 會即刻重新填返錯名,令「清空」動作形同冇做過。
+    if (row.album_source === 'manual' || row.album_source === 'legacy') { protectedRows.push({ row, catalogAlbum: album }); continue; }
     if (row.album && row.album.trim()) { alreadyHasAlbum.push({ row, catalogAlbum: album }); continue; }
     matched.push({ row, album });
   }
@@ -128,6 +133,7 @@ async function main() {
   log(`match 到單一專輯且可寫(album 本身空):${matched.length}`);
   log(`match 到但衝突(撞多隻專輯,唔寫):${conflicts.length}`);
   log(`match 到但 DB 已經有 album(保護規則,唔覆寫):${alreadyHasAlbum.length}`);
+  log(`match 到但 album_source=manual/legacy(受保護,唔覆寫):${protectedRows.length}`);
   log(`喺 catalog 搵唔到:${notFound.length}`);
 
   if (!DRY && matched.length) {
@@ -136,9 +142,12 @@ async function main() {
     try {
       const freshDb = await openDb();
       for (const { row, album } of matched) {
-        // 鎖內重新確認 album 仲係空(防止 discover→apply 之間第二個 job 寫咗)。
-        const fresh = query(freshDb, 'SELECT album FROM hymns_all WHERE id = ?', [row.id])[0];
-        if (fresh && fresh.album && fresh.album.trim()) continue;
+        // 鎖內重新確認(防止 discover→apply 之間第二個 job 寫咗,或者
+        // admin 啱啱手動清空咗做 manual)。
+        const fresh = query(freshDb, 'SELECT album, album_source FROM hymns_all WHERE id = ?', [row.id])[0];
+        if (!fresh) continue;
+        if (fresh.album_source === 'manual' || fresh.album_source === 'legacy') continue;
+        if (fresh.album && fresh.album.trim()) continue;
         freshDb.run("UPDATE hymns_all SET album = ?, album_source = 'website' WHERE id = ?", [album, row.id]);
       }
       saveDb(freshDb);
@@ -152,10 +161,10 @@ async function main() {
     log('冇可寫嘅候選,冇碰 DB');
   }
 
-  writeReport({ rows, matched, conflicts, alreadyHasAlbum, notFound, dry: DRY });
+  writeReport({ rows, matched, conflicts, alreadyHasAlbum, protectedRows, notFound, dry: DRY });
 }
 
-function writeReport({ rows, matched, conflicts, alreadyHasAlbum, notFound, dry }) {
+function writeReport({ rows, matched, conflicts, alreadyHasAlbum, protectedRows, notFound, dry }) {
   const lines = [];
   lines.push('# backfillAlbumFromCatalog 報告 —— Phase B(sop.org catalog)');
   lines.push('');
@@ -165,6 +174,7 @@ function writeReport({ rows, matched, conflicts, alreadyHasAlbum, notFound, dry 
   lines.push(`- match 到單一專輯且已寫(或 --dry 模擬):${matched.length}`);
   lines.push(`- match 到但撞多隻專輯(衝突,冇寫):${conflicts.length}`);
   lines.push(`- match 到但 DB 已有 album(冇覆寫):${alreadyHasAlbum.length}`);
+  lines.push(`- match 到但 album_source=manual/legacy(受保護,冇覆寫):${protectedRows.length}`);
   lines.push(`- catalog 搵唔到:${notFound.length}`);
   lines.push('');
   lines.push('## 已寫(或 --dry 模擬)清單');
@@ -183,7 +193,8 @@ function writeReport({ rows, matched, conflicts, alreadyHasAlbum, notFound, dry 
     lines.push(`| ${c.row.id} | ${c.row.youtube_id} | ${mdEscape(c.row.display_title || c.row.title)} | ${mdEscape(c.albums.join(' / '))} |`);
   }
   lines.push('');
-  lines.push(`(catalog 搵唔到嘅 ${notFound.length} 首、DB 已有 album 冇覆寫嘅 ${alreadyHasAlbum.length} 首,唔逐條列,見上面統計數字。)`);
+  lines.push(`(catalog 搵唔到嘅 ${notFound.length} 首、DB 已有 album 冇覆寫嘅 ${alreadyHasAlbum.length} 首、`);
+  lines.push(`album_source=manual/legacy 受保護嘅 ${protectedRows.length} 首,唔逐條列,見上面統計數字。)`);
   lines.push('');
   fs.writeFileSync(REPORT_PATH, lines.join('\n'), 'utf8');
   log(`report 已寫:${REPORT_PATH}`);

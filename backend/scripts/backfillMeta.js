@@ -307,7 +307,7 @@ function pickCandidates(db) {
   const params = [];
   if (ORG) { conds.push('org = ?'); params.push(ORG); }
   if (STATUS) { conds.push('status = ?'); params.push(STATUS); }
-  return query(db, `SELECT id, youtube_id, title, artist, org, album, performer_source, last_meta_attempt
+  return query(db, `SELECT id, youtube_id, title, artist, org, album, album_source, performer_source, last_meta_attempt
                     FROM hymns_all WHERE ${conds.join(' AND ')}
                     ORDER BY last_meta_attempt IS NOT NULL, last_meta_attempt ASC`, params);
 }
@@ -463,7 +463,13 @@ async function main() {
       fields.performer = performer;
       fields.performer_source = performerSource;
     }
-    if (album && !(row.album && row.album.trim())) {
+    // ALBUM-BACKFILL-ACCEL-PLAN.md Opus 5 驗收 followup 必修①:淨睇
+    // `row.album` 有冇值唔夠——admin 清空一個寫錯嘅 album 之後(album=''
+    // 但 album_source='manual'),下次呢度會即刻重新填返錯名,令「清空」
+    // 動作形同冇做過。protected source(manual/legacy)一律 skip,唔理
+    // album 本身而家係咪空。
+    const protectedSource = row.album_source === 'manual' || row.album_source === 'legacy';
+    if (album && !protectedSource && !(row.album && row.album.trim())) {
       fields.album = album;
       fields.album_source = albumSource;
     }

@@ -56,10 +56,15 @@ export async function updateHymn(id, fields) {
     const params = [];
     for (const key of Object.keys(fields)) {
       if (!EDITABLE_FIELDS.includes(key)) continue; // 白名單以外一律唔理(route 層應該已經 400 咗)
+      // ALBUM-BACKFILL-ACCEL-PLAN.md Opus 5 驗收 followup(建議④):album
+      // 值要 trim——冇 trim 嘅話,admin 想「清空」但唔小心留咗個空白字符,
+      // 落到 backfill script 嘅 `row.album && row.album.trim()` guard 會
+      // 判斷做「非空」,睇落好似受保護,但顯示層又空白一片,狀態唔一致。
+      const value = (key === 'album' && typeof fields[key] === 'string') ? fields[key].trim() : fields[key];
       before[key] = existing[key];
-      after[key] = fields[key];
+      after[key] = value;
       setClauses.push(`${key} = ?`);
-      params.push(fields[key]);
+      params.push(value);
     }
     // TAXONOMY-5D-PLAN.md §2.2/§4.4:admin 人手改過 performer 嘅永不被
     // backfillMeta 夜晚 job 重寫,靠 performer_source='manual' 標記。

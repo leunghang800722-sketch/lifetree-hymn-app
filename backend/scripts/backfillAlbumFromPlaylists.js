@@ -347,7 +347,11 @@ async function runApply() {
   log(`合共 ${videoOwners.size} 個 distinct video id,衝突 ${conflictRows.length} 個(唔寫),可寫候選 ${toWrite.size} 個`);
 
   // ── 鎖內零網絡操作:全部 yt-dlp call 已經做晒,呢步淨係開 db 逐條 UPDATE ──
-  const writeStats = { written: 0, skippedNonEmpty: 0, notFound: 0 };
+  // 2026-08-04 Opus 5 驗收 followup 必修①:淨睇 `row.album` 有冇值唔夠——
+  // admin 清空一個寫錯嘅 album 之後(album='' + album_source='manual'),
+  // 單靠「album 空就可以寫」guard 會即刻重新填返錯名,令「清空」動作形同
+  // 冇做過。加返 album_source IN ('manual','legacy') 一律 skip。
+  const writeStats = { written: 0, skippedNonEmpty: 0, skippedProtected: 0, notFound: 0 };
   const writtenSample = [];
   if (!DRY && toWrite.size) {
     const token = await acquireDbLock('backfillAlbumFromPlaylists');
@@ -358,9 +362,10 @@ async function runApply() {
     try {
       const db = await openDb();
       for (const [videoId, albumName] of toWrite) {
-        const rows = query(db, 'SELECT id, album FROM hymns_all WHERE youtube_id = ?', [videoId]);
+        const rows = query(db, 'SELECT id, album, album_source FROM hymns_all WHERE youtube_id = ?', [videoId]);
         if (!rows.length) { writeStats.notFound++; continue; }
         for (const row of rows) {
+          if (row.album_source === 'manual' || row.album_source === 'legacy') { writeStats.skippedProtected++; continue; }
           if (row.album && row.album.trim()) { writeStats.skippedNonEmpty++; continue; }
           db.run('UPDATE hymns_all SET album = ?, album_source = ? WHERE id = ?', [albumName, 'playlist', row.id]);
           writeStats.written++;
@@ -375,9 +380,10 @@ async function runApply() {
     // --dry 或者冇嘢寫:淨計數,唔真係開鎖碰 DB。
     const db = await openDb();
     for (const [videoId, albumName] of toWrite) {
-      const rows = query(db, 'SELECT id, album FROM hymns_all WHERE youtube_id = ?', [videoId]);
+      const rows = query(db, 'SELECT id, album, album_source FROM hymns_all WHERE youtube_id = ?', [videoId]);
       if (!rows.length) { writeStats.notFound++; continue; }
       for (const row of rows) {
+        if (row.album_source === 'manual' || row.album_source === 'legacy') { writeStats.skippedProtected++; continue; }
         if (row.album && row.album.trim()) { writeStats.skippedNonEmpty++; continue; }
         writeStats.written++;
         if (writtenSample.length < 50) writtenSample.push({ id: row.id, youtube_id: videoId, album: albumName });
@@ -385,7 +391,7 @@ async function runApply() {
     }
   }
 
-  log(`寫入完成:${writeStats.written} 首${DRY ? '(--dry,實際冇寫,以上為模擬計數)' : ''}(album 已非空跳過 ${writeStats.skippedNonEmpty},DB 搵唔到 ${writeStats.notFound},yt-dlp 攞member失敗 ${fetchFailCount} 個 playlist)`);
+  log(`寫入完成:${writeStats.written} 首${DRY ? '(--dry,實際冇寫,以上為模擬計數)' : ''}(album 已非空跳過 ${writeStats.skippedNonEmpty},manual/legacy 保護跳過 ${writeStats.skippedProtected},DB 搵唔到 ${writeStats.notFound},yt-dlp 攞member失敗 ${fetchFailCount} 個 playlist)`);
 
   writeApplyReport({ org: ORG, approved, conflictRows, writeStats, writtenSample, fetchFailCount, dry: DRY });
 }
@@ -400,6 +406,7 @@ function writeApplyReport({ org, approved, conflictRows, writeStats, writtenSamp
   lines.push(`- yt-dlp 攞 member 失敗嘅 playlist 數:${fetchFailCount}`);
   lines.push(`- 實際寫入(或 --dry 模擬寫入):${writeStats.written} 首`);
   lines.push(`- album 已非空(保護規則,冇覆寫):${writeStats.skippedNonEmpty} 首`);
+  lines.push(`- album_source=manual/legacy(受保護,冇覆寫):${writeStats.skippedProtected} 首`);
   lines.push(`- DB 搵唔到對應 youtube_id:${writeStats.notFound} 首`);
   lines.push(`- 衝突(同一 video 撞多個唔同專輯名,冇寫):${conflictRows.length} 個`);
   lines.push('');
