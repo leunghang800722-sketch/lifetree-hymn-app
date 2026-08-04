@@ -204,6 +204,9 @@ export default function AdminAddHymnScreen({ onClose }) {
         lang: preview.lang,
         album: preview.album,
         title_en: preview.title_en,
+        // 揀「分類:兒童」或「語言:兒童」就自動連動 kids=1,唔使再手動撳開關
+        // (呢個畫面本身冇 kids UI——見 project-kids-category-toggle-desync 記憶)。
+        kids: (preview.category === '兒童' || preview.lang === '兒童') ? 1 : 0,
       };
       if (Number.isFinite(preview.duration)) fields.duration = preview.duration;
       const { dataVersion } = await adminAddHymn(token, fields);
