@@ -99,12 +99,22 @@ const EXCLUDE_RULES = [
 // 編號部分容許尾隨一個英文字母(實測讚美之泉「(11J)」「(12P)」「(12A)」呢類
 // 分輯子編號)。
 const ALBUM_SIGNAL_RE = /專輯|系列\s*[（(]\s*\d+[A-Za-z]?\s*[）)]|[（(]\s*\d+[A-Za-z]?\s*[）)]\s*.{0,4}系列/;
+// 2026-08-04 約書亞樂團實測補:佢哋嘅專輯 playlist 唔用「專輯」字眼,係
+// 「<系列名><編號>｜<專輯名>」格式(「約書亞28｜轉眼仰望」「大衛帳幕的榮耀12｜
+// 傾倒我全所有」「Gateway中文6｜卸下冠冕」)。要求開頭係非數字系列名+1-3位
+// 編號+分隔號,年份開頭(「2026 All for One｜」)唔會中(第一個字係數字)。
+const NUMBERED_SERIES_RE = /^[^\d｜|]{1,12}\d{1,3}\s*[｜|]/;
+// 英文團體/英文專輯 playlist 用 "album" 字眼(「Joshua Band's English album
+// 【Lift High Your Name】」)——認做候選,專輯名多數抽唔到會留 null 等人手填。
+const EN_ALBUM_RE = /\balbum\b/i;
 
 function classifyPlaylist(title) {
   for (const rule of EXCLUDE_RULES) {
     if (rule.re.test(title)) return { included: false, reason: rule.reason };
   }
   if (ALBUM_SIGNAL_RE.test(title)) return { included: true, reason: '「專輯」或編號「系列(N)」訊號' };
+  if (NUMBERED_SERIES_RE.test(title)) return { included: true, reason: '編號系列前綴(「系列名N｜」)訊號' };
+  if (EN_ALBUM_RE.test(title)) return { included: true, reason: '英文 "album" 訊號' };
   return { included: false, reason: '冇「專輯/系列(N)」訊號,分類唔明,跳過等人手覆核' };
 }
 
