@@ -55,7 +55,11 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const arg = (f, d) => { const i = process.argv.indexOf(f); return i > -1 && process.argv[i + 1] ? process.argv[i + 1] : d; };
 const LIMIT = Number(arg('--limit', 30)); // 細 budget,§brief 明文
 const DRY = process.argv.includes('--dry');
-const BATCH_SIZE = Number(arg('--batch-size', 10)); // web search 比純文字推斷貴,batch 開細啲
+// 2026-08-04 Fable 5 實測:web search 每首 ~80s(3 首 batch 行咗 3 分 52 秒),
+// 原本 batch 10 + timeout 180s 必爆(execFile 殺 process,成個 batch 冚唪唥
+// 冇收成——第一次 dry run 0/15 嘅根因)。batch 縮到 3、timeout 開 600s。
+const BATCH_SIZE = Number(arg('--batch-size', 3)); // web search 比純文字推斷貴+慢,batch 開細
+const CLAUDE_TIMEOUT_MS = Number(arg('--claude-timeout', 600000));
 const REPORT_PATH = arg('--report', path.join(__dirname, '..', 'data', 'album-backfill', 'search-report.md'));
 const ALBUM_MAX_LEN = 40;
 
@@ -142,7 +146,7 @@ async function runAiSearchBatch(items) {
     const { stdout } = await execFile(
       'claude',
       ['-p', prompt, '--allowedTools', 'WebSearch'],
-      { timeout: 180000, maxBuffer: 5 * 1024 * 1024 }
+      { timeout: CLAUDE_TIMEOUT_MS, maxBuffer: 5 * 1024 * 1024 }
     );
     const parsed = parseAiJson(stdout);
     if (!parsed || typeof parsed !== 'object') {
