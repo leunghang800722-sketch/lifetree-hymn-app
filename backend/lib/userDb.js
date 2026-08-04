@@ -71,6 +71,21 @@ function initSchema(db) {
     created_at  TEXT DEFAULT (datetime('now')),
     revoked     INTEGER DEFAULT 0
   )`);
+
+  // ── 會員系統 Phase 4:好友(MEMBERSHIP-PHASE4-FRIENDS-INVITES-PLAN §1.1)────
+  // 一對人得一行:user_lo < user_hi(app 層保證,入表前 sort)。status:
+  // pending(等 user_hi/user_lo 邊個唔係 requested_by 嗰個應)、accepted。
+  // 拒絕/解除好友 = 刪行(唔留 declined 狀態,§4-4)。冇 FOREIGN KEY(同
+  // favorites/playlists 一致,sql.js 唔 enforce,靠 app 層驗)。
+  db.run(`CREATE TABLE IF NOT EXISTS friendships (
+    user_lo      INTEGER NOT NULL,
+    user_hi      INTEGER NOT NULL,
+    requested_by INTEGER NOT NULL,
+    status       TEXT DEFAULT 'pending',
+    created_at   TEXT DEFAULT (datetime('now')),
+    responded_at TEXT,
+    PRIMARY KEY (user_lo, user_hi)
+  )`);
 }
 
 export function saveUserDb(db) {

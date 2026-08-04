@@ -17,6 +17,7 @@ import meRoutes from './routes/me.js';
 import streamRoutes from './routes/stream.js';
 import adminRoutes from './routes/admin.js';
 import shareRoutes from './routes/share.js';
+import friendsRoutes from './routes/friends.js';
 import { resolveAudioUrl, refreshAudioUrl, preVerifyUrl, cache, failCache, anyStreaming, isStreaming } from './lib/resolveAudio.js';
 import { getUserDb } from './lib/userDb.js';
 import { getDb, getDataVersion, DB_PATH } from './lib/serverDb.js';
@@ -40,6 +41,7 @@ otpAuthRoutes(app, getUserDb); // 電話 OTP 登入(PHONE-AUTH-PLAN;未有 TWILI
 meRoutes(app); // 跨裝置同步 API(MEMBERSHIP-PHASE1-LOGIN-SYNC §1.3)
 adminRoutes(app); // 管理員功能(MEMBERSHIP-PHASE2-ADMIN-PLAN §3.4)
 shareRoutes(app); // 分享播放清單(MEMBERSHIP-PHASE3-SHARE-PLAN §1-3)—— 自己逐條掛 requireAuth,唔靠掛載次序
+friendsRoutes(app); // 好友(MEMBERSHIP-PHASE4-FRIENDS-INVITES-PLAN §1)—— 自己逐條掛 requireAuth
 
 // Super simple APK download at root level
 app.get('/app.apk', (req, res) => {
