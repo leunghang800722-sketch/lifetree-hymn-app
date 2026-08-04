@@ -18,7 +18,10 @@
 //
 // album(§3.3):Layer M 嘅結構化 `album` 欄 → description 嘅「Album (專輯): XXX」/
 // 「專輯:XXX」行 → title 嘅「專輯 N:XXX」pattern。**唔准 AI 估**——parse 唔到
-// 就留空。現有 album 有值嘅唔重寫(保護規則)。
+// 就留空。現有 album 有值嘅唔重寫(保護規則)。ALBUM-BACKFILL-ACCEL-PLAN.md
+// Commit 1:邊層命中就 stamp 對應 `album_source`('metadata'/'description'/
+// 'title'),俾 Phase A(playlist)/B(sop.org catalog)/C(search)呢類之後嘅
+// backfill 分辨值嘅來歷(呢三層本身唔受影響,寫入條件不變)。
 //
 // ── 保護規則 ────────────────────────────────────────────────────
 //   * performer_source='manual' 嘅 row 一律 skip(admin 手動改過/Lullaby 13 條)
@@ -445,8 +448,11 @@ async function main() {
     const albumFromDesc = metaAlbum ? null : extractAlbumFromDescription(meta.description);
     const albumFromTitle = (metaAlbum || albumFromDesc) ? null : extractAlbumFromTitle(meta.title || row.title);
     const album = metaAlbum || albumFromDesc || albumFromTitle || null;
+    // ALBUM-BACKFILL-ACCEL-PLAN.md Commit 1:三層邊層命中就 stamp 對應
+    // album_source,俾 Phase A/B/C 之後可以分辨「呢個 album 值嚟自邊層」。
+    const albumSource = metaAlbum ? 'metadata' : (albumFromDesc ? 'description' : (albumFromTitle ? 'title' : null));
 
-    const result = { row, meta, performer, performerSource, album };
+    const result = { row, meta, performer, performerSource, album, albumSource };
     results.push(result);
 
     log(`    M/D/T:performer=${performer || '(空)'} source=${performerSource || '-'} album=${album || '(空)'}`);
@@ -459,6 +465,7 @@ async function main() {
     }
     if (album && !(row.album && row.album.trim())) {
       fields.album = album;
+      fields.album_source = albumSource;
     }
     const hasRealUpdate = Boolean(fields.performer || fields.album);
     await writeRow(row.id, fields);

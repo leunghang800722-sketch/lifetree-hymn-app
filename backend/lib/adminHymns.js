@@ -69,6 +69,16 @@ export async function updateHymn(id, fields) {
       setClauses.push('performer_source = ?');
       params.push('manual');
     }
+    // ALBUM-BACKFILL-ACCEL-PLAN.md Commit 1:同一道理,admin 人手改過 album
+    // 嘅永不被 Phase A/B/C 自動化 backfill 覆寫,靠 album_source='manual' 標記
+    // (呢批同 'legacy'——即 migration 一次過 stamp 嗰批舊資料——一齊係
+    // album backfill script 嘅「受保護,唔准寫」名單)。
+    if (Object.prototype.hasOwnProperty.call(fields, 'album')) {
+      before.album_source = existing.album_source;
+      after.album_source = 'manual';
+      setClauses.push('album_source = ?');
+      params.push('manual');
+    }
     if (!setClauses.length) throw notFoundError(); // 理論上唔會到呢度,route 層已擋「最少一個欄位」
 
     params.push(id);
