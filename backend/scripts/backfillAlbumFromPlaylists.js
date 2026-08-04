@@ -46,9 +46,18 @@ const DELAY_MS = Number(arg('--delay', 3500));
 const DATA_DIR = path.join(__dirname, '..', 'data', 'album-backfill');
 const ALBUM_MAX_LEN = 40; // §硬規矩④:白名單 album 名 sanity cap(比 backfillMeta 嘅 12 字寬,因為呢批係人手簽過)
 
-const stamp = () => new Date().toISOString().replace('T', ' ').slice(0, 19);
+// 2026-08-04 Opus 5 驗收 followup④:toISOString() 係 UTC,同本機 HKT 差 8
+// 個鐘,睇 log 好易誤判做「stall咗」(跟 67dcd23 對 growLibrary.js 同款修法)。
+const stamp = () => {
+  const d = new Date();
+  const pad = (n) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+};
 const log = (...a) => console.log(`[${stamp()}]`, ...a);
 const jitter = (base) => Math.round(base * (0.7 + Math.random() * 0.9));
+// followup①:專輯好少超過 30 首,member_count 過呢個數當「疑似俾人喺 playlist
+// 尾巴加咗唔相關嘅片」(id=735 根因)——discover 出警告,人手簽嗰陣多留意。
+const MEMBER_COUNT_WARN_THRESHOLD = 30;
 
 function whitelistPath(org) { return path.join(DATA_DIR, `${org}-playlists.json`); }
 function discoverReportPath(org) { return path.join(DATA_DIR, `${org}-discover-report.md`); }
@@ -57,6 +66,9 @@ function applyReportPath(org) { return path.join(DATA_DIR, `${org}-apply-report.
 function mdEscape(s) {
   return String(s || '').replace(/\|/g, '\\|').replace(/\n/g, ' ');
 }
+// followup②:proposed_album 而家可以係 null(抽唔到就留 null,唔 fallback),
+// report 顯示要分清「未填」定「已填但空字串」,避免睇漏。
+function albumLabel(a) { return a ? mdEscape(a) : '(未填)'; }
 
 // ── org 解析:喺 worshipGroups.js GROUPS 搵 name/aliases 撞得中嘅 entry ──
 function findOrgConfig(orgName) {
@@ -210,7 +222,11 @@ async function runDiscover() {
     if (i < included.length - 1) await sleep(jitter(DELAY_MS));
 
     const matchedIds = members.filter((id) => dbByYoutubeId.has(id));
-    const proposedAlbum = extractProposedAlbum(c.playlist_title, ORG) || c.playlist_title.trim().slice(0, ALBUM_MAX_LEN);
+    // followup②:抽唔到中文專輯名就留 null,唔准 fallback 塞成句 playlist
+    // title 落 proposed_album(嗰種名又長又帶英文/編號,人手一眼睇唔出啱唔啱,
+    // 好易漏簽咗個垃圾名)。留 null,report/白名單標明要人手填,approved
+    // 前一定要有人手填好個名。
+    const proposedAlbum = extractProposedAlbum(c.playlist_title, ORG);
     for (const id of matchedIds) {
       if (!videoOwners.has(id)) videoOwners.set(id, []);
       videoOwners.get(id).push({ playlist_id: c.playlist_id, playlist_title: c.playlist_title, proposed_album: proposedAlbum });
@@ -223,6 +239,9 @@ async function runDiscover() {
       member_count: members.length,
       matched_in_db: matchedIds.length,
       approved: false,
+      // followup①(a):member_count 過門檻嘅警告——專輯好少超過 30 首,
+      // 大機會係官方 playlist 尾巴俾人加咗唔相關嘅片(id=735 根因)。
+      member_count_warning: members.length > MEMBER_COUNT_WARN_THRESHOLD,
     });
   }
 
@@ -254,14 +273,24 @@ function writeDiscoverReport({ org, channel, included, excluded, candidates, con
   lines.push('');
   lines.push('## 候選專輯 playlist(白名單,等人手 approved)');
   lines.push('');
+  lines.push('⚠️ `proposed_album` 為 `(要人手填)` 嘅一定要人手喺白名單 JSON 入面填');
+  lines.push(`好個名先可以簽 approved(唔准留空 approve)。member_count > ${MEMBER_COUNT_WARN_THRESHOLD}`);
+  lines.push('嘅有 ⚠️ 標記——專輯好少超過 30 首,大機會係官方 playlist 尾巴被人加咗');
+  lines.push('唔相關嘅片(2026-08-04 id=735 就係呢個根因,簽嗰陣請人手核實 member 名單)。');
+  lines.push('');
   lines.push('| playlist_id | playlist_title | proposed_album | member_count | matched_in_db |');
   lines.push('|---|---|---|---|---|');
   for (const c of candidates) {
-    lines.push(`| ${c.playlist_id} | ${mdEscape(c.playlist_title)} | ${mdEscape(c.proposed_album)} | ${c.member_count} | ${c.matched_in_db} |`);
+    const memberCountDisplay = c.member_count_warning ? `⚠️ ${c.member_count}` : String(c.member_count);
+    const albumDisplay = c.proposed_album ? mdEscape(c.proposed_album) : '**(要人手填)**';
+    lines.push(`| ${c.playlist_id} | ${mdEscape(c.playlist_title)} | ${albumDisplay} | ${memberCountDisplay} | ${c.matched_in_db} |`);
   }
   const totalMatched = candidates.reduce((s, c) => s + c.matched_in_db, 0);
+  const needsNaming = candidates.filter((c) => !c.proposed_album).length;
+  const overWarnCount = candidates.filter((c) => c.member_count_warning).length;
   lines.push('');
   lines.push(`候選 ${candidates.length} 個,合共 matched_in_db ${totalMatched} 首(未去重,同一片可能撞多個候選,見底下衝突段)。`);
+  lines.push(`需要人手填 proposed_album 嘅候選:${needsNaming} 個。member_count > ${MEMBER_COUNT_WARN_THRESHOLD} 嘅候選:${overWarnCount} 個。`);
   lines.push('');
   lines.push('## 跳過嘅 playlist(非專輯類,連原因)');
   lines.push('');
@@ -279,7 +308,7 @@ function writeDiscoverReport({ org, channel, included, excluded, candidates, con
     lines.push('| youtube_id | 撞中嘅專輯(playlist_title → proposed_album) |');
     lines.push('|---|---|');
     for (const c of conflicts.slice(0, 30)) {
-      const desc = c.owners.map((o) => `「${mdEscape(o.playlist_title)}」→${mdEscape(o.proposed_album)}`).join('; ');
+      const desc = c.owners.map((o) => `「${mdEscape(o.playlist_title)}」→${albumLabel(o.proposed_album)}`).join('; ');
       lines.push(`| ${c.videoId} | ${desc} |`);
     }
     if (conflicts.length > 30) lines.push(`\n(仲有 ${conflicts.length - 30} 條衝突,呢度淨顯示頭 30 條)`);
@@ -308,12 +337,16 @@ async function runApply() {
   // 逐 approved playlist 攞返 fresh member(白名單簽咗之後 playlist 內容可能
   // 變過,唔靠 discover 舊 snapshot)。
   const videoOwners = new Map(); // youtube_id -> [{ playlist_id, playlist_title, proposed_album }]
+  const staleSkips = []; // followup①(b):fresh member 數 > 簽嗰陣記錄嘅數,playlist 俾人加咗嘢
   let fetchFailCount = 0;
   for (let i = 0; i < approved.length; i++) {
     const c = approved[i];
     const albumName = (c.proposed_album || '').trim();
     if (!albumName || albumName.length > ALBUM_MAX_LEN) {
-      log(`  ⚠ ${c.playlist_id}「${c.playlist_title}」proposed_album 唔啱(空或 >${ALBUM_MAX_LEN} 字),skip`);
+      // followup②:proposed_album 而家可以係 null(discover 抽唔到名唔准
+      // fallback),approved:true 但冇填名 = 白名單簽漏咗,一定要 skip+報錯,
+      // 唔可以靜靜哋當冇事。
+      log(`  ⚠ ${c.playlist_id}「${c.playlist_title}」approved 但 proposed_album ${c.proposed_album ? '過長(>' + ALBUM_MAX_LEN + '字)' : '未填(要人手喺白名單入面補)'},skip`);
       continue;
     }
     log(`  [${i + 1}/${approved.length}] 攞 member:${c.playlist_id} 「${c.playlist_title}」→ ${albumName}`);
@@ -327,10 +360,28 @@ async function runApply() {
     }
     if (i < approved.length - 1) await sleep(jitter(DELAY_MS));
 
+    // followup①(b):discover 簽嗰陣記錄嘅 member_count 係「簽名對象」,
+    // fresh 數多過嗰個 = playlist 喺簽咗之後俾官方加咗新片(簽名對象已經
+    // 唔係而家呢個 playlist)——成個 playlist 唔寫,叫人重新 discover 過。
+    if (Number.isFinite(c.member_count) && members.length > c.member_count) {
+      staleSkips.push({ playlist_id: c.playlist_id, playlist_title: c.playlist_title, signedCount: c.member_count, freshCount: members.length });
+      log(`    ⚠ member 數變咗(簽嗰陣 ${c.member_count} → 而家 ${members.length}),成個 playlist 唔寫,叫人重新 discover`);
+      continue;
+    }
+
     for (const id of members) {
       if (!videoOwners.has(id)) videoOwners.set(id, []);
       videoOwners.get(id).push({ playlist_id: c.playlist_id, playlist_title: c.playlist_title, proposed_album: albumName });
     }
+  }
+
+  // followup③:有 playlist fetch 失敗,衝突偵測就唔完整(嗰條 playlist 嘅
+  // member 冇入 videoOwners,如果佢原本應該同另一個 approved playlist 撞
+  // 衝突,而家會漏檢,誤寫落錯專輯)——一律 abort,乜都唔寫。
+  if (fetchFailCount > 0) {
+    log(`⚠ 有 ${fetchFailCount} 個 playlist 攞 member 失敗,衝突偵測唔完整,abort——乜都唔寫,下次重跑`);
+    writeApplyReport({ org: ORG, approved, conflictRows: [], staleSkips, writeStats: { written: 0, skippedNonEmpty: 0, notFound: 0, aborted: true }, writtenSample: [], fetchFailCount, dry: DRY, aborted: true });
+    return;
   }
 
   // 衝突:同一 video 撞多個唔同專輯名嘅 approved playlist——唔寫,落 report。
@@ -347,10 +398,10 @@ async function runApply() {
   log(`合共 ${videoOwners.size} 個 distinct video id,衝突 ${conflictRows.length} 個(唔寫),可寫候選 ${toWrite.size} 個`);
 
   // ── 鎖內零網絡操作:全部 yt-dlp call 已經做晒,呢步淨係開 db 逐條 UPDATE ──
-  // 2026-08-04 Opus 5 驗收 followup 必修①:淨睇 `row.album` 有冇值唔夠——
-  // admin 清空一個寫錯嘅 album 之後(album='' + album_source='manual'),
-  // 單靠「album 空就可以寫」guard 會即刻重新填返錯名,令「清空」動作形同
-  // 冇做過。加返 album_source IN ('manual','legacy') 一律 skip。
+  // followup①(必修):guard 加返 album_source IN ('manual','legacy') 一律
+  // skip——單靠 `row.album && row.album.trim()` 唔夠,admin 清空一個寫錯嘅
+  // album 之後(album='' + album_source='manual'),下次呢度會即刻重新填返
+  // 錯名,令「清空」動作形同冇做過。
   const writeStats = { written: 0, skippedNonEmpty: 0, skippedProtected: 0, notFound: 0 };
   const writtenSample = [];
   if (!DRY && toWrite.size) {
@@ -391,17 +442,28 @@ async function runApply() {
     }
   }
 
-  log(`寫入完成:${writeStats.written} 首${DRY ? '(--dry,實際冇寫,以上為模擬計數)' : ''}(album 已非空跳過 ${writeStats.skippedNonEmpty},manual/legacy 保護跳過 ${writeStats.skippedProtected},DB 搵唔到 ${writeStats.notFound},yt-dlp 攞member失敗 ${fetchFailCount} 個 playlist)`);
+  log(`寫入完成:${writeStats.written} 首${DRY ? '(--dry,實際冇寫,以上為模擬計數)' : ''}(album 已非空跳過 ${writeStats.skippedNonEmpty},manual/legacy 保護跳過 ${writeStats.skippedProtected},DB 搵唔到 ${writeStats.notFound},member 數變咗跳過 ${staleSkips.length} 個 playlist)`);
 
-  writeApplyReport({ org: ORG, approved, conflictRows, writeStats, writtenSample, fetchFailCount, dry: DRY });
+  writeApplyReport({ org: ORG, approved, conflictRows, staleSkips, writeStats, writtenSample, fetchFailCount, dry: DRY, aborted: false });
 }
 
-function writeApplyReport({ org, approved, conflictRows, writeStats, writtenSample, fetchFailCount, dry }) {
+function writeApplyReport({ org, approved, conflictRows, staleSkips, writeStats, writtenSample, fetchFailCount, dry, aborted }) {
   const lines = [];
   lines.push(`# backfillAlbumFromPlaylists apply 報告 —— org=${org}`);
   lines.push('');
   lines.push(`> ALBUM-BACKFILL-ACCEL-PLAN.md Commit 2 / Phase A。生成時間:${stamp()}${dry ? '(--dry,DB 未寫入)' : ''}`);
   lines.push('');
+  if (aborted) {
+    lines.push(`## ⚠️ ABORTED —— 有 ${fetchFailCount} 個 playlist 攞 member 失敗`);
+    lines.push('');
+    lines.push('fetchFailCount > 0 會令衝突偵測唔完整(冇攞到 member 嘅 playlist 冇入');
+    lines.push('videoOwners,如果佢原本應該同另一個 approved playlist 撞衝突,而家會漏');
+    lines.push('檢,可能誤寫落錯專輯)——所以呢次 run **乜都冇寫**,下次重跑。');
+    lines.push('');
+    fs.writeFileSync(applyReportPath(org), lines.join('\n'), 'utf8');
+    log(`report 已寫:${applyReportPath(org)}`);
+    return;
+  }
   lines.push(`- approved playlist 數:${approved.length}`);
   lines.push(`- yt-dlp 攞 member 失敗嘅 playlist 數:${fetchFailCount}`);
   lines.push(`- 實際寫入(或 --dry 模擬寫入):${writeStats.written} 首`);
@@ -409,6 +471,7 @@ function writeApplyReport({ org, approved, conflictRows, writeStats, writtenSamp
   lines.push(`- album_source=manual/legacy(受保護,冇覆寫):${writeStats.skippedProtected} 首`);
   lines.push(`- DB 搵唔到對應 youtube_id:${writeStats.notFound} 首`);
   lines.push(`- 衝突(同一 video 撞多個唔同專輯名,冇寫):${conflictRows.length} 個`);
+  lines.push(`- member 數變咗(簽名失效,成個 playlist 唔寫):${staleSkips.length} 個`);
   lines.push('');
   lines.push('## 寫入樣本(頭 50 條)');
   lines.push('');
@@ -424,8 +487,20 @@ function writeApplyReport({ org, approved, conflictRows, writeStats, writtenSamp
     lines.push('| youtube_id | 撞中嘅專輯(playlist_title → proposed_album) |');
     lines.push('|---|---|');
     for (const c of conflictRows.slice(0, 30)) {
-      const desc = c.owners.map((o) => `「${mdEscape(o.playlist_title)}」→${mdEscape(o.proposed_album)}`).join('; ');
+      const desc = c.owners.map((o) => `「${mdEscape(o.playlist_title)}」→${albumLabel(o.proposed_album)}`).join('; ');
       lines.push(`| ${c.videoId} | ${desc} |`);
+    }
+  }
+  lines.push('');
+  lines.push('## Member 數變咗嘅 playlist(簽名失效,成個 playlist 冇寫,叫人重新 discover)');
+  lines.push('');
+  if (!staleSkips.length) {
+    lines.push('冇。');
+  } else {
+    lines.push('| playlist_id | playlist_title | 簽嗰陣 member_count | 而家 fresh 數 |');
+    lines.push('|---|---|---|---|');
+    for (const s of staleSkips) {
+      lines.push(`| ${s.playlist_id} | ${mdEscape(s.playlist_title)} | ${s.signedCount} | ${s.freshCount} |`);
     }
   }
   lines.push('');

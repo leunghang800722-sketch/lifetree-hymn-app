@@ -26,12 +26,21 @@ const SOP_URL = 'https://sop.org/copyright-ccli/';
 const OUT_PATH = path.join(__dirname, '..', 'data', 'album-backfill', 'sop-catalog.json');
 const MIN_ROWS = 300; // sop.org catalog 應該有幾百首,少過呢個當 parse 失敗
 
-const stamp = () => new Date().toISOString().replace('T', ' ').slice(0, 19);
+// 2026-08-04 Opus 5 驗收 followup④:toISOString() 係 UTC,同本機 HKT 差 8
+// 個鐘,睇 log 好易誤判做「stall咗」(跟 67dcd23 對 growLibrary.js 同款修法)。
+const stamp = () => {
+  const d = new Date();
+  const pad = (n) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+};
 const log = (...a) => console.log(`[${stamp()}]`, ...a);
+const FETCH_TIMEOUT_MS = 30000; // followup⑥:一次性 fetch 都要有上限,唔好卡死成個 script
 
 // TablePress 表格用 HTML entity 包一啲字符(主要 &amp;),做個輕量 decode——
 // 呢份 catalog 冇用到需要重型 HTML parser 嘅複雜結構(表格本身好規律),
 // 跟返呢個 repo 其他 script 慣例(yt-dlp/描述 regex parse),唔加新 dependency。
+// followup⑥:加返 hex numeric entity(&#x..;)支援——原本淨識 decimal
+// (&#39;)嗰種,冇覆蓋十六進位寫法,萬一 catalog 用到會漏 decode。
 function decodeEntities(s) {
   return (s || '')
     .replace(/&amp;/g, '&')
@@ -40,6 +49,7 @@ function decodeEntities(s) {
     .replace(/&quot;/g, '"')
     .replace(/&#0?39;/g, "'")
     .replace(/&nbsp;/g, ' ')
+    .replace(/&#x([0-9a-fA-F]+);/g, (_, hex) => String.fromCodePoint(parseInt(hex, 16)))
     .replace(/&#(\d+);/g, (_, code) => String.fromCodePoint(Number(code)));
 }
 
@@ -92,10 +102,23 @@ function parseCatalogHtml(html) {
 }
 
 async function main() {
-  log(`fetch:${SOP_URL}`);
-  const res = await fetch(SOP_URL, {
-    headers: { 'User-Agent': 'hymn-app-album-backfill/1.0 (ALBUM-BACKFILL-ACCEL-PLAN.md; low-frequency one-off fetch)' },
-  });
+  log(`fetch:${SOP_URL}(timeout ${FETCH_TIMEOUT_MS}ms)`);
+  // followup⑥:一次性 fetch 都要有上限,唔好卡死成個 script(網站慢/冇回應
+  // 嗰陣 fetch() 冇 timeout 會一路等落去)。
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), FETCH_TIMEOUT_MS);
+  let res;
+  try {
+    res = await fetch(SOP_URL, {
+      headers: { 'User-Agent': 'hymn-app-album-backfill/1.0 (ALBUM-BACKFILL-ACCEL-PLAN.md; low-frequency one-off fetch)' },
+      signal: ctrl.signal,
+    });
+  } catch (e) {
+    console.error(`fetch 失敗:${e?.name === 'AbortError' ? `超過 ${FETCH_TIMEOUT_MS}ms timeout` : (e?.message || e)}`);
+    process.exit(1);
+  } finally {
+    clearTimeout(timer);
+  }
   if (!res.ok) {
     console.error(`fetch 失敗:HTTP ${res.status}`);
     process.exit(1);

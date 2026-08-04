@@ -37,9 +37,18 @@ const REPORT_PATH = path.join(__dirname, '..', 'data', 'album-backfill', 'catalo
 const DRY = process.argv.includes('--dry');
 
 // Eric §6 拍板④:粵語翻唱(讚美之泉粵語)填**原曲**所屬專輯。
-const TARGET_ORGS = ['讚美之泉', '讚美之泉兒童', '讚美之泉粵語'];
+// 2026-08-04 Opus 5 驗收 followup⑤:DB 入面重有 2 首用咗舊/變體 org 名
+// 「讚美之泉 Stream Of Praise Music Ministries」(冇合併落「讚美之泉」),
+// 加落嚟先兜到。
+const TARGET_ORGS = ['讚美之泉', '讚美之泉兒童', '讚美之泉粵語', '讚美之泉 Stream Of Praise Music Ministries'];
 
-const stamp = () => new Date().toISOString().replace('T', ' ').slice(0, 19);
+// 2026-08-04 Opus 5 驗收 followup④:toISOString() 係 UTC,同本機 HKT 差 8
+// 個鐘,睇 log 好易誤判做「stall咗」(跟 67dcd23 對 growLibrary.js 同款修法)。
+const stamp = () => {
+  const d = new Date();
+  const pad = (n) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+};
 const log = (...a) => console.log(`[${stamp()}]`, ...a);
 
 const toTraditional = Converter({ from: 'cn', to: 'tw' });
@@ -113,7 +122,7 @@ async function main() {
   const conflicts = []; // { row, normTitle, albums }
   const notFound = [];
   const alreadyHasAlbum = [];
-  const protectedRows = []; // 2026-08-04 Opus 5 驗收 followup 必修①:album_source 已經係 manual/legacy
+  const protectedRows = []; // followup①:album_source 已經係 manual/legacy
 
   for (const row of rows) {
     const nameForMatch = (row.display_title && row.display_title.trim()) || row.title || '';
@@ -122,9 +131,9 @@ async function main() {
     if (!hit) { notFound.push(row); continue; }
     if (hit.size > 1) { conflicts.push({ row, normTitle: key, albums: [...hit] }); continue; }
     const album = [...hit][0];
-    // followup 必修①:淨睇 `row.album` 有冇值唔夠——admin 清空一個寫錯嘅
-    // album 之後(album='' + album_source='manual'),淨靠「album 空就可以
-    // 寫」guard 會即刻重新填返錯名,令「清空」動作形同冇做過。
+    // followup①(必修):淨睇 `row.album` 有冇值唔夠——admin 清空一個寫錯
+    // 嘅 album 之後(album='' + album_source='manual'),淨靠「album 空就
+    // 可以寫」會即刻重新填返錯名,令「清空」動作形同冇做過。
     if (row.album_source === 'manual' || row.album_source === 'legacy') { protectedRows.push({ row, catalogAlbum: album }); continue; }
     if (row.album && row.album.trim()) { alreadyHasAlbum.push({ row, catalogAlbum: album }); continue; }
     matched.push({ row, album });
