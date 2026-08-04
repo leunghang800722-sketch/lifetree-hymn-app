@@ -50,8 +50,18 @@
 
 import fs from 'fs';
 import path from 'path';
+import { Converter } from 'opencc-js';
 import { openDb, query } from '../lib/hymnDb.js';
 import { normCompare, textSimilarity, isCJK } from '../lib/textSimilarity.js';
+
+// 2026-07-27 監督診斷:whisper 出簡體字,OCR inventory(同官方歌詞)通常係繁體
+// (讚美之泉/小羊多數繁體字幕)——直接逐字 bigram 比對,簡繁唔同字就當唔中,
+// match 到嗰批都只得 57-74%,白蝕咗分。修法:比對之前兩邊文字都轉一次做繁體
+// (cn→tw),**淨係影響比對用嘅相似度計算**——verificationText/displayText 全部
+// 照樣輸出 inventory(OCR)原字,唔會被呢層改到。
+const toTraditional = Converter({ from: 'cn', to: 'tw' });
+// 統一入口:兩邊都轉繁體之後先叫返 textSimilarity(內部已經有 normCompare 剷標點)。
+const simText = (a, b) => textSimilarity(toTraditional(a || ''), toTraditional(b || ''));
 
 const arg = (f, d) => { const i = process.argv.indexOf(f); return i > -1 && process.argv[i + 1] ? process.argv[i + 1] : d; };
 const ID_ARG = arg('--id', null);
@@ -128,7 +138,7 @@ function buildCandidates(inventory) {
 function bestMatch(segText, candidates) {
   let best = null, bestScore = -1;
   for (const c of candidates) {
-    const score = textSimilarity(segText, c.text);
+    const score = simText(segText, c.text);
     if (score > bestScore) { bestScore = score; best = c; }
   }
   return { candidate: best, score: bestScore };
@@ -163,7 +173,7 @@ function alignSong(inventory, whisperSegs) {
       const prev = verification[verification.length - 1];
       if (prev) {
         const gap = seg.t0 - prev.t1;
-        const sim = textSimilarity(normCompare(prev.text), normCompare(lineText));
+        const sim = simText(normCompare(prev.text), normCompare(lineText));
         if (gap < LINE_REPEAT_GAP_SEC && sim >= LINE_REPEAT_SIM) {
           // 同一句畀 whisper 切咗開兩段,或者跨行 candidate 入面同上一項撞返
           // 埋一齊,延長返上一行嘅結束時間,唔重複 emit。
@@ -193,7 +203,6 @@ function alignSong(inventory, whisperSegs) {
     if (dropped[j]) continue;
     for (let i = 0; i < j; i++) {
       if (dropped[i]) continue;
-      const simText = (a, b) => textSimilarity(normCompare(a), normCompare(b));
       if (simText(verification[i].text, verification[j].text) < STANZA_DEDUP_SIM) continue;
       let len = 0;
       while (
