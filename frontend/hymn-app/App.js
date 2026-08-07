@@ -757,7 +757,14 @@ function PlayerProvider({ children }) {
         songId: curId,
         code: event?.code || '',
       });
-      if (errorSkipCountRef.current >= 10) {
+      // BG-PLAYBACK-STOPS-PLAN Fix B followup — 規劃層拍板 10→6:10次×~16s
+      // (8s timeout+8s retry)最壞要2.5分鐘先發現「播住但冇聲」,用戶感知同
+      // 「停咗」一樣但更困惑(通知仲寫住播緊);Fix A 滾動預熱已令前面3首
+      // 永遠warm,連續失敗基本上等於網絡真係斷咗,再試10次冇意義;30首尾巴
+      // 燒10首=33%,返嚟見播放位置跳好遠。6次≈最壞96秒,仍然係前台門檻3
+      // 嘅兩倍(「背景寬鬆啲」目的達到)但唔會拖到以為死機。前台門檻 3 維持
+      // 不變(Eric 2026-07-29 拍板,唔准郁)。
+      if (errorSkipCountRef.current >= 6) {
         await TrackPlayer.pause().catch(() => {});
         errorSkipCountRef.current = 0;
         pendingPlaybackNoticeRef.current = '背景播放中斷：連續多首歌載入唔到，已暫停';

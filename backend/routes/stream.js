@@ -141,6 +141,15 @@ export default function streamRoutes(getDb) {
       // before we responded at all).
       finishLog(res.headersSent ? res.statusCode : 0, { aborted: clientAborted });
     });
+    // Opus 5 驗收揪出嘅舊 bug(唔關 Fix D 事,但呢單背景播放 bug 直接撞到佢):
+    // 如果 client 喺上面 resolveAudioUrl() 仲跑緊嗰陣就已經走人(= ExoPlayer 8s
+    // timeout 撞冷歌,正正係呢單嘢嘅場景),個 'close' event 喺呢個 listener
+    // 註冊之前就已經 fire 咗,doUnmark 永遠唔會行 → markStreaming refcount
+    // 永久卡住 1 → anyStreaming() 永遠 true → 兩個 keep-warm timer 永久熄火
+    // 直到 backend 重啟。呢句補漏:listener 啱啱先註冊完,如果個 socket 已經
+    // 閂咗(res.destroyed),即刻補做一次 doUnmark()。doUnmark 本身有
+    // unmarked flag 防重覆,呢句絕對唔會 double-unmark。
+    if (res.destroyed) doUnmark();
 
     const isHead = req.method === 'HEAD';
     const clientRange = req.headers.range;
