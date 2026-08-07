@@ -1,8 +1,8 @@
 {
   "expo": {
-    "name": "God Music",
+    "name": "Ode",
     "slug": "hymn-app",
-    "version": "1.4.2",
+    "version": "1.5.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
@@ -13,12 +13,12 @@
     },
     "android": {
       "package": "com.hymnapp.praise",
-      "versionCode": 52,
+      "versionCode": 53,
       "adaptiveIcon": {
         "foregroundImage": "./assets/android-icon-foreground.png",
         "monochromeImage": "./assets/android-icon-monochrome.png",
         "backgroundImage": "./assets/android-icon-background.png",
-        "backgroundColor": "#E3E8EE"
+        "backgroundColor": "#0B0913"
       },
       "allowBackup": false,
       "intentFilters": [
@@ -26,9 +26,21 @@
           "action": "VIEW",
           "autoVerify": true,
           "data": [
-            { "scheme": "https", "host": "api.god-music.com", "pathPrefix": "/p/" }
+            {
+              "scheme": "https",
+              "host": "api.god-music.com",
+              "pathPrefix": "/p/"
+            },
+            {
+              "scheme": "https",
+              "host": "api.odemusics.com",
+              "pathPrefix": "/p/"
+            }
           ],
-          "category": ["BROWSABLE", "DEFAULT"]
+          "category": [
+            "BROWSABLE",
+            "DEFAULT"
+          ]
         }
       ]
     },
@@ -36,7 +48,8 @@
       "favicon": "./assets/favicon.png"
     },
     "plugins": [
-      "expo-web-browser"
+      "expo-web-browser",
+      "expo-font"
     ],
     "extra": {
       "eas": {
@@ -44,7 +57,7 @@
       }
     },
     "owner": "god-music-team",
-    "runtimeVersion": "2",
+    "runtimeVersion": "3",
     "updates": {
       "url": "https://u.expo.dev/2fc23a2a-dc9e-4f29-b2f6-a337ee4c692a",
       "requestHeaders": {

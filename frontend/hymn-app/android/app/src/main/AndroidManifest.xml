@@ -28,6 +28,28 @@
         <action android:name="android.intent.action.MAIN"/>
         <category android:name="android.intent.category.LAUNCHER"/>
       </intent-filter>
+      <!-- MEMBERSHIP-PHASE3-SHARE-PLAN 分享清單 deep link + ODE-REBRAND-PLAN
+           §3.5 domain 遷移。⚠️ 呢個 project 係 bare workflow(android/ 落咗
+           git),app.json 嘅 intentFilters 唔會自動同步入呢個檔案——rebrand
+           驗收(emulator 實測 adb am start -d "https://...")先發現呢個
+           intent-filter 之前根本冇落過 manifest(app.json 寫咗但冇生效,
+           分享連結一路淨係靠 SSR 頁嘅 intent:// 掣先開到 app,直接撳
+           https 連結會走去瀏覽器)。而家補返:https(雙域)+ godmusic://
+           scheme 兩個 intent-filter,同 App.js parseSharedToken() 認嘅
+           URL 對齊。 -->
+      <intent-filter android:autoVerify="true">
+        <action android:name="android.intent.action.VIEW"/>
+        <category android:name="android.intent.category.DEFAULT"/>
+        <category android:name="android.intent.category.BROWSABLE"/>
+        <data android:scheme="https" android:host="api.god-music.com" android:pathPrefix="/p/"/>
+        <data android:scheme="https" android:host="api.odemusics.com" android:pathPrefix="/p/"/>
+      </intent-filter>
+      <intent-filter>
+        <action android:name="android.intent.action.VIEW"/>
+        <category android:name="android.intent.category.DEFAULT"/>
+        <category android:name="android.intent.category.BROWSABLE"/>
+        <data android:scheme="godmusic" android:host="p"/>
+      </intent-filter>
     </activity>
   </application>
 </manifest>

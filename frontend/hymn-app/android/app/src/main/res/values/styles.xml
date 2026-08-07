@@ -1,0 +1,15 @@
+<resources xmlns:tools="http://schemas.android.com/tools">
+  <style name="AppTheme" parent="Theme.AppCompat.DayNight.NoActionBar">
+    <item name="android:editTextBackground">@drawable/rn_edit_text_material</item>
+    <item name="colorPrimary">@color/colorPrimary</item>
+    <item name="android:statusBarColor">@android:color/transparent</item>
+    <item name="android:navigationBarColor">@android:color/transparent</item>
+  </style>
+  <!-- ODE-REBRAND-PLAN R2:splashscreen_logo.png 而家係透明底(淨環,冇字樣),
+       如果 windowBackground 直接指佢,透明位會漏出 AppTheme 嘅預設底色(白色)。
+       改用 ic_launcher_background 呢個 layer-list(底色 @color/splashscreen_background
+       #0B0913 + 中心疊 splashscreen_logo),先至有正確嘅深色 splash 底。 -->
+  <style name="Theme.App.SplashScreen" parent="AppTheme">
+    <item name="android:windowBackground">@drawable/ic_launcher_background</item>
+  </style>
+</resources>
