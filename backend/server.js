@@ -30,6 +30,20 @@ const PORT = process.env.PORT || 3001;
 
 app.use(cors());
 app.use(express.json());
+
+// ODE-REBRAND-PLAN §3.5 第2步:domain 遷移(god-music.com → odemusics.com,
+// 雙域並行,舊域唔剪)。舊域嘅 /p/*(分享連結)同 /downloads/*(APK 下載)
+// 301 去新域,等舊連結自動着陸新域。⚠️ /api/* 路由唔准喺呢度攔截 redirect
+// ——舊 APK 嘅 src/config.js 仲會直接打 api.god-music.com 打 API,301 佢會
+// 斷晒現有用戶(App 唔會跟 redirect 打 fetch)。
+app.use((req, res, next) => {
+  const host = (req.headers.host || '').split(':')[0];
+  if (host === 'api.god-music.com' && (req.path.startsWith('/p/') || req.path.startsWith('/downloads/'))) {
+    return res.redirect(301, `https://api.odemusics.com${req.originalUrl}`);
+  }
+  next();
+});
+
 app.use('/api/home', homeRoutes);
 app.use('/api/search', searchRoutes);
 app.use('/api/category', categoryRoutes);

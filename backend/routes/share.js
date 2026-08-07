@@ -18,7 +18,9 @@ import { getUserDb, saveUserDb } from '../lib/userDb.js';
 import requireAuth from '../lib/requireAuth.js';
 import { clientIp } from '../lib/loginRateLimit.js';
 
-const API_BASE = 'https://api.god-music.com';
+// ODE-REBRAND-PLAN §3.5:新 domain。舊 god-music.com 唔剪(舊 APK/流通中連結
+// 靠佢),server.js 已加 host-based 301 將舊域 /p/ /downloads 帶去呢度。
+const API_BASE = 'https://api.odemusics.com';
 const APK_PACKAGE = 'com.hymnapp.praise';
 // debug.keystore 嘅 SHA-256(§0.3:release build 而家都係用呢條簽,keytool -list
 // -v -keystore android/app/debug.keystore -alias androiddebugkey -storepass android 攞)。
@@ -108,21 +110,22 @@ function intentUrl(token) {
   return `intent://p/${token}#Intent;scheme=godmusic;package=${APK_PACKAGE};S.browser_fallback_url=${fallback};end`;
 }
 
+// Ode 色板(ODE-REBRAND-PLAN §2):靛紫底 + 暖光 CTA,冇金色、冇綠色。
 const PAGE_STYLE = `
-  body { margin:0; background:#121212; color:#f2f2f2; font-family:-apple-system,Roboto,sans-serif; }
+  body { margin:0; background:#0B0913; color:#F4F1FA; font-family:-apple-system,Roboto,sans-serif; }
   .wrap { max-width:480px; margin:0 auto; padding:28px 20px 40px; }
-  .brand { font-size:13px; color:#9a9a9a; margin-bottom:6px; }
+  .brand { font-size:13px; color:#A79CD0; margin-bottom:6px; letter-spacing:1px; }
   h1 { font-size:22px; margin:0 0 6px; line-height:1.3; }
-  .meta { font-size:14px; color:#b0b0b0; margin-bottom:20px; }
-  .btn { display:block; text-align:center; text-decoration:none; padding:13px 16px; border-radius:10px;
+  .meta { font-size:14px; color:#8F88AB; margin-bottom:20px; }
+  .btn { display:block; text-align:center; text-decoration:none; padding:13px 16px; border-radius:24px;
          font-size:15px; font-weight:600; margin-bottom:10px; }
-  .btn.primary { background:#5DBE8A; color:#0c0c0c; }
-  .btn.secondary { background:#242424; color:#f2f2f2; border:1px solid #3a3a3a; }
+  .btn.primary { background:#EFE4D2; color:#1C1436; }
+  .btn.secondary { background:#150F26; color:#F4F1FA; border:1px solid #2A2145; }
   .songs { margin-top:24px; }
-  .song { display:flex; align-items:center; gap:12px; padding:10px 0; border-bottom:1px solid #232323; }
-  .song img { width:52px; height:52px; border-radius:6px; object-fit:cover; background:#242424; flex-shrink:0; }
+  .song { display:flex; align-items:center; gap:12px; padding:10px 0; border-bottom:1px solid #16112A; }
+  .song img { width:52px; height:52px; border-radius:9px; object-fit:cover; background:#221B3E; flex-shrink:0; }
   .song .title { font-size:15px; margin:0 0 2px; }
-  .song .artist { font-size:12px; color:#9a9a9a; margin:0; }
+  .song .artist { font-size:12px; color:#8F88AB; margin:0; }
   .gone { text-align:center; padding-top:60px; }
   .gone .icon { font-size:40px; }
 `;
@@ -153,7 +156,7 @@ function renderGonePage() {
     <p class="meta">連結可能已經失效,或者分享者刪咗個清單。</p>
     <a class="btn primary" href="/downloads/app.apk">⬇ 下載 App(Android)</a>
   </div>`;
-  return pageShell({ title: 'God Music 詩歌', bodyHtml });
+  return pageShell({ title: 'Ode 詩歌', bodyHtml });
 }
 
 function renderPlaylistPage(data, token) {
@@ -161,7 +164,7 @@ function renderPlaylistPage(data, token) {
   const owner = data.owner ? escapeHtml(data.owner) : null;
   const count = data.songs.length;
   const ogTitle = escapeHtml(`【${data.name}】· ${count} 首詩歌`);
-  const ogDesc = escapeHtml(owner ? `${data.owner} 喺 God Music 同你分享咗一個詩歌清單` : '有人喺 God Music 同你分享咗一個詩歌清單');
+  const ogDesc = escapeHtml(owner ? `${data.owner} 喺 Ode 同你分享咗一個詩歌清單` : '有人喺 Ode 同你分享咗一個詩歌清單');
   const firstYoutubeId = data.songs.find((s) => s?.youtube_id)?.youtube_id;
   const ogImageTag = firstYoutubeId
     ? `<meta property="og:image" content="https://img.youtube.com/vi/${escapeHtml(firstYoutubeId)}/mqdefault.jpg">`
@@ -180,7 +183,7 @@ ${ogImageTag}`;
   }).join('\n');
 
   const bodyHtml = `
-  <div class="brand">God Music 詩歌</div>
+  <div class="brand">Ode 詩歌</div>
   <h1>${name}</h1>
   <div class="meta">${owner ? `由 ${owner} 分享 · ` : ''}${count} 首詩歌</div>
   <a class="btn primary" href="${intentUrl(token)}">▶ 喺 App 開啟</a>
