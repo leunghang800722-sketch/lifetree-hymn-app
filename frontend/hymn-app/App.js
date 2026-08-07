@@ -386,6 +386,15 @@ function PlayerProvider({ children }) {
   const repeatModeRef = useRef(0);
   const isShuffledRef = useRef(false);
   const errorSkipCountRef = useRef(0); // §3.7 — consecutive PlaybackError count
+  // BG-PLAYBACK-STOPS-PLAN Fix A — 記住上次 warmIds() 暖過嘅 id 串,防止連環
+  // 換歌/撳「下一首」狂 POST /warm(同一組 3 首唔會重覆 call)。
+  const lastWarmedKeyRef = useRef('');
+  // BG-PLAYBACK-STOPS-PLAN Fix B — 記低而家 AppState,俾 PlaybackError 熔斷器
+  // 判斷前台/背景走邊條路(前台行為完全不變,門檻 3;背景門檻放寬到 10、
+  // 唔即場 Alert)。pendingPlaybackNoticeRef 存住背景觸發熔斷之後、等用戶返
+  // 前台先顯示嘅提示文字(背景彈 Alert 等於冇彈,用戶淨係見到「靜靜哋停咗」)。
+  const appStateRef = useRef(AppState.currentState);
+  const pendingPlaybackNoticeRef = useRef(null);
   // BUG2 P0 — 記低「呢首歌已經 retry 過一次未」,先至知道下次撞 PlaybackError
   // 係要再 retry 定係死心跳下一首。存 song id(唔係 index),因為 retry() 唔會
   // 改變 index,兩次錯誤事件個 index 一樣,靠 id 分辨「係咪同一首」。
@@ -664,6 +673,16 @@ function PlayerProvider({ children }) {
           insertBoundaryRef.current = null;
           setInsertBoundary(null);
         }
+        // BG-PLAYBACK-STOPS-PLAN Fix A — playQueue() 起播嗰陣淨係暖咗頭 3 首
+        // (§1092),之後換歌完全冇再預熱 → 第 5 首起全部撞冷歌。呢度令預熱窗口
+        // 跟住播放位置滾動,永遠暖住前面 3 首。輕量去重:同上次暖過嘅 id 串
+        // 一樣就唔再 call,防止連環撳「下一首」狂 POST /warm。
+        const nextIds = queueRef.current.slice(idx + 1, idx + 4).map((s) => s.id);
+        const nextIdsKey = nextIds.join(',');
+        if (nextIds.length && lastWarmedKeyRef.current !== nextIdsKey) {
+          lastWarmedKeyRef.current = nextIdsKey;
+          warmIds(nextIds);
+        }
         // §3a playLog:聽夠 30 秒先算一次(skip 唔算)。換咗歌就取消上一個計時器,
         // 開一個新嘅;30 秒後如果仲係播緊同一首,先記錄。
         if (playLogTimerRef.current) clearTimeout(playLogTimerRef.current);
@@ -710,16 +729,40 @@ function PlayerProvider({ children }) {
       retriedTrackRef.current = null;
 
       errorSkipCountRef.current += 1;
-      // BUG2(d)P0 — 舊門檻 5 太遲先出聲,而家 3 次連續失敗就出（Eric 要求 2–3）。
-      if (errorSkipCountRef.current >= 3) {
-        await TrackPlayer.pause().catch(() => {});
-        Alert.alert('播放中斷', '連續幾首歌都載入唔到，請檢查網絡或者稍後再試');
-        errorSkipCountRef.current = 0;
+
+      // BG-PLAYBACK-STOPS-PLAN Fix B — 前台/背景分流。前台行為完全不變(Eric
+      // 2026-07-29 拍板門檻 3,唔准喺前台改)。背景嗰陣 Alert 彈唔到俾人睇,
+      // 用戶淨係見到「靜靜哋停咗」,所以背景放寬門檻到 10 先 pause,而且
+      // 唔即場 Alert,改為記低 pending notice 等返前台先顯示。
+      const isBackground = appStateRef.current !== 'active';
+
+      if (!isBackground) {
+        // BUG2(d)P0 — 舊門檻 5 太遲先出聲,而家 3 次連續失敗就出（Eric 要求 2–3）。
+        if (errorSkipCountRef.current >= 3) {
+          await TrackPlayer.pause().catch(() => {});
+          Alert.alert('播放中斷', '連續幾首歌都載入唔到，請檢查網絡或者稍後再試');
+          errorSkipCountRef.current = 0;
+          return;
+        }
+        // BUG2(c)P0 — 單首歌失敗唔好再用會擋住成個畫面嘅白色系統 Alert,
+        // 改用輕量、非阻擋、自動消失嘅提示。
+        showNotice('呢首歌暫時載入唔到，跳去下一首');
+        try { await TrackPlayer.skipToNext(); } catch (e) { /* queue tail, repeat off — nothing to skip to */ }
         return;
       }
-      // BUG2(c)P0 — 單首歌失敗唔好再用會擋住成個畫面嘅白色系統 Alert,
-      // 改用輕量、非阻擋、自動消失嘅提示。
-      showNotice('呢首歌暫時載入唔到，跳去下一首');
+
+      // 背景路徑:每次失敗留一條 logcat 可見嘅記錄,方便下一輪對數。
+      console.warn('[playback] background skip', {
+        count: errorSkipCountRef.current,
+        songId: curId,
+        code: event?.code || '',
+      });
+      if (errorSkipCountRef.current >= 10) {
+        await TrackPlayer.pause().catch(() => {});
+        errorSkipCountRef.current = 0;
+        pendingPlaybackNoticeRef.current = '背景播放中斷：連續多首歌載入唔到，已暫停';
+        return;
+      }
       try { await TrackPlayer.skipToNext(); } catch (e) { /* queue tail, repeat off — nothing to skip to */ }
     });
 
@@ -797,6 +840,9 @@ function PlayerProvider({ children }) {
     // + 每次返前台(isColdStart=false,照舊 resync,唔清場)。
     const t = setTimeout(() => { resyncFromNative(true); }, 800);
     const sub = AppState.addEventListener('change', (s) => {
+      // BG-PLAYBACK-STOPS-PLAN Fix B — 記低所有 state(唔淨係 'active'),俾
+      // PlaybackError 熔斷器判斷前台/背景。原本 'active' 分支嘅行為完全不變。
+      appStateRef.current = s;
       if (s !== 'active') return;
       resyncFromNative(false);
       // OTA-MEDIA-NOTIFICATION:每次返前台都重新 apply 一次播放器選項。
@@ -805,6 +851,13 @@ function PlayerProvider({ children }) {
       // latestOptions,個媒體通知就會啞晒。updateOptions 係 idempotent,
       // KotlinAudio 見到 buttons 冇變會 skip 重建,所以重覆 call 好平。
       applyPlayerOptions({ retries: 1 });
+      // BG-PLAYBACK-STOPS-PLAN Fix B — 背景熔斷器觸發時冇即場 Alert(彈咗都
+      // 冇人見到),而係留低一個 pending notice;返前台呢度用現有嘅輕量
+      // showNotice() 顯示,保證用戶一定見到解釋,而唔係之前嗰種靜默 stop。
+      if (pendingPlaybackNoticeRef.current) {
+        showNotice(pendingPlaybackNoticeRef.current);
+        pendingPlaybackNoticeRef.current = null;
+      }
     });
     return () => { clearTimeout(t); sub.remove(); };
   }, [resyncFromNative, applyPlayerOptions]);

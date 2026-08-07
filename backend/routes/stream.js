@@ -4,7 +4,14 @@
 
 import { Router } from 'express';
 import { Readable } from 'stream';
-import { resolveAudioUrl, bustCache, preVerifyUrl, markStreaming, unmarkStreaming } from '../lib/resolveAudio.js';
+import { resolveAudioUrl, bustCache, preVerifyUrl, markStreaming, unmarkStreaming, cache } from '../lib/resolveAudio.js';
+
+// BG-PLAYBACK-STOPS-PLAN Fix D:純 observability helper,唔改任何 proxy 行為。
+// 一行 log,帶 ISO timestamp,用嚟診斷背景播放 3-4 首自動停個 bug(client abort
+// 之前完全冇 log,飛盲)。
+function logLine(fields) {
+  console.log(`[stream] ${new Date().toISOString()} ${Object.entries(fields).map(([k, v]) => `${k}=${v}`).join(' ')}`);
+}
 
 export default function streamRoutes(getDb) {
   const router = Router();
@@ -35,8 +42,11 @@ export default function streamRoutes(getDb) {
   });
 
   router.get('/:hymnId', async (req, res) => {
+    // BG-PLAYBACK-STOPS-PLAN Fix D:純 observability,零行為改動。
+    const reqStart = Date.now();
     const id = Number(req.params.hymnId);
     if (!Number.isInteger(id) || id <= 0) {
+      logLine({ id: req.params.hymnId, yt: '-', mode: '-', resolve_ms: 0, ttfb_ms: Date.now() - reqStart, status: 400, aborted: false, retried: false });
       return res.status(400).json({ error: 'bad id' });
     }
 
@@ -48,16 +58,58 @@ export default function streamRoutes(getDb) {
     stmt.free();
 
     if (!hymn?.youtube_id) {
+      logLine({ id, yt: '-', mode: '-', resolve_ms: 0, ttfb_ms: Date.now() - reqStart, status: 404, aborted: false, retried: false });
       return res.status(404).json({ error: 'not found' });
     }
 
+    // warm|cold 係「行呢個 request 之前」個 cache 狀態(唔改 resolveAudio.js
+    // 任何行為,只係讀返佢已經 export 咗嘅 cache Map)。
+    const warm = (() => {
+      const c = cache.get(hymn.youtube_id);
+      return !!(c && c.expiresAt > Date.now());
+    })();
+    let resolveMs = 0;
+    let retried = false;
+    let logged = false;
+    // 收工一定 log 一行,唔會重覆:正常/錯誤路徑同 res 'close' 都可能行到,
+    // 用 logged flag 防重覆(參考 doUnmark 個寫法)。
+    const finishLog = (status, extra = {}) => {
+      if (logged) return;
+      logged = true;
+      logLine({
+        id,
+        yt: hymn.youtube_id,
+        mode: warm ? 'warm' : 'cold',
+        resolve_ms: resolveMs,
+        ttfb_ms: extra.ttfbMs != null ? extra.ttfbMs : (Date.now() - reqStart),
+        status,
+        aborted: extra.aborted ?? false,
+        retried,
+      });
+    };
+
+    // Fix D coverage gap: if the client aborts *while resolveAudioUrl() is
+    // still running* (before the proxy's own res.on('close') below gets
+    // registered), that 'close' event would otherwise fire with zero
+    // listeners attached and be lost forever — silently unlogged, which is
+    // exactly the ExoPlayer-timeout fingerprint this fix exists to catch.
+    // This listener is purely additive (logging only) — it does NOT touch
+    // doUnmark/controller/markStreaming, those stay exactly where they were.
+    res.on('close', () => {
+      finishLog(res.headersSent ? res.statusCode : 0, { aborted: !res.writableFinished });
+    });
+
     let url;
+    const resolveStart1 = Date.now();
     try {
       url = await resolveAudioUrl(hymn.youtube_id);
     } catch (e) {
-      console.warn(`⚠️ stream resolve failed: id=${id} yt=${hymn.youtube_id} err=${e?.message || e}`);
+      resolveMs += Date.now() - resolveStart1;
+      console.warn(`[${new Date().toISOString()}] ⚠️ stream resolve failed: id=${id} yt=${hymn.youtube_id} err=${e?.message || e}`);
+      finishLog(502);
       return res.status(502).json({ error: 'resolve failed' });
     }
+    resolveMs += Date.now() - resolveStart1;
 
     // 止血:登記「呢首歌播緊」,keep-warm 就唔會中途換佢個 URL / 唔會同串流爭資源。
     // 純附加,唔改下面 proxy 邏輯。refcount 應付 ExoPlayer 嘅多個 range 連線。
@@ -70,7 +122,18 @@ export default function streamRoutes(getDb) {
     // sending (ExoPlayer closes+reopens range connections constantly while
     // streaming). res 'close' fires on normal completion too, so gate on
     // writableFinished to avoid aborting a request that already succeeded.
-    res.on('close', () => { doUnmark(); if (!res.writableFinished) controller.abort(); });
+    res.on('close', () => {
+      doUnmark();
+      const clientAborted = !res.writableFinished;
+      if (clientAborted) controller.abort();
+      // Fallback log for the streaming-success path (no explicit `return`
+      // after body.pipe(res)) and for any mid-stream abort. No-op if an
+      // explicit finishLog() below already fired. Express defaults
+      // statusCode to 200 even when nothing was ever sent — only trust it
+      // once headers actually went out, otherwise report 0 (client left
+      // before we responded at all).
+      finishLog(res.headersSent ? res.statusCode : 0, { aborted: clientAborted });
+    });
 
     const isHead = req.method === 'HEAD';
     const clientRange = req.headers.range;
@@ -98,14 +161,14 @@ export default function streamRoutes(getDb) {
       try {
         const r = await doFetch(u);
         if (r.status === 200 || r.status === 206) return r;
-        console.warn(`⚠️ stream upstream bad status: id=${id} yt=${hymn.youtube_id} status=${r.status}`);
+        console.warn(`[${new Date().toISOString()}] ⚠️ stream upstream bad status: id=${id} yt=${hymn.youtube_id} status=${r.status}`);
         // 唔consume嘅 body 喺 undici 底下會揸住個連線直到 GC——呢個分支而家
         // 觸發得比之前(淨係 403/410)密好多,要即刻放手,唔留手尾。
         try { r.body?.cancel(); } catch (_) {}
         return null;
       } catch (e) {
-        if (controller.signal.aborted) throw e; // 客戶端自己走咗,唔使 retry/log
-        console.warn(`⚠️ stream upstream fetch threw: id=${id} yt=${hymn.youtube_id} err=${e?.message || e}`);
+        if (controller.signal.aborted) throw e; // 客戶端自己走咗,唔使 retry(但 Fix D:要 log)
+        console.warn(`[${new Date().toISOString()}] ⚠️ stream upstream fetch threw: id=${id} yt=${hymn.youtube_id} err=${e?.message || e}`);
         return null;
       }
     }
@@ -118,6 +181,8 @@ export default function streamRoutes(getDb) {
     try {
       upstream = await attemptFetch(url);
     } catch (_) {
+      // Fix D: 呢個係 ExoPlayer 8s timeout 嘅指紋分支,一定要 log。
+      finishLog(502, { aborted: true });
       return res.status(502).json({ error: 'upstream fetch aborted' });
     }
 
@@ -135,21 +200,28 @@ export default function streamRoutes(getDb) {
           controller.signal.addEventListener('abort', () => { clearTimeout(t); resolve(); }, { once: true });
         });
       }
+      retried = true;
       bustCache(hymn.youtube_id);
+      const resolveStart2 = Date.now();
       try {
         url = await resolveAudioUrl(hymn.youtube_id);
       } catch (e) {
-        console.warn(`⚠️ stream retry resolve failed: id=${id} yt=${hymn.youtube_id} err=${e?.message || e}`);
+        resolveMs += Date.now() - resolveStart2;
+        console.warn(`[${new Date().toISOString()}] ⚠️ stream retry resolve failed: id=${id} yt=${hymn.youtube_id} err=${e?.message || e}`);
+        finishLog(502);
         return res.status(502).json({ error: 'resolve failed (retry)' });
       }
+      resolveMs += Date.now() - resolveStart2;
       try {
         upstream = await attemptFetch(url);
       } catch (_) {
+        finishLog(502, { aborted: true });
         return res.status(502).json({ error: 'upstream fetch aborted' });
       }
     }
 
     if (!upstream) {
+      finishLog(502, { aborted: controller.signal.aborted });
       return res.status(502).json({ error: 'upstream fetch failed after retry' });
     }
 
