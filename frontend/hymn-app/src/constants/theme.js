@@ -1,30 +1,31 @@
 // 相容層 —— 唔好喺呢度加新顏色。
 //
 // 呢個檔案本身曾經係第二套色板(黑底 + Spotify 綠 #1ED760),同
-// `src/theme/designSystem.js` 嗰套「深綠 + teal」並存,搞到成個 App 兩種樣
-// (REDESIGN-PLAN.md §5.1 講嘅正正就係呢個問題)。
+// `src/theme/designSystem.js` 並存,搞到成個 App 兩種樣。而家兩層都已經
+// 改晒做 Ode 色板(ODE-REBRAND-PLAN),呢度嘅 key 名冇變,淨係指去嘅值變咗。
 //
 // 有 10+ 個檔案 import 緊呢度嘅 `COLORS.bg` / `.accent` 等等,所以與其逐個檔案改,
-// 呢度改成**指返** designSystem 嗰套「生命樹」色板,舊 key 名照用。
+// 呢度改成**指返** designSystem 嗰套 Ode 色板,舊 key 名照用。
 // 咁樣所有 importer 自動攞到新色,唔使一個個手動改(亦唔會漏)。
 //
-// 👉 新 code 請直接 `import { COLORS } from '../theme/designSystem'`。
+// 👉 新 code 請直接 `import { COLORS } from '../theme/designSystem'`(可以攞到
+// 埋 glow/primary/surface/textMuted 等新 ode key,呢度冇 re-export)。
 
-import { COLORS as LIFE_TREE } from '../theme/designSystem';
+import { COLORS as ODE } from '../theme/designSystem';
 
 export const COLORS = {
-  bg: LIFE_TREE.background,           // was #000000 純黑
-  cardBg: LIFE_TREE.card,             // was #1A1A1A
-  cardBgLight: LIFE_TREE.cardLight,   // was #2A2A2A
-  primary: LIFE_TREE.textPrimary,     // was #FFFFFF 死白
-  secondary: LIFE_TREE.textSecondary, // was #A0A0A0
-  accent: LIFE_TREE.accent,           // was #1ED760 Spotify 綠 -> 生命綠
-  chipBg: LIFE_TREE.border,
-  chipText: LIFE_TREE.textPrimary,
-  divider: LIFE_TREE.border,
-  overlay: LIFE_TREE.overlay,
-  headerBg: LIFE_TREE.card,
-  gold: LIFE_TREE.gold,               // 【只限金句/精選】
+  bg: ODE.background,
+  cardBg: ODE.card,
+  cardBgLight: ODE.cardLight,
+  primary: ODE.textPrimary,
+  secondary: ODE.textSecondary,
+  accent: ODE.accent,
+  chipBg: ODE.border,
+  chipText: ODE.textPrimary,
+  divider: ODE.border,
+  overlay: ODE.overlay,
+  headerBg: ODE.card,
+  gold: ODE.gold,
 };
 
 export default COLORS;
