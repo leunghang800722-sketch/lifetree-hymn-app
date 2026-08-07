@@ -46,7 +46,7 @@ export default function streamRoutes(getDb) {
     const reqStart = Date.now();
     const id = Number(req.params.hymnId);
     if (!Number.isInteger(id) || id <= 0) {
-      logLine({ id: req.params.hymnId, yt: '-', mode: '-', resolve_ms: 0, ttfb_ms: Date.now() - reqStart, status: 400, aborted: false, retried: false });
+      logLine({ id: req.params.hymnId, yt: '-', mode: '-', resolve_ms: 0, ttfb_ms: Date.now() - reqStart, total_ms: Date.now() - reqStart, status: 400, aborted: false, retried: false });
       return res.status(400).json({ error: 'bad id' });
     }
 
@@ -58,7 +58,7 @@ export default function streamRoutes(getDb) {
     stmt.free();
 
     if (!hymn?.youtube_id) {
-      logLine({ id, yt: '-', mode: '-', resolve_ms: 0, ttfb_ms: Date.now() - reqStart, status: 404, aborted: false, retried: false });
+      logLine({ id, yt: '-', mode: '-', resolve_ms: 0, ttfb_ms: Date.now() - reqStart, total_ms: Date.now() - reqStart, status: 404, aborted: false, retried: false });
       return res.status(404).json({ error: 'not found' });
     }
 
@@ -71,6 +71,12 @@ export default function streamRoutes(getDb) {
     let resolveMs = 0;
     let retried = false;
     let logged = false;
+    // Opus 5 驗收修正:原本 ttfb_ms 係喺 res 'close' 度先量,即係「成個 request
+    // 由頭到尾嘅時間」——一首正常播完嘅歌會報幾分鐘,根本唔係 time-to-first-byte。
+    // 而 §1.5 要對比嘅正正係「冷歌 TTFB vs ExoPlayer 8s budget」,讀錯呢個數
+    // 就會誤判。而家喺攞到 upstream response header 嗰刻定格真 TTFB,另外用
+    // total_ms 保留返舊嗰個「成個 request 用咗幾耐」。純 log,零行為改動。
+    let ttfbMs = null;
     // 收工一定 log 一行,唔會重覆:正常/錯誤路徑同 res 'close' 都可能行到,
     // 用 logged flag 防重覆(參考 doUnmark 個寫法)。
     const finishLog = (status, extra = {}) => {
@@ -81,7 +87,8 @@ export default function streamRoutes(getDb) {
         yt: hymn.youtube_id,
         mode: warm ? 'warm' : 'cold',
         resolve_ms: resolveMs,
-        ttfb_ms: extra.ttfbMs != null ? extra.ttfbMs : (Date.now() - reqStart),
+        ttfb_ms: extra.ttfbMs != null ? extra.ttfbMs : (ttfbMs != null ? ttfbMs : (Date.now() - reqStart)),
+        total_ms: Date.now() - reqStart,
         status,
         aborted: extra.aborted ?? false,
         retried,
@@ -224,6 +231,9 @@ export default function streamRoutes(getDb) {
       finishLog(502, { aborted: controller.signal.aborted });
       return res.status(502).json({ error: 'upstream fetch failed after retry' });
     }
+    // 真 TTFB 定格位:upstream response header 已經到手,再落去就係寫 header
+    // + pipe body。純賦值,唔會拋、唔會改任何 proxy 行為。
+    ttfbMs = Date.now() - reqStart;
 
     // Forward pass-through headers. content-range is only meaningful when the
     // client actually asked for a range — we may have added `bytes=0-` upstream
