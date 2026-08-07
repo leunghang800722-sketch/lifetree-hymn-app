@@ -4,7 +4,7 @@
 // SharedPlaylistSheet(睇/播/儲存副本全部現成,呢度冇新同步邏輯)。
 import React, { useEffect, useState } from 'react';
 import { Modal, View, Text, FlatList, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
-import MaterialIcons from '@expo/vector-icons/MaterialIcons';
+import OdeIcon from '../icons/OdeIcon';
 import { COLORS, TYPOGRAPHY } from '../theme/designSystem';
 import { useInsets } from '../hooks/useInsets';
 import { useAuth } from '../context/AuthContext';
@@ -42,7 +42,7 @@ export default function FriendSharesSheet({ friend, onClose, onOpenToken }) {
           <Text style={styles.title}>{friend.username} 分享緊嘅清單</Text>
 
           {loading ? (
-            <View style={styles.centerState}><ActivityIndicator color={COLORS.accent} /></View>
+            <View style={styles.centerState}><ActivityIndicator color={COLORS.glow} /></View>
           ) : err ? (
             <View style={styles.centerState}>
               <Text style={styles.emptyText}>讀取失敗,遲啲再試</Text>
@@ -55,18 +55,18 @@ export default function FriendSharesSheet({ friend, onClose, onOpenToken }) {
               renderItem={({ item }) => (
                 <TouchableOpacity style={styles.row} activeOpacity={0.7} onPress={() => onOpenToken && onOpenToken(item.token)}>
                   <View style={styles.rowIcon}>
-                    <MaterialIcons name="queue-music" size={22} color={COLORS.accent} />
+                    <OdeIcon name="queue" size={22} color={COLORS.primary} />
                   </View>
                   <View style={styles.rowText}>
                     <Text style={styles.rowName} numberOfLines={1}>{item.name}</Text>
                     <Text style={styles.rowCount}>{item.song_count} 首</Text>
                   </View>
-                  <MaterialIcons name="chevron-right" size={20} color={COLORS.textSecondary} />
+                  <OdeIcon name="chevronRight" size={20} color={COLORS.textSecondary} />
                 </TouchableOpacity>
               )}
               ListEmptyComponent={
                 <View style={styles.centerState}>
-                  <MaterialIcons name="queue-music" size={36} color={COLORS.textSecondary} />
+                  <OdeIcon name="queue" size={36} color={COLORS.textSecondary} />
                   <Text style={styles.emptyText}>佢未有分享緊嘅清單</Text>
                 </View>
               }

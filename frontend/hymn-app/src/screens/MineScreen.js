@@ -8,7 +8,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { View, Text, FlatList, TouchableOpacity, StyleSheet, Image, Alert, ScrollView, ActivityIndicator } from 'react-native';
-import MaterialIcons from '@expo/vector-icons/MaterialIcons';
+import OdeIcon from '../icons/OdeIcon';
 import { COLORS, TYPOGRAPHY } from '../theme/designSystem';
 import { useInsets } from '../hooks/useInsets';
 import { useFavorites } from '../context/FavoritesContext';
@@ -30,7 +30,7 @@ function Cover({ youtubeId, size = 52 }) {
   if (!uri || failed) {
     return (
       <View style={[styles.cover, { width: size, height: size, alignItems: 'center', justifyContent: 'center' }]}>
-        <MaterialIcons name="music-note" size={size * 0.5} color={COLORS.textSecondary} />
+        <OdeIcon name="musicNote" size={size * 0.5} color={COLORS.textSecondary} />
       </View>
     );
   }
@@ -181,13 +181,13 @@ export default function MineScreen({ onPlayHymn, onOpenAuth, onOpenAdminAdd, min
           onPress={() => onOpenAuth && onOpenAuth()}
         >
           <View style={styles.avatar}>
-            <MaterialIcons name="person-outline" size={22} color={COLORS.accent} />
+            <OdeIcon name="me" size={22} color={COLORS.primary} />
           </View>
           <View style={{ flex: 1, marginLeft: 12 }}>
             <Text style={styles.accountTitle}>登入 / 註冊</Text>
             <Text style={styles.accountSub}>登入後可以同步最愛同清單</Text>
           </View>
-          <MaterialIcons name="chevron-right" size={22} color={COLORS.textSecondary} />
+          <OdeIcon name="chevronRight" size={22} color={COLORS.textSecondary} />
         </TouchableOpacity>
       )}
 
@@ -207,14 +207,14 @@ export default function MineScreen({ onPlayHymn, onOpenAuth, onOpenAdminAdd, min
         contentContainerStyle={styles.segment}
       >
         {[
-          { k: 'favorites', label: `最愛 ${favorites.length}`, icon: 'favorite', kind: 'tab' },
-          { k: 'playlists', label: `我嘅清單 ${playlists.length}`, icon: 'queue-music', kind: 'tab' },
+          { k: 'favorites', label: `最愛 ${favorites.length}`, icon: 'heart', kind: 'tab' },
+          { k: 'playlists', label: `我嘅清單 ${playlists.length}`, icon: 'queue', kind: 'tab' },
           // 好友(§3.1)—— 登入先顯示(未登入本身有 CTA 卡引導登入,唔使多個入口);
           // incoming>0 帶紅點,唔出數字。
-          ...(user ? [{ k: 'friends', label: '好友', icon: 'group', kind: 'tab', badge: friendsData.incoming.length > 0 }] : []),
+          ...(user ? [{ k: 'friends', label: '好友', icon: 'friends', kind: 'tab', badge: friendsData.incoming.length > 0 }] : []),
           ...(isAdmin ? [
-            { k: 'admin-add', label: 'URL加歌', icon: 'add-link', kind: 'action', onPress: () => onOpenAdminAdd && onOpenAdminAdd() },
-            { k: 'delisted', label: '已下架', icon: 'visibility-off', kind: 'tab' },
+            { k: 'admin-add', label: 'URL加歌', icon: 'link', kind: 'action', onPress: () => onOpenAdminAdd && onOpenAdminAdd() },
+            { k: 'delisted', label: '已下架', icon: 'visibilityOff', kind: 'tab' },
           ] : []),
         ].map((s) => {
           const active = s.kind === 'tab' && tab === s.k;
@@ -225,7 +225,7 @@ export default function MineScreen({ onPlayHymn, onOpenAuth, onOpenAdminAdd, min
               onPress={s.kind === 'action' ? s.onPress : () => setTab(s.k)}
               activeOpacity={0.7}
             >
-              <MaterialIcons name={s.icon} size={16} color={active ? COLORS.background : COLORS.textSecondary} />
+              <OdeIcon name={s.icon} size={16} filled={active} color={active ? COLORS.textOnGlow : COLORS.textSecondary} />
               <Text style={[styles.segText, active && styles.segTextActive]}>{s.label}</Text>
               {s.badge ? <View style={styles.segBadge} /> : null}
             </TouchableOpacity>
@@ -247,7 +247,7 @@ export default function MineScreen({ onPlayHymn, onOpenAuth, onOpenAdminAdd, min
                 onPress={() => onPlayHymn && onPlayHymn(favorites[0], { explicit: true, playlist: favorites })}
                 activeOpacity={0.8}
               >
-                <MaterialIcons name="play-arrow" size={22} color={COLORS.background} />
+                <OdeIcon name="play" size={22} color={COLORS.textOnGlow} />
                 <Text style={styles.playAllText}>播全部 {favorites.length} 首</Text>
               </TouchableOpacity>
             ) : null
@@ -263,17 +263,17 @@ export default function MineScreen({ onPlayHymn, onOpenAuth, onOpenAdminAdd, min
               </View>
               {/* ≡♪ 加入到清單 —— 彈揀清單 sheet(同播放頁「清單」pill 一致),唔使入返播放頁 */}
               <TouchableOpacity onPress={() => openAddToPlaylist(item)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} style={styles.rowAction}>
-                <MaterialIcons name="playlist-add" size={22} color={COLORS.textSecondary} />
+                <OdeIcon name="addToList" size={22} color={COLORS.textSecondary} />
               </TouchableOpacity>
               <TouchableOpacity onPress={() => toggleFavorite && toggleFavorite(item)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} style={styles.rowAction}>
                 {/* §5.2 心心着燈用生命綠 */}
-                <MaterialIcons name="favorite" size={22} color={COLORS.accent} />
+                <OdeIcon name="heart" filled size={22} color={COLORS.primary} />
               </TouchableOpacity>
             </TouchableOpacity>
           )}
           ListEmptyComponent={
             <View style={styles.empty}>
-              <MaterialIcons name="favorite-border" size={40} color={COLORS.textSecondary} />
+              <OdeIcon name="heart" size={40} color={COLORS.textSecondary} />
               <Text style={styles.emptyText}>仲未有最愛</Text>
               <Text style={styles.emptyHint}>喺播放頁撳心心就會加入呢度</Text>
             </View>
@@ -282,7 +282,7 @@ export default function MineScreen({ onPlayHymn, onOpenAuth, onOpenAdminAdd, min
       ) : tab === 'delisted' ? (
         delistedLoading ? (
           <View style={styles.loadingWrap}>
-            <ActivityIndicator color={COLORS.accent} />
+            <ActivityIndicator color={COLORS.glow} />
           </View>
         ) : (
           <FlatList
@@ -302,7 +302,7 @@ export default function MineScreen({ onPlayHymn, onOpenAuth, onOpenAdminAdd, min
             )}
             ListEmptyComponent={
               <View style={styles.empty}>
-                <MaterialIcons name="visibility-off" size={40} color={COLORS.textSecondary} />
+                <OdeIcon name="visibilityOff" size={40} color={COLORS.textSecondary} />
                 <Text style={styles.emptyText}>未有落架嘅歌</Text>
                 <Text style={styles.emptyHint}>喺詩歌庫長按一首歌可以落架</Text>
               </View>
@@ -312,7 +312,7 @@ export default function MineScreen({ onPlayHymn, onOpenAuth, onOpenAdminAdd, min
       ) : tab === 'friends' && user ? (
         friendsLoading && !friendsData.friends.length && !friendsData.incoming.length && !friendsData.outgoing.length ? (
           <View style={styles.loadingWrap}>
-            <ActivityIndicator color={COLORS.accent} />
+            <ActivityIndicator color={COLORS.glow} />
           </View>
         ) : (
           <FlatList
@@ -336,7 +336,7 @@ export default function MineScreen({ onPlayHymn, onOpenAuth, onOpenAdminAdd, min
             contentContainerStyle={{ paddingBottom: 24 }}
             ListHeaderComponent={
               <TouchableOpacity style={styles.newRow} onPress={() => setAddFriendVisible(true)} activeOpacity={0.7}>
-                <MaterialIcons name="person-add" size={22} color={COLORS.accent} />
+                <OdeIcon name="friends" size={22} color={COLORS.primary} />
                 <Text style={styles.newText}>加好友</Text>
               </TouchableOpacity>
             }
@@ -354,7 +354,7 @@ export default function MineScreen({ onPlayHymn, onOpenAuth, onOpenAdminAdd, min
                       <Text style={styles.pillBtnText}>接受</Text>
                     </TouchableOpacity>
                     <TouchableOpacity onPress={() => handleReject(item)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} style={styles.rowAction}>
-                      <MaterialIcons name="close" size={20} color={COLORS.textSecondary} />
+                      <OdeIcon name="close" size={20} color={COLORS.textSecondary} />
                     </TouchableOpacity>
                   </View>
                 );
@@ -362,7 +362,7 @@ export default function MineScreen({ onPlayHymn, onOpenAuth, onOpenAdminAdd, min
               if (item._type === 'outgoing') {
                 return (
                   <View style={styles.row}>
-                    <View style={styles.friendAvatar}><MaterialIcons name="person-outline" size={20} color={COLORS.textSecondary} /></View>
+                    <View style={styles.friendAvatar}><OdeIcon name="me" size={20} color={COLORS.textSecondary} /></View>
                     <View style={styles.rowInfo}>
                       <Text style={styles.rowTitle} numberOfLines={1}>尾號 {item.phone_tail}(等緊接受)</Text>
                     </View>
@@ -380,14 +380,14 @@ export default function MineScreen({ onPlayHymn, onOpenAuth, onOpenAdminAdd, min
                     <Text style={styles.rowTitle} numberOfLines={1}>{item.username}</Text>
                   </View>
                   <TouchableOpacity onPress={() => showFriendMenu(item)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} style={styles.rowAction}>
-                    <MaterialIcons name="more-vert" size={22} color={COLORS.textSecondary} />
+                    <OdeIcon name="more" size={22} color={COLORS.textSecondary} />
                   </TouchableOpacity>
                 </TouchableOpacity>
               );
             }}
             ListEmptyComponent={
               <View style={styles.empty}>
-                <MaterialIcons name="group" size={40} color={COLORS.textSecondary} />
+                <OdeIcon name="friends" size={40} color={COLORS.textSecondary} />
                 <Text style={styles.emptyText}>仲未有好友</Text>
                 <Text style={styles.emptyHint}>撳上面「加好友」用電話號碼搵朋友</Text>
               </View>
@@ -403,7 +403,7 @@ export default function MineScreen({ onPlayHymn, onOpenAuth, onOpenAdminAdd, min
           // 空狀態都有入口;唔加喺 chip 度(目標區太細,又同切 tab 撈亂語義)。
           ListHeaderComponent={
             <TouchableOpacity style={styles.newRow} onPress={() => openCreate && openCreate()} activeOpacity={0.7}>
-              <MaterialIcons name="add" size={22} color={COLORS.accent} />
+              <OdeIcon name="plus" size={22} color={COLORS.primary} />
               <Text style={styles.newText}>新播放清單</Text>
             </TouchableOpacity>
           }
@@ -413,7 +413,7 @@ export default function MineScreen({ onPlayHymn, onOpenAuth, onOpenAdminAdd, min
             <TouchableOpacity style={styles.row} activeOpacity={0.7}
               onPress={() => setDetailId(item.id)}>
               <View style={[styles.cover, styles.plCover]}>
-                <MaterialIcons name="queue-music" size={26} color={COLORS.textSecondary} />
+                <OdeIcon name="playlistTile" size={26} color={COLORS.textSecondary} />
               </View>
               <View style={styles.rowInfo}>
                 <Text style={styles.rowTitle} numberOfLines={1}>{item.name}</Text>
@@ -421,13 +421,13 @@ export default function MineScreen({ onPlayHymn, onOpenAuth, onOpenAdminAdd, min
               </View>
               <TouchableOpacity onPress={() => showPlaylistMenu(item)}
                 hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} style={styles.rowAction}>
-                <MaterialIcons name="more-vert" size={22} color={COLORS.textSecondary} />
+                <OdeIcon name="more" size={22} color={COLORS.textSecondary} />
               </TouchableOpacity>
             </TouchableOpacity>
           )}
           ListEmptyComponent={
             <View style={styles.empty}>
-              <MaterialIcons name="queue-music" size={40} color={COLORS.textSecondary} />
+              <OdeIcon name="queue" size={40} color={COLORS.textSecondary} />
               <Text style={styles.emptyText}>仲未有清單</Text>
               <Text style={styles.emptyHint}>撳上面「＋新播放清單」開一個{'\n'}喺播放頁撳「清單」都可以加歌</Text>
             </View>
@@ -457,7 +457,7 @@ export default function MineScreen({ onPlayHymn, onOpenAuth, onOpenAdminAdd, min
       {toast ? (
         <View pointerEvents="none" style={[styles.toastWrap, { bottom: insets.bottom + 24 }]}>
           <View style={styles.toastBubble}>
-            <MaterialIcons name="check-circle" size={16} color={COLORS.accent} style={{ marginRight: 6 }} />
+            <OdeIcon name="check" size={16} color={COLORS.primary} style={{ marginRight: 6 }} />
             <Text style={styles.toastText} numberOfLines={1}>{toast}</Text>
           </View>
         </View>
@@ -492,9 +492,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14, paddingVertical: 8, borderRadius: 16,
     backgroundColor: COLORS.card, marginRight: 8,
   },
-  segItemActive: { backgroundColor: COLORS.accent },
+  segItemActive: { backgroundColor: COLORS.primary },
   segText: { fontSize: 13, color: COLORS.textSecondary, fontWeight: '600', marginLeft: 5 },
-  segTextActive: { color: COLORS.background },
+  segTextActive: { color: COLORS.textOnGlow },
   row: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 8 },
   rowAction: { paddingLeft: 14 },
   cover: { borderRadius: 6, backgroundColor: COLORS.cardLight },
@@ -510,14 +510,14 @@ const styles = StyleSheet.create({
   delistedDate: { ...TYPOGRAPHY.artist, marginTop: 2, fontSize: 12 },
   // ＋新播放清單(視覺照 AddToPlaylistSheet 嘅 newRow/newText)
   newRow: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12 },
-  newText: { color: COLORS.accent, marginLeft: 8, fontSize: 15, fontWeight: '700' },
+  newText: { color: COLORS.primary, marginLeft: 8, fontSize: 15, fontWeight: '700' },
   // 播全部最愛 pill(視覺照 PlaylistDetailSheet 嘅 playAll)
   playAll: {
     flexDirection: 'row', alignItems: 'center', alignSelf: 'flex-start',
     marginHorizontal: 16, marginBottom: 12, paddingHorizontal: 18, paddingVertical: 9,
-    backgroundColor: COLORS.accent, borderRadius: 20,
+    backgroundColor: COLORS.glow, borderRadius: 20,
   },
-  playAllText: { color: COLORS.background, fontWeight: '700', fontSize: 15, marginLeft: 4 },
+  playAllText: { color: COLORS.textOnGlow, fontWeight: '700', fontSize: 15, marginLeft: 4 },
   // 好友 chip 紅點(§3.1,incoming>0 先出,唔出數字)
   segBadge: {
     position: 'absolute', top: 4, right: 6,
@@ -530,8 +530,8 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.cardLight, alignItems: 'center', justifyContent: 'center',
   },
   friendAvatarText: { fontSize: 16, fontWeight: '700', color: COLORS.textPrimary },
-  pillBtn: { backgroundColor: COLORS.accent, borderRadius: 14, paddingHorizontal: 14, paddingVertical: 6, marginLeft: 8 },
-  pillBtnText: { color: COLORS.background, fontWeight: '700', fontSize: 13 },
+  pillBtn: { backgroundColor: COLORS.glow, borderRadius: 14, paddingHorizontal: 14, paddingVertical: 6, marginLeft: 8 },
+  pillBtnText: { color: COLORS.textOnGlow, fontWeight: '700', fontSize: 13 },
   pillBtnOutline: { borderWidth: 1, borderColor: COLORS.border, borderRadius: 14, paddingHorizontal: 14, paddingVertical: 6 },
   pillBtnOutlineText: { color: COLORS.textSecondary, fontWeight: '700', fontSize: 13 },
   // 輕量 toast(照 AddToPlaylistSheet 個 pattern)

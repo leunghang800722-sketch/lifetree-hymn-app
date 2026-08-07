@@ -12,7 +12,7 @@ import {
   Platform,
   Image,
 } from 'react-native';
-import MaterialIcons from '@expo/vector-icons/MaterialIcons';
+import OdeIcon from '../icons/OdeIcon';
 import { useInsets } from '../hooks/useInsets';
 import { COLORS } from '../theme/designSystem';
 import { useAuth } from '../context/AuthContext';
@@ -72,13 +72,13 @@ export default function AuthScreen({ onClose }) {
       <View style={styles.inner}>
         {/* Close button */}
         <TouchableOpacity style={[styles.closeBtn, { top: insets.top + 8 }]} onPress={onClose}>
-          <MaterialIcons name="close" size={24} color={COLORS.textPrimary} />
+          <OdeIcon name="close" size={24} color={COLORS.textPrimary} />
         </TouchableOpacity>
 
         {/* Logo area — 品牌 icon 同 App.js home header / PhoneLoginScreen 同一個做法 */}
         <View style={styles.logoArea}>
           <Image source={require('../../assets/android-icon-foreground.png')} style={styles.brandLogoImg} />
-          <Text style={styles.logoTitle}>God Music</Text>
+          <Text style={styles.logoTitle}>ode</Text>
           <Text style={styles.logoSubtitle}>{mode === 'login' ? '歡迎回來' : '建立帳戶'}</Text>
         </View>
 
@@ -86,7 +86,7 @@ export default function AuthScreen({ onClose }) {
         <View style={styles.form}>
           {mode === 'register' && (
             <View style={[styles.inputWrap, focused === 'username' && styles.inputWrapFocused]}>
-              <MaterialIcons name="person-outline" size={20} color={COLORS.textSecondary} style={styles.inputIcon} />
+              <OdeIcon name="me" size={20} color={COLORS.textSecondary} style={styles.inputIcon} />
               <TextInput
                 style={styles.input}
                 placeholder="用戶名稱"
@@ -100,7 +100,7 @@ export default function AuthScreen({ onClose }) {
             </View>
           )}
           <View style={[styles.inputWrap, focused === 'email' && styles.inputWrapFocused]}>
-            <MaterialIcons name="email" size={20} color={COLORS.textSecondary} style={styles.inputIcon} />
+            <OdeIcon name="email" size={20} color={COLORS.textSecondary} style={styles.inputIcon} />
             <TextInput
               style={styles.input}
               placeholder="電郵"
@@ -114,7 +114,7 @@ export default function AuthScreen({ onClose }) {
             />
           </View>
           <View style={[styles.inputWrap, focused === 'password' && styles.inputWrapFocused]}>
-            <MaterialIcons name="lock-outline" size={20} color={COLORS.textSecondary} style={styles.inputIcon} />
+            <OdeIcon name="lockOutline" size={20} color={COLORS.textSecondary} style={styles.inputIcon} />
             <TextInput
               style={styles.input}
               placeholder="密碼（最少 6 位）"
@@ -130,7 +130,7 @@ export default function AuthScreen({ onClose }) {
 
           <TouchableOpacity style={styles.submitBtn} onPress={handleSubmit} disabled={loading} activeOpacity={0.8}>
             {loading ? (
-              <ActivityIndicator size="small" color={COLORS.background} />
+              <ActivityIndicator size="small" color={COLORS.textOnGlow} />
             ) : (
               <Text style={styles.submitText}>{mode === 'login' ? '登入' : '註冊'}</Text>
             )}
@@ -162,20 +162,20 @@ const styles = StyleSheet.create({
   // Logo
   logoArea: { alignItems: 'center', marginBottom: 40 },
   brandLogoImg: { width: 88, height: 88, marginBottom: 12, resizeMode: 'contain' },
-  logoTitle: { fontSize: 24, fontWeight: '800', color: COLORS.textPrimary, marginBottom: 4 },
+  logoTitle: { fontFamily: 'Sora', fontSize: 26, fontWeight: '200', letterSpacing: 1.2, color: COLORS.textPrimary, marginBottom: 4 },
   logoSubtitle: { fontSize: 15, color: COLORS.textSecondary },
 
   // Form
   form: { marginBottom: 20 },
   inputWrap: { flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.card, borderRadius: 12, marginBottom: 12, paddingHorizontal: 14, height: 52, borderWidth: 1, borderColor: COLORS.border },
-  inputWrapFocused: { borderColor: COLORS.accent },
+  inputWrapFocused: { borderColor: COLORS.primary },
   inputIcon: { marginRight: 10 },
   input: { flex: 1, fontSize: 16, color: COLORS.textPrimary },
   errText: { color: COLORS.danger, fontSize: 13, marginTop: -4, marginBottom: 12 },
 
-  submitBtn: { backgroundColor: COLORS.accent, borderRadius: 26, height: 52, justifyContent: 'center', alignItems: 'center', marginTop: 4 },
-  submitText: { fontSize: 17, fontWeight: '700', color: COLORS.background },
+  submitBtn: { backgroundColor: COLORS.glow, borderRadius: 26, height: 52, justifyContent: 'center', alignItems: 'center', marginTop: 4 },
+  submitText: { fontSize: 17, fontWeight: '700', color: COLORS.textOnGlow },
 
   linkTouch: { paddingVertical: 10, marginTop: 4 },
-  toggleText: { textAlign: 'center', fontSize: 14, color: COLORS.accent },
+  toggleText: { textAlign: 'center', fontSize: 14, color: COLORS.primary },
 });

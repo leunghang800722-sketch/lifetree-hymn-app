@@ -19,7 +19,7 @@
 
 import React, { createContext, useContext, useState, useCallback, useEffect, useRef } from 'react';
 import { Modal, View, Text, TextInput, TouchableOpacity, FlatList, StyleSheet, Alert, Keyboard } from 'react-native';
-import MaterialIcons from '@expo/vector-icons/MaterialIcons';
+import OdeIcon from '../icons/OdeIcon';
 import { COLORS } from '../theme/designSystem';
 import { usePlaylists, MAX_PLAYLIST_SONGS } from '../context/PlaylistsContext';
 import { useInsets } from '../hooks/useInsets';
@@ -203,7 +203,7 @@ export function AddToPlaylistProvider({ children }) {
                   nameInputRow(confirmCreate, '建立')
                 ) : (
                   <TouchableOpacity style={styles.newRow} onPress={() => setCreating(true)} activeOpacity={0.7}>
-                    <MaterialIcons name="add" size={22} color={COLORS.accent} />
+                    <OdeIcon name="plus" size={22} color={COLORS.primary} />
                     <Text style={styles.newText}>新播放清單</Text>
                   </TouchableOpacity>
                 )
@@ -215,7 +215,7 @@ export function AddToPlaylistProvider({ children }) {
                   <TouchableOpacity style={[styles.row, { opacity: full ? 0.45 : 1 }]}
                     onPress={() => addTo(item)} activeOpacity={0.7}>
                     <View style={styles.rowIcon}>
-                      <MaterialIcons name="queue-music" size={22} color={full ? COLORS.textSecondary : COLORS.accent} />
+                      <OdeIcon name="queue" size={22} color={full ? COLORS.textSecondary : COLORS.primary} />
                     </View>
                     <View style={styles.rowText}>
                       <Text style={styles.rowName} numberOfLines={1}>{item.name}</Text>
@@ -240,7 +240,7 @@ export function AddToPlaylistProvider({ children }) {
       {toast ? (
         <View pointerEvents="none" style={[styles.toastWrap, { bottom: insets.bottom + 24 }]}>
           <View style={styles.toastBubble}>
-            <MaterialIcons name="check-circle" size={16} color={COLORS.accent} style={{ marginRight: 6 }} />
+            <OdeIcon name="check" size={16} color={COLORS.primary} style={{ marginRight: 6 }} />
             <Text style={styles.toastText} numberOfLines={1}>{toast}</Text>
           </View>
         </View>
@@ -283,7 +283,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 16,
     borderTopWidth: 1, borderTopColor: COLORS.border, marginTop: 4,
   },
-  newText: { color: COLORS.accent, marginLeft: 8, fontSize: 15, fontWeight: '700' },
+  newText: { color: COLORS.primary, marginLeft: 8, fontSize: 15, fontWeight: '700' },
   createBox: {
     flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 12,
     borderTopWidth: 1, borderTopColor: COLORS.border, marginTop: 4,
@@ -294,10 +294,10 @@ const styles = StyleSheet.create({
     borderWidth: 1, borderColor: COLORS.border,
   },
   createConfirm: {
-    marginLeft: 10, backgroundColor: COLORS.accent, borderRadius: 10,
+    marginLeft: 10, backgroundColor: COLORS.glow, borderRadius: 10,
     paddingHorizontal: 16, paddingVertical: 11,
   },
-  createConfirmText: { color: COLORS.background, fontWeight: '700', fontSize: 15 },
+  createConfirmText: { color: COLORS.textOnGlow, fontWeight: '700', fontSize: 15 },
   // 輕量 toast(建立/加入清單後嘅非阻擋提示)
   toastWrap: { position: 'absolute', left: 0, right: 0, alignItems: 'center', zIndex: 999, elevation: 999 },
   toastBubble: {

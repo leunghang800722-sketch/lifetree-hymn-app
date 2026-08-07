@@ -10,7 +10,7 @@
 //   2. cloudflared tunnel run hymn-api       （config 喺 ~/.cloudflared/config.yml）
 //
 // ⚠️ backend 仍然係跑喺開發者部 Mac 度，部機要開住 + 有網，App 先用到。
-export const API_BASE = 'https://api.god-music.com';
+export const API_BASE = 'https://api.odemusics.com';
 
 // 電話 OTP 登入(PHONE-AUTH-PLAN)。2026-07-29 三條 Twilio key 已齊,
 // `/api/auth/otp/status` 確認 configured:true 先開(MEMBERSHIP-PHASE1-LOGIN-SYNC.md W3)。

@@ -1,9 +1,10 @@
-// 詩歌App v211 TrackPlayer — 背景播放 + 生命樹主題
+// 詩歌App v211 TrackPlayer — 背景播放 + Ode 主題(ODE-REBRAND-PLAN)
 import { COLORS as DesignColors, TYPOGRAPHY, SPACING } from './src/theme/designSystem';
 import { useCachedHymns } from './src/hooks/useCachedHymns';
 import Skeleton from './src/components/Skeleton';
 import React, { useState, useEffect, createContext, useContext, useRef, useCallback } from 'react';
-import MaterialIcons from '@expo/vector-icons/MaterialIcons';
+import { useFonts } from 'expo-font';
+import OdeIcon from './src/icons/OdeIcon';
 import TrackPlayer, {
   State as TPState,
   Event as TPEvent,
@@ -69,7 +70,7 @@ import BottomSheet, {
 // 兩個都已經喺 project 度。
 import DraggableFlatList, { ScaleDecorator } from 'react-native-draggable-flatlist';
 
-// ===== MaterialIcons 圖標名稱 =====
+// ===== OdeIcon 圖標名稱 =====
 
 // ===== 安全匯入 =====
 let SafeAreaProvider = null, useSafeAreaInsets = null;
@@ -83,14 +84,16 @@ try {
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 const VIDEO_HEIGHT = SCREEN_WIDTH * 9 / 16;
 
-// ===== 「生命樹」色板 (REDESIGN-PLAN.md §5.2) =====
-// 呢五個常數散落用咗 60+ 次,所以唔逐個改,直接指返單一色板 —— 全部一次過轉色。
-// 舊值:黑底 #000000 + Spotify 綠 #1ED760(§5.2 明確要求同 Spotify 綠講拜拜,
-// 因為佢令個 App 睇落似 Spotify 翻版,同「安靜、屬靈陪伴」嘅定位相沖)。
+// ===== Ode 色板 (ODE-REBRAND-PLAN) =====
+// 呢幾個常數散落用咗 60+ 次,所以唔逐個改 import,直接指返單一色板 —— 全部一次過轉色。
+// GLOW_COLOR(暖光 #EFE4D2)= 播放掣/進度條/CTA/啟用狀態;PRIMARY_COLOR(主色紫
+// #B9A6F2)= 已收藏/連結/靜態強調 icon。舊 ACCENT_COLOR 已經逐個用位判斷拆做
+// 呢兩個(唔係機械式全換一隻色),冇金色(GOLD_COLOR)呢個概念,Ode 唔用金。
 const MAIN_BG_COLOR = DesignColors.background;
 const CARD_BG_COLOR = DesignColors.card;
-const ACCENT_COLOR = DesignColors.accent;   // 生命綠
-const GOLD_COLOR = DesignColors.gold;       // 【只限金句/精選】
+const GLOW_COLOR = DesignColors.glow;
+const PRIMARY_COLOR = DesignColors.primary;
+const TEXT_ON_GLOW = DesignColors.textOnGlow;
 const TEXT_PRIMARY = DesignColors.textPrimary;
 const TEXT_SECONDARY = DesignColors.textSecondary;
 
@@ -174,7 +177,7 @@ function CoverImage({ youtubeId, style }) {
     const size = Math.min(flat.width || 44, flat.height || 44);
     return (
       <View style={[{ backgroundColor: DesignColors.cardLight, justifyContent: 'center', alignItems: 'center' }, style]}>
-        <MaterialIcons name="music-note" size={Math.max(16, size * 0.45)} color={TEXT_SECONDARY} />
+        <OdeIcon name="musicNote" size={Math.max(16, size * 0.45)} color={TEXT_SECONDARY} />
       </View>
     );
   }
@@ -197,7 +200,7 @@ function BigCover({ youtubeId }) {
   if (!youtubeId || tier >= 2) {
     return (
       <View style={fsStyles.coverFallback}>
-        <MaterialIcons name="music-note" size={90} color={TEXT_SECONDARY} />
+        <OdeIcon name="musicNote" size={90} color={TEXT_SECONDARY} />
       </View>
     );
   }
@@ -235,10 +238,11 @@ function FavHeart({ hymn }) {
       style={{ paddingLeft: 14, paddingVertical: 2 }}
       activeOpacity={0.6}
     >
-      <MaterialIcons
-        name={on ? 'favorite' : 'favorite-border'}
+      <OdeIcon
+        name="heart"
+        filled={on}
         size={20}
-        color={on ? ACCENT_COLOR : TEXT_SECONDARY}
+        color={on ? PRIMARY_COLOR : TEXT_SECONDARY}
       />
     </TouchableOpacity>
   );
@@ -1361,10 +1365,10 @@ function MiniPlayer({ onPress }) {
           </View>
         </TouchableOpacity>
         <TouchableOpacity style={miStyles.favBtn} onPress={(e) => { e.stopPropagation(); toggleFavorite(currentHymn); }} activeOpacity={0.7}>
-          <MaterialIcons name={fav ? 'favorite' : 'favorite-border'} size={24} color={fav ? ACCENT_COLOR : TEXT_PRIMARY} />
+          <OdeIcon name="heart" filled={fav} size={24} color={fav ? PRIMARY_COLOR : TEXT_PRIMARY} />
         </TouchableOpacity>
         <TouchableOpacity style={miStyles.playBtn} onPress={(e) => { e.stopPropagation(); togglePlayPause(); }} activeOpacity={0.8}>
-          <MaterialIcons name={isPlaying ? 'pause' : 'play-arrow'} size={20} color={MAIN_BG_COLOR} />
+          <OdeIcon name={isPlaying ? 'pause' : 'play'} size={20} color={TEXT_ON_GLOW} />
         </TouchableOpacity>
       </View>
     </View>
@@ -1388,7 +1392,7 @@ const miStyles = StyleSheet.create({
   artist: { fontSize: 12, color: TEXT_SECONDARY, marginTop: 1 },
   mainTouch: { flex: 1, flexDirection: 'row', alignItems: 'center' },
   favBtn: { width: 40, alignItems: 'center', justifyContent: 'center' },
-  playBtn: { width: 36, height: 36, borderRadius: 18, backgroundColor: TEXT_PRIMARY, justifyContent: 'center', alignItems: 'center' },
+  playBtn: { width: 36, height: 36, borderRadius: 18, backgroundColor: GLOW_COLOR, justifyContent: 'center', alignItems: 'center' },
 });
 
 // ================================================================
@@ -1402,10 +1406,11 @@ const miStyles = StyleSheet.create({
 //     本地即時 filter,見 SEARCH-MERGE-PLAN.md;獨立搜尋 tab 已刪)
 //   「播放」唔再佔一格 —— 撳迷你播放條就向上展開,係全世界音樂 App 嘅標準做法
 // §5.4:圖標一律用向量圖標庫,唔用 Emoji(舊版 tab 用緊 🏠🔍📚📋❤️)
+// ODE-HANDOFF §5:Tab icon 有 stroke/fill 兩版,選中用 fill,唔使再靠換 icon 名。
 const TAB_CONFIG = [
-  { key: 'Home',    label: '首頁',   icon: 'home',          iconOff: 'home' },
-  { key: 'Library', label: '詩歌庫', icon: 'library-music', iconOff: 'library-music' },
-  { key: 'Mine',    label: '我的',   icon: 'person',        iconOff: 'person-outline' },
+  { key: 'Home',    label: '首頁',   icon: 'home' },
+  { key: 'Library', label: '詩歌庫', icon: 'library' },
+  { key: 'Mine',    label: '我的',   icon: 'me' },
 ];
 function TabBar({ activeTab, onTabChange, bottomInset, onMiniPlayerPress }) {
   const safePad = Math.max(bottomInset || 0, 4);
@@ -1418,10 +1423,11 @@ function TabBar({ activeTab, onTabChange, bottomInset, onMiniPlayerPress }) {
           const active = activeTab === tab.key;
           return (
             <TouchableOpacity key={tab.key} style={tbStyles.item} onPress={() => onTabChange(tab.key)} activeOpacity={0.7}>
-              <MaterialIcons
-                name={active ? tab.icon : tab.iconOff}
+              <OdeIcon
+                name={tab.icon}
                 size={24}
-                color={active ? ACCENT_COLOR : TEXT_SECONDARY}
+                filled={active}
+                color={active ? GLOW_COLOR : TEXT_SECONDARY}
               />
               <Text style={[tbStyles.label, active && tbStyles.labelActive]}>{tab.label}</Text>
             </TouchableOpacity>
@@ -1441,7 +1447,7 @@ const tbStyles = StyleSheet.create({
   item: { flex: 1, alignItems: 'center', paddingVertical: 4 },
   // §5.3 重要功能嘅 icon 要配文字標籤
   label: { fontSize: 11, color: TEXT_SECONDARY, marginTop: 3, fontWeight: '500' },
-  labelActive: { color: ACCENT_COLOR, fontWeight: '700' },
+  labelActive: { color: GLOW_COLOR, fontWeight: '700' },
 });
 
 // ===== 各 tab 畫面 =====
@@ -1461,12 +1467,12 @@ function HomeScreen({ hymns, activeCategory, onCategoryChange, onPlayHymn, onOpe
   const homeInsets = typeof useSafeAreaInsets === 'function' ? useSafeAreaInsets() : { top: 0 };
   return (
     <View style={{ flex: 1, backgroundColor: COLORS.bg }}>
-      {/* Header — God Music 品牌 + 通知 + 頭像 */}
+      {/* Header — Ode 品牌 + 通知 + 頭像 */}
       <View style={[hs.header, { paddingTop: (homeInsets.top || StatusBar.currentHeight || 24) + 8 }]}>
         <View style={hs.brandWrap}>
           <Image source={require('./assets/android-icon-foreground.png')} style={hs.brandIconImg} />
           <View>
-            <Text style={hs.brandTitle}>God Music</Text>
+            <Text style={hs.brandTitle}>ode</Text>
           </View>
         </View>
         {/* B13 —— 舊嘅通知鐘掣冇 onPress(App 未有通知功能),撳落去零反應。
@@ -1499,16 +1505,19 @@ const hs = StyleSheet.create({
     fontSize: 24,
     marginRight: 10,
   },
+  // ODE-HANDOFF §1/§3:header logo 環 52dp,「ode」32px Sora 200 letterSpacing 1.5,全小寫
   brandIconImg: {
-    width: 38,
-    height: 38,
-    marginRight: 10,
+    width: 52,
+    height: 52,
+    marginRight: 13,
     resizeMode: 'contain',
   },
   brandTitle: {
-    fontSize: 20,
-    fontWeight: '800',
-    color: COLORS.primary,
+    fontFamily: 'Sora',
+    fontSize: 32,
+    fontWeight: '200',
+    letterSpacing: 1.5,
+    color: TEXT_PRIMARY,
   },
   iconWrap: {
     flexDirection: 'row',
@@ -1625,8 +1634,8 @@ function FullScreenPlayerOverlay() {
         style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingHorizontal: 16, paddingBottom: 10 }}
         onPress={() => (queueOpenRef.current ? closeQueue() : openQueue())}
       >
-        <MaterialIcons
-          name={queueExpanded ? 'keyboard-arrow-down' : 'keyboard-arrow-up'}
+        <OdeIcon
+          name={queueExpanded ? 'chevronDown' : 'chevronUp'}
           size={18} color={TEXT_SECONDARY} style={{ marginRight: 6 }}
         />
         <Text style={{ ...TYPOGRAPHY.sectionTitle }}>播放清單 ({queue.length})</Text>
@@ -1676,9 +1685,12 @@ function FullScreenPlayerOverlay() {
       {/* Top Bar */}
       <View style={[fsStyles.topBar, { paddingTop: safeTop }]}>
         <TouchableOpacity style={fsStyles.dismissBtn} onPress={player.hidePlayer}>
-          <MaterialIcons name="keyboard-arrow-down" size={24} color={TEXT_PRIMARY} />
+          <OdeIcon name="chevronDown" size={24} color={TEXT_PRIMARY} />
         </TouchableOpacity>
-        <Text style={fsStyles.topBarTitle}>God Music</Text>
+        <View style={fsStyles.topBarBrand}>
+          <Image source={require('./assets/android-icon-foreground.png')} style={fsStyles.topBarBrandImg} />
+          <Text style={fsStyles.topBarTitle}>ode</Text>
+        </View>
         <View style={fsStyles.dismissBtn} />
       </View>
 
@@ -1703,7 +1715,7 @@ function FullScreenPlayerOverlay() {
             標題都唔會再撞。 */}
         {player.isLoading && (
           <View style={fsStyles.loadingOverlay}>
-            <ActivityIndicator size="large" color={ACCENT_COLOR} />
+            <ActivityIndicator size="large" color={GLOW_COLOR} />
             <Text style={fsStyles.loadingText}>正在載入音訊...</Text>
           </View>
         )}
@@ -1723,15 +1735,15 @@ function FullScreenPlayerOverlay() {
           const faved = isFavorite(cur.id);
           const hasLyrics = !!lyricsText;
           const pills = [
-            { key: 'fav', label: '最愛', icon: faved ? 'favorite' : 'favorite-border',
+            { key: 'fav', label: '最愛', icon: 'heart',
               active: faved, onPress: () => toggleFavorite(cur) },
             { key: 'lyr', label: '歌詞', icon: 'lyrics', disabled: !hasLyrics,
               onPress: () => setLyricsVisible(true) },
             { key: 'shr', label: '分享', icon: 'share',
               onPress: () => Share.share({
-                message: `一齊聽「${getDisplayTitle(cur)}」${cur.artist ? ' - ' + cur.artist : ''}（God Music 詩歌）`,
+                message: `一齊聽「${getDisplayTitle(cur)}」${cur.artist ? ' - ' + cur.artist : ''}（Ode 詩歌）`,
               }).catch(() => {}) },
-            { key: 'que', label: '清單', icon: 'queue-music',
+            { key: 'que', label: '清單', icon: 'queue',
               onPress: () => openAddToPlaylist(cur) },
           ];
           return (
@@ -1744,12 +1756,13 @@ function FullScreenPlayerOverlay() {
                   disabled={p.disabled}
                   activeOpacity={0.7}
                 >
-                  <MaterialIcons
+                  <OdeIcon
                     name={p.icon}
                     size={20}
-                    color={p.disabled ? DesignColors.border : (p.active ? ACCENT_COLOR : TEXT_PRIMARY)}
+                    filled={!!p.active}
+                    color={p.disabled ? DesignColors.border : (p.active ? PRIMARY_COLOR : TEXT_PRIMARY)}
                   />
-                  <Text style={[fsStyles.pillLabel, p.active && { color: ACCENT_COLOR }, p.disabled && { color: TEXT_SECONDARY }]}>
+                  <Text style={[fsStyles.pillLabel, p.active && { color: PRIMARY_COLOR }, p.disabled && { color: TEXT_SECONDARY }]}>
                     {p.label}
                   </Text>
                 </TouchableOpacity>
@@ -1773,15 +1786,15 @@ function FullScreenPlayerOverlay() {
         <View style={fsStyles.controlsRow}>
           <TouchableOpacity style={fsStyles.controlBtn} onPress={player.toggleShuffle} activeOpacity={0.6}>
             <View style={{ alignItems: 'center' }}>
-              <MaterialIcons name="shuffle" size={32} color={player.isShuffled ? ACCENT_COLOR : TEXT_SECONDARY} />
+              <OdeIcon name="shuffle" size={32} color={player.isShuffled ? GLOW_COLOR : TEXT_SECONDARY} />
               {player.isShuffled && <View style={fsStyles.ctrlActiveDot} />}
             </View>
           </TouchableOpacity>
           <TouchableOpacity style={fsStyles.controlBtn} onPress={player.handlePrevTrack} activeOpacity={0.6}>
-            <MaterialIcons name="skip-previous" size={32} color={TEXT_PRIMARY} />
+            <OdeIcon name="prev" size={32} color={TEXT_PRIMARY} />
           </TouchableOpacity>
           <TouchableOpacity style={fsStyles.playBtn} onPress={player.togglePlayPause} activeOpacity={0.8}>
-            <MaterialIcons name={player.isPlaying ? 'pause' : 'play-arrow'} size={24} color={MAIN_BG_COLOR} />
+            <OdeIcon name={player.isPlaying ? 'pause' : 'play'} size={24} color={TEXT_ON_GLOW} />
           </TouchableOpacity>
           <TouchableOpacity
             style={[fsStyles.controlBtn, !hasNext && fsStyles.controlBtnDisabled]}
@@ -1789,15 +1802,22 @@ function FullScreenPlayerOverlay() {
             activeOpacity={0.6}
             disabled={!hasNext}
           >
-            <MaterialIcons name="skip-next" size={32} color={TEXT_PRIMARY} />
+            <OdeIcon name="next" size={32} color={TEXT_PRIMARY} />
           </TouchableOpacity>
           <TouchableOpacity style={fsStyles.controlBtn} onPress={() => player.setRepeatMode?.((player.repeatMode + 1) % 3)} activeOpacity={0.6}>
             <View style={{ alignItems: 'center' }}>
-              <MaterialIcons
-                name={player.repeatMode === 2 ? 'repeat-one' : 'repeat'}
-                size={32}
-                style={{ color: player.repeatMode > 0 ? ACCENT_COLOR : 'rgba(255,255,255,0.6)' }}
-              />
+              {/* odeIcons.js repeat note:單曲循環(repeatMode===2)= 同一個 repeat
+                  icon 中間疊一個 Sora 200「1」,唔另畫新 icon。 */}
+              <View>
+                <OdeIcon
+                  name="repeat"
+                  size={32}
+                  color={player.repeatMode > 0 ? GLOW_COLOR : 'rgba(255,255,255,0.6)'}
+                />
+                {player.repeatMode === 2 && (
+                  <Text style={fsStyles.repeatOneBadge}>1</Text>
+                )}
+              </View>
               {player.repeatMode > 0 && <View style={fsStyles.ctrlActiveDot} />}
             </View>
           </TouchableOpacity>
@@ -1895,7 +1915,7 @@ function FullScreenPlayerOverlay() {
               )}
               {player.isShuffled && (
                 <View style={[fsStyles.shuffleBanner, { marginBottom: 8, alignSelf: 'center' }]}>
-                  <MaterialIcons name="shuffle" size={14} color={ACCENT_COLOR} />
+                  <OdeIcon name="shuffle" size={14} color={GLOW_COLOR} />
                   <Text style={fsStyles.shuffleBannerText}>已隨機排序</Text>
                 </View>
               )}
@@ -1908,7 +1928,7 @@ function FullScreenPlayerOverlay() {
                 {index === player.autoRadioFrom && (
                   <View style={fsStyles.radioDivider}>
                     <View style={fsStyles.radioDividerLine} />
-                    <MaterialIcons name="shuffle" size={14} color={ACCENT_COLOR} style={{ marginHorizontal: 8 }} />
+                    <OdeIcon name="shuffle" size={14} color={GLOW_COLOR} style={{ marginHorizontal: 8 }} />
                     <Text style={fsStyles.radioDividerText}>自動播放：{player.autoplayFlavor || '全部'}</Text>
                     <View style={fsStyles.radioDividerLine} />
                   </View>
@@ -1921,7 +1941,7 @@ function FullScreenPlayerOverlay() {
                 {index === player.insertBoundary && (
                   <View style={fsStyles.radioDivider}>
                     <View style={fsStyles.radioDividerLine} />
-                    <MaterialIcons name="playlist-play" size={14} color={ACCENT_COLOR} style={{ marginHorizontal: 8 }} />
+                    <OdeIcon name="queue" size={14} color={PRIMARY_COLOR} style={{ marginHorizontal: 8 }} />
                     <Text style={fsStyles.radioDividerText}>即將播放</Text>
                     <View style={fsStyles.radioDividerLine} />
                   </View>
@@ -1934,7 +1954,7 @@ function FullScreenPlayerOverlay() {
                       dim,唔會卡喺灰色。 */}
                   <SheetTouchable onLongPress={drag} delayLongPress={150} activeOpacity={1}
                     hitSlop={{ top: 10, bottom: 10, left: 2, right: 2 }} style={fsStyles.dragHandleLeft}>
-                    <MaterialIcons name="drag-handle" size={22} color={item.id === cur.id ? ACCENT_COLOR : TEXT_SECONDARY} />
+                    <OdeIcon name="dragHandle" size={22} color={item.id === cur.id ? GLOW_COLOR : TEXT_SECONDARY} />
                   </SheetTouchable>
                   <CoverImage youtubeId={item.youtube_id} style={fsStyles.queueCover} />
                   <View style={fsStyles.queueInfo}>
@@ -1944,7 +1964,7 @@ function FullScreenPlayerOverlay() {
                   {/* ≡♪ 加入到清單 */}
                   <SheetTouchable onPress={(e) => { e?.stopPropagation?.(); openAddToPlaylist(item); }}
                     hitSlop={{ top: 10, bottom: 10, left: 6, right: 6 }} style={fsStyles.rowAct}>
-                    <MaterialIcons name="playlist-add" size={22} color={TEXT_SECONDARY} />
+                    <OdeIcon name="addToList" size={22} color={TEXT_SECONDARY} />
                   </SheetTouchable>
                   <FavHeart hymn={item} />
                 </SheetTouchable>
@@ -1968,11 +1988,11 @@ function FullScreenPlayerOverlay() {
         }}>
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingBottom: 16 }}>
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-              <MaterialIcons name="lyrics" size={20} color={ACCENT_COLOR} />
+              <OdeIcon name="lyrics" size={20} color={PRIMARY_COLOR} />
               <Text style={{ ...TYPOGRAPHY.sectionTitle, marginLeft: 8 }}>歌詞</Text>
             </View>
             <TouchableOpacity onPress={() => setLyricsVisible(false)} style={{ padding: 4 }}>
-              <MaterialIcons name="close" size={24} color={TEXT_SECONDARY} />
+              <OdeIcon name="close" size={24} color={TEXT_SECONDARY} />
             </TouchableOpacity>
           </View>
           {/* 歌名 + 歌手做副標 */}
@@ -2023,7 +2043,10 @@ const fsStyles = StyleSheet.create({
   pillLabel: { fontSize: 13, fontWeight: '600', color: TEXT_PRIMARY, marginLeft: 6 },
   dismissBtn: { width: 40, height: 40, justifyContent: 'center', alignItems: 'center' },
   dismissIcon: { fontSize: 16, color: TEXT_PRIMARY },
-  topBarTitle: { fontSize: 16, fontWeight: '600', color: TEXT_PRIMARY },
+  // ODE-HANDOFF §1:播放器頂 title = logo 環 22dp + 「ode」17px(Sora 200)
+  topBarBrand: { flexDirection: 'row', alignItems: 'center' },
+  topBarBrandImg: { width: 22, height: 22, marginRight: 7, resizeMode: 'contain' },
+  topBarTitle: { fontFamily: 'Sora', fontWeight: '200', fontSize: 17, letterSpacing: 1, color: TEXT_PRIMARY },
   // B4 修(第二版,revert):試過 aspectRatio:16/9 但令 Eric 部機睇落更差——
   // 唔少縮圖嘅色帶係燒死喺 JPEG 像素入面(唔係容器逼出嚟嘅偽影),16:9 容器
   // 反而完整顯示埋個色帶,仲拉開咗封面同歌名之間嘅空隙。改返正方形,由
@@ -2065,7 +2088,7 @@ const fsStyles = StyleSheet.create({
   },
   coverFallbackIcon: { fontSize: 80, opacity: 0.6 },
   equalizerContainer: { position: 'absolute', bottom: 16, right: 20, flexDirection: 'row', alignItems: 'flex-end', gap: 4 },
-  equalizerBar: { width: 5, backgroundColor: ACCENT_COLOR, borderRadius: 2 },
+  equalizerBar: { width: 5, backgroundColor: GLOW_COLOR, borderRadius: 2 },
   equalizerBar1: { height: 18 },
   equalizerBar2: { height: 28 },
   equalizerBar3: { height: 14 },
@@ -2076,8 +2099,8 @@ const fsStyles = StyleSheet.create({
   progressSection: { paddingHorizontal: 28, paddingVertical: 4 },
   progressBarTouchArea: { height: 36, justifyContent: 'center' },
   progressBarBg: { height: 5, backgroundColor: 'rgba(255,255,255,0.15)', borderRadius: 3 },
-  progressBarFill: { height: 5, backgroundColor: ACCENT_COLOR, borderRadius: 3 },
-  progressBarThumb: { width: 14, height: 14, borderRadius: 7, backgroundColor: ACCENT_COLOR, position: 'absolute', right: -7, top: '50%', marginTop: -7 },
+  progressBarFill: { height: 5, backgroundColor: GLOW_COLOR, borderRadius: 3 },
+  progressBarThumb: { width: 14, height: 14, borderRadius: 7, backgroundColor: GLOW_COLOR, position: 'absolute', right: -7, top: '50%', marginTop: -7 },
   timeRow: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 4 },
   timeText: { fontSize: 12, color: TEXT_SECONDARY },
   controlsRow: { flexDirection: 'row', justifyContent: 'space-evenly', alignItems: 'center', paddingVertical: 10, paddingHorizontal: 20 },
@@ -2087,10 +2110,16 @@ const fsStyles = StyleSheet.create({
   ctrlIconShuffle: { fontSize: 32, color: TEXT_SECONDARY },
   ctrlIconPrev: { fontSize: 32, color: TEXT_PRIMARY },
   ctrlIconNext: { fontSize: 32, color: TEXT_PRIMARY },
-  ctrlIconActive: { color: ACCENT_COLOR },
-  ctrlActiveDot: { width: 4, height: 4, borderRadius: 2, backgroundColor: ACCENT_COLOR, marginTop: 3 },
-  playBtn: { width: 68, height: 68, borderRadius: 34, backgroundColor: TEXT_PRIMARY, justifyContent: 'center', alignItems: 'center' },
-  playBtnIcon: { fontSize: 24, color: MAIN_BG_COLOR, marginLeft: 2 },
+  ctrlIconActive: { color: GLOW_COLOR },
+  ctrlActiveDot: { width: 4, height: 4, borderRadius: 2, backgroundColor: GLOW_COLOR, marginTop: 3 },
+  // 單曲循環:repeat icon 中間疊個 Sora 200「1」(odeIcons.js repeat note)
+  repeatOneBadge: {
+    position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
+    textAlign: 'center', textAlignVertical: 'center',
+    fontFamily: 'Sora', fontWeight: '200', fontSize: 13, color: GLOW_COLOR,
+  },
+  playBtn: { width: 68, height: 68, borderRadius: 34, backgroundColor: GLOW_COLOR, justifyContent: 'center', alignItems: 'center' },
+  playBtnIcon: { fontSize: 24, color: TEXT_ON_GLOW, marginLeft: 2 },
   handleBar: { width: 36, height: 4, backgroundColor: 'rgba(255,255,255,0.2)', borderRadius: 2, marginBottom: 8 },
   sheetHandleRow: { flexDirection: 'row', alignItems: 'center' },
   sheetTitle: { fontSize: 14, fontWeight: '600', color: TEXT_PRIMARY, marginRight: 8 },
@@ -2098,7 +2127,7 @@ const fsStyles = StyleSheet.create({
   // 「正在隨機播放：」分隔線 —— 用戶揀嘅歌 vs 系統自動接落去嘅歌之間嗰條界。
   radioDivider: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, marginTop: 14, marginBottom: 6 },
   radioDividerLine: { flex: 1, height: 1, backgroundColor: DesignColors.border },
-  radioDividerText: { color: ACCENT_COLOR, fontSize: 13, fontWeight: '600' },
+  radioDividerText: { color: GLOW_COLOR, fontSize: 13, fontWeight: '600' },
   sheetScrim: { flex: 1, backgroundColor: 'rgba(0,0,0,0.55)', justifyContent: 'flex-end' },
   sheetCard: { borderTopLeftRadius: 20, borderTopRightRadius: 20, overflow: 'hidden', paddingBottom: 8 },
   sheetHandle: { width: 40, height: 5, borderRadius: 3, backgroundColor: TEXT_SECONDARY, alignSelf: 'center', marginTop: 8, marginBottom: 6 },
@@ -2107,7 +2136,7 @@ const fsStyles = StyleSheet.create({
   autoplayTitle: { ...TYPOGRAPHY.songTitle, fontSize: 16 },
   autoplaySub: { ...TYPOGRAPHY.artist, marginTop: 1 },
   toggleTrack: { width: 46, height: 28, borderRadius: 14, backgroundColor: DesignColors.cardLight, padding: 3, justifyContent: 'center' },
-  toggleTrackOn: { backgroundColor: ACCENT_COLOR },
+  toggleTrackOn: { backgroundColor: GLOW_COLOR },
   toggleThumb: { width: 22, height: 22, borderRadius: 11, backgroundColor: TEXT_SECONDARY },
   toggleThumbOn: { backgroundColor: MAIN_BG_COLOR, alignSelf: 'flex-end' },
   chipBar: { flexDirection: 'row', flexWrap: 'wrap', paddingHorizontal: 12, paddingBottom: 6 },
@@ -2115,17 +2144,17 @@ const fsStyles = StyleSheet.create({
     paddingHorizontal: 14, paddingVertical: 7, borderRadius: 999, margin: 4,
     backgroundColor: CARD_BG_COLOR, borderWidth: 1, borderColor: DesignColors.border,
   },
-  apChipOn: { backgroundColor: ACCENT_COLOR, borderColor: ACCENT_COLOR },
+  apChipOn: { backgroundColor: PRIMARY_COLOR, borderColor: PRIMARY_COLOR },
   apChipText: { fontSize: 13, fontWeight: '600', color: TEXT_SECONDARY },
-  apChipTextOn: { color: MAIN_BG_COLOR },
+  apChipTextOn: { color: TEXT_ON_GLOW },
   apChipHint: { ...TYPOGRAPHY.artist, paddingHorizontal: 16, paddingBottom: 8, marginTop: -2 },
   shuffleBanner: {
     flexDirection: 'row', alignItems: 'center', alignSelf: 'center',
-    backgroundColor: 'rgba(30,215,96,0.12)',
+    backgroundColor: 'rgba(239,228,210,0.14)',
     paddingVertical: 5, paddingHorizontal: 12,
     borderRadius: 12, marginBottom: 8,
   },
-  shuffleBannerText: { fontSize: 12, fontWeight: '600', color: ACCENT_COLOR, marginLeft: 5 },
+  shuffleBannerText: { fontSize: 12, fontWeight: '600', color: GLOW_COLOR, marginLeft: 5 },
   sheetCount: { fontSize: 12, color: TEXT_SECONDARY, fontWeight: '500' },
   queueItem: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 10 },
   queueItemActive: { backgroundColor: 'rgba(255,255,255,0.08)' },
@@ -2137,7 +2166,7 @@ const fsStyles = StyleSheet.create({
   queueTitle: { fontSize: 14, fontWeight: '600', color: TEXT_PRIMARY },
   queueArtist: { fontSize: 12, color: TEXT_SECONDARY, marginTop: 2 },
   queueDragIcon: { fontSize: 18, color: TEXT_SECONDARY, paddingLeft: 8 },
-  queuePlayingIcon: { fontSize: 14, color: ACCENT_COLOR, paddingLeft: 8, fontWeight: 'bold' },
+  queuePlayingIcon: { fontSize: 14, color: GLOW_COLOR, paddingLeft: 8, fontWeight: 'bold' },
   lyricsContainer: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: MAIN_BG_COLOR, zIndex: 100 },
   lyricsHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, paddingTop: (StatusBar.currentHeight || 44) + 12, paddingBottom: 12 },
   lyricsTitle: { fontSize: 18, fontWeight: '700', color: TEXT_PRIMARY },
@@ -2153,21 +2182,26 @@ const fsStyles = StyleSheet.create({
 });
 
 // ===== AppContent =====
-// 分享清單 deep link(MEMBERSHIP-PHASE3-SHARE-PLAN §2.3)—— parse 兩款
-// URL:`https://api.god-music.com/p/<token>` 同 `godmusic://p/<token>`。
+// 分享清單 deep link(MEMBERSHIP-PHASE3-SHARE-PLAN §2.3;domain 遷移見
+// ODE-REBRAND-PLAN §3.5)—— parse 三款 URL:`https://api.god-music.com/p/<token>`
+// (舊域,流通中嘅分享連結靠佢,唔可以剷)、`https://api.odemusics.com/p/<token>`
+// (新域)、同 `godmusic://p/<token>`(scheme 冇改)。
 // 呢個 handler 喺 §0.2 講嘅「舊 APK dormant code」前提下要極度防禦性:
 // 冇 scheme/intentFilter 嘅舊 APK 根本唔會有呢個 URL 走入嚟,但萬一將來
 // 有奇怪輸入(例如其他 app 亂 send intent),parse 唔到就靜靜哋 return null,
 // 唔可以拋錯累冧成個開機流程。
 const SHARE_TOKEN_RE = /^[A-Za-z0-9_-]{20,24}$/;
+const SHARE_URL_PREFIXES = [
+  'https://api.god-music.com/p/',
+  'https://api.odemusics.com/p/',
+  'godmusic://p/',
+];
 function parseSharedToken(url) {
   if (typeof url !== 'string' || !url) return null;
   try {
     let rest = null;
-    if (url.startsWith('https://api.god-music.com/p/')) {
-      rest = url.slice('https://api.god-music.com/p/'.length);
-    } else if (url.startsWith('godmusic://p/')) {
-      rest = url.slice('godmusic://p/'.length);
+    for (const prefix of SHARE_URL_PREFIXES) {
+      if (url.startsWith(prefix)) { rest = url.slice(prefix.length); break; }
     }
     if (!rest) return null;
     const token = rest.split(/[/?#]/)[0];
@@ -2504,7 +2538,7 @@ function AppContent() {
             onPress={closeHymnList}
           >
             {/* §5.4 向量圖標,同全 App 其他返回入口睇齊 */}
-            <MaterialIcons name="arrow-back" size={22} color={TEXT_PRIMARY} />
+            <OdeIcon name="back" size={22} color={TEXT_PRIMARY} />
             <Text style={pageStyles.hymnListCloseText}>返回</Text>
           </TouchableOpacity>
           <HymnListScreen
@@ -2545,7 +2579,7 @@ function UpdateBanner() {
         activeOpacity={0.85}
         onPress={() => { setDismissed(true); Updates.reloadAsync(); }}
       >
-        <MaterialIcons name="system-update" size={16} color={ACCENT_COLOR} style={{ marginRight: 6 }} />
+        <OdeIcon name="systemUpdate" size={16} color={PRIMARY_COLOR} style={{ marginRight: 6 }} />
         <Text style={updateBannerStyles.text} numberOfLines={1}>已有新版本，撳一下更新</Text>
       </TouchableOpacity>
     </View>
@@ -2565,6 +2599,19 @@ const updateBannerStyles = StyleSheet.create({
 
 // ===== App Entry =====
 export default function App() {
+  // ODE-REBRAND-PLAN R2:Sora(拉丁字標)+ Noto Serif TC(金句/歌詞)隨新 APK
+  // 一齊入嚟,中文 UI 繼續用系統字(唔 bundle Noto Sans TC)。
+  // ⚠️ 故意唔 gate 成個 App 等字體(唔用 `if (!fontsLoaded) return null`)——
+  // Noto Serif TC 成隻 CJK 字 9.9MB,真機/慢機解析要一陣,一 gate 住成個 App
+  // 就會白閃/卡死喺白畫面(實測 release build 卡住唔郁,debug 冇事係因為
+  // Metro dev bundle 冇行呢個 native asset resolve path)。而家做法:字體喺
+  // 背景載,useFonts 個 loaded flag 一變就會觸發 re-render,用緊 Sora/Noto
+  // Serif TC 嘅 Text 會自動換字;之前嗰下純粹用返系統字 fallback,唔會白畫面。
+  useFonts({
+    Sora: require('./assets/fonts/Sora-ExtraLight.ttf'),
+    'Noto Serif TC': require('./assets/fonts/NotoSerifTC-Regular.ttf'),
+  });
+
   // GestureHandlerRootView 一定要包最外 —— gorhom 嘅拖曳手勢靠佢。
   // 兩個 sheet 用 inline `<BottomSheet>`(唔經 portal),所以**故意唔加**
   // BottomSheetModalProvider:加返佢就會走返 v228 嗰條 portal 路,個 hosting

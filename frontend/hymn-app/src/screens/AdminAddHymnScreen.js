@@ -11,7 +11,7 @@ import {
   View, Text, TextInput, TouchableOpacity, ScrollView, StyleSheet, Image,
   ActivityIndicator, KeyboardAvoidingView, Platform,
 } from 'react-native';
-import MaterialIcons from '@expo/vector-icons/MaterialIcons';
+import OdeIcon from '../icons/OdeIcon';
 import { useInsets } from '../hooks/useInsets';
 import { COLORS } from '../theme/designSystem';
 import { useAuth } from '../context/AuthContext';
@@ -41,7 +41,7 @@ function BigThumb({ videoId }) {
   if (!uri || failed) {
     return (
       <View style={[styles.bigThumb, styles.bigThumbFallback]}>
-        <MaterialIcons name="music-note" size={40} color={COLORS.textSecondary} />
+        <OdeIcon name="musicNote" size={40} color={COLORS.textSecondary} />
       </View>
     );
   }
@@ -54,7 +54,7 @@ function Cover({ youtubeId, size = 48 }) {
   if (!uri || failed) {
     return (
       <View style={[styles.cover, { width: size, height: size, alignItems: 'center', justifyContent: 'center' }]}>
-        <MaterialIcons name="music-note" size={size * 0.5} color={COLORS.textSecondary} />
+        <OdeIcon name="musicNote" size={size * 0.5} color={COLORS.textSecondary} />
       </View>
     );
   }
@@ -64,7 +64,7 @@ function Cover({ youtubeId, size = 48 }) {
 // 細 pill badge(§5.2:fontSize 11、paddingH 8、paddingV 2、borderRadius 8、
 // 1px 邊框),tone 揀顏色,唔好搶咗歌名戲。
 function Badge({ label, tone }) {
-  const color = tone === 'accent' ? COLORS.accent : tone === 'danger' ? COLORS.danger : COLORS.textSecondary;
+  const color = tone === 'accent' ? COLORS.primary : tone === 'danger' ? COLORS.danger : COLORS.textSecondary;
   return (
     <View style={[styles.badge, { borderColor: color }]}>
       <Text style={[styles.badgeText, { color }]}>{label}</Text>
@@ -239,7 +239,7 @@ export default function AdminAddHymnScreen({ onClose }) {
     <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
         <TouchableOpacity onPress={onClose} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-          <MaterialIcons name="close" size={24} color={COLORS.textPrimary} />
+          <OdeIcon name="close" size={24} color={COLORS.textPrimary} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>URL加歌</Text>
         <View style={{ width: 24 }} />
@@ -266,7 +266,7 @@ export default function AdminAddHymnScreen({ onClose }) {
               onPress={() => setUrl('')}
               hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
             >
-              <MaterialIcons name="cancel" size={20} color={COLORS.textSecondary} />
+              <OdeIcon name="close" size={20} color={COLORS.textSecondary} />
             </TouchableOpacity>
           )}
         </View>
@@ -277,7 +277,7 @@ export default function AdminAddHymnScreen({ onClose }) {
 
             {checking && !preview && !dup && (
               <View style={styles.loadingRow}>
-                <ActivityIndicator size="small" color={COLORS.accent} />
+                <ActivityIndicator size="small" color={COLORS.glow} />
                 <Text style={styles.loadingText}>攞緊片段資料⋯</Text>
               </View>
             )}
@@ -293,14 +293,14 @@ export default function AdminAddHymnScreen({ onClose }) {
 
             {dup?.kind === 'exists' && (
               <View style={styles.infoBanner}>
-                <MaterialIcons name="info-outline" size={18} color={COLORS.accent} />
+                <OdeIcon name="about" size={18} color={COLORS.primary} />
                 <Text style={styles.infoBannerText}>已經喺庫:「{dup.hymn.display_title || dup.hymn.title}」</Text>
               </View>
             )}
 
             {success && (
               <View style={styles.successBanner}>
-                <MaterialIcons name="check-circle" size={18} color={COLORS.accent} />
+                <OdeIcon name="check" size={18} color={COLORS.primary} />
                 <Text style={styles.successBannerText}>已入庫,詩歌庫即刻搵到</Text>
               </View>
             )}
@@ -309,7 +309,7 @@ export default function AdminAddHymnScreen({ onClose }) {
               <>
                 {dup?.kind === 'relistable' && (
                   <View style={styles.infoBanner}>
-                    <MaterialIcons name="info-outline" size={18} color={COLORS.accent} />
+                    <OdeIcon name="about" size={18} color={COLORS.primary} />
                     <Text style={styles.infoBannerText}>之前落咗架,確認會重新上架</Text>
                   </View>
                 )}
@@ -371,7 +371,7 @@ export default function AdminAddHymnScreen({ onClose }) {
                 )}
 
                 <TouchableOpacity style={styles.confirmBtn} onPress={confirm} disabled={submitting} activeOpacity={0.8}>
-                  {submitting ? <ActivityIndicator size="small" color={COLORS.background} /> : (
+                  {submitting ? <ActivityIndicator size="small" color={COLORS.textOnGlow} /> : (
                     <Text style={styles.confirmBtnText}>確認入庫</Text>
                   )}
                 </TouchableOpacity>
@@ -387,7 +387,7 @@ export default function AdminAddHymnScreen({ onClose }) {
             <Text style={styles.addedTitle}>我加過嘅歌</Text>
             {addedLoading ? (
               <View style={styles.addedLoadingWrap}>
-                <ActivityIndicator size="small" color={COLORS.accent} />
+                <ActivityIndicator size="small" color={COLORS.glow} />
               </View>
             ) : added.length === 0 ? (
               <Text style={styles.addedEmpty}>仲未加過歌,貼個 YouTube 連結試下</Text>
@@ -436,7 +436,7 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.background, borderRadius: 10, paddingHorizontal: 14, paddingVertical: 8,
     borderWidth: 1, borderColor: COLORS.border,
   },
-  retryBtnText: { color: COLORS.accent, fontWeight: '700', fontSize: 13 },
+  retryBtnText: { color: COLORS.primary, fontWeight: '700', fontSize: 13 },
   infoBanner: {
     flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.card,
     borderRadius: 10, padding: 12, marginTop: 4, marginBottom: 10,
@@ -444,7 +444,7 @@ const styles = StyleSheet.create({
   infoBannerText: { color: COLORS.textPrimary, fontSize: 13, marginLeft: 8, flex: 1 },
   successBanner: {
     flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.card,
-    borderRadius: 10, padding: 14, marginTop: 4, borderWidth: 1, borderColor: COLORS.accent,
+    borderRadius: 10, padding: 14, marginTop: 4, borderWidth: 1, borderColor: COLORS.primary,
   },
   successBannerText: { color: COLORS.textPrimary, fontSize: 14, fontWeight: '600', marginLeft: 8 },
   previewCard: { backgroundColor: COLORS.card, borderRadius: 14, padding: 16, marginTop: 14 },
@@ -452,10 +452,10 @@ const styles = StyleSheet.create({
   previewChannel: { color: COLORS.textSecondary, fontSize: 13, marginBottom: 8 },
   notStoredRow: { flexDirection: 'row', marginBottom: 12 },
   warnBanner: {
-    backgroundColor: '#3A3320', borderRadius: 10, padding: 10, marginBottom: 14,
-    borderWidth: 1, borderColor: '#E8B86D',
+    backgroundColor: COLORS.surface2, borderRadius: 10, padding: 10, marginBottom: 14,
+    borderWidth: 1, borderColor: COLORS.chipBorder,
   },
-  warnText: { color: '#E8B86D', fontSize: 13, marginBottom: 2 },
+  warnText: { color: COLORS.textMuted, fontSize: 13, marginBottom: 2 },
   fieldRow: { marginBottom: 14 },
   fieldLabel: { color: COLORS.textSecondary, fontSize: 13, marginBottom: 6, fontWeight: '600' },
   fieldInput: {
@@ -469,15 +469,15 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.background, marginRight: 8, marginBottom: 8,
     borderWidth: 1, borderColor: COLORS.border,
   },
-  chipActive: { backgroundColor: COLORS.accent, borderColor: COLORS.accent },
+  chipActive: { backgroundColor: COLORS.primary, borderColor: COLORS.primary },
   chipText: { fontSize: 13, color: COLORS.textSecondary, fontWeight: '600' },
-  chipTextActive: { color: COLORS.background },
+  chipTextActive: { color: COLORS.textOnGlow },
   durationText: { color: COLORS.textSecondary, fontSize: 13, marginBottom: 14 },
   confirmBtn: {
-    backgroundColor: COLORS.accent, borderRadius: 14, paddingVertical: 14,
+    backgroundColor: COLORS.glow, borderRadius: 14, paddingVertical: 14,
     alignItems: 'center', marginTop: 4,
   },
-  confirmBtnText: { color: COLORS.background, fontWeight: '700', fontSize: 16 },
+  confirmBtnText: { color: COLORS.textOnGlow, fontWeight: '700', fontSize: 16 },
   // 「我加過嘅歌」(§5.2)
   addedSection: { marginTop: 22 },
   addedTitle: { color: COLORS.textPrimary, fontSize: 15, fontWeight: '700', marginBottom: 10 },

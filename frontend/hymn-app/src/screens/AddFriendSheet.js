@@ -5,7 +5,7 @@
 // 冇 FlatList,一格輸入夠晒)。
 import React, { useState, useCallback } from 'react';
 import { Modal, View, Text, TextInput, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
-import MaterialIcons from '@expo/vector-icons/MaterialIcons';
+import OdeIcon from '../icons/OdeIcon';
 import { COLORS } from '../theme/designSystem';
 import { useAuth } from '../context/AuthContext';
 import { friendsLookup, friendsRequest, redeemInvite, friendsErrorMessage } from '../api';
@@ -68,7 +68,7 @@ export default function AddFriendSheet({ visible, onClose, onRequested, onFriend
   const relationView = () => {
     if (!result) return null;
     if (!result.found) {
-      return <Text style={styles.hint}>呢個號碼未註冊,可以邀請佢一齊用 God Music(帳戶頁「邀請朋友加入」)</Text>;
+      return <Text style={styles.hint}>呢個號碼未註冊,可以邀請佢一齊用 Ode 詩歌 App(帳戶頁「邀請朋友加入」)</Text>;
     }
     switch (result.relation) {
       case 'self':
@@ -82,14 +82,14 @@ export default function AddFriendSheet({ visible, onClose, onRequested, onFriend
           <>
             <Text style={styles.hint}>佢已經想加你做好友!撳下面即刻成為好友。</Text>
             <TouchableOpacity style={styles.confirmBtn} onPress={handleRequest} disabled={busy} activeOpacity={0.85}>
-              {busy ? <ActivityIndicator color={COLORS.background} /> : <Text style={styles.confirmBtnText}>接受</Text>}
+              {busy ? <ActivityIndicator color={COLORS.textOnGlow} /> : <Text style={styles.confirmBtnText}>接受</Text>}
             </TouchableOpacity>
           </>
         );
       default:
         return (
           <TouchableOpacity style={styles.confirmBtn} onPress={handleRequest} disabled={busy} activeOpacity={0.85}>
-            {busy ? <ActivityIndicator color={COLORS.background} /> : <Text style={styles.confirmBtnText}>發出好友請求</Text>}
+            {busy ? <ActivityIndicator color={COLORS.textOnGlow} /> : <Text style={styles.confirmBtnText}>發出好友請求</Text>}
           </TouchableOpacity>
         );
     }
@@ -103,7 +103,7 @@ export default function AddFriendSheet({ visible, onClose, onRequested, onFriend
           <View style={styles.headerRow}>
             <Text style={styles.title}>加好友</Text>
             <TouchableOpacity onPress={close} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-              <MaterialIcons name="close" size={22} color={COLORS.textSecondary} />
+              <OdeIcon name="close" size={22} color={COLORS.textSecondary} />
             </TouchableOpacity>
           </View>
           <View style={styles.tabRow}>
@@ -133,7 +133,7 @@ export default function AddFriendSheet({ visible, onClose, onRequested, onFriend
               {!!err && <Text style={styles.err}>{err}</Text>}
               {!result && (
                 <TouchableOpacity style={styles.confirmBtn} onPress={handleLookup} disabled={busy} activeOpacity={0.85}>
-                  {busy ? <ActivityIndicator color={COLORS.background} /> : <Text style={styles.confirmBtnText}>搵吓</Text>}
+                  {busy ? <ActivityIndicator color={COLORS.textOnGlow} /> : <Text style={styles.confirmBtnText}>搵吓</Text>}
                 </TouchableOpacity>
               )}
               {relationView()}
@@ -152,7 +152,7 @@ export default function AddFriendSheet({ visible, onClose, onRequested, onFriend
                 style={styles.confirmBtn} onPress={handleRedeem}
                 disabled={busy || !code.trim()} activeOpacity={0.85}
               >
-                {busy ? <ActivityIndicator color={COLORS.background} /> : <Text style={styles.confirmBtnText}>兌換</Text>}
+                {busy ? <ActivityIndicator color={COLORS.textOnGlow} /> : <Text style={styles.confirmBtnText}>兌換</Text>}
               </TouchableOpacity>
             </>
           )}
@@ -176,9 +176,9 @@ const styles = StyleSheet.create({
     padding: 3, marginTop: 14,
   },
   tabBtn: { flex: 1, paddingVertical: 8, borderRadius: 10, alignItems: 'center' },
-  tabBtnActive: { backgroundColor: COLORS.accent },
+  tabBtnActive: { backgroundColor: COLORS.primary },
   tabText: { color: COLORS.textSecondary, fontSize: 13, fontWeight: '600' },
-  tabTextActive: { color: COLORS.background },
+  tabTextActive: { color: COLORS.textOnGlow },
   sub: { color: COLORS.textSecondary, fontSize: 13, marginTop: 12, marginBottom: 16 },
   input: {
     backgroundColor: COLORS.background, borderRadius: 12, height: 48, paddingHorizontal: 14,
@@ -187,8 +187,8 @@ const styles = StyleSheet.create({
   err: { color: COLORS.danger, fontSize: 13, marginTop: 10 },
   hint: { color: COLORS.textSecondary, fontSize: 14, marginTop: 14, lineHeight: 20 },
   confirmBtn: {
-    backgroundColor: COLORS.accent, borderRadius: 24, height: 48,
+    backgroundColor: COLORS.glow, borderRadius: 24, height: 48,
     justifyContent: 'center', alignItems: 'center', marginTop: 16,
   },
-  confirmBtnText: { color: COLORS.background, fontWeight: '700', fontSize: 15 },
+  confirmBtnText: { color: COLORS.textOnGlow, fontWeight: '700', fontSize: 15 },
 });

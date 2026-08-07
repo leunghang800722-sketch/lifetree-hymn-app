@@ -9,7 +9,7 @@
 
 import React, { useState, useRef, useCallback, useEffect, useMemo } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, ActivityIndicator, KeyboardAvoidingView, Platform, Image, ScrollView } from 'react-native';
-import MaterialIcons from '@expo/vector-icons/MaterialIcons';
+import OdeIcon from '../icons/OdeIcon';
 import { COLORS } from '../theme/designSystem';
 import { useAuth } from '../context/AuthContext';
 import { useInsets } from '../hooks/useInsets';
@@ -226,7 +226,7 @@ export default function PhoneLoginScreen({ onClose, onUseEmail }) {
   return (
     <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <TouchableOpacity style={[styles.close, { top: insets.top + 8 }]} onPress={onClose}>
-        <MaterialIcons name="close" size={24} color={COLORS.textSecondary} />
+        <OdeIcon name="close" size={24} color={COLORS.textSecondary} />
       </TouchableOpacity>
 
       <ScrollView contentContainerStyle={styles.inner} keyboardShouldPersistTaps="handled">
@@ -251,7 +251,7 @@ export default function PhoneLoginScreen({ onClose, onUseEmail }) {
             />
             {!!err && <Text style={styles.err}>{err}</Text>}
             <TouchableOpacity style={styles.btn} onPress={handleLogin} disabled={busy} activeOpacity={0.85}>
-              {busy ? <ActivityIndicator color={COLORS.background} /> : <Text style={styles.btnText}>登入</Text>}
+              {busy ? <ActivityIndicator color={COLORS.textOnGlow} /> : <Text style={styles.btnText}>登入</Text>}
             </TouchableOpacity>
             <View style={styles.rowLinks}>
               <TouchableOpacity onPress={startRegister}><Text style={styles.link}>新用戶?註冊</Text></TouchableOpacity>
@@ -277,7 +277,7 @@ export default function PhoneLoginScreen({ onClose, onUseEmail }) {
             />
             {!!err && <Text style={styles.err}>{err}</Text>}
             <TouchableOpacity style={styles.btn} onPress={handleCheckInvite} disabled={busy || !inviteCode.trim()} activeOpacity={0.85}>
-              {busy ? <ActivityIndicator color={COLORS.background} /> : <Text style={styles.btnText}>下一步</Text>}
+              {busy ? <ActivityIndicator color={COLORS.textOnGlow} /> : <Text style={styles.btnText}>下一步</Text>}
             </TouchableOpacity>
             <TouchableOpacity onPress={goLogin} style={{ marginTop: 14 }}>
               <Text style={styles.link}>返去登入</Text>
@@ -296,7 +296,7 @@ export default function PhoneLoginScreen({ onClose, onUseEmail }) {
             />
             {!!err && <Text style={styles.err}>{err}</Text>}
             <TouchableOpacity style={styles.btn} onPress={handleSendCode} disabled={busy} activeOpacity={0.85}>
-              {busy ? <ActivityIndicator color={COLORS.background} /> : <Text style={styles.btnText}>發送驗證碼</Text>}
+              {busy ? <ActivityIndicator color={COLORS.textOnGlow} /> : <Text style={styles.btnText}>發送驗證碼</Text>}
             </TouchableOpacity>
             <TouchableOpacity onPress={goLogin} style={{ marginTop: 14 }}>
               <Text style={styles.link}>返去登入</Text>
@@ -314,7 +314,7 @@ export default function PhoneLoginScreen({ onClose, onUseEmail }) {
             />
             {!!err && <Text style={styles.err}>{err}</Text>}
             <TouchableOpacity style={styles.btn} onPress={handleVerifyCode} disabled={busy} activeOpacity={0.85}>
-              {busy ? <ActivityIndicator color={COLORS.background} /> : <Text style={styles.btnText}>下一步</Text>}
+              {busy ? <ActivityIndicator color={COLORS.textOnGlow} /> : <Text style={styles.btnText}>下一步</Text>}
             </TouchableOpacity>
             <TouchableOpacity onPress={cooldown > 0 ? undefined : handleSendCode} disabled={cooldown > 0} style={{ marginTop: 14 }}>
               <Text style={styles.link}>{cooldown > 0 ? `${cooldown} 秒後可重新發送` : '重新發送驗證碼'}</Text>
@@ -367,7 +367,7 @@ export default function PhoneLoginScreen({ onClose, onUseEmail }) {
             />
             {!!err && <Text style={styles.err}>{err}</Text>}
             <TouchableOpacity style={styles.btn} onPress={handleRegisterSubmit} disabled={busy} activeOpacity={0.85}>
-              {busy ? <ActivityIndicator color={COLORS.background} /> : <Text style={styles.btnText}>完成註冊</Text>}
+              {busy ? <ActivityIndicator color={COLORS.textOnGlow} /> : <Text style={styles.btnText}>完成註冊</Text>}
             </TouchableOpacity>
           </>
         )}
@@ -408,7 +408,7 @@ export default function PhoneLoginScreen({ onClose, onUseEmail }) {
             )}
             {!!err && <Text style={styles.err}>{err}</Text>}
             <TouchableOpacity style={styles.btn} onPress={handleResetSubmit} disabled={busy} activeOpacity={0.85}>
-              {busy ? <ActivityIndicator color={COLORS.background} /> : <Text style={styles.btnText}>完成設定</Text>}
+              {busy ? <ActivityIndicator color={COLORS.textOnGlow} /> : <Text style={styles.btnText}>完成設定</Text>}
             </TouchableOpacity>
           </>
         )}
@@ -436,12 +436,12 @@ const styles = StyleSheet.create({
     color: COLORS.textPrimary, fontSize: 17, borderWidth: 1, borderColor: COLORS.border,
     textAlignVertical: 'center',
   },
-  inputFocused: { borderColor: COLORS.accent },
+  inputFocused: { borderColor: COLORS.primary },
   codeInput: { textAlign: 'center', letterSpacing: 8, fontSize: 24 },
   err: { color: COLORS.danger, fontSize: 13, marginTop: 10, textAlign: 'center' },
-  btn: { backgroundColor: COLORS.accent, borderRadius: 26, height: 52, justifyContent: 'center', alignItems: 'center', marginTop: 18 },
-  btnText: { color: COLORS.background, fontSize: 16, fontWeight: '700' },
-  link: { color: COLORS.accent, fontSize: 14, textAlign: 'center', fontWeight: '600', paddingVertical: 10 },
+  btn: { backgroundColor: COLORS.glow, borderRadius: 26, height: 52, justifyContent: 'center', alignItems: 'center', marginTop: 18 },
+  btnText: { color: COLORS.textOnGlow, fontSize: 16, fontWeight: '700' },
+  link: { color: COLORS.primary, fontSize: 14, textAlign: 'center', fontWeight: '600', paddingVertical: 10 },
   linkDim: { color: COLORS.textSecondary, fontSize: 14, textAlign: 'center', paddingVertical: 10 },
   rowLinks: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 6 },
   fieldLabel: { color: COLORS.textSecondary, fontSize: 13, fontWeight: '600', marginTop: 14, marginBottom: 8 },
@@ -450,7 +450,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20, paddingVertical: 10, borderRadius: 18, backgroundColor: COLORS.card,
     borderWidth: 1, borderColor: COLORS.border, marginRight: 10,
   },
-  chipActive: { backgroundColor: COLORS.accent, borderColor: COLORS.accent },
+  chipActive: { backgroundColor: COLORS.primary, borderColor: COLORS.primary },
   chipText: { color: COLORS.textSecondary, fontWeight: '600', fontSize: 14 },
-  chipTextActive: { color: COLORS.background },
+  chipTextActive: { color: COLORS.textOnGlow },
 });

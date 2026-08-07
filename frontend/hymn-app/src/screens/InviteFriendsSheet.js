@@ -3,16 +3,16 @@
 // 每個未用碼有「分享」掣 → Share.share 純文字(照 §2.7 文案)。
 import React, { useEffect, useState, useCallback } from 'react';
 import { Modal, View, Text, FlatList, TouchableOpacity, StyleSheet, ActivityIndicator, Share, Alert } from 'react-native';
-import MaterialIcons from '@expo/vector-icons/MaterialIcons';
+import OdeIcon from '../icons/OdeIcon';
 import { COLORS, TYPOGRAPHY } from '../theme/designSystem';
 import { useInsets } from '../hooks/useInsets';
 import { useAuth } from '../context/AuthContext';
 import { createInvite, listMyInvites, friendsErrorMessage } from '../api';
 
-const APK_URL = 'https://api.god-music.com/downloads/app.apk';
+const APK_URL = 'https://api.odemusics.com/downloads/app.apk';
 
 function shareText(code) {
-  return `我邀請你用 God Music 詩歌 App 🎵\n\n` +
+  return `我邀請你用 Ode 詩歌 App 🎵\n\n` +
     `未裝 app?下載(Android):${APK_URL}\n開新戶時輸入邀請碼:${code}\n\n` +
     `已經有 app?入「我的」→「加好友」→揀「輸入邀請碼」,打呢個碼即刻同我做好友:${code}`;
 }
@@ -59,22 +59,22 @@ export default function InviteFriendsSheet({ visible, onClose }) {
           <View style={styles.headerRow}>
             <Text style={styles.title}>邀請朋友加入</Text>
             <TouchableOpacity onPress={onClose} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-              <MaterialIcons name="close" size={22} color={COLORS.textSecondary} />
+              <OdeIcon name="close" size={22} color={COLORS.textSecondary} />
             </TouchableOpacity>
           </View>
           <Text style={styles.sub}>邀請碼一次性:未裝 app 嘅朋友用嚟開新戶;已經有 app 嘅朋友可以喺「加好友」揀「輸入邀請碼」打呢個碼——兩種情況都會自動同你做好友</Text>
 
           <TouchableOpacity style={styles.genBtn} onPress={handleGenerate} disabled={generating} activeOpacity={0.85}>
-            {generating ? <ActivityIndicator color={COLORS.background} /> : (
+            {generating ? <ActivityIndicator color={COLORS.textOnGlow} /> : (
               <>
-                <MaterialIcons name="add" size={20} color={COLORS.background} />
+                <OdeIcon name="plus" size={20} color={COLORS.textOnGlow} />
                 <Text style={styles.genBtnText}>生成新邀請碼</Text>
               </>
             )}
           </TouchableOpacity>
 
           {loading ? (
-            <View style={styles.centerState}><ActivityIndicator color={COLORS.accent} /></View>
+            <View style={styles.centerState}><ActivityIndicator color={COLORS.glow} /></View>
           ) : (
             <FlatList
               data={invites}
@@ -90,7 +90,7 @@ export default function InviteFriendsSheet({ visible, onClose }) {
                   </View>
                   {!item.used && (
                     <TouchableOpacity onPress={() => handleShare(item.code)} style={styles.shareBtn} activeOpacity={0.75}>
-                      <MaterialIcons name="share" size={16} color={COLORS.background} />
+                      <OdeIcon name="share" size={16} color={COLORS.textOnGlow} />
                       <Text style={styles.shareBtnText}>分享</Text>
                     </TouchableOpacity>
                   )}
@@ -98,7 +98,7 @@ export default function InviteFriendsSheet({ visible, onClose }) {
               )}
               ListEmptyComponent={
                 <View style={styles.centerState}>
-                  <MaterialIcons name="card-giftcard" size={36} color={COLORS.textSecondary} />
+                  <OdeIcon name="invite" size={36} color={COLORS.textSecondary} />
                   <Text style={styles.emptyText}>仲未生成過邀請碼</Text>
                 </View>
               }
@@ -123,9 +123,9 @@ const styles = StyleSheet.create({
   genBtn: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
     marginHorizontal: 20, marginBottom: 10, paddingVertical: 12, borderRadius: 24,
-    backgroundColor: COLORS.accent,
+    backgroundColor: COLORS.glow,
   },
-  genBtnText: { color: COLORS.background, fontWeight: '700', fontSize: 15, marginLeft: 6 },
+  genBtnText: { color: COLORS.textOnGlow, fontWeight: '700', fontSize: 15, marginLeft: 6 },
   centerState: { alignItems: 'center', paddingVertical: 32 },
   emptyText: { color: COLORS.textSecondary, fontSize: 14, marginTop: 8 },
   row: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 12 },
@@ -133,8 +133,8 @@ const styles = StyleSheet.create({
   code: { color: COLORS.textPrimary, fontSize: 16, fontWeight: '700', letterSpacing: 1 },
   status: { color: COLORS.textSecondary, fontSize: 13, marginTop: 2 },
   shareBtn: {
-    flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.accent,
+    flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.glow,
     borderRadius: 14, paddingHorizontal: 12, paddingVertical: 7,
   },
-  shareBtnText: { color: COLORS.background, fontWeight: '700', fontSize: 13, marginLeft: 4 },
+  shareBtnText: { color: COLORS.textOnGlow, fontWeight: '700', fontSize: 13, marginLeft: 4 },
 });

@@ -11,7 +11,7 @@
 //   未登入 → person-outline icon
 import React from 'react';
 import { TouchableOpacity, Text, StyleSheet } from 'react-native';
-import MaterialIcons from '@expo/vector-icons/MaterialIcons';
+import OdeIcon from '../icons/OdeIcon';
 import { COLORS } from '../theme/designSystem';
 import { useAuth } from '../context/AuthContext';
 
@@ -25,7 +25,7 @@ export default function AvatarButton({ onPress }) {
           {(user.username || user.phone?.slice(-4) || '?').charAt(0).toUpperCase()}
         </Text>
       ) : (
-        <MaterialIcons name="person-outline" size={20} color={COLORS.textPrimary} />
+        <OdeIcon name="me" size={20} color={COLORS.textPrimary} />
       )}
     </TouchableOpacity>
   );
@@ -36,13 +36,13 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: COLORS.accent,
+    backgroundColor: COLORS.glow,
     justifyContent: 'center',
     alignItems: 'center',
   },
   avatarText: {
     fontSize: 16,
     fontWeight: '700',
-    color: COLORS.background,
+    color: COLORS.textOnGlow,
   },
 });

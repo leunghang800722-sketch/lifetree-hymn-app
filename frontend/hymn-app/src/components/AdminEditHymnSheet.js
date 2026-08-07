@@ -16,7 +16,7 @@ import {
   Modal, View, Text, TextInput, TouchableOpacity, ScrollView,
   StyleSheet, Alert, Keyboard, KeyboardAvoidingView, Platform, Switch,
 } from 'react-native';
-import MaterialIcons from '@expo/vector-icons/MaterialIcons';
+import OdeIcon from '../icons/OdeIcon';
 import { COLORS } from '../theme/designSystem';
 import { useAuth } from '../context/AuthContext';
 import { adminGetHymn, adminPatchHymn, adminDelistHymn, adminErrorMessage } from '../api';
@@ -186,7 +186,7 @@ export function AdminEditHymnProvider({ children }) {
                     <Switch
                       value={form.kids}
                       onValueChange={(v) => setField('kids', v)}
-                      trackColor={{ false: COLORS.border, true: COLORS.accent }}
+                      trackColor={{ false: COLORS.border, true: COLORS.glow }}
                       thumbColor={COLORS.card}
                     />
                   </View>
@@ -235,7 +235,7 @@ export function AdminEditHymnProvider({ children }) {
                   <Text style={styles.saveBtnText}>{saving ? '儲存緊…' : '儲存'}</Text>
                 </TouchableOpacity>
                 <TouchableOpacity style={[styles.delistBtn, saving && styles.btnDisabled]} onPress={confirmDelist} disabled={saving} activeOpacity={0.8}>
-                  <MaterialIcons name="delete-outline" size={18} color={COLORS.danger} />
+                  <OdeIcon name="trash" size={18} color={COLORS.danger} />
                   <Text style={styles.delistBtnText}>落架呢首</Text>
                 </TouchableOpacity>
               </ScrollView>
@@ -277,15 +277,15 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.background, marginRight: 8, marginBottom: 8,
     borderWidth: 1, borderColor: COLORS.border,
   },
-  chipActive: { backgroundColor: COLORS.accent, borderColor: COLORS.accent },
+  chipActive: { backgroundColor: COLORS.primary, borderColor: COLORS.primary },
   chipText: { fontSize: 13, color: COLORS.textSecondary, fontWeight: '600' },
-  chipTextActive: { color: COLORS.background },
+  chipTextActive: { color: COLORS.textOnGlow },
   errText: { color: COLORS.danger, fontSize: 13, marginBottom: 10 },
   saveBtn: {
-    backgroundColor: COLORS.accent, borderRadius: 14, paddingVertical: 14,
+    backgroundColor: COLORS.glow, borderRadius: 14, paddingVertical: 14,
     alignItems: 'center', marginTop: 4,
   },
-  saveBtnText: { color: COLORS.background, fontWeight: '700', fontSize: 16 },
+  saveBtnText: { color: COLORS.textOnGlow, fontWeight: '700', fontSize: 16 },
   delistBtn: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
     paddingVertical: 14, marginTop: 8,

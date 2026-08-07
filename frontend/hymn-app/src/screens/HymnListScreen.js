@@ -18,7 +18,7 @@ import {
   StyleSheet,
   Image,
 } from 'react-native';
-import MaterialIcons from '@expo/vector-icons/MaterialIcons';
+import OdeIcon from '../icons/OdeIcon';
 import { COLORS, TYPOGRAPHY } from '../theme/designSystem';
 import { useFavorites } from '../context/FavoritesContext';
 import { useAddToPlaylist } from '../components/AddToPlaylistSheet';
@@ -39,7 +39,7 @@ function Cover({ youtubeId, size = 52 }) {
   if (!uri || failed) {
     return (
       <View style={[styles.cover, { width: size, height: size, alignItems: 'center', justifyContent: 'center' }]}>
-        <MaterialIcons name="music-note" size={size * 0.42} color={COLORS.textSecondary} />
+        <OdeIcon name="musicNote" size={size * 0.42} color={COLORS.textSecondary} />
       </View>
     );
   }
@@ -64,10 +64,11 @@ function Heart({ hymn }) {
       style={styles.heart}
       activeOpacity={0.6}
     >
-      <MaterialIcons
-        name={on ? 'favorite' : 'favorite-border'}
+      <OdeIcon
+        name="heart"
         size={20}
-        color={on ? COLORS.accent : COLORS.textSecondary}
+        filled={on}
+        color={on ? COLORS.primary : COLORS.textSecondary}
       />
     </TouchableOpacity>
   );
@@ -99,7 +100,7 @@ export default function HymnListScreen({ hymns = [], title, onPlayHymn, hasMiniP
         contentContainerStyle={{ paddingBottom: bottomPad }}
         ListEmptyComponent={
           <View style={styles.empty}>
-            <MaterialIcons name="music-off" size={36} color={COLORS.textSecondary} />
+            <OdeIcon name="musicOff" size={36} color={COLORS.textSecondary} />
             <Text style={styles.emptyText}>呢個清單暫時冇歌</Text>
           </View>
         }
@@ -122,7 +123,7 @@ export default function HymnListScreen({ hymns = [], title, onPlayHymn, hasMiniP
               style={styles.rowAction}
               activeOpacity={0.6}
             >
-              <MaterialIcons name="playlist-add" size={22} color={COLORS.textSecondary} />
+              <OdeIcon name="addToList" size={22} color={COLORS.textSecondary} />
             </TouchableOpacity>
             <Heart hymn={item} />
           </TouchableOpacity>

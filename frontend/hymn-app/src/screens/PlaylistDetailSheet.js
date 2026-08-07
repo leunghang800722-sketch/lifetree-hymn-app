@@ -11,7 +11,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { Modal, View, Text, FlatList, TouchableOpacity, StyleSheet, Image, Alert, Share } from 'react-native';
-import MaterialIcons from '@expo/vector-icons/MaterialIcons';
+import OdeIcon from '../icons/OdeIcon';
 import { COLORS, TYPOGRAPHY } from '../theme/designSystem';
 import { useInsets } from '../hooks/useInsets';
 import { usePlaylists, MAX_PLAYLIST_SONGS } from '../context/PlaylistsContext';
@@ -28,7 +28,7 @@ function Cover({ youtubeId, size = 52 }) {
   if (!uri || failed) {
     return (
       <View style={[styles.cover, { width: size, height: size, alignItems: 'center', justifyContent: 'center' }]}>
-        <MaterialIcons name="music-note" size={size * 0.5} color={COLORS.textSecondary} />
+        <OdeIcon name="musicNote" size={size * 0.5} color={COLORS.textSecondary} />
       </View>
     );
   }
@@ -157,14 +157,14 @@ export default function PlaylistDetailSheet({ playlistId, onClose, onPlayHymn, o
         {/* Header:返回 │ 清單名 + N / 30 首 │ ⋯ */}
         <View style={styles.header}>
           <TouchableOpacity onPress={onClose} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} style={styles.headerBtn}>
-            <MaterialIcons name="arrow-back" size={24} color={COLORS.textPrimary} />
+            <OdeIcon name="back" size={24} color={COLORS.textPrimary} />
           </TouchableOpacity>
           <View style={styles.headerText}>
             <Text style={styles.headerTitle} numberOfLines={1}>{pl.name}</Text>
             <Text style={styles.headerSub}>{songs.length} / {MAX_PLAYLIST_SONGS} 首</Text>
           </View>
           <TouchableOpacity onPress={showMenu} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} style={styles.headerBtn}>
-            <MaterialIcons name="more-vert" size={24} color={COLORS.textPrimary} />
+            <OdeIcon name="more" size={24} color={COLORS.textPrimary} />
           </TouchableOpacity>
         </View>
 
@@ -178,7 +178,7 @@ export default function PlaylistDetailSheet({ playlistId, onClose, onPlayHymn, o
               <TouchableOpacity
                 style={[styles.playAll, { opacity: songs.length ? 1 : 0.45 }]}
                 onPress={playAll} activeOpacity={0.8} disabled={!songs.length}>
-                <MaterialIcons name="play-arrow" size={22} color={COLORS.background} />
+                <OdeIcon name="play" size={22} color={COLORS.textOnGlow} />
                 <Text style={styles.playAllText}>播全部</Text>
               </TouchableOpacity>
               {/* 分享係 Phase 3 嘅主打動作,搬 Spotify 同款喺「播全部」隔籬加個
@@ -186,7 +186,7 @@ export default function PlaylistDetailSheet({ playlistId, onClose, onPlayHymn, o
               <TouchableOpacity
                 style={[styles.shareBtn, { opacity: sharing ? 0.5 : 1 }]}
                 onPress={handleShare} activeOpacity={0.8} disabled={sharing}>
-                <MaterialIcons name="share" size={20} color={COLORS.textPrimary} />
+                <OdeIcon name="share" size={20} color={COLORS.textPrimary} />
               </TouchableOpacity>
             </View>
           }
@@ -200,13 +200,13 @@ export default function PlaylistDetailSheet({ playlistId, onClose, onPlayHymn, o
               </View>
               <TouchableOpacity onPress={() => removeFromPlaylist && removeFromPlaylist(pl.id, item.id)}
                 hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} style={styles.rowAction}>
-                <MaterialIcons name="remove-circle-outline" size={22} color={COLORS.textSecondary} />
+                <OdeIcon name="trash" size={22} color={COLORS.textSecondary} />
               </TouchableOpacity>
             </TouchableOpacity>
           )}
           ListEmptyComponent={
             <View style={styles.empty}>
-              <MaterialIcons name="queue-music" size={40} color={COLORS.textSecondary} />
+              <OdeIcon name="queue" size={40} color={COLORS.textSecondary} />
               <Text style={styles.emptyText}>呢個清單仲未有歌</Text>
               <Text style={styles.emptyHint}>喺播放頁或者最愛度撳 ≡♪ 加歌入嚟</Text>
             </View>
@@ -230,9 +230,9 @@ const styles = StyleSheet.create({
   playAll: {
     flexDirection: 'row', alignItems: 'center', alignSelf: 'flex-start',
     paddingHorizontal: 18, paddingVertical: 9,
-    backgroundColor: COLORS.accent, borderRadius: 20,
+    backgroundColor: COLORS.glow, borderRadius: 20,
   },
-  playAllText: { color: COLORS.background, fontWeight: '700', fontSize: 15, marginLeft: 4 },
+  playAllText: { color: COLORS.textOnGlow, fontWeight: '700', fontSize: 15, marginLeft: 4 },
   shareBtn: {
     width: 38, height: 38, borderRadius: 19, marginLeft: 10,
     alignItems: 'center', justifyContent: 'center', backgroundColor: COLORS.cardLight,

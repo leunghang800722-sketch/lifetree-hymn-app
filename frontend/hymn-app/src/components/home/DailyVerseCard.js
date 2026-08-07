@@ -1,7 +1,7 @@
-// DailyVerseCard — 每日聖經金句
+// DailyVerseCard — 每日金句(ODE-REBRAND-PLAN §3:金線退場,改宋體 + 暖光短線)
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { COLORS } from '../../constants/theme';
+import { COLORS } from '../../theme/designSystem';
 
 export default function DailyVerseCard({ verse }) {
   if (!verse || !verse.text) return null;
@@ -10,7 +10,8 @@ export default function DailyVerseCard({ verse }) {
     <View style={styles.card}>
       <Text style={styles.label}>每日金句</Text>
       <Text style={styles.verse}>「{verse.text}」</Text>
-      <Text style={styles.ref}>—— {verse.ref}</Text>
+      <View style={styles.glowLine} />
+      <Text style={styles.ref}>{verse.ref}</Text>
     </View>
   );
 }
@@ -20,28 +21,33 @@ const styles = StyleSheet.create({
     marginHorizontal: 16,
     marginBottom: 20,
     padding: 20,
-    borderRadius: 12,
-    backgroundColor: COLORS.cardBg,
-    borderLeftWidth: 3,
-    borderLeftColor: '#C8A951', // golden accent
+    borderRadius: 18,
+    backgroundColor: COLORS.surface,
   },
   label: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: '#C8A951',
-    letterSpacing: 1,
-    marginBottom: 10,
+    fontSize: 12,
+    fontWeight: '500',
+    letterSpacing: 2.5,
+    color: COLORS.textMuted,
+    marginBottom: 12,
+    textTransform: 'uppercase',
   },
   verse: {
-    fontSize: 16,
-    color: COLORS.primary,
-    lineHeight: 26,
-    fontWeight: '500',
+    fontFamily: 'Noto Serif TC',
+    fontSize: 17,
+    lineHeight: 17 * 1.85,
+    color: COLORS.text,
+  },
+  glowLine: {
+    width: 18,
+    height: 1,
+    backgroundColor: COLORS.glow,
+    marginTop: 14,
+    marginBottom: 8,
   },
   ref: {
+    fontFamily: 'Noto Serif TC',
     fontSize: 13,
-    color: COLORS.secondary,
-    marginTop: 8,
-    fontStyle: 'italic',
+    color: COLORS.textMuted,
   },
 });

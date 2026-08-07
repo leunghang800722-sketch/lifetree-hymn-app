@@ -9,7 +9,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { Modal, View, Text, FlatList, TouchableOpacity, StyleSheet, Image, Alert, ActivityIndicator } from 'react-native';
-import MaterialIcons from '@expo/vector-icons/MaterialIcons';
+import OdeIcon from '../icons/OdeIcon';
 import { COLORS, TYPOGRAPHY } from '../theme/designSystem';
 import { useInsets } from '../hooks/useInsets';
 import { usePlaylists } from '../context/PlaylistsContext';
@@ -23,7 +23,7 @@ function Cover({ youtubeId, size = 52 }) {
   if (!uri || failed) {
     return (
       <View style={[styles.cover, { width: size, height: size, alignItems: 'center', justifyContent: 'center' }]}>
-        <MaterialIcons name="music-note" size={size * 0.5} color={COLORS.textSecondary} />
+        <OdeIcon name="musicNote" size={size * 0.5} color={COLORS.textSecondary} />
       </View>
     );
   }
@@ -98,7 +98,7 @@ export default function SharedPlaylistSheet({ token, onClose, onPlayHymn, miniPl
       <View style={[styles.container, { paddingTop: insets.top + 8 }]}>
         <View style={styles.header}>
           <TouchableOpacity onPress={onClose} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} style={styles.headerBtn}>
-            <MaterialIcons name="arrow-back" size={24} color={COLORS.textPrimary} />
+            <OdeIcon name="back" size={24} color={COLORS.textPrimary} />
           </TouchableOpacity>
           <View style={styles.headerText}>
             <Text style={styles.headerTitle} numberOfLines={1}>{data?.name || '分享嘅清單'}</Text>
@@ -113,27 +113,27 @@ export default function SharedPlaylistSheet({ token, onClose, onPlayHymn, miniPl
 
         {state === 'loading' && (
           <View style={styles.centerState}>
-            <ActivityIndicator size="large" color={COLORS.accent} />
+            <ActivityIndicator size="large" color={COLORS.glow} />
           </View>
         )}
 
         {state === 'gone' && (
           <View style={styles.centerState}>
-            <MaterialIcons name="link-off" size={40} color={COLORS.textSecondary} />
+            <OdeIcon name="linkOff" size={40} color={COLORS.textSecondary} />
             <Text style={styles.emptyText}>呢個清單已經唔存在</Text>
           </View>
         )}
 
         {state === 'error' && (
           <View style={styles.centerState}>
-            <MaterialIcons name="wifi-off" size={40} color={COLORS.textSecondary} />
+            <OdeIcon name="wifiOff" size={40} color={COLORS.textSecondary} />
             <Text style={styles.emptyText}>而家冇網,遲啲再試</Text>
           </View>
         )}
 
         {state === 'rate_limited' && (
           <View style={styles.centerState}>
-            <MaterialIcons name="hourglass-empty" size={40} color={COLORS.textSecondary} />
+            <OdeIcon name="clock" size={40} color={COLORS.textSecondary} />
             <Text style={styles.emptyText}>操作太密,唞一唞再試</Text>
           </View>
         )}
@@ -149,13 +149,13 @@ export default function SharedPlaylistSheet({ token, onClose, onPlayHymn, miniPl
                 <TouchableOpacity
                   style={[styles.playAll, { opacity: songs.length ? 1 : 0.45 }]}
                   onPress={playAll} activeOpacity={0.8} disabled={!songs.length}>
-                  <MaterialIcons name="play-arrow" size={22} color={COLORS.background} />
+                  <OdeIcon name="play" size={22} color={COLORS.textPrimary} />
                   <Text style={styles.playAllText}>播全部</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={[styles.saveBtn, { opacity: saving ? 0.5 : 1 }]}
                   onPress={handleSave} activeOpacity={0.8} disabled={saving}>
-                  <MaterialIcons name="library-add" size={20} color={COLORS.background} />
+                  <OdeIcon name="addToList" size={20} color={COLORS.textOnGlow} />
                   <Text style={styles.saveBtnText}>儲存做我嘅清單</Text>
                 </TouchableOpacity>
               </View>
@@ -171,7 +171,7 @@ export default function SharedPlaylistSheet({ token, onClose, onPlayHymn, miniPl
             )}
             ListEmptyComponent={
               <View style={styles.empty}>
-                <MaterialIcons name="queue-music" size={40} color={COLORS.textSecondary} />
+                <OdeIcon name="queue" size={40} color={COLORS.textSecondary} />
                 <Text style={styles.emptyText}>呢個清單冇歌</Text>
               </View>
             }
@@ -203,9 +203,9 @@ const styles = StyleSheet.create({
   saveBtn: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center', alignSelf: 'stretch',
     paddingHorizontal: 18, paddingVertical: 12,
-    backgroundColor: COLORS.accent, borderRadius: 20,
+    backgroundColor: COLORS.glow, borderRadius: 20,
   },
-  saveBtnText: { color: COLORS.background, fontWeight: '700', fontSize: 15, marginLeft: 6 },
+  saveBtnText: { color: COLORS.textOnGlow, fontWeight: '700', fontSize: 15, marginLeft: 6 },
   row: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 8 },
   cover: { borderRadius: 6, backgroundColor: COLORS.cardLight },
   rowInfo: { flex: 1, marginLeft: 12 },

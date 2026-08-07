@@ -8,7 +8,7 @@
 
 import React, { useState, useMemo, useEffect } from 'react';
 import { View, Text, TextInput, FlatList, TouchableOpacity, StyleSheet, Image, Keyboard } from 'react-native';
-import MaterialIcons from '@expo/vector-icons/MaterialIcons';
+import OdeIcon from '../icons/OdeIcon';
 import { COLORS, TYPOGRAPHY } from '../theme/designSystem';
 import { useInsets } from '../hooks/useInsets';
 import { useFavorites } from '../context/FavoritesContext';
@@ -38,10 +38,11 @@ function Heart({ hymn }) {
       style={styles.heart}
       activeOpacity={0.6}
     >
-      <MaterialIcons
-        name={on ? 'favorite' : 'favorite-border'}
+      <OdeIcon
+        name="heart"
         size={20}
-        color={on ? COLORS.accent : COLORS.textSecondary}
+        filled={on}
+        color={on ? COLORS.primary : COLORS.textSecondary}
       />
     </TouchableOpacity>
   );
@@ -54,7 +55,7 @@ function Cover({ youtubeId, size = 52 }) {
     // §5.4 唔用 Emoji 做 fallback,用向量圖標
     return (
       <View style={[styles.cover, { width: size, height: size, alignItems: 'center', justifyContent: 'center' }]}>
-        <MaterialIcons name="music-note" size={size * 0.5} color={COLORS.textSecondary} />
+        <OdeIcon name="musicNote" size={size * 0.5} color={COLORS.textSecondary} />
       </View>
     );
   }
@@ -177,11 +178,11 @@ export default function LibraryScreen({ hymns = [], onPlayHymn, onOpenAuth }) {
 
       {/* 搜尋欄(SEARCH-MERGE-PLAN §3)— 喺固定 header 區內,自動 pinned 唔跟 scroll */}
       <View style={[styles.searchWrap, focused && styles.searchWrapFocused]}>
-        <MaterialIcons name="search" size={20} color={COLORS.textSecondary} style={styles.searchIcon} />
+        <OdeIcon name="search" size={20} color={COLORS.textSecondary} style={styles.searchIcon} />
         <TextInput
           style={styles.searchInput}
           placeholder="搜尋歌名、歌手、歌詞、專輯"
-          placeholderTextColor="#888"
+          placeholderTextColor={COLORS.textDim}
           value={query}
           onChangeText={setQuery}
           onFocus={() => setFocused(true)}
@@ -191,7 +192,7 @@ export default function LibraryScreen({ hymns = [], onPlayHymn, onOpenAuth }) {
         />
         {hasQuery && (
           <TouchableOpacity style={styles.clearBtn} onPress={() => setQuery('')}>
-            <MaterialIcons name="close" size={18} color={COLORS.textSecondary} />
+            <OdeIcon name="close" size={18} color={COLORS.textSecondary} />
           </TouchableOpacity>
         )}
       </View>
@@ -296,14 +297,14 @@ export default function LibraryScreen({ hymns = [], onPlayHymn, onOpenAuth }) {
               style={styles.rowAction}
               activeOpacity={0.6}
             >
-              <MaterialIcons name="playlist-add" size={22} color={COLORS.textSecondary} />
+              <OdeIcon name="addToList" size={22} color={COLORS.textSecondary} />
             </TouchableOpacity>
             <Heart hymn={item} />
           </TouchableOpacity>
         )}
         ListEmptyComponent={
           <View style={styles.empty}>
-            <MaterialIcons name={hasQuery ? 'search-off' : 'library-music'} size={40} color={COLORS.textSecondary} />
+            <OdeIcon name={hasQuery ? 'search' : 'library'} size={40} color={COLORS.textSecondary} />
             {hasQuery ? (
               hasChipFilter ? (
                 <>
@@ -341,33 +342,34 @@ const styles = StyleSheet.create({
   headerRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16 },
   header: { ...TYPOGRAPHY.title },
   count: { ...TYPOGRAPHY.artist, paddingHorizontal: 16, marginTop: 2, marginBottom: 10 },
-  // 搜尋欄 — 樣式跟舊 SearchScreen 嘅藥丸形睇齊
+  // 搜尋欄(ODE-HANDOFF §4 5a:16 圓角,深色底,唔再係舊嘅白底藥丸)
   searchWrap: {
     flexDirection: 'row', alignItems: 'center',
-    backgroundColor: '#E8E8E8', borderRadius: 24,
+    backgroundColor: COLORS.surface, borderRadius: 16,
     marginHorizontal: 16, paddingHorizontal: 16,
     height: 48, marginBottom: 10,
+    borderWidth: 1, borderColor: COLORS.chipBorder,
   },
-  searchWrapFocused: { borderWidth: 2, borderColor: COLORS.accent },
+  searchWrapFocused: { borderWidth: 2, borderColor: COLORS.primary },
   searchIcon: { marginRight: 8 },
-  searchInput: { flex: 1, fontSize: 16, color: '#0B0F0E', height: 48 },
+  searchInput: { flex: 1, fontSize: 16, color: COLORS.textPrimary, height: 48 },
   clearBtn: { padding: 4 },
   chipRow: { flexDirection: 'row', paddingHorizontal: 16, marginBottom: 10 },
   chip: {
     paddingHorizontal: 16, paddingVertical: 7, borderRadius: 16,
     backgroundColor: COLORS.card, marginRight: 8,
   },
-  chipActive: { backgroundColor: COLORS.accent },
+  chipActive: { backgroundColor: COLORS.primary },
   chipText: { fontSize: 14, color: COLORS.textSecondary, fontWeight: '600' },
-  chipTextActive: { color: COLORS.background },
+  chipTextActive: { color: COLORS.textOnGlow },
   artistWrap: { paddingLeft: 16, marginBottom: 10 },
   artistChip: {
     paddingHorizontal: 12, paddingVertical: 6, borderRadius: 14,
     borderWidth: 1, borderColor: COLORS.border, marginRight: 8, maxWidth: 150,
   },
-  artistChipActive: { borderColor: COLORS.accent, backgroundColor: COLORS.card },
+  artistChipActive: { borderColor: COLORS.primary, backgroundColor: COLORS.card },
   artistChipText: { fontSize: 12, color: COLORS.textSecondary },
-  artistChipTextActive: { color: COLORS.accent, fontWeight: '700' },
+  artistChipTextActive: { color: COLORS.primary, fontWeight: '700' },
   row: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 8 },
   cover: { borderRadius: 6, backgroundColor: COLORS.cardLight },
   rowInfo: { flex: 1, marginLeft: 12 },
@@ -377,10 +379,10 @@ const styles = StyleSheet.create({
   heart: { paddingLeft: 14 },
   empty: { alignItems: 'center', paddingTop: 60 },
   emptyText: { ...TYPOGRAPHY.artist, marginTop: 8 },
-  emptyHint: { fontSize: 13, color: '#666', marginTop: 6 },
+  emptyHint: { fontSize: 13, color: COLORS.textDim, marginTop: 6 },
   clearFilterBtn: {
     marginTop: 16, paddingHorizontal: 20, paddingVertical: 8,
-    borderRadius: 18, borderWidth: 1, borderColor: COLORS.accent,
+    borderRadius: 18, borderWidth: 1, borderColor: COLORS.primary,
   },
-  clearFilterText: { fontSize: 14, color: COLORS.accent, fontWeight: '600' },
+  clearFilterText: { fontSize: 14, color: COLORS.primary, fontWeight: '600' },
 });

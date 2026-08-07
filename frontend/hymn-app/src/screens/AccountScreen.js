@@ -3,7 +3,7 @@
 // 由 AuthScreen.js 見到 user 就 render 呢個(原本齋齋一個頭像+登出掣個 profile 段搬咗嚟呢度)。
 import React, { useState } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Alert } from 'react-native';
-import MaterialIcons from '@expo/vector-icons/MaterialIcons';
+import OdeIcon from '../icons/OdeIcon';
 import Constants from 'expo-constants';
 import { COLORS, TYPOGRAPHY } from '../theme/designSystem';
 import { useInsets } from '../hooks/useInsets';
@@ -16,16 +16,16 @@ import InviteFriendsSheet from './InviteFriendsSheet';
 
 function Row({ icon, label, value, onPress, showChevron = true, tint }) {
   const Wrapper = onPress ? TouchableOpacity : View;
-  const color = tint || COLORS.accent;
+  const color = tint || COLORS.primary;
   return (
     <Wrapper style={styles.row} onPress={onPress} activeOpacity={onPress ? 0.6 : undefined}>
       <View style={styles.rowIconWrap}>
-        <MaterialIcons name={icon} size={22} color={color} />
+        <OdeIcon name={icon} size={22} color={color} />
       </View>
       <Text style={[styles.rowLabel, tint && { color: tint }]} numberOfLines={1}>{label}</Text>
       {value ? <Text style={styles.rowValue} numberOfLines={1}>{value}</Text> : null}
       {onPress && showChevron ? (
-        <MaterialIcons name="chevron-right" size={20} color={COLORS.textSecondary} style={{ marginLeft: 4 }} />
+        <OdeIcon name="chevronRight" size={20} color={COLORS.textSecondary} style={{ marginLeft: 4 }} />
       ) : null}
     </Wrapper>
   );
@@ -70,13 +70,13 @@ export default function AccountScreen({ onClose }) {
   };
 
   const handleAbout = () => {
-    Alert.alert('God Music', buildLabel());
+    Alert.alert('Ode', buildLabel());
   };
 
   return (
     <View style={styles.container}>
       <TouchableOpacity style={[styles.closeBtn, { top: insets.top + 8 }]} onPress={onClose} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-        <MaterialIcons name="close" size={24} color={COLORS.textPrimary} />
+        <OdeIcon name="close" size={24} color={COLORS.textPrimary} />
       </TouchableOpacity>
 
       <ScrollView contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: insets.bottom + 24 }}>
@@ -89,8 +89,8 @@ export default function AccountScreen({ onClose }) {
         {!!subtitle && <Text style={styles.subtitle}>{subtitle}</Text>}
 
         <View style={styles.syncPill}>
-          <MaterialIcons name={synced ? 'cloud-done' : 'cloud-queue'} size={16} color={synced ? COLORS.accent : COLORS.textSecondary} />
-          <Text style={[styles.syncPillText, { color: synced ? COLORS.accent : COLORS.textSecondary }]}>
+          <OdeIcon name="synced" size={16} color={synced ? COLORS.primary : COLORS.textSecondary} />
+          <Text style={[styles.syncPillText, { color: synced ? COLORS.primary : COLORS.textSecondary }]}>
             {synced ? '已同步' : `${outboxLength} 項等緊同步`}
           </Text>
         </View>
@@ -98,12 +98,12 @@ export default function AccountScreen({ onClose }) {
         <Text style={styles.groupTitle}>帳戶</Text>
         <GroupCard
           rows={[
-            { key: 'fav', icon: 'favorite', label: '我的最愛', value: String(favorites.length), onPress: onClose },
-            { key: 'pl', icon: 'queue-music', label: '我嘅清單', value: String(playlists.length), onPress: onClose },
-            { key: 'sync', icon: synced ? 'cloud-done' : 'cloud-queue', label: '同步狀態', value: synced ? '已同步' : `${outboxLength} 項等緊同步` },
+            { key: 'fav', icon: 'heart', label: '我的最愛', value: String(favorites.length), onPress: onClose },
+            { key: 'pl', icon: 'queue', label: '我嘅清單', value: String(playlists.length), onPress: onClose },
+            { key: 'sync', icon: 'synced', label: '同步狀態', value: synced ? '已同步' : `${outboxLength} 項等緊同步` },
             // 邀請朋友加入(§2.7)—— 所有登入會員見到,擺帳戶動作呢組(唔加
             // 「我的」頁 chip——chips 係內容 tab,邀請係帳戶動作)。
-            { key: 'invite', icon: 'card-giftcard', label: '邀請朋友加入', onPress: () => setInviteVisible(true) },
+            { key: 'invite', icon: 'invite', label: '邀請朋友加入', onPress: () => setInviteVisible(true) },
           ]}
         />
 
@@ -114,8 +114,8 @@ export default function AccountScreen({ onClose }) {
             <Text style={styles.groupTitle}>個人資料</Text>
             <GroupCard
               rows={[
-                user.gender && { key: 'gender', icon: 'wc', label: '性別', value: user.gender === 'male' ? '男' : '女' },
-                user.birthYear && { key: 'birthYear', icon: 'cake', label: '出生年份', value: String(user.birthYear) },
+                user.gender && { key: 'gender', icon: 'gender', label: '性別', value: user.gender === 'male' ? '男' : '女' },
+                user.birthYear && { key: 'birthYear', icon: 'birthYear', label: '出生年份', value: String(user.birthYear) },
               ].filter(Boolean)}
             />
           </>
@@ -124,7 +124,7 @@ export default function AccountScreen({ onClose }) {
         <Text style={styles.groupTitle}>一般</Text>
         <GroupCard
           rows={[
-            { key: 'about', icon: 'info-outline', label: '關於 God Music', value: `v${Constants.expoConfig?.version || '—'}`, onPress: handleAbout },
+            { key: 'about', icon: 'about', label: '關於 Ode', value: `v${Constants.expoConfig?.version || '—'}`, onPress: handleAbout },
           ]}
         />
 
@@ -150,10 +150,10 @@ const styles = StyleSheet.create({
 
   avatar: {
     width: 84, height: 84, borderRadius: 42,
-    backgroundColor: COLORS.accent, alignSelf: 'center',
+    backgroundColor: COLORS.glow, alignSelf: 'center',
     alignItems: 'center', justifyContent: 'center',
   },
-  avatarLetter: { fontSize: 38, fontWeight: '800', color: COLORS.background },
+  avatarLetter: { fontSize: 38, fontWeight: '800', color: COLORS.textOnGlow },
   displayName: { ...TYPOGRAPHY.title, fontSize: 24, textAlign: 'center', marginTop: 14 },
   subtitle: { fontSize: 14, color: COLORS.textSecondary, textAlign: 'center', marginTop: 4 },
 

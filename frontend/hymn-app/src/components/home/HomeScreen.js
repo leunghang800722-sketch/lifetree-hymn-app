@@ -21,7 +21,7 @@
 
 import React, { useMemo, useState, useCallback, useRef } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Image, Dimensions } from 'react-native';
-import MaterialIcons from '@expo/vector-icons/MaterialIcons';
+import OdeIcon from '../../icons/OdeIcon';
 import { COLORS, TYPOGRAPHY } from '../../theme/designSystem';
 import DailyVerseCard from './DailyVerseCard';
 import { getHomeChip, saveHomeChip } from '../../homePrefs';
@@ -64,14 +64,14 @@ const CHIP_DEFS = [
     match: (h) => /(安靜|靈修|禱告|恩典|同在|安息|寧靜|Still|Peace|Quiet|Rest)/i.test(h.title || '') },
 ];
 
-function Thumb({ youtubeId, size, radius = 8, icon = 'music-note' }) {
+function Thumb({ youtubeId, size, radius = 8, icon = 'musicNote' }) {
   const [failed, setFailed] = React.useState(false);
   // mqdefault = 真 16:9 冇黑邊(hqdefault 係 4:3,黑邊 baked 咗入張圖)
   const uri = youtubeId ? `https://img.youtube.com/vi/${youtubeId}/mqdefault.jpg` : null;
   if (!uri || failed) {
     return (
       <View style={{ width: size, height: size, borderRadius: radius, backgroundColor: COLORS.cardLight, alignItems: 'center', justifyContent: 'center' }}>
-        <MaterialIcons name={icon} size={size * 0.4} color={COLORS.textSecondary} />
+        <OdeIcon name={icon} size={size * 0.4} color={COLORS.textSecondary} />
       </View>
     );
   }
@@ -82,7 +82,7 @@ function Thumb({ youtubeId, size, radius = 8, icon = 'music-note' }) {
 function PlayBadge() {
   return (
     <View style={styles.playBadge}>
-      <MaterialIcons name="play-arrow" size={18} color={COLORS.accent} />
+      <OdeIcon name="play" size={18} color={COLORS.glow} />
     </View>
   );
 }
@@ -101,10 +101,11 @@ function Heart({ hymn, style }) {
       activeOpacity={0.6}
       style={style}
     >
-      <MaterialIcons
-        name={on ? 'favorite' : 'favorite-border'}
+      <OdeIcon
+        name="heart"
         size={20}
-        color={on ? COLORS.accent : COLORS.textSecondary}
+        filled={on}
+        color={on ? COLORS.primary : COLORS.textSecondary}
       />
     </TouchableOpacity>
   );
@@ -210,7 +211,7 @@ export default function HomeScreen({ hymns = [], onPlayHymn, onOpenList }) {
   if (!hasData) {
     return (
       <View style={styles.emptyRoot}>
-        <MaterialIcons name="cloud-off" size={40} color={COLORS.textSecondary} />
+        <OdeIcon name="cloudOff" size={40} color={COLORS.textSecondary} />
         <Text style={styles.emptyText}>網絡好似斷咗</Text>
         <Text style={styles.emptyHint}>連得返線會自動載返啲詩歌</Text>
       </View>
@@ -234,7 +235,7 @@ export default function HomeScreen({ hymns = [], onPlayHymn, onOpenList }) {
           activeOpacity={0.85}
           onPress={playShuffleAll}
         >
-          <MaterialIcons name="shuffle" size={26} color={COLORS.accent} />
+          <OdeIcon name="shuffle" size={26} color={COLORS.glow} />
           <View style={styles.quickTextWrap}>
             <Text style={styles.quickTitle} numberOfLines={1}>隨心聽</Text>
             <Text style={styles.quickSub} numberOfLines={1}>隨機播放全部詩歌</Text>
@@ -294,7 +295,7 @@ export default function HomeScreen({ hymns = [], onPlayHymn, onOpenList }) {
                       <Text style={styles.rowTitle} numberOfLines={1}>{getDisplayTitle(h)}</Text>
                       <Text style={styles.rowArtist} numberOfLines={1}>{h.artist || '未知'}</Text>
                     </View>
-                    <MaterialIcons name="play-arrow" size={22} color={COLORS.textSecondary} />
+                    <OdeIcon name="play" size={22} color={COLORS.textSecondary} />
                     <Heart hymn={h} style={styles.rowHeart} />
                   </TouchableOpacity>
                 ))}
@@ -315,13 +316,13 @@ export default function HomeScreen({ hymns = [], onPlayHymn, onOpenList }) {
           <View style={styles.chipFooter}>
             <TouchableOpacity style={styles.footerPlay} activeOpacity={0.85}
               onPress={() => play(activeChip.songs[0], activeChip.songs, true)}>
-              <MaterialIcons name="play-arrow" size={18} color={COLORS.background} />
+              <OdeIcon name="play" size={18} color={COLORS.textOnGlow} />
               <Text style={styles.footerPlayText}>播全部 {activeChip.songs.length} 首</Text>
             </TouchableOpacity>
             <TouchableOpacity style={styles.footerMore} activeOpacity={0.7}
               onPress={() => onOpenList && onOpenList(activeChip.songs, activeChip.title)}>
               <Text style={styles.footerMoreText}>睇晒 {activeChip.songs.length} 首</Text>
-              <MaterialIcons name="chevron-right" size={18} color={COLORS.textSecondary} />
+              <OdeIcon name="chevronRight" size={18} color={COLORS.textSecondary} />
             </TouchableOpacity>
           </View>
         </View>
@@ -401,9 +402,9 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.card, marginRight: 8,
     borderWidth: 1, borderColor: COLORS.border,
   },
-  chipOn: { backgroundColor: COLORS.accent, borderColor: COLORS.accent },
+  chipOn: { backgroundColor: COLORS.primary, borderColor: COLORS.primary },
   chipText: { fontSize: 14, fontWeight: '600', color: COLORS.textSecondary },
-  chipTextOn: { color: COLORS.background },
+  chipTextOn: { color: COLORS.textOnGlow },
   // 每一頁固定闊度 + 鎖死高度(5 行)—— pager 靠呢個 + PAGE_SNAP 做 snap。
   // 鎖高係因為最尾一頁可能唔夠 5 首,唔鎖住滑到嗰頁成個區塊會縮,好核突。
   page: {
@@ -415,7 +416,7 @@ const styles = StyleSheet.create({
     width: 6, height: 6, borderRadius: 3, marginHorizontal: 3,
     backgroundColor: COLORS.border,
   },
-  dotOn: { backgroundColor: COLORS.accent, width: 16 },
+  dotOn: { backgroundColor: COLORS.primary, width: 16 },
   chipFooter: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
     marginHorizontal: PAGE_H_MARGIN, marginTop: 12,
@@ -430,10 +431,10 @@ const styles = StyleSheet.create({
   rowArtist: { ...TYPOGRAPHY.artist, marginTop: 2, lineHeight: ROW_ARTIST_LH },
   footerPlay: {
     flexDirection: 'row', alignItems: 'center',
-    backgroundColor: COLORS.accent, borderRadius: 999,
+    backgroundColor: COLORS.glow, borderRadius: 999,
     paddingHorizontal: 14, paddingVertical: 9,
   },
-  footerPlayText: { fontSize: 14, fontWeight: '700', color: COLORS.background, marginLeft: 4 },
+  footerPlayText: { fontSize: 14, fontWeight: '700', color: COLORS.textOnGlow, marginLeft: 4 },
   footerMore: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 6, paddingVertical: 9 },
   footerMoreText: { fontSize: 14, fontWeight: '600', color: COLORS.textSecondary },
 
