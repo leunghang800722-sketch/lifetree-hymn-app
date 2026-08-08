@@ -63,11 +63,33 @@ shareRoutes(app); // 分享播放清單(MEMBERSHIP-PHASE3-SHARE-PLAN §1-3)—�
 friendsRoutes(app); // 好友(MEMBERSHIP-PHASE4-FRIENDS-INVITES-PLAN §1)—— 自己逐條掛 requireAuth
 invitesRoutes(app); // 邀請碼 + 註冊閘配套(MEMBERSHIP-PHASE4-FRIENDS-INVITES-PLAN §2)
 
+// APK 下載檔名(APP-UPDATE-CHECK-PLAN §5 第二輪修正):以前寫死
+// "hymn-app-v1.3.0-week2.apk"(rebrand 前、W2 個陣嘅殘留),同而家實際版本
+// 完全脫節。而家動態由 app-version.json 讀 versionName 砌,manifest 讀唔到
+// /壞 JSON 就 fallback 返 "Ode.apk"(唔准 crash)。
+function buildApkFilename() {
+  try {
+    const raw = fs.readFileSync(path.join(__dirname, 'public', 'app-version.json'), 'utf8');
+    const manifest = JSON.parse(raw);
+    const versionName = typeof manifest?.versionName === 'string' ? manifest.versionName.trim() : '';
+    // 淨係留返檔名安全字符,防止 manifest 手民之誤打入奇怪字元累到 HTTP header
+    const safe = versionName.replace(/[^a-zA-Z0-9._-]/g, '');
+    if (safe) return `Ode-v${safe}.apk`;
+  } catch (e) {
+    // manifest 讀唔到 / 壞 JSON —— fallback
+  }
+  return 'Ode.apk';
+}
+
 // Super simple APK download at root level
 app.get('/app.apk', (req, res) => {
   const filePath = path.join(__dirname, 'public', 'app.apk');
   res.setHeader('Content-Type', 'application/vnd.android.package-archive');
-  res.setHeader('Content-Disposition', 'attachment; filename="hymn-app.apk"');
+  res.setHeader('Content-Disposition', `attachment; filename="${buildApkFilename()}"`);
+  // 換 APK 後 Cloudflare 之前 cache 住舊版 4 個鐘,用戶落到舊版又觸發返
+  // update banner,同新推嘅 APK 打交。呢條同 /downloads/app.apk 一齊唔准
+  // 俾任何 CDN/瀏覽器 cache 住(APP-UPDATE-CHECK-PLAN §5)。
+  res.setHeader('Cache-Control', 'no-store');
   res.sendFile(filePath, (err) => {
     if (err) {
       console.error('Send file error:', err);
@@ -79,13 +101,19 @@ app.get('/app.apk', (req, res) => {
 // APK download with attachment header (must be before static middleware)
 app.get('/downloads/app.apk', (req, res) => {
   const filePath = path.join(__dirname, 'public', 'app.apk');
-  res.setHeader('Content-Disposition', 'attachment; filename="hymn-app-v1.3.0-week2.apk"');
+  res.setHeader('Content-Disposition', `attachment; filename="${buildApkFilename()}"`);
   res.setHeader('Content-Type', 'application/vnd.android.package-archive');
+  res.setHeader('Cache-Control', 'no-store');
   res.sendFile(filePath);
 });
 
-// Serve other static files
-app.use('/downloads', express.static('public'));
+// ⚠️ 舊版曾經有 `app.use('/downloads', express.static('public'))`——即係
+// `backend/public/` 成個目錄任何檔案（包括 `.bak-*` 歷史 APK、其他運行時
+// 產物)都可以由 `/downloads/<檔名>` 直接公開讀取。已剷走呢個 static mount
+// (APP-UPDATE-CHECK-PLAN §5 第二輪修正);`/downloads/` 而家淨係識派上面
+// 嗰條 `/downloads/app.apk` route,任何其他 `/downloads/<其他檔案>` 一律
+// 404。已 grep 全 repo 確認冇其他地方依賴 `/downloads/` 底下 app.apk 以外
+// 嘅檔案(分享頁/邀請文案全部指返 `/downloads/app.apk`)。
 
 // Health check
 app.get('/api/health', (req, res) => {
