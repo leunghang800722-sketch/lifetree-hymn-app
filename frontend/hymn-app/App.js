@@ -54,6 +54,7 @@ import { getDisplayTitle } from './src/utils/displayTitle';
 // 唔會有舊 PanResponder 撞 FlatList scroll 嗰個問題(HANDOFF 教訓)。
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import * as Updates from 'expo-updates';
+import Constants from 'expo-constants';
 // ⚠️ sheet **入面**啲掣要用 gorhom 自己嗰個 TouchableOpacity(SheetTouchable)。
 // RN 內置嘅 TouchableOpacity 用舊 responder 系統,喺 gesture-handler 嘅手勢區域入面
 // 喺 Android 上會俾 pan gesture 搶咗個 touch,撳落去時好時壞。gorhom 個版本係
@@ -2527,6 +2528,7 @@ function AppContent() {
       )}
 
       {!__DEV__ ? <UpdateBanner /> : null}
+      {!__DEV__ ? <ApkUpdateBanner /> : null}
       <TabBar activeTab={activeTab} onTabChange={setActiveTab}
         bottomInset={bottomInset} onMiniPlayerPress={handleOpenFullScreen} />
 
@@ -2599,6 +2601,95 @@ const updateBannerStyles = StyleSheet.create({
     shadowColor: '#000', shadowOpacity: 0.3, shadowRadius: 8, shadowOffset: { width: 0, height: 2 },
   },
   text: { color: TEXT_PRIMARY, fontSize: 14, fontWeight: '600' },
+});
+
+// ===== APK 側載更新提示（APP-UPDATE-CHECK-PLAN §1.2）=====
+// App 冇上架 store，靠側載 APK 派新版，用戶對「有大更新」零感知。呢個 banner
+// 補呢個窿：cold start 起完 render 之後靜默 fetch 一次 manifest，同裝機
+// versionCode 比，有新先出 banner，撳落開瀏覽器落新 APK。
+//
+// ⚠️ 唔跟 UpdateBanner（EAS OTA）任何機制——嗰個係另一條管道（JS bundle
+// 靜默下載完待冷啟動生效），呢個係「要換成隻新 APK」嗰種大更新，冇得靜默，
+// 一定要用戶撳一下去瀏覽器落載＋人手裝。兩個 banner 共存邏輯淨係「OTA
+// 優先」：isUpdatePending 顯示緊就唔出呢個，因為 OTA 撳一下就完，體驗好過
+// 叫人去落 APK。
+//
+// 比較用 Constants.nativeBuildVersion（二進制實際 versionCode）—— 唔可以用
+// Constants.expoConfig.version，因為 OTA 推咗新 JS bundle 之後，JS 側嘅
+// version 字串會行先於二進制，用嗰個比較會喺用戶其實仲用緊舊 APK 底子時
+// 都話「已經最新」，或者反過來誤判有更新（見 §1.2 註解）。
+function ApkUpdateBanner() {
+  const { isUpdatePending } = Updates.useUpdates();
+  const [dismissed, setDismissed] = useState(false);
+  const [manifest, setManifest] = useState(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 8000);
+    (async () => {
+      try {
+        const res = await fetch(`${API_BASE}/api/app-version`, { signal: controller.signal });
+        if (!res.ok) return; // 404/5xx 一律靜默當冇更新
+        const data = await res.json();
+        if (cancelled) return;
+        const remoteCode = Number(data?.versionCode);
+        const installedCode = Number(Constants.nativeBuildVersion);
+        if (
+          Number.isFinite(remoteCode) && Number.isFinite(installedCode) &&
+          remoteCode > installedCode && typeof data?.url === 'string' && data.url
+        ) {
+          setManifest(data);
+        }
+      } catch (e) {
+        // 斷網 / timeout(AbortError)/ 壞 JSON 一律靜默——呢個 banner 冇得
+        // 有 error UI，唔准阻塞正常用機（§1.2）。
+      } finally {
+        clearTimeout(timer);
+      }
+    })();
+    return () => { cancelled = true; clearTimeout(timer); controller.abort(); };
+  }, []);
+
+  if (isUpdatePending) return null; // OTA banner 優先，避免兩條疊
+  if (!manifest || dismissed) return null;
+
+  return (
+    <View style={apkUpdateBannerStyles.wrap}>
+      <View style={apkUpdateBannerStyles.bubble}>
+        <TouchableOpacity
+          style={apkUpdateBannerStyles.mainTouch}
+          activeOpacity={0.85}
+          onPress={() => { Linking.openURL(manifest.url); }}
+        >
+          <OdeIcon name="systemUpdate" size={16} color={PRIMARY_COLOR} style={{ marginRight: 6 }} />
+          <Text style={apkUpdateBannerStyles.text} numberOfLines={1}>
+            {`有新版本 v${manifest.versionName}，撳一下下載安裝`}
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={apkUpdateBannerStyles.dismissTouch}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          onPress={() => setDismissed(true)}
+        >
+          <OdeIcon name="close" size={14} color={TEXT_SECONDARY} />
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
+}
+
+const apkUpdateBannerStyles = StyleSheet.create({
+  wrap: { alignItems: 'center', backgroundColor: MAIN_BG_COLOR, paddingVertical: 8 },
+  bubble: {
+    flexDirection: 'row', alignItems: 'center', maxWidth: '86%',
+    backgroundColor: CARD_BG_COLOR, paddingHorizontal: 16, paddingVertical: 10, borderRadius: 24,
+    borderWidth: 1, borderColor: DesignColors.border,
+    shadowColor: '#000', shadowOpacity: 0.3, shadowRadius: 8, shadowOffset: { width: 0, height: 2 },
+  },
+  mainTouch: { flexDirection: 'row', alignItems: 'center', flexShrink: 1 },
+  text: { color: TEXT_PRIMARY, fontSize: 14, fontWeight: '600', flexShrink: 1 },
+  dismissTouch: { marginLeft: 10 },
 });
 
 // ===== App Entry =====
