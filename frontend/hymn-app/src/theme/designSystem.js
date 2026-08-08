@@ -117,10 +117,15 @@ export const header = {
   avatar: 40,
 };
 
+// F3 followup(Opus 第二輪覆核):shadowColor/shadowOpacity/shadowRadius 淨係
+// iOS 有效,呢個 project 開咗 newArchEnabled,RN 0.85 Android 側方案係
+// `boxShadow` CSS string(Fabric 先支援,兩邊平台都食得),先至真係有暖光
+// 外發光效果。數值對齊 ODE-HANDOFF §3:ctaGlow = 0 0 22px 16% 透明度,
+// playGlow = 0 0 34px 24% 透明度。
 export const effects = {
   coverInset: { borderWidth: 1, borderColor: 'rgba(255,255,255,0.07)' },
-  ctaGlow: { shadowColor: '#FFE3C2', shadowOpacity: 0.16, shadowRadius: 22 },
-  playGlow: { shadowColor: '#FFE3C2', shadowOpacity: 0.24, shadowRadius: 34 },
+  ctaGlow: { boxShadow: '0 0 22px rgba(255,227,194,0.16)' },
+  playGlow: { boxShadow: '0 0 34px rgba(255,227,194,0.24)' },
 };
 
 export const iconState = {

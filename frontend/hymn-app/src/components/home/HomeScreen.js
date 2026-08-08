@@ -70,12 +70,12 @@ function Thumb({ youtubeId, size, radius = 8, icon = 'musicNote' }) {
   const uri = youtubeId ? `https://img.youtube.com/vi/${youtubeId}/mqdefault.jpg` : null;
   if (!uri || failed) {
     return (
-      <View style={{ width: size, height: size, borderRadius: radius, backgroundColor: COLORS.cardLight, alignItems: 'center', justifyContent: 'center' }}>
+      <View style={{ width: size, height: size, borderRadius: radius, backgroundColor: COLORS.cardLight, alignItems: 'center', justifyContent: 'center', ...effects.coverInset }}>
         <OdeIcon name={icon} size={size * 0.4} color={COLORS.textSecondary} />
       </View>
     );
   }
-  return <Image source={{ uri }} style={{ width: size, height: size, borderRadius: radius }} onError={() => setFailed(true)} />;
+  return <Image source={{ uri }} style={{ width: size, height: size, borderRadius: radius, ...effects.coverInset }} onError={() => setFailed(true)} />;
 }
 
 // 卡片右下角嘅 play 角標 —— 話俾用戶知「撳我即播」,唔係「撳我入去睇」(§2.4)
