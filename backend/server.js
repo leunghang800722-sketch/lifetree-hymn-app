@@ -100,6 +100,28 @@ app.get('/api/version', (req, res) => {
   res.json({ dataVersion });
 });
 
+// APK 更新提示 manifest(APP-UPDATE-CHECK-PLAN §1.1)。讀 backend/public/app-version.json
+// 原樣回傳,no-store 避免 CDN/瀏覽器 cache 住舊版本號。檔案唔存在/壞 JSON 一律
+// 404,唔准 crash——呢個 endpoint 純粹俾 App 靜默檢查,前端任何失敗都當冇更新。
+app.get('/api/app-version', (req, res) => {
+  res.setHeader('Cache-Control', 'no-store');
+  const filePath = path.join(__dirname, 'public', 'app-version.json');
+  fs.readFile(filePath, 'utf8', (err, raw) => {
+    if (err) {
+      console.error('app-version.json 讀取失敗:', err.message);
+      return res.status(404).json({ error: 'not found' });
+    }
+    let manifest;
+    try {
+      manifest = JSON.parse(raw);
+    } catch (parseErr) {
+      console.error('app-version.json 壞 JSON:', parseErr.message);
+      return res.status(404).json({ error: 'invalid manifest' });
+    }
+    res.json(manifest);
+  });
+});
+
 // 內部用:俾夜晚維護 script(growLibrary.js / checkDeadLinks.js)查詢「而家有冇
 // 真人聽緊歌」,實現「有真人用就縮」呢個開關(2026-07-21 Eric 拍板,暫時未開)。
 // 直接讀返 keep-warm tick 用緊嗰個 refcount(見上面 §206 anyStreaming),
