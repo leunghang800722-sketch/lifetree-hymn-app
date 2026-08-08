@@ -230,7 +230,7 @@ export default function PhoneLoginScreen({ onClose, onUseEmail }) {
       </TouchableOpacity>
 
       <ScrollView contentContainerStyle={styles.inner} keyboardShouldPersistTaps="handled">
-        <Image source={require('../../assets/android-icon-foreground.png')} style={styles.brandLogoImg} />
+        <Image source={require('../../assets/logo-ring.png')} style={styles.brandLogoImg} />
         <Text style={styles.title}>{title}</Text>
         <Text style={styles.sub}>{sub}</Text>
 

@@ -22,7 +22,7 @@
 import React, { useMemo, useState, useCallback, useRef } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Image, Dimensions } from 'react-native';
 import OdeIcon from '../../icons/OdeIcon';
-import { COLORS, TYPOGRAPHY } from '../../theme/designSystem';
+import { COLORS, TYPOGRAPHY, radii, effects } from '../../theme/designSystem';
 import DailyVerseCard from './DailyVerseCard';
 import { getHomeChip, saveHomeChip } from '../../homePrefs';
 import { dailyPick, dailyPickBalanced, randomShuffle } from '../../utils/dailyShuffle';
@@ -386,7 +386,7 @@ const styles = StyleSheet.create({
   quickRow: { flexDirection: 'row', marginHorizontal: 16, marginBottom: 22 },
   quickBtn: {
     flexDirection: 'row', alignItems: 'center', minHeight: 56,
-    backgroundColor: COLORS.card, borderRadius: 14,
+    backgroundColor: COLORS.card, borderRadius: radii.card, // F3(c):14→18(ODE-HANDOFF §3)
     paddingHorizontal: 14, paddingVertical: 10,
     borderWidth: 1, borderColor: COLORS.border,
   },
@@ -409,7 +409,7 @@ const styles = StyleSheet.create({
   // 鎖高係因為最尾一頁可能唔夠 5 首,唔鎖住滑到嗰頁成個區塊會縮,好核突。
   page: {
     width: PAGE_W, height: SONGS_PER_PAGE * ROW_H, marginRight: PAGE_GAP,
-    backgroundColor: COLORS.card, borderRadius: 14, overflow: 'hidden',
+    backgroundColor: COLORS.card, borderRadius: radii.card, overflow: 'hidden', // F3(c):14→18
   },
   dots: { flexDirection: 'row', justifyContent: 'center', marginTop: 10 },
   dot: {
@@ -433,6 +433,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center',
     backgroundColor: COLORS.glow, borderRadius: 999,
     paddingHorizontal: 14, paddingVertical: 9,
+    ...effects.ctaGlow, // F3(b):主 CTA 暖光外發光(ODE-HANDOFF §3)
   },
   footerPlayText: { fontSize: 14, fontWeight: '700', color: COLORS.textOnGlow, marginLeft: 4 },
   footerMore: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 6, paddingVertical: 9 },

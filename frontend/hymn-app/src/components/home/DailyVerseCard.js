@@ -33,7 +33,7 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
   },
   verse: {
-    fontFamily: 'Noto Serif TC',
+    fontFamily: 'NotoSerifTC-Regular',
     fontSize: 17,
     lineHeight: 17 * 1.85,
     color: COLORS.text,
@@ -46,7 +46,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   ref: {
-    fontFamily: 'Noto Serif TC',
+    fontFamily: 'NotoSerifTC-Regular',
     fontSize: 13,
     color: COLORS.textMuted,
   },

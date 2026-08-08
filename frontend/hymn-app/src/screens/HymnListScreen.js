@@ -2,11 +2,10 @@
 //
 // ⚠️ v234 之前呢個係全 App 最後一塊冇跟色板嘅畫面:白底 #fff、黑字、灰線,
 // 喺深色 App 入面撞到出面。而且啲寫死 hex 犯咗 §5.2「唔准再寫死 hex」。
-// 而家跟返「生命樹」色板同 LibraryScreen / MineScreen 嘅列表樣式:
-//   * 深林綠 #0B0F0E 底、米白字、灰綠次要字
-//   * 生命綠 #3DB389 = 播放 / 着燈狀態
-//   * 暖金 #E8B86D 淨係用嚟做「屬靈重點」記號 —— 呢頁冇金句類內容,
-//     所以金色只出現喺 header 嗰條細分隔線,唔攞嚟做普通按鈕(§5.2 聖俗有別)
+// 而家跟返 Ode 色板同 LibraryScreen / MineScreen 嘅列表樣式(ODE-REBRAND-PLAN):
+//   * 靛紫底 #0B0913、米白字、淡紫次要字
+//   * 暖光 #EFE4D2 = 播放 / 選中狀態
+//   * 主色紫 #B9A6F2 = 已收藏 / 連結
 //   * 歌名 18pt(§5.3 列表可讀性)、封面縮圖、行尾心心同其他歌單一致
 
 import React, { useState } from 'react';
@@ -19,7 +18,7 @@ import {
   Image,
 } from 'react-native';
 import OdeIcon from '../icons/OdeIcon';
-import { COLORS, TYPOGRAPHY } from '../theme/designSystem';
+import { COLORS, TYPOGRAPHY, effects } from '../theme/designSystem';
 import { useFavorites } from '../context/FavoritesContext';
 import { useAddToPlaylist } from '../components/AddToPlaylistSheet';
 import { useAdminEditHymn } from '../components/AdminEditHymnSheet';
@@ -145,7 +144,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center',
     paddingHorizontal: 16, paddingVertical: 8,
   },
-  cover: { borderRadius: 6, backgroundColor: COLORS.cardLight },
+  cover: { borderRadius: 6, backgroundColor: COLORS.cardLight, ...effects.coverInset },
   rowInfo: { flex: 1, marginLeft: 12 },
   rowTitle: { ...TYPOGRAPHY.songTitle },   // §5.3 列表 18pt
   rowArtist: { ...TYPOGRAPHY.artist, marginTop: 2 },

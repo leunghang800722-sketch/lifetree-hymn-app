@@ -9,7 +9,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, FlatList, TouchableOpacity, StyleSheet, Image, Alert, ScrollView, ActivityIndicator } from 'react-native';
 import OdeIcon from '../icons/OdeIcon';
-import { COLORS, TYPOGRAPHY } from '../theme/designSystem';
+import { COLORS, TYPOGRAPHY, effects } from '../theme/designSystem';
 import { useInsets } from '../hooks/useInsets';
 import { useFavorites } from '../context/FavoritesContext';
 import { usePlaylists } from '../context/PlaylistsContext';
@@ -429,7 +429,7 @@ export default function MineScreen({ onPlayHymn, onOpenAuth, onOpenAdminAdd, min
             <View style={styles.empty}>
               <OdeIcon name="queue" size={40} color={COLORS.textSecondary} />
               <Text style={styles.emptyText}>仲未有清單</Text>
-              <Text style={styles.emptyHint}>撳上面「＋新播放清單」開一個{'\n'}喺播放頁撳「清單」都可以加歌</Text>
+              <Text style={styles.emptyHint}>撳上面「新播放清單」開一個{'\n'}喺播放頁撳「清單」都可以加歌</Text>
             </View>
           }
         />
@@ -497,7 +497,7 @@ const styles = StyleSheet.create({
   segTextActive: { color: COLORS.textOnGlow },
   row: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 8 },
   rowAction: { paddingLeft: 14 },
-  cover: { borderRadius: 6, backgroundColor: COLORS.cardLight },
+  cover: { borderRadius: 6, backgroundColor: COLORS.cardLight, ...effects.coverInset },
   plCover: { width: 52, height: 52, alignItems: 'center', justifyContent: 'center' },
   rowInfo: { flex: 1, marginLeft: 12 },
   rowTitle: { ...TYPOGRAPHY.songTitle },
@@ -516,6 +516,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center', alignSelf: 'flex-start',
     marginHorizontal: 16, marginBottom: 12, paddingHorizontal: 18, paddingVertical: 9,
     backgroundColor: COLORS.glow, borderRadius: 20,
+    ...effects.ctaGlow, // F3(b):主 CTA 暖光外發光(ODE-HANDOFF §3)
   },
   playAllText: { color: COLORS.textOnGlow, fontWeight: '700', fontSize: 15, marginLeft: 4 },
   // 好友 chip 紅點(§3.1,incoming>0 先出,唔出數字)

@@ -77,7 +77,7 @@ export default function AuthScreen({ onClose }) {
 
         {/* Logo area — 品牌 icon 同 App.js home header / PhoneLoginScreen 同一個做法 */}
         <View style={styles.logoArea}>
-          <Image source={require('../../assets/android-icon-foreground.png')} style={styles.brandLogoImg} />
+          <Image source={require('../../assets/logo-ring.png')} style={styles.brandLogoImg} />
           <Text style={styles.logoTitle}>ode</Text>
           <Text style={styles.logoSubtitle}>{mode === 'login' ? '歡迎回來' : '建立帳戶'}</Text>
         </View>
@@ -162,7 +162,7 @@ const styles = StyleSheet.create({
   // Logo
   logoArea: { alignItems: 'center', marginBottom: 40 },
   brandLogoImg: { width: 88, height: 88, marginBottom: 12, resizeMode: 'contain' },
-  logoTitle: { fontFamily: 'Sora', fontSize: 26, fontWeight: '200', letterSpacing: 1.2, color: COLORS.textPrimary, marginBottom: 4 },
+  logoTitle: { fontFamily: 'Sora-ExtraLight', fontSize: 26, fontWeight: '200', letterSpacing: 1.2, color: COLORS.textPrimary, marginBottom: 4 },
   logoSubtitle: { fontSize: 15, color: COLORS.textSecondary },
 
   // Form

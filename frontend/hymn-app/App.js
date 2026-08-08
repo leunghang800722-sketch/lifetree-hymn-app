@@ -1,9 +1,8 @@
 // 詩歌App v211 TrackPlayer — 背景播放 + Ode 主題(ODE-REBRAND-PLAN)
-import { COLORS as DesignColors, TYPOGRAPHY, SPACING } from './src/theme/designSystem';
+import { COLORS as DesignColors, TYPOGRAPHY, SPACING, effects } from './src/theme/designSystem';
 import { useCachedHymns } from './src/hooks/useCachedHymns';
 import Skeleton from './src/components/Skeleton';
 import React, { useState, useEffect, createContext, useContext, useRef, useCallback } from 'react';
-import { useFonts } from 'expo-font';
 import OdeIcon from './src/icons/OdeIcon';
 import TrackPlayer, {
   State as TPState,
@@ -1386,7 +1385,7 @@ const miStyles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 10,
   },
-  cover: { width: 44, height: 44, borderRadius: 6, backgroundColor: DesignColors.cardLight },
+  cover: { width: 44, height: 44, borderRadius: 6, backgroundColor: DesignColors.cardLight, ...effects.coverInset },
   info: { flex: 1, marginLeft: 12 },
   title: { fontSize: 14, fontWeight: '600', color: TEXT_PRIMARY },
   artist: { fontSize: 12, color: TEXT_SECONDARY, marginTop: 1 },
@@ -1470,7 +1469,7 @@ function HomeScreen({ hymns, activeCategory, onCategoryChange, onPlayHymn, onOpe
       {/* Header — Ode 品牌 + 通知 + 頭像 */}
       <View style={[hs.header, { paddingTop: (homeInsets.top || StatusBar.currentHeight || 24) + 8 }]}>
         <View style={hs.brandWrap}>
-          <Image source={require('./assets/android-icon-foreground.png')} style={hs.brandIconImg} />
+          <Image source={require('./assets/logo-ring.png')} style={hs.brandIconImg} />
           <View>
             <Text style={hs.brandTitle}>ode</Text>
           </View>
@@ -1513,7 +1512,7 @@ const hs = StyleSheet.create({
     resizeMode: 'contain',
   },
   brandTitle: {
-    fontFamily: 'Sora',
+    fontFamily: 'Sora-ExtraLight',
     fontSize: 32,
     fontWeight: '200',
     letterSpacing: 1.5,
@@ -1688,7 +1687,7 @@ function FullScreenPlayerOverlay() {
           <OdeIcon name="chevronDown" size={24} color={TEXT_PRIMARY} />
         </TouchableOpacity>
         <View style={fsStyles.topBarBrand}>
-          <Image source={require('./assets/android-icon-foreground.png')} style={fsStyles.topBarBrandImg} />
+          <Image source={require('./assets/logo-ring.png')} style={fsStyles.topBarBrandImg} />
           <Text style={fsStyles.topBarTitle}>ode</Text>
         </View>
         <View style={fsStyles.dismissBtn} />
@@ -2046,7 +2045,7 @@ const fsStyles = StyleSheet.create({
   // ODE-HANDOFF §1:播放器頂 title = logo 環 22dp + 「ode」17px(Sora 200)
   topBarBrand: { flexDirection: 'row', alignItems: 'center' },
   topBarBrandImg: { width: 22, height: 22, marginRight: 7, resizeMode: 'contain' },
-  topBarTitle: { fontFamily: 'Sora', fontWeight: '200', fontSize: 17, letterSpacing: 1, color: TEXT_PRIMARY },
+  topBarTitle: { fontFamily: 'Sora-ExtraLight', fontWeight: '200', fontSize: 17, letterSpacing: 1, color: TEXT_PRIMARY },
   // B4 修(第二版,revert):試過 aspectRatio:16/9 但令 Eric 部機睇落更差——
   // 唔少縮圖嘅色帶係燒死喺 JPEG 像素入面(唔係容器逼出嚟嘅偽影),16:9 容器
   // 反而完整顯示埋個色帶,仲拉開咗封面同歌名之間嘅空隙。改返正方形,由
@@ -2066,6 +2065,7 @@ const fsStyles = StyleSheet.create({
     height: '100%',
     borderRadius: 24,
     resizeMode: 'cover',
+    ...effects.coverInset, // F3(a):封面 1px 內描邊(ODE-HANDOFF §3)
   },
   // 背景墊底層:同前景同一張圖、放大 15% 再 blur,填滿成個 coverWrap,行
   // 喺前景之後(z-order 靠 View child order,呢層擺喺 coverImg 之前 render)。
@@ -2116,9 +2116,13 @@ const fsStyles = StyleSheet.create({
   repeatOneBadge: {
     position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
     textAlign: 'center', textAlignVertical: 'center',
-    fontFamily: 'Sora', fontWeight: '200', fontSize: 13, color: GLOW_COLOR,
+    fontFamily: 'Sora-ExtraLight', fontWeight: '200', fontSize: 13, color: GLOW_COLOR,
   },
-  playBtn: { width: 68, height: 68, borderRadius: 34, backgroundColor: GLOW_COLOR, justifyContent: 'center', alignItems: 'center' },
+  playBtn: {
+    width: 68, height: 68, borderRadius: 34, backgroundColor: GLOW_COLOR,
+    justifyContent: 'center', alignItems: 'center',
+    ...effects.playGlow, // F3(b):播放器主掣暖光外發光(ODE-HANDOFF §3)
+  },
   playBtnIcon: { fontSize: 24, color: TEXT_ON_GLOW, marginLeft: 2 },
   handleBar: { width: 36, height: 4, backgroundColor: 'rgba(255,255,255,0.2)', borderRadius: 2, marginBottom: 8 },
   sheetHandleRow: { flexDirection: 'row', alignItems: 'center' },
@@ -2161,7 +2165,7 @@ const fsStyles = StyleSheet.create({
   queueItemDragging: { backgroundColor: CARD_BG_COLOR, borderRadius: 10 },
   dragHandleLeft: { paddingRight: 10, paddingVertical: 4 }, // §Eric #4:喺最左
   rowAct: { paddingHorizontal: 8, paddingVertical: 4 },
-  queueCover: { width: 40, height: 40, borderRadius: 6, backgroundColor: DesignColors.cardLight },
+  queueCover: { width: 40, height: 40, borderRadius: 6, backgroundColor: DesignColors.cardLight, ...effects.coverInset },
   queueInfo: { flex: 1, marginLeft: 10 },
   queueTitle: { fontSize: 14, fontWeight: '600', color: TEXT_PRIMARY },
   queueArtist: { fontSize: 12, color: TEXT_SECONDARY, marginTop: 2 },
@@ -2599,18 +2603,13 @@ const updateBannerStyles = StyleSheet.create({
 
 // ===== App Entry =====
 export default function App() {
-  // ODE-REBRAND-PLAN R2:Sora(拉丁字標)+ Noto Serif TC(金句/歌詞)隨新 APK
-  // 一齊入嚟,中文 UI 繼續用系統字(唔 bundle Noto Sans TC)。
-  // ⚠️ 故意唔 gate 成個 App 等字體(唔用 `if (!fontsLoaded) return null`)——
-  // Noto Serif TC 成隻 CJK 字 9.9MB,真機/慢機解析要一陣,一 gate 住成個 App
-  // 就會白閃/卡死喺白畫面(實測 release build 卡住唔郁,debug 冇事係因為
-  // Metro dev bundle 冇行呢個 native asset resolve path)。而家做法:字體喺
-  // 背景載,useFonts 個 loaded flag 一變就會觸發 re-render,用緊 Sora/Noto
-  // Serif TC 嘅 Text 會自動換字;之前嗰下純粹用返系統字 fallback,唔會白畫面。
-  useFonts({
-    Sora: require('./assets/fonts/Sora-ExtraLight.ttf'),
-    'Noto Serif TC': require('./assets/fonts/NotoSerifTC-Regular.ttf'),
-  });
+  // ODE-REBRAND-PLAN B2 followup:Sora(拉丁字標)+ Noto Serif TC(金句/歌詞)
+  // 已改做 build 期靜態嵌入(app.json expo-font plugin `fonts` array +
+  // android/app/src/main/assets/fonts/),唔再靠 runtime `useFonts()`——
+  // 舊做法喺 release build 靜默失敗(Noto Serif TC 9.9MB,native asset
+  // resolve 唔到),成 app 永遠 fallback 返 Roboto。字體 family 名直接以
+  // ttf 檔名為準:'Sora-ExtraLight' / 'NotoSerifTC-Regular',即裝即用,
+  // 冇載入延遲、冇白閃。中文 UI 繼續用系統字(唔 bundle Noto Sans TC)。
 
   // GestureHandlerRootView 一定要包最外 —— gorhom 嘅拖曳手勢靠佢。
   // 兩個 sheet 用 inline `<BottomSheet>`(唔經 portal),所以**故意唔加**

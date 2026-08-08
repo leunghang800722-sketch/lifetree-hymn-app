@@ -49,7 +49,15 @@
     },
     "plugins": [
       "expo-web-browser",
-      "expo-font"
+      [
+        "expo-font",
+        {
+          "fonts": [
+            "./assets/fonts/Sora-ExtraLight.ttf",
+            "./assets/fonts/NotoSerifTC-Regular.ttf"
+          ]
+        }
+      ]
     ],
     "extra": {
       "eas": {

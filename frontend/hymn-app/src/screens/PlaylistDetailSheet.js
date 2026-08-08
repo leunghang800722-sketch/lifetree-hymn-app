@@ -12,7 +12,7 @@
 import React, { useEffect, useState } from 'react';
 import { Modal, View, Text, FlatList, TouchableOpacity, StyleSheet, Image, Alert, Share } from 'react-native';
 import OdeIcon from '../icons/OdeIcon';
-import { COLORS, TYPOGRAPHY } from '../theme/designSystem';
+import { COLORS, TYPOGRAPHY, effects } from '../theme/designSystem';
 import { useInsets } from '../hooks/useInsets';
 import { usePlaylists, MAX_PLAYLIST_SONGS } from '../context/PlaylistsContext';
 import { useAddToPlaylist } from '../components/AddToPlaylistSheet';
@@ -231,6 +231,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center', alignSelf: 'flex-start',
     paddingHorizontal: 18, paddingVertical: 9,
     backgroundColor: COLORS.glow, borderRadius: 20,
+    ...effects.ctaGlow, // F3(b):主 CTA 暖光外發光(ODE-HANDOFF §3)
   },
   playAllText: { color: COLORS.textOnGlow, fontWeight: '700', fontSize: 15, marginLeft: 4 },
   shareBtn: {
@@ -239,7 +240,7 @@ const styles = StyleSheet.create({
   },
   row: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 8 },
   rowAction: { paddingLeft: 14 },
-  cover: { borderRadius: 6, backgroundColor: COLORS.cardLight },
+  cover: { borderRadius: 6, backgroundColor: COLORS.cardLight, ...effects.coverInset },
   rowInfo: { flex: 1, marginLeft: 12 },
   rowTitle: { ...TYPOGRAPHY.songTitle },
   rowArtist: { ...TYPOGRAPHY.artist, marginTop: 2 },

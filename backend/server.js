@@ -31,14 +31,18 @@ const PORT = process.env.PORT || 3001;
 app.use(cors());
 app.use(express.json());
 
-// ODE-REBRAND-PLAN §3.5 第2步:domain 遷移(god-music.com → odemusics.com,
-// 雙域並行,舊域唔剪)。舊域嘅 /p/*(分享連結)同 /downloads/*(APK 下載)
-// 301 去新域,等舊連結自動着陸新域。⚠️ /api/* 路由唔准喺呢度攔截 redirect
-// ——舊 APK 嘅 src/config.js 仲會直接打 api.god-music.com 打 API,301 佢會
-// 斷晒現有用戶(App 唔會跟 redirect 打 fetch)。
+// ODE-REBRAND-PLAN §3.5 第2步 followup(F2):domain 遷移(god-music.com →
+// odemusics.com,雙域並行,舊域唔剪)。⚠️ 舊域嘅 /p/*(分享連結)**唔准
+// 301**——舊 APK 對 api.god-music.com 嘅 app-link 已經 autoVerify,撳連結會
+// 直接開 app;一旦 301 去新域(新域未落 intent filter 嘅舊 APK 唔識),用戶
+// 就會由「直接開 app」跌落瀏覽器,要多撳一次先入到 app,體驗倒退。所以 /p/*
+// 照舊留喺呢個 host 直接出 SSR 頁(唔 redirect,落面 shareRoutes 照行)。
+// 淨係 /downloads/*(APK 下載連結,冇 app-link 語意)先 301 去新域。
+// /api/* 路由一律唔喺呢度攔截 redirect——舊 APK 嘅 src/config.js 仲會直接
+// 打 api.god-music.com 打 API,301 佢會斷晒現有用戶(App 唔會跟 redirect 打 fetch)。
 app.use((req, res, next) => {
   const host = (req.headers.host || '').split(':')[0];
-  if (host === 'api.god-music.com' && (req.path.startsWith('/p/') || req.path.startsWith('/downloads/'))) {
+  if (host === 'api.god-music.com' && req.path.startsWith('/downloads/')) {
     return res.redirect(301, `https://api.odemusics.com${req.originalUrl}`);
   }
   next();

@@ -59,9 +59,9 @@ export const TYPOGRAPHY = {
   songTitle: { fontSize: 15.5, fontWeight: '500', color: COLORS.textPrimary },
   body: { fontSize: 15, fontWeight: '400', color: COLORS.textPrimary },
   artist: { fontSize: 12.5, fontWeight: '400', color: COLORS.textSecondary },
-  lyrics: { fontFamily: 'Noto Serif TC', fontSize: 19, fontWeight: '400', color: COLORS.textPrimary, lineHeight: 19 * 1.95 },
+  lyrics: { fontFamily: 'NotoSerifTC-Regular', fontSize: 19, fontWeight: '400', color: COLORS.textPrimary, lineHeight: 19 * 1.95 },
   // 拉丁品牌字標
-  brand: { fontFamily: 'Sora', fontWeight: '200', letterSpacing: 1.5 },
+  brand: { fontFamily: 'Sora-ExtraLight', fontWeight: '200', letterSpacing: 1.5 },
 };
 
 export const SPACING = { sm: 8, md: 16, lg: 24 };
@@ -70,10 +70,10 @@ export const SPACING = { sm: 8, md: 16, lg: 24 };
 export const colors = ODE_COLORS;
 
 export const typography = {
-  brand: { fontFamily: 'Sora', fontWeight: '200', letterSpacing: 1.5 },
+  brand: { fontFamily: 'Sora-ExtraLight', fontWeight: '200', letterSpacing: 1.5 },
   brandHeader: 32,
   brandSplash: 44,
-  numeric: { fontFamily: 'Sora', fontWeight: '200' },
+  numeric: { fontFamily: 'Sora-ExtraLight', fontWeight: '200' },
 
   ui: { fontFamily: 'Noto Sans TC' },
   pageTitle: 26,
@@ -85,7 +85,7 @@ export const typography = {
   body: 15,
   tabLabel: 11.5,
 
-  serif: { fontFamily: 'Noto Serif TC' },
+  serif: { fontFamily: 'NotoSerifTC-Regular' },
   quote: { size: 17, lineHeight: 1.85 },
   lyrics: { size: 19, lineHeight: 1.95 },
 };
