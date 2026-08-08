@@ -201,6 +201,14 @@ App 由 **God Music** 改名 **Ode**(因為 God Music 撞名)。版面結構/導
 
 ---
 
+## 8.6 icon fix(`b034a38`)隨 APK vc54 一次過出街(2026-08-08)
+
+`b034a38`(play/prev/next icon 冇傳 filled 唔 render)之前已經用 OTA(runtime 3,
+update group 6cb842b2)推咗出去,呢次唔使再做嘢——單純記錄:呢個 fix 自然
+包含喺今次(APP-UPDATE-CHECK-PLAN §6)出嘅正式 APK vc54(commit 78a4d6f/
+5c0dd7a,runtimeVersion 3→4)裡面,因為 vc54 係由呢條分支現時 HEAD build,
+HEAD 早已包含 `b034a38`。冇額外改動,純交代版本追溯。
+
 ## 9. 建議執行次序(拍板後)
 
 1. Eric 答 Q1-Q4 + 補 dc.html →(§3.5 第 1-3 步 tunnel/DNS 可以呢段時間先做,唔使等拍板)

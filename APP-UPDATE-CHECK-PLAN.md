@@ -1,6 +1,7 @@
 # 「檢查新版本」in-app APK 更新提示 — 規劃(APP-UPDATE-CHECK-PLAN)
 
-> 狀態:Eric 已批准(2026-08-08),Fable 5 規劃 → Sonnet 5 落地 → Opus 5 驗收 → deploy gate 上線。
+> 狀態:Eric 已批准(2026-08-08),Fable 5 規劃 → Sonnet 5 落地 → Opus 5 驗收 → deploy gate 上線 →
+> **正式 APK vc54 已發佈(2026-08-08,見 §6)**,等獨立 Opus 5 session 全鏈路驗收先可以叫 Eric 裝機。
 > 背景:app 靠側載派 APK,冇 store 自動更新;現有 UpdateBanner 只覆蓋 EAS OTA(細更新)。大更新(新 APK)用戶零感知,要人手搵 link。今次補呢個窿。
 > 紅線:**OTA 機制一啖都唔准郁**(Updates.useUpdates 嗰個 banner 照舊)。
 
@@ -124,3 +125,57 @@ Opus 驗收期間親身踩中:`apk-publish.sh <apk> 54 --dry-run` 漏咗 version
 三項已用臨時 port(39281)起真 `server.js`驗過:filename 動態砌啱、兩條
 APK route 都有 `no-store`、`/downloads/app-version.json`(以前 static mount
 會派到)而家 404、`/api/app-version` 本身不受影響。
+
+## 6. 正式 APK vc54 發佈記錄(2026-08-08,Dispatch 指示 → Sonnet 5 執行)
+
+**版本**:versionCode 53→54 / versionName 1.5.0→1.5.1 / runtimeVersion 3→4。
+
+**Commit**:
+- `78a4d6f` — version bump(`app.json` + `android/app/build.gradle`)
+- `5c0dd7a` — **關鍵修正**:`android/app/src/main/res/values/strings.xml` 嘅
+  `expo_runtime_version` 冧咗冇跟 `app.json` bump(3→4)
+
+**⚠️ 落地時發現嘅 gotcha(下次出 APK 要記住)**:
+`android/` 係 checked-in 嘅 native project(呢個 repo 冇每次 build 前
+`expo prebuild` 重新生成),`expo.modules.updates.EXPO_RUNTIME_VERSION`
+呢個 meta-data 讀嘅係 static string resource `strings.xml`,**唔係直接讀
+`app.json` 嘅 `runtimeVersion`**。第一次 build 完之後,喺
+`android/app/build/intermediates/merged_manifest/.../AndroidManifest.xml`
+核對先發現呢個 string resource 仲係 `3`——如果冇發現就會出咗隻「話自己係
+runtime 4」但實際仍然拉緊 runtime-3 OTA 嘅 APK,令 §5「runtime bump 解決
+測試干擾」嘅假設落空。修完(改 `strings.xml` 嘅 `3`→`4`)重 build 先啱。
+**下次 bump runtimeVersion,兩個地方都要改:`app.json` + 呢個
+`strings.xml`。**
+
+**Build**:本機 `./gradlew assembleRelease`(非 EAS cloud build),
+`android/app/build/outputs/apk/release/app-release.apk`,110,740,119 bytes,
+md5 `eb591df262197e0944e82f6dceb0e089`。
+
+**發佈**:`ops/deploy/apk-publish.sh` 正式行(先 `--dry-run` 核對),舊
+1.5.0 已 backup 去 `backend/public/app.apk.bak-1.5.0-20260808-070853`。
+
+**驗證(Sonnet 自己做,唔算最終驗收)**:
+- `backend/public/app.apk` md5 同 build 產物一致。
+- localhost:3001 `/api/health` 200、`/api/app-version` 回 `{versionCode:54,
+  versionName:"1.5.1",...}`(backend 冇 restart,routes 本身動態讀檔,即刻
+  生效)。
+- 公網 `https://api.odemusics.com/api/health`、`/api/app-version` 同上,
+  一致。
+- `https://api.odemusics.com/downloads/app.apk`:header 正確
+  (`Content-Length: 110740119`、`Content-Disposition: Ode-v1.5.1.apk`、
+  `Cache-Control: no-store`、`cf-cache-status: BYPASS`)。完整 110MB
+  download 喺呢個執行環境嘅網絡會斷(HTTP/2 stream 中途 reset,懷疑係
+  sandbox 出網限制,唔係 server 問題)——改用 range request 逐段核對
+  head/middle(~55MB)/tail 三段 byte-for-byte 同本機檔案完全一致,連同
+  正確嘅 Content-Length,結論係公網成隻檔一致。
+- `git diff` 乾淨:淨係 `backend/public/app-version.json`(apk-publish.sh
+  運行時產物,豁免)有改,冇其他意外改動。
+- 冇行 backend restart——`app.apk`/`app-version.json` 兩條 route 都係
+  request-time 讀檔(`sendFile`/`fs.readFile`),c94f189 嗰輪修正已經 live,
+  唔需要 restart 先生效。
+
+**未做/留返俾其他 session**:
+- 冇叫 Eric 裝機——留返俾獨立 Opus 5 session 全鏈路驗收(包括真機側載/
+  banner 實測)先算數。
+- 冇拆走 App.js 嘅 guarded require(§5.1 提過呢個係可選 cleanup,呢次
+  release scope 冇包)。
