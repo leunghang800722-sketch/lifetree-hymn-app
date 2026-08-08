@@ -39,7 +39,16 @@ export default function OdeIcon({ name, size = 24, color = iconState.idle, fille
 
   // 有 fill 版又要求 filled 先用 f/fShapes;冇 fill 版(好多 icon 淨係得 stroke)
   // 就 fallback 用 s/shapes,唔理 filled prop。
-  const useFill = filled && (icon.f || icon.fShapes);
+  // Opus 第三輪覆核揪到嘅根因:play/playSmall/prev/next 淨係有 `f` 冇 `s`,
+  // 但成 10 個 call site(播放器主掣、mini player、prev/next、播全部 pill)
+  // 全部冇傳 `filled`——舊邏輯 `filled && (...)` 喺 filled=false 時
+  // useFill=false,於是 `paths = icon.s = undefined`,成個 icon 冧晒得返
+  // 個空隙(prev/next 淨返 fill:true 嗰條豎棒,冇三角)。加 `!icon.s` 令
+  // 「冇 stroke 版嘅 icon」唔理 filled prop 都自動行 fill 分支——同一段
+  // 邏輯已經係 icon.f 冇 icon.s 就 fallback 用 f 嘅原意,淨係之前漏咗呢個
+  // case。淨影響 play/playSmall/prev/next 呢 4 個(其餘 icon 全部有 `s`,
+  // `!icon.s` 恒為 false,行為完全唔變)。
+  const useFill = (filled || !icon.s) && (icon.f || icon.fShapes);
   const paths = useFill ? icon.f : icon.s;
   // F1(ODE-REBRAND-PLAN)真根因:fill 模式冇 fShapes 就唔准齋齋 fallback 去
   // icon.shapes——嗰組係畫俾 stroke 版 `s` 配對嘅描邊裝飾圖元(例:library
