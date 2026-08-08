@@ -150,12 +150,16 @@ function mdEscape(s) {
 //     (album='' + source='manual',例:id=735)係人手判定「冇專輯」,search
 //     層照揀就會重填,成個「清空」機制冇晒意思
 //   · 淨揀 status='ok'——soft-delete 咗嘅歌唔好嘥 web search budget
+// 2026-08-08 Eric 拍板收緊:加 curated=1——呢層 web search 成本最貴(每首
+// ~80s claude -p),status='ok' 入面仲有大把未上架(curated=0)嘅歌,唔應該
+// 同已上架嘅歌爭 budget。只做已上架(curated=1)嘅先。
 function pickCandidates(db) {
   const rows = query(db, `SELECT id, youtube_id, title, display_title, org, album
                           FROM hymns_all
                           WHERE (album IS NULL OR trim(album) = '')
                             AND COALESCE(album_source,'') NOT IN ('manual','legacy')
                             AND status = 'ok'
+                            AND curated = 1
                           ORDER BY last_album_search_attempt IS NOT NULL, last_album_search_attempt ASC, id ASC`);
   return LIMIT ? rows.slice(0, LIMIT) : rows;
 }

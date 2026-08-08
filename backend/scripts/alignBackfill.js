@@ -212,8 +212,22 @@ async function processOne(c) {
       if (!DRY) await recordAlignFail(c.id);
       return { ok: false, downloadFailed: true };
     }
-    const wav = await toWav(audioPath, dir);
-    const { segs, garbageDropped, failed } = await runWhisperJsonShared(wav, WHISPER_MODEL, whisperLang);
+    let whisperResult;
+    try {
+      const wav = await toWav(audioPath, dir);
+      whisperResult = await runWhisperJsonShared(wav, WHISPER_MODEL, whisperLang);
+    } catch (e) {
+      // 2026-08-08 修:呢個 try/catch 之前冇包住,whisper-cli 逾時/爆(例:片太長,
+      // 好似 id=246 個成場敬拜巡迴錄影咁,7 分鐘 timeout 一定爆)會一路飛到
+      // main() 嘅頂層 catch,成個 script exit 1 死咗,而且唔會行 recordAlignFail
+      // 計數 —— 導致隊尾嗰首爛片夜夜重試、夜夜拖死成個 job,永遠去唔到 3 次
+      // 死片放棄門檻。而家同下載失敗一樣攞去 recordAlignFail 計數,3 次後一樣
+      // 會標 dead-video 永久甩隊,script 唔會再因為單一首爛片成個死咗。
+      log(`    ⚠ whisper 轉錄失敗(逾時或者程序爆咗):${e?.message || e}`);
+      if (!DRY) await recordAlignFail(c.id);
+      return { ok: false, whisperFailed: true };
+    }
+    const { segs, garbageDropped, failed } = whisperResult;
     if (garbageDropped) log(`    ⚠ 剷走 ${garbageDropped} 段疑似垃圾(CJK 佔比太低)`);
     if (failed) { log('    · whisper 出嚟嘅嘢大部分係垃圾,當轉錄失敗,skip 唔寫'); return { ok: false, garbage: true }; }
     log(`    whisper 出咗 ${segs.length} 段`);
