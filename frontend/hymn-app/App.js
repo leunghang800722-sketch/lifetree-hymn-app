@@ -54,7 +54,6 @@ import { getDisplayTitle } from './src/utils/displayTitle';
 // 唔會有舊 PanResponder 撞 FlatList scroll 嗰個問題(HANDOFF 教訓)。
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import * as Updates from 'expo-updates';
-import Constants from 'expo-constants';
 // ⚠️ sheet **入面**啲掣要用 gorhom 自己嗰個 TouchableOpacity(SheetTouchable)。
 // RN 內置嘅 TouchableOpacity 用舊 responder 系統,喺 gesture-handler 嘅手勢區域入面
 // 喺 Android 上會俾 pan gesture 搶咗個 touch,撳落去時好時壞。gorhom 個版本係
@@ -2614,10 +2613,27 @@ const updateBannerStyles = StyleSheet.create({
 // 優先」：isUpdatePending 顯示緊就唔出呢個，因為 OTA 撳一下就完，體驗好過
 // 叫人去落 APK。
 //
-// 比較用 Constants.nativeBuildVersion（二進制實際 versionCode）—— 唔可以用
-// Constants.expoConfig.version，因為 OTA 推咗新 JS bundle 之後，JS 側嘅
-// version 字串會行先於二進制，用嗰個比較會喺用戶其實仲用緊舊 APK 底子時
-// 都話「已經最新」，或者反過來誤判有更新（見 §1.2 註解）。
+// 比較用 native 實際 versionCode —— 唔可以用 Constants.expoConfig.version，
+// 因為 OTA 推咗新 JS bundle 之後，JS 側嘅 version 字串會行先於二進制，用嗰個
+// 比較會喺用戶其實仲用緊舊 APK 底子時都話「已經最新」，或者反過來誤判有
+// 更新（見 §1.2 註解）。
+//
+// ⚠️ 第二輪修正（見 APP-UPDATE-CHECK-PLAN §5）：expo-constants 56 已經剷咗
+// `nativeBuildVersion`（types 淨返 deprecation 註解，runtime 係
+// undefined），改用 `expo-application` 嘅同名 field。但而家出街緊嘅 APK 53
+// 未 embed 呢個 native module —— 如果 top-level `import * as Application
+// from 'expo-application'` 會喺 import 時直接 throw，一推呢個 OTA 就即刻
+// 整死現役 app。所以呢度用 **guarded require**（唔用 top-level import）：
+// require 失敗（APK 53）→ null → NaN → banner 靜默唔觸發（冇 crash）；
+// 下一隻含 expo-application 嘅 APK 上正常運作。呢個 guard 一定要留到落
+// 一隻新 APK 出咗街先可以拆（到時 runtimeVersion 都會由 3 bump 去 4）。
+let _nativeBuildVersion = null;
+try {
+  _nativeBuildVersion = require('expo-application').nativeBuildVersion;
+} catch (e) {
+  // native module 未存在（現役 APK 53）—— 靜默，等同「查唔到，唔出 banner」
+}
+
 function ApkUpdateBanner() {
   const { isUpdatePending } = Updates.useUpdates();
   const [dismissed, setDismissed] = useState(false);
@@ -2634,7 +2650,12 @@ function ApkUpdateBanner() {
         const data = await res.json();
         if (cancelled) return;
         const remoteCode = Number(data?.versionCode);
-        const installedCode = Number(Constants.nativeBuildVersion);
+        // ⚠️ 唔可以直接 Number(_nativeBuildVersion)：guard 失敗時佢係
+        // `null`，而 `Number(null) === 0`（唔係 NaN！），會令下面
+        // `remoteCode > installedCode` 錯誤咁當 0 係合法已裝機版本，
+        // 喺 APK 53（native module 未存在）都彈 banner。要顯式將
+        // null/undefined 導去 NaN 先可以俾 Number.isFinite 擋到。
+        const installedCode = _nativeBuildVersion != null ? Number(_nativeBuildVersion) : NaN;
         if (
           Number.isFinite(remoteCode) && Number.isFinite(installedCode) &&
           remoteCode > installedCode && typeof data?.url === 'string' && data.url
