@@ -94,6 +94,11 @@ const WANT_LANGS = ['zh-Hant', 'zh-HK', 'yue', 'zh', 'zh-Hans', 'zh-CN', 'en'];
 const FRAME_INTERVAL_SEC = 2;
 // OCR/whisper 草稿去晒水印之後少過呢個字數,當「呢個來源攞唔到嘢」。
 const MIN_DRAFT_CHARS = 40;
+// 2026-08-09 OCR frame loop 並發上限——單條片入面嘅 frame 逐張叫本機 Vision
+// binary,零 YouTube request,唔關防封鎖事,純粹想用返閒置 CPU(實測 82% idle)。
+// 5 張一批,唔好無限制全部一齊掟(避免瞬間開太多 ocrframe subprocess 拖累
+// backend 服務)。
+const OCR_FRAME_CONCURRENCY = 5;
 
 const today = () => new Date().toISOString().slice(0, 10);
 const stamp = () => new Date().toISOString().replace('T', ' ').slice(0, 19);
@@ -329,6 +334,25 @@ async function ocrFrame(framePath) {
   }
 }
 
+// concurrency-limited 版 map,keep 原本 items 次序(用 index 寫入 results,唔理
+// 邊個 worker 先做完)。mergeOcrLines() 嘅段落分組演算法靠「frame 陣列次序 = 片
+// 入面畫面出現次序」呢個假設,呢度一定要保住呢個次序,唔可以用 Promise.all
+// 逐個掟晒出去嗰種(結果次序靠完成快慢,唔靠原本次序)。
+async function mapConcurrent(items, limit, fn) {
+  const results = new Array(items.length);
+  let next = 0;
+  async function worker() {
+    for (;;) {
+      const i = next++;
+      if (i >= items.length) return;
+      results[i] = await fn(items[i], i);
+    }
+  }
+  const workers = Array.from({ length: Math.min(limit, items.length) }, worker);
+  await Promise.all(workers);
+  return results;
+}
+
 // 清一行 OCR 文字:實測撞過卡拉OK填色特效令 Vision 將同一句讀成「AA」兩份黏埋
 // 一齊(例:「找到我找到我」),得返偶數長度先可能係呢種情況,一半一半比較,
 // 啱就摺埋得返一份。
@@ -510,8 +534,7 @@ async function runOcr(db, budget) {
 
       const frames = await extractFrames(videoPath, dir);
       log(`    抽咗 ${frames.length} 張 frame`);
-      const frameLines = [];
-      for (const f of frames) frameLines.push(await ocrFrame(f));
+      const frameLines = await mapConcurrent(frames, OCR_FRAME_CONCURRENCY, ocrFrame);
       const { blocks: ocrBlocks, text: ocrText, watermarkCount } = mergeOcrLines(frameLines);
       const ocrChars = charCount(ocrText);
       log(`    OCR 草稿 ${ocrChars} 隻字、${ocrBlocks.length} 個段落 block(剔咗 ${watermarkCount} 種疑似水印行)`);
