@@ -267,6 +267,50 @@ export function isNonWorship(title = '', artist = '') {
   return false;
 }
 
+// ── 歌詞攞取優先次序(2026-08-09 Eric 拍板)──────────────────────────
+// Eric:先攞專輯官方靜態版嘅歌詞,現場/伴奏/翻唱/串燒合輯呢啲版本延後
+// (**唔係剔除**,淨係排後啲,等官方版做晒先到佢)。
+//
+// ⚠️ Live/現場 獨立分開一層,唔同「翻唱/串燒/組曲/acoustic」呢批同層 ——
+// 落地前用全庫 curated 6661 首查證過:標題含 live/現場嘅有 922 首,但
+// 當中 823 首(89%)嚟自讚美之泉/讚美之泉粵語/約書亞樂團/同心圓敬拜等
+// 頭部官方敬拜團體,格式係「XX現場敬拜MV (Live Worship MV)」——呢個係
+// 嗰批團體**自己嘅標準官方發行格式**,並唔係業餘/翻唱嗰種 duplicate
+// 版本(對照組:淨係 99 首同時帶「official/官方」字眼,證明大部分 live
+// 標題本身唔會特登加呢個字,唔可以用嚟做過濾條件)。如果同真.翻唱/組曲/
+// acoustic 呢批擺同一層,會將一大截頭部官方內容累到全部排到最後,
+// 同「優先攞官方版」呢個目標背道而馳。所以分兩層:
+//   Tier 1(VERSION_TIER_LIVE)—— 淨係撞 live/現場:方向啱(Eric 想先攞
+//     studio 靜態版),但風險同「真.翻唱/合輯」唔同級,擺喺 clean 之後、
+//     真.翻唱/組曲之前。
+//   Tier 2(VERSION_TIER_ALT)—— 撞翻唱/cover/串燒/組曲/acoustic/伴奏
+//     呢批(落地前逐個字眼查過全庫 curated,零已知誤殺——組曲 12 中 12
+//     真.組曲,acoustic 111 中 111 真.Acoustic Live 版,cover/covered by
+//     用 \b word boundary 避開 Alive/Covers Me 呢類撞正真歌名嘅陷阱)——
+//     擺最後。
+// Tier 0 = 冇撞任何呢啲字眼,當「官方/靜態版」,行先。
+export const LIVE_VERSION_PATTERNS_ZH = ['現場'];
+export const LIVE_VERSION_PATTERNS_EN = [/\blive\b/i];
+export const ALT_VERSION_PATTERNS_ZH = ['翻唱', '串燒', '串烧', '組曲', '伴奏'];
+export const ALT_VERSION_PATTERNS_EN = [/\bcover\b/i, /covered by/i, /\bmedley\b/i, /\bacoustic\b/i, /\binstrumental\b/i, /backing track/i];
+
+export function versionPriorityTier(title = '') {
+  const t = title || '';
+  if (ALT_VERSION_PATTERNS_ZH.some((p) => t.includes(p)) || ALT_VERSION_PATTERNS_EN.some((re) => re.test(t))) return 2;
+  if (LIVE_VERSION_PATTERNS_ZH.some((p) => t.includes(p)) || LIVE_VERSION_PATTERNS_EN.some((re) => re.test(t))) return 1;
+  return 0;
+}
+
+// 排候選用嘅完整 sort key:先 versionPriorityTier(官方靜態版行先),同層
+// 再睇 album 有冇資料(album backfill 已知就當多一分信心,行前啲)——album
+// 全庫覆蓋率淨係 31%(2096/6661),唔夠齊全做主軸,淨係做同層嘅次要 tie-break。
+// 呼叫方要自己 stable sort(Array#sort 喺 Node 保證 stable),先至可以連埋
+// SQL 嗰句 ORDER BY RANDOM() 一齊用,喺同一個 key 值入面保留隨機次序
+// (唔好用 id 順序嘅教訓見 pickCandidates 註解)。
+export function candidateSortKey(row) {
+  return versionPriorityTier(row.title) * 2 + (row.album ? 0 : 1);
+}
+
 // discover mode 專用:用官方頻道 handle(或者 playlist?list=XXX)列片,
 // flat-playlist 唔落載、唔逐條resolve,好平。2026-07-27 由 growLibrary.js
 // 搬過嚟(集中一份,俾 growLibrary.js 同 auditChannel.js 共用)。

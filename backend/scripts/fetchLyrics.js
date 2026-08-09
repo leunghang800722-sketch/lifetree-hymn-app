@@ -64,7 +64,7 @@ import fs from 'fs';
 import os from 'os';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { openDb, saveDb, query, sleep, acquireDbLock, releaseDbLock } from '../lib/hymnDb.js';
+import { openDb, saveDb, query, sleep, acquireDbLock, releaseDbLock, candidateSortKey } from '../lib/hymnDb.js';
 import { normCompare, bigramDice } from '../lib/textSimilarity.js';
 import { detectWhisperLang, runWhisperJson as runWhisperJsonShared, DEFAULT_WHISPER_MODEL_NAME } from '../lib/whisperTranscribe.js';
 
@@ -152,23 +152,29 @@ async function writeLyricsRow(id, fields) {
   }
 }
 
-// 揀下一首:curated、生、status='none'、未 CC 試過(source 空)。隨機次序(同 growLibrary
-// 教訓:唔好用 id 順序,舊 id 死亡率高)。
+// 揀下一首:curated、生、status='none'、未 CC 試過(source 空)。SQL 層 ORDER BY
+// RANDOM() 打亂,再用 candidateSortKey stable-sort(官方靜態版行先,現場/翻唱
+// 等延後——見 hymnDb.js「歌詞攞取優先次序」註解)——Array#sort 喺 Node 保證
+// stable,所以同一個 key 值入面保留返 SQL 嗰層嘅隨機次序,唔會退返做 id 順序
+// (growLibrary 教訓:唔好用 id 順序,舊 id 死亡率高)。
 function pickCandidates(db) {
-  return query(db, `SELECT id, youtube_id, title, artist FROM hymns_all
+  const rows = query(db, `SELECT id, youtube_id, title, artist, album FROM hymns_all
                     WHERE curated=1 AND status!='dead'
                       AND (lyrics_status IS NULL OR lyrics_status='none')
                       AND (lyrics_source IS NULL OR lyrics_source='')
                     ORDER BY RANDOM()`);
+  return rows.sort((a, b) => candidateSortKey(a) - candidateSortKey(b));
 }
 
 // OCR 候選:CC 試過冇(source='cc:miss')嘅歌。攞埋 lang 俾 whisper 語言判斷做
-// fallback(OCR 讀唔到字嗰陣冇文字可以判斷 CJK 比例,就靠呢個欄位)。
+// fallback(OCR 讀唔到字嗰陣冇文字可以判斷 CJK 比例,就靠呢個欄位)。同樣用
+// candidateSortKey 排先後(見上面 pickCandidates 註解)。
 function pickOcrCandidates(db) {
-  return query(db, `SELECT id, youtube_id, title, artist, lang FROM hymns_all
+  const rows = query(db, `SELECT id, youtube_id, title, artist, lang, album FROM hymns_all
                     WHERE curated=1 AND status!='dead'
                       AND lyrics_status='none' AND lyrics_source='cc:miss'
                     ORDER BY RANDOM()`);
+  return rows.sort((a, b) => candidateSortKey(a) - candidateSortKey(b));
 }
 
 // 判斷呢首歌叫 whisper 應該用邊個語言:優先用 OCR 啱啱讀到嘅文字(最準,見
