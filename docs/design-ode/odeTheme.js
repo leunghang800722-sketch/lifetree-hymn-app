@@ -1,4 +1,4 @@
-// Ode 設計系統 — 取代 src/theme/designSystem.js 嘅「生命樹」色板
+// Odely 設計系統 — 取代 src/theme/designSystem.js 嘅「生命樹」色板
 // 定稿來源：Ode Home Design.dc.html → 2a / 2b（首頁定稿 + token 表）
 // 原則：綠色全退場、冇金色、暖光（cream）只用嚟表示「光 / 播放 / 進度」
 
@@ -68,11 +68,23 @@ export const spacing = {
 };
 
 export const header = {
-  markSize: 52,      // logo 日蝕環（原圖裁出）
+  markSize: 52,      // logo 日蝕環 — 52dp，唔係 28dp
   markGap: 13,
   padding: { top: 12, horizontal: 18, bottom: 20 },
   avatar: 40,
+  wordmarkSize: 30,  // 「odely」Sora 200 / letterSpacing 1.2
 };
+
+// Logo 環：一律由原圖 assets/ode-logo.jpeg 裁切，唔可以用 View 畫圓環。
+// 用法：<View style={logoRing(52)}><Image source={odeLogo} style={logoRingImage(52)} /></View>
+export const logoRing = (size) => ({
+  width: size, height: size, borderRadius: size / 2, overflow: 'hidden',
+});
+export const logoRingImage = (size) => ({
+  width: size * 1.6, height: size * 1.6,
+  marginLeft: -size * 0.3, marginTop: -size * 0.255,
+});
+export const LOGO_SIZES = { header: 52, player: 22, splash: 156 };
 
 export const effects = {
   // 所有封面加內描邊，防止深底「浮」出嚟

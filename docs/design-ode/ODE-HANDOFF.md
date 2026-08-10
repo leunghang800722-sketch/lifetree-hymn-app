@@ -1,4 +1,4 @@
-# Ode 改名 + 重新設計 — 交付說明（給 Claude Code）
+# Odely 改名 + 重新設計 — 交付說明（給 Claude Code）
 
 設計檔（唯一 source of truth）：專案內 `Ode Home Design.dc.html`
 本資料夾附帶：`odeTheme.js`（色板 / 字級 / 間距 token）、`odeIcons.js`（全套 icon path）
@@ -10,7 +10,9 @@
 
 ## 0. 一句話
 
-App 由 **God Music** 改名為 **Ode**。版面結構、資訊層級、導航（3 tab）**全部唔變**；變嘅係品牌名、logo、色板（深林綠 → 靛紫 + 暖光）、字體、卡片／按鈕／間距質感、同一整套 icon。
+> **⚠ 2026-08-10 改名更新**：新名由 `Ode` 改為 **`Odely`**（Ode 已有人用）。所有字標、app 名、store listing、splash、icon 字樣全部要用 odely。Logo **圖形不變**。
+
+App 由 **God Music** 改名為 **Odely**。版面結構、資訊層級、導航（3 tab）**全部唔變**；變嘅係品牌名、logo、色板（深林綠 → 靛紫 + 暖光）、字體、卡片／按鈕／間距質感、同一整套 icon。
 
 ---
 
@@ -18,9 +20,9 @@ App 由 **God Music** 改名為 **Ode**。版面結構、資訊層級、導航�
 
 | 位置 | 由 | 改成 |
 |---|---|---|
-| App header 文字 | `God Music` | `ode`（Sora 200 / 32px / letterSpacing 1.5，全小寫） |
-| 播放器頂 title | `God Music` | logo 環 22dp + `ode` 17px |
-| 「關於 God Music」 | — | 「關於 Ode」 |
+| App header 文字 | `God Music` / `ode` | `odely`（Sora 200 / **30px** / letterSpacing 1.2，全小寫） |
+| 播放器頂 title | `God Music` | logo 環 22dp + `odely` 17px |
+| 「關於 God Music」 | — | 「關於 Odely」 |
 | `app.json` name / slug、splash、store listing | God Music | Ode |
 | Android `package id` / iOS bundle id | `com.hymnapp.praise` | **不變**（改會斷開現有用戶更新） |
 
@@ -54,6 +56,29 @@ App 由 **God Music** 改名為 **Ode**。版面結構、資訊層級、導航�
 
 排版下限（沿用舊規矩）：正文 ≥ 15、歌名 ≥ 15.5、播放頁歌名 26、歌詞行高 1.95、點擊區 ≥ 44dp。
 
+### 3.1 ⚠ Header logo — 必讀（目前落實錯咗）
+
+實機截圖見到 logo 環只有約 **28dp**、而且係「自己畫嘅細圓環」。正確做法：
+
+```
+[  logo 環 52×52  ] ←13px→ [ odely  Sora 200 / 30px / ls 1.2 ]        [ 頭像 40×40 ]
+         ↑ 由原圖 assets/ode-logo.jpeg 裁出，唔可以用 View + borderRadius 自己畫
+```
+
+| 屬性 | 值 |
+|---|---|
+| logo 環尺寸 | **52 × 52 dp**（現時約 28，要放大近一倍） |
+| 來源 | `assets/ode-logo.jpeg` 原圖，`resizeMode="cover"` + 圓形裁切，只顯示中央日蝕環，**唔要包住底部「ode」字樣** |
+| 裁切比例 | 圖放大到 **1.6 倍** 容器尺寸（52 → 83.2），位移 `left: -15.6, top: -13.3`，外層 `borderRadius: 26` + `overflow: hidden` |
+| 圖形↔字標 gap | **13 dp** |
+| 字標 | `odely` 全小寫 · Sora 200 · **30px** · letterSpacing 1.2 · `#EDE7FA` |
+| Header padding | top **12** / 左右 **18** / bottom **20** |
+| 頭像 | **40 × 40**，底 `#221B3E`，1px 邊 `#3A3060`，字 Sora 200 / 17px |
+
+同一個裁環規則喺其他位嘅尺寸：播放器頂 **22dp**、Splash **156dp**（放大 1.766 倍、位移 -59.7 / -51.9）。
+
+**唔准**：用 emoji、用 `<View>` 畫圓環代替、用 icon font、重新繪製環形。Logo 圖形係 Eric 原設計，一律由原圖出。
+
 ---
 
 ## 4. 畫面清單（設計檔對應）
@@ -66,7 +91,7 @@ App 由 **God Music** 改名為 **Ode**。版面結構、資訊層級、導航�
 | 歌詞頁 | **5c** | 宋體 19 / 1.95，段落之間 26px；當前段 `#F7F2E9`、其餘 `#EFEAE0`／`#BDB4D6`；底部迷你播放器 |
 | 我的（最愛） | **5d** | chips + 播全部 pill + 歌單 + 迷你播放器 |
 | 我的（設定卡） | **8a** 下半 | 帳戶／個人資料／一般三組卡，行高 52 |
-| Splash | **5e** | 日蝕環 156 + `ode` 44 / letterSpacing 5 + 「你嘅隨身詩歌本」宋體 14 |
+| Splash | **5e** | 日蝕環 156 + `odely` 40 / letterSpacing 4 + 「你嘅隨身詩歌本」宋體 14 |
 | App icon | **5f** | 見下 |
 
 未畫（如需要再開）：播放清單 sheet、加入清單 sheet、好友、URL 加歌、個人資料編輯。
@@ -105,7 +130,7 @@ Logo 圖形 = Eric 原設計（日蝕環），**唔准重畫**。原圖：`asset
   - background = 純色 `#0B0913`（**唔再用** `#E3E8EE`）
   - monochrome = 環嘅單色剪影，線寬加粗約 1.3 倍
 - **細 size**：24dp 時原圖底部「ode」字樣讀唔到 → 出兩版：store icon 保留字樣，裝機 icon 只留環。
-- Splash icon：只留環，底色 `#0B0913`，下面 `ode` 字標由 app 畫（唔要燒入圖）。
+- Splash icon：只留環，底色 `#0B0913`，下面 `odely` 字標由 app 畫（唔要燒入圖）。
 - 需要真實 PNG 切圖（`icons/` 現有檔案要重出）：foreground/background/monochrome、notification、splash、favicon。
 
 ---
@@ -113,7 +138,9 @@ Logo 圖形 = Eric 原設計（日蝕環），**唔准重畫**。原圖：`asset
 ## 7. 驗收清單
 
 - [ ] 全 repo `grep` 唔再有 `#3DB389`、`#00C9A7`、`#E8B86D`、`#0B0F0E`、`#121A17`、`#E3E8EE`
-- [ ] 全 repo 唔再有面向用戶嘅 `God Music` 字串（package id 除外）
+- [ ] 全 repo 唔再有面向用戶嘅 `God Music` 或 `ode`（單獨字標）字串（package id 除外）
+- [ ] Header logo 環實測 **52dp**（唔係 28dp），且係由原圖裁切、唔係自己畫嘅圓環
+- [ ] `odely` 字標 30px / Sora 200；頭像 40dp
 - [ ] 首頁／詩歌庫／播放器／歌詞／我的 對得上 2a、5a、5b、5c、5d
 - [ ] 所有 icon 由 `OdeIcon` 出，冇混用其他 icon 包
 - [ ] `grep` 唔再有 emoji／文字符號當 icon 用（`≡₊ ♥ ♡ ⌕ ⌂ ♫ ☺ › ⌄ ⌃ ✕`）
@@ -126,6 +153,6 @@ Logo 圖形 = Eric 原設計（日蝕環），**唔准重畫**。原圖：`asset
 
 ## 8. 未拍板 / 要 Eric 決定
 
-1. 「Ode」名字未做商標同 store 撞名檢查；`god-music.com` 域名處理未定。
+1. 「Odely」名字未做商標同 store 撞名檢查；`god-music.com` 域名處理未定。
 2. 情境分類（安靜獨處／感恩讚美／親子時光／車程路上，設計檔 4a）係提案，未落實。
 3. 淺色模式、播放清單 sheet 等未設計。

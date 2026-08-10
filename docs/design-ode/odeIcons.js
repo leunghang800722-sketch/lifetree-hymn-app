@@ -1,4 +1,4 @@
-// Ode icon set — 24×24 grid, stroke 1.75, round cap/join
+// Odely icon set — 24×24 grid, stroke 1.75, round cap/join
 // 用法（react-native-svg）：
 //   import Svg, { Path, Circle, Rect } from 'react-native-svg';
 //   import { ODE_ICONS } from './odeIcons';
