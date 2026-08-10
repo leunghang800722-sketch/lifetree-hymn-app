@@ -108,8 +108,9 @@ export function AuthProvider({ children }) {
   }, []);
 
   // ③一版過填密碼+姓名+性別+出生年份,連同 ticket 換 session token;
-  // inviteCode(MEMBERSHIP-PHASE4-FRIENDS-INVITES-PLAN §2.7)—— mode=open 時
-  // 淨係送 undefined,backend 唔理呢個欄。
+  // inviteCode(MEMBERSHIP-PHASE4-FRIENDS-INVITES-PLAN §2.7;REGISTER-
+  // OPTIONAL-INVITE-PLAN §2-B2)—— open mode 選填:冇送/undefined 照開戶,
+  // 有送 backend 一樣真驗+消費。
   const registerPhone = useCallback(async ({ ticket, password, username, gender, birthYear, inviteCode }) => {
     const data = await postAuth('/api/auth/register-phone', { ticket, password, username, gender, birthYear, inviteCode });
     await saveAuth(data.token, data.user);

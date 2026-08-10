@@ -76,12 +76,14 @@ export default function PhoneLoginScreen({ onClose, onUseEmail }) {
   const goLogin = useCallback(() => {
     setScreen('login'); setFlow(null); resetStepState();
   }, []);
-  // registrationMode==='open' 一早由 otp/status 攞返嚟就跳過⓪步;null(仲未
-  // 攞到)都當要顯示(fail-closed,同 backend 冇設 env 一致嘅取態,§4 case 12)。
+  // ⓪步兩個 mode 都顯示(REGISTER-OPTIONAL-INVITE-PLAN §2-F1):invite mode
+  // 必填冇跳過掣(一字不改);open mode 變選填,有跳過掣。registrationMode
+  // null(仲未攞到)一樣行呢個畫面,fail-closed 當要輸入(同 backend 冇設
+  // env 一致嘅取態,§4 case 12)——差別淨係入面顯唔顯示跳過掣。
   const startRegister = useCallback(() => {
-    setScreen(registrationMode === 'open' ? 'phone' : 'invite'); setFlow('register'); resetStepState();
+    setScreen('invite'); setFlow('register'); resetStepState();
     setInviteCode(''); setNewPassword(''); setConfirmPassword(''); setUsername(''); setGender(null); setBirthYear('');
-  }, [registrationMode]);
+  }, []);
   const startForgot = useCallback(() => {
     setScreen('phone'); setFlow('forgot'); resetStepState();
     setNewPassword(''); setConfirmPassword(''); setUsername(''); setGender(null); setBirthYear('');
@@ -99,7 +101,7 @@ export default function PhoneLoginScreen({ onClose, onUseEmail }) {
     finally { setBusy(false); }
   }, [phone, password, loginPhone, onClose]);
 
-  // ── ⓪邀請碼(register only,invite mode 先有,§2.7/§3.3)────────────
+  // ── ⓪邀請碼(register only,§2.7/§3.3;open mode 選填——§2-F1)────────
   const handleCheckInvite = useCallback(async () => {
     setErr(''); setBusy(true);
     try {
@@ -109,6 +111,12 @@ export default function PhoneLoginScreen({ onClose, onUseEmail }) {
     } catch (e) { setErr(e.message || '檢查失敗,請再試'); }
     finally { setBusy(false); }
   }, [inviteCode, checkInviteCode]);
+
+  // open mode 專用嘅跳過掣——清空 inviteCode 直接入①電話步,register-phone
+  // 冇送碼一樣開戶成功。
+  const handleSkipInvite = useCallback(() => {
+    setInviteCode(''); setErr(''); setScreen('phone');
+  }, []);
 
   // ── ①電話 → 發驗證碼(register/forgot 共用)──────────────────────
   const handleSendCode = useCallback(async () => {
@@ -197,7 +205,9 @@ export default function PhoneLoginScreen({ onClose, onUseEmail }) {
 
   const { title, sub } = useMemo(() => {
     if (screen === 'login') return { title: '電話登入', sub: '用電話號碼同密碼登入' };
-    if (screen === 'invite') return { title: '輸入邀請碼', sub: '而家要有邀請碼先註冊得,問返邀請你嗰位朋友' };
+    if (screen === 'invite') return registrationMode === 'open'
+      ? { title: '有冇邀請碼?(選填)', sub: '有邀請碼可以同派碼嗰位自動成為好友;冇都可以直接註冊' }
+      : { title: '輸入邀請碼', sub: '而家要有邀請碼先註冊得,問返邀請你嗰位朋友' };
     if (screen === 'phone') return {
       title: flow === 'register' ? '註冊新帳戶' : '忘記密碼',
       sub: '會用 WhatsApp 或短訊寄一個 6 位驗證碼俾你',
@@ -206,7 +216,7 @@ export default function PhoneLoginScreen({ onClose, onUseEmail }) {
     if (screen === 'profile') return { title: '設定密碼同資料', sub: '一次過設定,之後隨時用電話+密碼登入' };
     if (screen === 'newpass') return { title: '設定新密碼', sub: profileComplete ? '設定新密碼即可' : '順便填埋姓名/性別/出生年份' };
     return { title: '', sub: '' };
-  }, [screen, flow, phone, profileComplete]);
+  }, [screen, flow, phone, profileComplete, registrationMode]);
 
   const GenderChips = () => (
     <View style={styles.chipRow}>
@@ -279,6 +289,11 @@ export default function PhoneLoginScreen({ onClose, onUseEmail }) {
             <TouchableOpacity style={styles.btn} onPress={handleCheckInvite} disabled={busy || !inviteCode.trim()} activeOpacity={0.85}>
               {busy ? <ActivityIndicator color={COLORS.textOnGlow} /> : <Text style={styles.btnText}>下一步</Text>}
             </TouchableOpacity>
+            {registrationMode === 'open' && (
+              <TouchableOpacity onPress={handleSkipInvite} disabled={busy} style={{ marginTop: 14 }}>
+                <Text style={styles.link}>冇邀請碼,直接註冊</Text>
+              </TouchableOpacity>
+            )}
             <TouchableOpacity onPress={goLogin} style={{ marginTop: 14 }}>
               <Text style={styles.link}>返去登入</Text>
             </TouchableOpacity>

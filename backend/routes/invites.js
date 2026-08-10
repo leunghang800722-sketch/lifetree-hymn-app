@@ -3,7 +3,8 @@
 // 五條 route,自己逐條掛 requireAuth/requireAdmin(跟 routes/friends.js 一致
 // 做法)。REGISTRATION_MODE 閘本身喺 otpAuth.js(register-phone)同 auth.js
 // (email register 封側門)接,呢度淨係管邀請碼本身嘅生成/查詢/revoke/
-// 公開預檢。
+// 公開預檢——預檢一律真驗 DB,唔跟 REGISTRATION_MODE(REGISTER-OPTIONAL-
+// INVITE-PLAN §2-B3)。
 
 import crypto from 'crypto';
 import { getUserDb, saveUserDb } from '../lib/userDb.js';
@@ -11,7 +12,6 @@ import requireAuth from '../lib/requireAuth.js';
 import requireAdmin from '../lib/requireAdmin.js';
 import { clientIp } from '../lib/loginRateLimit.js';
 import { appendAudit, whoOf } from '../lib/auditLog.js';
-import { REGISTRATION_MODE } from '../lib/registrationMode.js';
 import { redeemInviteAndFriend } from '../lib/inviteRedeem.js';
 
 // 8 字元,alphabet 去晒易撈亂字符(冇 0/O/1/I/L),31 字元 ≈ 39.6-bit(§2.1)。
@@ -240,13 +240,14 @@ export default function invitesRoutes(app) {
   });
 
   // ── 公開預檢(§2.3/§0.6)—— 燒 OTP 錢之前先驗;唔透露原因(no oracle)──
+  // ⚠️REGISTER-OPTIONAL-INVITE-PLAN §2-B3:刪走「open mode 一律 valid:true」
+  // 捷徑,統一真驗 DB。因為 open mode 而家都會真消費(§2-B2),預檢一律放行
+  // 會俾垃圾碼流到 register 先爆,體驗仲差過而家。
   app.post('/api/auth/invite-check', async (req, res) => {
     try {
       const ip = clientIp(req);
       if (isCheckRateLimited(ip)) return res.status(429).json({ error: 'rate_limited' });
       if (globalChecksCapped()) return res.status(429).json({ error: 'rate_limited' });
-
-      if (REGISTRATION_MODE === 'open') return res.json({ valid: true }); // §2.3/§4 case 12
 
       const code = normalizeCode(req.body?.code);
       if (!code) return res.json({ valid: false });

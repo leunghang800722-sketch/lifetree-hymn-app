@@ -283,14 +283,20 @@ export default function otpAuthRoutes(app, getUserDb) {
       const existing = findUserByPhone(db, phone);
       if (existing) return res.status(422).json({ error: 'already_registered', message: '呢個號碼已註冊,請直接登入' });
 
-      // ── 邀請碼閘(MEMBERSHIP-PHASE4-FRIENDS-INVITES-PLAN §2.4)────────
+      // ── 邀請碼閘(MEMBERSHIP-PHASE4-FRIENDS-INVITES-PLAN §2.4;open mode
+      // 由必填改做選填——REGISTER-OPTIONAL-INVITE-PLAN §2-B2)────────────
       // 驗碼(存在、未用、未 revoked)要喺 INSERT user 之前,同開戶做同一個
       // 邏輯批次(§0.6:預檢喺 invite-check,呢度先係真正消費)。§4 case 9:
       // 舊 bundle 完全冇送 inviteCode 欄 → 當「請更新 app」處理,唔當「碼錯」。
+      // invite mode:一字不改(保底,隨時切返)。open mode:冇送/空字串照開戶
+      // 唔建 friendship;有送就照同一套驗證——用戶主動入咗碼就要誠實擋,
+      // 唔可以 silent ignore 令佢以為加咗好友其實冇。
       let inviteRow = null;
-      if (REGISTRATION_MODE === 'invite') {
-        const normalized = normalizeInviteCode(inviteCode);
-        if (!normalized) return res.status(422).json({ error: 'invite_required', message: '請更新 app 再註冊' });
+      const normalized = normalizeInviteCode(inviteCode);
+      if (REGISTRATION_MODE === 'invite' && !normalized) {
+        return res.status(422).json({ error: 'invite_required', message: '請更新 app 再註冊' });
+      }
+      if (normalized) {
         const stmt = db.prepare('SELECT code, created_by, used_by, revoked FROM invites WHERE code = ?');
         stmt.bind([normalized]);
         inviteRow = stmt.step() ? stmt.getAsObject() : null;
@@ -315,10 +321,18 @@ export default function otpAuthRoutes(app, getUserDb) {
       const user = findUserByPhone(db, phone);
 
       if (inviteRow) {
-        // 消費碼 + 自動加好友(§2.6)—— 共用邏輯喺 lib/inviteRedeem.js(同
-        // /api/invites/redeem 一份)。極罕見 race(§4 case 6:兩個人同時撞正用
-        // 同一個碼)已開嘅戶唔回滾,淨係邀請關係冧咗,function 內部有 log。
-        redeemInviteAndFriend(db, inviteRow, user.id);
+        // self-check 防手滑(§2-B2):理論上一個啱啱先開嘅新戶唔會撞到自己
+        // 送嘅碼(created_by 一定係已存在嘅另一個用戶)——純防禦性,一旦撞到
+        // 就當冇送碼咁唔 consume 唔建 friendship,戶口已開唔撤銷(避免半吊子
+        // 帳戶好過拒絕註冊)。
+        if (inviteRow.created_by === user.id) {
+          console.warn('register-phone invite self-use guard tripped', inviteRow.code, user.id);
+        } else {
+          // 消費碼 + 自動加好友(§2.6)—— 共用邏輯喺 lib/inviteRedeem.js(同
+          // /api/invites/redeem 一份)。極罕見 race(§4 case 6:兩個人同時撞正用
+          // 同一個碼)已開嘅戶唔回滾,淨係邀請關係冧咗,function 內部有 log。
+          redeemInviteAndFriend(db, inviteRow, user.id);
+        }
       }
 
       saveUserDb(db);
