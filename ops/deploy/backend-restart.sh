@@ -5,7 +5,10 @@
 #   1. HEAD 必須等於 approved.json 嘅 backend.sha。
 #   2. git status --porcelain -- backend/ 必須乾淨,但豁免運行時檔案
 #      (hymns.db、users.db*、backend/data/、*.log、*.bak*、backend/public/ 等)。
-#   3. 全過 -> launchctl kickstart -k gui/$(id -u)/com.hymnapp.backend,
+#   3. 全過 -> launchctl bootout + bootstrap gui/$(id -u)/com.hymnapp.backend
+#      (唔用 kickstart -k:嗰個淨係 restart 已 load 緊嘅 job spec,唔會重讀
+#      plist——改咗 plist 嘅 EnvironmentVariables(例如 REGISTRATION_MODE)
+#      唔會生效。bootout+bootstrap 先係真係由磁盤重新載入 plist),
 #      然後 health check(10 秒內 200 先算成功)。
 #   4. append deploy.log。
 #
@@ -105,7 +108,15 @@ if [[ -z "$PORT" ]]; then
   " "$REPO_ROOT/backend/server.js")"
 fi
 
-launchctl kickstart -k "gui/$(id -u)/com.hymnapp.backend"
+UID_N="$(id -u)"
+LABEL="com.hymnapp.backend"
+PLIST_PATH="$HOME/Library/LaunchAgents/${LABEL}.plist"
+
+# bootout 先卸載(如果本來冇 load 緊會非 0 exit,唔可以令成個 script 中斷)
+launchctl bootout "gui/${UID_N}/${LABEL}" 2>/dev/null || true
+sleep 1
+# bootstrap 由磁盤重新讀 plist(RunAtLoad=true 會即刻起返)
+launchctl bootstrap "gui/${UID_N}" "$PLIST_PATH"
 
 # health check:10 秒內 200 先算成功
 OK=0
