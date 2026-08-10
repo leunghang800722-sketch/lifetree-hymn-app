@@ -1462,7 +1462,7 @@ import AvatarButton from './src/components/AvatarButton'; // PHONE-PASSWORD-AUTH
 // ================================================================
 //  HOME SCREEN
 // ================================================================
-function HomeScreen({ hymns, activeCategory, onCategoryChange, onPlayHymn, onOpenAuth, onOpenList }) {
+function HomeScreen({ hymns, loading, activeCategory, onCategoryChange, onPlayHymn, onOpenAuth, onOpenList }) {
   const homeInsets = typeof useSafeAreaInsets === 'function' ? useSafeAreaInsets() : { top: 0 };
   return (
     <View style={{ flex: 1, backgroundColor: COLORS.bg }}>
@@ -1482,7 +1482,7 @@ function HomeScreen({ hymns, activeCategory, onCategoryChange, onPlayHymn, onOpe
           <AvatarButton onPress={onOpenAuth} />
         </View>
       </View>
-      <HomeSections hymns={hymns} onPlayHymn={onPlayHymn} onOpenList={onOpenList} />
+      <HomeSections hymns={hymns} loading={loading} onPlayHymn={onPlayHymn} onOpenList={onOpenList} />
     </View>
   );
 }
@@ -2492,7 +2492,7 @@ function AppContent() {
         {/* 三 tab(§2.2 + SEARCH-MERGE-PLAN):首頁 / 詩歌庫 / 我的。全部 keep mount,
             靠 display 收埋以保留各自 scroll/state(詩歌庫嘅搜尋字串都因此跨 tab 保留)。 */}
         <View style={[pageStyles.screenWrap, { display: activeTab === 'Home' ? 'flex' : 'none' }]}>
-          <HomeScreen hymns={allSongs || []} activeCategory={activeCategory}
+          <HomeScreen hymns={allSongs || []} loading={loading} activeCategory={activeCategory}
             onCategoryChange={setActiveCategory} onPlayHymn={handlePlayHymn} onOpenAuth={openAuth}
             onOpenList={showHymnList} />
         </View>

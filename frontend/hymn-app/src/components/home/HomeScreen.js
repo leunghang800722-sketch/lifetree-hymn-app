@@ -20,7 +20,7 @@
 // 全部喺 client 用現有 /hymns 全量列表計,冇新 backend API(§6)。
 
 import React, { useMemo, useState, useCallback, useRef } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Image, Dimensions } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Image, Dimensions, ActivityIndicator } from 'react-native';
 import OdeIcon from '../../icons/OdeIcon';
 import { COLORS, TYPOGRAPHY, radii, effects } from '../../theme/designSystem';
 import DailyVerseCard from './DailyVerseCard';
@@ -127,7 +127,7 @@ function SongCard({ hymn, onPress }) {
   );
 }
 
-export default function HomeScreen({ hymns = [], onPlayHymn, onOpenList }) {
+export default function HomeScreen({ hymns = [], loading = false, onPlayHymn, onOpenList }) {
   // 有歌先計嘢。冇歌(未 load / 冇網)整頁一個狀態,唔好五個區塊各自閃 loading(§2.7)
   const hasData = Array.isArray(hymns) && hymns.length > 0;
 
@@ -209,6 +209,15 @@ export default function HomeScreen({ hymns = [], onPlayHymn, onOpenList }) {
   }, [hymns, hasData, play]);
 
   if (!hasData) {
+    // 仲喺度攞緊(未 timeout / 未 retry 完)—— 顯示 loading,唔好一冇歌就
+    // 話「網絡斷咗」。真正逾時+retry 完都攞唔到先落去底下嗰個錯誤畫面。
+    if (loading) {
+      return (
+        <View style={styles.emptyRoot}>
+          <ActivityIndicator size="large" color={COLORS.glow} />
+        </View>
+      );
+    }
     return (
       <View style={styles.emptyRoot}>
         <OdeIcon name="cloudOff" size={40} color={COLORS.textSecondary} />
