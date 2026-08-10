@@ -78,7 +78,7 @@ export default function AuthScreen({ onClose }) {
         {/* Logo area — 品牌 icon 同 App.js home header / PhoneLoginScreen 同一個做法 */}
         <View style={styles.logoArea}>
           <Image source={require('../../assets/logo-ring.png')} style={styles.brandLogoImg} />
-          <Text style={styles.logoTitle}>ode</Text>
+          <Text style={styles.logoTitle}>odely</Text>
           <Text style={styles.logoSubtitle}>{mode === 'login' ? '歡迎回來' : '建立帳戶'}</Text>
         </View>
 

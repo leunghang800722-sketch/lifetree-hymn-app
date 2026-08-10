@@ -68,7 +68,7 @@ export default function AddFriendSheet({ visible, onClose, onRequested, onFriend
   const relationView = () => {
     if (!result) return null;
     if (!result.found) {
-      return <Text style={styles.hint}>呢個號碼未註冊,可以邀請佢一齊用 Ode 詩歌 App(帳戶頁「邀請朋友加入」)</Text>;
+      return <Text style={styles.hint}>呢個號碼未註冊,可以邀請佢一齊用 Odely 詩歌 App(帳戶頁「邀請朋友加入」)</Text>;
     }
     switch (result.relation) {
       case 'self':

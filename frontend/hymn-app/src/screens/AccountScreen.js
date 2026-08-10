@@ -70,7 +70,7 @@ export default function AccountScreen({ onClose }) {
   };
 
   const handleAbout = () => {
-    Alert.alert('Ode', buildLabel());
+    Alert.alert('Odely', buildLabel());
   };
 
   return (
@@ -124,7 +124,7 @@ export default function AccountScreen({ onClose }) {
         <Text style={styles.groupTitle}>一般</Text>
         <GroupCard
           rows={[
-            { key: 'about', icon: 'about', label: '關於 Ode', value: `v${Constants.expoConfig?.version || '—'}`, onPress: handleAbout },
+            { key: 'about', icon: 'about', label: '關於 Odely', value: `v${Constants.expoConfig?.version || '—'}`, onPress: handleAbout },
           ]}
         />
 

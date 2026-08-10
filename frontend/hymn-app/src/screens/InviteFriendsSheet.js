@@ -12,7 +12,7 @@ import { createInvite, listMyInvites, friendsErrorMessage } from '../api';
 const APK_URL = 'https://api.odemusics.com/downloads/app.apk';
 
 function shareText(code) {
-  return `我邀請你用 Ode 詩歌 App 🎵\n\n` +
+  return `我邀請你用 Odely 詩歌 App 🎵\n\n` +
     `未裝 app?下載(Android):${APK_URL}\n開新戶時輸入邀請碼:${code}\n\n` +
     `已經有 app?入「我的」→「加好友」→揀「輸入邀請碼」,打呢個碼即刻同我做好友:${code}`;
 }

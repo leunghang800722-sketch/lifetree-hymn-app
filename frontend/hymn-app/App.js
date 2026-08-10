@@ -1471,7 +1471,7 @@ function HomeScreen({ hymns, loading, activeCategory, onCategoryChange, onPlayHy
         <View style={hs.brandWrap}>
           <Image source={require('./assets/logo-ring.png')} style={hs.brandIconImg} />
           <View>
-            <Text style={hs.brandTitle}>ode</Text>
+            <Text style={hs.brandTitle}>odely</Text>
           </View>
         </View>
         {/* B13 —— 舊嘅通知鐘掣冇 onPress(App 未有通知功能),撳落去零反應。
@@ -1513,9 +1513,9 @@ const hs = StyleSheet.create({
   },
   brandTitle: {
     fontFamily: 'Sora-ExtraLight',
-    fontSize: 32,
+    fontSize: 30,
     fontWeight: '200',
-    letterSpacing: 1.5,
+    letterSpacing: 1.2,
     color: TEXT_PRIMARY,
   },
   iconWrap: {
@@ -1688,7 +1688,7 @@ function FullScreenPlayerOverlay() {
         </TouchableOpacity>
         <View style={fsStyles.topBarBrand}>
           <Image source={require('./assets/logo-ring.png')} style={fsStyles.topBarBrandImg} />
-          <Text style={fsStyles.topBarTitle}>ode</Text>
+          <Text style={fsStyles.topBarTitle}>odely</Text>
         </View>
         <View style={fsStyles.dismissBtn} />
       </View>
@@ -1740,7 +1740,7 @@ function FullScreenPlayerOverlay() {
               onPress: () => setLyricsVisible(true) },
             { key: 'shr', label: '分享', icon: 'share',
               onPress: () => Share.share({
-                message: `一齊聽「${getDisplayTitle(cur)}」${cur.artist ? ' - ' + cur.artist : ''}（Ode 詩歌）`,
+                message: `一齊聽「${getDisplayTitle(cur)}」${cur.artist ? ' - ' + cur.artist : ''}（Odely 詩歌）`,
               }).catch(() => {}) },
             { key: 'que', label: '清單', icon: 'queue',
               onPress: () => openAddToPlaylist(cur) },

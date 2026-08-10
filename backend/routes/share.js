@@ -156,7 +156,7 @@ function renderGonePage() {
     <p class="meta">連結可能已經失效,或者分享者刪咗個清單。</p>
     <a class="btn primary" href="/downloads/app.apk">⬇ 下載 App(Android)</a>
   </div>`;
-  return pageShell({ title: 'Ode 詩歌', bodyHtml });
+  return pageShell({ title: 'Odely 詩歌', bodyHtml });
 }
 
 function renderPlaylistPage(data, token) {
@@ -164,7 +164,7 @@ function renderPlaylistPage(data, token) {
   const owner = data.owner ? escapeHtml(data.owner) : null;
   const count = data.songs.length;
   const ogTitle = escapeHtml(`【${data.name}】· ${count} 首詩歌`);
-  const ogDesc = escapeHtml(owner ? `${data.owner} 喺 Ode 同你分享咗一個詩歌清單` : '有人喺 Ode 同你分享咗一個詩歌清單');
+  const ogDesc = escapeHtml(owner ? `${data.owner} 喺 Odely 同你分享咗一個詩歌清單` : '有人喺 Odely 同你分享咗一個詩歌清單');
   const firstYoutubeId = data.songs.find((s) => s?.youtube_id)?.youtube_id;
   const ogImageTag = firstYoutubeId
     ? `<meta property="og:image" content="https://img.youtube.com/vi/${escapeHtml(firstYoutubeId)}/mqdefault.jpg">`
@@ -183,7 +183,7 @@ ${ogImageTag}`;
   }).join('\n');
 
   const bodyHtml = `
-  <div class="brand">Ode 詩歌</div>
+  <div class="brand">Odely 詩歌</div>
   <h1>${name}</h1>
   <div class="meta">${owner ? `由 ${owner} 分享 · ` : ''}${count} 首詩歌</div>
   <a class="btn primary" href="${intentUrl(token)}">▶ 喺 App 開啟</a>

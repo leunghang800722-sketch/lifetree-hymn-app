@@ -61,7 +61,7 @@ export const TYPOGRAPHY = {
   artist: { fontSize: 12.5, fontWeight: '400', color: COLORS.textSecondary },
   lyrics: { fontFamily: 'NotoSerifTC-Regular', fontSize: 19, fontWeight: '400', color: COLORS.textPrimary, lineHeight: 19 * 1.95 },
   // 拉丁品牌字標
-  brand: { fontFamily: 'Sora-ExtraLight', fontWeight: '200', letterSpacing: 1.5 },
+  brand: { fontFamily: 'Sora-ExtraLight', fontWeight: '200', letterSpacing: 1.2 },
 };
 
 export const SPACING = { sm: 8, md: 16, lg: 24 };
@@ -70,9 +70,9 @@ export const SPACING = { sm: 8, md: 16, lg: 24 };
 export const colors = ODE_COLORS;
 
 export const typography = {
-  brand: { fontFamily: 'Sora-ExtraLight', fontWeight: '200', letterSpacing: 1.5 },
-  brandHeader: 32,
-  brandSplash: 44,
+  brand: { fontFamily: 'Sora-ExtraLight', fontWeight: '200', letterSpacing: 1.2 },
+  brandHeader: 30,
+  brandSplash: 40,
   numeric: { fontFamily: 'Sora-ExtraLight', fontWeight: '200' },
 
   ui: { fontFamily: 'Noto Sans TC' },

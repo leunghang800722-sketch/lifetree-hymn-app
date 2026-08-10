@@ -66,7 +66,7 @@ invitesRoutes(app); // 邀請碼 + 註冊閘配套(MEMBERSHIP-PHASE4-FRIENDS-INV
 // APK 下載檔名(APP-UPDATE-CHECK-PLAN §5 第二輪修正):以前寫死
 // "hymn-app-v1.3.0-week2.apk"(rebrand 前、W2 個陣嘅殘留),同而家實際版本
 // 完全脫節。而家動態由 app-version.json 讀 versionName 砌,manifest 讀唔到
-// /壞 JSON 就 fallback 返 "Ode.apk"(唔准 crash)。
+// /壞 JSON 就 fallback 返 "Odely.apk"(唔准 crash)。
 function buildApkFilename() {
   try {
     const raw = fs.readFileSync(path.join(__dirname, 'public', 'app-version.json'), 'utf8');
@@ -74,11 +74,11 @@ function buildApkFilename() {
     const versionName = typeof manifest?.versionName === 'string' ? manifest.versionName.trim() : '';
     // 淨係留返檔名安全字符,防止 manifest 手民之誤打入奇怪字元累到 HTTP header
     const safe = versionName.replace(/[^a-zA-Z0-9._-]/g, '');
-    if (safe) return `Ode-v${safe}.apk`;
+    if (safe) return `Odely-v${safe}.apk`;
   } catch (e) {
     // manifest 讀唔到 / 壞 JSON —— fallback
   }
-  return 'Ode.apk';
+  return 'Odely.apk';
 }
 
 // Super simple APK download at root level
