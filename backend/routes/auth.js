@@ -22,7 +22,7 @@ export default function authRoutes(app, getUserDb) {
     // 一旦邀請碼變 optional(open mode),留返呢條路等於重開一個冇電話驗證、
     // 知 URL 就開到戶嘅後門。收埋佢嘅原意喺 open mode 一樣成立。現有 email
     // 帳戶(opus-verify 等)登入(下面 /api/auth/login)完全唔受影響。
-    return res.status(422).json({ error: 'registration_closed', message: '而家要邀請碼註冊,請用電話註冊流程' });
+    return res.status(422).json({ error: 'registration_closed', message: '呢個方式已經停用,請用電話註冊' });
   });
 
   app.post('/api/auth/login', async (req, res) => {

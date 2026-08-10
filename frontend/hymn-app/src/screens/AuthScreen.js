@@ -137,12 +137,10 @@ export default function AuthScreen({ onClose }) {
           </TouchableOpacity>
         </View>
 
-        {/* Toggle mode */}
-        <TouchableOpacity onPress={() => { setMode(mode === 'login' ? 'register' : 'login'); setPassword(''); setErr(''); }} style={styles.linkTouch}>
-          <Text style={styles.toggleText}>
-            {mode === 'login' ? '未有帳戶？按此註冊' : '已有帳戶？按此登入'}
-          </Text>
-        </TouchableOpacity>
+        {/* Email 註冊已經永久封側門(routes/auth.js /api/auth/register)——
+            呢個掣一直帶去一條死路,收埋(opus-verify local_a1403205 P3)。
+            mode 只會停喺 'login',register 分支留返俾已有帳戶但意外行到
+            'register' state 嘅邊緣情況(理論上而家唔會再發生)。 */}
         {PHONE_AUTH_ENABLED && (
           <TouchableOpacity onPress={() => setUsePhone(true)} style={styles.linkTouch}>
             <Text style={styles.toggleText}>改用電話登入</Text>

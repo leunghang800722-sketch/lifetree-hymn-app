@@ -103,21 +103,25 @@ export default function PhoneLoginScreen({ onClose, onUseEmail }) {
   }, [phone, password, loginPhone, onClose]);
 
   // ── ⓪邀請碼(register only,§2.7/§3.3;open mode 選填——§2-F1)────────
+  // 撞 invite_used/invite_invalid 由③跳返⓪嗰陣(§4 case 6/9),ticket 仲有效
+  // (未過期,只係個邀請碼冇用得)——呢種情況重過⓪就應該直接跳去③,唔使
+  // 再發多次 OTP 燒 quota(opus-verify local_a1403205 P2)。
   const handleCheckInvite = useCallback(async () => {
     setErr(''); setBusy(true);
     try {
       const valid = await checkInviteCode(inviteCode);
       if (!valid) { setErr('邀請碼唔啱,請問返邀請你嗰位朋友'); return; }
-      setScreen('phone');
+      setScreen(ticket && flow === 'register' ? 'profile' : 'phone');
     } catch (e) { setErr(e.message || '檢查失敗,請再試'); }
     finally { setBusy(false); }
-  }, [inviteCode, checkInviteCode]);
+  }, [inviteCode, checkInviteCode, ticket, flow]);
 
   // open mode 專用嘅跳過掣——清空 inviteCode 直接入①電話步,register-phone
-  // 冇送碼一樣開戶成功。
+  // 冇送碼一樣開戶成功。同上:ticket 仲喺度就跳返③,唔重發 OTP。
   const handleSkipInvite = useCallback(() => {
-    setInviteCode(''); setErr(''); setScreen('phone');
-  }, []);
+    setInviteCode(''); setErr('');
+    setScreen(ticket && flow === 'register' ? 'profile' : 'phone');
+  }, [ticket, flow]);
 
   // ── ①電話 → 發驗證碼(register/forgot 共用)──────────────────────
   const handleSendCode = useCallback(async () => {

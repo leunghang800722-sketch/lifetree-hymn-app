@@ -55,7 +55,7 @@ export function AuthProvider({ children }) {
       body: JSON.stringify({ username, email, password }),
     });
     const data = await resp.json();
-    if (!resp.ok) throw new Error(data.error || 'Registration failed');
+    if (!resp.ok) throw new Error(data.message || '呢個方式已經停用,請用電話註冊');
     await saveAuth(data.token, data.user);
     return data;
   }, [saveAuth]);

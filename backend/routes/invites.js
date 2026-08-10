@@ -83,7 +83,12 @@ function isCheckRateLimited(ip) {
   return rec.count > CHECK_RATE_MAX;
 }
 
-const GLOBAL_DAILY_CAP = Number(process.env.INVITES_CHECK_GLOBAL_DAILY_CAP || 500);
+// 500 太低——如果將來由 open mode 切返 invite mode,全部人嗰日撞埋一齊查
+// 邀請碼(每個 register 流程②驗證碼過咗都要過⓪)有機會撞爆全局 cap,累到
+// 個個都攞唔到碼。per-IP 10次/15分鐘(CHECK_RATE_MAX)先係真正防濫用嘅
+// 防線,呢個全局熔斷淨係托底防單一 IP 繞過限速嘅極端場景,調高唔削弱防護
+// (opus-verify local_a1403205 P4)。
+const GLOBAL_DAILY_CAP = Number(process.env.INVITES_CHECK_GLOBAL_DAILY_CAP || 5000);
 let globalDay = new Date().toDateString();
 let globalCount = 0;
 function globalChecksCapped() {
