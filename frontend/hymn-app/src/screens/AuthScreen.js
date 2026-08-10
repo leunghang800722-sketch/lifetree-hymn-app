@@ -10,9 +10,9 @@ import {
   ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
-  Image,
 } from 'react-native';
 import OdeIcon from '../icons/OdeIcon';
+import LogoRing from '../components/LogoRing';
 import { useInsets } from '../hooks/useInsets';
 import { COLORS } from '../theme/designSystem';
 import { useAuth } from '../context/AuthContext';
@@ -77,7 +77,7 @@ export default function AuthScreen({ onClose }) {
 
         {/* Logo area — 品牌 icon 同 App.js home header / PhoneLoginScreen 同一個做法 */}
         <View style={styles.logoArea}>
-          <Image source={require('../../assets/logo-ring.png')} style={styles.brandLogoImg} />
+          <LogoRing size={88} style={styles.brandLogoImg} />
           <Text style={styles.logoTitle}>odely</Text>
           <Text style={styles.logoSubtitle}>{mode === 'login' ? '歡迎回來' : '建立帳戶'}</Text>
         </View>
@@ -161,7 +161,7 @@ const styles = StyleSheet.create({
 
   // Logo
   logoArea: { alignItems: 'center', marginBottom: 40 },
-  brandLogoImg: { width: 88, height: 88, marginBottom: 12, resizeMode: 'contain' },
+  brandLogoImg: { marginBottom: 12 },
   logoTitle: { fontFamily: 'Sora-ExtraLight', fontSize: 26, fontWeight: '200', letterSpacing: 1.2, color: COLORS.textPrimary, marginBottom: 4 },
   logoSubtitle: { fontSize: 15, color: COLORS.textSecondary },
 

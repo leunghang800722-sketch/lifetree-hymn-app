@@ -2,6 +2,7 @@
 import { COLORS as DesignColors, TYPOGRAPHY, SPACING, effects } from './src/theme/designSystem';
 import { useCachedHymns } from './src/hooks/useCachedHymns';
 import Skeleton from './src/components/Skeleton';
+import LogoRing from './src/components/LogoRing';
 import React, { useState, useEffect, createContext, useContext, useRef, useCallback } from 'react';
 import OdeIcon from './src/icons/OdeIcon';
 import TrackPlayer, {
@@ -1469,7 +1470,7 @@ function HomeScreen({ hymns, loading, activeCategory, onCategoryChange, onPlayHy
       {/* Header — Ode 品牌 + 通知 + 頭像 */}
       <View style={[hs.header, { paddingTop: (homeInsets.top || StatusBar.currentHeight || 24) + 8 }]}>
         <View style={hs.brandWrap}>
-          <Image source={require('./assets/logo-ring.png')} style={hs.brandIconImg} />
+          <LogoRing size={52} style={hs.brandIconImg} />
           <View>
             <Text style={hs.brandTitle}>odely</Text>
           </View>
@@ -1505,11 +1506,9 @@ const hs = StyleSheet.create({
     marginRight: 10,
   },
   // ODE-HANDOFF §1/§3:header logo 環 52dp,「ode」32px Sora 200 letterSpacing 1.5,全小寫
+  // CHANGE-REQUEST §2:環要由原圖放大1.6倍裁切填滿容器(LogoRing component),呢度淨係要 gap
   brandIconImg: {
-    width: 52,
-    height: 52,
     marginRight: 13,
-    resizeMode: 'contain',
   },
   brandTitle: {
     fontFamily: 'Sora-ExtraLight',
@@ -1687,7 +1686,7 @@ function FullScreenPlayerOverlay() {
           <OdeIcon name="chevronDown" size={24} color={TEXT_PRIMARY} />
         </TouchableOpacity>
         <View style={fsStyles.topBarBrand}>
-          <Image source={require('./assets/logo-ring.png')} style={fsStyles.topBarBrandImg} />
+          <LogoRing size={22} style={fsStyles.topBarBrandImg} />
           <Text style={fsStyles.topBarTitle}>odely</Text>
         </View>
         <View style={fsStyles.dismissBtn} />
@@ -2044,7 +2043,7 @@ const fsStyles = StyleSheet.create({
   dismissIcon: { fontSize: 16, color: TEXT_PRIMARY },
   // ODE-HANDOFF §1:播放器頂 title = logo 環 22dp + 「ode」17px(Sora 200)
   topBarBrand: { flexDirection: 'row', alignItems: 'center' },
-  topBarBrandImg: { width: 22, height: 22, marginRight: 7, resizeMode: 'contain' },
+  topBarBrandImg: { marginRight: 7 },
   topBarTitle: { fontFamily: 'Sora-ExtraLight', fontWeight: '200', fontSize: 17, letterSpacing: 1, color: TEXT_PRIMARY },
   // B4 修(第二版,revert):試過 aspectRatio:16/9 但令 Eric 部機睇落更差——
   // 唔少縮圖嘅色帶係燒死喺 JPEG 像素入面(唔係容器逼出嚟嘅偽影),16:9 容器

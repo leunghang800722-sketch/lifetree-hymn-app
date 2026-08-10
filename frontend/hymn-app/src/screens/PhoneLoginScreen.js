@@ -8,8 +8,9 @@
 // 呢度顯示「用電郵」提示。
 
 import React, { useState, useRef, useCallback, useEffect, useMemo } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, ActivityIndicator, KeyboardAvoidingView, Platform, Image, ScrollView } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
 import OdeIcon from '../icons/OdeIcon';
+import LogoRing from '../components/LogoRing';
 import { COLORS } from '../theme/designSystem';
 import { useAuth } from '../context/AuthContext';
 import { useInsets } from '../hooks/useInsets';
@@ -240,7 +241,7 @@ export default function PhoneLoginScreen({ onClose, onUseEmail }) {
       </TouchableOpacity>
 
       <ScrollView contentContainerStyle={styles.inner} keyboardShouldPersistTaps="handled">
-        <Image source={require('../../assets/logo-ring.png')} style={styles.brandLogoImg} />
+        <LogoRing size={72} style={styles.brandLogoImg} />
         <Text style={styles.title}>{title}</Text>
         <Text style={styles.sub}>{sub}</Text>
 
@@ -443,7 +444,7 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.background },
   close: { position: 'absolute', right: 20, zIndex: 10, padding: 8 },
   inner: { flexGrow: 1, paddingHorizontal: 24, justifyContent: 'center', paddingVertical: 40 },
-  brandLogoImg: { width: 72, height: 72, alignSelf: 'center', marginBottom: 12, resizeMode: 'contain' },
+  brandLogoImg: { alignSelf: 'center', marginBottom: 12 },
   title: { fontSize: 26, fontWeight: '800', color: COLORS.textPrimary, textAlign: 'center' },
   sub: { fontSize: 14, color: COLORS.textSecondary, textAlign: 'center', marginTop: 8, marginBottom: 28 },
   input: {
