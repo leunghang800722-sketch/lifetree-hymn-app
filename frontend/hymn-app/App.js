@@ -381,6 +381,7 @@ function PlayerProvider({ children }) {
   const queueRef = useRef([]);
   const originalQueueRef = useRef([]); // pre-shuffle order, for shuffle-off restore
   const [trackState, setTrackState] = useState(TPState.None);
+  const trackStateRef = useRef(TPState.None); // stuck-track-end watchdog 用(§見下面 poll effect)
   const [queueReady, setQueueReady] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -536,6 +537,7 @@ function PlayerProvider({ children }) {
   repeatModeRef.current = repeatMode;
   isShuffledRef.current = isShuffled;
   queueRef.current = queue;
+  trackStateRef.current = trackState;
 
   // ── 自動播放(AUTOPLAY-MIX-PLAN)──────────────────────────────
   const [autoplayEnabled, setAutoplayEnabledState] = useState(getAutoplayEnabled());
@@ -873,18 +875,64 @@ function PlayerProvider({ children }) {
     return () => { clearTimeout(t); sub.remove(); };
   }, [resyncFromNative, applyPlayerOptions]);
 
+  // iOS 真機 QA(Eric 2026-08-11)—— 一首歌實際上已經播完(冇聲),但 App/鎖屏
+  // 仲顯示緊「播放緊」,亦冇自動跳下一首。查過 react-native-track-player 上游
+  // GitHub(#1995/#1598 等),SwiftAudioEx(RNTP 底層 iOS engine)已知有一類
+  // bug:track 真係播完,但 native 冇轉 playback state、亦冇 fire
+  // PlaybackActiveTrackChanged/PlaybackState,令 App.js 呢邊完全唔知已經完咗
+  // ——包括下面 pollState() 嗰個 2 秒一次嘅 getPlaybackState() poll,因為佢讀
+  // 嘅都係同一個「卡死咗」嘅 native 內部狀態,唔淨係 event 冇 fire 咁簡單。
+  // 呢度純粹屬 native SDK 行為,唔喺呢個 repo 度、亦唔准掂 native(同 §3.7
+  // ExoPlayer timeout 嗰段一樣嘅限制)。
+  //
+  // Watchdog:position/duration 呢兩個數值嚟自另一條讀取路徑(AVPlayerItem 嘅
+  // currentTime/duration 屬性),就算 state 卡咗都仲反映緊實際播放頭。淨係喺
+  // 「貼近track尾(仲有 <1.5s)+ 連續 3 秒完全冇郁」先當「真係完咗但native冇講
+  // 我知」,唔會同正常 mid-song buffering(通常唔喺尾、亦好快恢復)撞。
+  const stuckEndTicksRef = useRef(0);
+  const lastPollPositionRef = useRef(-1);
+  const handleStuckTrackEnd = useCallback(async () => {
+    try {
+      if (repeatModeRef.current === 2) {
+        // repeat-one:native 冇自動重播(上游 #1995 講嘅正正係呢個場景),手動
+        // 由頭嚟過。
+        await TrackPlayer.seekTo(0);
+        await TrackPlayer.play();
+        return;
+      }
+      const idx = currentQueueIndexRef.current ?? 0;
+      const q = queueRef.current || [];
+      const hasNext = repeatModeRef.current === 1 || idx < q.length - 1;
+      if (hasNext) {
+        await TrackPlayer.skipToNext();
+        // 見 handleNextTrack() 嗰句一樣嘅原因(SwiftAudioEx QueuedAudioPlayer.next()
+        // 冇 playWhenReady:true,單靠佢自己嗰套 preserve-existing-flag 邏輯響呢個
+        // 卡死場景未必信得過)——明文再叫一次 play() 逼佢真係郁,唔淨係靠估。
+        await TrackPlayer.play().catch(() => {});
+      } else {
+        // 成個 queue 真係播晒——native 卡住嘅「播放緊」係假嘅,強制歸位到
+        // 「已停」,UI/鎖屏至會反映返實況。
+        await TrackPlayer.pause().catch(() => {});
+        setTrackState(TPState.Paused);
+      }
+    } catch (e) {
+      console.warn('[player] stuck-track-end recovery failed:', e?.message || e);
+    }
+  }, []);
+
   // Progress — poll TrackPlayer.getProgress() directly instead of useProgress hook
   // This avoids the hook being mounted before TrackPlayer is ready
   useEffect(() => {
     if (!queueReady) return;
     let mounted = true;
-    
+
     async function poll() {
       while (mounted) {
         try {
           const progress = await TrackPlayer.getProgress();
           if (mounted) {
-            setCurrentTime(progress.position || 0);
+            const pos = progress.position || 0;
+            setCurrentTime(pos);
             // B14 修 —— toggleShuffle 會 reset()+add() 成個 native queue,呢 1 秒
             // poll 窗口入面有陣時 getProgress() 會短暫報 duration:0(隊列啱啱重
             // 起,新 metadata 未到手),之前直接 setDuration(0) 就即刻喺 UI 度
@@ -893,6 +941,23 @@ function PlayerProvider({ children }) {
             // 覆蓋一個已知嘅正確長度 —— 淨係喺攞到正數先更新,0/undefined 就
             // 保留返上一個已知值,唔會喺 UI 度出現「肯定係假」嘅 0:00。
             if (progress.duration > 0) setDuration(progress.duration);
+
+            const dur = progress.duration || 0;
+            const nearEnd = dur > 0 && pos >= dur - 1.5;
+            const stalled = nearEnd && Math.abs(pos - lastPollPositionRef.current) < 0.05;
+            // 淨係 Playing 先算——Buffering 有可能係尾段正常等緊剩低幾 KB
+            // 未到,唔想同「真係播完但native卡死」撞埋一齊誤判。
+            const claimsActive = trackStateRef.current === TPState.Playing;
+            lastPollPositionRef.current = pos;
+            if (stalled && claimsActive) {
+              stuckEndTicksRef.current += 1;
+              if (stuckEndTicksRef.current >= 3) {
+                stuckEndTicksRef.current = 0;
+                handleStuckTrackEnd();
+              }
+            } else {
+              stuckEndTicksRef.current = 0;
+            }
           }
         } catch (e) {
           // TrackPlayer not ready yet, skip
@@ -901,9 +966,9 @@ function PlayerProvider({ children }) {
       }
     }
     poll();
-    
+
     return () => { mounted = false; };
-  }, [queueReady]);
+  }, [queueReady, handleStuckTrackEnd]);
 
   // Poll player state as well
   useEffect(() => {
@@ -1214,9 +1279,23 @@ function PlayerProvider({ children }) {
 
   // §3.3 — next/previous handed off to TrackPlayer's own queue/repeat state
   // instead of JS recomputing "what's next".
+  //
+  // iOS 真機 QA(Eric 2026-08-11 補充)—— 撳「下一首」有時要自己再撳多一次
+  // 「Play」先真正出聲。查過 SwiftAudioEx 原碼(ios/Pods/SwiftAudioEx/Sources/
+  // SwiftAudioEx/QueuedAudioPlayer.swift):`next()` 淨係 `queue.next()`,行到
+  // `onCurrentItemChanged()` → `super.load(item:)`,冇傳 `playWhenReady:true`
+  // ——即係淨係「preserve 返而家個 playWhenReady flag」,唔係主動叫佢播。正常
+  // 情況呢個 flag 應該仲係 true(冇人主動 pause 過),但依家已知 iOS 有個
+  // 上游 bug(track 播完 native 冇收到 didPlayToEndTime,見上面 watchdog 段
+  // 註解)會令 native 個「播放緊」狀態同真實audio session唔同步咗好耐,期間
+  // 隨時俾 audio session interruption(鎖屏/收音頻打斷)靜靜哋將 playWhenReady
+  // 撥返 false——到用戶終於手動撳「下一首」嗰刻,呢個 flag 已經唔可靠。明文
+  // 再 play() 一次,唔理內部個 flag 係乜,強制真係郁。Android 呢邊 native
+  // 事件一路行得好,呢句最多係多餘嘅 no-op,唔會有副作用。
   async function handleNextTrack() {
     try {
       await TrackPlayer.skipToNext();
+      await TrackPlayer.play().catch(() => {});
     } catch (e) {
       // Queue tail with repeat off — matches notification-bar behavior (no-op)
       if (repeatModeRef.current === 1) {
