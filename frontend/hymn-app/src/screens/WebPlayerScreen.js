@@ -10,12 +10,12 @@ import {
   ScrollView,
   Alert,
   Modal,
-  Linking,
   FlatList,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { fetchHymnDetail, fetchPlaylists, addHymnToPlaylist, getToken } from '../api';
 import { useFavorites } from '../context/FavoritesContext';
+import { openYoutubeVideo } from '../utils/openYoutube';
 
 const RECENT_KEY = '@hymn_app_recent';
 
@@ -49,23 +49,9 @@ export default function WebPlayerScreen({ route, navigation }) {
 
     await AsyncStorage.setItem(RECENT_KEY, String(hymn.id)).catch(() => {});
 
-    const youtubeUrl = `https://www.youtube.com/watch?v=${hymn.youtube_id}`;
-    const youtubeAppIntent = `intent://watch?v=${hymn.youtube_id}#Intent;package=com.google.android.youtube;scheme=https;end`;
-
-    try {
-      const canOpenYT = await Linking.canOpenURL(youtubeAppIntent);
-      if (canOpenYT) {
-        await Linking.openURL(youtubeAppIntent);
-        return;
-      }
-      const canOpen = await Linking.canOpenURL(youtubeUrl);
-      if (canOpen) {
-        await Linking.openURL(youtubeUrl);
-        return;
-      }
+    const ok = await openYoutubeVideo(hymn.youtube_id);
+    if (!ok) {
       Alert.alert('錯誤', '開唔到YouTube，請確保已安裝 YouTube App');
-    } catch (err) {
-      console.log('Open error:', err);
     }
   }
 

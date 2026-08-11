@@ -2526,7 +2526,10 @@ function AppContent() {
       )}
 
       {!__DEV__ ? <UpdateBanner /> : null}
-      {!__DEV__ ? <ApkUpdateBanner /> : null}
+      {/* iOS 冇 APK 側載,呢個 banner 淨係 Android 適用——iOS 嘅 native 殼
+          更新行 TestFlight 自己嘅更新機制,唔 gate 嘅話會攞 iOS build number
+          同 Android versionCode 亂比,仲叫 iPhone 用戶去落 APK。 */}
+      {!__DEV__ && Platform.OS === 'android' ? <ApkUpdateBanner /> : null}
       <TabBar activeTab={activeTab} onTabChange={setActiveTab}
         bottomInset={bottomInset} onMiniPlayerPress={handleOpenFullScreen} />
 

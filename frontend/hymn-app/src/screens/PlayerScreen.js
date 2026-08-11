@@ -8,13 +8,13 @@ import {
   TouchableOpacity,
   StyleSheet,
   ScrollView,
-  Linking,
   StatusBar,
   Image,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { fetchHymnDetail, fetchHymns } from '../api';
 import { getAlbumCoverUrl } from '../utils/albumCover';
+import { openYoutubeVideo } from '../utils/openYoutube';
 
 const RECENT_KEY = '@hymn_app_recent';
 
@@ -61,25 +61,13 @@ export default function PlayerScreen({ navigation, route }) {
 
   async function playOnYouTube(hymn) {
     if (!hymn?.youtube_id) return;
-    
+
     // Save as recent
     await AsyncStorage.setItem(RECENT_KEY, String(hymn.id));
     setRecentHymn(hymn);
 
     // Open YouTube App
-    const youtubeUrl = `https://www.youtube.com/watch?v=${hymn.youtube_id}`;
-    const intentUrl = `intent://watch?v=${hymn.youtube_id}#Intent;package=com.google.android.youtube;scheme=https;end`;
-    
-    try {
-      const canOpen = await Linking.canOpenURL(intentUrl);
-      if (canOpen) {
-        await Linking.openURL(intentUrl);
-      } else {
-        await Linking.openURL(youtubeUrl);
-      }
-    } catch (err) {
-      console.log('YouTube error:', err);
-    }
+    await openYoutubeVideo(hymn.youtube_id);
   }
 
   // 推薦詩歌 — 快速播歌用
@@ -317,7 +305,7 @@ const styles = StyleSheet.create({
     lineHeight: 22,
   },
   lyricLine: {
-    color: .#A0A0A0.,
+    color: '#A0A0A0',
     fontSize: 14,
     marginBottom: 8,
     lineHeight: 22,

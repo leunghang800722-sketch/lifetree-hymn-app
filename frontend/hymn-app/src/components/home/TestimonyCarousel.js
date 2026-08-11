@@ -1,7 +1,8 @@
 // TestimonyCarousel — 見證分享 · 星火飛騰 + 恩雨之聲 橫滑卡片
 import React, { useState, useRef, useCallback } from 'react';
-import { View, Text, FlatList, TouchableOpacity, StyleSheet, Image, Dimensions, Linking } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, StyleSheet, Image, Dimensions } from 'react-native';
 import { COLORS } from '../../constants/theme';
+import { openYoutubeVideo } from '../../utils/openYoutube';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const CARD_WIDTH = Math.floor((SCREEN_WIDTH - 32 - 12) / 2.5); // 2.5 cards visible
@@ -73,23 +74,7 @@ function Thumbnail({ youtubeId }) {
 
 export default function TestimonyCarousel() {
   const handlePress = useCallback(async (item) => {
-    const url = `https://www.youtube.com/watch?v=${item.youtube_id}`;
-    const intent = `intent://watch?v=${item.youtube_id}#Intent;package=com.google.android.youtube;scheme=https;end`;
-
-    try {
-      const canOpenYT = await Linking.canOpenURL(intent);
-      if (canOpenYT) {
-        await Linking.openURL(intent);
-        return;
-      }
-      const canOpen = await Linking.canOpenURL(url);
-      if (canOpen) {
-        await Linking.openURL(url);
-        return;
-      }
-    } catch (e) {
-      console.warn('open testimony failed:', e);
-    }
+    await openYoutubeVideo(item.youtube_id);
   }, []);
 
   return (

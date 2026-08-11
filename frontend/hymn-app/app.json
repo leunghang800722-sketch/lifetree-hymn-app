@@ -9,7 +9,12 @@
     "scheme": "godmusic",
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.hymnapp.praise"
+      "bundleIdentifier": "com.hymnapp.praise",
+      "buildNumber": "1",
+      "infoPlist": {
+        "UIBackgroundModes": ["audio"],
+        "LSApplicationQueriesSchemes": ["youtube"]
+      }
     },
     "android": {
       "package": "com.hymnapp.praise",
