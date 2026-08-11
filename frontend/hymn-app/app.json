@@ -13,7 +13,8 @@
       "buildNumber": "1",
       "infoPlist": {
         "UIBackgroundModes": ["audio"],
-        "LSApplicationQueriesSchemes": ["youtube"]
+        "LSApplicationQueriesSchemes": ["youtube"],
+        "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {
