@@ -10,10 +10,14 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.hymnapp.praise",
-      "buildNumber": "1",
+      "buildNumber": "2",
       "infoPlist": {
-        "UIBackgroundModes": ["audio"],
-        "LSApplicationQueriesSchemes": ["youtube"],
+        "UIBackgroundModes": [
+          "audio"
+        ],
+        "LSApplicationQueriesSchemes": [
+          "youtube"
+        ],
         "ITSAppUsesNonExemptEncryption": false
       }
     },
