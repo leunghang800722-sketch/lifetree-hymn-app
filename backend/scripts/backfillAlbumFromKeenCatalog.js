@@ -37,7 +37,10 @@ const CATALOG_PATH = path.join(__dirname, '..', 'data', 'album-backfill', 'keen-
 const REPORT_PATH = path.join(__dirname, '..', 'data', 'album-backfill', 'keen-catalog-report.md');
 const DRY = process.argv.includes('--dry');
 
-const TARGET_ORGS = ['基恩敬拜'];
+// 2026-08-11:加返「基恩敬拜祈禱仔」(兒童 playlist,母 channel 同「基恩敬拜」
+// 一致,worshipGroups.js 42 行 note 已註明)——之前個 match script 冇用呢個
+// org 名做候選,而家試埋佢,睇下 agwmm.org 官網 catalog 撞唔撞到啲兒童歌。
+const TARGET_ORGS = ['基恩敬拜', '基恩敬拜祈禱仔'];
 
 const stamp = () => {
   const d = new Date();
@@ -184,10 +187,10 @@ async function main() {
       for (const { row, album } of matched) {
         const fresh = query(freshDb, 'SELECT album, album_source, org FROM hymns_all WHERE id = ?', [row.id])[0];
         if (!fresh) continue;
-        if (fresh.org !== '基恩敬拜') continue;
+        if (!TARGET_ORGS.includes(fresh.org)) continue;
         if (fresh.album_source === 'manual' || fresh.album_source === 'legacy') continue;
         if (fresh.album && fresh.album.trim()) continue;
-        freshDb.run("UPDATE hymns_all SET album = ?, album_source = 'website' WHERE id = ? AND org = '基恩敬拜'", [album, row.id]);
+        freshDb.run("UPDATE hymns_all SET album = ?, album_source = 'website' WHERE id = ?", [album, row.id]);
         written++;
       }
       saveDb(freshDb);

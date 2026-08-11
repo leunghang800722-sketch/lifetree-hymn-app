@@ -1,11 +1,11 @@
 # backfillAlbumFromCatalog 報告 —— Phase B(sop.org catalog)
 
-> ALBUM-BACKFILL-ACCEL-PLAN.md Commit 3。org=讚美之泉/讚美之泉兒童/讚美之泉粵語/讚美之泉 Stream Of Praise Music Ministries。生成時間:2026-08-04 14:34:55
+> ALBUM-BACKFILL-ACCEL-PLAN.md Commit 3。org=讚美之泉/讚美之泉兒童/讚美之泉粵語/讚美之泉 Stream Of Praise Music Ministries。生成時間:2026-08-11 10:12:10(--dry,DB 未寫入)
 
 - 候選 row 總數:1399
-- match 到單一專輯且已寫(或 --dry 模擬):2
+- match 到單一專輯且已寫(或 --dry 模擬):0
 - match 到但撞多隻專輯(衝突,冇寫):170
-- match 到但 DB 已有 album(冇覆寫):468
+- match 到但 DB 已有 album(冇覆寫):470
 - match 到但 album_source=manual/legacy(受保護,冇覆寫):9
 - catalog 搵唔到:750
 
@@ -13,8 +13,6 @@
 
 | id | youtube_id | title | album |
 |---|---|---|---|
-| 4982 | CiZG2oPGfko | 來歡呼讚美 Come and Worship | 沙漠中的讚美 |
-| 4984 | iCY_YB1jouY | 喜樂泉源 Fountain of Joy | 沙漠中的讚美 |
 
 ## 衝突清單(撞多隻專輯,人手覆核)
 
@@ -191,5 +189,5 @@
 | 6541 | Do7NwFKVpgw | 寶貴十架 | 寶貴十架 / 認識祢真好 |
 | 6542 | wh6WwSrlkhw | 恩典之路 | 不要放棄．滿有能力 / 新造的人 |
 
-(catalog 搵唔到嘅 750 首、DB 已有 album 冇覆寫嘅 468 首、
+(catalog 搵唔到嘅 750 首、DB 已有 album 冇覆寫嘅 470 首、
 album_source=manual/legacy 受保護嘅 9 首,唔逐條列,見上面統計數字。)
