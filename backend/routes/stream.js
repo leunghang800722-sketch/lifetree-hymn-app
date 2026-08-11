@@ -4,7 +4,7 @@
 
 import { Router } from 'express';
 import { Readable } from 'stream';
-import { resolveAudioUrl, bustCache, preVerifyUrl, markStreaming, unmarkStreaming, cache } from '../lib/resolveAudio.js';
+import { resolveAudioUrl, bustCache, preVerifyUrl, markStreaming, unmarkStreaming, cache, warmBuffer, getBufferedChunk } from '../lib/resolveAudio.js';
 
 // BG-PLAYBACK-STOPS-PLAN Fix D:純 observability helper,唔改任何 proxy 行為。
 // 一行 log,帶 ISO timestamp,用嚟診斷背景播放 3-4 首自動停個 bug(client abort
@@ -36,7 +36,11 @@ export default function streamRoutes(getDb) {
         stmt.free();
       }
       for (const yt of ytIds) {
-        try { const url = await resolveAudioUrl(yt); await preVerifyUrl(yt, url); } catch (_) {}
+        try {
+          const url = await resolveAudioUrl(yt);
+          const verifiedUrl = await preVerifyUrl(yt, url);
+          await warmBuffer(yt, verifiedUrl);
+        } catch (_) {}
       }
     } catch (_) { /* 背景嘢,靜靜哋收工就得 */ }
   });
@@ -153,6 +157,35 @@ export default function streamRoutes(getDb) {
 
     const isHead = req.method === 'HEAD';
     const clientRange = req.headers.range;
+
+    // IOS-NEXT-TRACK-PRELOAD-PLAN 方向3:warm 已經攞埋頭一截音訊落嚟,呢度
+    // 淨係處理「由頭播」嘅最常見場景(冇 clientRange = 用戶未拖過 seek bar)。
+    // clientRange 有值即係 seek,行返下面原本嘅冷路徑,唔冒風險。
+    const buffered = (!isHead && !clientRange) ? getBufferedChunk(hymn.youtube_id, url) : null;
+    if (buffered) {
+      const { buf, totalLength, contentType } = buffered;
+      res.setHeader('Content-Type', contentType || 'audio/mp4');
+      res.setHeader('Accept-Ranges', 'bytes');
+      if (totalLength) res.setHeader('Content-Length', String(totalLength));
+      res.status(200);
+      ttfbMs = Date.now() - reqStart;
+      res.write(buf);
+      if (totalLength && buf.length < totalLength) {
+        try {
+          const rest = await fetch(url, { method: 'GET', headers: { Range: `bytes=${buf.length}-` }, signal: controller.signal });
+          if ((rest.status === 200 || rest.status === 206) && rest.body) {
+            const restBody = Readable.fromWeb(rest.body);
+            restBody.on('error', () => { if (!res.writableEnded) res.destroy(); });
+            restBody.pipe(res);
+            return;
+          }
+          try { await rest.body?.cancel?.(); } catch (_) {}
+        } catch (_) { /* 落返去下面直接收尾,buffer 都已經去到用家手上 */ }
+      }
+      finishLog(200);
+      return res.end();
+    }
+
     // Always send a Range upstream. googlevideo throttles range-less (full-file)
     // GETs to ~17KB/s but serves ranged requests at ~1.5MB/s. ExoPlayer's first
     // request usually has NO Range header — forwarding that as-is throttled

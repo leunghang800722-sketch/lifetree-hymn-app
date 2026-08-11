@@ -240,4 +240,47 @@ export function bustCache(youtubeId) {
   failCache.delete(youtubeId);
 }
 
+// ── IOS-NEXT-TRACK-PRELOAD-PLAN 方向3:warm 升級做真正 buffer ──────────
+// 舊 warm 止步喺「resolve 到 CDN URL」,`GET /api/stream/:id` 打嚟嗰刻仲要
+// 由零開一條新 backend↔googlevideo TCP/TLS 連線,呢段 RTT 之前完全冇慳到。
+// 而家 warm 順手用 Range 攞埋頭一截音訊落嚟,擺喺記憶體,俾 stream.js 嗰個
+// GET handler 一收到「由頭播」嘅請求就可以即刻吐呢截,唔使等新連線。
+const PREBUFFER_BYTES = 256 * 1024; // ~16s@128kbps,「頭幾百KB」量級
+const BUFFER_TTL_MS = 3 * 60 * 1000; // 3 分鐘——warm 到真正撳 next 通常好快
+const bufferCache = new Map(); // youtubeId -> { url, buf, totalLength, contentType, expiresAt }
+
+// url 由呼叫方(warm 路由)傳入,一定係 resolveAudioUrl/preVerifyUrl 啱啱拎到嗰條——
+// 存埋佢係為咗喺 getBufferedChunk() 度可以核對「而家播放請求攞到嘅 url 係咪
+// 同warm嗰陣一樣」,唔一樣就唔用(避免罕見情況下 URL 被 bust 重 resolve 換咗
+// 唔同 format/itag,叉埋舊 buffer 落新 stream 會爛檔)。
+export async function warmBuffer(youtubeId, url) {
+  try {
+    const r = await fetch(url, { method: 'GET', headers: { Range: `bytes=0-${PREBUFFER_BYTES - 1}` } });
+    if (r.status !== 200 && r.status !== 206) { try { await r.body?.cancel?.(); } catch (_) {} return; }
+    const buf = Buffer.from(await r.arrayBuffer());
+    let totalLength = null;
+    const cr = r.headers.get('content-range'); // "bytes 0-262143/12345678"
+    const m = cr && /\/(\d+)$/.exec(cr);
+    if (m) totalLength = Number(m[1]);
+    else {
+      const cl = r.headers.get('content-length'); // 全首歌細過 PREBUFFER_BYTES,直接 200
+      if (cl) totalLength = Number(cl);
+    }
+    bufferCache.set(youtubeId, {
+      url,
+      buf,
+      totalLength,
+      contentType: r.headers.get('content-type') || null,
+      expiresAt: Date.now() + BUFFER_TTL_MS,
+    });
+  } catch (_) { /* 熱身失敗唔緊要,行返冷路徑 */ }
+}
+
+export function getBufferedChunk(youtubeId, url) {
+  const c = bufferCache.get(youtubeId);
+  if (!c) return null;
+  if (c.expiresAt <= Date.now() || c.url !== url) { bufferCache.delete(youtubeId); return null; }
+  return c;
+}
+
 export { cache, failCache };
