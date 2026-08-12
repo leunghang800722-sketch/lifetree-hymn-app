@@ -254,7 +254,9 @@ export function bustCache(youtubeId) {
 // (App.js 一開始播就即刻 warm 埋下 3 首),1.5MB 喺正常網速下都係一兩秒內嘅
 // 事,唔會頂住呢個 lead time。加大呢個窗口純粹係擴大「一定慳到、唔使掂
 // VPN」嘅安全區,對已經好快嘅情況(< 256KB 就夠)零影響。
-const PREBUFFER_BYTES = 1536 * 1024; // 1.5MB —— 覆蓋更多 AVFoundation 嘅早期 range 需求
+const PREBUFFER_BYTES = 4 * 1024 * 1024; // 4MB —— 實測 AVFoundation 嘅 playable 判斷有時
+// 會主動讀過 3MB 先滿意,而且次次唔同(3s~20s+都見過),1.5MB 唔夠穩陣。大部份
+// 詩歌全首得 3-8MB,4MB 已經覆蓋咗絕大部份歌嘅大半甚至全首。
 const BUFFER_TTL_MS = 3 * 60 * 1000; // 3 分鐘——warm 到真正撳 next 通常好快
 const bufferCache = new Map(); // youtubeId -> { url, buf, totalLength, contentType, expiresAt }
 
