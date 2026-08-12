@@ -517,7 +517,18 @@ function PlayerProvider({ children }) {
         // ExoPlayer冇呢種預測式等待,單次慢咗都會一氣呵成播)。設false之後AVPlayer
         // 唔再自己估,一有數據夠(靠已有嘅preferredForwardBufferDuration/
         // playbackLikelyToKeepUp把關)就播,唔會再自行反覆重試。
-        await TrackPlayer.setupPlayer({ waitForBuffer: false });
+        //
+        // autoHandleInterruptions:true —— 2026-08-12 真機撞到「鎖屏聽緊15分鐘
+        // 又自己完全靜晒」,查落 SwiftAudioEx 原碼(RNTrackPlayer.swift
+        // handleInterruption)發現:audio session 俾人打斷完(電話/Siri/另一個
+        // app攞走audio/藍牙路由切換)之後,native 淨係喺呢個flag=true先會自動
+        // player.play() 恢復;預設false嘅話淨係fire個RemoteDuck event,冇人聽
+        // 就一直卡喺paused、冇crash冇錯誤、亦唔會再有任何network request(所以
+        // backend log會見到完全靜晒——同「卡buffering」嗰種截然不同,三個
+        // stuck-watchdog都唔會出手,因為native老實報緊「已經pause咗」)。之前
+        // 一直冇設呢個flag(default false)。見STREAM-LOCKSCREEN-STOP-ROOTCAUSE-
+        // 2026-08-12.md 續篇。
+        await TrackPlayer.setupPlayer({ waitForBuffer: false, autoHandleInterruptions: true });
       } catch (e) {
         // setupPlayer 喺「player 已經 set 過」嗰陣都會 reject(code
         // player_already_initialized,見 MusicModule.kt),嗰個唔算失敗;
