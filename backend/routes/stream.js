@@ -179,21 +179,60 @@ export default function streamRoutes(getDb) {
     const isHead = req.method === 'HEAD';
     const clientRange = req.headers.range;
 
-    // IOS-NEXT-TRACK-PRELOAD-PLAN 方向3:warm 已經攞埋頭一截音訊落嚟,呢度
-    // 淨係處理「由頭播」嘅最常見場景(冇 clientRange = 用戶未拖過 seek bar)。
-    // clientRange 有值即係 seek,行返下面原本嘅冷路徑,唔冒風險。
-    const buffered = (!isHead && !clientRange) ? getBufferedChunk(hymn.youtube_id, url) : null;
+    // NEXT-TRACK-LATENCY 2026-08-12:原本呢度淨係處理「冇 clientRange」(見
+    // STREAM-MIDTRACK-SILENCE-ROOTCAUSE-2026-08-12 §5.3)——但實測(真 AVFoundation
+    // probe 打真 backend)證實 AVFoundation *每一個* request 都帶 Range header,
+    // 一次都冇例外(即使係啱啱 warm 完嘅 track),所以舊嘅 `!clientRange` 閘
+    // 對 iOS 係死碼:warmBuffer() 攞埋落嚟嘅頭 256KB 一直冇被 iOS 用過,佢每次
+    // 都要重新開條新連線去 googlevideo(經 VPN,呢段先係 8-10s delay 嘅主因)。
+    // 而家改成:只要 client 個 range 嘅起始 offset 落喺已 buffer 嗰截之內
+    // (包括冇 Range 嘅舊case,起始offset當0),就用返嗰截記憶體數據應付,
+    // 唔使等新連線。呢個係 IOS-NEXT-TRACK-PRELOAD-PLAN 方向3嘅完整實現。
+    const parsedRange = (() => {
+      const m = clientRange && /^bytes=(\d+)-(\d*)$/.exec(clientRange);
+      if (!m) return null;
+      return { start: Number(m[1]), end: m[2] ? Number(m[2]) : null };
+    })();
+    // clientRange 有值但格式古怪(multi-range 之類)—— parsedRange 會係 null,
+    // rangeStart 跟住都係 null,下面 buffered 判斷自然跳過,行返原本冷路徑。
+    const rangeStart = !isHead ? (clientRange ? (parsedRange ? parsedRange.start : null) : 0) : null;
+    const bufferedChunk = (rangeStart != null) ? getBufferedChunk(hymn.youtube_id, url) : null;
+    // clientRange 分支要寫 Content-Range,冇 totalLength(googlevideo 冇俾 content-range/
+    // content-length,理論上唔會發生但要防)就唔知真正檔案總長,寧願行返冷路徑都好過
+    // 報錯個 total(會累到 AVFoundation 以為成首歌得 256KB 長)。!clientRange 分支
+    // 本身冇 Content-Range 呢個風險,維持原本行為。
+    const buffered = (bufferedChunk && rangeStart < bufferedChunk.buf.length && (!clientRange || bufferedChunk.totalLength))
+      ? bufferedChunk : null;
     if (buffered) {
       const { buf, totalLength, contentType } = buffered;
+      const total = totalLength || buf.length;
+      const sliceEnd = (parsedRange && parsedRange.end != null)
+        ? Math.min(parsedRange.end + 1, buf.length, total)
+        : buf.length;
+      const chunk = buf.subarray(rangeStart, sliceEnd);
+
       res.setHeader('Content-Type', contentType || 'audio/mp4');
       res.setHeader('Accept-Ranges', 'bytes');
-      if (totalLength) res.setHeader('Content-Length', String(totalLength));
-      res.status(200);
+      if (clientRange) {
+        res.setHeader('Content-Range', `bytes ${rangeStart}-${sliceEnd - 1}/${total}`);
+        res.status(206);
+      } else {
+        if (totalLength) res.setHeader('Content-Length', String(totalLength));
+        res.status(200);
+      }
       ttfbMs = Date.now() - reqStart;
-      res.write(buf);
-      if (totalLength && buf.length < totalLength) {
+      res.write(chunk);
+
+      // 呢個 range 想要嘅嘢係咪已經全部喺 buffer 入面?(例如 AVFoundation
+      // 成日發嘅細 range,好似 bytes=49152-65535,成個 request 都喺 256KB
+      // 之內)——係就唔使開任何新連線,直接收工。
+      const wantsBeyondBuffer = clientRange
+        ? (parsedRange.end == null || parsedRange.end + 1 > buf.length) && buf.length < total
+        : (totalLength && buf.length < totalLength);
+      if (wantsBeyondBuffer) {
         try {
-          const rest = await fetch(url, { method: 'GET', headers: { Range: `bytes=${buf.length}-` }, signal: controller.signal });
+          const restRangeEnd = (parsedRange && parsedRange.end != null) ? `${parsedRange.end}` : '';
+          const rest = await fetch(url, { method: 'GET', headers: { Range: `bytes=${buf.length}-${restRangeEnd}` }, signal: controller.signal });
           if ((rest.status === 200 || rest.status === 206) && rest.body) {
             const restBody = Readable.fromWeb(rest.body);
             restBody.on('error', () => { if (!res.writableEnded) res.destroy(); });
