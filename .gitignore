@@ -78,3 +78,8 @@ backend/cookies.txt
 
 # Claude agent auto-memory — belongs to the local session, not the project repo
 memory/
+
+# 歌詞複核用嘅第三方來源 cache(cantonhymn.net sitemap + API JSON):
+# 體積大、隨時可以用 scripts/updateCantonhymnIndex.js 重建,而且入面係第三方歌詞全文,
+# 版權紀律上唔應該 commit 入 repo(HANDOFF.md §2.0)
+backend/data/lyrics-verify-cache/
