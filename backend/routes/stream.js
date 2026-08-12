@@ -206,15 +206,23 @@ export default function streamRoutes(getDb) {
     if (buffered) {
       const { buf, totalLength, contentType } = buffered;
       const total = totalLength || buf.length;
-      const sliceEnd = (parsedRange && parsedRange.end != null)
-        ? Math.min(parsedRange.end + 1, buf.length, total)
-        : buf.length;
+      // ⚠️ sliceEnd 淨係「呢刻由記憶體即寫幾多」嘅邊界(俾 buf.subarray 用)。
+      // Content-Range 一定要報成個 response *最終*會送嘅範圍(buffered prefix +
+      // 之後 pipe 落嚟嘅 live 續集),唔可以淨係報 buffered 嗰截——如果得
+      // sliceEnd-1 就報做 range 上限,但之後仲有 wantsBeyondBuffer 續 pipe
+      // 多啲 bytes 落同一個 response,個 header 應承嘅長度就會同實際 body
+      // 長度對唔上,AVFoundation 會即刻拒收(實測:error -12935,幾百 ms
+      // 內就 fail,唔使等到成個 response 派完)。
+      const declaredEnd = (parsedRange && parsedRange.end != null)
+        ? Math.min(parsedRange.end, total - 1)
+        : total - 1;
+      const sliceEnd = Math.min(declaredEnd + 1, buf.length);
       const chunk = buf.subarray(rangeStart, sliceEnd);
 
       res.setHeader('Content-Type', contentType || 'audio/mp4');
       res.setHeader('Accept-Ranges', 'bytes');
       if (clientRange) {
-        res.setHeader('Content-Range', `bytes ${rangeStart}-${sliceEnd - 1}/${total}`);
+        res.setHeader('Content-Range', `bytes ${rangeStart}-${declaredEnd}/${total}`);
         res.status(206);
       } else {
         if (totalLength) res.setHeader('Content-Length', String(totalLength));
