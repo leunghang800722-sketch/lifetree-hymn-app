@@ -246,7 +246,15 @@ export function bustCache(youtubeId) {
 // 由零開一條新 backend↔googlevideo TCP/TLS 連線,呢段 RTT 之前完全冇慳到。
 // 而家 warm 順手用 Range 攞埋頭一截音訊落嚟,擺喺記憶體,俾 stream.js 嗰個
 // GET handler 一收到「由頭播」嘅請求就可以即刻吐呢截,唔使等新連線。
-const PREBUFFER_BYTES = 256 * 1024; // ~16s@128kbps,「頭幾百KB」量級
+// NEXT-TRACK-LATENCY 2026-08-12:256KB 曾經係「頭幾百KB」量級嘅估計,但實測
+// (真 AVFoundation probe 打真 backend)發現 AVFoundation 對「呢個 asset 係咪
+// playable」嘅判斷,唔止睇 moov(632 bytes 已經夠),仲會主動開多條 range
+// 連線去攞遠超 256KB 嘅內容(觀察到攞到 3MB+ 都仲未收貨)。warm() 本身喺
+// background 行,喺用戶撳「下一首」之前通常有成首歌嘅播放時間做 lead time
+// (App.js 一開始播就即刻 warm 埋下 3 首),1.5MB 喺正常網速下都係一兩秒內嘅
+// 事,唔會頂住呢個 lead time。加大呢個窗口純粹係擴大「一定慳到、唔使掂
+// VPN」嘅安全區,對已經好快嘅情況(< 256KB 就夠)零影響。
+const PREBUFFER_BYTES = 1536 * 1024; // 1.5MB —— 覆蓋更多 AVFoundation 嘅早期 range 需求
 const BUFFER_TTL_MS = 3 * 60 * 1000; // 3 分鐘——warm 到真正撳 next 通常好快
 const bufferCache = new Map(); // youtubeId -> { url, buf, totalLength, contentType, expiresAt }
 
