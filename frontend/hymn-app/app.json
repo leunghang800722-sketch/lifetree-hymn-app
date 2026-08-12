@@ -67,7 +67,8 @@
             "./assets/fonts/NotoSerifTC-Regular.ttf"
           ]
         }
-      ]
+      ],
+      "./plugins/withSwiftAudioExStallFix.js"
     ],
     "extra": {
       "eas": {

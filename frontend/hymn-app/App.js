@@ -510,7 +510,14 @@ function PlayerProvider({ children }) {
       }
       let setupOk = true;
       try {
-        await TrackPlayer.setupPlayer({ waitForBuffer: true });
+        // waitForBuffer:false → iOS AVPlayer.automaticallyWaitsToMinimizeStalling=false。
+        // true(舊設定)令AVPlayer用自己嘅頻寬預測算法決定幾時開始播,喺VPN造成
+        // 嘅高延遲抖動下,呢個算法會不斷推翻自己個估算、反覆等待/重新緩衝,將
+        // 單次~600ms嘅慢response滾大成20幾個buffering週期、成30秒先播到(Android
+        // ExoPlayer冇呢種預測式等待,單次慢咗都會一氣呵成播)。設false之後AVPlayer
+        // 唔再自己估,一有數據夠(靠已有嘅preferredForwardBufferDuration/
+        // playbackLikelyToKeepUp把關)就播,唔會再自行反覆重試。
+        await TrackPlayer.setupPlayer({ waitForBuffer: false });
       } catch (e) {
         // setupPlayer 喺「player 已經 set 過」嗰陣都會 reject(code
         // player_already_initialized,見 MusicModule.kt),嗰個唔算失敗;
