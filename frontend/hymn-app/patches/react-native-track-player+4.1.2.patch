@@ -555,3 +555,38 @@ index afa6b0f..eeb0ddb 100644
              ?.getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter::class.java)
              ?.emit(event, payload)
      }
+diff --git a/node_modules/react-native-track-player/ios/RNTrackPlayer/RNTrackPlayer.swift b/node_modules/react-native-track-player/ios/RNTrackPlayer/RNTrackPlayer.swift
+index 3be1342..03b5796 100644
+--- a/node_modules/react-native-track-player/ios/RNTrackPlayer/RNTrackPlayer.swift
++++ b/node_modules/react-native-track-player/ios/RNTrackPlayer/RNTrackPlayer.swift
+@@ -42,6 +42,17 @@ public class RNTrackPlayer: RCTEventEmitter, AudioSessionControllerDelegate {
+         player.event.currentItem.addListener(self, handleAudioPlayerCurrentItemChange)
+         player.event.secondElapse.addListener(self, handleAudioPlayerSecondElapse)
+         player.event.playWhenReadyChange.addListener(self, handlePlayWhenReadyChange)
++        // STREAM-LOCKSCREEN-NO-DURATION-2026-08-12 —— SwiftAudioEx's own
++        // `AVWrapper(didUpdateDuration:)` only emits this event, it never
++        // re-pushes MPNowPlayingInfoCenter's duration (that only happens on
++        // .ready/.loading/.playing/.paused state changes, see AudioPlayer.swift
++        // updateNowPlayingPlaybackValues()). For streamed audio the AVPlayerItem
++        // duration KVO often resolves *after* the .playing state transition
++        // already fired with duration 0, and if no further qualifying state
++        // change happens for the rest of that track, the lock-screen scrubber
++        // and elapsed/remaining time stay blank for the whole playback. Close
++        // that gap by resyncing duration ourselves whenever it changes.
++        player.event.updateDuration.addListener(self, handleAudioPlayerUpdateDuration)
+     }
+ 
+     deinit {
+@@ -894,6 +905,12 @@ public class RNTrackPlayer: RCTEventEmitter, AudioSessionControllerDelegate {
+         emit(event: EventType.PlaybackTrackChanged, body: b)
+     }
+ 
++    func handleAudioPlayerUpdateDuration(duration: Double) {
++        if player.automaticallyUpdateNowPlayingInfo {
++            player.nowPlayingInfoController.set(keyValue: MediaItemProperty.duration(duration))
++        }
++    }
++
+     func handleAudioPlayerSecondElapse(seconds: Double) {
+         // because you cannot prevent the `event.secondElapse` from firing
+         // do not emit an event if `progressUpdateEventInterval` is nil
