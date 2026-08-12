@@ -5,12 +5,33 @@
 import { Router } from 'express';
 import { Readable } from 'stream';
 import { resolveAudioUrl, bustCache, preVerifyUrl, markStreaming, unmarkStreaming, cache, warmBuffer, getBufferedChunk } from '../lib/resolveAudio.js';
+import { zeroFragmentedMp4Durations } from '../lib/fixFragmentedMp4Duration.js';
 
 // BG-PLAYBACK-STOPS-PLAN Fix D:純 observability helper,唔改任何 proxy 行為。
 // 一行 log,帶 ISO timestamp,用嚟診斷背景播放 3-4 首自動停個 bug(client abort
 // 之前完全冇 log,飛盲)。
 function logLine(fields) {
   console.log(`[stream] ${new Date().toISOString()} ${Object.entries(fields).map(([k, v]) => `${k}=${v}`).join(' ')}`);
+}
+
+// STREAM-MIDTRACK-SILENCE-ROOTCAUSE-2026-08-12 §5.2:兩條 googlevideo URL 係咪
+// 同一個 itag/檔案大細(即係「換條 URL 但唔係換咗 format」)。攞唔到 itag 就保守
+// 放行(true),唔好阻住現有 retry 行為——呢個 check 淨係用嚟攔「肯定唔同」嘅情況。
+function sameFormat(urlA, urlB) {
+  try {
+    const a = new URL(urlA);
+    const b = new URL(urlB);
+    const itagA = a.searchParams.get('itag');
+    const itagB = b.searchParams.get('itag');
+    if (!itagA || !itagB) return true;
+    if (itagA !== itagB) return false;
+    const clenA = a.searchParams.get('clen');
+    const clenB = b.searchParams.get('clen');
+    if (clenA && clenB && clenA !== clenB) return false;
+    return true;
+  } catch (_) {
+    return true;
+  }
 }
 
 export default function streamRoutes(getDb) {
@@ -250,6 +271,7 @@ export default function streamRoutes(getDb) {
         });
       }
       retried = true;
+      const preRetryUrl = url;
       bustCache(hymn.youtube_id);
       const resolveStart2 = Date.now();
       try {
@@ -261,6 +283,20 @@ export default function streamRoutes(getDb) {
         return res.status(502).json({ error: 'resolve failed (retry)' });
       }
       resolveMs += Date.now() - resolveStart2;
+
+      // STREAM-MIDTRACK-SILENCE-ROOTCAUSE-2026-08-12 §5.2:resolveAudio.js 自己
+      // 講明「唔同時間 resolve 可能出唔同 format,byte offset 會對唔上」,但呢個
+      // retry 路徑漏咗防護。中段 seek(clientRange 唔係由 byte 0 開始)嘅 offset
+      // 係跟舊 format 嘅檔案大細計出嚟——換咗 itag 就完全對唔上另一個檔案,會
+      // 餵到損毀 bytes。寧願 502 逼 client 由頭嚟過(App 側已有
+      // TrackPlayer.retry()+skip 接得住),都好過靜靜哋餵爛檔。
+      const midFileSeek = !!clientRange && !/^bytes=0-/.test(clientRange);
+      if (midFileSeek && !sameFormat(preRetryUrl, url)) {
+        console.warn(`[${new Date().toISOString()}] ⚠️ stream retry format mismatch: id=${id} yt=${hymn.youtube_id} — refusing to reuse mid-file range against a different format`);
+        finishLog(502);
+        return res.status(502).json({ error: 'format changed on retry' });
+      }
+
       try {
         upstream = await attemptFetch(url);
       } catch (_) {
@@ -273,6 +309,26 @@ export default function streamRoutes(getDb) {
       finishLog(502, { aborted: controller.signal.aborted });
       return res.status(502).json({ error: 'upstream fetch failed after retry' });
     }
+
+    // STREAM-MIDTRACK-SILENCE-ROOTCAUSE-2026-08-12 §5.1:AVFoundation(iOS)完全
+    // 播唔到 webm/opus——resolveAudio.js 嘅 format selector 喺搵唔到 m4a/mp4a
+    // 嘅片會 fallback 去 webm(itag 251/249,例如 hymn 7511)。呢個 fmt selector
+    // 係 resolveAudioUrl() 共用嘅(冇 platform 分支,cache key 亦冇分 platform),
+    // 唔可以喺呢層淨係為 iOS 改埋 Android 嘅 format 選擇——改咗會令「而家 Android
+    // 播得好地地」嘅 opus-only 片喺兩邊都變播唔到。所以只喺呢度做最小風險嘅
+    // 攔截:淨係 iOS UA + webm content-type 先 502,即刻俾 App 現有
+    // PlaybackError retry→skip 邏輯接手,好過畀 AVFoundation 拋一個 native
+    // decode error、有機會冇俾 JS 層接到就靜靜哋卡住。Android 完全唔受影響
+    // (呢個 if 淨係喺 UA 含 AppleCoreMedia 先入到)。
+    const upstreamContentType = upstream.headers.get('content-type') || '';
+    const isAppleClient = /AppleCoreMedia/i.test(req.headers['user-agent'] || '');
+    if (isAppleClient && /webm|opus/i.test(upstreamContentType)) {
+      try { await upstream.body?.cancel?.(); } catch (_) {}
+      console.warn(`[${new Date().toISOString()}] ⚠️ stream iOS webm/opus unsupported: id=${id} yt=${hymn.youtube_id} content-type=${upstreamContentType}`);
+      finishLog(502);
+      return res.status(502).json({ error: 'format not supported on iOS' });
+    }
+
     // 真 TTFB 定格位:upstream response header 已經到手,再落去就係寫 header
     // + pipe body。純賦值,唔會拋、唔會改任何 proxy 行為。
     ttfbMs = Date.now() - reqStart;
@@ -306,6 +362,36 @@ export default function streamRoutes(getDb) {
     // is exactly what made ExoPlayer hang on "loading" forever).
     const body = Readable.fromWeb(upstream.body);
     body.on('error', () => { if (!res.writableEnded) res.destroy(); });
+
+    // STREAM-MIDTRACK-SILENCE-ROOTCAUSE-2026-08-12:iOS fMP4 duration-doubling
+    // 修補。moov(mvhd/tkhd/mdhd)實測一定喺檔頭 632 bytes 之內,而 AVFoundation
+    // 嘅第一個內容請求一定係由 byte 0 開始 —— 所以只要處理「呢個 range 由 byte 0
+    // 開始」嘅回應就 100% 覆蓋到。其餘 range(中段 seek)冇 moov,原封不動 pipe,
+    // 零行為改動。
+    const startsAtZero = !clientRange || /^bytes=0-/.test(clientRange);
+    if (startsAtZero) {
+      const HEAD_BYTES = 4096;
+      let head = Buffer.alloc(0);
+      let done = false;
+      body.on('data', (chunk) => {
+        if (done) return;
+        head = Buffer.concat([head, chunk]);
+        if (head.length < HEAD_BYTES) return;
+        done = true;
+        body.pause();
+        try { zeroFragmentedMp4Durations(head); } catch (_) {}
+        res.write(head);
+        body.resume();
+        body.pipe(res);
+      });
+      body.on('end', () => {
+        if (!done) { // 成個檔案細過 HEAD_BYTES(理論上唔會,音訊檔一定大過 4KB)
+          try { zeroFragmentedMp4Durations(head); } catch (_) {}
+          res.end(head);
+        }
+      });
+      return;
+    }
     body.pipe(res);
   });
 

@@ -9,6 +9,7 @@ import { promisify } from 'util';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { zeroFragmentedMp4Durations } from './fixFragmentedMp4Duration.js';
 
 const exec = promisify(execCb);
 
@@ -258,6 +259,10 @@ export async function warmBuffer(youtubeId, url) {
     const r = await fetch(url, { method: 'GET', headers: { Range: `bytes=0-${PREBUFFER_BYTES - 1}` } });
     if (r.status !== 200 && r.status !== 206) { try { await r.body?.cancel?.(); } catch (_) {} return; }
     const buf = Buffer.from(await r.arrayBuffer());
+    // STREAM-MIDTRACK-SILENCE-ROOTCAUSE-2026-08-12:呢截頭 256KB 一定包住成個
+    // moov(mvhd/tkhd/mdhd 實測喺 632 bytes 之內),喺存入 cache 之前就地修好,
+    // 之後 getBufferedChunk() 攞返嚟嘅永遠係已修版本,唔使逐次 stream.js 補。
+    try { zeroFragmentedMp4Durations(buf); } catch (_) {}
     let totalLength = null;
     const cr = r.headers.get('content-range'); // "bytes 0-262143/12345678"
     const m = cr && /\/(\d+)$/.exec(cr);
