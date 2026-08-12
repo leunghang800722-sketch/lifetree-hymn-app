@@ -887,9 +887,36 @@ function PlayerProvider({ children }) {
   //
   // Watchdog:position/duration 呢兩個數值嚟自另一條讀取路徑(AVPlayerItem 嘅
   // currentTime/duration 屬性),就算 state 卡咗都仲反映緊實際播放頭。淨係喺
-  // 「貼近track尾(仲有 <1.5s)+ 連續 3 秒完全冇郁」先當「真係完咗但native冇講
-  // 我知」,唔會同正常 mid-song buffering(通常唔喺尾、亦好快恢復)撞。
+  // 「貼近track尾+連續 3 秒完全冇郁」先當「真係完咗但native冇講我知」。
+  //
+  // 2026-08-12 Eric 真機再報一單:「有一天」(盛曉玫)卡喺 5:55/11:54,即係
+  // 明顯唔喺尾聲、pause icon 顯示緊播放緊但完全冇聲——證明上面條「貼近track
+  // 尾」嘅 gate 太窄,response 唔到中途 stall(SwiftAudioEx 個
+  // AVWrapperItemPlaybackStalled() delegate 係完全空,ios/Pods/SwiftAudioEx/
+  // Sources/SwiftAudioEx/AudioPlayer.swift:440-442 確認過——AVPlayerItem 中途
+  // 派 AVPlayerItemPlaybackStalled 通知嗰陣,SwiftAudioEx 接住咗個 delegate call
+  // 但入面乜都冇做,state 唔會轉,同track-end嗰個缺口係同一個技術根因、唔同
+  // 觸發時機)。呢個係 Pods 入面嘅 vendored 依賴(SwiftAudioEx,經
+  // react-native-track-player 帶入嚟),唔喺呢個 repo,亦冇喺 patches/ 度整
+  // 個 patch-package——照跟 §3.7 嗰條「唔准掂 native」限制,喺 JS 層度用
+  // poll 頂住呢個缺口(同上面 track-end watchdog 一樣嘅招數)。
+  //
+  // (順帶查過:呢首歌 DB 個 youtube_id 96WDXhk6qjU 用 yt-dlp 核實真身,單一
+  // 首歌、真實長度 5:57——唔係大合輯/連續播放多首歌嗰種 video,5:55 stall
+  // 已經非常貼近呢個真長度。App 度顯示嘅 11:54 總長明顯係另一個 duration
+  // 顯示/上報獨立問題[真實媒體長度冇doubling,單獨起request驗證過],但同
+  // 呢次stall recovery冧咗嘅根因冇直接關係——下面嘅 fix 已經唔再靠信賴
+  // reported duration 嚟判斷,所以呢個獨立問題唔會影響 recovery 生效。)
+  //
+  // 泛化:淨係當「聲稱 Playing + position 連續 N 秒完全冇郁」就當 stall,唔理
+  // 離 duration 有幾遠。近尾(<1.5s)當「真係播完」,直接用返原本嗰套 track-end
+  // recovery;唔近尾就當「中途 stall」——先試一次「向前 nudge 個
+  // seek+play()」逼 AVPlayerItem 喺嗰個位重新攞緊接落去嗰段data(呢招對「已經
+  // buffer 落嚟嘅data用晒、AVPlayer冇再拉新data」嗰類 stall 好有用),仲係卡住
+  // 先當呢首歌/呢段串流有問題,跌落去同track-end一樣嘅 skip 邏輯。
   const stuckEndTicksRef = useRef(0);
+  const midStallTicksRef = useRef(0);
+  const midStallNudgedRef = useRef(false);
   const lastPollPositionRef = useRef(-1);
   const handleStuckTrackEnd = useCallback(async () => {
     try {
@@ -920,6 +947,36 @@ function PlayerProvider({ children }) {
     }
   }, []);
 
+  // 中途 stall(唔近尾)——第一次先試 nudge(前跳0.3s再play()逼佢重新拉
+  // data),留個 flag 記住「呢首歌已經nudge過」;如果 nudge 完再卡多 3 秒即係
+  // nudge 都救唔到(串流呢段真係有問題),先跌落去 handleStuckTrackEnd 嗰套
+  // skip/repeat 邏輯,唔好一直喺同一首歌度死等。track 一轉(見下面
+  // PlaybackActiveTrackChanged 個 effect)個 flag 會reset,新歌有自己一次
+  // nudge 機會。
+  const handleMidStreamStall = useCallback(async () => {
+    try {
+      if (!midStallNudgedRef.current) {
+        midStallNudgedRef.current = true;
+        const pos = lastPollPositionRef.current;
+        console.warn('[player] mid-stream stall detected @', pos, '— nudging seek+play');
+        await TrackPlayer.seekTo(Math.max(0, pos + 0.3));
+        await TrackPlayer.play().catch(() => {});
+        return;
+      }
+      console.warn('[player] mid-stream stall persists after nudge — treating as unrecoverable, skipping');
+      await handleStuckTrackEnd();
+    } catch (e) {
+      console.warn('[player] mid-stream stall recovery failed:', e?.message || e);
+    }
+  }, [handleStuckTrackEnd]);
+
+  // 新歌一上場,舊歌嗰個「已經nudge過」flag要reset,唔好累到新歌一開波就
+  // 當自己已經nudge失敗一次。
+  useEffect(() => {
+    midStallNudgedRef.current = false;
+    midStallTicksRef.current = 0;
+  }, [currentQueueIndex]);
+
   // Progress — poll TrackPlayer.getProgress() directly instead of useProgress hook
   // This avoids the hook being mounted before TrackPlayer is ready
   useEffect(() => {
@@ -944,19 +1001,31 @@ function PlayerProvider({ children }) {
 
             const dur = progress.duration || 0;
             const nearEnd = dur > 0 && pos >= dur - 1.5;
-            const stalled = nearEnd && Math.abs(pos - lastPollPositionRef.current) < 0.05;
-            // 淨係 Playing 先算——Buffering 有可能係尾段正常等緊剩低幾 KB
-            // 未到,唔想同「真係播完但native卡死」撞埋一齊誤判。
+            const stalled = pos > 0 && Math.abs(pos - lastPollPositionRef.current) < 0.05;
+            // 淨係 Playing 先算——Buffering 有可能係正常等緊data未到(RNTP
+            // 呢種情況會轉 state=Buffering,唔會停留喺 Playing),唔想同
+            // 「聲稱播放緊但native卡死」撞埋一齊誤判。
             const claimsActive = trackStateRef.current === TPState.Playing;
             lastPollPositionRef.current = pos;
             if (stalled && claimsActive) {
-              stuckEndTicksRef.current += 1;
-              if (stuckEndTicksRef.current >= 3) {
+              if (nearEnd) {
+                midStallTicksRef.current = 0;
+                stuckEndTicksRef.current += 1;
+                if (stuckEndTicksRef.current >= 3) {
+                  stuckEndTicksRef.current = 0;
+                  handleStuckTrackEnd();
+                }
+              } else {
                 stuckEndTicksRef.current = 0;
-                handleStuckTrackEnd();
+                midStallTicksRef.current += 1;
+                if (midStallTicksRef.current >= 3) {
+                  midStallTicksRef.current = 0;
+                  handleMidStreamStall();
+                }
               }
             } else {
               stuckEndTicksRef.current = 0;
+              midStallTicksRef.current = 0;
             }
           }
         } catch (e) {
@@ -968,7 +1037,7 @@ function PlayerProvider({ children }) {
     poll();
 
     return () => { mounted = false; };
-  }, [queueReady, handleStuckTrackEnd]);
+  }, [queueReady, handleStuckTrackEnd, handleMidStreamStall]);
 
   // Poll player state as well
   useEffect(() => {
