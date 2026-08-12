@@ -98,3 +98,38 @@ iOS 會回收個 background session。個 session 一冇咗,`MPNowPlayingInfoCen
    對照組真機測試,或者(b)攞 Eric 部機接 Xcode Console 睇返嗰刻真實
    `AVAudioSession`/`mediaserverd` log——我呢邊冇辦法睇到手機端嘅 OS log,
    淨係做到 backend request pattern 呢層證據。
+
+---
+
+## 補記(同日 16:00-16:30 HKT)—— 已落地
+
+**1. Buffering watchdog 缺口已修**(`frontend/hymn-app/App.js`):加咗獨立
+`handleBufferingStuck`,poll loop 淨係計「聲稱 Buffering」嘅連續秒數(唔靠
+position 郁唔郁,因為冷 resolve 嗰陣 position 本身就係 0)。15 秒先軟踢一腳
+(單純再 `play()`,唔 seek),再 15 秒仲係 Buffering 就當救唔返,跌落去同
+`handleStuckTrackEnd` 一樣嘅 skip/repeat 邏輯。門檻特登揀夠鬆,唔會同正常
+冷 resolve(實測最壞 ~11s)撞埋誤殺。
+
+**2. 建議 3(再檢查四個 warm-buffer commit)結果**:live re-test 過
+`declaredEnd`/`sliceEnd`/`wantsBeyondBuffer` 嘅 arithmetic(`bytes=0-5780700`
+全檔request、`bytes=49152-65535`細range、連續15次burst request),Content-Range
+同 total 喺多次獨立 request 之間保持一致,冇搵到會令 AVFoundation 拒收嘅
+header/長度矛盾。**冇搵到會直接觸發 storm 嘅邏輯 bug**,老實講:呢個唔代表
+一定同呢四個 commit 冇關(AVFoundation 內部決策唔透明,冇 device console 睇
+唔到佢個判斷),但起碼 backend 呢層送出去嘅 response 本身係自洽、正確嘅。
+
+順手揪到一個**確有其事嘅獨立 bug**:`routes/stream.js` 253 行 buffered
+fast-path 收尾嗰句 `finishLog(200)` 硬寫死,唔理 `res.status()` 實際係 200
+定 206——即係話**之前所有喺 buffered fast-path 完成嘅 ranged request(iOS
+最常見嗰種)log 都寫錯做 200**。呢個誤導咗呢輪診斷初期(一度以為撞到
+「AVFoundation 唔帶 Range」嘅離奇案例),已修用返 `res.statusCode`。
+
+**3. 已部署**(commit `a9b9e80`):backend restart(health check 過)+ OTA
+android/ios 都推咗(update group `79a7d861`/`92d9278e`,runtime version 4,
+同 Eric 部機嘅 build 3/4 對得上)。process 規矩已補落 `HANDOFF.md` §2.3。
+
+**仍未閂嘅缺口**:retry storm 本身嘅觸發根因(client-side AVFoundation 響
+呢啲網絡條件下嘅內部決策)冇 device console log 撐住,冇辦法百分百實錘。
+新加嘅 Buffering watchdog 係止血(即使根因未斷尾,都唔會再卡到 iOS 自己
+殺 session),唔係根治。想再進一步,要 Eric 部機接 Xcode Console 先攞到
+`AVAudioSession`/`mediaserverd` 嘅第一手證據。
