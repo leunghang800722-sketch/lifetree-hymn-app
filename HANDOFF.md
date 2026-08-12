@@ -81,6 +81,14 @@ Zeabur 嘅 datacenter IP **已經被封死**（實測 5/5 全部 `Sign in to con
 - **容量上限：同時 30-50 人**（唔好超過）。樽頸唔係頻寬（實測上傳 136 Mbps ≈ 800 人），
   係 **yt-dlp resolve 風暴**：cache miss 時每首唔同歌開一個 process，2.1 秒 × **87MB RAM**。
   in-flight dedup 擋到「同一首歌」，擋唔到「50 首唔同歌」。
+- **Eric 真機測試緊（尤其鎖屏／背景播放）嗰段時間，唔好改動或重啟 `routes/stream.js`／
+  `resolveAudio.js` 呢類串流熱路徑。** 2026-08-12「鎖屏播幾首歌後 widget 完全消失」
+  一單，Eric 15:08 已經開波測試，backend 卻喺 15:02-15:14 之間仲部署緊全新未驗證過嘅
+  warm-buffer 代碼、仲夾埋一次 process 重啟——之後單嘢嘅根因分析好難百分百切割
+  「舊 bug 殘留」定係「新代碼本身有 bug」，證據鏈俾自己污染咗（見
+  `STREAM-LOCKSCREEN-STOP-ROOTCAUSE-2026-08-12.md`）。有排期嘅串流部署要嘛喺 Eric
+  開始測試前做完，要嘛等佢話完成先做，唔好一路改一路等佢試（除非佢明確話呢個
+  session 係「一路改一路試」）。
 
 ### 2.4 資料庫
 

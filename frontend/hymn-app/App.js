@@ -924,6 +924,26 @@ function PlayerProvider({ children }) {
   const stuckEndTicksRef = useRef(0);
   const midStallTicksRef = useRef(0);
   const midStallNudgedRef = useRef(false);
+  // STREAM-LOCKSCREEN-STOP-ROOTCAUSE-2026-08-12 —— 上面兩個 watchdog(track-end/
+  // mid-stream stall)淨係喺 native state 聲稱 `Playing` 先會觸發(下面
+  // `claimsActive` 個 gate)。但 2026-08-12 真機撞到嘅「鎖屏播幾首歌後 widget
+  // 完全消失」,backend log 顯示係一輪典型 AVPlayer stalling-retry-storm 訊號
+  // (同一首歌短短15秒內30幾個 range request)——呢種卡法 native state 老實報
+  // 緊 `Buffering`(唔係假扮 Playing 嗰種),所以兩個現存 watchdog 一個都唔會
+  // 出手,一直卡到 iOS 見「冇真正出緊聲」自己收返背景執行權(呢個正正解釋
+  // 點解個 widget 會成個消失,唔淨係停頓——`UIBackgroundModes:audio` 嘅背景權
+  // 前提係要真係播緊嘢,永久 Buffering 唔算)。
+  //
+  // 呢度加返一條獨立分支頂呢個缺口:淨係計「聲稱 Buffering」嘅連續秒數(唔靠
+  // position 郁唔郁——啱啱起播/冷 resolve 嗰陣 position 本身就係 0,唔可以當
+  // stall 訊號)。門檻要夠鬆,唔好同正常冷 resolve(實測最壞 ~11s)撞埋:第一次
+  // 15 秒先試軟踢一腳(唔 seek,單純再 play() 逼佢重新嘗試,同 mid-stream stall
+  // 嗰套「唔知邊度卡死就唔好亂 seek」原則一致);再 15 秒仲係 Buffering 就當
+  // 呢首歌/呢段串流救唔返,跌落去同 handleStuckTrackEnd 一樣嘅 skip/repeat 邏輯。
+  const bufferingStuckTicksRef = useRef(0);
+  const bufferingNudgedRef = useRef(false);
+  const BUFFERING_STUCK_NUDGE_TICKS = 15;
+  const BUFFERING_STUCK_SKIP_TICKS = 15;
   const lastPollPositionRef = useRef(-1);
   const handleStuckTrackEnd = useCallback(async () => {
     try {
@@ -977,11 +997,33 @@ function PlayerProvider({ children }) {
     }
   }, [handleStuckTrackEnd]);
 
-  // 新歌一上場,舊歌嗰個「已經nudge過」flag要reset,唔好累到新歌一開波就
+  // STREAM-LOCKSCREEN-STOP-ROOTCAUSE-2026-08-12 —— 「聲稱 Buffering 太耐冇轉」
+  // 嘅復原:第一次淨係再 play() 軟踢一腳(唔 seek——呢首歌可能仲未真正播過
+  // 一格,冇一個「已知安全」嘅位可以 seek 去);踢完都仲係卡就當救唔返,跌落去
+  // 同 track-end 一樣嘅 skip/repeat 邏輯(唔好一直卡喺同一首歌等 iOS 自己收
+  // 背景權)。
+  const handleBufferingStuck = useCallback(async () => {
+    try {
+      if (!bufferingNudgedRef.current) {
+        bufferingNudgedRef.current = true;
+        console.warn('[player] stuck-in-buffering detected — nudging play()');
+        await TrackPlayer.play().catch(() => {});
+        return;
+      }
+      console.warn('[player] stuck-in-buffering persists after nudge — treating as unrecoverable, skipping');
+      await handleStuckTrackEnd();
+    } catch (e) {
+      console.warn('[player] stuck-in-buffering recovery failed:', e?.message || e);
+    }
+  }, [handleStuckTrackEnd]);
+
+  // 新歌一上場,舊歌嗰啲「已經nudge過」flag要reset,唔好累到新歌一開波就
   // 當自己已經nudge失敗一次。
   useEffect(() => {
     midStallNudgedRef.current = false;
     midStallTicksRef.current = 0;
+    bufferingNudgedRef.current = false;
+    bufferingStuckTicksRef.current = 0;
   }, [currentQueueIndex]);
 
   // Progress — poll TrackPlayer.getProgress() directly instead of useProgress hook
@@ -1034,6 +1076,25 @@ function PlayerProvider({ children }) {
               stuckEndTicksRef.current = 0;
               midStallTicksRef.current = 0;
             }
+
+            // STREAM-LOCKSCREEN-STOP-ROOTCAUSE-2026-08-12 —— 獨立於上面嗰個
+            // `claimsActive`(Playing-only)分支:淨係計「聲稱 Buffering」嘅
+            // 連續秒數,唔睇 position 郁唔郁(啱啱起播/冷 resolve position 本身
+            // 就係 0,唔可以當停頓訊號)。呢個分支專門頂「native 老實報緊
+            // Buffering,但其實卡喺 retry storm 永遠出唔到嚟」嗰種缺口——上面
+            // 兩個 watchdog 淨係 Playing 先觸發,呢種情況一個都唔會出手。
+            if (trackStateRef.current === TPState.Buffering) {
+              bufferingStuckTicksRef.current += 1;
+              if (!bufferingNudgedRef.current && bufferingStuckTicksRef.current >= BUFFERING_STUCK_NUDGE_TICKS) {
+                bufferingStuckTicksRef.current = 0;
+                handleBufferingStuck();
+              } else if (bufferingNudgedRef.current && bufferingStuckTicksRef.current >= BUFFERING_STUCK_SKIP_TICKS) {
+                bufferingStuckTicksRef.current = 0;
+                handleBufferingStuck();
+              }
+            } else {
+              bufferingStuckTicksRef.current = 0;
+            }
           }
         } catch (e) {
           // TrackPlayer not ready yet, skip
@@ -1044,7 +1105,7 @@ function PlayerProvider({ children }) {
     poll();
 
     return () => { mounted = false; };
-  }, [queueReady, handleStuckTrackEnd, handleMidStreamStall]);
+  }, [queueReady, handleStuckTrackEnd, handleMidStreamStall, handleBufferingStuck]);
 
   // Poll player state as well
   useEffect(() => {

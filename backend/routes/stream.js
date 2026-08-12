@@ -250,7 +250,13 @@ export default function streamRoutes(getDb) {
           try { await rest.body?.cancel?.(); } catch (_) {}
         } catch (_) { /* 落返去下面直接收尾,buffer 都已經去到用家手上 */ }
       }
-      finishLog(200);
+      // 2026-08-12 覆查 STREAM-LOCKSCREEN-STOP 事件時揪出:呢度一直硬寫死
+      // finishLog(200),但 clientRange 分支上面明明 `res.status(206)`——即係
+      // 90% 嘅正常 iOS ranged 請求全部俾呢個 fast-path 錯 log 做「200」。
+      // 診斷嗰輪一度誤導咗自己(以為撞到「AVFoundation 唔帶 Range」嘅離奇案
+      // 例,其實淨係 log 講大話,實際response一直都啱)。改用返 res.statusCode
+      // 真實反映出去嗰個 status,唔好再靠估。
+      finishLog(res.statusCode);
       return res.end();
     }
 
