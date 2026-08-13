@@ -384,7 +384,7 @@ function PlayerProvider({ children }) {
       // seeking right after play() left the player stalled at 0:00 (the queue
       // was correct but playback sat paused).
       if (position > 1) { try { await TrackPlayer.seekTo(position); } catch (_) {} }
-      if (wasPlaying) { try { await TrackPlayer.play(); } catch (_) {} }
+      if (wasPlaying) { expectPlayingRef.current = true; try { await TrackPlayer.play(); } catch (_) {} }
       setIsShuffled(!isShuffledRef.current);
     } catch (e) {
       console.warn('toggleShuffle error:', e?.message || e);
@@ -407,6 +407,13 @@ function PlayerProvider({ children }) {
   const repeatModeRef = useRef(0);
   const isShuffledRef = useRef(false);
   const errorSkipCountRef = useRef(0); // §3.7 — consecutive PlaybackError count
+  // STREAM-LOCKSCREEN-FREEZE-OPUS5-2026-08-13 D2 —— 「呢個app自己有冇主動叫過
+  // pause()」嘅意圖旗標。淨係covers呢個file入面嘅pause()/play() call site(§4.4
+  // 揪出嘅native quiet-shutoff聽`Event.PlaybackPlayWhenReadyChanged`要靠呢支
+  // flag分辨「我哋自己想暫停」定「native靜靜哋熄咗」)。⚠️已知缺口:
+  // track-player-service.js嘅RemoteDuck permanent:true分支唔會經呢度、亦冇
+  // set呢支flag——如果第時喺嗰個獨立service context都要對呢個flag,要另外接駁。
+  const expectPlayingRef = useRef(false);
   // BG-PLAYBACK-STOPS-PLAN Fix A — 記住上次 warmIds() 暖過嘅 id 串,防止連環
   // 換歌/撳「下一首」狂 POST /warm(同一組 3 首唔會重覆 call)。
   const lastWarmedKeyRef = useRef('');
@@ -805,6 +812,7 @@ function PlayerProvider({ children }) {
       if (!isBackground) {
         // BUG2(d)P0 — 舊門檻 5 太遲先出聲,而家 3 次連續失敗就出（Eric 要求 2–3）。
         if (errorSkipCountRef.current >= 3) {
+          expectPlayingRef.current = false; // D2 — 呢個係我哋主動叫嘅pause,唔想俾D2扣返play()
           await TrackPlayer.pause().catch(() => {});
           Alert.alert('播放中斷', '連續幾首歌都載入唔到，請檢查網絡或者稍後再試');
           errorSkipCountRef.current = 0;
@@ -831,6 +839,7 @@ function PlayerProvider({ children }) {
       // 嘅兩倍(「背景寬鬆啲」目的達到)但唔會拖到以為死機。前台門檻 3 維持
       // 不變(Eric 2026-07-29 拍板,唔准郁)。
       if (errorSkipCountRef.current >= 6) {
+        expectPlayingRef.current = false; // D2 — 呢個係我哋主動叫嘅pause,唔想俾D2扣返play()
         await TrackPlayer.pause().catch(() => {});
         errorSkipCountRef.current = 0;
         pendingPlaybackNoticeRef.current = '背景播放中斷：連續多首歌載入唔到，已暫停';
@@ -839,10 +848,41 @@ function PlayerProvider({ children }) {
       try { await TrackPlayer.skipToNext(); } catch (e) { /* queue tail, repeat off — nothing to skip to */ }
     });
 
+    // STREAM-LOCKSCREEN-FREEZE-OPUS5-2026-08-13 D2 —— §4.4 揪出嘅缺口:native
+    // 喺 AVPlayer 因為藍牙斷開/其他外部原因跌落 .paused 嗰陣,會靜靜哋將
+    // playWhenReady 熄咗但**唔改 state**(JS 見到嘅 state 仲係過時嘅
+    // Playing),之後冇聲 → iOS suspend → 所有 JS watchdog 一齊死。呢個
+    // event(RNTrackPlayer.swift:44 player.event.playWhenReadyChange)係
+    // 目前為止**唯一一條喺 suspend 之前、JS 仲行得郁嗰陣就收到嘅訊號**。
+    //
+    // ⚠️ 呢個係止血,唔係根治,亦唔保證100%攔得住:
+    // (a) 淨係喺 process 仲未俾 suspend、event 仲有機會 fire 到 JS 嗰個窗口先
+    //     有用——如果 native 熄咗 playWhenReady 之後好快就直接 suspend(冇畀
+    //     event 機會 round-trip 到 JS),呢度一樣救唔到,同其他 JS watchdog
+    //     結構性缺陷一樣。
+    // (b) expectPlayingRef 淨係 cover 呢個 file(App.js)入面嘅 pause()/play()
+    //     call site——track-player-service.js 嘅 RemoteDuck permanent:true
+    //     分支(用戶接聽電話等唔應該恢復嘅情況)冇 set 呢支 flag,理論上可能
+    //     被呢度誤判做「未預期」而錯誤咁再 play() 番。呢個 race 未實測過。
+    const unsubscribePlayWhenReady = TrackPlayer.addEventListener(TPEvent.PlaybackPlayWhenReadyChanged, (event) => {
+      try {
+        logDiag('playWhenReadyChanged', {
+          appState: appStateRef.current,
+          trackState: trackStateRef.current,
+          detail: `playWhenReady=${event?.playWhenReady} expected=${expectPlayingRef.current}`,
+        });
+        if (event?.playWhenReady === false && expectPlayingRef.current === true) {
+          console.warn('[player] playWhenReady quietly turned off unexpectedly — resuming');
+          TrackPlayer.play().catch(() => {});
+        }
+      } catch (_) {}
+    });
+
     return () => {
       unsubscribe.remove();
       unsubscribeTrack.remove();
       unsubscribeError.remove();
+      unsubscribePlayWhenReady.remove();
     };
   }, [queueReady]);
 
@@ -1030,6 +1070,7 @@ function PlayerProvider({ children }) {
       if (repeatModeRef.current === 2) {
         // repeat-one:native 冇自動重播(上游 #1995 講嘅正正係呢個場景),手動
         // 由頭嚟過。
+        expectPlayingRef.current = true;
         await TrackPlayer.seekTo(0);
         await TrackPlayer.play();
         return;
@@ -1042,10 +1083,12 @@ function PlayerProvider({ children }) {
         // 見 handleNextTrack() 嗰句一樣嘅原因(SwiftAudioEx QueuedAudioPlayer.next()
         // 冇 playWhenReady:true,單靠佢自己嗰套 preserve-existing-flag 邏輯響呢個
         // 卡死場景未必信得過)——明文再叫一次 play() 逼佢真係郁,唔淨係靠估。
+        expectPlayingRef.current = true;
         await TrackPlayer.play().catch(() => {});
       } else {
         // 成個 queue 真係播晒——native 卡住嘅「播放緊」係假嘅,強制歸位到
         // 「已停」,UI/鎖屏至會反映返實況。
+        expectPlayingRef.current = false; // D2 — 我哋主動叫嘅pause
         await TrackPlayer.pause().catch(() => {});
         setTrackState(TPState.Paused);
       }
@@ -1066,6 +1109,7 @@ function PlayerProvider({ children }) {
         midStallNudgedRef.current = true;
         const pos = lastPollPositionRef.current;
         console.warn('[player] mid-stream stall detected @', pos, '— nudging seek+play');
+        expectPlayingRef.current = true;
         await TrackPlayer.seekTo(Math.max(0, pos + 0.3));
         await TrackPlayer.play().catch(() => {});
         return;
@@ -1088,6 +1132,7 @@ function PlayerProvider({ children }) {
       if (!bufferingNudgedRef.current) {
         bufferingNudgedRef.current = true;
         console.warn('[player] stuck-in-buffering detected — nudging play()');
+        expectPlayingRef.current = true;
         await TrackPlayer.play().catch(() => {});
         return;
       }
@@ -1104,6 +1149,7 @@ function PlayerProvider({ children }) {
       const isBackground = appStateRef.current !== 'active';
       const threshold = isBackground ? 6 : 3;
       if (errorSkipCountRef.current >= threshold) {
+        expectPlayingRef.current = false; // D2 — 我哋主動叫嘅pause
         await TrackPlayer.pause().catch(() => {});
         errorSkipCountRef.current = 0;
         if (isBackground) {
@@ -1470,6 +1516,7 @@ function PlayerProvider({ children }) {
       await TrackPlayer.reset();
       await TrackPlayer.add(finalList.map(toTrack));
       if (startIndex > 0) await TrackPlayer.skip(startIndex);
+      expectPlayingRef.current = true;
       await TrackPlayer.play();
       // §3b:起播後預熱隊列下 3 首 → 自動接續 / 撳「下一首」永遠 warm。
       warmIds(finalList.slice(startIndex + 1, startIndex + 4).map((s) => s.id));
@@ -1484,9 +1531,11 @@ function PlayerProvider({ children }) {
   }
 
   async function cmd_play() {
+    expectPlayingRef.current = true; // D2 — 用戶自己撳play
     await TrackPlayer.play();
   }
   async function cmd_pause() {
+    expectPlayingRef.current = false; // D2 — 用戶自己撳pause,呢個係最主要嗰個「唔好嗌醒」訊號
     await TrackPlayer.pause();
   }
   function togglePlayPause() {
@@ -1499,6 +1548,7 @@ function PlayerProvider({ children }) {
     if (typeof idx !== 'number' || idx < 0) return;
     try {
       await TrackPlayer.skip(idx);
+      expectPlayingRef.current = true;
       await TrackPlayer.play();
     } catch (e) {
       console.warn('skipToQueueIndex error:', e.message || e);
@@ -1549,11 +1599,13 @@ function PlayerProvider({ children }) {
   async function handleNextTrack() {
     try {
       await TrackPlayer.skipToNext();
+      expectPlayingRef.current = true;
       await TrackPlayer.play().catch(() => {});
     } catch (e) {
       // Queue tail with repeat off — matches notification-bar behavior (no-op)
       if (repeatModeRef.current === 1) {
         await TrackPlayer.skip(0);
+        expectPlayingRef.current = true;
         await TrackPlayer.play();
       }
     }

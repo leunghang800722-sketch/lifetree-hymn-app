@@ -34,6 +34,30 @@ function sameFormat(urlA, urlB) {
   }
 }
 
+// LOCKSCREEN-FREEZE-LOAD-STALL-HARDENING(2026-08-13)—— id=6事件(見
+// STREAM-LOCKSCREEN-FREEZE-OPUS5-2026-08-13.md §3.1)實測:轉歌後撞403,
+// 原本嘅固定 2 秒 backoff 先 bust+重 resolve,呢 2 秒本身就係計落用戶感知
+// 嘅斷聲時間入面。但固定 2 秒係為咗頂「即刻重試好大機會撞返同一個節流窗口」
+// (2026-07-29 STREAM-403-FGS-CRASH-PLAN §1.4 嘅實測數字)——唔可以盲目縮短,
+// 唔係會重新引入嗰個問題。做法:淨係「呢個 youtubeId 最近未撞過失敗」嘅單次
+// 偶發情況先用短 backoff(800ms),如果短時間內同一條片再撞多次,升級返做
+// 完整 2 秒(保住原本已經用真實 incident 數據調教過嘅保護)。
+const RECENT_FAIL_WINDOW_MS = 30 * 1000;
+const recentUpstreamFail = new Map(); // youtubeId -> last-fail timestamp(ms)
+function backoffMsFor(youtubeId) {
+  const now = Date.now();
+  const last = recentUpstreamFail.get(youtubeId);
+  recentUpstreamFail.set(youtubeId, now);
+  // 順手清舊 entry,唔畀個 Map 長期accumulate(呢類失敗罕見,唔使掃描門檻)。
+  if (recentUpstreamFail.size > 200) {
+    for (const [k, ts] of recentUpstreamFail) {
+      if (now - ts > RECENT_FAIL_WINDOW_MS) recentUpstreamFail.delete(k);
+    }
+  }
+  if (last && now - last < RECENT_FAIL_WINDOW_MS) return 2000; // 30秒內第二次—當係持續節流,用返原本嘅2秒
+  return 800; // 30秒內第一次——當係偶發,短backoff
+}
+
 export default function streamRoutes(getDb) {
   const router = Router();
 
@@ -326,15 +350,21 @@ export default function streamRoutes(getDb) {
 
     if (!upstream) {
       // 2026-07-29 STREAM-403-FGS-CRASH-PLAN §1.4:即刻重試好大機會撞返同一個
-      // 節流窗口(prod log 7 次失敗 5 次都係 403 retry 中招)。加 2 秒 backoff
-      // 先至 bust+重 resolve,等節流窗口過返先。已經 abort 咗嘅客戶端唔使陪佢
-      // 等(慳返 2 秒),但 bust+resolve 本身唔可以因為 abort 而唔做——
-      // resolveAudioUrl 唔綁 controller,resolve 完結果照落 cache,app 端嗰下
-      // TrackPlayer.retry() 返嚟就食到 warm cache,呢個接力係而家架構本身嘅
-      // 優點,唔好破壞(即係:client abort 之後唔好 short-circuit 個 resolve)。
+      // 節流窗口(prod log 7 次失敗 5 次都係 403 retry 中招)。加 backoff 先至
+      // bust+重 resolve,等節流窗口過返先。已經 abort 咗嘅客戶端唔使陪佢等,
+      // 但 bust+resolve 本身唔可以因為 abort 而唔做——resolveAudioUrl 唔綁
+      // controller,resolve 完結果照落 cache,app 端嗰下 TrackPlayer.retry()
+      // 返嚟就食到 warm cache,呢個接力係而家架構本身嘅優點,唔好破壞(即係:
+      // client abort 之後唔好 short-circuit 個 resolve)。
+      //
+      // LOCKSCREEN-FREEZE-LOAD-STALL-HARDENING(2026-08-13)—— backoffMsFor()
+      // 淨係喺呢首片30秒內未撞過失敗(偶發403)先用短嘅800ms,收窄用戶感知
+      // 嘅斷聲時間;30秒內第二次先升級返完整2秒(保住原本用真實incident
+      // 數據調教過嘅anti-storm保護,唔盲目縮短)。
       if (!controller.signal.aborted) {
+        const backoffMs = backoffMsFor(hymn.youtube_id);
         await new Promise((resolve) => {
-          const t = setTimeout(resolve, 2000);
+          const t = setTimeout(resolve, backoffMs);
           controller.signal.addEventListener('abort', () => { clearTimeout(t); resolve(); }, { once: true });
         });
       }

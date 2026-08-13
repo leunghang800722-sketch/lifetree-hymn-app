@@ -337,11 +337,34 @@ function withWarmLock(fn) {
 // 存埋佢係為咗喺 getBufferedChunk() 度可以核對「而家播放請求攞到嘅 url 係咪
 // 同warm嗰陣一樣」,唔一樣就唔用(避免罕見情況下 URL 被 bust 重 resolve 換咗
 // 唔同 format/itag,叉埋舊 buffer 落新 stream 會爛檔)。
+// LOCKSCREEN-FREEZE-LOAD-STALL-HARDENING(2026-08-13,Eric假設查證後追加)——
+// id=6/id=44兩單真.凍結事件,查落原始log都喺轉歌後嗰15-25秒窗口撞到YouTube
+// 403(見STREAM-LOCKSCREEN-FREEZE-OPUS5-2026-08-13.md §3)。之前呢個head-fetch
+// 一撞非2xx就直接放棄、靜靜哋行返冷路徑("熱身失敗唔緊要")——但warmBuffer()
+// 通常喺client真正播到嗰首歌之前幾分鐘/幾首歌就已經call緊(§3b滾動預熱),
+// 呢個階段完全冇用戶等緊,加一次retry零代價,可以攔截住呢種一次性403,等
+// client真正播到嗰陣呢首歌已經係暖㗎。唔喺呢度加無限重試/長backoff——單次
+// 短delay就夠(呢層本身已經有前置嘅429全局冷卻,唔會同嗰層打交)。
+const WARM_RETRY_DELAY_MS = 1200;
+async function fetchHeadWithRetry(url) {
+  for (let attempt = 0; attempt < 2; attempt++) {
+    try {
+      const r = await fetch(url, { method: 'GET', headers: { Range: `bytes=0-${WARM_CAP_BYTES - 1}` } });
+      if (r.status === 200 || r.status === 206) return r;
+      try { await r.body?.cancel?.(); } catch (_) {}
+      if (attempt === 0) await new Promise((resolve) => setTimeout(resolve, WARM_RETRY_DELAY_MS));
+    } catch (_) {
+      if (attempt === 0) await new Promise((resolve) => setTimeout(resolve, WARM_RETRY_DELAY_MS));
+    }
+  }
+  return null;
+}
+
 export async function warmBuffer(youtubeId, url) {
   return withWarmLock(async () => {
     try {
-      const r = await fetch(url, { method: 'GET', headers: { Range: `bytes=0-${WARM_CAP_BYTES - 1}` } });
-      if (r.status !== 200 && r.status !== 206) { try { await r.body?.cancel?.(); } catch (_) {} return; }
+      const r = await fetchHeadWithRetry(url);
+      if (!r) return;
       const buf = Buffer.from(await r.arrayBuffer());
       // STREAM-MIDTRACK-SILENCE-ROOTCAUSE-2026-08-12:呢截頭一定包住成個
       // moov(mvhd/tkhd/mdhd 實測喺 632 bytes 之內),喺存入 cache 之前就地修好,
