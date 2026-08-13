@@ -674,6 +674,11 @@ function PlayerProvider({ children }) {
       try {
         // v3: event.state = enum; v4: event.state = object with .state
         const val = typeof event?.state === 'object' ? event.state.state : event.state;
+        // STREAM-LOCKSCREEN-FREEZE-OPUS5-2026-08-13 D1 —— Opus5 揪出 §4.3 覆蓋
+        // 矩陣有洞(Paused/Ready/Loading/Ended冇watchdog管),但完全冇log過player
+        // 最後停喺邊個state。呢度記低轉換(trackStateRef.current呢一刻仲係轉之前
+        // 嗰個值,setTrackState(val)要等render後嘅sync effect先追上)。
+        logDiag('stateChange', { appState: appStateRef.current, detail: `from=${trackStateRef.current} to=${val}` });
         setTrackState(val);
         // playQueue() (§3.2) leaves isLoading true until audio is actually
         // audible, rather than clearing it right after TrackPlayer.play()
@@ -999,6 +1004,14 @@ function PlayerProvider({ children }) {
   // 唔會再同正常(雖然好慢)嘅 resolve 撞埋。
   const BUFFERING_STUCK_SKIP_TICKS = 30;
   const lastPollPositionRef = useRef(-1);
+  // STREAM-LOCKSCREEN-FREEZE-OPUS5-2026-08-13 D1 —— Opus5 核實過RN喺background
+  // 唔會節流JS timer(CADisplayLink轉NSTimer照跑),真正停係iOS成個process
+  // suspend咗。呢個poll loop理論上應該全速1秒一tick,如果兩個tick之間嘅
+  // wall-clock時間爆錶,即係中間成個process俾suspend咗(假說A);如果一直都係
+  // 1秒一tick、冇drift,但state卡住唔郁,就係跌落冇watchdog管嘅state(假說B)。
+  // 一個數字就分到,唔使Xcode/device log。
+  const lastTickTsRef = useRef(Date.now());
+  const driftLogRef = useRef([]); // 本地ring buffer,封頂20條
   const handleStuckTrackEnd = useCallback(async () => {
     try {
       const idx0 = currentQueueIndexRef.current ?? 0;
@@ -1123,6 +1136,21 @@ function PlayerProvider({ children }) {
 
     async function poll() {
       while (mounted) {
+        // STREAM-LOCKSCREEN-FREEZE-OPUS5-2026-08-13 D1 —— drift探測要喺
+        // try/catch外面、喺getProgress()之前計,先至唔會受native call失敗影響,
+        // 亦先至量到嘅係「呢個poll loop本身隔咗幾耐先再行到」,唔係其他嘢。
+        const nowTs = Date.now();
+        const drift = nowTs - lastTickTsRef.current - 1000;
+        lastTickTsRef.current = nowTs;
+        if (drift > 5000) {
+          driftLogRef.current.push({ ts: nowTs, driftMs: drift });
+          if (driftLogRef.current.length > 20) driftLogRef.current.shift();
+          logDiag('wallClockDrift', {
+            appState: appStateRef.current,
+            trackState: trackStateRef.current,
+            detail: `driftMs=${drift}`,
+          });
+        }
         try {
           const progress = await TrackPlayer.getProgress();
           if (mounted) {
