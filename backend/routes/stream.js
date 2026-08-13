@@ -201,12 +201,27 @@ export default function streamRoutes(getDb) {
     // content-length,理論上唔會發生但要防)就唔知真正檔案總長,寧願行返冷路徑都好過
     // 報錯個 total(會累到 AVFoundation 以為成首歌得 256KB 長)。!clientRange 分支
     // 本身冇 Content-Range 呢個風險,維持原本行為。
-    const buffered = (bufferedChunk && rangeStart < bufferedChunk.buf.length && (!clientRange || bufferedChunk.totalLength))
-      ? bufferedChunk : null;
+    // NEXT-TRACK-LATENCY 2026-08-12 追加:bufferCache 而家除咗頭截(buf)仲可能有
+    // 尾截(tailBuf/tailOffset,見 resolveAudio.js warmBuffer)——AVFoundation
+    // 一定會另開一條尾巴 range 連線讀 duration/index,舊代碼淨係識睇頭截,呢類
+    // 請求次次都跌落冷路徑。呢度揀返「呢個 rangeStart 落喺邊一截」,揀到用揀到
+    // 嗰截嘅記憶體數據,兩截都冚唔到先真係行冷路徑(例如大過 12MB cap 嘅檔,
+    // 中段嗰截冇快取,屬已知可接受嘅缺口)。
+    const bufSource = (() => {
+      if (!bufferedChunk || (clientRange && !bufferedChunk.totalLength)) return null;
+      if (rangeStart < bufferedChunk.buf.length) return { arr: bufferedChunk.buf, base: 0 };
+      if (bufferedChunk.tailBuf && bufferedChunk.tailOffset != null &&
+          rangeStart >= bufferedChunk.tailOffset && rangeStart < bufferedChunk.tailOffset + bufferedChunk.tailBuf.length) {
+        return { arr: bufferedChunk.tailBuf, base: bufferedChunk.tailOffset };
+      }
+      return null;
+    })();
+    const buffered = bufSource ? bufferedChunk : null;
     if (buffered) {
-      const { buf, totalLength, contentType } = buffered;
-      const total = totalLength || buf.length;
-      // ⚠️ sliceEnd 淨係「呢刻由記憶體即寫幾多」嘅邊界(俾 buf.subarray 用)。
+      const { totalLength, contentType } = buffered;
+      const { arr, base } = bufSource;
+      const total = totalLength || (base + arr.length);
+      // ⚠️ sliceEnd 淨係「呢刻由記憶體即寫幾多」嘅邊界(俾 subarray 用)。
       // Content-Range 一定要報成個 response *最終*會送嘅範圍(buffered prefix +
       // 之後 pipe 落嚟嘅 live 續集),唔可以淨係報 buffered 嗰截——如果得
       // sliceEnd-1 就報做 range 上限,但之後仲有 wantsBeyondBuffer 續 pipe
@@ -216,8 +231,8 @@ export default function streamRoutes(getDb) {
       const declaredEnd = (parsedRange && parsedRange.end != null)
         ? Math.min(parsedRange.end, total - 1)
         : total - 1;
-      const sliceEnd = Math.min(declaredEnd + 1, buf.length);
-      const chunk = buf.subarray(rangeStart, sliceEnd);
+      const sliceEndAbs = Math.min(declaredEnd + 1, base + arr.length);
+      const chunk = arr.subarray(rangeStart - base, sliceEndAbs - base);
 
       res.setHeader('Content-Type', contentType || 'audio/mp4');
       res.setHeader('Accept-Ranges', 'bytes');
@@ -232,15 +247,15 @@ export default function streamRoutes(getDb) {
       res.write(chunk);
 
       // 呢個 range 想要嘅嘢係咪已經全部喺 buffer 入面?(例如 AVFoundation
-      // 成日發嘅細 range,好似 bytes=49152-65535,成個 request 都喺 256KB
+      // 成日發嘅細 range,好似 bytes=49152-65535,成個 request 都喺 buffer
       // 之內)——係就唔使開任何新連線,直接收工。
       const wantsBeyondBuffer = clientRange
-        ? (parsedRange.end == null || parsedRange.end + 1 > buf.length) && buf.length < total
-        : (totalLength && buf.length < totalLength);
+        ? (parsedRange.end == null || parsedRange.end + 1 > base + arr.length) && (base + arr.length) < total
+        : (totalLength && (base + arr.length) < totalLength);
       if (wantsBeyondBuffer) {
         try {
           const restRangeEnd = (parsedRange && parsedRange.end != null) ? `${parsedRange.end}` : '';
-          const rest = await fetch(url, { method: 'GET', headers: { Range: `bytes=${buf.length}-${restRangeEnd}` }, signal: controller.signal });
+          const rest = await fetch(url, { method: 'GET', headers: { Range: `bytes=${base + arr.length}-${restRangeEnd}` }, signal: controller.signal });
           if ((rest.status === 200 || rest.status === 206) && rest.body) {
             const restBody = Readable.fromWeb(rest.body);
             restBody.on('error', () => { if (!res.writableEnded) res.destroy(); });
