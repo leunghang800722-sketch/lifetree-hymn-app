@@ -3807,3 +3807,446 @@ Hillsong UNITED等);(2)如果呢批都掃完,剩低嘅基本上就係死症殘�
 **全庫最終狀態:** verified 1384→1549(+165),draft 231(扣除今日移走171,加返背景job其他語種新產出)。
 
 **WebSearch用量:0**(全程靠OCR原文本身質素夠、經文引用交叉印證,冇動用外部搜尋)。**未撞content filter,冇DB鎖問題,冇同其他session寫入衝突。**
+
+---
+
+## 2026-08-11 10:00 — 每日自動歌詞校對 routine(scheduled task `lyrics-daily-proofread`)
+
+**背景:**接手嘅時候 draft 池已經係今日凌晨「國語隊自主複核衝刺」(01:37 entry)剩低嘅 **231 首「queue exhausted」殘餘**——即係嗰輪逐首人手判斷「唔夠信心/OCR太散/語言標錯/medley」跳過嘅個案,唔係新鮮 draft。
+
+**做法:** `reviewLyrics.js --export`(231 首)+ `alignLyrics.js --all` 攞對齊參考,揀 export 原生順序(`lyrics_checked_at ASC`)頭 160 首做兩批(80+80)。
+
+**Batch 1+2 分類:**
+- **非歌內容/合輯/純器樂/教學(19 首,{id,demote:true}):**
+  - 合輯/medley(8 首):209、260、261、389 已被前輪處理,今輪新揪出 **616**(Chris Tomlin Hits合輯)、**707**、**1644**、**3052**、**3054**、**3500**、**3522**、**5065**(多首歌名並列 medley,同前輪707/1644/3500判斷一致)
+  - 純器樂/冇歌詞可能(讚美之泉安靜系列/鋼琴演奏系列/弦樂四重奏、CantonHymn Piano Cover):**739、2987、2988、5690、5691、5803、5804、5810、5925**
+  - 全場錄影/感言非歌:**1722**(Session Replay 全場)、**1999**(頒獎禮後有感——講感想唔係歌)
+- **真歌但0 verified:** 逐首讀 raw draft + align displayText,發現呢批殘餘(悅雨音樂GRM phone mic錄音、U-Fire GYRO、玻璃海、CantonHymn cover等 indie/live 錄音為主)嘅 whisper/OCR 轉錄嚴重破碎(大量同句多次重複、每次都唔同錯法),唔似前面幾輪咁「一睇就啱」。用咗 3 次 WebSearch 交叉核對(約書亞樂團《牽手》、《剛強壯膽》、原始和聲《願祢愛覆蓋我》)拎到部分句子確認(例如「願祢智慧庇護我 我心會持守 天父口中的教誨」),但淨係攞到歌嘅片段唔係全首,信心唔夠去到「可以出街」嘅門檻,跟返「處理有困難就跳過留draft,唔好糾纏」嘅規矩,冇一首入 verified。
+
+**驗收:** 19 條 demote,`auditLyricsBatch.js` 全過(0 reject)。
+
+**Apply:** `reviewLyrics.js --apply` 一次過,0 verified / 19 demote / 0 skip,DB 鎖冇撞。直接讀 DB 核實 19 個 id 嘅 `lyrics_checked_at` 已更新到今日、`lyrics_status='draft'`、`lyrics=NULL`(呢批本身已經係 draft,demote 嘅作用係推遲佢哋喺 FIFO queue 嘅優先度,唔會再日日排頭位)。
+
+**⛔ Deploy gate 煞停(非錯誤,係正常攔截):** `launchctl kickstart` 已被 gate 擋(符合預期),改行 `ops/deploy/backend-restart.sh --dry-run` 診斷,發現 HEAD 已經行咗過 approved SHA(`c9739d9`)—— 中間夾住 4 個未批准 commit(`373df8c`/`8f872fd`/`f05cb5a` album backfill + `13afc6f` docs),明顯係另一個併發 session(專輯回填工作)推嘅。**呢啲 commit 唔屬於呢個 routine 嘅範圍,冇資格幫佢哋 approve**,所以冇跑 `ops/deploy/approve.sh`,亦冇強行 restart。DB 寫入(19 demote)已經安全落咗 `hymns.db` 磁碟(直接讀 DB 核實過),但**行緊嘅 backend process 要等正常批准流程 restart 先會反映呢批改動**(對前端冇影響,因為呢 19 首本身就已經係 draft,前端 `lyrics` 一直都係 null)。API `/api/hymns` 抽驗步驟今日跳過(冇 restart,抽驗冇意義)。
+
+**DB 狀態:** draft 231→231(demote 唔改變 draft 數,因為呢 19 首本身已經係 draft)。verified 維持 1549(冇新增)。
+
+**Fable 5 抽查名單:** 今日 0 verified,冇名單可以抽。
+
+**異常:** Deploy gate 攔截(見上,非本 routine 引致,已按規矩唔強行 bypass)。冇 apply 失敗,audit script 正常行,冇同其他 session 撞 DB 鎖。
+
+---
+### 2026-08-11 流程更新:粵語歌詞複核加WebFetch分流(免計WebSearch 30次限額)
+
+Eric 拍板:粵語 team 複核期間發現 `cantonhymn.net`/`jesuslovesyou.online` 呢2個粵語詩歌歌詞庫結構穩定,要求優先用 WebFetch 直接對照,唔使計入原本 WebSearch「每日30次」自我節流。已改寫 SKILL.md(`~/.claude/scheduled-tasks/lyrics-daily-proofread/SKILL.md` 步驟2)同新增 memory `project-lyrics-cantonhymn-webfetch`。
+
+**新分流邏輯:**
+1. 粵語 low-confidence 真歌:先用歌名 grep `backend/data/lyrics-verify-cache/cantonhymn-title-url-index.tsv`(9994條 cantonhymn.net title→URL index,`node backend/scripts/updateCantonhymnIndex.js` 可重整)揾URL,揾到就 WebFetch `/song/<slug>/`(**URL尾必須有斜杠**,冇嘅話 redirect去首頁攞唔到內容)攞歌詞結構核對——呢步唔算入WebSearch限額。
+2. cantonhymn.net 個 `?s=` 站內搜尋對 WebFetch 冇用(JS render 睇唔到),唔好用,一定用本地 index grep。
+3. **jesuslovesyou.online 現時 WebFetch 攞唔到**(2026-08-11測試多個URL、http/https都係`unable to get local issuer certificate` TLS錯誤,係網站成體cert鏈問題,唔係單一頁面)——技術問題解決之前呢個源冇得用,要嗰度啲料就跳去下面WebSearch。
+4. index揾唔到/國語/兒童歌:fallback返WebSearch,跟返原本1首1次、30次/日節流。
+5. 版權紅線不變(HANDOFF.md §2.0):cantonhymn.net文字淨係核對,唔准成段照抄。
+
+**目的:** 粵語隊複核唔再俾30次/日額度卡住產量,理論上可以大手做完成個粵語 low-confidence 隊列。
+
+(嘗試send message去「歌詞複核-粵語team(接力)」session通知,但呢個session而家非running,send_message工具喺unattended session唔可用——留呢段log俾佢下次resume時睇到。)
+
+---
+### 2026-08-12 10:03 每日自動歌詞校對(scheduled task)
+
+**現況:** export 390 首 draft,`alignLyrics.js --all`(全庫,行咗約 3 分鐘)攞返 align report。Draft 入面 65 首 whisper/OCR 對齊 `confidence=auto-pass`(matchRate≥55%),324 首 low-confidence,1 首冇 timeline 對唔到。
+
+**第一批(65 首 auto-pass):** 逐首讀 align 嘅 `displayText`(已經係 whisper 時間軸做過段落級去重嘅版本),人手審:
+- **9 首 demote**(非歌/合輯,雖然 matchRate 夠但內容唔啱):id 260/261(「連續播放」/「十首連續播放」心靈舒壓組曲,顯示層證實係多首歌拼埋一齊)、389(晨禱詩歌推薦合輯,顯示層主題跳躍)、6427(HKACM「舞蹈教室」——內容係雙語跳舞教學指令,唔係歌詞)、8441(盛曉玫「幸福熱線」電台節目,內容係傾偈唔係唱歌)、4551(displayText 淨係得 credit 殘影,冇實質內容)、2682(displayText 得「MUSIC BOOKSTORE」重複 5 次,純雜訊)、8417(「Happiness Hotline」電台節目夾住讀經分享,經文附註全部係 credit 殘影)、8435(displayText 得「Clayy Music」,純雜訊)。
+- **7 首太多不確定嘅殘缺片段,跳過留 draft**(唔糾纏,唔靠估拼句):id 5432、5857(得 49 個 CJK 字,清完注定穿門檻)、5353、5319(得兩句副歌循環,冇 verse)、4124、7549、7641。
+- **1 首機械驗收 reject:** id 4374(ACM 兒歌,清完淨 34 個 CJK 字,穿 45 字門檻,留返 draft)。
+- **餘低 48 首校對後 verified**:主要係 OCR 逐字修正(常見錯字模式:称/标/杯→祢、戈→我、齋→齊、农星→晨星、酱台→醫治、耶和幸→耶和華等視覺相似字 OCR 誤認,逐個核對上文下理先改,唔識就照 OCR 原字唔亂估)、剷晒 credit/水印/URL 殘留、經文附註統一去重成「書卷 章:節」格式放尾。
+
+**重要發現 —— cantonhymn.net WebFetch 而家攞唔到歌詞(推翻 2026-08-11 個判斷):** 跟 SKILL.md 步驟試用 WebFetch 攞 `https://cantonhymn.net/song/<slug>/`(URL 尾有斜杠),結果 WebFetch 話頁面淨係得網站框架/版權聲明,冇歌詞內容。用 curl 起底確認:歌詞而家淨係喺頁面嘅 `og:description` meta tag 度得返頭 ~300 字(WordPress SEO 自動截斷),完整歌詞內文已經改成靠前端 JS/AJAX 先載入,靜態 HTML fetch 攞唔到——同 jesuslovesyou.online 而家嘅 TLS 死症一樣,cantonhymn.net 而家都要當「呢個源核對唔到」處理。試咗 5 個 CantonHymn 粵語 cover(同心高舉十架、祢是配得、10000 reasons、叫我抬起頭的神、默然愛我)全部一樣結果。**呢個發現推翻咗 2026-08-11 個「結構穩定」判斷,SKILL.md 步驟2嘅WebFetch分流指示而家對唔住現實,需要下次有人手覆核個網站係咪改咗結構(可能要用 browser render 先攞到,或者真係要登入)。** 今日冇再消耗 WebFetch 喺 cantonhymn.net 度,全部粵語 low-confidence 改行 WebSearch fallback。
+
+**第二批(低信心,揀高把握目標,用 WebSearch 核對結構):** 冇跟返「粵語專用 cantonhymn」路線(見上,行唔通),改為喺低信心隊列入面揀已知大機構(約書亞樂團/小羊詩歌)嘅單曲、draft 本身 OCR 已經夠靚嘅(bilingual 歌詞影片,逐句重複2-5次但每次文字都清晰,人手去重就得,唔使真係查 WebSearch)。校對 3 首:id 6619(永恆盼望 Eternal Hope)、1324(醫治這地 Heal Us O Lord,小羊詩歌)、6674(祂是笑臉幫助我的神 The Help of His Countenance,約書亞樂團,詩篇42-43底本)。三首都係逐句手動去重(bilingual 對句每 2 秒重複一次嘅 OCR 慣常 pattern),機械驗收全過。今日冇用 WebSearch(0/30)——留返俾之後 session。
+
+**驗收:** 兩批共 61 條,`auditLyricsBatch.js` 過 60 條、reject 1 條(id 4374 太薄)。
+
+**Apply:** 分兩次 `reviewLyrics.js --apply`。第一批:48 verified + 9 demote。第二批:3 verified。共 **51 首新 verified,9 首 demote**。DB 鎖冇撞。直接讀 DB 核實:draft 390→339(-51,啱數)、verified 1549→1600(+51)。
+
+**⛔ Deploy gate 煞停(非錯誤,係正常攔截,同 2026-08-11 個案一樣模式):** `launchctl kickstart -k` 已被 guard-bash 擋,改行 `ops/deploy/backend-restart.sh --dry-run` 診斷:approved backend SHA 係 `2bc1ce0`,但 HEAD 而家係 `01626cc`(中間夾住 1 個未批准 commit `fix(ios): mid-track playback stall`,睇 commit message 明顯係另一個 iOS session 推嘅,唔屬於呢個校對 routine 範圍)。**冇資格幫呢個 commit approve,冇跑 `approve.sh`,亦冇強行 restart。** DB 寫入(51 verified + 9 demote)已經安全落咗 `hymns.db` 磁碟(sqlite3 直接查證實)。**行緊嘅 backend process 要等正常批准流程 restart 先會反映呢批新歌詞**——API `/api/hymns` 抽驗步驟今日跳過(冇 restart,抽驗冇意義)。
+
+**Fable 5 抽查名單(今日 51 首 verified 隨機抽 8):**
+- 354 【中英字幕】活祭 小羊詩歌活祭專輯
+- 4428 Sons And Daughters - Dance Actions Video | Hillsong Kids
+- 5609 【全然美麗 Beautiful】官方歌詞版MV - 讚美之泉敬拜讚美 (11J)
+- 5862 【齊來讚美 Praise Your Holy Name】官方歌詞版MV - 讚美之泉敬拜讚美 (18)
+- 7008 大衛帳幕的榮耀【祢是萬事中最榮美 / You Are Most Beautiful】Official Lyric Video
+- 7333 【奇妙的愛 / What He Has Done For Me】官方歌詞MV - 約書亞樂團 ft. 璽恩 SiEnVanessa
+- 8442 榮耀歸神 平安給人 Glory to God Peace to Men 盛曉玫 Amy Sand 泥土音樂專輯：親密的朋友
+- 8456 承諾 Promise 盛曉玫 Amy Sand 泥土音樂專輯 5：信心
+
+**異常:** Deploy gate 攔截(見上,非本 routine 引致,已按規矩唔強行 bypass)。冇 apply 失敗,audit script 正常行,冇同其他 session 撞 DB 鎖。**建議跟進:** (1) cantonhymn.net WebFetch 失效需要人手覆核/改用 browser render;(2) 61 首之外仲有 278 首粵語 low-confidence(114 首)+國語/英文 low-confidence 未處理,留返下次 routine 或指定 session 用 WebSearch 額度慢慢做。
+
+---
+
+## 2026-08-12 (Opus 5 code session) — cantonhymn.net 歌詞來源改用公開 JSON API
+
+**背景:** 今朝每日校對 routine 報告 cantonhymn.net WebFetch 失效(頁面改咗 React 前端,靜態 HTML 淨係得 og:description 頭 ~300 字),推翻 8/11 拍板嘅「WebFetch 優先」policy。Eric 交由 Opus 5 自行判斷同落手改。
+
+**實測結果(唔係估):**
+1. 確認 WebFetch/curl 條路真係死咗——song 頁 body 淨係得 `<div id="parentSongSingleViewComponent">` 空殼 + `react_components/parentSongSingleView.js`。
+2. WordPress REST API(`/wp-json/wp/v2/`)冇用:`song` 唔係 registered post type,`posts?slug=` return `[]`。
+3. **拆個 React bundle 揾到佢自己個 endpoint:`GET /api/song-detail.php?slug=<slug>&songHierarchyType=parent|child`** —— 免登入、robots.txt 全開、返完整結構化歌詞 JSON,而且一次過連埋所有粵語翻譯版本(`otherRelatedSongs`)。8/12 報告話攞唔到嗰 5 首(同心高舉十架/祢是配得/10000 reasons/叫我抬起頭的神/默然愛我)全部攞返到完整歌詞。
+4. 連發 15 次:200 全中、每次 ~1.1 秒、冇 rate limit。**要帶瀏覽器 UA**(Cloudflare 擋預設 UA,python-urllib 直接 403,curl 就過)。
+5. `jesuslovesyou.online` **已經唔係歌詞網**:而家 return HTTP 204 + body「OK」(openresty)。唔係 8/11 判斷嘅 TLS cert 問題,係個網站冇咗。永久剔除。
+6. 順手揪到一個舊 bug:sitemap 除咗 `/song/`(原曲 9994)仲有 `/song-sub/`(粵語翻譯版 10472),舊 index 生成 script 淨係收 `/song/`,所以成半粵語 cover 歌名根本 grep 唔到。
+
+**落地嘅嘢:**
+- `backend/scripts/updateCantonhymnIndex.js` — 加收 `/song-sub/`,TSV 加 type 欄。index 9994 → **20466** 條。
+- `backend/scripts/cantonhymnLookup.js`(新) — 由 YouTube 原題自動拆片語 → grep index → 打 API → 印歌詞(預設剷走 `[C]` 和弦標記)+ 所有相關粵語版本。有本地 30 日 cache、parent/child 自動 fallback、match 唔係直中會出警告叫人對埋內容。
+- `.gitignore` 加 `backend/data/lyrics-verify-cache/`(第三方歌詞全文,版權上唔應該 commit)。
+- SKILL.md(`~/.claude/scheduled-tasks/lyrics-daily-proofread/`)步驟2 改晒;memory `project-lyrics-cantonhymn-webfetch` 重寫。
+
+**實測命中率:** 隨機抽 40 首粵語 draft(DB `lyrics_status='draft' AND lang='粵語'`,總數 119)—— **撞到 23 首(57%)、0 error**。miss 嗰啲多數係 cantonhymn 真係冇收錄(原創 demo/純音樂/preview/非歌內容)。
+中途量到嘅嘢:第一版配對規則 68% 但有明顯假陽性(短英文歌名「One」撞中「Milk&Honey」入面個 one、「讚美之泉」撞中頻道名),收緊之後(剷反方向 substring、純英文候選要 ≥6 字、加括號剝離)precision 靚咗好多。抽 8 首人手核對,配對嘅歌名全部啱;4-gram 覆蓋率低嗰啲係 OCR draft 本身係垃圾(例 id 3366 成篇「復活在我/復活在戰」亂碼),唔係配對錯。
+
+**對今晚衝刺嘅影響:** 粵語隊唔使再燒 WebSearch 30 次/日 額度,約 6 成粵語 low-confidence 可以直接攞可靠底本核對。
+
+---
+
+## 2026-08-12 18:2x-18:41 — 歌詞複核衝刺 Round 1(Eric 批准做到聽日10:00,唔使中途問)
+
+**背景:** Eric 指示即刻開始一輪衝刺,由今晚做到聽日 10:00,追近 278 首 low-confidence backlog(琴晚冇人派夜間衝刺+cantonhymn WebFetch 失效令今日進度落後於 180-220 首/日預期)。呢個 routine 唔等 cantonhymn 修復 session,中途撞到佢 commit(`5102edf`)先接手用。
+
+**做法:** `reviewLyrics.js --export`(339 首全庫 draft,唔淨係 daily 160 上限)+ `alignLyrics.js --all` 攞低信心分佈,按 artist vein 逐個掃(跟返之前幾晚嘅方法論):
+
+- **讚美之泉(91 首,國語)**:全掃完。20 verified(官方歌詞版MV 系列,OCR 錯字逐個修——`称→祢`/`找→我`等已知 pattern)、22 demote(舞蹈教室/音樂教室教學旁白非歌詞、鋼琴演奏/弦樂四重奏/安靜系列純器樂、DVD 現場錄影)、其餘 49 首(日語 SOP Kids Worship/韓語 Stream of Praise Korean Album 語言標錯、太薄/太散)留 draft 唔碰。
+- **約書亞樂團(22 首,國語)**:12 verified(官方歌詞MV/KALA版,質素高)、1 demote(7075「簽名會直擊」訪談花絮非歌)、其餘(7475 前輪已知難重組、7090/5307 台語標錯、太薄)留 draft。
+- **小羊詩歌(13 首,國語)**:10 verified(林婉容主唱系列,質素好高)、8186 差 2 個字穿唔到 45 CJK 門檻機械 reject 留 draft、3 首台語標錯留 draft。
+- **讚美之泉兒童(10 首,國語)**:4 verified、6 首(日語 SOP Kids/太薄)留 draft。
+- **CantonHymn(22 首,粵語)**:先按舊政策全部卡住,中途 API fix commit 落地,即場改用 `cantonhymnLookup.js` —— 但**只用嚟核對,唔補完全新內容**:大部分呢批 OCR 本身已經係亂碼/whisper 幻覺佔位符(「詩歌歌詞的錄音」「000009」loop),冇合法底本可以核對修正,唔強行填;淨係 3353(新三一頌)OCR 本身已捕到 2 段完整詩節,用 API 核對埋結構一致先出街,1 verified。2987/2988 Piano Cover 純器樂之前已 demote。
+- **悅雨音樂 GRM(30 首,粵語)**:全部係已知死症(phone mic/live 錄音嚴重破碎,前輪已證實 0 verified 可能),抽查最高分一首(2543)確認冇新料,冇再糾纏,維持 draft。
+
+**成績:合共 46 verified + 23 demote**(46 首入面:讚美之泉20/約書亞12/小羊10/兒童4/CantonHymn1;23 demote 全部讚美之泉+約書亞非歌內容)。
+
+**驗收:** 全部經 `auditLyricsBatch.js`,僅 8186 一條因 43 CJK 字穿門檻 reject(留 draft,冇強行）。
+
+**Apply:** 分 6 次 `reviewLyrics.js --apply`,DB 鎖冇撞。直接讀 DB 核實:draft 339→293(國語195→150、粵語119→118、英文25→25),verified 1600→1646(+46)。
+
+**⛔ Deploy gate 煞停(非錯誤,同前幾晚一樣模式):** approved backend SHA 係 `a9b9e80`,但 HEAD 而家夾住 4 個未批准 commit(cantonhymn API fix `5102edf` + 3 個 iOS 相關 commit),唔屬於呢個校對 routine 範圍,冇資格 approve,冇強行 restart。DB 寫入(46 verified + 23 demote)已安全落碟(sqlite3 直接查證實)。**行緊嘅 backend process 要等正常批准流程先反映呢批新歌詞**,API 抽驗步驟跳過。
+
+**Fable 5 抽查名單(46 首隨機抽 8):**
+- 3353 新三一頌 (New Doxology 粵語版 Cantonese Cover) — CantonHymn
+- 5124 【頌讚歸於祢 Taste And See】官方歌詞版MV — 讚美之泉
+- 5559 【深觸我心 How Precious You are to Me】官方歌詞版MV — 讚美之泉
+- 6309 【這裡有榮耀 Glory】敬拜MV — 讚美之泉兒童
+- 5512 【主的恩典乃是一生之久 The Light of Your Grace】官方歌詞版MV — 讚美之泉
+- 7446 約書亞樂團-【交託我憂愁 / Trading My Sorrow】
+- 4319 【當祢走進我們當中 When Your Presence Comes Upon Us】敬拜MV — 讚美之泉兒童
+- 4209 【不停讚美祢 Won't Stop Praising】官方歌詞版MV — 讚美之泉
+
+**異常:** Deploy gate 攔截(見上,非本 routine 引致)。冇 apply 失敗,audit script 正常行,冇同其他 session 撞 DB 鎖。
+
+**下一輪計劃:** cantonhymn API fix 對粵語隊影響大(前段報告 57% 命中率),Round 2 起改為集中掃粵語 low-confidence(118 首)用 `cantonhymnLookup.js` 核對,再輪國語其他 vein(天韻合唱團/盛曉玫/611 Worship 等)同英文 vein。持續做到聽日 10:00 或 queue exhausted,唔中途停低等確認。
+
+---
+
+## 2026-08-12 18:42-18:52 — 歌詞複核衝刺 Round 2(粵語 vein 掃尾 + 天韻/611/英文)
+
+**做法:**
+
+- **粵語剩餘 62 首(悅雨音樂GRM/CantonHymn以外嘅所有 artist):** 逐個 artist 睇 raw draft 內容——U-Fire GYRO Band/原始和聲/團契遊樂園/SON Music/天弦音樂事工/鹹蛋音樂事工/角聲使團大部分/Milk&Honey 大部分/共享詩歌/jollyisland/ACM 大部分,OCR 全部係亂碼/whisper 幻覺佔位符(俄文亂碼、[MUSIC]、「詩歌歌詞的錄音」loop)——冇合法底本可以核對修正,一律唔碰留 draft。**試咗 cantonhymnLookup.js 大批背景 lookup 但個 while 迴圈卡死(疑似 shell/背景執行問題,已 kill),改用逐首 foreground 呼叫,同時堅持「淨係核對唔係借嚟填」紅線——OCR 本身冇字嘅(例 id=109)即使 API 撞中都唔填,因為冇合法底本可以「修正」,填咗就變咗成段照抄。**
+- 撈到 6 首 OCR 本身已有可讀內容嘅:玻璃海 107(願你公義降臨)、ACM 99(晴天雨天)、團契遊樂園 124(以感恩為祭,7 節齊晒)、U-Fire GYRO 2070(豁燃)、同心圓敬拜 3439(平安)、611 Worship 3758(永遠愛著我)—— 6 verified。6081(角聲使團《讓愛留痕》)判斷做宣傳單張(演唱會日期/地點/票務資訊為主,夾雜少量歌詞)demote。
+- **天韻合唱團(13 首,今晚呢批同 8/11 校對嗰批唔同 id):** 大部分同前輪判斷一致——全部 OCR 嚴重 garbled。淨係 2 首撈到清晰內容:7730(傳揚)、8004(施比受更有福)—— 2 verified。
+- **611 Worship(3 首):** 3500/3522 已知 medley(今早已demote,冇再郁),3758 verified(見上)。
+- **英文 vein(24 首):** 608/616 已知 medley(今早已demote)。大部分 Hillsong/Passion/Maverick City OCR 亂碼。撈到 2 首 whisper 轉錄質素高嘅:Kari Jobe 631(Nothing Else)、793(Only Your Love)—— 2 verified。413(What A Beautiful Name)draft 太薄(55字)留 draft。
+- **CantonHymn API 工具備忘(俾下一輪用):** exit code 2 = 撞唔到,當「呢個來源核對唔到」落 WebSearch fallback;script 印「靠片語撞到」warning 要對埋內容先當數,唔可以見到有 output 就照抄。
+
+**成績:合共 10 verified + 1 demote。**
+
+**驗收:** 全部經 `auditLyricsBatch.js`,0 reject。
+
+**Apply:** 3 次 `reviewLyrics.js --apply`,DB 鎖冇撞。draft 293→283(國語150→147、粵語118→113、英文25→23),verified 1646→1654(+10)(英文97→99)。
+
+**Deploy gate:** 狀態不變(見 Round 1),未批准 commit 未清,DB 寫入已安全落碟,行緊嘅 process 未反映。
+
+**Fable 5 抽查名單(10 首隨機抽 8):**
+- 107 願你公義降臨 — 玻璃海
+- 124 以感恩為祭 團契遊樂園5 應許(基督教詩歌) — 團契遊樂園
+- 631 Nothing Else The Heart of Worship — Kari Jobe
+- 793 Kari Jobe Carnes - Only Your Love — Kari Jobe
+- 2070 豁燃(Official Lyrics MV) — U-Fire GYRO Band
+- 3439 同心圓《平安》TWS 敬拜者使團「HEART」專輯 — 同心圓敬拜
+- 3758 《永遠愛著我》 — 611 Worship
+- 7730 【傳揚】天韻合唱團Official — 天韻合唱團
+
+**異常:** 冇。CantonHymn 大批 lookup 背景執行卡死已處理(kill+改foreground)。
+
+**Running total(Round1+2):** verified 56 首(累計 1600→1654,較 Round1 前多 54 首其實準確係 +56,見上兩輪逐項相加),demote 24 首。draft 339→283(-56)。粵語 low-confidence backlog 由 114 首推進到大致掃晒一輪(剩低嘅全部係已確認冇合法底本嘅死症,唔會再重複糾纏)。續做國語剩餘 vein(泥土音樂/天韻詩歌/有情天音樂等零散)+ 重新 export 追新產出嘅 draft。
+
+---
+
+## 2026-08-12 18:52-18:56 — 歌詞複核衝刺 Round 3(國語零散 vein 掃尾)
+
+**做法:** 掃剩低嘅細 vein——泥土音樂(5)、天韻詩歌(4)、有情天音樂(2)、我心旋律(1)、生命河靈糧堂(1)、台北復興堂(1)。392(我心旋律)、1644(台北復興堂)前輪已知(難重組/medley),冇再郁。
+
+- **泥土音樂(獨立 artist tag,同「盛曉玫」個 tag 唔同,OCR 質素好好多):** 5 首全部撈到清晰內容——882(想起祢)、8450(我主何等偉大 Awesome God)、8481(笑看風浪)、8540(天國的子民,彼得前書2:9,兒童敬拜歌,已剝走開頭「媽媽我今天在主日學」故事白只留歌詞部分)—— 4 verified。8374(我們來禱告)判斷做敘事對白為主、歌詞部分夾雜太散,信心唔夠,留 draft。
+- **天韻詩歌(4首):** 288(每一天有祢)verified;276(QT音樂敬拜篇)判斷純經文展示配樂,冇實際演唱歌詞,demote;283(呣免驚耶穌在此)台語標錯,留draft;298(投靠者的讚美)OCR 語意唔通順、有明顯錯重組風險,留draft唔糾纏。
+- **生命河靈糧堂(1):** 320(與你面對面)verified。
+- **有情天音樂(2):** 367(等候神,詩篇62意譯)、384(千山萬水恩惠相隨,詩篇9/申命記7:9/詩篇8)都 verified。
+
+**成績:合共 8 verified + 1 demote。**
+
+**驗收:** `auditLyricsBatch.js` 0 reject。
+
+**Apply:** 1 次 `reviewLyrics.js --apply`。draft 283→275(國語147→139,粵語/英文不變),verified 1654→1662(+8)。
+
+**Fable 5 抽查名單(8 首全列):**
+- 288 【每一天有祢】Emmanuel Every Day — 天韻詩歌
+- 320 與你面對面 Face to Face with You — 生命河靈糧堂
+- 367 有情天音樂_等候神 — 有情天音樂
+- 384 千山萬水恩惠相隨 — 有情天音樂
+- 882 盛曉玫詩歌 想起祢 When I Think Of You — 泥土音樂
+- 8450 我主何等偉大 Awesome God — 泥土音樂
+- 8481 笑看風浪 Winds and Waves — 泥土音樂
+- 8540 天國的子民 / 泥娃娃 — 泥土音樂
+
+**Running total(Round1-3):** verified **64** 首(1600→1664 需再核實,實際數字以下輪 export 確認),demote **25** 首。draft 339→**275**(-64)。今晚呢一輪已經覆蓋晒今日 export 出嚟嘅全部 artist vein(讚美之泉/約書亞樂團/小羊詩歌/讚美之泉兒童/CantonHymn/悅雨音樂GRM/粵語散兵/天韻合唱團/盛曉玫/611 Worship/英文全 vein/泥土音樂/天韻詩歌/有情天音樂等)。**下一輪要重新 `--export` 攞新一批(background job 呢幾個鐘可能再產咗新 draft),再睇低信心分佈,持續做到聽日 10:00。**
+
+---
+
+## 2026-08-12 19:59 — 歌詞複核衝刺 Round 4(定時 wakeup 第一次,追新產出)
+
+**背景:** 之前排定每小時 wakeup 一次,check 有冇新 draft(等 04:20 fetchLyrics 夜間批次之前,白天/傍晚 background job 都可能滴量產出)。
+
+**做法:** 重新 `--export`,275→292 首(+17 新 draft),diff 出新 id 逐首人手審(冇用 alignLyrics,17 首量細直接讀 raw draft 夠):
+
+- **verified(11):** 2273(一齊奔跑 Run,新心音樂事工)、5015(深深地敬拜,讚美之泉)、6453(耶和華作了我的高臺,讚美之泉,詩94:13-14/94:22)、6839(到應許之地,約書亞樂團)、7264(安靜居所,約書亞樂團/大衛帳幕的榮耀)、7393(宣告祢名,約書亞樂團)、8006(給我真正的自由,天韻合唱團)、8392(愛你到底,泥土音樂)、8411(有你比什麼都好,泥土音樂——OCR 夾雜大量重複噪音但核心句清晰,詩84:10/詩73:25 底)、8534(我的世界不寂寞,泥土音樂)、8628(神哪我要讚美祢,新心音樂事工,詩89:11,12,14)。
+- **demote(1):** 8161(小羊詩歌《復活 升天 大使命》——全首係經文摘編+對白配音嘅敬拜劇,唔係演唱歌詞,片尾credit「經文摘編/背景音樂/對白」confirm 呢個判斷)。
+- **留 draft(5):** 3630(同心圓,[MUSIC]/[FOREIGN] ASR 佔位符)、5325(ACM,OCR徹底scramble)、7718/7833(天韻合唱團,同已知「大精劇作專之十」watermark噪音pattern一致)、8077(天韻合唱團愛如死之堅強,得返「天韻影視中心」watermark loop,得幾隻字「愛是恆久忍耐」冇上文下理)。
+
+**驗收:** `auditLyricsBatch.js` 0 reject。
+
+**Apply:** 1 次,draft 292→281(-11),verified 1664→1675(+11)。
+
+**Deploy gate:** 仍然攔截,approved SHA 未變,HEAD 而家夾多咗 4 個 iOS 鎖屏/build 相關 commit(唔屬呢個routine)。DB 寫入已安全落碟。
+
+**Fable 5 抽查名單(11 首隨機抽 8):**
+- 2273 一齊奔跑 Run — 新心音樂事工
+- 5015 深深地敬拜 Deeply, I Worship — 讚美之泉
+- 6453 耶和華作了我的高臺 You're My Fortress — 讚美之泉
+- 6839 到應許之地 Toward Promised Land — 約書亞樂團
+- 7393 宣告祢名 Shout Your Name — 約書亞樂團
+- 8006 給我真正的自由 — 天韻合唱團
+- 8411 有你比什麼都好 I'd Rather Have You — 泥土音樂
+- 8628 神哪！我要讚美祢 — 新心音樂事工
+
+**Running total(全晚累計):** verified **75** 首,demote **26** 首。draft 339→**281**(background job 呢幾個鐘又產咗新料,所以淨減幅冇 75 咁多,係正常)。**下次 wakeup 排定 1 小時後,持續到 04:20 前後(fetchLyrics 夜間大批次)加密 check,再做到聽日 10:00。**
+
+---
+
+## 2026-08-12 21:03 — 歌詞複核衝刺 Round 5(定時 wakeup,呢輪冇新進度)
+
+**做法:** 重新 `--export`,281→281(diff 對比上次 292 首匯出減去 Round4 apply 咗嘅 11 首,啱數,**0 首新 draft**)。呢個鐘數(21:03)未到 fetchLyrics 04:20 夜間批次,冇新料好審,冇重複糾纏已經判斷過嘅 id。
+
+**Deploy gate:** 未 check(冇新 apply 冇需要)。
+
+**Running total(全晚累計不變):** verified 75 首,demote 26 首。draft 維持 281。**下次 wakeup 排定 1 小時後(~22:03),04:20 前後加密到 20-30 分鐘一次。**
+
+---
+
+## 2026-08-12 22:04 — 歌詞複核衝刺 Round 6(白天background job有零星產出)
+
+**做法:** 重新 `--export`,281→300(+19 新 draft)。逐首讀 raw draft:
+
+- **verified(17):** 1079(Hillsong Worship, Always Been God)、1834(上帝的作為何等奧妙,新心音樂事工)、2282(成長 Maturity,新心音樂事工,短歌全首)、3206(專心愛祢,新心音樂事工)、4289(在祢沒有難成的事,讚美之泉兒童,剝走bilingual pinyin行淨留中文)、4659(Yancy - Not Ashamed)、5133(獻上感謝 Give Thanks,基恩敬拜)、5417(復興的火,讚美之泉)、6097(我們呼求,讚美之泉,詩28:9/羅8:15/詩33:12/代下7:14四個引文)、6458(深刻的愛,讚美之泉,耶利米書31:3)、6771(信靠/Trust,約書亞樂團 張家綺/陳州邦版,同7465 KALA版係同一首歌不同影片,內容更完整)、6968(我受造奇妙,約書亞樂團,保留原曲入面嘅"Hay yan hay yan"和聲吟唱)、7456(每一天/Everyday,約書亞樂團)、7471(神偉大的舞池,約書亞樂團)、8214(我的神真偉大,小羊詩歌)、8463(我不在乎,泥土音樂,申31:8)、8497(祂是道路,泥土音樂,約1:9)。
+- **demote(1):** 5348(HKACM《REBIRTH》40周年創作專輯「新碟試聽」——tracklist 式合輯介紹,唔係單曲)。
+- **留 draft(1):** 4295(有耶穌不害怕,讚美之泉兒童——實質歌詞內容太薄,剩返「耶穌基督我的救主/以馬內利我的幫助/有祂同在時時看顧/我就不害怕」約30字,大部分draft係重複「不害怕」filler,穿唔到45字門檻)。
+
+**驗收:** `auditLyricsBatch.js` 0 reject。
+
+**Apply:** 1 次,draft 300→283(-17),verified 1675→1692(+17)。
+
+**Deploy gate:** 仍然攔截,approved SHA 未變,HEAD 夾住嘅未批 commit 增加到 8 個(全部 iOS 鎖屏/build 相關,唔屬呢個routine)。DB 寫入已安全落碟。
+
+**Fable 5 抽查名單(17 首隨機抽 8):**
+- 1079 Always Been God — Hillsong Worship
+- 2282 成長 Maturity — 新心音樂事工
+- 4289 在祢沒有難成的事 Nothing Is Impossible — 讚美之泉兒童
+- 4659 Yancy - Not Ashamed — Yancy
+- 5133 《獻上感謝》Give Thanks — 基恩敬拜
+- 6458 深刻的愛 Jesus, Your Love — 讚美之泉
+- 7471 神偉大的舞池 God's Great Dance Floor — 約書亞樂團
+- 8214 我的神真偉大 — 小羊詩歌
+
+**Running total(全晚累計):** verified **92** 首,demote **27** 首。draft 339→**283**。**下次 wakeup 1小時後(~23:04),持續到04:20夜間批次前後加密。**
+
+---
+
+## 2026-08-12 23:08 — 歌詞複核衝刺 Round 7(零星產出持續)
+
+**做法:** 重新 `--export`,283→290(+7 新 draft)。逐首讀 raw draft:
+
+- **verified(4):** 5599(耶和華尼西 Jehovah Nissi,讚美之泉,詩144:1)、6382(天父的花園,讚美之泉兒童)、6395(小小的夢想,讚美之泉兒童)、8431(越久越甘甜,泥土音樂,林後12:9)。
+- **demote(1):** 8447(信耶穌就可上天堂？盛曉玫【幸福熱線】——同已知「幸福熱線」電台節目系列一致,傾偈訪談唔係唱歌,跟返之前8441/8417同一判斷)。
+- **留 draft(2):** 2278(從未變的應許,SON Music,OCR watermark 噪音蓋晒實質內容)、4722(神大愛Hip Hop版,祈禱仔唱詩歌,實質內容太薄~25字)。
+
+**驗收:** `auditLyricsBatch.js` 0 reject。
+
+**Apply:** 1 次,draft 290→288(-4,demote冇減draft),verified 1692→1696(+4)。
+
+**Deploy gate:** 未再 check(狀態同上一輪一致,冇新資訊)。DB 寫入已安全落碟。
+
+**Fable 5 抽查名單(4 首全列):**
+- 5599 耶和華尼西 Jehovah Nissi — 讚美之泉
+- 6382 天父的花園 Father's Garden — 讚美之泉兒童
+- 6395 小小的夢想 Little Dream — 讚美之泉兒童
+- 8431 越久越甘甜 It gets sweeter — 泥土音樂
+
+**Running total(全晚累計):** verified **96** 首,demote **28** 首。draft 339→**288**。**下次 wakeup 1小時後(~00:08),持續到04:20夜間批次前後加密到20-30分鐘一次。**
+
+---
+
+## 2026-08-13 00:10 — 歌詞複核衝刺 Round 8(零星產出持續)
+
+**做法:** 重新 `--export`,288→298(+10 新 draft)。逐首讀 raw draft:
+
+- **verified(10):** 1626(主我高舉祢的名 Lord I Lift Your Name on High,新心音樂事工,Rick Founds名曲譯本)、2352(詩篇一百零三篇,新心音樂事工)、5035(新的一天 A New Day,基恩敬拜,粵語)、5127(我是被主重價買回的人,讚美之泉)、7051(彰顯你榮面 Show Me Your Face,約書亞樂團/大衛帳幕的榮耀)、7856(歡欣歌頌,天韻合唱團,代上16:23-25/賽40:28-31)、8116(主,我相信,小羊詩歌)、8200(祢與我同在,小羊詩歌,詩91:1)、8332(祢的愛,小羊詩歌《盟約》專輯)、8438(依然愛我,泥土音樂,林後12:10)。
+- **demote(1):** 5805(讚美之泉安靜系列(2)找一個地方——同已demote嘅5803/5804/5806/5810屬同一純器樂系列)。
+- **留draft(1):** 166(建殿者的呼聲,原始和聲,OCR碎到單字散落,冇合法底本)。
+
+**驗收:** `auditLyricsBatch.js` 0 reject。
+
+**Apply:** 1 次,draft 298→288(-10),verified 1696→1706(+10)。
+
+**Fable 5 抽查名單(10 首隨機抽 8):**
+- 1626 主, 我高舉祢的名 — 新心音樂事工
+- 2352 詩篇一百零三篇 — 新心音樂事工
+- 5035 《新的一天》A New Day — 基恩敬拜
+- 5127 我是被主重價買回的人 — 讚美之泉
+- 7856 歡欣歌頌 — 天韻合唱團
+- 8116 主,我相信 — 小羊詩歌
+- 8200 祢與我同在 — 小羊詩歌
+- 8332 祢的愛 — 小羊詩歌
+
+**Running total(全晚累計):** verified **106** 首,demote **29** 首。draft 339→**288**。**下次 wakeup 排定 1 小時後(~01:10),持續到 04:20 夜間批次前後加密到 20-30 分鐘一次。**
+
+---
+
+## 2026-08-13 09:43-10:10 — 每日自動歌詞校對 routine(scheduled task `lyrics-daily-proofread`)
+
+**背景:** 呢個係 cron 排程嘅正式 daily routine(唔係上面嗰個「衝刺」session),兩者獨立運行。開工時 `--export` 攞到 **371** 首 draft(隔夜 04:20 fetchLyrics 批次 + 白天零星產出,較尋晚 00:10 嘅 288 首多咗 83 首)。因為 371 首規模太大,呢一輪集中掃**讚美之泉**呢個單一 vein(佢一個 artist 就佔咗 95 首,係全庫最大宗),其餘 veins(悦雨音樂GRM 31、約書亞樂團 27、天韻合唱團 22、CantonHymn 21 等)留返下一輪。
+
+**做法:** 逐首讀 raw draft(冇用 alignLyrics 嘅 displayText,因為實測佢會過度摺疊/漏咗部分內容,同 §1 指引一致改用底本)。
+
+- **verified(18):** 5251(耶和華祝福滿滿,台語)、5270(犧牲的愛,彼前2:24/來12:2)、5285(耶穌祢疼我,台語,約15:9-10)、5307(主啊我要跟隨祢,台語,詩63:1-8)、5311(讓讚美飛揚/新造的人/唯有主耶穌的寶血——一條片3首medley,分段標題處理)、5331(凡若依靠耶和華,台語,詩5:11)、5345(我是天父的孩子,羅8:15/詩18:34-35/林後6:18)、5419(求祢仰起臉來/主懇求祢——2首medley,詩4)、5510(秋雨之福,詩84:5-6)、5770(祢的恩典夠我用,林後12:9/詩145/申31:8)、5831(最珍貴的角落,箴17:17/約15:12-13)、5869(更多充滿,羅15:13/弗5:18-19/羅5:1-5)、6117(我要歡唱)、6118(永遠尊貴,提前1:17)、6183(新的異象新的方向,賽43:19/林後5:17/耶哀3:23-25)、6185(全新的生命,林後5:17)、6319(給夢想一雙翅膀,約壹4:19/約13:34/太10:40/彌6:8)、6364(歡呼Shout For Joy)。
+- **demote(33):** 全部係非歌內容,分幾類 ——
+  - **舞蹈教室/DANCE CLASS(14 首,示範類):** 6125、6267、6268、6270、6272、6273、6282、6284、6285、6286、6289、6290、6427、6431——實測全部係跳舞動作教學口述,唔係歌詞。
+  - **音樂教室(1):** 6366(介紹樂器嘅講解,唔係歌詞)。
+  - **樂器演奏專輯介紹(1):** 6487(旁白介紹每首器樂演奏,冇歌詞)。
+  - **GOODTV談話節目(2):** 6536、6543(「樂河」節目主持人談創作心路歷程,唔係唱歌)。
+  - **純器樂演奏系列(15):** 5065(聖誕弦樂四重奏)、5690/5691/5701(鋼琴演奏系列)、5803/5804/5805/5806/5810/5812(安靜系列(2))、5922/5925(弦樂四重奏)、5980/5990/5991(安靜系列(1))——OCR 顯示純係重複片名/credit watermark,冇實際演唱內容。
+- **留 draft(重大發現:CantonHymn vein 21 首全部核唔到):** 抽查咗 CantonHymn artist 成 21 首,發現絕大部分自己個 OCR/whisper draft 淨係攞到 YouTube 自動生成嘅通用字幕免責聲明(「詩歌歌詞的錄音,粵語或國語敬拜讚美詩歌」呢類重複句),或者純粹係片段 credit watermark 亂碼(例:3366/3368/3369/3374 出現「復活在我」呢類完全對唔上標題嘅重複亂碼)。**用 `cantonhymnLookup.js` 核對咗 5 首(3015/3018/3022/3035/3037)全部喺 cantonhymn.net 度搵到啱嘅粵語譯本**(不再是奴僕/飢渴/神啊配受榮耀/寶血救贖 等),但因為我哋自己個 OCR draft 完全冇捕捉到實際歌詞內容(淨係得免責聲明句),**根據 §2.0 紅線(唔可以將第三方歌詞成段搬字過紙),呢 5 首冇 apply,留返 draft**——呢個先係「核對驗證」同「照抄」嘅分界案例,記錄低俾以後參考。3552(Rain Down)、3868 等有少量自己捕捉到嘅真實內容但太薄(净副歌 1-2 句,未夠 45 字門檻),都留 draft。其餘讚美之泉 vein 入面(4115/4124/4152/5065-韓文專輯5首/日文專輯9首/日文兒童聖經課9首/6015/6292/6389/6390/6393/6470)因為 OCR 徹底 scramble 或者係韓文/日文字幕 OCR 完全失敗,救唔返,全部留 draft,冇糾纏。
+
+**驗收:** `auditLyricsBatch.js` 52 條入面 reject 1 條 —— id=5319(讓讚美飛揚敬拜版,同 5311 首段係同一首歌嘅短版剪輯,dedup 後淨 25 個 CJK 字,未夠 45 門檻),已跳過冇 apply,留返 draft。
+
+**Apply:** 1 次,`reviewLyrics.js --apply` 寫入 verified 18 首 + demote(退返draft)33 首。draft 371→353(-18),verified 1706→1724(+18)。sqlite 直接核對 5251/6117/6118/6364 確認 lyrics_status=verified 且內容啱,5065/6125/5319 確認 draft,全部同預期一致。
+
+**重啟:** `launchctl kickstart` 俾部署批准 Gate 擋咗(HEAD 夾住 8 個未批准嘅 iOS 相關 commit,approved SHA 未變,同今日凌晨嗰輪一致)。DB 寫入已經安全落碟,只係 public API 嘅 in-memory cache(serverDb.js)未刷新,要等下次合法 restart 先會反映;admin API(唔靠 cache)已經可以睇到最新狀態。
+
+**Fable 5 抽查名單(18 首隨機抽 8):**
+- 5251 耶和華祝福滿滿 Jehovah's Blessings Abound — 讚美之泉
+- 5311 讓讚美飛揚/新造的人/唯有主耶穌的寶血(medley) — 讚美之泉
+- 5345 我是天父的孩子 I Am A Child Of God — 讚美之泉
+- 5419 求祢仰起臉來/主懇求祢(medley) — 讚美之泉
+- 5770 祢的恩典夠我用 Your Grace Is Enough — 讚美之泉
+- 5831 最珍貴的角落 Precious Corner — 讚美之泉
+- 6118 永遠尊貴 All Honor To You — 讚美之泉
+- 6364 歡呼 Shout For Joy — 讚美之泉
+
+**異常:** 冇 apply/audit 失敗。備註:今日呢一輪同凌晨「衝刺」session 係兩個獨立 session,做工前後兩次重新 `--export` 都攞到相同 371 首(冇撞到並行改動嘅跡象)。**下一輪(下次排程觸發)應該優先掃悦雨音樂GRM/約書亞樂團/天韻合唱團/CantonHymn(今日已核實核唔到,毋須再撞)呢幾條剩低嘅大 vein。**
+
+---
+
+## 2026-08-13 10:41 — ⚠️ 衝刺 session wakeup 鏈斷咗(01:13-10:41 冇再產出)+ Round 9 補做 + 收工總結
+
+**異常記錄:** 01:13 個 wakeup 觸發咗,session 開始審 15 首新 draft(`draft-fresh-r10.json`),讀完 raw draft 之後個 turn 就冇再有回應——冇 apply、冇寫 log、亦冇再排下一個 wakeup,條鏈斷咗。Eric 事後問係咪撞到 content filtering。**查證結果:** 逐首重新讀晒嗰 15 首 draft 嘅完整內容(唔淨係之前印嘅 700 字preview),全部係正常敬拜歌詞——最似「敏感」嘅係 7918《爭戰的兵器》(以弗所書6章「神所賜的全副軍裝」,夾雜「兵器」「寶劍」「盾牌」「頭盔」「攻破」「營地」等軍事意象詞,但呢個係聖經常見比喻,唔係真實暴力/武器內容),但都睇唔出有咩應該觸發 content policy 嘅嘢。**冇搵到實質證據話係 content filtering 拒答**,比較似係技術性中斷(harness/wakeup機制本身嘅問題),原因仍未能確定。**後果:** 條 wakeup 鏈由 01:13 斷到而家(10:41),即係話原本應該喺 02:13/03:13/04:13-04:30(夜間大批次)/05:xx-10:xx 嘅所有 check 全部冇做——呢段時間嘅新產出全靠獨立嘅 `lyrics-daily-proofread` 排程 routine(09:43-10:10,見上面日誌)頂咗一輪。
+
+**Round 9 補做(15 首新 draft,扣除 5311/5831 已俾 daily-proofread session 校咗):**
+- **verified(10):** 146(原來有祢 It Is You,角聲使團,賽41:10/約壹3:16)、1534(祢的信實廣大 Great is Thy Faithfulness,新心音樂事工,經典聖詩)、4293(我們的神 You Are Our God,讚美之泉兒童)、4493(My God Is So Big,Listener Kids)、4882(頌讚祂的愛 Praise His Love,基恩敬拜,弗3:18)、7030(停留 Linger,約書亞樂團/Gateway Worship)、7187(光芒 Shine,約書亞樂團)、7918(爭戰的兵器,天韻合唱團,弗6:11-18全副軍裝——內容覆核過,正常聖經比喻,冇問題)、8292(我渴慕祢,小羊詩歌)、8474(不一樣的愛,泥土音樂)。
+- **留draft(3):** 6389(我要向高山舉目,讚美之泉兒童,draft只得251字元純credit,冇實質歌詞)、7799(Joy to the World,天韻合唱團,雖然係公版聖誕頌歌但OCR徹底scramble、呢個錄影嘅實際中英合唱編排核唔到,唔靠記憶補全)、8397(一起走 Walk with me,盛曉玫,OCR太多不確定嘅錯字要靠估,唔糾纏)。
+
+**驗收:** `auditLyricsBatch.js` 0 reject。**Apply:** 1次,draft 353→343(-10),verified 1724→1734(+10)。
+
+**Fable 5 抽查名單(10首隨機抽8):**
+- 146 原來有祢 It Is You — 角聲使團
+- 1534 祢的信實廣大 Great is Thy Faithfulness — 新心音樂事工
+- 4293 我們的神 You Are Our God — 讚美之泉兒童
+- 4493 My God Is So Big — Listener Kids
+- 4882 《頌讚祂的愛》Praise His Love — 基恩敬拜
+- 7187 光芒 Shine — 約書亞樂團
+- 8292 我渴慕祢 — 小羊詩歌
+- 8474 不一樣的愛 Different Kind of Love — 泥土音樂
+
+---
+
+### 📊 收工總結(Eric 2026-08-12 17:xx 落指示做到 2026-08-13 10:00,而家 10:41,已過原定deadline)
+
+**「衝刺」session(呢個session)全晚實際成績:**
+- Round 1-9 合計:**verified 116 首,demote 29 首**(Round1:46+23、Round2:10+1、Round3:8+1、Round4:11+1、Round5:0(冇新draft)、Round6:17+1、Round7:4+1、Round8:10+1、Round9:10+0)
+- 覆蓋 vein:讚美之泉(91)、約書亞樂團(22+新產出)、小羊詩歌(13+新產出)、讚美之泉兒童(10+新產出)、CantonHymn(22,只1首有合法底本核到)、悅雨音樂GRM(30,確認全部死症)、天韻合唱團/盛曉玫/611 Worship/英文全vein/泥土音樂/天韻詩歌/有情天音樂/新心音樂事工/基恩敬拜/角聲使團等零散vein、以及全晚白天陸續產出嘅新draft。
+
+**同一晚仲有獨立嘅 `lyrics-daily-proofread` 排程 session(09:43-10:10)做咗:verified 18 首,demote 33 首**(主力掃讚美之泉vein,亦確認咗CantonHymn vein核唔到嘅結論)。
+
+**兩個session合計(唔重複計,5311/5831由daily-proofread做,冇喺呢邊重複):verified 134 首,demote 62 首,共處理 196 首。**
+
+**老實講backlog現況:** draft 由今晚開波前嘅 339 首,而家係 **343 首**——即係話**淨消耗係負嘅**,因為 growLibrary/fetchLyrics 背景production嘅速度(尤其係04:20嗰次夜間批次,今晚因為wakeup斷咗鏈冇即時追到)大過人手覆核速度。呢個唔係今晚工作冇成效(196首係扎實嘅產出),而係backlog嘅「水源」本身流入速度好快,單靠人手審核追唔切全部。真正嘅backlog改善喺於:**低信心舊存貨(琴日18:xx開波嗰278首)已經大部分審過一輪,已確認嘅死症(語言標錯/OCR徹底garbled/純器樂/舞蹈教學等)唔會再重複糾纏,新產出嘅draft先係而家嘅主力**。
+
+**建議跟進(俾Eric定):**
+1. wakeup鏈中斷嘅根因未查到,如果之後仲要開長時間衝刺,可能要加多一層「fallback監督」(例如獨立排程task定期check衝刺session係咪仲生)嚟頂呢種斷鏈風險。
+2. Backlog持續增長嘅根本解法唔喺加派人手複核,而係考慮源頭(fetchLyrics OCR/whisper質素、或者growLibrary收錄速度)——但呢個超出歌詞複核routine嘅範圍,要另外評估。
+3. 而家已過10:00deadline,呢個「衝刺」session而家停低,交返俾日常`lyrics-daily-proofread`排程接力。如果Eric想繼續開多輪,請明確指示。
+
+---
+
+## 2026-08-13 11:16 — 衝刺正式收工(最後一次check,冇新draft)
+
+**收尾check:** 重新 `--export`,343→343,**0 首新draft**(同上一輪一模一樣,冇背景production喺呢30分鐘產出新嘢,亦冇任何04:20批次遲到殘留)。冇嘢好審,呢個session今晚嘅工作到此為止。
+
+### 📊 最終收工總結(Eric 2026-08-12 17:xx指示做到2026-08-13 10:00,實際收工11:16)
+
+**「衝刺」session(呢個session,Round 1-9)全晚實績:verified 116 首,demote 29 首。**
+
+**獨立嘅 `lyrics-daily-proofread` 排程session(09:43-10:10,同一晚但獨立運作):verified 18 首,demote 33 首。**
+
+**兩個session合計(冇重複計算,5311/5831由daily-proofread校咗、衝刺session跳過咗呢兩條):**
+**verified 134 首,demote 62 首,共處理 196 首draft。**
+
+**Backlog老實數:** draft由開波前(2026-08-12 18:2x)嘅339首,收工時(2026-08-13 11:16)係**343首**——表面睇淨消耗係負4首,因為growLibrary/fetchLyrics背景production(尤其係凌晨04:20嗰次夜間大批次,受01:13-10:41 wakeup斷鏈影響、冇即時追住)入貨速度大過人手覆核。但呢個唔代表今晚白做:
+- 196首draft經逐首人手審視、機械驗收、正式verified/demote,係扎實產出。
+- 昨晚開波時嗰278首low-confidence舊存貨(Eric特別點名嘅「278首backlog」)已經大部分掃過一輪,包括粵語114首、國語/英文164首。已確認嘅死症(OCR徹底scramble、語言標錯韓/日/台語、純器樂系列、whisper ASR全失敗嘅盛曉玫獨立tag、悅雨音樂GRM全vein、CantonHymn舊政策卡死嘅22首)已經記錄清楚,唔會再重複糾纏。
+- CantonHymn.net WebFetch失效問題今晚由Opus 5並行session修復(`cantonhymnLookup.js`公開API方案,commit 5102edf),已即時採用,粵語隊今後可以大手做,呢個係今晚一個重要基建改善,唔止今晚即時verified數字。
+
+**異常記錄(見上):** 01:13-10:41 wakeup鏈斷咗9.5個鐘,根因未查到(排除咗content filtering嘅可能性,較似技術性中斷)。呢段期間嘅新產出全靠獨立嘅daily-proofread排程頂咗。
+
+**⏹️ 衝刺session到此正式停止,唔再自動排wakeup。歌詞複核工作交返俾日常`lyrics-daily-proofread`排程task(09:40行程)同下一次Eric指定嘅衝刺接力。**
+
+## 2026-08-13 15:0x — 追backlog三項結構性改動(Eric拍板A+B+C,Fable 5執行)
+
+**背景:** 琴晚衝刺196首產出但backlog 339→343不跌反升;10:41記錄咗wakeup鏈斷9.5個鐘。Eric拍板三項一齊做:
+
+**A. 加「底本判死」終態 + 一次過清殭屍(draft 343→52):**
+- `reviewLyrics.js --apply` 新增第三種格式 `{id, unusable:true}` → `lyrics_status='unavailable'`,永久踢出複核隊列(export同fetchLyrics候選都只揀draft/none,唔會再見到);`lyrics_draft` 原文保留做證據,翻案人手改返status='draft'就得。
+- 一次過將 **291 首**已有文件記錄「人手讀過判死」嘅殭屍draft標做unavailable。名單完全按8/11-8/13三日log嘅判死記錄編制:死症vein全滅(悦雨音樂GRM 31/盛曉玫tag 10/原始和聲 7/CantonHymn 21/天韻合唱團 21)、讚美之泉全77(韓日語標錯/純器樂/舞蹈音樂教室/GOODTV/OCR scramble,8/13朝早daily routine啱啱全vein掃完)、R2英文同粵語散兵全掃判死嗰批、加埋log逐首點名嘅個案(medley/台語標錯/電台節目/太薄注定穿門檻)。
+- **高產vein(新心13/約書亞18/小羊5/泥土3)嘅未點名項目全部留低**,8/13新入貨未讀過嘅5首(2202/1910/3339/4872/3631)亦留低——剩低52首先係「真backlog」,絕大部分係官方歌詞MV/KALA版類高把握目標。
+- 驗證:draft 343→**52**,unavailable 3→294,verified 1734不變。名單存喺執行session scratchpad(zombie-sorted.txt),291個id全部核對過係現有draft、冇重複。
+- SKILL.md(lyrics-daily-proofread)已同步教路:底本判死一律用unusable,唔好demote/跳過留draft(嗰兩樣正正係殭屍循環根源——同一批純器樂demote咗三晚);demote只留返俾「已verified要拉返重校」。
+- **注意:呢批DB改動唔使backend restart**(draft/unavailable都唔出街,前端只讀verified嘅lyrics欄),所以冇掂deploy gate。
+
+**B. 複核排程一班→三班(取代單一wakeup鏈):**
+- `lyrics-daily-proofread` scheduled task cron由 `40 9 * * *` 改做 `40 9,15,21 * * *`(09:40/15:40/21:40)。三班獨立cron觸發,一班斷咗最多6個鐘後有下一班自動頂上,唔再靠session內部wakeup鏈接力(01:13嗰種斷鏈唔會再令成晚冇人做)。夜晚衝刺以後仍可以另開,但已經唔係唯一保障。
+
+**C. fetchLyrics夜間排程已暫停(踩brake):**
+- `launchctl bootout gui/501/com.hymnapp.fetchlyrics` 已執行,plist改咗名做 `~/Library/LaunchAgents/com.hymnapp.fetchlyrics.plist.disabled-20260813`(重啟/重新login都唔會翻生)。已確認冇fetchLyrics process行緊。
+- **零損失**:4402首lyrics_status='none'嘅歌一直喺度,遲啲恢復照抽。
+- **恢復方法**(隊列清到雙位數以下、Eric拍板先做):`mv ~/Library/LaunchAgents/com.hymnapp.fetchlyrics.plist.disabled-20260813 ~/Library/LaunchAgents/com.hymnapp.fetchlyrics.plist && launchctl bootstrap gui/501 ~/Library/LaunchAgents/com.hymnapp.fetchlyrics.plist`;恢復嗰陣建議將plist入面嘅班次/budget校細(例如每晚兩班CC25+OCR10≈20-30首/日)同日常複核速度打和,以後唔會再堆積。
+- growLibrary冇掂(佢8/9之後每日得1-2首,唔係壓力源)。
+
+**監督session注意:** fetchLyrics launchd job而家見唔到係刻意暫停,唔係故障,唔好「修返」。
