@@ -954,7 +954,13 @@ function PlayerProvider({ children }) {
   const bufferingStuckTicksRef = useRef(0);
   const bufferingNudgedRef = useRef(false);
   const BUFFERING_STUCK_NUDGE_TICKS = 15;
-  const BUFFERING_STUCK_SKIP_TICKS = 15;
+  // NEXT-TRACK-LATENCY 2026-08-12 追加(Opus 5 驗收 punch list 第6點)——原本
+  // 15+15=30 秒就會跳,同 backend 死鏈嘅最壞 resolve+retry 時間(RESOLVE_TIMEOUT_MS
+  // 12s × 3 個 strategy = 36s,見 resolveAudio.js)有衝突:watchdog 會喺 backend
+  // 仲未答之前搶先跳咗,本身應該成功嘅 retry 冧咗都嚟唔切見到。加落去到 30(即係
+  // nudge 後再等 30 秒,總共 45 秒先跳),留返 9 秒安全邊際俾 36s 嘅最壞情況,
+  // 唔會再同正常(雖然好慢)嘅 resolve 撞埋。
+  const BUFFERING_STUCK_SKIP_TICKS = 30;
   const lastPollPositionRef = useRef(-1);
   const handleStuckTrackEnd = useCallback(async () => {
     try {
@@ -1022,6 +1028,26 @@ function PlayerProvider({ children }) {
         return;
       }
       console.warn('[player] stuck-in-buffering persists after nudge — treating as unrecoverable, skipping');
+      // NEXT-TRACK-LATENCY 2026-08-12 追加(Opus 5 驗收 punch list 第5點)——之前
+      // 呢度冧咗都係直接 handleStuckTrackEnd() 跳落一首,冇熔斷:網絡真係斷咗嘅
+      // 話,每首歌都會重複「nudge 一次、再冧就跳」,即係每 ~30-45 秒自動跳一首,
+      // 10 分鐘可以跳成 20 首。同 §3.7 PlaybackError 個熔斷器共用同一條
+      // errorSkipCountRef——兩者都係「呢首/呢幾首播唔到聲」嘅訊號,應該計埋
+      // 同一條數(而且都係靠同一句「真係播到聲」嗰下 reset,見上面 line ~672)。
+      // 門檻同背景/前台分流完全對齊 §3.7:前台 3 次、背景 6 次。
+      errorSkipCountRef.current += 1;
+      const isBackground = appStateRef.current !== 'active';
+      const threshold = isBackground ? 6 : 3;
+      if (errorSkipCountRef.current >= threshold) {
+        await TrackPlayer.pause().catch(() => {});
+        errorSkipCountRef.current = 0;
+        if (isBackground) {
+          pendingPlaybackNoticeRef.current = '背景播放中斷：連續多首歌載入唔到，已暫停';
+        } else {
+          Alert.alert('播放中斷', '連續幾首歌都載入唔到，請檢查網絡或者稍後再試');
+        }
+        return;
+      }
       await handleStuckTrackEnd();
     } catch (e) {
       console.warn('[player] stuck-in-buffering recovery failed:', e?.message || e);

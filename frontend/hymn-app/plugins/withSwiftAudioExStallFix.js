@@ -44,25 +44,34 @@ const NEW_SETUP = `        // disabled since we're not making use of video playb
         avPlayer.automaticallyWaitsToMinimizeStalling = _automaticallyWaitsToMinimizeStalling`;
 
 function rubyPatchSnippet() {
+  // NEXT-TRACK-LATENCY 2026-08-12 追加(Opus 5 驗收 punch list 第8點)——Ruby
+  // 嘅 String#sub 搵唔到個 pattern 唔會拋錯,淨係原封不動咁返轉個字串。之前
+  // 呢度冧咗嘅話(例如 CocoaPods 拉到新版 SwiftAudioEx,原始碼格式變咗)會
+  // 靜靜哋寫返同一份未patch嘅檔案落去,但下面照樣印"patched"——即係「呃自己」:
+  // build 睇落成功、log 話patch咗,但實際上鎖屏interruption-resume個fix完全冇
+  // 生效,而家先發現。而家:sub之前先assert個pattern實際存在,搵唔到就raise
+  // (令 pod install 直接 fail),唔畀個build靜靜哋帶住冇patch過嘅二進位出街。
   return `
     # ${MARKER} — see plugins/withSwiftAudioExStallFix.js for the why
     swift_audio_ex_file = File.join(installer.sandbox.pod_dir('SwiftAudioEx'), 'Sources', 'SwiftAudioEx', 'AVPlayerWrapper', 'AVPlayerWrapper.swift')
     if File.exist?(swift_audio_ex_file)
       content = File.read(swift_audio_ex_file)
       unless content.include?('_automaticallyWaitsToMinimizeStalling')
-        content = content.sub(
-          ${JSON.stringify(OLD_PROPERTY)},
-          ${JSON.stringify(NEW_PROPERTY)}
-        )
-        content = content.sub(
-          ${JSON.stringify(OLD_SETUP)},
-          ${JSON.stringify(NEW_SETUP)}
-        )
+        old_property = ${JSON.stringify(OLD_PROPERTY)}
+        old_setup = ${JSON.stringify(OLD_SETUP)}
+        unless content.include?(old_property)
+          raise "[${MARKER}] OLD_PROPERTY pattern not found in #{swift_audio_ex_file} — SwiftAudioEx source has changed and the patch needs updating. Refusing to silently ship an unpatched build."
+        end
+        content = content.sub(old_property, ${JSON.stringify(NEW_PROPERTY)})
+        unless content.include?(old_setup)
+          raise "[${MARKER}] OLD_SETUP pattern not found in #{swift_audio_ex_file} — SwiftAudioEx source has changed and the patch needs updating. Refusing to silently ship an unpatched build."
+        end
+        content = content.sub(old_setup, ${JSON.stringify(NEW_SETUP)})
         File.write(swift_audio_ex_file, content)
         Pod::UI.puts "[${MARKER}] patched SwiftAudioEx AVPlayerWrapper.swift"
       end
     else
-      Pod::UI.warn "[${MARKER}] SwiftAudioEx source not found at #{swift_audio_ex_file}, skipping patch"
+      raise "[${MARKER}] SwiftAudioEx source not found at #{swift_audio_ex_file} — cannot verify the interruption-resume fix is applied. Refusing to silently ship an unpatched build."
     end
 `;
 }
