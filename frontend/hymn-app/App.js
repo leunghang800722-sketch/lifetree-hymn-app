@@ -166,6 +166,22 @@ function warmIds(ids) {
   } catch (_) {}
 }
 
+// STREAM-MIDTRACK-SILENCE-ROOTCAUSE 續篇(2026-08-13)—— 鎖屏播25分鐘停咗嗰單,
+// 查到watchdog/PlaybackError呢幾條路徑就係疑犯,但完全冇log可以睇:TestFlight
+// build冇人駁Xcode,console.warn全部飛咗,下次撞到都係一樣飛盲。加呢個
+// fire-and-forget beacon(同warmIds()一樣寫法),將watchdog決策嗰刻嘅state
+// 送去backend,同[stream] log共用嗰條管,下次撞到就可以對返時間軸。刻意唔
+// await、唔重試——診斷本身唔可以拖累/整壞播放。
+function logDiag(event, extra) {
+  try {
+    fetch(`${API_BASE}/api/client-log`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ event, clientTs: new Date().toISOString(), ...extra }),
+    }).catch(() => {});
+  } catch (_) {}
+}
+
 // ===== CoverImage with fallback =====
 // §5.4 fallback 用向量圖標,唔用 Emoji 🎵。(fallbackIcon 舊 prop 仍收但只用嚟兼容,
 // 唔再當文字render。)
@@ -688,6 +704,10 @@ function PlayerProvider({ children }) {
         setCurrentQueueIndex(idx);
         const song = queueRef.current[idx];
         if (song) { setHymn(song); setCurrentHymn(song); }
+        // STREAM-MIDTRACK-SILENCE-ROOTCAUSE 續篇 —— 呢個先係「track 幾時真係轉
+        // 咗」嘅唯一 client-side 真相來源;之前次診斷淨係靠 backend [stream] log
+        // 反推轉歌時間,查唔到轉歌係 native 真轉定係重載緊同一首。呢度直接記低。
+        logDiag('trackChanged', { appState: appStateRef.current, hymnId: song?.id ?? null, detail: `idx=${idx}` });
         // 2026-07-29 QUEUE-UX-4FIXES §3(Opus 5 驗收補漏)—— 插播歌播完(或者
         // 用戶自己撳咗過去),播放位置一行過條分隔線,「即將播放」就唔再係
         // 「即將」:線下面嗰首已經係播緊嗰首,插播歌反而喺線上面變咗「播完咗
@@ -739,6 +759,23 @@ function PlayerProvider({ children }) {
       try { curIdx = await TrackPlayer.getActiveTrackIndex(); } catch (_) {}
       const curSong = typeof curIdx === 'number' ? queueRef.current[curIdx] : null;
       const curId = curSong?.id ?? null;
+
+      // STREAM-MIDTRACK-SILENCE-ROOTCAUSE 續篇 —— 呢一刻嘅 position/duration 係
+      // 判斷「TrackPlayer.retry()下面嘅native reload(startFromCurrentTime:true)
+      // 會唔會執位失敗變返0:00」嘅關鍵訊號(SwiftAudioEx只喺currentItem.duration
+      // 唔係indefinite先會攞返position嚟seek番去)。JS層攞唔到嗰個native flag
+      // 本身,但duration喺呢度報0/attb好可疑就係好強嘅代理訊號。
+      let diagProgress = null;
+      try { diagProgress = await TrackPlayer.getProgress(); } catch (_) {}
+      logDiag('PlaybackError', {
+        appState: appStateRef.current,
+        hymnId: curId,
+        position: diagProgress?.position,
+        duration: diagProgress?.duration,
+        repeatMode: repeatModeRef.current,
+        errorSkipCount: errorSkipCountRef.current,
+        detail: `code=${event?.code || ''} willRetry=${curId != null && retriedTrackRef.current !== curId}`,
+      });
 
       // 呢首歌未 retry 過 → retry 一次先,唔即刻放棄跳下一首。
       if (curId != null && retriedTrackRef.current !== curId) {
@@ -964,6 +1001,19 @@ function PlayerProvider({ children }) {
   const lastPollPositionRef = useRef(-1);
   const handleStuckTrackEnd = useCallback(async () => {
     try {
+      const idx0 = currentQueueIndexRef.current ?? 0;
+      const q0 = queueRef.current || [];
+      let diagProgress = null;
+      try { diagProgress = await TrackPlayer.getProgress(); } catch (_) {}
+      logDiag('handleStuckTrackEnd', {
+        appState: appStateRef.current,
+        hymnId: q0[idx0]?.id ?? null,
+        position: diagProgress?.position,
+        duration: diagProgress?.duration,
+        repeatMode: repeatModeRef.current,
+        errorSkipCount: errorSkipCountRef.current,
+        detail: `idx=${idx0} qlen=${q0.length}`,
+      });
       if (repeatModeRef.current === 2) {
         // repeat-one:native 冇自動重播(上游 #1995 講嘅正正係呢個場景),手動
         // 由頭嚟過。
@@ -1008,6 +1058,7 @@ function PlayerProvider({ children }) {
         return;
       }
       console.warn('[player] mid-stream stall persists after nudge — treating as unrecoverable, skipping');
+      logDiag('handleMidStreamStall_giveup', { appState: appStateRef.current, position: lastPollPositionRef.current });
       await handleStuckTrackEnd();
     } catch (e) {
       console.warn('[player] mid-stream stall recovery failed:', e?.message || e);
@@ -1028,6 +1079,7 @@ function PlayerProvider({ children }) {
         return;
       }
       console.warn('[player] stuck-in-buffering persists after nudge — treating as unrecoverable, skipping');
+      logDiag('handleBufferingStuck_giveup', { appState: appStateRef.current, errorSkipCount: errorSkipCountRef.current });
       // NEXT-TRACK-LATENCY 2026-08-12 追加(Opus 5 驗收 punch list 第5點)——之前
       // 呢度冧咗都係直接 handleStuckTrackEnd() 跳落一首,冇熔斷:網絡真係斷咗嘅
       // 話,每首歌都會重複「nudge 一次、再冧就跳」,即係每 ~30-45 秒自動跳一首,

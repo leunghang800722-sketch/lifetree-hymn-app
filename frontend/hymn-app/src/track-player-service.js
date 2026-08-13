@@ -1,5 +1,19 @@
 // TrackPlayer Background Service (v3 compatible)
 import TrackPlayer, { Event } from 'react-native-track-player';
+import { API_BASE } from './config.js';
+
+// STREAM-MIDTRACK-SILENCE-ROOTCAUSE 續篇(2026-08-13)—— 呢個service行喺獨立
+// registerPlaybackService context,冇App.js嘅logDiag()可以攞,自成一個極簡版
+// (同App.js嗰個一樣寫法:fire-and-forget、唔await、唔重試)。
+function logDiag(event, extra) {
+  try {
+    fetch(`${API_BASE}/api/client-log`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ event, clientTs: new Date().toISOString(), ...extra }),
+    }).catch(() => {});
+  } catch (_) {}
+}
 
 export default async function () {
   TrackPlayer.addEventListener(Event.RemotePlay, () => TrackPlayer.play());
@@ -15,6 +29,7 @@ export default async function () {
   // 明文再嗌一次」原則一致,見 App.js handleNextTrack)。`permanent:true`
   // (OS話唔應該恢復)嗰種唔理,由用戶自己撳返play。
   TrackPlayer.addEventListener(Event.RemoteDuck, (event) => {
+    logDiag('RemoteDuck', { detail: `paused=${event?.paused} permanent=${event?.permanent}` });
     if (event?.paused === false && !event?.permanent) {
       TrackPlayer.play().catch(() => {});
     }

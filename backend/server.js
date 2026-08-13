@@ -19,6 +19,7 @@ import adminRoutes from './routes/admin.js';
 import shareRoutes from './routes/share.js';
 import friendsRoutes from './routes/friends.js';
 import invitesRoutes from './routes/invites.js';
+import clientLogRoutes from './routes/clientLog.js';
 import { resolveAudioUrl, refreshAudioUrl, preVerifyUrl, cache, failCache, anyStreaming, isStreaming } from './lib/resolveAudio.js';
 import { getUserDb } from './lib/userDb.js';
 import { getDb, getDataVersion, DB_PATH } from './lib/serverDb.js';
@@ -62,6 +63,7 @@ adminRoutes(app); // 管理員功能(MEMBERSHIP-PHASE2-ADMIN-PLAN §3.4)
 shareRoutes(app); // 分享播放清單(MEMBERSHIP-PHASE3-SHARE-PLAN §1-3)—— 自己逐條掛 requireAuth,唔靠掛載次序
 friendsRoutes(app); // 好友(MEMBERSHIP-PHASE4-FRIENDS-INVITES-PLAN §1)—— 自己逐條掛 requireAuth
 invitesRoutes(app); // 邀請碼 + 註冊閘配套(MEMBERSHIP-PHASE4-FRIENDS-INVITES-PLAN §2)
+clientLogRoutes(app); // 播放 watchdog 診斷 beacon(STREAM-MIDTRACK-SILENCE-ROOTCAUSE 續篇,2026-08-13)
 
 // APK 下載檔名(APP-UPDATE-CHECK-PLAN §5 第二輪修正):以前寫死
 // "hymn-app-v1.3.0-week2.apk"(rebrand 前、W2 個陣嘅殘留),同而家實際版本
