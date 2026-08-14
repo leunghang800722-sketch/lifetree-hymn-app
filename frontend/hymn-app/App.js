@@ -427,10 +427,39 @@ function PlayerProvider({ children }) {
   // 係要再 retry 定係死心跳下一首。存 song id(唔係 index),因為 retry() 唔會
   // 改變 index,兩次錯誤事件個 index 一樣,靠 id 分辨「係咪同一首」。
   const retriedTrackRef = useRef(null);
+  // IOS-ANDROID-PARITY-PLAN Phase 1 —— 轉歌感知延遲真機量度。t0 喺「轉歌動作」
+  // 嗰刻 set(用戶撳掣優先;native auto-advance 就用 PlaybackActiveTrackChanged
+  // 嗰刻),t1 = 之後第一次 state=Playing。t1 必須「見過 trackChanged」先算數
+  // (trackChangedSeen),否則舊 track 遲到嘅 Playing event 會搶閘做出 0ms 假數。
+  // 相減就係用戶感受緊嘅「等幾耐先有聲」,經 logDiag('nextTrackMs') 打返 backend
+  // 收 baseline。detail 內 source 標明播緊嘅係串流定本地檔(Phase 2 先會有 local),
+  // Android 一樣上報——正好攞埋「Android 感知延遲」做對照組。
+  const transitionT0Ref = useRef(null); // { ts, origin, trackChangedSeen, hymnId }
   // BUG2 P0 — 單曲載入失敗嘅輕量非阻擋提示(唔用會擋住成個畫面嘅白色系統
   // Alert)。noticeTimerRef 用嚟蓋過上一個未完嘅計時器,唔會提早收咗新嗰句。
   const [noticeText, setNoticeText] = useState(null);
   const noticeTimerRef = useRef(null);
+  // Phase 1 量度收尾:由 PlaybackState listener(主)同 poll loop(fallback,
+  // 冚「state event 冇嚟/轉歌時 state 冇離開過 Playing」)兩度呼叫。只掂 refs,
+  // 邊個 render 嘅 closure 版本都得。>60s 當過期唔上報(中間可能 suspend 過,
+  // 嗰啲數屬於「自己停」事件,唔應該溝入轉歌延遲分佈)。
+  function finishTransitionMeasure() {
+    const t0 = transitionT0Ref.current;
+    if (!t0 || !t0.trackChangedSeen) return;
+    transitionT0Ref.current = null;
+    const ms = Date.now() - t0.ts;
+    if (ms > 60000) return;
+    TrackPlayer.getActiveTrack()
+      .then((t) => {
+        const src = t && t.url && String(t.url).indexOf('file:') === 0 ? 'local' : 'stream';
+        logDiag('nextTrackMs', {
+          appState: appStateRef.current,
+          hymnId: typeof t0.hymnId === 'number' ? t0.hymnId : null,
+          detail: `ms=${ms} origin=${t0.origin} source=${src}`,
+        });
+      })
+      .catch(() => {});
+  }
   const showNotice = useCallback((msg) => {
     setNoticeText(msg);
     if (noticeTimerRef.current) clearTimeout(noticeTimerRef.current);
@@ -691,6 +720,8 @@ function PlayerProvider({ children }) {
         // audible, rather than clearing it right after TrackPlayer.play()
         // resolves — this is what clears it.
         if (val === TPState.Playing) {
+          // Phase 1 量度 t1(主路徑):真係播到聲嗰刻。
+          finishTransitionMeasure();
           setIsLoading(false);
           // §3.7 — only ACTUAL audible playback proves we've recovered, so the
           // circuit breaker resets here. It must NOT reset on track-change:
@@ -720,6 +751,17 @@ function PlayerProvider({ children }) {
         // 咗」嘅唯一 client-side 真相來源;之前次診斷淨係靠 backend [stream] log
         // 反推轉歌時間,查唔到轉歌係 native 真轉定係重載緊同一首。呢度直接記低。
         logDiag('trackChanged', { appState: appStateRef.current, hymnId: song?.id ?? null, detail: `idx=${idx}` });
+        // Phase 1 量度 —— 撳掣起源嘅 t0 未過期(30s)就補「track 真係轉咗」標記
+        // + hymnId;冇 t0(native auto-advance)就以呢一刻做 t0。
+        {
+          const t0 = transitionT0Ref.current;
+          if (t0 && !t0.trackChangedSeen && Date.now() - t0.ts <= 30000) {
+            t0.trackChangedSeen = true;
+            t0.hymnId = song?.id ?? null;
+          } else {
+            transitionT0Ref.current = { ts: Date.now(), origin: 'auto', trackChangedSeen: true, hymnId: song?.id ?? null };
+          }
+        }
         // 2026-07-29 QUEUE-UX-4FIXES §3(Opus 5 驗收補漏)—— 插播歌播完(或者
         // 用戶自己撳咗過去),播放位置一行過條分隔線,「即將播放」就唔再係
         // 「即將」:線下面嗰首已經係播緊嗰首,插播歌反而喺線上面變咗「播完咗
@@ -1211,6 +1253,17 @@ function PlayerProvider({ children }) {
             // 保留返上一個已知值,唔會喺 UI 度出現「肯定係假」嘅 0:00。
             if (progress.duration > 0) setDuration(progress.duration);
 
+            // Phase 1 量度 t1(fallback):Playing state event 冇嚟(或者轉歌時
+            // state 冇離開過 Playing)就由 poll 收尾,精度 ±1s,夠做 baseline。
+            if (
+              transitionT0Ref.current &&
+              transitionT0Ref.current.trackChangedSeen &&
+              trackStateRef.current === TPState.Playing &&
+              pos > 0.2
+            ) {
+              finishTransitionMeasure();
+            }
+
             const dur = progress.duration || 0;
             const nearEnd = dur > 0 && pos >= dur - 1.5;
             const stalled = pos > 0 && Math.abs(pos - lastPollPositionRef.current) < 0.05;
@@ -1512,6 +1565,9 @@ function PlayerProvider({ children }) {
     originalQueueRef.current = finalList;
     setIsShuffled(false);
     try {
+      // Phase 1 量度 t0 —— 用戶撳一個清單/一首歌開播,由呢刻計到出聲,就係
+      // 「第一首要 load 幾耐」嘅真機數(origin=start,同轉歌數分開統計)。
+      transitionT0Ref.current = { ts: Date.now(), origin: 'start', trackChangedSeen: false, hymnId: null };
       await lazyEnsurePlayer();
       await TrackPlayer.reset();
       await TrackPlayer.add(finalList.map(toTrack));
@@ -1546,6 +1602,7 @@ function PlayerProvider({ children }) {
   // don't reset/rebuild (that's what playQueue() is for, for a new list).
   async function skipToQueueIndex(idx) {
     if (typeof idx !== 'number' || idx < 0) return;
+    transitionT0Ref.current = { ts: Date.now(), origin: 'tapQueue', trackChangedSeen: false, hymnId: null }; // Phase 1 量度 t0
     try {
       await TrackPlayer.skip(idx);
       expectPlayingRef.current = true;
@@ -1597,6 +1654,8 @@ function PlayerProvider({ children }) {
   // 再 play() 一次,唔理內部個 flag 係乜,強制真係郁。Android 呢邊 native
   // 事件一路行得好,呢句最多係多餘嘅 no-op,唔會有副作用。
   async function handleNextTrack() {
+    // Phase 1 量度 t0 —— 由用戶撳掣嗰刻計起,先反映到真實體感。
+    transitionT0Ref.current = { ts: Date.now(), origin: 'tapNext', trackChangedSeen: false, hymnId: null };
     try {
       await TrackPlayer.skipToNext();
       expectPlayingRef.current = true;
@@ -1616,6 +1675,7 @@ function PlayerProvider({ children }) {
       const { position } = await TrackPlayer.getProgress();
       if (position > 3) { await TrackPlayer.seekTo(0); return; } // standard UX: >3s in, prev = restart
     } catch (e) {}
+    transitionT0Ref.current = { ts: Date.now(), origin: 'tapPrev', trackChangedSeen: false, hymnId: null }; // Phase 1 量度 t0
     try {
       await TrackPlayer.skipToPrevious();
     } catch (e) {
