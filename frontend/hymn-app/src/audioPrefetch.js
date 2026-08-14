@@ -124,10 +124,19 @@ export function initCache() {
   return initPromise;
 }
 
+// Fable5 review 補(2026-08-14)—— prune 保護名單:本 session 內俾
+// getLocalUri() 命中過(即係可能已經變咗隊列入面嘅 file:// URL)或者啱啱
+// 落載完嘅 id,prune 唔准剷。否則舊歌重播+cache 頂 cap 嗰陣,LRU 有機會
+// 刪走 AVPlayer 打開緊/排緊隊嘅檔,搞出一單本可避免嘅 PlaybackError+跳歌。
+// 只喺 session 內生效(重開 app 清零),最壞情況係 cache 短暫超 cap,可接受。
+const touchedThisSession = new Set();
+
 // 同步查——播放器建隊列嗰刻要即刻知有冇本地檔,唔可以等 async。
 export function getLocalUri(songId) {
   if (Platform.OS !== 'ios' || !ready || songId == null) return null;
-  return index.get(String(songId)) || null;
+  const uri = index.get(String(songId)) || null;
+  if (uri) touchedThisSession.add(String(songId));
+  return uri;
 }
 
 function notifyComplete(songId, uri) {
@@ -181,6 +190,7 @@ async function downloadOne(songId) {
     if (finalFile.exists) { try { finalFile.delete(); } catch (_) {} }
     await partFile.move(finalFile);
     index.set(String(songId), finalFile.uri);
+    touchedThisSession.add(String(songId)); // 啱啱落載完,一定就快用,prune 唔准掂
     notifyComplete(String(songId), finalFile.uri);
     prune();
   } catch (e) {
@@ -195,7 +205,9 @@ function processQueue() {
   if (id == null) return;
   if (index.has(id)) { processQueue(); return; } // 落載緊嗰陣已經有第二個 caller 攞到
   currentDownloadId = id;
-  downloadOne(id).finally(() => {
+  // Fable5 review 補:downloadOne 內部大部分路徑自己食咗錯,但 getCacheDir()/
+  // new File() 喺佢個 try 之外,throw 落嚟呢度要兜住,唔准漏 unhandled rejection。
+  downloadOne(id).catch(() => {}).finally(() => {
     currentDownloadId = null;
     processQueue();
   });
@@ -251,6 +263,7 @@ function prune() {
       const { entry, size } = sized[i];
       try {
         const name = entry.name || '';
+        if (touchedThisSession.has(idFromFinalName(name))) continue; // 保護名單,見上面
         entry.delete();
         index.delete(idFromFinalName(name));
         total -= size;
