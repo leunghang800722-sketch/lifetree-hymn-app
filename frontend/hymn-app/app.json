@@ -10,7 +10,7 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.hymnapp.praise",
-      "buildNumber": "8",
+      "buildNumber": "9",
       "runtimeVersion": "5",
       "infoPlist": {
         "UIBackgroundModes": [
