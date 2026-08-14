@@ -11,6 +11,7 @@
       "supportsTablet": true,
       "bundleIdentifier": "com.hymnapp.praise",
       "buildNumber": "8",
+      "runtimeVersion": "5",
       "infoPlist": {
         "UIBackgroundModes": [
           "audio"

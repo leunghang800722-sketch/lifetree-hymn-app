@@ -30,6 +30,16 @@ import { AdminEditHymnProvider } from './src/components/AdminEditHymnSheet';
 import { PlaylistProvider } from './src/context/PlaylistContext';
 import { setAuthToken, pullData, pushSync, flush as flushOutbox, getOwner, setOwner, clearOutbox } from './src/sync/userSync';
 import { API_BASE } from './src/config.js';
+// IOS-ANDROID-PARITY-PLAN §5 Phase 2 — iOS 本地音頻預載。呢個 module 頂層
+// 冇任何 native 依賴(expo-file-system 淨係喺 module 入面 lazy require、
+// 淨係 iOS call site 先觸發),所以呢度 static import 對 Android 完全 safe。
+import {
+  initCache as initAudioCache,
+  getLocalUri as getLocalAudioUri,
+  prefetch as prefetchAudio,
+  invalidate as invalidateAudioCache,
+  onPrefetchComplete,
+} from './src/audioPrefetch.js';
 import { dailyPickBalanced } from './src/utils/dailyShuffle';
 import { buildAutoplayTail, FLAVORS, poolSize } from './src/utils/autoplay';
 import { getPlayLog, getRecentIds, recordPlay } from './src/playLog';
@@ -111,10 +121,19 @@ function getAlbumCoverUrlHi(youtubeId) {
 
 // PHASE1-PLAYER-REBUILD.md §3.2 — stable per-song URL via the backend stream
 // proxy, so the whole list can be handed to TrackPlayer at once.
+// IOS-ANDROID-PARITY-PLAN §5 Phase 2 — iOS 建隊列嗰刻已經盡量用本地檔:
+// 有落載完成嘅 file:// URI 就用嗰個(跳過網絡),冇就照舊行 stream URL。
+// getLocalAudioUri() 喺 Android/未 ready 時永遠回 null,呢個 if 淨係喺
+// iOS 先會行到,Android 行為零改動。
 function toTrack(song) {
+  let url = `${API_BASE}/api/stream/${song.id}`;
+  if (Platform.OS === 'ios') {
+    const localUri = getLocalAudioUri(song.id);
+    if (localUri) url = localUri;
+  }
   return {
     id: String(song.id),
-    url: `${API_BASE}/api/stream/${song.id}`,
+    url,
     title: song.display_title || song.title || 'Unknown',
     artist: song.artist || '',
     artwork: getAlbumCoverUrl(song.youtube_id),
@@ -466,6 +485,42 @@ function PlayerProvider({ children }) {
     noticeTimerRef.current = setTimeout(() => setNoticeText(null), 2800);
   }, []);
 
+  // IOS-ANDROID-PARITY-PLAN §5 Phase 2 —— boot scan(建 in-memory index)+
+  // 隊列熱換訂閱。獨立於 queueReady,一開 app 就跑;getLocalAudioUri()/
+  // prefetchAudio() 喺 index 未 ready 之前只會係「冇本地檔」,唔會出錯。
+  // Android 上 initAudioCache()/onPrefetchComplete() 都係 no-op(見
+  // audioPrefetch.js),呢個 effect 喺 Android 上等於冇行過。
+  useEffect(() => {
+    if (Platform.OS !== 'ios') return;
+    initAudioCache();
+    const unsubscribe = onPrefetchComplete((songId) => {
+      (async () => {
+        try {
+          const q = queueRef.current || [];
+          const curIdx = currentQueueIndexRef.current ?? 0;
+          const idx = q.findIndex((s) => String(s.id) === String(songId));
+          // 永遠唔掂播緊嗰首、唔掂 current 之前嘅。
+          if (idx <= curIdx) return;
+          const song = q[idx];
+          if (!song) return;
+          if (idx === curIdx + 1) {
+            // 避開 native auto-advance 交接嘅 race:就快跳去下一首(尾
+            // 15 秒內)嗰陣唔好換,等佢自然過渡完先算。
+            let prog = null;
+            try { prog = await TrackPlayer.getProgress(); } catch (_) {}
+            if (prog && prog.duration > 0 && prog.position > prog.duration - 15) return;
+          }
+          const swappedTrack = toTrack(song); // toTrack() 而家已經會揀返本地 URI
+          try {
+            await TrackPlayer.remove(idx);
+            await TrackPlayer.add(swappedTrack, idx);
+          } catch (_) { /* 換失敗就算數,原本 stream URL 照行 */ }
+        } catch (_) {}
+      })();
+    });
+    return unsubscribe;
+  }, []);
+
   // Lazy TrackPlayer initialization — runs on first play, not on mount
   const playerReadyRef = useRef(false);
   const optionsAppliedRef = useRef(false);
@@ -781,6 +836,16 @@ function PlayerProvider({ children }) {
           lastWarmedKeyRef.current = nextIdsKey;
           warmIds(nextIds);
         }
+        // IOS-ANDROID-PARITY-PLAN §5 Phase 2 — 落載下 2 首去本地(iOS only,
+        // no-op on Android)。audioPrefetch 自己序列化(module-level 1 條
+        // 落載嘅 queue/lock),呢度連續 call 兩次就得,唔使等第一個先。
+        // backend warm(above)令 prefetch 快好多,兩層係配合唔係重複。
+        if (Platform.OS === 'ios') {
+          const n1 = queueRef.current[idx + 1];
+          const n2 = queueRef.current[idx + 2];
+          if (n1?.id != null) prefetchAudio(n1.id);
+          if (n2?.id != null) prefetchAudio(n2.id);
+        }
         // §3a playLog:聽夠 30 秒先算一次(skip 唔算)。換咗歌就取消上一個計時器,
         // 開一個新嘅;30 秒後如果仲係播緊同一首,先記錄。
         if (playLogTimerRef.current) clearTimeout(playLogTimerRef.current);
@@ -830,6 +895,21 @@ function PlayerProvider({ children }) {
         errorSkipCount: errorSkipCountRef.current,
         detail: `code=${event?.code || ''} willRetry=${curId != null && retriedTrackRef.current !== curId}`,
       });
+
+      // IOS-ANDROID-PARITY-PLAN §5 Phase 2 —— 播緊嘅係本地 file:// 檔仲會撞
+      // PlaybackError,理論上唔應該有(落載嗰陣已經驗過 HTTP 200 + size +
+      // content-type),但保險起見:剷咗個壞檔 + 從 index 移除,令呢首歌下次
+      // 唔會再摸到同一個壞本地檔,跌返串流路徑。下面現有 retry/skip 邏輯
+      // 完全不變,呢度淨係做清理,唔改流程走向。
+      if (Platform.OS === 'ios' && curId != null) {
+        try {
+          const activeTrack = await TrackPlayer.getActiveTrack();
+          const activeUrl = activeTrack?.url;
+          if (activeUrl && String(activeUrl).indexOf('file:') === 0) {
+            invalidateAudioCache(curId);
+          }
+        } catch (_) {}
+      }
 
       // 呢首歌未 retry 過 → retry 一次先,唔即刻放棄跳下一首。
       if (curId != null && retriedTrackRef.current !== curId) {
