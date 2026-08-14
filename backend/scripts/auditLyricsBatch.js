@@ -5,8 +5,10 @@
 //
 //   1. JSON 格式啱、係陣列
 //   2. 冇重複 id
-//   3. {id, lyrics} 條目(verify)嘅 lyrics 唔可以係空 —— {id, demote:true} 條目
-//      唔使呢個 check(demote 本身冇 lyrics 欄)
+//   3. {id, lyrics} 條目(verify)嘅 lyrics 唔可以係空 —— {id, demote:true} 同
+//      {id, unusable:true} 條目唔使呢個 check(兩者本身都冇 lyrics 欄)。
+//      unusable = 底本判死(2026-08-13 reviewLyrics.js 加嘅第三種終態,寫
+//      lyrics_status='unavailable'),同 demote 一樣淨係 id/重複 id check 適用。
 //   4. 衛生 regex:(編曲|監製|版權|訂閱|http|www\.|生成|Official MV|讚好)命中
 //      即 reject —— 呢啲字眼代表 draft 摻埋咗 YouTube 頻道資訊/廣告,唔係正經歌詞
 //   5. 太薄:中文歌 normalize(剝晒標點/空白)之後 <45 個 CJK 字 reject;純英文
@@ -54,14 +56,21 @@ function auditItem(item) {
   }
 
   const isDemote = item?.demote === true;
+  const isUnusable = item?.unusable === true;
   const hasLyricsField = Object.prototype.hasOwnProperty.call(item || {}, 'lyrics');
 
-  if (!isDemote && !hasLyricsField) {
-    reasons.push('唔識嘅條目格式(要係 {id, lyrics} 或者 {id, demote:true})');
+  if (isDemote && isUnusable) {
+    reasons.push('demote 同 unusable 唔可以同時 true(兩個終態互斥)');
     return reasons;
   }
 
-  if (isDemote) return reasons; // demote 條目冇 lyrics 可比,淨係 id/重複 id check 適用
+  if (!isDemote && !isUnusable && !hasLyricsField) {
+    reasons.push('唔識嘅條目格式(要係 {id, lyrics}、{id, demote:true} 或者 {id, unusable:true})');
+    return reasons;
+  }
+
+  // demote / unusable 條目冇 lyrics 可比,淨係 id/重複 id check 適用
+  if (isDemote || isUnusable) return reasons;
 
   const lyrics = item.lyrics;
   const trimmed = (lyrics || '').trim();
