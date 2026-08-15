@@ -60,15 +60,52 @@ function getFS() {
   return _fsCache;
 }
 
+// 版權合規(Eric 2026-08-15 明確要求):快取檔一定要對外完全隱藏——用戶、
+// 其他 App、電腦、備份全部唔可以搵到/攞到。所以放 Library/Caches
+// (Paths.cache),唔係 Documents(Paths.document):
+//   - Caches 預設排除喺 iCloud/電腦備份之外(Documents 預設會被備份,
+//     即係音訊檔可以由 backup 抽返出嚟——唔合規,呢個就係由 Documents
+//     搬過嚟嘅原因);
+//   - 就算第日有人手多開咗 UIFileSharingEnabled,曝露嘅都只係 Documents,
+//     Caches 永遠唔會出現喺「檔案」App/Finder;
+//   - 代價:iOS 儲存空間緊張時可以自行清走 Caches——啱啱好,呢個本來
+//     就係快取,boot scan 會重建 index,冇咗咪再落載過。
+// 刪 App 時成個沙箱(連 Caches)即刻清晒。Android 冇本地快取(全 module
+// iOS-only),自動合規。
 function getCacheDir() {
   if (_cacheDirCache) return _cacheDirCache;
   const { Directory, Paths } = getFS();
-  const dir = new Directory(Paths.document, CACHE_SUBDIR);
+  const dir = new Directory(Paths.cache, CACHE_SUBDIR);
   if (!dir.exists) {
     try { dir.create(); } catch (_) {}
   }
   _cacheDirCache = dir;
   return dir;
+}
+
+// 一次性遷移:build 9 初版(2b6c53e)曾經將快取放咗喺 Documents,Eric 部機
+// 上已經有檔。搬晒去 Caches 再剷走舊目錄——唔遷移嘅話,舊檔會一直留喺
+// Documents 度被備份,合規等於冇修。冪等:舊目錄唔存在就咩都唔做。
+function migrateLegacyDocumentsDir() {
+  try {
+    const { File, Directory, Paths } = getFS();
+    const legacy = new Directory(Paths.document, CACHE_SUBDIR);
+    if (!legacy.exists) return;
+    const dest = getCacheDir();
+    for (const entry of legacy.list()) {
+      try {
+        const name = entry.name || '';
+        if (name.endsWith(FINAL_SUFFIX) && entry instanceof File) {
+          const target = new File(dest, name);
+          if (target.exists) { entry.delete(); continue; }
+          entry.move(target);
+        } else {
+          entry.delete(); // .part 殘件/雜物直接清
+        }
+      } catch (_) {}
+    }
+    try { legacy.delete(); } catch (_) {}
+  } catch (_) {}
 }
 
 function idFromFinalName(name) {
@@ -100,6 +137,7 @@ export function initCache() {
   if (initPromise) return initPromise;
   initPromise = (async () => {
     try {
+      migrateLegacyDocumentsDir(); // 合規遷移先行,scan 先會見到搬過嚟嘅檔
       const dir = getCacheDir();
       const entries = dir.exists ? dir.list() : [];
       for (const entry of entries) {
