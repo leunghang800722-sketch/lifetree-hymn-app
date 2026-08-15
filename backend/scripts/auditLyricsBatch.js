@@ -9,16 +9,18 @@
 //      {id, unusable:true} 條目唔使呢個 check(兩者本身都冇 lyrics 欄)。
 //      unusable = 底本判死(2026-08-13 reviewLyrics.js 加嘅第三種終態,寫
 //      lyrics_status='unavailable'),同 demote 一樣淨係 id/重複 id check 適用。
-//   4. 衛生 regex:(編曲|監製|版權|訂閱|http|www\.|生成|Official MV|讚好)命中
-//      即 reject —— 呢啲字眼代表 draft 摻埋咗 YouTube 頻道資訊/廣告,唔係正經歌詞
+//   4. 衛生 regex:(編曲|監製|版權|訂閱|http|www\.|AI生成|自動生成|Official MV|讚好)
+//      命中即 reject —— 呢啲字眼代表 draft 摻埋咗 YouTube 頻道資訊/廣告,唔係正經歌詞
 //   5. 太薄:中文歌 normalize(剝晒標點/空白)之後 <45 個 CJK 字 reject;純英文
 //      (冇 CJK 字)<60 個字元 reject —— demote 條目唔使 check(冇 lyrics 可比)
 //   6. 經文附註格式:半形括號包住「書卷 章:節」呢種格式(例:(約3:16))reject,
 //      要求一定要用全形「（書卷 章:節）」先啱規格
 //
-// 輸出 <input>-passed.json(全部過晒嘅原始條目)+ <input>-rejects.json(冇過嘅
-// 條目 + reject 原因陣列),exit code:0 = 全過,1 = 有 reject(俾自動校對
-// routine 判斷使唔使停低人手覆核)。
+// 輸出三個檔:<input>-passed.json(全部過晒嘅原始條目,只有呢個准 --apply)、
+// <input>-rejects.json(冇過嘅條目 + reject 原因陣列)、<input>-langmismatch.json
+// (2026-08-15 加:lang 標中文但歌詞主要係英文嘅條目,唔入 passed,merge 落
+// backend/data/lyrics-langmismatch-hold.json 等 Eric 拍板)。exit code:0 = 全過,
+// 1 = 有 reject(俾自動校對 routine 判斷使唔使停低人手覆核)。
 //
 // Usage:
 //   node scripts/auditLyricsBatch.js /path/to/apply.json
@@ -34,7 +36,9 @@ const log = (...a) => console.log(`[${stamp()}]`, ...a);
 const INPUT_FILE = process.argv[2];
 const QUIET = process.argv.includes('--quiet');
 
-const HYGIENE_RE = /(編曲|監製|版權|訂閱|http|www\.|生成|Official MV|讚好)/;
+// 2026-08-15:『生成』由裸字收窄做『AI生成|自動生成』—— 裸字會誤殺正經歌詞
+// (SUPERVISION-LOG L4800 實錄:id 3140「降生成為人子」俾呢條 regex reject 咗)。
+const HYGIENE_RE = /(編曲|監製|版權|訂閱|http|www\.|AI生成|自動生成|Official MV|讚好)/;
 // 半形括號包住「書卷 N:N」呢種經文附註 —— 一定要係 ASCII ( ) 先中,全形「（）」
 // 係唔同 code point,唔會撞入呢條 regex(即係全形版本合規、唔會誤 reject)。
 const HALFWIDTH_SCRIPTURE_RE = /\([^()]*\d+:\d+[^()]*\)/;
@@ -44,6 +48,28 @@ const CJK_RE = /[一-鿿㐀-䶿]/g;
 
 function charCountCJK(s) {
   return ((s || '').match(CJK_RE) || []).length;
+}
+
+// ── 語言錯配 bucket(LYRICS-47H-SPRINT-PLAN §P0.2)──────────────────────
+// 背景:全庫掃過,2207 首 verified 入面有 263 首係「lang 標住中文,但歌詞內容
+// 主要係英文」(69 首連一隻中文字都冇)。Eric 拍板嗰 263 首 live 嘅唔郁,但
+// **新入庫嘅唔可以再有同類**。呢度做機械擋板:reviewer 喺 apply JSON 每條
+// {id, lyrics} 帶埋 export 出嚟嗰個 `lang` 欄,lang 係國語/粵語/兒童而歌詞
+// 拉丁字母數 > CJK 字數,就撥入 <input>-langmismatch.json,唔入 passed。
+// 呢啲 entry 由班次 merge 落 backend/data/lyrics-langmismatch-hold.json 等 Eric
+// 拍板(§7 分支 A 收貨 / 分支 B 判 unusable),draft 保留唔判死、唔 demote。
+const CJK_LANGS = new Set(['國語', '粵語', '兒童']);
+const LATIN_RE = /[A-Za-z]/g;
+
+function langMismatchReason(item) {
+  if (!Object.prototype.hasOwnProperty.call(item || {}, 'lang')) return null; // 冇 lang 欄就判唔到
+  if (!CJK_LANGS.has(item.lang)) return null;
+  const lyrics = (item.lyrics || '').trim();
+  if (!lyrics) return null;
+  const cjk = charCountCJK(lyrics);
+  const latin = (lyrics.match(LATIN_RE) || []).length;
+  if (latin > cjk) return `語言錯配:lang=${item.lang} 但拉丁字母 ${latin} 個 > CJK ${cjk} 個(入 hold 池等 Eric 拍板)`;
+  return null;
 }
 
 // 檢查單一條目,回傳 reject 原因陣列(空陣列 = 全過)。
@@ -117,6 +143,7 @@ function outPaths(inputPath) {
   return {
     passed: path.join(dir, `${base}-passed${ext}`),
     rejects: path.join(dir, `${base}-rejects${ext}`),
+    langmismatch: path.join(dir, `${base}-langmismatch${ext}`),
   };
 }
 
@@ -154,12 +181,24 @@ function main() {
 
   const passed = [];
   const rejects = [];
+  const langMismatched = [];
+  let noLangField = 0;
 
   for (const item of items) {
     const reasons = auditItem(item);
     if (dupIds.has(item?.id)) reasons.push(`重複 id(呢個 id 喺檔入面出現 ${idCounts.get(item.id)} 次)`);
 
-    if (reasons.length) {
+    // 語言錯配優先分流:呢類**一定唔可以入 passed**(入咗就係重演 263 首問題),
+    // 就算佢同時有其他 reject 原因,都係擺入 hold 池等 Eric,唔會蝕貨。
+    const mismatch = langMismatchReason(item);
+    const isVerifyItem = item?.demote !== true && item?.unusable !== true
+      && Object.prototype.hasOwnProperty.call(item || {}, 'lyrics');
+    if (isVerifyItem && !Object.prototype.hasOwnProperty.call(item || {}, 'lang')) noLangField++;
+
+    if (mismatch) {
+      langMismatched.push({ ...item, holdReason: mismatch, ...(reasons.length ? { rejectReasons: reasons } : {}) });
+      if (!QUIET) log(`  ⏸ hold id=${item?.id ?? '(冇id)'}:${mismatch}`);
+    } else if (reasons.length) {
       rejects.push({ ...item, rejectReasons: reasons });
       if (!QUIET) log(`  ✗ reject id=${item?.id ?? '(冇id)'}:${reasons.join('; ')}`);
     } else {
@@ -167,13 +206,16 @@ function main() {
     }
   }
 
-  const { passed: passedPath, rejects: rejectsPath } = outPaths(INPUT_FILE);
+  const { passed: passedPath, rejects: rejectsPath, langmismatch: langPath } = outPaths(INPUT_FILE);
   fs.writeFileSync(passedPath, JSON.stringify(passed, null, 2), 'utf8');
   fs.writeFileSync(rejectsPath, JSON.stringify(rejects, null, 2), 'utf8');
+  fs.writeFileSync(langPath, JSON.stringify(langMismatched, null, 2), 'utf8');
 
-  log(`驗收完成:共 ${items.length} 條,過 ${passed.length} 條,reject ${rejects.length} 條`);
+  log(`驗收完成:共 ${items.length} 條,過 ${passed.length} 條,reject ${rejects.length} 條,語言錯配 hold ${langMismatched.length} 條`);
   log(`  → ${passedPath}`);
   log(`  → ${rejectsPath}`);
+  log(`  → ${langPath}${langMismatched.length ? '(merge 落 backend/data/lyrics-langmismatch-hold.json,唔好 apply、唔好判 unusable)' : ''}`);
+  if (noLangField) log(`  ⚠ 有 ${noLangField} 條 {id, lyrics} 冇帶 lang 欄 —— 語言錯配擋板對呢啲判唔到,下批記住由 export 抄返個 lang`);
 
   process.exit(rejects.length ? 1 : 0);
 }

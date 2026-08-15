@@ -116,6 +116,75 @@ const inWindow = () => {
 };
 const charCount = (s) => (s || '').replace(/\s/g, '').length;
 
+// ── 落載失敗 ledger(LYRICS-47H-SPRINT-PLAN §P0.1)──────────────────────
+// 之前落載失敗係純 `continue` 唔寫任何嘢,同一首片可以夜夜重抽重敗、零記憶
+// (403 率實測 ~49%,即係接近一半 budget 花咗喺重複攻打同一批死片)。呢個
+// ledger 用純 fs JSON 記賬(唔使 DB 鎖 —— 全程只准一個 producer process 跑,
+// 由 ops/lyrics/producer-keeper.sh 嘅 pgrep 把關),做三件事:
+//   1. fails >= 3 → 寫 DB `lyrics_source='dl:dead'`,永久踢出 OCR 候選
+//      (pickOcrCandidates 要求 source='cc:miss')。status 保留 'none' 可翻案:
+//      人手 UPDATE 返做 'cc:miss' 就會重新入隊。
+//   2. fails >= 1 而 12 鐘頭內試過 → cooldown 跳過(403 大約半數係間歇性,
+//      俾佢隔半日再試一次,夠三次先判死)。
+//   3. CC 層(--list-subs)失敗都記賬,但 **唔判 dl:dead**,淨係食 cooldown ——
+//      CC 係輕操作,失敗多數係網絡雜訊,唔應該憑呢個判一首歌死。
+const DL_LEDGER_PATH = path.join(__dirname, '..', 'data', 'lyrics-dl-failures.json');
+const DL_DEAD_AFTER = 3;
+const DL_COOLDOWN_MS = 12 * 60 * 60 * 1000;
+
+function readDlLedger() {
+  try {
+    return JSON.parse(fs.readFileSync(DL_LEDGER_PATH, 'utf8')) || {};
+  } catch (_) {
+    return {}; // 未有檔 / 壞 JSON:當空 ledger 由頭記,唔好因為呢樣死成個 run
+  }
+}
+
+function recordDlFail(id) {
+  const ledger = readDlLedger();
+  const key = String(id);
+  const prev = ledger[key] || { fails: 0 };
+  ledger[key] = { fails: (prev.fails || 0) + 1, lastAt: new Date().toISOString() };
+  try {
+    fs.mkdirSync(path.dirname(DL_LEDGER_PATH), { recursive: true });
+    fs.writeFileSync(DL_LEDGER_PATH, JSON.stringify(ledger, null, 2), 'utf8');
+  } catch (e) {
+    log(`    \u26a0 \u5beb\u5514\u5230\u843d\u8f09\u5931\u6557 ledger(\u5514\u963b run):${e?.message || e}`);
+  }
+  return ledger[key].fails;
+}
+
+// 候選過濾:ledger 判咗死嘅(補漏 —— 防 DB 嗰次寫入攞唔到鎖)同埋仲喺 cooldown
+// 入面嘅,喺 loop 開始之前就剔走,唔好食 budget。
+function filterByDlLedger(cands, label) {
+  const ledger = readDlLedger();
+  const now = Date.now();
+  let dead = 0, cooling = 0;
+  const kept = cands.filter((c) => {
+    const e = ledger[String(c.id)];
+    if (!e) return true;
+    if ((e.fails || 0) >= DL_DEAD_AFTER) { dead++; return false; }
+    if ((e.fails || 0) >= 1 && e.lastAt && (now - Date.parse(e.lastAt)) < DL_COOLDOWN_MS) { cooling++; return false; }
+    return true;
+  });
+  if (dead || cooling) log(`  ${label}:ledger 剔走 ${dead} 首(失敗 ≥${DL_DEAD_AFTER} 次判死)、${cooling} 首(12 鐘頭 cooldown 內)`);
+  return kept;
+}
+
+// --skip-orgs "A,B,C":將已知死症 vein(逐首讀過、底本救唔返嗰幾間機構)押後到
+// 池尾 —— artist 或者 org 欄命中就今轉唔落隊。唔係永不做:池乾嗰陣唔加呢個
+// flag 就會照做(見 LYRICS-47H-SPRINT-PLAN §8)。
+const SKIP_ORGS = (arg('--skip-orgs', '') || '').split(',').map((x) => x.trim()).filter(Boolean);
+
+function filterBySkipOrgs(cands, label) {
+  if (!SKIP_ORGS.length) return cands;
+  const hit = (v) => !!v && SKIP_ORGS.some((o) => String(v).includes(o));
+  const kept = cands.filter((c) => !hit(c.artist) && !hit(c.org));
+  const dropped = cands.length - kept.length;
+  if (dropped) log(`  ${label}:--skip-orgs 押後 ${dropped} 首(${SKIP_ORGS.join('/')})`);
+  return kept;
+}
+
 function report(db) {
   const rows = query(db, `SELECT lyrics_status, COUNT(*) n FROM hymns_all WHERE curated=1 AND status!='dead' GROUP BY lyrics_status`);
   log('歌詞進度(curated,按 status):');
@@ -158,7 +227,7 @@ async function writeLyricsRow(id, fields) {
 // stable,所以同一個 key 值入面保留返 SQL 嗰層嘅隨機次序,唔會退返做 id 順序
 // (growLibrary 教訓:唔好用 id 順序,舊 id 死亡率高)。
 function pickCandidates(db) {
-  const rows = query(db, `SELECT id, youtube_id, title, artist, album FROM hymns_all
+  const rows = query(db, `SELECT id, youtube_id, title, artist, album, org FROM hymns_all
                     WHERE curated=1 AND status!='dead'
                       AND (lyrics_status IS NULL OR lyrics_status='none')
                       AND (lyrics_source IS NULL OR lyrics_source='')
@@ -170,7 +239,7 @@ function pickCandidates(db) {
 // fallback(OCR 讀唔到字嗰陣冇文字可以判斷 CJK 比例,就靠呢個欄位)。同樣用
 // candidateSortKey 排先後(見上面 pickCandidates 註解)。
 function pickOcrCandidates(db) {
-  const rows = query(db, `SELECT id, youtube_id, title, artist, lang, album FROM hymns_all
+  const rows = query(db, `SELECT id, youtube_id, title, artist, lang, album, org FROM hymns_all
                     WHERE curated=1 AND status!='dead'
                       AND lyrics_status='none' AND lyrics_source='cc:miss'
                     ORDER BY RANDOM()`);
@@ -248,8 +317,8 @@ async function runCC(db, budget) {
   // (呢度風險本身細好多——run 一開波就叫,同 main() openDb() 相隔幾乎零——
   // 但養成「揀候選就攞新鮮」嘅習慣,唔會因為第日改咗執行次序而中招)。
   const freshDb = await openDb();
-  const cands = pickCandidates(freshDb);
-  if (!cands.length) { log('冇更多要做嘅歌(全部 curated 都試過 CC 或者有歌詞)'); return 0; }
+  const cands = filterByDlLedger(filterBySkipOrgs(pickCandidates(freshDb), 'CC'), 'CC');
+  if (!cands.length) { log('冇更多要做嘅歌(全部 curated 都試過 CC / 有歌詞 / 俾 ledger 同 --skip-orgs 剔走)'); return 0; }
 
   let drafted = 0, missed = 0, streak = 0;
   for (let i = 0; i < budget && i < cands.length; i++) {
@@ -259,7 +328,9 @@ async function runCC(db, budget) {
 
     if (error) {
       streak++;
-      log(`    ⚠ yt-dlp exec 失敗 (連續 ${streak})`);
+      // CC 層失敗只記賬食 cooldown,唔判 dl:dead(見 ledger 註解第 3 點)
+      const fails = recordDlFail(c.id);
+      log(`    ⚠ yt-dlp exec 失敗 (連續 ${streak},呢首累計 ${fails} 次)`);
       if (streak >= 3) {
         log('  連續 3 次 exec 失敗 —— 用已知有 CC 嘅片做對照探測…');
         await sleep(jitter(DELAY_MS));
@@ -511,8 +582,8 @@ async function runOcr(db, budget) {
   // 誤判「冇更多 cc:miss 等 OCR」,0 首收工。要重新 openDb() 攞返呢一刻
   // 最新嘅版,先睇得到 CC 層啱啱寫落去嘅嘢。
   const freshDb = await openDb();
-  const cands = pickOcrCandidates(freshDb);
-  if (!cands.length) { log('冇更多 cc:miss 嘅歌等 OCR'); return 0; }
+  const cands = filterByDlLedger(filterBySkipOrgs(pickOcrCandidates(freshDb), 'OCR'), 'OCR');
+  if (!cands.length) { log('冇更多 cc:miss 嘅歌等 OCR(或者淨低嗰啲俾 ledger / --skip-orgs 剔走)'); return 0; }
 
   let drafted = 0, unavailable = 0, ocrMiss = 0, streak = 0;
   for (let i = 0; i < budget && i < cands.length; i++) {
@@ -526,7 +597,14 @@ async function runOcr(db, budget) {
         videoPath = await downloadVideoLowRes(c.youtube_id, dir);
       } catch (e) {
         streak++;
-        log(`    ⚠ 落載失敗 (連續 ${streak}):${e?.message || e}`);
+        const fails = recordDlFail(c.id);
+        log(`    ⚠ 落載失敗 (連續 ${streak},呢首累計 ${fails} 次):${e?.message || e}`);
+        if (fails >= DL_DEAD_AFTER && !DRY) {
+          // 三次都落唔到 → 寫 dl:dead 踢出 OCR 候選(pickOcrCandidates 要 cc:miss),
+          // lyrics_status 保留 'none' 所以第日想翻案改返 source 就得。
+          await writeLyricsRow(c.id, { lyrics_source: 'dl:dead', lyrics_checked_at: today() });
+          log(`    · 落載失敗夠 ${DL_DEAD_AFTER} 次,標 dl:dead 永久踢出 OCR 隊(可人手翻案)`);
+        }
         if (streak >= 3) {
           log('  連續 3 次落載失敗 —— 用 CC 對照探測分清係咪俾擋…');
           await sleep(jitter(DELAY_MS));
