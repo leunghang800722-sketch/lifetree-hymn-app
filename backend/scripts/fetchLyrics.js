@@ -185,6 +185,39 @@ function filterBySkipOrgs(cands, label) {
   return kept;
 }
 
+// ── cantonhymn 預篩排隊(Eric 2026-08-15 拍板)────────────────────────
+// ops/lyrics/cantonhymn-prescreen.mjs 掃過全部「粵語 + 仲未有歌詞」嘅歌,記低邊啲
+// 喺 cantonhymn.net 有現成核對底本。呢度將嗰批**排到隊頭**先做 OCR。
+//
+// 點解:複核線嘅樽頸係 Claude 額度(硬頂 1,500 個決定),唔係池夠唔夠大。有現成
+// 底本嘅歌,複核起上嚟快、信心高、唔使燒 WebSearch 配額,即係「每個決定買到嘅
+// verified」高好多。之前 OCR 池係國語 409 / 粵語 125 而 producer 隨機抽,等於
+// 大部分決定花咗喺冇免費核對來源嗰批。
+//
+// ⚠️ 呢個純粹係**做事次序**,唔涉及歌詞內容:cantonhymn 嘅文字照舊只准核對、
+//    唔准照抄入 DB(HANDOFF §2.0)。預篩命中 ≠ 嗰首歌有歌詞,佢一樣要行 OCR。
+const PRESCREEN_PATH = path.join(__dirname, '..', 'data', 'cantonhymn-prescreen.json');
+
+function loadPrescreenIds() {
+  try {
+    const j = JSON.parse(fs.readFileSync(PRESCREEN_PATH, 'utf8'));
+    return new Set(Object.keys(j.hits || {}).map(Number));
+  } catch (_) {
+    return new Set(); // 未跑過預篩:當冇呢件事,次序維持原狀
+  }
+}
+
+// stable partition:命中嘅照原本次序排前,其餘照原本次序跟尾 —— 唔會搞亂
+// candidateSortKey 喺各自組別入面嘅優先次序(官方靜態版行先嗰套)。
+function prioritizeByPrescreen(cands, label) {
+  const ids = loadPrescreenIds();
+  if (!ids.size) return cands;
+  const front = [], back = [];
+  for (const c of cands) (ids.has(c.id) ? front : back).push(c);
+  if (front.length) log(`  ${label}:cantonhymn 預篩命中 ${front.length} 首,排到隊頭先做`);
+  return front.concat(back);
+}
+
 function report(db) {
   const rows = query(db, `SELECT lyrics_status, COUNT(*) n FROM hymns_all WHERE curated=1 AND status!='dead' GROUP BY lyrics_status`);
   log('歌詞進度(curated,按 status):');
@@ -317,7 +350,7 @@ async function runCC(db, budget) {
   // (呢度風險本身細好多——run 一開波就叫,同 main() openDb() 相隔幾乎零——
   // 但養成「揀候選就攞新鮮」嘅習慣,唔會因為第日改咗執行次序而中招)。
   const freshDb = await openDb();
-  const cands = filterByDlLedger(filterBySkipOrgs(pickCandidates(freshDb), 'CC'), 'CC');
+  const cands = prioritizeByPrescreen(filterByDlLedger(filterBySkipOrgs(pickCandidates(freshDb), 'CC'), 'CC'), 'CC');
   if (!cands.length) { log('冇更多要做嘅歌(全部 curated 都試過 CC / 有歌詞 / 俾 ledger 同 --skip-orgs 剔走)'); return 0; }
 
   let drafted = 0, missed = 0, streak = 0;
@@ -582,7 +615,7 @@ async function runOcr(db, budget) {
   // 誤判「冇更多 cc:miss 等 OCR」,0 首收工。要重新 openDb() 攞返呢一刻
   // 最新嘅版,先睇得到 CC 層啱啱寫落去嘅嘢。
   const freshDb = await openDb();
-  const cands = filterByDlLedger(filterBySkipOrgs(pickOcrCandidates(freshDb), 'OCR'), 'OCR');
+  const cands = prioritizeByPrescreen(filterByDlLedger(filterBySkipOrgs(pickOcrCandidates(freshDb), 'OCR'), 'OCR'), 'OCR');
   if (!cands.length) { log('冇更多 cc:miss 嘅歌等 OCR(或者淨低嗰啲俾 ledger / --skip-orgs 剔走)'); return 0; }
 
   let drafted = 0, unavailable = 0, ocrMiss = 0, streak = 0;
