@@ -22,6 +22,7 @@ LOG=/tmp/hymn_keeper.log
 FLOG=/tmp/hymn_fetchlyrics.log
 MARK=/tmp/lyrics-sprint-keeper-mark      # 上一轉開波嗰時 FLOG 嘅 byte offset
 STREAK=/tmp/lyrics-sprint-403-streak     # 連續「開波即斷路」次數
+STARVE=/tmp/lyrics-sprint-ocr-starved    # 上一轉 OCR 開到但池入面冇一首攻得(全部俾 ledger cooldown / --skip-orgs 剔走)
 
 NODE_BIN="$(command -v node)"
 SQLITE_BIN="$(command -v sqlite3)"
@@ -62,6 +63,19 @@ was_circuit_broken() {
   (( brk_e - first_e <= 300 ))
 }
 
+# 上一轉 OCR 係咪「開到但一首都攻唔到」——即係 POOL 條 SQL 數到嘅 cc:miss 全部
+# 俾 fetchLyrics 自己嘅落載失敗 ledger(12 鐘頭 cooldown / fails>=3)或者 --skip-orgs 剔走。
+# 唔偵測嘅話 POOL 會永遠停喺高位、跌唔穿 POOL_FLOOR,keeper 就會一路空轉開 OCR,
+# 補倉嘅 CC 分支永遠行唔到(2026-08-15 15:21–17:00 實際咁樣蝕咗 1.5 個鐘)。
+was_ocr_starved() {
+  local off block
+  off="$(cat "$MARK" 2>/dev/null)"
+  [[ -z "$off" ]] && return 1
+  block="$(tail -c "+$((off + 1))" "$FLOG" 2>/dev/null)"
+  [[ -z "$block" ]] && return 1
+  echo "$block" | grep -q '冇更多 cc:miss 嘅歌等 OCR'
+}
+
 # fetchLyrics.js 用相對路徑跑(scripts/… + ../data、../lib),所以成個 keeper
 # 一開波就 cd 入 backend,兩條分支都唔使各自 cd。
 cd "$BACKEND" || { log "⛔ cd 唔到 $BACKEND"; exit 1; }
@@ -94,12 +108,27 @@ while true; do
     else
       echo 0 > "$STREAK"
     fi
+    if was_ocr_starved; then
+      touch "$STARVE"
+      log "⚠ 上一轉 OCR 池入面冇一首攻得(全部 cooldown / skip-orgs)→ 下一轉強制轉 CC 補倉"
+    else
+      rm -f "$STARVE"
+    fi
     rm -f "$MARK"
   fi
 
   POOL="$(count "SELECT COUNT(*) FROM hymns_all WHERE curated=1 AND status!='dead' AND lyrics_status='none' AND lyrics_source='cc:miss';")"
   CCLEFT="$(count "SELECT COUNT(*) FROM hymns_all WHERE curated=1 AND status!='dead' AND (lyrics_status IS NULL OR lyrics_status='none') AND (lyrics_source IS NULL OR lyrics_source='');")"
-  DRAFTS="$(count "SELECT COUNT(*) FROM hymns_all WHERE curated=1 AND status!='dead' AND lyrics_status='draft';")"
+  # ⚠️ 2026-08-16:唔可以再數 draft 總數 —— Eric 拍板將「中文歌配英文歌詞」嗰批
+  # 全面扣起(唔准 apply、唔准判死,等新方法出嚟先處理),而佢哋一直留喺 draft。
+  # 用總數就會出現「隊列 444 塞爆 → 熄咗 producer」但其實得 190 首做得嘅情況
+  # (2026-08-16 朝早實錄:P 線白白閒置咗成個上晝)。所以數「真正可做」嗰個。
+  DRAFTS="$("$NODE_BIN" "$REPO/ops/lyrics/bi-freeze.mjs" --count 2>/dev/null)"
+  # script 有咩冬瓜豆腐就 fallback 返總數(保守:寧願早唞都好過亂出貨)
+  if [[ -z "$DRAFTS" ]]; then
+    DRAFTS="$(count "SELECT COUNT(*) FROM hymns_all WHERE curated=1 AND status!='dead' AND lyrics_status='draft';")"
+    log "⚠ bi-freeze --count 攞唔到數,fallback 用 draft 總數 $DRAFTS"
+  fi
 
   # sqlite3 讀唔到(DB 俾人揸緊鎖之類)就今 tick 唔做嘢,唔好靠估開 producer。
   if [[ -z "$POOL" || -z "$CCLEFT" || -z "$DRAFTS" ]]; then
@@ -107,20 +136,33 @@ while true; do
     sleep "$TICK"; continue
   fi
 
-  if (( DRAFTS >= DRAFT_CEILING )); then
-    log "draft 隊列 $DRAFTS ≥ $DRAFT_CEILING,reviewer 追唔切,唞 10 分鐘"
+  # 2026-08-16 LYRICS-CJK-OCR-ROOTCAUSE-PLAN §P4:重做隊(Eric 拍板嗰 280 首)
+  # 有貨嗰陣唔受 ceiling 限制 —— ceiling 原意係「reviewer 追唔切就唔好堆新貨」,
+  # 重做批係 Eric 點名要重出嘅舊貨,fetchLyrics 會排佢哋隊頭先做。
+  REDO_PENDING="$("$NODE_BIN" "$REPO/ops/lyrics/requeue-pending-count.mjs" 2>/dev/null | head -1)"
+  [[ -z "$REDO_PENDING" ]] && REDO_PENDING=0
+  if (( DRAFTS >= DRAFT_CEILING )) && (( REDO_PENDING == 0 )); then
+    log "可做 draft $DRAFTS ≥ $DRAFT_CEILING,reviewer 追唔切,唞 10 分鐘"
     sleep 600; continue
+  fi
+  if (( REDO_PENDING > 0 )); then
+    log "重做隊仲有 $REDO_PENDING 首(ceiling 唔攔重做批)"
   fi
 
   wc -c < "$FLOG" 2>/dev/null | tr -d ' ' > "$MARK" || echo 0 > "$MARK"
 
-  if (( POOL < POOL_FLOOR )) && (( CCLEFT > 0 )); then
-    log "池 $POOL < $POOL_FLOOR,CC 未行 $CCLEFT 首 → 開 CC 補倉(budget 300)"
+  if { (( POOL < POOL_FLOOR )) || [[ -f "$STARVE" ]]; } && (( CCLEFT > 0 )); then
+    if [[ -f "$STARVE" ]]; then
+      log "池 $POOL 但全部攻唔到(cooldown / skip-orgs),CC 未行 $CCLEFT 首 → 開 CC 補倉(budget 300)"
+      rm -f "$STARVE"
+    else
+      log "池 $POOL < $POOL_FLOOR,CC 未行 $CCLEFT 首 → 開 CC 補倉(budget 300)"
+    fi
     nohup "$NODE_BIN" scripts/fetchLyrics.js --mode cc --budget 300 --delay 3000 --ignore-window \
       >> "$FLOG" 2>&1 &
     disown
   elif (( POOL > 0 )); then
-    log "池 $POOL、draft $DRAFTS → 開 OCR(budget 120)"
+    log "池 $POOL、可做 draft $DRAFTS → 開 OCR(budget 120)"
     nohup "$NODE_BIN" scripts/fetchLyrics.js --mode ocr --budget 120 --delay 4000 --ignore-window \
       --skip-orgs "$SKIP_ORGS" >> "$FLOG" 2>&1 &
     disown

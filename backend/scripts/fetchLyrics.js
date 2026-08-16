@@ -65,8 +65,12 @@ import os from 'os';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { openDb, saveDb, query, sleep, acquireDbLock, releaseDbLock, candidateSortKey } from '../lib/hymnDb.js';
-import { normCompare, bigramDice } from '../lib/textSimilarity.js';
 import { detectWhisperLang, runWhisperJson as runWhisperJsonShared, DEFAULT_WHISPER_MODEL_NAME } from '../lib/whisperTranscribe.js';
+// 2026-08-16 LYRICS-CJK-OCR-ROOTCAUSE-PLAN:合併演算法抽咗去 lib(P2 fuzzy watermark
+// + P3 行級投票喺嗰邊),中文判定共用 lyricsLangCheck.js。
+import { mergeOcrLines } from '../lib/ocrMerge.js';
+import { CJK_LANGS, cjkCount } from '../lib/lyricsLangCheck.js';
+import { paddleEntriesToFrameLines } from '../lib/paddleAdapter.js';
 
 const exec = promisify(execCb);
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -215,6 +219,31 @@ function prioritizeByPrescreen(cands, label) {
   const front = [], back = [];
   for (const c of cands) (ids.has(c.id) ? front : back).push(c);
   if (front.length) log(`  ${label}:cantonhymn 預篩命中 ${front.length} 首,排到隊頭先做`);
+  return front.concat(back);
+}
+
+// ── 重做隊列優先(LYRICS-CJK-OCR-ROOTCAUSE-PLAN §P4,2026-08-16)────────
+// backend/data/lyrics-requeue-priority.json 記住 Eric 拍板要**優先重做**嘅歌
+// (71 首 live 純英文遺害排最先,之後係爛 draft 重做批)。呢啲 id 排到隊頭
+// 最前(先於 cantonhymn 預篩)。名單唔使清:一首重做完 source 由 'cc:miss'
+// 變返 'ocr',pickOcrCandidates 自然唔會再揀佢,留喺名單零影響。
+const REQUEUE_PRIORITY_PATH = path.join(__dirname, '..', 'data', 'lyrics-requeue-priority.json');
+
+function prioritizeByRequeue(cands, label) {
+  let ids;
+  try {
+    ids = new Set(JSON.parse(fs.readFileSync(REQUEUE_PRIORITY_PATH, 'utf8')).ids || []);
+  } catch (_) {
+    return cands; // 冇名單 = 冇呢回事
+  }
+  if (!ids.size) return cands;
+  const front = [], back = [];
+  for (const c of cands) (ids.has(c.id) ? front : back).push(c);
+  if (!front.length) return cands;
+  // front 跟返名單檔嘅次序(名單係按緊急度排:live 遺害行最先)
+  const order = [...ids];
+  front.sort((a, b) => order.indexOf(a.id) - order.indexOf(b.id));
+  log(`  ${label}:重做優先名單命中 ${front.length} 首,排到隊頭最前`);
   return front.concat(back);
 }
 
@@ -411,12 +440,15 @@ const WHISPER_BIN = 'whisper-cli';
 const WHISPER_MODEL = path.join(__dirname, '..', 'models', `ggml-${DEFAULT_WHISPER_MODEL_NAME}.bin`);
 
 // 落低清片(video+audio 埋一齊,俾 whisper 之後攞音軌用,唔使再落多次)。
-// bestvideo+bestaudio 先(ffmpeg merge),先 fallback 去 combined best —— 純
-// bestvideo 冇音軌,whisper 就用唔到,一定要有音軌先夠用。
+// 2026-08-16 改 format 18(360p 漸進式 mp4,自帶音軌)行先:當日實測同一條片
+// (US6S0B3ECJ8)用 bestvideo+bestaudio 落 403、用 18 即刻落到 —— googlevideo
+// 間歇性擋 DASH 分流格式,漸進式冇事;18 對 pipeline 係完美格式(360p Paddle
+// 已實測夠準、有音軌俾 whisper、慳一步 ffmpeg merge)。冇 18 嘅片先 fallback
+// 返 DASH merge / combined best(純 bestvideo 冇音軌,whisper 用唔到,唔要)。
 async function downloadVideoLowRes(youtubeId, dir) {
   const outTemplate = path.join(dir, 'video.%(ext)s');
   await exec(
-    `yt-dlp -f "bestvideo[height<=360]+bestaudio/best[height<=360]" -o "${outTemplate}" ` +
+    `yt-dlp -f "18/bestvideo[height<=360]+bestaudio/best[height<=360]" -o "${outTemplate}" ` +
     `"https://www.youtube.com/watch?v=${youtubeId}"`,
     { timeout: 180000 }
   );
@@ -463,104 +495,34 @@ async function mapConcurrent(items, limit, fn) {
   return results;
 }
 
-// 清一行 OCR 文字:實測撞過卡拉OK填色特效令 Vision 將同一句讀成「AA」兩份黏埋
-// 一齊(例:「找到我找到我」),得返偶數長度先可能係呢種情況,一半一半比較,
-// 啱就摺埋得返一份。
-function cleanOcrLine(raw) {
-  let s = (raw || '').trim();
-  if (!s) return '';
-  if (s.length % 2 === 0) {
-    const half = s.length / 2;
-    if (s.slice(0, half) === s.slice(half)) s = s.slice(0, half);
-  }
-  return s;
-}
-
-// 段落級(block)相似度門檻 —— 相鄰 frame 嘅文字 normalize 後 bigram Dice ≥ 呢個數,
-// 當係同一版字幕(OCR 抽 frame 密過畫面轉字幕,同一句歌詞正常會影中 2-5 張 frame)。
-const BLOCK_SIM_THRESHOLD = 0.7;
-
-// 合併全部 frame 嘅 OCR 文字做一份歌詞草稿 + 段落級時間軸。
+// ── PaddleOCR 引擎(§P1,中文歌主力)────────────────────────────────
+// mergeOcrLines/cleanOcrLine 本體搬咗去 lib/ocrMerge.js(P2 fuzzy watermark +
+// P3 行級投票喺嗰邊,有離線 harness 回歸)。呢度剩返引擎層:邊個 engine 讀
+// frame、Paddle 專屬嘅行級 filter。
 //
-// ⚠️ 2026-07-27 STAGE 3(音訊次序驗證層)重寫:舊版(逐行/逐段浮現去重)靠「畫面
-// 顯示次序」做重複判斷嘅唯一根據,冇對照實際演唱(audio)—— Eric 抽查 id=141
-// 揪出嚟:OCR 每 2 秒抽一張 frame,同一版字幕正常影 2-5 次(假重複),舊版嘅
-// 「連續完全一樣先算重複」對雜訊(卡拉OK填色令逐張 OCR 結果有少少出入)好脆弱,
-// 斷鏈之後假重複同真重複(唱兩次)混埋一齊,冇得分。
-//
-// 新做法分兩步(唔再靠「畫面次序」判斷真假重複 —— 呢個判斷而家交咗俾 STAGE 3
-// 嘅 alignLyrics.js,靠 whisper timestamp 做 ground truth):
-//   1. 段落分組:相鄰 frame 文字相似度 ≥ BLOCK_SIM_THRESHOLD → 同一個 block(假
-//      重複,frame 抽得密過字幕轉嘅速度),block 代表文字揀當中最長/最完整嘅
-//      變體(卡拉OK/經文逐字浮現,最遲嗰張通常最齊全,但唔假設順序,逐張比長度)。
-//   2. 相鄰 block 之間再撞多次相似度 —— OCR 雜訊(一張讀衰咗)有時會將本應
-//      合埋嘅假重複喺同一版字幕入面截斷做兩個相鄰 block,需要再合一次。相隔
-//      遠(中間隔咗其他唔同 block)嘅重複唔會撞入呢層,保留做「可能係真重複」
-//      (真定假,終極由 alignLyrics.js 對照 whisper 判)。
-// 唔再用「同句全曲上限N次」呢種規則 —— 會連真正嘅第二輪都一齊刪走。
-//
-// 回傳 { blocks: [{t, text}], text, watermarkCount }。blocks 直接存入
-// lyrics_timeline.ocr(STAGE 3 schema:{t: 秒, text: block 文字})。
-// frameLineLists: string[][],每個元素係一張 frame(已經跟返個 frame 上到下嘅次序)嘅文字行。
-function mergeOcrLines(frameLineLists) {
-  const cleaned = frameLineLists.map((lines) => lines.map(cleanOcrLine).filter(Boolean));
+// 實測(2026-08-16,LYRICS-CJK-OCR-ROOTCAUSE-PLAN §1):macOS Vision 對圓體/
+// 藝術中文字體到頂(720p+預處理照錯「憐憫→機憫」),PaddleOCR chinese_cht
+// 360p 都全對,仲有信心分+bbox。所以 lang∈{國語,粵語,兒童} 行 Paddle,英文
+// 照舊 Vision(英文字幕 Vision 夠準,唔使開 python)。
 
-  // 水印偵測(不變):淨係當有字嘅 frame 做分母(冇字嘅 frame 唔應該拉低個百分比)。
-  const framesWithText = cleaned.filter((f) => f.length > 0);
-  const freq = new Map();
-  for (const f of cleaned) for (const line of new Set(f)) freq.set(line, (freq.get(line) || 0) + 1);
-  const watermark = new Set();
-  if (framesWithText.length) {
-    for (const [line, n] of freq) if (n / framesWithText.length > 0.6) watermark.add(line);
+const PADDLE_PY = path.join(__dirname, '..', 'tools', 'paddle-venv', 'bin', 'python');
+const PADDLEFRAME = path.join(__dirname, '..', 'tools', 'paddleframe.py');
+const paddleReady = () => fs.existsSync(PADDLE_PY) && fs.existsSync(PADDLEFRAME);
+
+// 一次過 OCR 成首歌嘅 frame(model 載入 ~5 秒,逐張叫就嘥晒),再行 lib/paddleAdapter.js
+// 嘅行級 filter(score/拼音/殘影/位置級 watermark)。回傳 string[][](同 Vision
+// 路徑一樣 shape,餵 mergeOcrLines);出錯回傳 null(調用方 fallback 去 Vision)。
+async function ocrFramesPaddle(framePaths) {
+  try {
+    const { stdout } = await exec(
+      `"${PADDLE_PY}" "${PADDLEFRAME}" ${framePaths.map((f) => `"${f}"`).join(' ')}`,
+      { timeout: 10 * 60 * 1000, maxBuffer: 64 * 1024 * 1024 }
+    );
+    return paddleEntriesToFrameLines(JSON.parse(stdout));
+  } catch (e) {
+    log(`    ⚠ PaddleOCR 行唔到(fallback 返 Vision):${String(e?.message || e).slice(0, 200)}`);
+    return null;
   }
-
-  // 逐張 frame 剔水印,計時間點(第 N 張 frame ≈ N × FRAME_INTERVAL_SEC 秒,N 由 1 起)。
-  const frames = [];
-  cleaned.forEach((rawFrame, idx) => {
-    const lines = rawFrame.filter((l) => !watermark.has(l));
-    if (!lines.length) return;
-    frames.push({ t: (idx + 1) * FRAME_INTERVAL_SEC, text: lines.join('\n') });
-  });
-
-  // Step 1:段落分組 —— 相鄰 frame 相似度夠高就合做同一個 block。
-  const rawBlocks = [];
-  for (const f of frames) {
-    const cur = rawBlocks[rawBlocks.length - 1];
-    const lastFrameInBlock = cur ? cur.frames[cur.frames.length - 1] : null;
-    if (lastFrameInBlock && bigramDice(normCompare(lastFrameInBlock.text), normCompare(f.text)) >= BLOCK_SIM_THRESHOLD) {
-      cur.frames.push(f);
-    } else {
-      rawBlocks.push({ frames: [f] });
-    }
-  }
-  // 每個 block 揀最長(最完整)嘅變體做代表文字。
-  let blocks = rawBlocks.map((b) => {
-    const best = b.frames.reduce((a, c) => (charCount(c.text) >= charCount(a.text) ? c : a));
-    return { t: b.frames[0].t, text: best.text };
-  });
-
-  // Step 2:相鄰 block 之間再合一次(修雜訊令假重複斷鏈嘅情況)。
-  let merged = true;
-  while (merged) {
-    merged = false;
-    const next = [];
-    for (const b of blocks) {
-      const prev = next[next.length - 1];
-      if (prev && bigramDice(normCompare(prev.text), normCompare(b.text)) >= BLOCK_SIM_THRESHOLD) {
-        if (charCount(b.text) > charCount(prev.text)) prev.text = b.text; // 揀長嗰份
-        merged = true; // t 保留 prev 嗰個(較早)
-      } else {
-        next.push({ ...b });
-      }
-    }
-    blocks = next;
-  }
-
-  return {
-    blocks,
-    text: blocks.map((b) => b.text).join('\n\n').trim(),
-    watermarkCount: watermark.size,
-  };
 }
 
 async function extractAudioWav(videoPath, dir) {
@@ -615,7 +577,10 @@ async function runOcr(db, budget) {
   // 誤判「冇更多 cc:miss 等 OCR」,0 首收工。要重新 openDb() 攞返呢一刻
   // 最新嘅版,先睇得到 CC 層啱啱寫落去嘅嘢。
   const freshDb = await openDb();
-  const cands = prioritizeByPrescreen(filterByDlLedger(filterBySkipOrgs(pickOcrCandidates(freshDb), 'OCR'), 'OCR'), 'OCR');
+  const cands = prioritizeByRequeue(
+    prioritizeByPrescreen(filterByDlLedger(filterBySkipOrgs(pickOcrCandidates(freshDb), 'OCR'), 'OCR'), 'OCR'),
+    'OCR'
+  );
   if (!cands.length) { log('冇更多 cc:miss 嘅歌等 OCR(或者淨低嗰啲俾 ledger / --skip-orgs 剔走)'); return 0; }
 
   let drafted = 0, unavailable = 0, ocrMiss = 0, streak = 0;
@@ -651,10 +616,33 @@ async function runOcr(db, budget) {
 
       const frames = await extractFrames(videoPath, dir);
       log(`    抽咗 ${frames.length} 張 frame`);
-      const frameLines = await mapConcurrent(frames, OCR_FRAME_CONCURRENCY, ocrFrame);
-      const { blocks: ocrBlocks, text: ocrText, watermarkCount } = mergeOcrLines(frameLines);
+
+      // §P1 引擎選擇:中文歌行 PaddleOCR(藝術字體實測完勝 Vision),英文照舊
+      // Vision。Paddle 行唔到(venv 冧咗/JSON 壞)或者讀出嚟 CJK 得雞碎咁多
+      // (可能簡體字幕/怪字體認唔晒)→ Vision 兜底,邊份 CJK 多用邊份。
+      let engine = 'vision';
+      let merged = null;
+      if (CJK_LANGS.has(c.lang) && paddleReady()) {
+        const paddleLines = await ocrFramesPaddle(frames);
+        if (paddleLines) {
+          merged = mergeOcrLines(paddleLines, FRAME_INTERVAL_SEC);
+          engine = 'paddle';
+        }
+      }
+      if (!merged || (engine === 'paddle' && cjkCount(merged.text) < MIN_DRAFT_CHARS)) {
+        const visionLines = await mapConcurrent(frames, OCR_FRAME_CONCURRENCY, ocrFrame);
+        const visionMerged = mergeOcrLines(visionLines, FRAME_INTERVAL_SEC);
+        if (!merged || cjkCount(visionMerged.text) > cjkCount(merged.text)) {
+          if (engine === 'paddle') {
+            log(`    · Paddle 讀到 CJK 太少(${cjkCount(merged.text)}),Vision 兜底(${cjkCount(visionMerged.text)})`);
+            engine = 'vision-fallback';
+          }
+          merged = visionMerged;
+        }
+      }
+      const { blocks: ocrBlocks, text: ocrText, watermarkCount } = merged;
       const ocrChars = charCount(ocrText);
-      log(`    OCR 草稿 ${ocrChars} 隻字、${ocrBlocks.length} 個段落 block(剔咗 ${watermarkCount} 種疑似水印行)`);
+      log(`    OCR(${engine})草稿 ${ocrChars} 隻字、${ocrBlocks.length} 個段落 block(剔咗 ${watermarkCount} 組疑似水印行)`);
 
       // 順手做 whisper(用返呢首歌啱啱落載嗰條片嘅音軌,零額外 request)。失敗
       // 唔阻 OCR draft(catch 咗)——timeline 冇 whisper 就等 alignBackfill.js 補。

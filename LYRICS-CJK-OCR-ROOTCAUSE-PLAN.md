@@ -107,8 +107,21 @@ P1-P3落地後排隊重OCR:
 - ❌ whisper做主來源——實測錯字率唔合格,只做仲裁
 - ❌ Claude vision做主pipeline——每首~30-40張圖太貴,只做死症修殘局
 
-## 7. 等Eric拍板嘅三件事
+## 7. Eric拍板結果(2026-08-16)+落地狀態
 
-1. **雙語對照格式**係咪接受出街(官方MV就係中英對照;建議:接受,呢個係忠於原作)?定係要淨中文行?(技術上兩樣都得,per-line filter一開就淨中文)
-2. **71首live純英文**嘅過渡處理:重做期間照住先(建議)定即刻侷unusable落架?
-3. P1-P4開唔開工(P0建議即批,佢淨係令擋板更準)。
+Eric三項全批:(1)跟官方,雙語對照照出街;(2)71首live遺害唔落架,重做期間照住,救返後自動更新;(3)P0-P4全部落地。
+
+**全部已於2026-08-16下晝落地**(執行:Fable 5):
+
+| 項 | 狀態 | 落點 |
+|---|---|---|
+| P0-a 擋板行級判斷 | ✅ | `backend/lib/lyricsLangCheck.js`(唯一判定來源),auditLyricsBatch.js + bi-freeze.mjs 共用;可做draft即時190→452 |
+| P0-b hold池釋放 | ✅ | 117條→`lyrics-bilingual-release-20260816-passed.json`(新audit 117/117過,交47H班覆核apply);4條改lang=英文+`lyrics-english4-release-20260816-passed.json`;hold檔清空歸檔 |
+| P1 PaddleOCR主引擎 | ✅ | `backend/tools/paddle-venv`(系統py3.9,pin 3.3.1/3.7.0)+`paddleframe.py`+`lib/paddleAdapter.js`;中文歌行Paddle,英文行Vision,CJK太少自動Vision兜底 |
+| P2 watermark四重偵測 | ✅ | `lib/ocrMerge.js`:Dice聚類+純拉丁containment合併+覆蓋率/episode+30秒長駐規則;adapter幾何規則(字高<55%中位+偏離中線);拼音行/credits行filter |
+| P3 行級多數投票 | ✅ | `lib/ocrMerge.js` voteBlockText;block合併都改埋support優先 |
+| P4 重做隊280首 | ✅ | 66 live遺害+45凍結+169亂碼draft(近似變體比率≥0.5)reset做cc:miss;`lyrics-requeue-priority.json`排隊頭;keeper改「重做隊有貨ceiling唔攔」並重啟;16首KEC/約書亞英文cover改lang |
+
+離線回歸(真實frame存底):id 4228關鍵句「慈愛和憐憫是天父的心腸」✓、副歌7次保留✓、credits剔清✓;id 241草書watermark 163變體→0、「雙膝跪下」69→1、中文歌詞全對;id 355雙語官方字幕完整保留。
+
+備註:實測後對計劃嘅兩個修訂——(a)位置級「頻率型」watermark filter會誤殺重複度高嘅兒歌副歌,已改用無狀態幾何規則(細字+偏離中線);(b)重做隊由~420收窄到280:雙語clean draft(同hold池117條同一class)直接入review唔重跑,慳YouTube quota(出口IP係全App命脈)。5142/5143兩首英文兒歌(lang=兒童)未郁,等Eric定lang體系。

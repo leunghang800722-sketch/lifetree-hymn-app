@@ -29,6 +29,7 @@
 import fs from 'fs';
 import path from 'path';
 import { normCompare, isCJK } from '../lib/textSimilarity.js';
+import { langMismatchReason as langMismatchReasonShared } from '../lib/lyricsLangCheck.js';
 
 const stamp = () => new Date().toISOString().replace('T', ' ').slice(0, 19);
 const log = (...a) => console.log(`[${stamp()}]`, ...a);
@@ -50,26 +51,15 @@ function charCountCJK(s) {
   return ((s || '').match(CJK_RE) || []).length;
 }
 
-// ── 語言錯配 bucket(LYRICS-47H-SPRINT-PLAN §P0.2)──────────────────────
-// 背景:全庫掃過,2207 首 verified 入面有 263 首係「lang 標住中文,但歌詞內容
-// 主要係英文」(69 首連一隻中文字都冇)。Eric 拍板嗰 263 首 live 嘅唔郁,但
-// **新入庫嘅唔可以再有同類**。呢度做機械擋板:reviewer 喺 apply JSON 每條
-// {id, lyrics} 帶埋 export 出嚟嗰個 `lang` 欄,lang 係國語/粵語/兒童而歌詞
-// 拉丁字母數 > CJK 字數,就撥入 <input>-langmismatch.json,唔入 passed。
-// 呢啲 entry 由班次 merge 落 backend/data/lyrics-langmismatch-hold.json 等 Eric
-// 拍板(§7 分支 A 收貨 / 分支 B 判 unusable),draft 保留唔判死、唔 demote。
-const CJK_LANGS = new Set(['國語', '粵語', '兒童']);
-const LATIN_RE = /[A-Za-z]/g;
-
+// ── 語言錯配 bucket(LYRICS-47H-SPRINT-PLAN §P0.2 → 2026-08-16 改行級)────
+// 舊版全文計「拉丁字母總數 vs CJK 字總數」——實測屈死雙語對照:同一句歌詞,
+// 英文譯行天然係中文行 3-4 倍字符,官方 MV 中英對照字幕必然中招(hold 池 121
+// 條有 117 條中文齊晒讀啱晒)。Eric 2026-08-16 拍板:跟官方,雙語對照照出街。
+// 判定改用 lib/lyricsLangCheck.js 嘅**行級**分類(CJK 行佔比 ≥35% pass;
+// <10% 真錯配 hold;中間疑似爛 draft hold),唯一來源,bi-freeze.mjs 都用同一份。
 function langMismatchReason(item) {
   if (!Object.prototype.hasOwnProperty.call(item || {}, 'lang')) return null; // 冇 lang 欄就判唔到
-  if (!CJK_LANGS.has(item.lang)) return null;
-  const lyrics = (item.lyrics || '').trim();
-  if (!lyrics) return null;
-  const cjk = charCountCJK(lyrics);
-  const latin = (lyrics.match(LATIN_RE) || []).length;
-  if (latin > cjk) return `語言錯配:lang=${item.lang} 但拉丁字母 ${latin} 個 > CJK ${cjk} 個(入 hold 池等 Eric 拍板)`;
-  return null;
+  return langMismatchReasonShared(item.lang, item.lyrics);
 }
 
 // 檢查單一條目,回傳 reject 原因陣列(空陣列 = 全過)。
