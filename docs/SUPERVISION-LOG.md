@@ -5382,3 +5382,43 @@ ops/deploy/backend-restart.sh --dry-run
 1. `ops/deploy/approve.sh backend <HEAD sha> --confirm` + `ops/deploy/backend-restart.sh` —— 等埋 backend/routes/clientLog.js + backend/lib/clientLogStore.js commit 咗先過到 gate,兩單嘢(呢個 + 每日校對嗰 13 首)一齊 restart。
 2. restart 完要覆查 live:全庫 `lyrics_status='verified' AND lyrics IS NOT NULL` 嘅 count 應該同 live API 有歌詞嘅 count 對得上(跟返 21 首嗰次做法)。
 3. D2(重開 keeper):`/tmp/lyrics-sprint-stop` 呢個安全掣、`ops/lyrics/producer-keeper.sh` 呢個背景 process 都要喺實機做——sandbox 呢邊嘅背景 process 隨 call 完即死,冚唪唥留唔低。
+
+## 2026-08-17 13:10 — 歌詞持續追趕:P 線重開 + 新節奏排班(Eric 13:00 指示)
+
+**指示:** 47H 衝刺收咗工,但**唔好停,繼續追**;**唔再訂死線**;要現實啲嘅排班(唔好再似 b04–b06/wrap 咁死得早);每 2–3 個鐘要查到準確進度。
+
+### 1. 安全掣解除 + P 線重開
+- `/tmp/lyrics-sprint-stop` 係我 11:13 收尾時 set 嘅(防止有人誤開 keeper)。**已經 `rm -f`** —— 唔解除嘅話 keeper 一開就會即刻自殺。
+- 部機 10:56 重啟殺晒 keeper/producer/caffeinate,已經全部重開:keeper pid 17967、caffeinate pid 17968、fetchLyrics pid 18006。
+- **PaddleOCR 環境重啟後完好**(`paddle-venv` + `paddleframe.py` 都喺,`import paddleocr` 過)。實測跑緊:python subprocess 一次過食 240 張 frame。
+- 開波即刻食重做隊:log 實錄「**重做優先名單命中 457 首,排到隊頭最前**」+「cantonhymn 預篩命中 45 首」。
+
+### 2. ⚠️ 新引擎慢好多(要調整期望)
+PaddleOCR 第一首歌用咗 **4 分鐘以上**(舊 Vision pipeline 約 1 分鐘/首)。即係 producer 吞吐由 ~60–77 首/鐘跌到粗略 **~15 首/鐘**。
+- **重做隊 490 首 ≈ 33 個鐘連續 producing**(約一日半)先做得晒。
+- producer **唔食 Claude 額度**,所以慢唔緊要,但**複核班有時會見到 draft 唔多**——呢個係正常,唔好當故障、更加唔好開多個 producer 去「加速」(YouTube 出口 IP 係全 App 命脈)。
+
+### 3. 真實進度基線(誠實數)
+| | |
+|---|---|
+| verified | **2812** |
+| 覆蓋率 | **44.1%** |
+| 重做隊未做 | **490 首**(名單 573 個 id) |
+
+⚠️ 47H 衝刺報嘅 50.4% **唔再成立**:8/17 11:57 另一條線執行咗 Eric 拍板嘅 **416 首 bulk 止血**(剷走中英混合歌詞 + 併入重做隊),覆蓋率主動回落到 44.1%。即係**真實淨進度係 34.2% → 44.1%(+9.9 個點)**,嗰 416 首要靠 PaddleOCR 重做返先算數。
+
+### 4. 新排班(冇死線,可持續)
+| Job | 時間 | 做乜 |
+|---|---|---|
+| `lyrics-daily-proofread` | 每日 09:40 / 15:40 / 21:40 | 原有日常校對(wrap 補做時已開返,**確認 enabled**) |
+| `lyrics-catchup`(新) | 每日 **01:30 / 12:30** | 追趕班,同日常班錯開 ≥3 個鐘 |
+| `lyrics-progress-heartbeat`(新) | **每 3 個鐘**(02/05/08/11/14/17/20/23:00) | 極輕量,只寫一行進度落呢個 log,唔複核唔 apply |
+
+**針對「班次死得早」嘅四項改動**(全部寫死喺 `lyrics-catchup` SKILL):
+1. 每班**硬上限 80 個決定**(衝刺係冇上限)
+2. 每班**最多 2 個鐘**(衝刺係 3h45m —— 實測太長,中段撞 5 小時滾動窗口就成班蒸發)
+3. 每批 **≤40 首**,做完即刻寫 ledger,**開波第一件事就要寫低開波行**(死咗都有紀錄;上個衝刺十二班得四班交到功課)
+4. 累計 **900 個決定**就全部轉輕 checkpoint,等 8/21 15:00 週期 reset
+
+新 ledger:`docs/LYRICS-CATCHUP-LEDGER.md`(基線已寫)。**額度尺唔再信「35 決定 = 1%」** —— 上個衝刺 1,186 個決定就燒到班次一個接一個死,證明個尺太樂觀。
+
