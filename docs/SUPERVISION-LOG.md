@@ -5299,3 +5299,69 @@ restart 嘅實錘、累計決定同額度、模糊個案名單、隊列/producer
 
 **仲未處理(等 Eric 拍板):** 嗰 416 首係衝刺之前同衝刺頭段(8/16 政策落實前)已經 live 嘅舊數,Eric 一路講「唔好郁」,所以呢次一首都冇回捲。
 
+
+---
+
+## 2026-08-17 11:27–11:55 每日自動歌詞校對(lyrics-daily-proofread)
+
+**現況**:export 攞到 46 首 draft(>10,照做)。`alignLyrics.js --all` 跑完出對齊數據。
+
+**數字**:verified 3215 → **3228**(+13)。draft 46 → 14。unavailable +19 → 643。
+
+**今日分佈(46 首)**
+- **verify 出街 13 首**(見下)
+- **unusable(底本判死,踢出隊列)19 首** —— 呢批就係 2026-08-11-13 一路 demote 咗幾晚嘅死症,今次跟 08-13 新規矩一次過清:
+  - 純器樂 6 首:5794 / 5795 / 5798 / 5799 / 5801(讚美之泉鋼琴演奏系列 2)、5915(弦樂四重奏),OCR 全部得標題卡循環
+  - 語言標錯 2 首:4345(日語兒歌標國語 + 亂碼)、8432(盛曉玫日語版標國語)
+  - 只有 credit / 零歌詞 6 首:3251、3904、3946、5352、6396、4718
+  - OCR 全浮水印 1 首:3929
+  - 多語言輪唱標國語 + CCLI 浮水印淹沒 2 首:7536、7538(各國主領演唱)
+  - 一條片多首歌冇法拆 1 首:1850(611《日日夜夜》實際係敬拜會 medley)
+  - 結構性救唔返 1 首:6082(「試聽」預覽片段,永遠得副歌冇主歌)
+- **audit reject(太薄)4 首,留 draft**:6133(40 CJK)、6147(44 CJK)、6179(31 CJK)、8347(37 CJK)。⚠️ 呢 4 首全部係**天然短嘅兒歌/經文短歌**,內容已經核到實(6133 WebSearch 對到、6179 + 4976 CantonHymn 對到、8347 小羊詩歌官網對到、6147 = Away in a Manger 傳統中譯),純粹過唔到 45 CJK 字門檻。6147 爭 1 個字。**要唔要開個「天然短歌」豁免,請 Eric 拍板**,唔係就每晚會再讀多次。
+- **langmismatch hold 6 首**(已 merge 落 `backend/data/lyrics-langmismatch-hold.json`,冇 apply、冇判 unusable):1857、6128、6602(英文為主,CJK 行 0-7%)、7159、7178、7532(官方中英對照,但中文行本身夾住 "Let's Go" / "Grace" 等英文字,行級判定跌到 28-34%,差少少過唔到 35% 門檻)。⚠️ 呢三首係**真雙語官方歌詞**,唔係爛 draft,建議 Eric 睇下要唔要放行。
+- **自行留 draft 4 首**:4396(CantonHymn 對到,但 OCR 只有一半 verse)、3222(信你到尾,MV 報紙道具嘅英文聖經文字污染晒,次序不可靠)、4074(得一段 + 一句亂碼)、6667(Because of You,OCR 好乾淨但 WebSearch 核對唔到,跟規矩留低)
+
+**核對來源**:CantonHymn lookup 6 次(命中 4:4385 珍惜、4396 無比忠心、4976 讓我們彼此相愛、6179 聖靈果子歌;另 6147 用佢 return 嘅 Away in a Manger 英文原文逐句對到)。WebSearch 用咗 11 次(budget 30),核到 6601 / 7159+7178 / 7179 / 7365+7395 / 7373 / 7532 / 6424 / 8347 / 5327 / 6133;1940 用詩篇 19:7-14 原文對到(歌詞係逐句改寫)。全程冇照抄第三方歌詞網文字,只做 OCR 逐字修正。
+
+**⛔ 異常:backend restart 俾部署 Gate 擋咗 —— 13 首未出街**
+```
+ops/deploy/backend-restart.sh --dry-run
+❌ abort:backend/ working tree 有唔屬於運行時豁免嘅未 commit 改動:
+ M backend/routes/clientLog.js
+?? backend/lib/clientLogStore.js
+?? backend/scripts/oneoff-clearBiLiveLyrics-bulk-20260817.mjs
+```
+- HEAD == approved.json 嘅 backend.sha(第一關過咗),擋喺第二關:另一個 session 有未 commit 嘅 backend code。
+- 本 routine 嚴禁 git commit / git add,亦唔會掂人哋嘅 code,所以停低唔夾硬。
+- DB 已經寫實(13 首 lyrics_status='verified'、19 首 'unavailable' 都 query 到),API 200 但仍然行緊舊 in-memory DB(7179/5327/8551/7373/6601 live lyrics 長度全部係 0)。
+- **要出街,等嗰個 session commit 完 backend code(或者 stash),再行 `ops/deploy/backend-restart.sh`。** 同 2026-08-14 通宵班撞嘅係同一個 gate。
+- 另外 apply 撞過鎖:11:43 開始等,個鎖俾 `oneoff-clearBiLiveLyrics-bulk` 一路搶住,11:47:42 先入到,冇 hack,冇 timeout。
+
+**Fable 5 抽查名單(8 首)**
+| id | 歌名 |
+|---|---|
+| 4385 | 珍惜 - ACM 齊唱兒歌2(⚠️ 副歌第一句「要盡我心珍愛…」OCR 冇影到,冇加返,現時副歌只得一句) |
+| 4976 | 崇拜歌詞版《讓我們彼此相愛》 |
+| 5327 | 【齊唱・頌揚】ACM 40周年主題曲 |
+| 6601 | 【一件事 / Onething】Acoustic Live |
+| 7179 | 【祢的呼喚 / Your Calling】 |
+| 7365 | 【如今我信靠 / In God We Trust】官方歌詞MV(⚠️「我神永遠都不動搖」呢句係靠 7395 同 WebSearch 對返嚟,自己條 draft 冇) |
+| 7373 | 【進城曲 / King Is Here】 |
+| 8551 | 幸福 (Blessed) / 泥娃娃 |
+
+---
+
+## 2026-08-17 11:4x-11:5x — 416 首止血(Eric 批准,Fable 5/Cowork sandbox 執行)
+
+**做咗乜:** 上面「437→416」嗰 416 首(全部 `lyrics_status='verified'`,唔係排緊隊嘅個案),Eric 批准套用同 21 首一樣做法:`lyrics=NULL`,唔動 `lyrics_status`。
+
+- 重新用同一條偵測式(lang∈{國語,粵語,兒童} 且拉丁字母>中文字,對 `status='ok'` live 庫查)對現時 DB 查出完整 416 個 id(263→437 嗰個舊統計已經隨 21 首止血跌到 416,呢次係處理返嗰 416)。
+- script:`backend/scripts/oneoff-clearBiLiveLyrics-bulk-20260817.mjs`(commit `7ac3bc0`),行返 `hymnDb.js` 個鎖,逐首落手前重驗(live + BI + 有 `lyrics_draft` 底本先剷)。
+- `--dry` 先過一次(416 會剷、0 skip),再正式行。
+- **結果:剷咗 416 首,skip 0 首。** DB 覆查:416 個 id 全部 `lyrics` 變 NULL、`lyrics_status` 全部維持 `verified` 冇變、`SELECT COUNT(*) WHERE lyrics IS NULL AND lyrics_status='verified'` 剛好等於 416(冇額外 id 被誤 touch)。
+- ⚠️ **backend restart 未做。** 執行呢批嘅係 Cowork sandbox(Linux 隔離環境,經 FUSE mount 呢個 repo 資料夾),**冇 `launchctl` / 冇 Mac 本機 process 控制權**,`ops/deploy/approve.sh`(寫 `~/.hymn-deploy/approved.json`)同 `ops/deploy/backend-restart.sh`(`launchctl bootout/bootstrap`)呢兩步一定要喺實機(有 launchd 嘅 session)先可以完成。而且撞正上面「每日校對」routine 11:27-55 都俾同一個 gate 擋咗(`backend/routes/clientLog.js` / `backend/lib/clientLogStore.js` 未 commit)——呢個 blocker 兩單嘢共用,一齊解決。
+- **遺留:** DB 內 416 首 `lyrics=NULL` 現時仲**未反映落 live**(backend 行緊嘅 in-memory DB 仲係改動前嗰份),要等實機 session 補做 `approve.sh backend <HEAD sha> --confirm` + `backend-restart.sh`,健康檢查過先算數,跟住要用返 §2026-08-17 11:35 個做法覆查 live(全庫 verified count == live 有歌詞 count)。
+- 副技術筆記:Cowork sandbox 呢邊 unlink() 對呢個 mount 一律 `EPERM`(rename 冇事),`hymnDb.js` 嘅 `releaseDbLock()`/git 都係靜靜哋 catch 咗呢個錯,所以每次喺呢邊行完 script 都會留低一個「release 唔到」嘅孤兒 lock file——已經逐個 `mv` 走,冚唪唥唔影響下一個攞鎖嘅人(daily-proofread routine 11:43 等到 11:47:42 就係等緊呢個,佢自己嘅 retry loop 冇 hack、行為正常)。如果之後仲喺呢個 sandbox 執行呢類 script,記得留意呢個 quirk。
+
+**下一步(D1/D2,等呢個 restart 補做完再一齊 wrap):** 300 首(437 等價集入面未入過 273 首重做隊嘅)併入 `lyrics-requeue-priority.json`;65 首「行過 OCR 但仍然錯配」個案標記優先人手覆核;重開 keeper 之前先確認 `/tmp/lyrics-sprint-stop` 狀態(呢個亦都要喺實機做)。
