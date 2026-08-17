@@ -30,6 +30,7 @@ import { AdminEditHymnProvider } from './src/components/AdminEditHymnSheet';
 import { PlaylistProvider } from './src/context/PlaylistContext';
 import { setAuthToken, pullData, pushSync, flush as flushOutbox, getOwner, setOwner, clearOutbox } from './src/sync/userSync';
 import { API_BASE } from './src/config.js';
+import { consumeRemotePauseExpected } from './src/playback-intent.js';
 // IOS-ANDROID-PARITY-PLAN §5 Phase 2 — iOS 本地音頻預載。呢個 module 頂層
 // 冇任何 native 依賴(expo-file-system 淨係喺 module 入面 lazy require、
 // 淨係 iOS call site 先觸發),所以呢度 static import 對 Android 完全 safe。
@@ -427,11 +428,16 @@ function PlayerProvider({ children }) {
   const isShuffledRef = useRef(false);
   const errorSkipCountRef = useRef(0); // §3.7 — consecutive PlaybackError count
   // STREAM-LOCKSCREEN-FREEZE-OPUS5-2026-08-13 D2 —— 「呢個app自己有冇主動叫過
-  // pause()」嘅意圖旗標。淨係covers呢個file入面嘅pause()/play() call site(§4.4
-  // 揪出嘅native quiet-shutoff聽`Event.PlaybackPlayWhenReadyChanged`要靠呢支
-  // flag分辨「我哋自己想暫停」定「native靜靜哋熄咗」)。⚠️已知缺口:
-  // track-player-service.js嘅RemoteDuck permanent:true分支唔會經呢度、亦冇
-  // set呢支flag——如果第時喺嗰個獨立service context都要對呢個flag,要另外接駁。
+  // pause()」嘅意圖旗標。呢個file入面嘅pause()/play() call site全部直接set
+  // 呢支flag(§4.4 揪出嘅native quiet-shutoff聽`Event.PlaybackPlayWhenReadyChanged`
+  // 要靠呢支flag分辨「我哋自己想暫停」定「native靜靜哋熄咗」)。
+  // STREAM-LOCKSCREEN-PAUSE-RESUME-BUG-2026-08-17 —— track-player-service.js
+  // 嘅RemotePause/RemoteStop(鎖屏/耳機/Control Center暫停/停止掣)行喺獨立
+  // event-listener context,冇呢個ref可以碰,而家經playback-intent.js呢個共用
+  // module,喺下面D2嘅PlaybackPlayWhenReadyChanged listener入面consume返嚟同步
+  // 呢支flag(見下面)。⚠️仍然已知缺口:RemoteDuck permanent:true分支(用戶接
+  // 聽電話等唔應該恢復嘅情況)未接駁——呢個係唔同觸發路徑,冇included喺今次
+  // 嘅fix範圍,如果第時要覆蓋要另外處理。
   const expectPlayingRef = useRef(false);
   // BG-PLAYBACK-STOPS-PLAN Fix A — 記住上次 warmIds() 暖過嘅 id 串,防止連環
   // 換歌/撳「下一首」狂 POST /warm(同一組 3 首唔會重覆 call)。
@@ -988,6 +994,20 @@ function PlayerProvider({ children }) {
     //     被呢度誤判做「未預期」而錯誤咁再 play() 番。呢個 race 未實測過。
     const unsubscribePlayWhenReady = TrackPlayer.addEventListener(TPEvent.PlaybackPlayWhenReadyChanged, (event) => {
       try {
+        // STREAM-LOCKSCREEN-PAUSE-RESUME-BUG-2026-08-17 —— 鎖屏/耳機/Control
+        // Center撳暫停/停止掣,係經track-player-service.js嘅RemotePause/
+        // RemoteStop觸發,嗰個file冇呢個component嘅expectPlayingRef可以碰,
+        // 所以喺嗰邊call pause()/stop()之前,經playback-intent.js呢個共用
+        // module留低一個one-shot訊號。呢度consume返嚟(consume-once:讀完
+        // 即刻歸位,唔會賴死响度誤蓋第日真係「native靜靜清除意圖」嗰種要
+        // D2攔嘅場景),但淨係喺呢個event真係對應嗰個pause transition
+        // (playWhenReady===false)先應用去expectPlayingRef,避免同「native
+        // 靜默清除意圖」(呢個flag冇set過,event照舊淨係睇原本嗰支ref)嗰種
+        // D2原本要防範嘅場景撞埋一齊、被誤判做「已預期」。
+        const remotePauseWasExpected = consumeRemotePauseExpected();
+        if (remotePauseWasExpected && event?.playWhenReady === false) {
+          expectPlayingRef.current = false;
+        }
         logDiag('playWhenReadyChanged', {
           appState: appStateRef.current,
           trackState: trackStateRef.current,

@@ -1,6 +1,7 @@
 // TrackPlayer Background Service (v3 compatible)
 import TrackPlayer, { Event } from 'react-native-track-player';
 import { API_BASE } from './config.js';
+import { markRemotePauseExpected } from './playback-intent.js';
 
 // STREAM-MIDTRACK-SILENCE-ROOTCAUSE 續篇(2026-08-13)—— 呢個service行喺獨立
 // registerPlaybackService context,冇App.js嘅logDiag()可以攞,自成一個極簡版
@@ -17,8 +18,21 @@ function logDiag(event, extra) {
 
 export default async function () {
   TrackPlayer.addEventListener(Event.RemotePlay, () => TrackPlayer.play());
-  TrackPlayer.addEventListener(Event.RemotePause, () => TrackPlayer.pause());
-  TrackPlayer.addEventListener(Event.RemoteStop, () => TrackPlayer.stop());
+  // STREAM-LOCKSCREEN-PAUSE-RESUME-BUG-2026-08-17 —— 鎖屏/耳機/Control Center
+  // 嘅暫停/停止掣撳落去,native會令`playWhenReady`變false,觸發App.js嗰個D2
+  // guard(PlaybackPlayWhenReadyChanged listener)。舊code淨係call
+  // TrackPlayer.pause()/stop(),冇話俾App.js嘅expectPlayingRef知呢個係用戶
+  // 主動嘅動作,搞到D2誤判做「native靜靜清除播放意圖」,即刻幫用戶play()番
+  // ——變相撳咗暫停但即刻自己彈返播。而家喺call pause()/stop()之前,經
+  // playback-intent.js呢個共用module,明文話俾D2 guard知呢個係預期之內。
+  TrackPlayer.addEventListener(Event.RemotePause, () => {
+    markRemotePauseExpected();
+    TrackPlayer.pause();
+  });
+  TrackPlayer.addEventListener(Event.RemoteStop, () => {
+    markRemotePauseExpected();
+    TrackPlayer.stop();
+  });
   TrackPlayer.addEventListener(Event.RemoteNext, () => TrackPlayer.skipToNext());
   TrackPlayer.addEventListener(Event.RemotePrevious, () => TrackPlayer.skipToPrevious());
   TrackPlayer.addEventListener(Event.RemoteSeek, (event) => TrackPlayer.seekTo(event.position));
