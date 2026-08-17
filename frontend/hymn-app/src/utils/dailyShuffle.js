@@ -61,9 +61,12 @@ export function randomShuffle(list) {
 
 // 「今日為你預備」用:當日抽 n 首,但保證指定語言各至少一首。
 // (國語佔歌庫一半,唔夾硬保底就成日抽到成堆國語 —— §2.4)
-export function dailyPickBalanced(list, salt, n, langs) {
+// IOS-ANDROID-PARITY-PLAN Phase 2.5 —— 加可選 `d`(Date)參數:個清單係
+// 日期種子決定嘅,即係今晚已經計到「聽日」係邊幾首,可以預先落載。唔傳
+// 就係今日,所有現有 caller 行為不變。
+export function dailyPickBalanced(list, salt, n, langs, d = new Date()) {
   if (!Array.isArray(list) || list.length === 0) return [];
-  const shuffled = seededShuffle(list, `${todayKey()}|${salt}`);
+  const shuffled = seededShuffle(list, `${todayKey(d)}|${salt}`);
   const picked = [];
   const taken = new Set();
 
@@ -78,5 +81,5 @@ export function dailyPickBalanced(list, salt, n, langs) {
     if (!taken.has(h.id)) { picked.push(h); taken.add(h.id); }
   }
   // 保底嗰幾首固定咗排頭,再洗一次先唔會日日都係「粵國英」同一個次序
-  return seededShuffle(picked.slice(0, n), `${todayKey()}|${salt}|order`);
+  return seededShuffle(picked.slice(0, n), `${todayKey(d)}|${salt}|order`);
 }

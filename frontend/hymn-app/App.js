@@ -39,6 +39,7 @@ import {
   getLocalUri as getLocalAudioUri,
   prefetch as prefetchAudio,
   invalidate as invalidateAudioCache,
+  cancelIfDownloading as cancelAudioPrefetch,
   onPrefetchComplete,
 } from './src/audioPrefetch.js';
 import { dailyPickBalanced } from './src/utils/dailyShuffle';
@@ -185,6 +186,13 @@ function warmIds(ids) {
     }).catch(() => {});
   } catch (_) {}
 }
+
+// IOS-ANDROID-PARITY-PLAN Phase 2.5 —— 「聽日」清單頭 2 首嘅 id,由 boot warm
+// effect(下面 §3b①)計好擺喺度;PlayerProvider 嘅 trackChanged listener 喺
+// 用戶真係聽緊歌嗰陣先排佢入落載隊(每個 app session 一次)。兩個 component
+// 同喺呢個 file,用 module scope 傳遞,唔使搞 context/prop 鏈。
+let tomorrowHeadIds = [];
+let tomorrowQueuedThisSession = false;
 
 // STREAM-MIDTRACK-SILENCE-ROOTCAUSE 續篇(2026-08-13)—— 鎖屏播25分鐘停咗嗰單,
 // 查到watchdog/PlaybackError呢幾條路徑就係疑犯,但完全冇log可以睇:TestFlight
@@ -847,10 +855,19 @@ function PlayerProvider({ children }) {
         // 落載嘅 queue/lock),呢度連續 call 兩次就得,唔使等第一個先。
         // backend warm(above)令 prefetch 快好多,兩層係配合唔係重複。
         if (Platform.OS === 'ios') {
+          // Phase 2.5 backstop —— 「而家播緊嗰首」永遠唔准同時落載緊(native
+          // 自動轉歌唔經任何撳掣 call site,喺呢度兜底;撳掣路徑早一步已 cancel)。
+          if (song?.id != null) cancelAudioPrefetch(song.id);
           const n1 = queueRef.current[idx + 1];
           const n2 = queueRef.current[idx + 2];
           if (n1?.id != null) prefetchAudio(n1.id);
           if (n2?.id != null) prefetchAudio(n2.id);
+          // Phase 2.5② —— 用戶真係聽緊歌,先至排「聽日」頭 2 首入落載隊
+          // (每 session 一次;FIFO 排喺即場 next-2 後面,唔會搶priority)。
+          if (!tomorrowQueuedThisSession && tomorrowHeadIds.length) {
+            tomorrowQueuedThisSession = true;
+            for (const tid of tomorrowHeadIds) if (tid != null) prefetchAudio(tid);
+          }
         }
         // §3a playLog:聽夠 30 秒先算一次(skip 唔算)。換咗歌就取消上一個計時器,
         // 開一個新嘅;30 秒後如果仲係播緊同一首,先記錄。
@@ -1668,6 +1685,12 @@ function PlayerProvider({ children }) {
       // Phase 1 量度 t0 —— 用戶撳一個清單/一首歌開播,由呢刻計到出聲,就係
       // 「第一首要 load 幾耐」嘅真機數(origin=start,同轉歌數分開統計)。
       transitionT0Ref.current = { ts: Date.now(), origin: 'start', trackChangedSeen: false, hymnId: null };
+      // Phase 2.5 —— 就嚟播嗰首如果啱啱好背景落載緊,即刻中止讓路俾串流
+      // (已落載完成嘅唔受影響,toTrack 上面已經揀咗 file://)。
+      if (Platform.OS === 'ios') {
+        const startSong = finalList[startIndex];
+        if (startSong?.id != null) cancelAudioPrefetch(startSong.id);
+      }
       await lazyEnsurePlayer();
       await TrackPlayer.reset();
       await TrackPlayer.add(finalList.map(toTrack));
@@ -1703,6 +1726,10 @@ function PlayerProvider({ children }) {
   async function skipToQueueIndex(idx) {
     if (typeof idx !== 'number' || idx < 0) return;
     transitionT0Ref.current = { ts: Date.now(), origin: 'tapQueue', trackChangedSeen: false, hymnId: null }; // Phase 1 量度 t0
+    if (Platform.OS === 'ios') {
+      const target = queueRef.current[idx]; // Phase 2.5 —— 撳嗰首落載緊就中止讓路
+      if (target?.id != null) cancelAudioPrefetch(target.id);
+    }
     try {
       await TrackPlayer.skip(idx);
       expectPlayingRef.current = true;
@@ -1756,6 +1783,10 @@ function PlayerProvider({ children }) {
   async function handleNextTrack() {
     // Phase 1 量度 t0 —— 由用戶撳掣嗰刻計起,先反映到真實體感。
     transitionT0Ref.current = { ts: Date.now(), origin: 'tapNext', trackChangedSeen: false, hymnId: null };
+    if (Platform.OS === 'ios') {
+      const nxt = queueRef.current[currentQueueIndexRef.current + 1]; // Phase 2.5 —— 就嚟播嗰首落載緊就中止讓路
+      if (nxt?.id != null) cancelAudioPrefetch(nxt.id);
+    }
     try {
       await TrackPlayer.skipToNext();
       expectPlayingRef.current = true;
@@ -2960,8 +2991,23 @@ function AppContent() {
       const featured = allSongs.filter((h) => h.featured === 1);
       const pool = featured.length >= 6 ? featured : allSongs;
       for (const p of dailyPickBalanced(pool, 'today', 6, ['粵語', '國語', '英文'])) ids.push(p.id);
+      // Phase 2.5② —— 個清單係日期種子決定,今晚已經計到「聽日」係邊幾首。
+      // 呢度淨係計低,唔即刻落載(等用戶真係聽緊歌先排隊,見 trackChanged)。
+      if (Platform.OS === 'ios') {
+        const tmr = new Date(Date.now() + 24 * 60 * 60 * 1000);
+        tomorrowHeadIds = dailyPickBalanced(pool, 'today', 6, ['粵語', '國語', '英文'], tmr)
+          .slice(0, 2)
+          .map((p) => p.id);
+      }
     } catch (_) {}
     warmIds(ids);
+    // Phase 2.5① —— 開 App 即刻背景落載今日頭 2 首。命中嘅話「開 App 第一首」
+    // 同轉歌一樣即開;未落載完用戶就撳 play 嘅話,playQueue() 會 cancel 呢度
+    // 嘅落載讓路俾串流,行為同以前一樣,冇 regression。
+    if (Platform.OS === 'ios') {
+      if (ids[0] != null) prefetchAudio(ids[0]);
+      if (ids[1] != null) prefetchAudio(ids[1]);
+    }
   }, [allSongs]);
 
   async function handlePlayHymn(h, opts = {}) {

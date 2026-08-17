@@ -41,6 +41,10 @@ let initPromise = null;
 // 落載隊列:同一時間最多 1 條(唔想同播緊嗰首爭頻寬)。
 const downloadQueue = [];
 let currentDownloadId = null;
+// Phase 2.5 —— 落載中嘅 fetch 嘅 AbortController。用戶撳 play 嗰首啱啱好
+// 落載緊嗰陣,即刻 abort,唔准背景落載同即場串流爭網絡(嗰刻串流先係
+// 用戶聽緊/等緊嘅嘢,落載讓路;首歌下次做「即將播放」時自然再排隊)。
+let currentAbortController = null;
 
 // 落載完成通知(App.js 用嚟做隊列熱換)。
 const completeListeners = new Set();
@@ -201,9 +205,11 @@ async function downloadOne(songId) {
   }
   const dir = getCacheDir();
   const partFile = new File(dir, `${songId}${PART_SUFFIX}`);
+  const controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
+  currentAbortController = controller;
   try {
     const url = `${API_BASE}/api/stream/${songId}`;
-    const response = await fetch(url);
+    const response = await fetch(url, controller ? { signal: controller.signal } : undefined);
     if (!response || response.status !== 200) {
       diagFail(songId, `status=${response ? response.status : 'none'}`);
       return;
@@ -232,8 +238,13 @@ async function downloadOne(songId) {
     notifyComplete(String(songId), finalFile.uri);
     prune();
   } catch (e) {
-    diagFail(songId, e?.message || 'exception');
+    // 被 cancelIfDownloading() 主動 abort 唔算失敗——係設計行為,只留一條
+    // 輕量 diag 供核實機制有冇郁,唔好同真失敗撈亂。
+    const aborted = e && (e.name === 'AbortError' || /abort/i.test(String(e.message || '')));
+    diagFail(songId, aborted ? 'aborted-for-stream' : (e?.message || 'exception'));
     try { if (partFile.exists) partFile.delete(); } catch (_) {}
+  } finally {
+    if (currentAbortController === controller) currentAbortController = null;
   }
 }
 
@@ -261,6 +272,18 @@ export function prefetch(songId) {
   if (currentDownloadId === id || downloadQueue.includes(id)) return;
   downloadQueue.push(id);
   processQueue();
+}
+
+// Phase 2.5 —— 用戶撳咗 play 嘅歌啱啱好背景落載緊:即刻中止,讓路俾即場
+// 串流。排緊隊未開始嘅一併踢走。已落載完成嘅(index 有)唔受影響。
+export function cancelIfDownloading(songId) {
+  if (Platform.OS !== 'ios' || songId == null) return;
+  const id = String(songId);
+  const qi = downloadQueue.indexOf(id);
+  if (qi >= 0) downloadQueue.splice(qi, 1);
+  if (currentDownloadId === id && currentAbortController) {
+    try { currentAbortController.abort(); } catch (_) {}
+  }
 }
 
 // 本地檔 PlaybackError 用:剷檔 + 從 index 移除,令 retry/skip 跌返串流
