@@ -15,6 +15,7 @@
 | 2026-08-15 13:35 | b01 | 131 | 131 | 3.7% | 2326 | 三輪複核(129+27+5 draft 全清)。verified 117 / unusable 14 / delist 6 / reject留draft 1 / **langmismatch hold 23**。backend restart 14:09 做咗(等真機播放靜足 20 分鐘先做),live 6446→6440 首、抽驗歌詞已出街。WebSearch 0 次。 |
 | 2026-08-15 17:21 | b02 | 70(**b03 事後補嘅**) | 201 | 5.7% | 2386 | ⚠️ **b02 自己冇寫 ledger 亦冇寫 SUPERVISION-LOG**(17:00 開波,17:21 之後冇再出檔,疑似中途斷咗)。b03 由佢 scratchpad 重組:batchA/B passed 40+30=70 已 apply(verified 60 / unusable 10)、langmismatch hold +25、delist 7。**冇做 checkpoint、冇 restart。** |
 | 2026-08-15 23:20 | b03 | 249 | 450 | 12.9% | 2609 | 五輪(A粵語小org 74 / B同心圓+ACM+角聲 76 / C英文兒歌+國語 50 / D約書亞+讚美之泉 36 / E新心+Yancy+小羊 33)。verified 223 / unusable 26 / delist 16 / reject留draft 3 / langmismatch hold 1。backend restart 做咗**三次**(21:42 / 22:36 / 23:19),live 6434→**6418** 首,每輪抽驗都全部吐到歌詞。WebSearch **0 次**(cantonhymnLookup 4 次)。 |
+| 2026-08-17 08:30 | b11 | 182 | 1186 | 33.9% | 3215 | 十一輪複核。verified 141 / unusable 14 / delist 27 / reject留draft 9 / langmismatch hold **0**。backend restart 做咗**四次**(05:21 / 07:41 / 08:18 / 08:28,四次都行足 deploy gate,每次前都做咗 `[stream]` 靜音檢查——最後一條 stream 停喺 08-16 11:52,即 20 個鐘冇人聽歌,冇撞正真機 QA)。live 6408→**6381** 首,**verified 覆蓋率首次過半:50.4%**。⚠️ 05:21 嗰次順手放咗 b04–b10 + 根因線一直未出街嘅積壓(上一次 restart 係 b03 08-15 23:19,即係 8/16 成日嘅 430 首 verified 從來未 live 過)。WebSearch 0 次。 |
 
 ---
 
@@ -130,3 +131,57 @@
 6. 16 首 KEC/約書亞英文 cover lang 已改英文。5142/5143(英文兒歌,lang=兒童)未郁,等 Eric 定 lang 體系。
 7. 上面第 1 點嗰個 deploy gate 卡關(oneoff-delistLingMingSuZao.mjs 未 commit):根因線已用
    pathspec commit 處理,下一班 restart 就會一次過出街。
+
+---
+
+## 🔚 b11 班(Mon 05:00–08:45)交俾 `lyrics47-wrap` 嘅六件事
+
+**1. hold 池已經空咗 —— 呢件事已經冇 backlog。**
+`backend/data/lyrics-langmismatch-hold.json` = **0 條**(根因線 8/16 已全部釋放:117 條中英對照 +
+4 條英文歌,兩份 `*-passed.json` 都 apply 咗、抽驗過 live 有歌詞)。b11 八輪 171 個決定入面
+**langmismatch hold 0 條** —— 新嘅行級擋板(CJK 行佔比 ≥35% 就 pass)實測完全冇再誤殺中英對照。
+
+**2. 🔴 b04–b10 七班全部冇寫 ledger、冇寫 SUPERVISION-LOG、冇做過一次 backend restart。**
+- ledger 個表由 b03(08-15 23:20)直接跳到 b11;SUPERVISION-LOG 最後修改時間 08-15 23:21。
+- `~/.hymn-deploy/deploy.log` 實錘:**上一次 backend restart 係 08-15 23:19(b03),之後直到
+  b11 05:21 中間 30 個鐘冇 restart 過**。即係 8/16 全日做嘅 **430 首 verified 一直未出街**,
+  b11 05:21 嗰次 restart 一次過放晒出去(verified live 2609 → 3168)。
+- 佢哋**有做嘢**(scratchpad 仲喺度:b04 174 條 passed / b05 16 / b06 9 / b08 45 / b09 53 / b10 64,
+  另 a1485f9a 係根因線 286 條),淨係冇留紀錄。**wrap 班唔好靠 ledger 個表估數,要用 DB delta。**
+- 教訓:**「班尾 checkpoint」入面最緊要嗰步係 restart,唔係寫檔** —— 冇 restart 嘅班,做幾多都係
+  寫入 DB 但用戶睇唔到。下次衝刺個 SKILL 建議加一句「開波先睇 deploy.log,見到上一班冇 restart
+  就即刻補做」。
+
+**3. 累計決定 1,186(est 33.9% 週額度),距離 1,500 硬頂仲有 314 個。**
+基準:Phase 0 verified 2207 / unavailable 511 / live 6446 → 而家 3215 / 624 / 6381(覆蓋率 34.2% → 50.4%)。
+wrap 班照計仲有大量餘額,唔使為額度收手。
+
+**4. 模糊個案 / 等 Eric 拍板嘅嘢(b11 新增):**
+- **純器樂點處理唔一致**:b11 撞到 7 首純音樂 draft(3228/3229 天弦鋼琴版、4821/4823 Hillsong Kids
+  Piano Lullaby、5981 讚美之泉安靜系列、3628 同心圓《緊隨祢》OCR 全空、5911 讚美之泉弦樂四重奏),
+  **跟 b03 先例判咗 unusable**;但 Eric 8/16 對重做隊嗰 7 首(5699/5700/5794/5795/5799/5801/6734)
+  嘅指示係「擱置唔好理」= 留返喺度唔郁。兩種做法唔一致,**請 Eric 一句話統一**
+  (判 unusable 隨時拉得返 draft,唔會蝕底)。
+- **lang 欄錯標(繼續累積,由 b01 講到而家都未拍板)**:8432《想起你》係日文版但 lang=國語;
+  4896《耶和華是我的牧者》title 明寫「華語詩歌」但 lang=粵語。b11 照 verify 冇改 lang 欄。
+- **天然短曲(CJK < 45 門檻)今班再多 9 首**,全部歌詞冇問題、純粹係首歌本身短,每班都會 re-export
+  出嚟俾人重讀一次:8347(35字)、4074(44)、4385(38)、4396(27)、4976(23)、8432(28)、
+  6133(40)、6179(31)、6147(44)。**b03 已經提過同一件事(5255/6147/6179),而家累積到 9 首。**
+  建議:人手 approve 一次,或者開個「短曲豁免名單」,唔好再燒下一班時間。
+- **ACM 齊唱兒歌 CD 版只 OCR 到半首**(4385 珍惜、4396 無比忠心):唔係 OCR 差,係條片本身淨係
+  show 咗幾行字幕。呢類建議入重做隊試 whisper,唔好當死症。
+
+**5. 隊列同 producer 現況(b11 08:00 實測):**
+- 收工時 draft 33,BI 凍結 24,**可做 9 首 —— 而且嗰批全部係 b11 判「太薄」reject 返出嚟嘅**(見第 4 點),
+  即係新貨已經做清晒,wrap 班開波唔會即刻有貨,要等 producer 嗰轉 OCR 再出。
+  OCR 池約 870、CC 未行過約 1,617、dl:dead 70、重做隊仲有約 74 首未做。
+- producer(keeper pid 25630)生勾勾,05:05 開咗新一轉 OCR(budget 120),**新 PaddleOCR 之後每首
+  約 5–6 分鐘**(舊 Vision 大約 1–2 分鐘),所以一轉 120 首要行 8–12 個鐘,**產出速度大約
+  每個鐘 15–17 首 draft、其中約 10 首真係可做**。b11 後半段每 30–40 分鐘 re-export 一次,
+  每次得 5–9 首新貨 —— 呢個係而家嘅真實補給率,wrap 班排時間用呢個數。
+- **BI 凍結 24 首入面有一半係純器樂**(鋼琴演奏系列/弦樂四重奏,draft 冇 CJK 所以中招),
+  唔係真係「中文歌配英文歌詞」。呢個係凍結名單嘅已知雜訊,唔使驚。
+
+**6. keeper 同 caffeinate b11 冇郁過(照 SKILL 指示留返俾 wrap 班停)。**
+`pgrep -fl producer-keeper` → pid 25630 生存;`caffeinate -dims` pid 38249 生存。
+| 2026-08-17 11:15 | **wrap(手動補做)** | 0 | 1186 | 33.9% | **3215** | ⚠️ 排程 wrap 09:00:07 觸發咗但**死咗**(冇寫 ledger/LOG、冇做第 6 步)。11:10 由 Dispatch 叫 Opus 5 手動補做。部 Mac **10:56:55 重啟過**(`/tmp` 清空,keeper/producer/caffeinate 死於重啟,backend 由 launchd 自動返生、7 個 job 齊)。核實:HEAD=approved=044190c、**DB verified 3215 全部已 live**、draft 46(可做 21)、hold 池 0、覆蓋率 **50.4%**。`lyrics-daily-proofread` 已開返。 |
