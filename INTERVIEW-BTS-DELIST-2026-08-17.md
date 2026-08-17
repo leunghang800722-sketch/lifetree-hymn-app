@@ -100,17 +100,19 @@ Script:`backend/scripts/oneoff-delistPromoTutorial-20260817.mjs`(內置 prefligh
 - C 批(促銷/教學/開箱):48 首
 - `hymns` live view:6381 → **6238**(−143)
 
-## 七、⚠️ 上線狀態:等 backend restart 批准
+## 七、✅ 已上線(2026-08-17)
 
-`delistHymn()` 嘅 `reloadDb()` 只清**自己個 process** 嘅 in-memory 副本。呢個 script
-係獨立 node process 行,所以**跑住嘅 backend 仲攞住舊副本**:
+`delistHymn()` 嘅 `reloadDb()` 只清**自己個 process** 嘅 in-memory 副本,而 script 係
+獨立 node process 行,所以跑住嘅 backend 一直攞住舊副本(live API 照返 6381)。
+經 deploy gate 解決:
 
-- DB 檔:已落架(6286)✅
-- live `GET /api/hymns`:仲返 6381,95 首全部仲喺度 ❌(`cf-cache-status: DYNAMIC`,
-  唔係 CDN cache,係 server in-memory 舊副本)
+1. `ops/deploy/approve.sh backend 0964606 --confirm` —— 批准範圍只有本次兩個 commit
+   (3974e58 + 0964606),冇夾帶其他 session 嘅嘢;兩個 commit 都冇改 backend 執行碼。
+2. `ops/deploy/backend-restart.sh` —— gate 全過,health check 過(port 3001)。
 
-唯一合法修法係 `ops/deploy/backend-restart.sh`(要 HEAD == approved.json 嘅 backend.sha),
-**等 Eric 批准**。restart 之後 dataVersion 由 hymns.db mtime 重算,App 端 MMKV 會自動 refetch,
-唔使推 OTA。
+**live API 核實**:`GET /api/hymns` = **6238**(6381 − 143),兩批 143 首殘留 **0**,
+A/B/真歌試聽 30 首全部仲喺 live,關鍵字殘留 0。dataVersion 已重算
+(`1786956687862.9246-...`),App 端 MMKV 會自動 refetch,唔使推 OTA。
 
-冇資料風險:server 嗰份舊副本係唯讀,唔會覆寫返落架結果(夜晚 job 全部由碟 `openDb()` 開新鮮副本)。
+> ⚠️ 驗證教訓:唔好用 `curl /api/hymns/<id>` 當驗證 —— **根本冇呢條 route**,乜 id 都
+> 404,會俾你錯覺以為落咗架。列表 endpoint 個 count 先係真相。
