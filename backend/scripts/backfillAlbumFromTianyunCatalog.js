@@ -38,6 +38,8 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const CATALOG_PATH = path.join(__dirname, '..', 'data', 'album-backfill', 'tianyun-catalog.json');
 const REPORT_PATH = path.join(__dirname, '..', 'data', 'album-backfill', 'tianyun-catalog-report.md');
 const DRY = process.argv.includes('--dry');
+// --no-resolve-earliest:關掉「同名歌撞多隻碟時揀最早發行嗰隻(=原碟)」嘅解衝突規則
+const RESOLVE_EARLIEST = !process.argv.includes('--no-resolve-earliest');
 
 // 2026-08-11:加返「天韻詩歌」(worshipGroups.js 已經將呢個名列做「天韻合唱團」
 // 嘅 alias,但 DB 部分 row 仲用緊呢個舊/獨立 org 字串)——同一個官方
@@ -152,6 +154,15 @@ async function main() {
   const alreadyHasAlbum = [];
   const protectedRows = [];
 
+  // album → 發行年份(由 fetchTianyunAlbumYears.js 由 shop.hms.org.tw 補入 catalog)
+  const albumYear = new Map();
+  for (const t of catalog) {
+    if (!t.album || t.year == null || albumYear.has(t.album)) continue;
+    const y = Number(t.year);            // 有啲 catalog(MusicBrainz)嘅 year 係字串
+    if (Number.isFinite(y)) albumYear.set(t.album, y);
+  }
+  const resolvedEarliest = [];
+
   for (const row of rows) {
     const titleCandidates = [
       ...extractCandidates(row.display_title || ''),
@@ -173,15 +184,35 @@ async function main() {
     }
 
     if (!hitAlbums) { notFound.push(row); continue; }
-    if (hitAlbums.size > 1) { conflicts.push({ row, matchedOn, albums: [...hitAlbums] }); continue; }
-    const album = [...hitAlbums][0];
+    let album;
+    if (hitAlbums.size > 1) {
+      // 同一首歌撞多隻碟 = 原碟 + 之後嘅精選/重編合輯。有齊年份就揀最早
+      // 嗰隻(原碟);差一隻冇年份、或者最早嗰個唔止一隻(平手)就照舊唔寫。
+      const list = [...hitAlbums];
+      const years = list.map((a) => albumYear.get(a));
+      if (!RESOLVE_EARLIEST || years.some((y) => y == null)) {
+        conflicts.push({ row, matchedOn, albums: list, reason: RESOLVE_EARLIEST ? '有專輯欠年份' : '規則關咗' });
+        continue;
+      }
+      const min = Math.min(...years);
+      const winners = list.filter((a) => albumYear.get(a) === min);
+      if (winners.length !== 1) {
+        conflicts.push({ row, matchedOn, albums: list, reason: `最早年份${min}平手` });
+        continue;
+      }
+      album = winners[0];
+      resolvedEarliest.push({ row, album, matchedOn, year: min, from: list.map((a) => `${a}(${albumYear.get(a)})`).join(' / ') });
+    } else {
+      album = [...hitAlbums][0];
+    }
     if (row.album_source === 'manual' || row.album_source === 'legacy') { protectedRows.push({ row, catalogAlbum: album }); continue; }
     if (row.album && row.album.trim()) { alreadyHasAlbum.push({ row, catalogAlbum: album }); continue; }
     matched.push({ row, album, matchedOn });
   }
 
   log(`match 到單一專輯且可寫(album 本身空):${matched.length}`);
-  log(`match 到但衝突(撞多隻專輯,唔寫):${conflicts.length}`);
+  log(`衝突靠「最早發行=原碟」解決咗:${resolvedEarliest.length}`);
+  log(`match 到但衝突(仲係解唔到,唔寫):${conflicts.length}`);
   log(`match 到但 DB 已經有 album(保護規則,唔覆寫):${alreadyHasAlbum.length}`);
   log(`match 到但 album_source=manual/legacy(受保護,唔覆寫):${protectedRows.length}`);
   log(`喺 catalog 搵唔到:${notFound.length}`);
@@ -212,10 +243,10 @@ async function main() {
     log('冇可寫嘅候選,冇碰 DB');
   }
 
-  writeReport({ rows, matched, conflicts, alreadyHasAlbum, protectedRows, notFound, dry: DRY });
+  writeReport({ rows, matched, conflicts, alreadyHasAlbum, protectedRows, notFound, resolvedEarliest, dry: DRY });
 }
 
-function writeReport({ rows, matched, conflicts, alreadyHasAlbum, protectedRows, notFound, dry }) {
+function writeReport({ rows, matched, conflicts, alreadyHasAlbum, protectedRows, notFound, resolvedEarliest = [], dry }) {
   const lines = [];
   lines.push('# backfillAlbumFromTianyunCatalog 報告 —— 天韻合唱團(shop.hms.org.tw 官方商城 catalog)');
   lines.push('');
@@ -223,7 +254,8 @@ function writeReport({ rows, matched, conflicts, alreadyHasAlbum, protectedRows,
   lines.push('');
   lines.push(`- 候選 row 總數:${rows.length}`);
   lines.push(`- match 到單一專輯且已寫(或 --dry 模擬):${matched.length}`);
-  lines.push(`- match 到但撞多隻專輯(衝突,冇寫):${conflicts.length}`);
+  lines.push(`- 其中撞多隻專輯、靠「最早發行=原碟」解決咗:${resolvedEarliest.length}`);
+  lines.push(`- match 到但撞多隻專輯(仲係解唔到,冇寫):${conflicts.length}`);
   lines.push(`- match 到但 DB 已有 album(冇覆寫):${alreadyHasAlbum.length}`);
   lines.push(`- match 到但 album_source=manual/legacy(受保護,冇覆寫):${protectedRows.length}`);
   lines.push(`- catalog 搵唔到:${notFound.length}`);

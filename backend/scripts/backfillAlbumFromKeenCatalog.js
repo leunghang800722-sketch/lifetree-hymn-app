@@ -36,6 +36,8 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const CATALOG_PATH = path.join(__dirname, '..', 'data', 'album-backfill', 'keen-catalog.json');
 const REPORT_PATH = path.join(__dirname, '..', 'data', 'album-backfill', 'keen-catalog-report.md');
 const DRY = process.argv.includes('--dry');
+// --no-resolve-earliest:關掉「同名歌撞多隻碟時揀最早發行嗰隻(=原碟)」嘅解衝突規則
+const RESOLVE_EARLIEST = !process.argv.includes('--no-resolve-earliest');
 
 // 2026-08-11:加返「基恩敬拜祈禱仔」(兒童 playlist,母 channel 同「基恩敬拜」
 // 一致,worshipGroups.js 42 行 note 已註明)——之前個 match script 冇用呢個
@@ -144,6 +146,16 @@ async function main() {
   const alreadyHasAlbum = [];
   const protectedRows = [];
 
+  // album → 發行年份;同一首歌撞多隻碟通常係「原碟 + 之後嘅精選/重編合輯」,
+  // 有齊年份就可以揀最早嗰隻(原碟)去解衝突。
+  const albumYear = new Map();
+  for (const t of catalog) {
+    if (!t.album || t.year == null || albumYear.has(t.album)) continue;
+    const y = Number(t.year);            // 有啲 catalog(MusicBrainz)嘅 year 係字串
+    if (Number.isFinite(y)) albumYear.set(t.album, y);
+  }
+  const resolvedEarliest = [];
+
   for (const row of rows) {
     const nameForMatch = (row.display_title && row.display_title.trim()) || row.title || '';
     const candidates = extractCandidates(nameForMatch);
@@ -165,7 +177,22 @@ async function main() {
     }
 
     if (!hitAlbums) { notFound.push(row); continue; }
-    if (hitAlbums.size > 1) { conflicts.push({ row, matchedOn, albums: [...hitAlbums] }); continue; }
+    if (hitAlbums.size > 1) {
+      const list = [...hitAlbums];
+      const years = list.map((a) => albumYear.get(a));
+      if (!RESOLVE_EARLIEST || years.some((y) => y == null)) {
+        conflicts.push({ row, matchedOn, albums: list, reason: RESOLVE_EARLIEST ? '有專輯欠年份' : '規則關咗' });
+        continue;
+      }
+      const min = Math.min(...years);
+      const winners = list.filter((a) => albumYear.get(a) === min);
+      if (winners.length !== 1) {
+        conflicts.push({ row, matchedOn, albums: list, reason: `最早年份${min}平手` });
+        continue;
+      }
+      hitAlbums = new Set([winners[0]]);
+      resolvedEarliest.push({ row, album: winners[0], year: min, from: list.map((a) => `${a}(${albumYear.get(a)})`).join(' / ') });
+    }
     const album = [...hitAlbums][0];
     if (row.album_source === 'manual' || row.album_source === 'legacy') { protectedRows.push({ row, catalogAlbum: album }); continue; }
     if (row.album && row.album.trim()) { alreadyHasAlbum.push({ row, catalogAlbum: album }); continue; }
@@ -173,6 +200,7 @@ async function main() {
   }
 
   log(`match 到單一專輯且可寫(album 本身空):${matched.length}`);
+  log(`衝突靠「最早發行=原碟」解決咗:${resolvedEarliest.length}`);
   log(`match 到但衝突(撞多隻專輯,唔寫):${conflicts.length}`);
   log(`match 到但 DB 已經有 album(保護規則,唔覆寫):${alreadyHasAlbum.length}`);
   log(`match 到但 album_source=manual/legacy(受保護,唔覆寫):${protectedRows.length}`);

@@ -237,3 +237,116 @@ album 名。缺點:要開 developer app + 英繁對 match、精選輯污染。
   playlist)、英文 org 群(worshipGroups 冇 channel)——連同各 org 殘餘留 Phase C
 - Phase C 開波前置:人手驗 headless `claude -p --allowedTools WebSearch` 得唔得
   (backfillAlbumSearch.js header TODO);成本細批跑(--limit 30/晚)
+
+---
+
+## 8. 執行記錄(2026-08-17,Opus 5 —— 停咗 6 日之後接返手)
+
+### 8.1 先答返 Eric 兩條疑問:新心/天韻「已完成但仲有 160 缺口」
+
+**兩隊都唔係 track list 攞漏,亦唔係 DB match 唔到。**(順帶一提,Eric 手上
+嗰批數字係舊嘅;8/17 實查係 CantonHymn 264 / 天韻 138 / 新心 43 / 讚美之泉 88 /
+約書亞 89。)
+
+- **新心音樂事工:43 首殘餘 100% 係非歌內容**。逐條睇過:
+  《二十天求復興》默想禱告集(13 條)、大提琴演奏、《沉思集》、「—作者分享」
+  系列、事工介紹片(音樂學院/培訓服事/新加坡義工團隊…)。**呢隊實質做完。**
+- **天韻合唱團:138 首殘餘 = 229 首 catalog 搵唔到(親輕唱 Ep.1-13 兒童聖經
+  故事、「歌唱的威立」教學、與爵士之間個人訪談篇、微電影、巡迴 vlog、
+  感恩見證)+ 62 首「撞多隻專輯」conflict 卡住冇寫**。後者先係真嘢——
+  見下面 8.2。
+
+### 8.2 新做法:用「最早發行 = 原碟」解 conflict(呢輪最大收成)
+
+之前所有 catalog backfill 遇到「同一首歌喺 catalog 出現喺多隻碟」(原碟 +
+之後嘅精選/重編合輯)都係一律 flag conflict 唔寫,**全庫累積卡咗 383 個
+conflict**(天韻 62 / 基恩 133 / 約書亞 169 / MusicBrainz 81)。
+
+解法:攞到每隻碟嘅**發行年份**,同一首歌撞幾隻碟就揀**最早嗰隻 = 原碟**。
+
+- 新寫 `scripts/fetchTianyunAlbumYears.js`:天韻嘅 catalog 本身 year 全部
+  null,由 shop.hms.org.tw 商品頁抽「YYYY年M月發行」補返(53 隻碟攞到 38 隻)。
+  順帶實錘咗《另一種情歌》係 1998 年嘅**後期精選**,而《野地的花》1980、
+  《風和愛》1983 先係原碟——之前一律當 conflict 就係因為分唔出。
+- 四個 backfill script 加咗同一條規則(`--no-resolve-earliest` 可關):
+  `backfillAlbumFrom{Tianyun,Joshua,Keen,MusicBrainz}Catalog.js`。
+  **有任何一隻碟欠年份、或者最早嗰個平手 → 照舊唔寫**(守返「寧空莫錯」)。
+- ⚠️ 踩過一個坑:MusicBrainz catalog 嘅 `year` 係**字串**("2012"),
+  `===` 比唔到 number,一開始 51 個可解嘅 conflict 全部靜靜哋當「解唔到」。
+  已改成 `Number(t.year)` + `Number.isFinite` 守門。
+
+**成績:383 conflict → 324 個解到(天韻 52 / 基恩 126 / 約書亞 95 / MB 51),
+其中 78 首本身 album 空、真係寫得入。**
+
+### 8.3 另一條新做法:標題自帶《專輯》字面(零外部抓取)
+
+**全心製作 HeartPro**:37 首冇 album 入面 21 首標題尾自帶
+「《HIS70ry 齊唱。吳秉堅之歌。》自傳第一樂章。」,而 DB 入面已經有 2 首
+**同一標記**嘅 row 喺早期 'search' 輪填咗 `album='齊唱‧吳秉堅之歌'`
+(同一隻碟,得標點寫法唔同)——即係 DB 內部已經有實錘,唔使爬任何嘢。
+跟小羊詩歌 Tier1 做法,新寫 `scripts/backfillAlbumHeartProTitle.js`,
+`album_source='title'`。**37 → 16**(剩返 WAO 訪談/北美巡迴等非專輯內容)。
+
+> 順帶做咗全庫掃描:no-album row 之中帶 `《》` 嘅得 196 條,而其中
+> 《X》真係撞到同 org 已有專輯名嘅**得 5 條**。即係話呢招**唔通用**——
+> 大部分《》係歌名(Giggles)或者系列名(《沉思集》/《二十天求復興》),
+> HeartPro 係少數特例。唔好下輪又當佢係萬能鎖匙。
+
+### 8.4 呢輪寫入總數
+
+| 做法 | org | 寫入 |
+|---|---|---|
+| 標題字面《》 | 全心製作 HeartPro | 21 |
+| 最早發行解 conflict | 基恩敬拜 + 祈禱仔 | 29 |
+| 最早發行解 conflict | MusicBrainz 群(Phil Wickham/Bethel/Elevation/Hillsong…) | 31 |
+| 最早發行解 conflict | 天韻合唱團 | 10 |
+| 最早發行解 conflict | 約書亞樂團 | 8 |
+| | **合計** | **99** |
+
+⚠️ **99 首係 `hymns_all` 層面**;其中 **46 首**係 app 真係見到嘅 curated 活
+row(全庫 curated no-album 1619 → 1573)。差額 53 首落咗喺 non-curated /
+rejected row 度——因為 Keen/MB 兩個 script **原本就冇 curated 過濾**
+(8/11 就係咁,唔係呢輪改壞)。冇害(第日 revive 返仲慳返功夫),但報數
+要分開講。
+
+### 8.5 確認「結構性冇專輯、唔使再試」嘅 org(新增)
+
+呢輪逐隊爬晒 YouTube playlist 結構 + 對返 DB 命中率,確認以下幾隊同
+[[悅雨音樂 GRM]]/[[611 Worship]] 同一類 —— playlist 全部係**內容分桶**
+(原創/Cover/Demo/教學/訪問/年齡分層)而唔係專輯,已寫 attempt report:
+
+| org | 冇album | 報告 |
+|---|---|---|
+| KEC Worship | 66 | `kec-catalog-attempt-report.md` |
+| Giggles and Tunes | 57 | `giggles-catalog-attempt-report.md` |
+| Milk&Honey | 50 | `milkhoney-cjfriends-woxin-catalog-attempt-report.md` |
+| CJ and Friends | 45 | 同上 |
+| 我心旋律 | 38 | 同上 |
+| 原始和聲 | 44 | `rawharmony-tws-catalog-attempt-report.md` |
+
+**另外兩隊唔係「未做」,係已經做完**(殘餘全部係非專輯內容):
+- **同心圓敬拜(43)**:13 個逐年高峰敬拜音樂會 playlist **全部 0 首欠
+  album**;殘餘落喺詩歌精選/GLOW 青年事工/幕後花絮/清談節目/探訪行動。
+- **新心音樂事工(43)**:見 8.1。
+
+### 8.6 仲未做 / 下輪可以再試
+
+- **CantonHymn(264)** —— 2026-08-11 已有 `cantonhymn-catalog-attempt-report.md`
+  嘅死結論(眾籌翻譯運動,唔係樂團,demo cover 本身唔屬任何碟)。
+  **唯一剩低嘅線索**:Phase A 嗰個 64-member「恢復粵語敬拜共建專輯系列」
+  playlist,`CantonHymn-playlists.json` 入面 `approved:false`,matched 8 首
+  (3%)。想要嗰 3% 就直接 approve+apply,唔使重起 catalog。
+- **Milk&Honey「More than a Concert 2015 【LIVE】」9 首** —— 9/9 全部在庫,
+  係唯一似正式 release 嘅嘢,但未實錘有冇發行過 live 專輯。**留咗未寫**,
+  搵到證據就即刻有 9 首。
+- **天韻剩低 10 個解唔到嘅 conflict** —— 兩種情況:①《不為明天憂慮》vs
+  《莫得為明日掛慮》(1993 同年,國語/台語版同一隻碟)平手;②《飛翔》
+  呢隻碟喺 shop 抽唔到年份。補到年份/釐清版本就解到。
+- **天韻仲有 15 隻碟冇年份**(多數係近年 release:逆轉/更新/等待中的讚美
+  /超越星河的愛…),`fetchTianyunAlbumYears.js` 再跑或者換抽法可以補。
+- **讚美之泉(88)/ 約書亞(81)殘餘** —— 對過官方 catalog(sop-catalog.json
+  51 隻碟到 2026、joshua-catalog.json 59 隻碟到 2026,兩個都係最新):
+  殘餘係 **YouTube 系列而唔係碟**(SOP:2023/24/25 聖誕系列單曲、天堂敬拜
+  LIVE、個人安靜敬拜時分、台北青少年弦樂團、異象影片;約書亞:J-US /
+  Yeram Worship / 제이어스 韓團合作單曲、搖滾媽媽唱清談)。韓團合作嗰批
+  **確認唔喺約書亞任何一隻碟入面**,係獨立單曲。

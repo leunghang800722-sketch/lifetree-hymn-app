@@ -1,13 +1,15 @@
 # backfillAlbumSearch 報告 —— Phase C(web search fallback)
 
-> ALBUM-BACKFILL-ACCEL-PLAN.md Commit 4。生成時間:2026-08-04 16:19:53
+> ALBUM-BACKFILL-ACCEL-PLAN.md Commit 4。生成時間:2026-08-08 08:49:33(--dry,DB 未寫入)
 
-- 候選 row 總數:1
+- 候選 row 總數:5
 - claude CLI 可用:true
-- 有出處且填咗(或 --dry 模擬):1
+- 有出處且填咗(或 --dry 模擬):3
 
 ## 寫入清單(連 source_url,俾人日後覆核)
 
 | id | youtube_id | title | album | source_url |
 |---|---|---|---|---|
-| 78 | ef__WY4tVAM | 神在這裏God Is Here (現場版) 禱告更新2025AGWMM Official Live | Live Worship 2025 | https://music.apple.com/us/album/%E7%A5%9E%E5%9C%A8%E9%80%99%E8%A3%8F-live-2025/1821168608?i=1821168620 |
+| 986 | Qt_iJcOBY08 | Surrounds Me | These Same Skies | https://www.multitracks.com/songs/Hillsong-Worship/These-Same-Skies/Surrounds-Me/ |
+| 1028 | tMXOBIhByTk | Miracle Maker | Song of the Saints | https://www.air1.com/music/blog/music-news/album-spotlight-song-of-the-saints-phil-wickham-11669 |
+| 1040 | R2nxE_L2hg4 | Song Of The Saints | Song Of The Saints | https://en.wikipedia.org/wiki/Song_of_the_Saints |
