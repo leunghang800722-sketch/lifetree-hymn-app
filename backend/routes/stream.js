@@ -158,7 +158,10 @@ export default function streamRoutes(getDb) {
     let url;
     const resolveStart1 = Date.now();
     try {
-      url = await resolveAudioUrl(hymn.youtube_id);
+      // APP-HANG-2026-08-17 —— playbackRetry:真人等緊出聲,唔好俾一個由
+      // speculative 預取 arm 落嚟嘅舊 failCache entry 死擋(見 resolveAudio.js
+      // FAIL_TTL_PLAYBACK_MS)。
+      url = await resolveAudioUrl(hymn.youtube_id, { playbackRetry: true });
     } catch (e) {
       resolveMs += Date.now() - resolveStart1;
       console.warn(`[${new Date().toISOString()}] ⚠️ stream resolve failed: id=${id} yt=${hymn.youtube_id} err=${e?.message || e}`);
@@ -373,7 +376,9 @@ export default function streamRoutes(getDb) {
       bustCache(hymn.youtube_id);
       const resolveStart2 = Date.now();
       try {
-        url = await resolveAudioUrl(hymn.youtube_id);
+        // APP-HANG-2026-08-17 —— 同上。呢條路徑本來就係「頭一次 fetch 唔得,幫
+        // 用戶再試」,俾 failCache 擋死等於白行咗個 backoff。
+        url = await resolveAudioUrl(hymn.youtube_id, { playbackRetry: true });
       } catch (e) {
         resolveMs += Date.now() - resolveStart2;
         console.warn(`[${new Date().toISOString()}] ⚠️ stream retry resolve failed: id=${id} yt=${hymn.youtube_id} err=${e?.message || e}`);

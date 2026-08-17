@@ -26,6 +26,22 @@ const EXPIRE_BUFFER_MS = 10 * 60 * 1000; // refresh before the real expiry hits
 // Short enough that a temporary glitch (network blip, throttle) recovers on its
 // own; long enough that skipping through a run of dead links is ~instant.
 const FAIL_TTL_MS = 15 * 60 * 1000;
+// APP-HANG-2026-08-17 —— 上面 15 分鐘嗰個視野對「批量掃死鏈」係啱嘅,但對「真人
+// 等緊出聲」就太狠。2026-08-17 個事故:05:48:15 一個**預取**(POST /warm,純
+// speculative)resolve 失敗 arm 咗 failCache,7 分 54 秒之後用戶真係撳去播同一首
+// (id=8608),即刻食 502,連 client 嗰個 TrackPlayer.retry() 都注定死 —— 明明嗰
+// 條片本身完全冇事(事後 curl 返 206 / 2.8s)。跟住冇聲 → iOS 收返 audio
+// assertion → process 俾 suspend → 成個 app hang。
+//
+// 修法唔係拆咗個負面快取(佢真係有用),而係**同一個 entry、按 caller 用唔同視野**:
+//   · 批量/預取/keep-warm(冇人等):維持 FAIL_TTL_MS,死鏈照樣即刻跳過,行為零改動。
+//   · 真實播放請求(routes/stream.js,真人等緊):用下面呢個短視野。
+// 60 秒係咁揀嘅 —— 15 分鐘快取真正嘅價值係「連環跳過一串死鏈」,而嗰種 cascade
+// 係幾秒之內發生,60 秒完全罩得住;但一個 8 分鐘前、由 speculative 預取 arm 落嚟
+// 嘅 entry 就唔應該再擋住一個真人。而且每次真失敗都會重寫 failedUntil,所以同一
+// 首歌最多每 60 秒俾人真試一次(再加 inFlight 合併同時嘅 range 連線),唔會有
+// stampede。
+const FAIL_TTL_PLAYBACK_MS = 60 * 1000;
 
 // §2b PERF-FAST-START-PLAN:冷 resolve timeout 由 30s → 12s。實測冷 resolve 6.6s,
 // 12s 綽綽有餘;死鏈全 fail 由最壞 90s(3×30)縮到 36s(3×12)。
@@ -193,7 +209,11 @@ async function resolveViaYtDlp(youtubeId) {
   throw new Error(`All yt-dlp strategies failed for ${youtubeId}`);
 }
 
-export async function resolveAudioUrl(youtubeId) {
+// opts.playbackRetry —— 淨係 routes/stream.js 嗰兩個「真人等緊出聲」嘅 call site
+// 傳 true(見 FAIL_TTL_PLAYBACK_MS 上面嘅註釋)。其他所有 caller(預取 /warm、
+// keep-warm、開機 pre-cache、growLibrary/curateLibrary/checkDeadLinks/refetchKids
+// /channelScan/backfillCore/admin preview)一律唔傳,行為同改之前一模一樣。
+export async function resolveAudioUrl(youtubeId, opts = {}) {
   const cached = cache.get(youtubeId);
   if (cached && cached.expiresAt > Date.now()) return cached.url;
 
@@ -201,7 +221,17 @@ export async function resolveAudioUrl(youtubeId) {
   // the same dead link.
   const failedUntil = failCache.get(youtubeId);
   if (failedUntil && failedUntil > Date.now()) {
-    throw new Error(`Known-bad (cached failure) for ${youtubeId}`);
+    // failCache 存嘅係「幾時到期」,而寫入嗰兩處一律用 `Date.now() + FAIL_TTL_MS`,
+    // 所以 failedUntil - FAIL_TTL_MS 就係上次真失敗嘅時刻(反推,冇改 entry 嘅
+    // 資料形狀 —— routes/audio.js 個 /cache/stats 同 server.js keep-warm 都仲係
+    // 讀一個 number,唔會壞)。
+    const failedAt = failedUntil - FAIL_TTL_MS;
+    const horizon = opts.playbackRetry ? FAIL_TTL_PLAYBACK_MS : FAIL_TTL_MS;
+    if (Date.now() - failedAt < horizon) {
+      throw new Error(`Known-bad (cached failure) for ${youtubeId}`);
+    }
+    // 過咗播放視野 → 落去真真正正 resolve 一次。再失敗嘅話下面 catch 會重寫
+    // failedUntil,即係又要再等 60 秒,唔會連環燒 yt-dlp。
   }
 
   const pending = inFlight.get(youtubeId);
@@ -419,4 +449,4 @@ export function getBufferedChunk(youtubeId, url) {
   return c;
 }
 
-export { cache, failCache };
+export { cache, failCache, FAIL_TTL_MS, FAIL_TTL_PLAYBACK_MS };

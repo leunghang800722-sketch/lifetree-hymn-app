@@ -3,7 +3,7 @@
 // Otherwise, uses yt-dlp directly (for local/free-cloud usage)
 
 import { Router } from 'express';
-import { resolveAudioUrl, cache, failCache } from '../lib/resolveAudio.js';
+import { resolveAudioUrl, cache, failCache, FAIL_TTL_MS, FAIL_TTL_PLAYBACK_MS } from '../lib/resolveAudio.js';
 
 const router = Router();
 
@@ -83,8 +83,21 @@ router.get('/cache/stats', (req, res) => {
   const now = Date.now();
   const failing = [...failCache.entries()]
     .filter(([, until]) => until > now)
-    .map(([id, until]) => ({ youtubeId: id, retryInSec: Math.round((until - now) / 1000) }));
-  res.json({ cacheSize: cache.size, failCacheSize: failing.length, failing });
+    .map(([id, until]) => ({
+      youtubeId: id,
+      retryInSec: Math.round((until - now) / 1000),
+      // APP-HANG-2026-08-17 —— 播放路徑用短視野(FAIL_TTL_PLAYBACK_MS),所以上面
+      // 個 retryInSec 對真人播放嚟講唔再係實情。呢條係「真人撳播幾時解封」,
+      // ≤0 = 而家撳落去已經會真真正正 resolve 一次。
+      playbackRetryInSec: Math.round((until - FAIL_TTL_MS + FAIL_TTL_PLAYBACK_MS - now) / 1000),
+    }));
+  res.json({
+    cacheSize: cache.size,
+    failCacheSize: failing.length,
+    failTtlSec: FAIL_TTL_MS / 1000,
+    failTtlPlaybackSec: FAIL_TTL_PLAYBACK_MS / 1000,
+    failing,
+  });
 });
 
 export { cache };
