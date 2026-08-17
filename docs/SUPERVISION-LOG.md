@@ -5284,3 +5284,18 @@ restart 嘅實錘、累計決定同額度、模糊個案名單、隊列/producer
 1. **live 出緊街嘅「中文歌配英文歌詞」由 263 首升到 437 首。** 衝刺頭段(政策 8/16 落實之前)嘅班次又入咗約 174 首同類。Eric 8/16 拍板嘅係「**唔准再有新嘅出街**」,對**已經 live 嗰批**佢一路講「唔好郁」,所以呢次收尾**冇回捲任何一首**。要唔要回捲、幾時回捲,等佢話事。
 2. **21 首處於矛盾狀態:`lyrics` 欄仲有英文歌詞喺度出街,但 `lyrics_status` 已經俾根因線改咗做 `none`(18 首)/ `draft`(3 首)入重做隊。** 即係佢哋一邊排住隊等重做,一邊繼續餵緊舊嘅英文歌詞出街。呢 21 首全部係 BI 個案。**建議**:重做隊嗰啲順手 `lyrics=NULL`(唔影響重做,但即刻停止出街錯嘢)。**冇 Eric 批准冇郁。** ids:1857 3527 3720 4094 4098 5702 5902 6000 6059 6564 6601 6712 6822 6861 6989 7113 7129 7538 7752 7804 7982
 
+
+## 2026-08-17 11:35 — 21 首矛盾狀態止血(Eric 批准後執行)
+
+**做咗乜:** 上面 11:15 收尾總結揾到嗰 21 首(`lyrics` 欄有英文歌詞仲喺出街,但 `lyrics_status` 已經入咗重做隊),Eric 批准即刻 `lyrics=NULL` 止血。
+
+- script:`backend/scripts/oneoff-clearBiLiveLyrics-20260817.mjs`(commit `f83ccf2`),行返 `hymnDb.js` 個鎖 —— **唔用 raw sqlite3 CLI**(並行 job 嘅 `saveDb()` 會靜靜哋覆寫返)。
+- **只改 `lyrics` 一個欄**,冇郁 `lyrics_status` / `lyrics_draft` / `lyrics_checked_at` → 重做隊排序同底本零影響(Eric 要求)。
+- 逐首落手前重驗三個條件(有歌詞 + BI + 非 verified)+ 確認有 `lyrics_draft` 底本先剷。
+- **結果:剷咗 21 首,skip 0 首。** DB 覆查:21 首全部 `lyrics` 空咗、status 一個都冇變(none 18 / draft 3)、**21 個 `lyrics_draft` 底本全部完好**。
+- deploy gate 一次過(HEAD == approved `f83ccf2`),restart 完 health check 過、7 個 job 齊。`[stream]` 檢查:重啟之後個 log 一條 stream 都冇,即係冇人喺度聽歌,唔會撞正真機 QA。
+- **LIVE 覆查:21 首全部確認冇歌詞出街。** 全庫 DB verified 3,215 == live 有歌詞 3,215(之前差 +21,而家 **差 0,完全對數**)。
+- 副作用:live 出街嘅「中文歌配英文歌詞」由 **437 首跌到 416 首**。
+
+**仲未處理(等 Eric 拍板):** 嗰 416 首係衝刺之前同衝刺頭段(8/16 政策落實前)已經 live 嘅舊數,Eric 一路講「唔好郁」,所以呢次一首都冇回捲。
+
