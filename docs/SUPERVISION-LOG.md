@@ -5365,3 +5365,20 @@ ops/deploy/backend-restart.sh --dry-run
 - 副技術筆記:Cowork sandbox 呢邊 unlink() 對呢個 mount 一律 `EPERM`(rename 冇事),`hymnDb.js` 嘅 `releaseDbLock()`/git 都係靜靜哋 catch 咗呢個錯,所以每次喺呢邊行完 script 都會留低一個「release 唔到」嘅孤兒 lock file——已經逐個 `mv` 走,冚唪唥唔影響下一個攞鎖嘅人(daily-proofread routine 11:43 等到 11:47:42 就係等緊呢個,佢自己嘅 retry loop 冇 hack、行為正常)。如果之後仲喺呢個 sandbox 執行呢類 script,記得留意呢個 quirk。
 
 **下一步(D1/D2,等呢個 restart 補做完再一齊 wrap):** 300 首(437 等價集入面未入過 273 首重做隊嘅)併入 `lyrics-requeue-priority.json`;65 首「行過 OCR 但仍然錯配」個案標記優先人手覆核;重開 keeper 之前先確認 `/tmp/lyrics-sprint-stop` 狀態(呢個亦都要喺實機做)。
+
+---
+
+## 2026-08-17 11:57 — D1:416 首併入重做隊(Eric 拍板,Cowork sandbox 執行)
+
+**做咗乜:** 跟返 `oneoff-requeueCjkRedo-20260816.mjs`「Batch A:live 遺害」嗰個做法,將啱啱剷咗嘅 416 首 reset `lyrics_status='none'` + `lyrics_source='cc:miss'`(單淨 `lyrics=NULL` 唔會俾 `pickOcrCandidates` 揀中,一定要連呢步先真係入到隊)。
+
+- script:`backend/scripts/oneoff-requeueBulk416-20260817.mjs`(commit `922372f`)。`--dry` 先過一次核實,再正式行。
+- **結果:reset 416 首,skip 0 首。** merge 落 `lyrics-requeue-priority.json`:同舊 273 首隊列重疊 116 首,淨低 157 首跟返原有次序排喺後面 —— **新隊列合計 573 個 id**,呢 416 首排到隊頭最前(依家出街緊係 NULL,比原有 66 首「live 遺害」更急)。
+- DB 覆查:`lyrics_status='none' AND lyrics_source='cc:miss'` 全庫由改動前加咗 416,417→573 個 id 就緒可俾 producer 揀。
+
+**⚠️ Git 操作事故(已修正,無資料損失):** commit 呢批嘢第一次嗰陣,`git add` 三個指定檔案之後、`git commit` 之前嗰個空窗,撞正另一個 session(前面 11:27-55 果個每日校對 routine,同一個 worktree)喺自己 stage 緊 `frontend/hymn-app/App.js`、`src/playback-intent.js`(新)、`src/track-player-service.js`——`git commit` 唔認 pathspec,見到咩就 commit 咩,結果第一個 commit 夾埋咗呢 3 個唔屬於呢單嘢嘅 frontend 檔案。**發現即刻用 `git reset --soft HEAD~1` + `git restore --staged` 拆返出嚟**,frontend 三個檔案內容完全冇損失、冇 revert,淨係冇入呢個 commit,重新只 commit 返 lyrics 相關 3 個檔案(`922372f`)。**教訓:呢個 sandbox 同其他 session 共用同一個 worktree,`git add <指定檔案>` 之後一定要即刻 `git commit`,中間唔可以有其他步驟(包括 `git status`)——`git status` 本身都會刷新 index、觸發同一個 EPERM-unlink lock 問題,拖長咗呢次嘅空窗。**
+
+**仲欠(要喺有 launchctl 嘅實機 session 先做得到,呢個 sandbox 做唔到):**
+1. `ops/deploy/approve.sh backend <HEAD sha> --confirm` + `ops/deploy/backend-restart.sh` —— 等埋 backend/routes/clientLog.js + backend/lib/clientLogStore.js commit 咗先過到 gate,兩單嘢(呢個 + 每日校對嗰 13 首)一齊 restart。
+2. restart 完要覆查 live:全庫 `lyrics_status='verified' AND lyrics IS NOT NULL` 嘅 count 應該同 live API 有歌詞嘅 count 對得上(跟返 21 首嗰次做法)。
+3. D2(重開 keeper):`/tmp/lyrics-sprint-stop` 呢個安全掣、`ops/lyrics/producer-keeper.sh` 呢個背景 process 都要喺實機做——sandbox 呢邊嘅背景 process 隨 call 完即死,冚唪唥留唔低。
