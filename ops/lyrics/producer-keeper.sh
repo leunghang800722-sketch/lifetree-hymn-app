@@ -82,11 +82,34 @@ cd "$BACKEND" || { log "⛔ cd 唔到 $BACKEND"; exit 1; }
 
 log "keeper 開波(pid $$,repo $REPO)"
 
+# ── 每小時產出時報(2026-08-17 Eric 要求 24h 追趕,實況入 docs/SUPERVISION-LOG.md)──
+REPORT_MARK=/tmp/lyrics-pline-report-epoch
+REPORT_CUM=/tmp/lyrics-pline-report-lastcum
+SUPLOG="$REPO/docs/SUPERVISION-LOG.md"
+
+maybe_report() {
+  local now last cum lastcum delta redo draftnow prod
+  now=$(date +%s)
+  last=$(cat "$REPORT_MARK" 2>/dev/null || echo 0)
+  (( now - last < 3600 )) && return 0
+  cum=$(grep -c "有效草稿" "$FLOG" 2>/dev/null | head -1); [[ -z "$cum" ]] && cum=0
+  lastcum=$(cat "$REPORT_CUM" 2>/dev/null || echo "$cum")
+  delta=$(( cum - lastcum ))
+  redo=$("$NODE_BIN" "$REPO/ops/lyrics/requeue-pending-count.mjs" 2>/dev/null | head -1); [[ -z "$redo" ]] && redo='?'
+  draftnow=$("$NODE_BIN" "$REPO/ops/lyrics/bi-freeze.mjs" --count 2>/dev/null); [[ -z "$draftnow" ]] && draftnow='?'
+  prod=$(pgrep -f 'scripts/fetchLyrics.js' >/dev/null 2>&1 && echo '行緊' || echo '冇行')
+  echo "- [$(date '+%Y-%m-%d %H:%M')] P線時報(keeper自動):過去1小時 OCR/whisper draft **+${delta}**(log累計 ${cum});重做隊剩 ${redo};可做draft ${draftnow};producer ${prod}" >> "$SUPLOG"
+  echo "$now" > "$REPORT_MARK"
+  echo "$cum" > "$REPORT_CUM"
+}
+
 while true; do
   if [[ -f "$STOP" ]]; then
     log "見到 $STOP,keeper 收工"
     exit 0
   fi
+
+  maybe_report
 
   if pgrep -f 'scripts/fetchLyrics.js' >/dev/null 2>&1; then
     sleep "$TICK"; continue

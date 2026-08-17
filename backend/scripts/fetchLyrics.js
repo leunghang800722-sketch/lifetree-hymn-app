@@ -561,8 +561,97 @@ const whisperPlainText = (segs) => segs.map((s) => s.text).join(' ').trim();
 
 const WHISPER_MODEL_NAME = path.basename(WHISPER_MODEL).replace(/^ggml-/, '').replace(/\.bin$/, '');
 
+// ── OCR 流水線(2026-08-17 Eric 拍板 24h 追趕)────────────────────────
+// 舊版一首歌「落載→OCR→whisper」全串行,一首 ~5.5 分鐘,日產 150-260 首,
+// 追唔上複核線(Max plan 後容量 ~880 決定/日)。樽頸喺本機 CPU 唔喺 YouTube,
+// 所以拆開兩層:
+//   * 落載照舊**單線 + jitter delay** —— YouTube 出口 IP 係全 App 命脈,
+//     請求密度、次序、間隔全部零改變(唔准為速度郁呢層,紅線)
+//   * OCR/whisper(本機 CPU,同 IP 無關)開 --ocr-concurrency 條線並行食隊
+// 落載隊上限 MAX_DL_QUEUE 首(每首 360p ~10-30MB,唔好喺 /tmp 囤太多)。
+const OCR_SONG_CONCURRENCY = Number(arg('--ocr-concurrency', 2));
+const MAX_DL_QUEUE = 3;
+
+// 一首已經落載好嘅歌嘅全部慢工序(frame→OCR→whisper→寫DB)。
+// 呢個 function 會俾多條 worker 並行叫,log 用 [id] 做前綴等交錯都睇得明;
+// 佢唔負責刪 temp dir(worker 嘅 finally 做)。
+async function processOneSong(c, dir, videoPath, whisperReady, state) {
+  const tag = `[${c.id}]`;
+  const frames = await extractFrames(videoPath, dir);
+  log(`    ${tag} 抽咗 ${frames.length} 張 frame`);
+
+  // §P1 引擎選擇:中文歌行 PaddleOCR(藝術字體實測完勝 Vision),英文照舊
+  // Vision。Paddle 行唔到(venv 冧咗/JSON 壞)或者讀出嚟 CJK 得雞碎咁多
+  // (可能簡體字幕/怪字體認唔晒)→ Vision 兜底,邊份 CJK 多用邊份。
+  let engine = 'vision';
+  let merged = null;
+  if (CJK_LANGS.has(c.lang) && paddleReady()) {
+    const paddleLines = await ocrFramesPaddle(frames);
+    if (paddleLines) {
+      merged = mergeOcrLines(paddleLines, FRAME_INTERVAL_SEC);
+      engine = 'paddle';
+    }
+  }
+  if (!merged || (engine === 'paddle' && cjkCount(merged.text) < MIN_DRAFT_CHARS)) {
+    const visionLines = await mapConcurrent(frames, OCR_FRAME_CONCURRENCY, ocrFrame);
+    const visionMerged = mergeOcrLines(visionLines, FRAME_INTERVAL_SEC);
+    if (!merged || cjkCount(visionMerged.text) > cjkCount(merged.text)) {
+      if (engine === 'paddle') {
+        log(`    ${tag} · Paddle 讀到 CJK 太少(${cjkCount(merged.text)}),Vision 兜底(${cjkCount(visionMerged.text)})`);
+        engine = 'vision-fallback';
+      }
+      merged = visionMerged;
+    }
+  }
+  const { blocks: ocrBlocks, text: ocrText, watermarkCount } = merged;
+  const ocrChars = charCount(ocrText);
+  log(`    ${tag} OCR(${engine})草稿 ${ocrChars} 隻字、${ocrBlocks.length} 個段落 block(剔咗 ${watermarkCount} 組疑似水印行)`);
+
+  // 順手做 whisper(用返呢首歌啱啱落載嗰條片嘅音軌,零額外 request)。失敗
+  // 唔阻 OCR draft(catch 咗)——timeline 冇 whisper 就等 alignBackfill.js 補。
+  let whisperSegs = [], whisperError = null;
+  if (whisperReady) {
+    try {
+      const wav = await extractAudioWav(videoPath, dir);
+      const whisperLang = whisperLangFor(ocrText, c.lang);
+      const result = await runWhisperTranscribe(wav, whisperLang);
+      whisperSegs = result.segs;
+      if (result.garbageDropped) log(`    ${tag} ⚠ 剷走 ${result.garbageDropped} 段疑似垃圾(CJK 佔比太低)`);
+      if (result.failed) log(`    ${tag} · whisper 出嚟嘅嘢大部分係垃圾,當轉錄失敗,唔存入 timeline`);
+      log(`    ${tag} whisper(-l ${whisperLang})出咗 ${whisperSegs.length} 段(存 timeline,俾將來對齊用)`);
+    } catch (e) {
+      whisperError = e;
+      log(`    ${tag} ⚠ whisper 轉錄出錯(唔阻 OCR draft):${e?.message || e}`);
+    }
+  }
+  const whisperText = whisperPlainText(whisperSegs);
+  const whisperChars = charCount(whisperText);
+  const timelineFields = (ocrBlocks.length || whisperSegs.length)
+    ? { lyrics_timeline: JSON.stringify({ ocr: ocrBlocks, whisper: whisperSegs, model: WHISPER_MODEL_NAME, updatedAt: new Date().toISOString() }) }
+    : {};
+
+  if (ocrChars >= MIN_DRAFT_CHARS) {
+    if (!DRY) await writeLyricsRow(c.id, { lyrics_draft: ocrText, lyrics_status: 'draft', lyrics_source: 'ocr', lyrics_checked_at: today(), ...timelineFields });
+    state.drafted++;
+    log(`    ${tag} ✓ OCR 有效草稿(累計 +${state.drafted})`);
+  } else if (whisperChars >= MIN_DRAFT_CHARS) {
+    // OCR 去晒水印之後少過 40 字(當畫面冇字幕)—— whisper 文字夠就做後備 draft。
+    if (!DRY) await writeLyricsRow(c.id, { lyrics_draft: whisperText, lyrics_status: 'draft', lyrics_source: 'whisper', lyrics_checked_at: today(), ...timelineFields });
+    state.drafted++;
+    log(`    ${tag} ✓ OCR 冇字幕,whisper 有效草稿(累計 +${state.drafted})`);
+  } else if (whisperReady && !whisperError) {
+    if (!DRY) await writeLyricsRow(c.id, { lyrics_status: 'unavailable', lyrics_source: 'whisper', lyrics_checked_at: today(), ...timelineFields });
+    state.unavailable++;
+    log(`    ${tag} · OCR 冇字幕、whisper 都攞唔到嘢(可能純音樂/即興 live),標 unavailable`);
+  } else {
+    if (!DRY) await writeLyricsRow(c.id, { lyrics_source: 'ocr:miss', lyrics_checked_at: today(), ...timelineFields });
+    state.ocrMiss++;
+    log(whisperReady ? `    ${tag} · whisper 轉錄出錯,標 ocr:miss 留低(下次再試)` : `    ${tag} · whisper 未裝,標 ocr:miss 留低(唔算失敗,等裝好再揀返)`);
+  }
+}
+
 async function runOcr(db, budget) {
-  log(`mode=OCR budget=${budget} delay=~${DELAY_MS}ms`);
+  log(`mode=OCR budget=${budget} delay=~${DELAY_MS}ms 並行OCR線=${OCR_SONG_CONCURRENCY}`);
   const whisperReady = await checkWhisperAvailable();
   // 2026-07-27 STAGE 3:whisper 而家唔再淨係「OCR 唔夠字」先撞——同一個 run 順手
   // 幫每首(唔理 OCR 夠唔夠字)做埋 whisper,攞 timestamp 存 lyrics_timeline.whisper
@@ -583,17 +672,24 @@ async function runOcr(db, budget) {
   );
   if (!cands.length) { log('冇更多 cc:miss 嘅歌等 OCR(或者淨低嗰啲俾 ledger / --skip-orgs 剔走)'); return 0; }
 
-  let drafted = 0, unavailable = 0, ocrMiss = 0, streak = 0;
-  for (let i = 0; i < budget && i < cands.length; i++) {
-    const c = cands[i];
-    log(`  OCR 處理 [${c.artist}] ${c.title}`);
-    // 慢工序全部喺 mkdtemp 目錄入面做,呢首(唔理成功定失敗)一定即刪。
-    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'hymnocr-'));
-    try {
+  const state = { drafted: 0, unavailable: 0, ocrMiss: 0 };
+  const queue = [];       // 已落載好、等 OCR 嘅歌:{ c, dir, videoPath }
+  let dlFinished = false;
+
+  // 落載線(串行):原有失敗記賬/streak/對照探測/斷路邏輯全部原封保留。
+  const downloader = (async () => {
+    let streak = 0;
+    for (let i = 0; i < budget && i < cands.length; i++) {
+      const c = cands[i];
+      // 隊滿就等 OCR 線消化 —— 呢段等待唔會產生任何 YouTube 請求
+      while (queue.length >= MAX_DL_QUEUE) await sleep(2000);
+      log(`  落載 [${c.artist}] ${c.title}(id ${c.id})`);
+      const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'hymnocr-'));
       let videoPath;
       try {
         videoPath = await downloadVideoLowRes(c.youtube_id, dir);
       } catch (e) {
+        try { fs.rmSync(dir, { recursive: true, force: true }); } catch (_) {}
         streak++;
         const fails = recordDlFail(c.id);
         log(`    ⚠ 落載失敗 (連續 ${streak},呢首累計 ${fails} 次):${e?.message || e}`);
@@ -607,91 +703,40 @@ async function runOcr(db, budget) {
           log('  連續 3 次落載失敗 —— 用 CC 對照探測分清係咪俾擋…');
           await sleep(jitter(DELAY_MS));
           const probe = await listManualSubs(PROBE_VIDEO);
-          if (probe.error) { log('  對照都 exec 失敗 → 疑似俾 YouTube 擋,今晚 OCR 收工'); break; }
+          if (probe.error) { log('  對照都 exec 失敗 → 疑似俾 YouTube 擋,落載線收工(OCR 線做埋手尾)'); return; }
           log('  對照行到 → 唔關 block 事,呢首本身落唔到,繼續'); streak = 0;
         }
-        continue; // 冇寫 DB,留返下晚再試(finally 已經會清 temp dir)
+        if (i < budget - 1) await sleep(jitter(DELAY_MS));
+        continue;
       }
       streak = 0;
-
-      const frames = await extractFrames(videoPath, dir);
-      log(`    抽咗 ${frames.length} 張 frame`);
-
-      // §P1 引擎選擇:中文歌行 PaddleOCR(藝術字體實測完勝 Vision),英文照舊
-      // Vision。Paddle 行唔到(venv 冧咗/JSON 壞)或者讀出嚟 CJK 得雞碎咁多
-      // (可能簡體字幕/怪字體認唔晒)→ Vision 兜底,邊份 CJK 多用邊份。
-      let engine = 'vision';
-      let merged = null;
-      if (CJK_LANGS.has(c.lang) && paddleReady()) {
-        const paddleLines = await ocrFramesPaddle(frames);
-        if (paddleLines) {
-          merged = mergeOcrLines(paddleLines, FRAME_INTERVAL_SEC);
-          engine = 'paddle';
-        }
-      }
-      if (!merged || (engine === 'paddle' && cjkCount(merged.text) < MIN_DRAFT_CHARS)) {
-        const visionLines = await mapConcurrent(frames, OCR_FRAME_CONCURRENCY, ocrFrame);
-        const visionMerged = mergeOcrLines(visionLines, FRAME_INTERVAL_SEC);
-        if (!merged || cjkCount(visionMerged.text) > cjkCount(merged.text)) {
-          if (engine === 'paddle') {
-            log(`    · Paddle 讀到 CJK 太少(${cjkCount(merged.text)}),Vision 兜底(${cjkCount(visionMerged.text)})`);
-            engine = 'vision-fallback';
-          }
-          merged = visionMerged;
-        }
-      }
-      const { blocks: ocrBlocks, text: ocrText, watermarkCount } = merged;
-      const ocrChars = charCount(ocrText);
-      log(`    OCR(${engine})草稿 ${ocrChars} 隻字、${ocrBlocks.length} 個段落 block(剔咗 ${watermarkCount} 組疑似水印行)`);
-
-      // 順手做 whisper(用返呢首歌啱啱落載嗰條片嘅音軌,零額外 request)。失敗
-      // 唔阻 OCR draft(catch 咗)——timeline 冇 whisper 就等 alignBackfill.js 補。
-      let whisperSegs = [], whisperError = null;
-      if (whisperReady) {
-        try {
-          const wav = await extractAudioWav(videoPath, dir);
-          const whisperLang = whisperLangFor(ocrText, c.lang);
-          const result = await runWhisperTranscribe(wav, whisperLang);
-          whisperSegs = result.segs;
-          if (result.garbageDropped) log(`    ⚠ 剷走 ${result.garbageDropped} 段疑似垃圾(CJK 佔比太低)`);
-          if (result.failed) log('    · whisper 出嚟嘅嘢大部分係垃圾,當轉錄失敗,唔存入 timeline');
-          log(`    whisper(-l ${whisperLang})出咗 ${whisperSegs.length} 段(存 timeline,俾將來對齊用)`);
-        } catch (e) {
-          whisperError = e;
-          log(`    ⚠ whisper 轉錄出錯(唔阻 OCR draft):${e?.message || e}`);
-        }
-      }
-      const whisperText = whisperPlainText(whisperSegs);
-      const whisperChars = charCount(whisperText);
-      const timelineFields = (ocrBlocks.length || whisperSegs.length)
-        ? { lyrics_timeline: JSON.stringify({ ocr: ocrBlocks, whisper: whisperSegs, model: WHISPER_MODEL_NAME, updatedAt: new Date().toISOString() }) }
-        : {};
-
-      if (ocrChars >= MIN_DRAFT_CHARS) {
-        if (!DRY) await writeLyricsRow(c.id, { lyrics_draft: ocrText, lyrics_status: 'draft', lyrics_source: 'ocr', lyrics_checked_at: today(), ...timelineFields });
-        drafted++;
-        log(`    ✓ OCR 有效草稿(累計 +${drafted})`);
-      } else if (whisperChars >= MIN_DRAFT_CHARS) {
-        // OCR 去晒水印之後少過 40 字(當畫面冇字幕)—— whisper 文字夠就做後備 draft。
-        if (!DRY) await writeLyricsRow(c.id, { lyrics_draft: whisperText, lyrics_status: 'draft', lyrics_source: 'whisper', lyrics_checked_at: today(), ...timelineFields });
-        drafted++;
-        log(`    ✓ OCR 冇字幕,whisper 有效草稿(累計 +${drafted})`);
-      } else if (whisperReady && !whisperError) {
-        if (!DRY) await writeLyricsRow(c.id, { lyrics_status: 'unavailable', lyrics_source: 'whisper', lyrics_checked_at: today(), ...timelineFields });
-        unavailable++;
-        log('    · OCR 冇字幕、whisper 都攞唔到嘢(可能純音樂/即興 live),標 unavailable');
-      } else {
-        if (!DRY) await writeLyricsRow(c.id, { lyrics_source: 'ocr:miss', lyrics_checked_at: today(), ...timelineFields });
-        ocrMiss++;
-        log(whisperReady ? '    · whisper 轉錄出錯,標 ocr:miss 留低(下次再試)' : '    · whisper 未裝,標 ocr:miss 留低(唔算失敗,等裝好再揀返)');
-      }
-    } finally {
-      try { fs.rmSync(dir, { recursive: true, force: true }); } catch (_) {}
+      queue.push({ c, dir, videoPath });
+      if (i < budget - 1) await sleep(jitter(DELAY_MS));
     }
-    if (i < budget - 1) await sleep(jitter(DELAY_MS));
-  }
-  log(`今次:OCR/whisper 有效草稿 ${drafted} 首,unavailable ${unavailable} 首,ocr:miss(等 whisper/重試)${ocrMiss} 首`);
-  return drafted;
+  })().finally(() => { dlFinished = true; });
+
+  // OCR 線 × OCR_SONG_CONCURRENCY:本機 CPU 工序,同 YouTube 完全無關。
+  const worker = async (wid) => {
+    for (;;) {
+      const item = queue.shift();
+      if (!item) {
+        if (dlFinished) return;
+        await sleep(1500);
+        continue;
+      }
+      try {
+        await processOneSong(item.c, item.dir, item.videoPath, whisperReady, state);
+      } catch (e) {
+        log(`    [${item.c.id}] ⚠ OCR 線 w${wid} 處理出錯(跳過呢首,唔寫 DB,下次再試):${e?.message || e}`);
+      } finally {
+        try { fs.rmSync(item.dir, { recursive: true, force: true }); } catch (_) {}
+      }
+    }
+  };
+
+  await Promise.all([downloader, ...Array.from({ length: OCR_SONG_CONCURRENCY }, (_, w) => worker(w + 1))]);
+  log(`今次:OCR/whisper 有效草稿 ${state.drafted} 首,unavailable ${state.unavailable} 首,ocr:miss(等 whisper/重試)${state.ocrMiss} 首`);
+  return state.drafted;
 }
 
 async function main() {

@@ -52,23 +52,64 @@ def main():
         use_textline_orientation=False,
     )
 
+    # 連續 frame 去重(2026-08-17 24h 追趕加):歌詞 MV 好多時成十秒畫面完全唔郁,
+    # 每 2 秒抽一張 frame 就有大量一模一樣嘅 frame。用 64x36 灰階縮圖比較,直接
+    # 翻用上一張嘅 OCR 結果(semantics 一樣:同一版字幕讀出嚟本來就同一堆行)。
+    # ⚠️ 量度一定要用**分區最大差**唔可以用全幅平均差 —— 合成測試實錘:字幕
+    # 只佔畫面一細撻,全幅平均會被唔郁嘅背景溝淡到 <1,字幕轉咗都察覺唔到。
+    # 做法:縮圖切 8x6=48 個 block,逐 block 計平均差,攞最大嗰個;局部變化
+    # (字幕轉行)一定頂爆自己嗰幾個 block,背景壓縮雜訊就全域都細。
+    # 縮圖 128x72:試過 64x36,細字幕(有啲 MV 字幕得畫面高度 5%)縮完得 1-2px,
+    # 訊號冇晒;128x72 之下 5% 高度都仲有 3-4px,block 度量捉得到。
+    import PIL.Image
+    DEDUP_BLOCK_THRESHOLD = 6.0
+    THUMB_W, THUMB_H = 128, 72
+
+    def max_block_diff(a, b, w=THUMB_W, h=THUMB_H, bw=8, bh=6):
+        worst = 0.0
+        for by in range(0, h, bh):
+            for bx in range(0, w, bw):
+                s = 0
+                for y in range(by, by + bh):
+                    row = y * w
+                    for x in range(bx, bx + bw):
+                        s += abs(a[row + x] - b[row + x])
+                d = s / (bw * bh)
+                if d > worst:
+                    worst = d
+        return worst
+
     out = []
+    prev_thumb = None
+    prev_lines = None
+    reused = 0
     for f in frames:
         entry = {"file": f, "lines": []}
+        w = h = None
+        thumb = None
+        try:
+            with PIL.Image.open(f) as im:
+                w, h = im.size
+                thumb = list(im.convert("L").resize((THUMB_W, THUMB_H)).getdata())
+        except Exception as e:
+            print(f"frame 讀唔到({f}):{e}", file=sys.stderr)
+            out.append(entry)
+            continue
+
+        if prev_thumb is not None and thumb is not None:
+            if max_block_diff(thumb, prev_thumb) < DEDUP_BLOCK_THRESHOLD and prev_lines is not None:
+                entry["lines"] = prev_lines
+                out.append(entry)
+                prev_thumb = thumb
+                reused += 1
+                continue
+
         try:
             for res in ocr.predict(f):
                 texts = res.get("rec_texts") or []
                 scores = res.get("rec_scores") or []
                 boxes = res.get("rec_boxes")
                 boxes = boxes.tolist() if boxes is not None and hasattr(boxes, "tolist") else (boxes or [])
-                # normalize bbox 用嘅畫面大細
-                w = h = None
-                try:
-                    import PIL.Image
-                    with PIL.Image.open(f) as im:
-                        w, h = im.size
-                except Exception:
-                    pass
                 lines = []
                 for i, t in enumerate(texts):
                     line = {"text": t, "score": float(scores[i]) if i < len(scores) else None}
@@ -82,7 +123,10 @@ def main():
         except Exception as e:
             print(f"frame 讀唔到({f}):{e}", file=sys.stderr)
         out.append(entry)
+        prev_thumb = thumb
+        prev_lines = entry["lines"]
 
+    print(f"dedup:翻用 {reused}/{len(frames)} 張 frame", file=sys.stderr)
     json.dump(out, sys.stdout, ensure_ascii=False)
 
 if __name__ == "__main__":
