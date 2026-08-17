@@ -55,3 +55,20 @@ YouTube 頻道(UCPcACo-iIs0lrDjJarseFXQ)15 個 playlist,全部係**經文主題
 ## 共通結論
 
 三隊都跟 [[悅雨音樂 GRM]] / [[611 Worship]] 同一個模式。**冇夾硬填。**
+
+---
+
+## 2026-08-17 補充:「More than a Concert 2015 【LIVE】」查完 —— 唔係專輯
+
+上面第 1 節留低嗰 9 首,查完實錘**唔係正式發行**,**冇寫 DB**:
+
+1. **片尾 description 白紙黑字**:「Milk&Honey **第一次音樂分享會**
+   More than a Concert **回顧**」(gNZtq_XwxpY,2015-09-13 上載)——
+   係一場音樂分享會嘅回顧片,唔係碟。
+2. **曲目大部分係世俗流行歌 cover**:自知之明(謝安琪)、Patience
+   (Take That)、Fix You(Coldplay)、飛(Supper Moment)、陀飛輪 /
+   幸福摩天輪(陳奕迅)。敬拜事工唔會出一隻咁嘅專輯。
+3. **片名編號 01-09 係分集上載**(「More than a Concert 01…09」),
+   係 YouTube 分集,唔係碟嘅曲序。
+
+三項夾埋,結論好清楚:一場 2015 年音樂分享會嘅片段回顧。呢 9 首維持留空。

@@ -162,6 +162,22 @@ async function main() {
     if (Number.isFinite(y)) albumYear.set(t.album, y);
   }
   const resolvedEarliest = [];
+  const resolvedPrecedent = [];
+  // DB 內部先例:同 org、同一首歌(normalize 後同名)嘅其他 row 已經填咗邊隻碟。
+  // 用嚟解「同年平手」——例如天韻《不為明天憂慮》(國語)同《莫得為明日掛慮》
+  // (台語)係同一張碟嘅兩個語言版,1993 同年、13 首曲序一樣,曲名有幾首
+  // 完全相同,靠年份分唔到。但早期 'search' 輪已經幫同名歌填咗國語嗰隻,
+  // 跟返呢個先例好過亂估。
+  const precedent = new Map();
+  for (const r of rows) {
+    if (!r.album || !String(r.album).trim()) continue;
+    for (const cand of [...extractCandidates(r.display_title || ''), ...extractCandidates(r.title || '')]) {
+      const key = hasCJK(cand) ? normalizeZh(cand) : normalizeEn(cand);
+      if (!key) continue;
+      if (!precedent.has(key)) precedent.set(key, new Set());
+      precedent.get(key).add(String(r.album).trim());
+    }
+  }
 
   for (const row of rows) {
     const titleCandidates = [
@@ -197,7 +213,19 @@ async function main() {
       const min = Math.min(...years);
       const winners = list.filter((a) => albumYear.get(a) === min);
       if (winners.length !== 1) {
-        conflicts.push({ row, matchedOn, albums: list, reason: `最早年份${min}平手` });
+        // 平手 → 睇 DB 內部先例:同名歌喺同 org 其他 row 填咗邊隻
+        const key = hasCJK(matchedOn) ? normalizeZh(matchedOn) : normalizeEn(matchedOn);
+        const seen = precedent.get(key);
+        const byPrecedent = seen ? winners.filter((a) => seen.has(a)) : [];
+        if (byPrecedent.length !== 1) {
+          conflicts.push({ row, matchedOn, albums: list, reason: `最早年份${min}平手,DB先例都分唔到` });
+          continue;
+        }
+        album = byPrecedent[0];
+        resolvedPrecedent.push({ row, album, matchedOn, from: winners.join(' / ') });
+        if (row.album_source === 'manual' || row.album_source === 'legacy') { protectedRows.push({ row, catalogAlbum: album }); continue; }
+        if (row.album && row.album.trim()) { alreadyHasAlbum.push({ row, catalogAlbum: album }); continue; }
+        matched.push({ row, album, matchedOn });
         continue;
       }
       album = winners[0];
@@ -212,6 +240,7 @@ async function main() {
 
   log(`match 到單一專輯且可寫(album 本身空):${matched.length}`);
   log(`衝突靠「最早發行=原碟」解決咗:${resolvedEarliest.length}`);
+  log(`同年平手靠「DB內部先例」解決咗:${resolvedPrecedent.length}`);
   log(`match 到但衝突(仲係解唔到,唔寫):${conflicts.length}`);
   log(`match 到但 DB 已經有 album(保護規則,唔覆寫):${alreadyHasAlbum.length}`);
   log(`match 到但 album_source=manual/legacy(受保護,唔覆寫):${protectedRows.length}`);

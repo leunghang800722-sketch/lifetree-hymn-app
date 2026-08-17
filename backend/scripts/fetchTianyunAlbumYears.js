@@ -42,11 +42,12 @@ async function fetchHtml(url) {
 function extractYear(html) {
   let t = html.replace(/<script[\s\S]*?<\/script>/gi, '').replace(/<style[\s\S]*?<\/style>/gi, '');
   t = t.replace(/<[^>]+>/g, ' ').replace(/&nbsp;/g, ' ').replace(/\s+/g, ' ');
-  // 主要格式:「1980年4月發行」/「1998年12月發行」
-  const m = t.match(/(19[5-9]\d|20[0-2]\d)\s*年\s*\d{1,2}\s*月\s*發行/);
+  // shop.hms.org.tw 唔止一種寫法:發行 / 出版 / 上市 / 推出 都見過。
+  // 例:「1980年4月發行」(野地的花)、「2000年3月出版」(飛翔)。
+  const VERBS = '發行|出版|上市|推出|問世';
+  const m = t.match(new RegExp(`(19[5-9]\\d|20[0-2]\\d)\\s*年\\s*\\d{1,2}\\s*月\\s*(?:${VERBS})`));
   if (m) return Number(m[1]);
-  // 後備:「1980年發行」
-  const m2 = t.match(/(19[5-9]\d|20[0-2]\d)\s*年\s*發行/);
+  const m2 = t.match(new RegExp(`(19[5-9]\\d|20[0-2]\\d)\\s*年\\s*(?:${VERBS})`));
   if (m2) return Number(m2[1]);
   return null;
 }
