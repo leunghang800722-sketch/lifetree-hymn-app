@@ -6,9 +6,16 @@
 // 呢度加一個極簡、無認證(watchdog 觸發嗰刻好可能已經冇好网络,唔應該再要求
 // 一個完整 authed request 先俾過)嘅 fire-and-forget beacon,淨係 append 一行
 // log 落 backend 已有嘅 stdout(同 [stream] log 走同一條管——已經證明呢條管
-// 好用,唔另起爐灶)。刻意唔存 DB、唔查 users.db 對身份——呢個係診斷用嘅
-// observability helper,唔係業務 API。
+// 好用,唔另起爐灶)。唔查 users.db 對身份——呢個係診斷用嘅 observability
+// helper,唔係業務 API。
+//
+// 2026-08-17 補:stdout 經 launchd 轉去 /tmp/hymn_backend.log,而 macOS 開機
+// 會清 /tmp——8/15-17 三日數據因為一次整機重啟全部蒸發,冇第二份底。而家
+// 除咗 stdout(即時 tail 用)之外,再多寫一份持久化落 backend/logs/client-log/
+// (lib/clientLogStore.js,同 admin-audit.log 一樣嘅豁免目錄,唔會俾 /tmp
+// 清走影響),有 rotation + size 上限,保證至少 14 日資料唔清。
 import { Router } from 'express';
+import { appendClientLog } from '../lib/clientLogStore.js';
 
 function logLine(fields) {
   console.log(`[client-log] ${new Date().toISOString()} ${Object.entries(fields).map(([k, v]) => `${k}=${JSON.stringify(v)}`).join(' ')}`);
@@ -34,6 +41,7 @@ export default function clientLogRoutes(app) {
         detail: String(b.detail || '').slice(0, 120),
       };
       logLine(safe);
+      appendClientLog(safe); // 持久化底(backend/logs/client-log/),唔會俾 /tmp 清走影響
     } catch (_) {
       // 診斷 beacon 本身唔可以拖累/整壞任何嘢——壞咗就靜靜哋算。
     }
