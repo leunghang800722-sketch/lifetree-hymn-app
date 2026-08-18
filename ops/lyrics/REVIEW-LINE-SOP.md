@@ -94,6 +94,32 @@ node scripts/reviewLyrics.js --apply <passed檔>
 # → 跟住做 §1.3 嘅覆查
 ```
 
+## §3b 天然短詩歌:`shortOk` whisper override(Eric 2026-08-19 拍板)
+
+有啲詩歌成首歌真係得三四句,俾 45 CJK 門檻硬擋死,每輪 export 都出返嚟俾人重讀,
+**永遠出唔到街**。而家有正式出路:
+
+**用法:** 你讀完覺得「唔係 OCR 漏,係首歌本身短」,就喺 apply entry 加 `shortOk: true`:
+```json
+{"id": 5431, "lang": "國語", "lyrics": "…", "shortOk": true}
+```
+
+**⚠️ 呢個唔係聲明就算數。** `auditLyricsBatch.js` 會**開 DB 查返條片嘅 whisper timeline
+實證**,三樣都要過先放行:
+1. whisper 覆蓋 ≥85% 歌曲長度(真係聽到尾)
+2. whisper 本身聽到嘢(中文 ≥30 CJK / 英文 ≥60 字元)—— 擋走「成段都係 [MUSIC]」
+3. whisper 去重後 unique 內容 ≤ 你交嘅歌詞 × 1.6 —— **最緊要嗰條**:whisper 聽到嘅
+   多過你交嘅,即係 OCR 漏咗嘢,唔係天然短
+
+實證唔過佢會印明點解(例:`whisper 聽到嘅 unique 內容 44 明顯多過你交嘅 7,比例 6.3×`),
+**唔好夾硬再試,亦唔准為咗過關而屈歌詞** —— 過唔到就照留 draft。
+
+override **只推翻「太薄」一個原因**;有第二個 reject 原因(衛生 regex / 經文括號 /
+重複 id)照樣唔放行。冇 `shortOk` 嘅 entry 行為零改動。
+
+已知實例:5431 願祢國降臨(27 CJK,覆蓋 95%)✅、5632 祢的慈愛(30 CJK,覆蓋 100%)✅
+兩首已出街;6385 賜福與你 whisper 全程 [MUSIC] ❌ 實證唔到,維持 draft。
+
 ## §4 🔴 最高優先政策(Eric 2026-08-16,凌駕一切效率考慮)
 
 > **完全拒絕「中文歌配英文歌詞」,唔可以為咗衝數字而做。**
