@@ -31,7 +31,13 @@ TICK=300                 # 每 5 分鐘一 tick
 DRAFT_CEILING=400        # draft 積到咁多就唞,唔好嘥 YouTube quota 堆貨
 POOL_FLOOR=100           # OCR 池低過咁多就轉去 CC 補倉
 COOL_403=7200            # 連續兩轉開波即斷路 → 唞 2 個鐘保 IP
-SKIP_ORGS="天韻合唱團,CantonHymn,悦雨音樂,原始和聲"
+# 2026-08-18 22:20 Eric 拍板**放行**呢四個 vein(留空 = 唔再押後)。
+# 背景:天韻/CantonHymn/悦雨/原始和聲 原本喺 47H 衝刺 Phase 0 押後,理由係
+# 「2026-08-11 至 08-13 逐首讀過判死」—— 但嗰個判斷係基於**舊 Vision OCR**。
+# 8/16 換咗 PaddleOCR 主引擎之後未重新評估過,而家池榨乾(連續兩轉「冇一首
+# 攻得」),放返出嚟 680 首入 OCR 池頂住三條複核線嘅消耗,順便實測新引擎
+# 救唔救得返呢批。要重新押後就填返:SKIP_ORGS="天韻合唱團,CantonHymn,悦雨音樂,原始和聲"
+SKIP_ORGS=""
 
 log() { echo "[$(date '+%Y-%m-%d %H:%M:%S')] $*" >> "$LOG"; }
 
@@ -187,7 +193,7 @@ while true; do
   elif (( POOL > 0 )); then
     log "池 $POOL、可做 draft $DRAFTS → 開 OCR(budget 120)"
     nohup "$NODE_BIN" scripts/fetchLyrics.js --mode ocr --budget 120 --delay 4000 --ignore-window \
-      --skip-orgs "$SKIP_ORGS" >> "$FLOG" 2>&1 &
+      ${SKIP_ORGS:+--skip-orgs "$SKIP_ORGS"} >> "$FLOG" 2>&1 &
     disown
   else
     rm -f "$MARK"
