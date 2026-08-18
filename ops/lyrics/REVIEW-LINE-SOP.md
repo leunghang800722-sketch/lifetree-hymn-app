@@ -40,6 +40,22 @@
   (Eric 靠呢個判斷 Max plan 有冇真係解決班次早死)。
 - 撞 rate limit → 完成手頭嗰批 → apply → 寫 ledger 收工,**唔好死頂**。
 
+## §2b ⚠️ Payload 紀律(2026-08-18 R3 三轉全滅之後加)
+
+**實錄:** R3 英文線 13:23 / 17:22 / 21:22 連續三轉,export 完一次過對成個 61 首分區做 dedupe,
+2–3 分鐘後成個 session 蒸發,零決定零 ledger。根因唔係 quota(全日零 rate limit),
+**係 per-session context 上限** —— 英文分區 61 首 raw draft 合共 57,279 字元,dedupe 完個 JSON
+132KB,一入 context 就爆。
+
+**所以:**
+- **批次大細要按字元計,唔係按首數計。** 一批目標 ≤ **15,000 字元 raw draft**:
+  中文歌(平均 ~1,400 字元)約 12–18 首;英文歌(平均 ~940 但長尾去到 3,799)**最多 12 首**。
+- **一定要切完先讀**:先由分區揀今批嗰十幾個 id,**先至**對嗰批做 dedupe / 讀內容。
+  **唔准對成個分區做 dedupe** —— 呢個就係 R3 死嘅動作。
+- **唔准 `cat` / Read 成個大檔**(`drafts.json` / `mine-dd.json` / `align/*`)。要睇就寫 script
+  逐首 print,睇完即刻判。align 數據只准攞當前批嘅 id。
+- **每批做完即刻 audit + apply + append ledger 先攞下一批** —— 死喺第 N 批都保得住頭 N-1 批。
+
 ## §3 每班流程
 
 ```bash
