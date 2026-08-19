@@ -7,7 +7,9 @@
 |---|---|---|---|---|
 | **R1** | `lyrics-line-mandarin` | `國語` | WebSearch(每班 ≤4 次) | ✅ **只有 R1 可以 approve + restart** |
 | **R2** | `lyrics-line-cantonese` | `粵語` | `cantonhymnLookup.js`(**WebSearch 0 次**) | ❌ |
-| **R3** | `lyrics-line-english` | `英文` + `兒童` | WebSearch(每班 ≤2 次) | ❌ |
+| ~~**R3**~~ | ~~`lyrics-line-english`~~ | ~~`英文` + `兒童`~~ | — | ❌ |
+
+> 🛑 **R3 英文線 2026-08-19 已停用(Eric 拍板)。** 英文/兒童分區 100% 係在版權當代敬拜歌(Yancy / Hillsong Kids / CJ and Friends / Listener Kids / Matt Redman / Chris Tomlin / Bethel…),複核 agent 嘅運作守則唔准重現在版權歌詞正文,所以呢條線**結構上做唔到嘢**(七轉零產出;早前「context 爆」嘅診斷係錯,見 SUPERVISION-LOG 2026-08-19)。66 首 draft + 池入面 39 首同類已記錄喺 `backend/data/lyrics-copyright-hold.json`,狀態「暫緩-版權」——**draft 保留唔郁**(唔 apply、唔判 unusable、唔 delist),隨時可翻案。池入面**冇任何非在版權英文歌**可以轉做,所以係暫停唔係轉線。第日收錄咗公有領域傳統聖詩先開返。
 
 ## §1 唔會撞車嘅五條機制
 
