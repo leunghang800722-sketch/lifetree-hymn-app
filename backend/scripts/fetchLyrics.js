@@ -454,17 +454,24 @@ const WHISPER_BIN = 'whisper-cli';
 const WHISPER_MODEL = path.join(__dirname, '..', 'models', `ggml-${DEFAULT_WHISPER_MODEL_NAME}.bin`);
 
 // 落低清片(video+audio 埋一齊,俾 whisper 之後攞音軌用,唔使再落多次)。
-// 2026-08-16 改 format 18(360p 漸進式 mp4,自帶音軌)行先:當日實測同一條片
-// (US6S0B3ECJ8)用 bestvideo+bestaudio 落 403、用 18 即刻落到 —— googlevideo
-// 間歇性擋 DASH 分流格式,漸進式冇事;18 對 pipeline 係完美格式(360p Paddle
-// 已實測夠準、有音軌俾 whisper、慳一步 ffmpeg merge)。冇 18 嘅片先 fallback
-// 返 DASH merge / combined best(純 bestvideo 冇音軌,whisper 用唔到,唔要)。
+//
+// ⚠️ 2026-08-19 大改(403 事故):YouTube 8/18 起**唔再派 format 18**(漸進式 mp4),
+// 而舊 yt-dlp stable 2026.07.04 對住新版 player 全線攞 403 —— 實測 6 條琴晚 403 嘅片,
+// stable 100% 403,nightly 2026.08.18 + DASH format **6/6 全部落到**。所以兩樣一齊改:
+//   ① 用 nightly binary(backend/tools/yt-dlp-nightly,獨立檔,唔覆蓋系統 brew 嗰個)
+//   ② format 由 `18/...` 改做 DASH 為主(`bv*+ba` 合併,ffmpeg 會 merge 返一條有音軌嘅片,
+//      whisper 照用得)
+// 2026-08-16 嗰個「用 18 避 DASH 403」嘅結論**已經反轉**,唔好照抄舊註解。
+// 系統 `yt-dlp`(stable)保留住冇郁,想比對隨時試得返。
+const YTDLP = path.join(__dirname, '..', 'tools', 'yt-dlp-nightly');
+const DL_FORMAT = 'bv*[height<=360]+ba/bv*[height<=480]+ba/18/b[height<=480]/b';
+
 async function downloadVideoLowRes(youtubeId, dir) {
   const outTemplate = path.join(dir, 'video.%(ext)s');
   await exec(
-    `yt-dlp -f "18/bestvideo[height<=360]+bestaudio/best[height<=360]" -o "${outTemplate}" ` +
+    `"${YTDLP}" -f "${DL_FORMAT}" --no-playlist -o "${outTemplate}" ` +
     `"https://www.youtube.com/watch?v=${youtubeId}"`,
-    { timeout: 180000 }
+    { timeout: 300000 }
   );
   const file = fs.readdirSync(dir).find((f) => f.startsWith('video.') && !f.endsWith('.part'));
   if (!file) throw new Error('落載完但搵唔到片檔');
