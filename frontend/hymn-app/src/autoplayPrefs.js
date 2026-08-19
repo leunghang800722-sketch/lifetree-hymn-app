@@ -1,14 +1,12 @@
 // 自動播放設定 —— AUTOPLAY-MIX-PLAN。toggle + 揀咗嘅 flavor,存 MMKV,開 App 記得。
-import { MMKV } from 'react-native-mmkv';
+import { getStorage } from './storage';
 
 const K_ON = 'autoplay.enabled.v1';
 const K_FLAVOR = 'autoplay.flavor.v1';
 
-let _store = null;
-function store() {
-  if (!_store) { try { _store = new MMKV(); } catch (e) { console.warn('MMKV(autoplay):', e?.message); } }
-  return _store;
-}
+// BATCH5 O10:MMKV instance 收歸 storage.js 一份共用(零行為改變,本身就係
+// 同一份 default instance)。
+const store = getStorage;
 
 export function getAutoplayEnabled() {
   try { const v = store()?.getString(K_ON); return v == null ? true : v === '1'; } catch (_) { return true; }

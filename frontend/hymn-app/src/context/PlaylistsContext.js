@@ -8,20 +8,16 @@
 // 最愛(favorites)係另一套嘢,冇上限 —— Eric 講嘅 30 首上限淨係指自訂清單。
 
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef, useMemo } from 'react';
-import { MMKV } from 'react-native-mmkv';
+import { getStorage } from '../storage';
 import { enqueue, flush, setStalePlaylistHandler } from '../sync/userSync';
 
 export const MAX_PLAYLIST_SONGS = 30;
 
 const KEY = 'playlists.v1';
 
-let _store = null;
-function store() {
-  if (!_store) {
-    try { _store = new MMKV(); } catch (e) { console.warn('MMKV(playlists):', e?.message); }
-  }
-  return _store;
-}
+// BATCH5 O10:MMKV instance 收歸 storage.js 一份共用(零行為改變,本身就係
+// 同一份 default instance)。
+const store = getStorage;
 
 const PlaylistsCtx = createContext();
 

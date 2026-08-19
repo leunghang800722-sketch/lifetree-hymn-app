@@ -2,16 +2,14 @@
 // MMKV(同 lastPlayed / favorites 一致),lazy + try-catch,掛咗都唔 crash。
 // 聽夠 30 秒先算一次播放(skip 唔算)。只存本機,唔上傳。
 
-import { MMKV } from 'react-native-mmkv';
+import { getStorage } from './storage';
 
 const KEY = 'playLog.v1';       // { [hymnId]: { count, lastAt } }
 const RECENT_KEY = 'playRecent.v1'; // 最近播過嘅 id(壓權防循環),最多留 15
 
-let _store = null;
-function store() {
-  if (!_store) { try { _store = new MMKV(); } catch (e) { console.warn('MMKV(playLog):', e?.message); } }
-  return _store;
-}
+// BATCH5 O10:MMKV instance 收歸 storage.js 一份共用(零行為改變,本身就係
+// 同一份 default instance)。
+const store = getStorage;
 
 export function getPlayLog() {
   try { const s = store()?.getString(KEY); return s ? JSON.parse(s) : {}; } catch (_) { return {}; }

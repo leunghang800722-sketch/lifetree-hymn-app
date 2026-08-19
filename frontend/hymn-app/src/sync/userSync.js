@@ -7,16 +7,12 @@
 // token 由 AuthContext 用 setAuthToken() 灌入(冇 token 就一律 no-op,靜靜哋
 // 留低 outbox 等下次)。
 
-import { MMKV } from 'react-native-mmkv';
+import { getStorage } from '../storage';
 import { API_BASE } from '../config';
 
-let storage = null;
-function store() {
-  if (!storage) {
-    try { storage = new MMKV(); } catch (e) { console.warn('MMKV(sync):', e?.message); }
-  }
-  return storage;
-}
+// BATCH5 O10:MMKV instance 收歸 storage.js 一份共用(零行為改變,本身就係
+// 同一份 default instance)。
+const store = getStorage;
 
 const OUTBOX_KEY = 'sync.outbox.v1';
 const OWNER_KEY = 'sync.owner.v1';

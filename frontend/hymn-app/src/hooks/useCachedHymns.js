@@ -1,15 +1,7 @@
 import { useEffect } from 'react';
-import { MMKV } from 'react-native-mmkv';
+import { getStorage } from '../storage';
 import { API_BASE } from '../config.js';
 import { createExternalStore } from './externalStore.js';
-
-let storage = null;
-function getStorage() {
-  if (!storage) {
-    try { storage = new MMKV(); } catch (e) { console.warn('MMKV init:', e); }
-  }
-  return storage;
-}
 
 // BATCH5 O7:改用 AbortController——舊嘅 Promise.race 逾時之後底層 fetch
 // 連線唔會斷,慢網下會同 retry(fetchAllHymnsWithRetry)疊住背景繼續拉多

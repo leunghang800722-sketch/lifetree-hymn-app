@@ -8,17 +8,13 @@
 //
 // key 加版本前綴,將來改格式唔會讀到舊 data。
 
-import { MMKV } from 'react-native-mmkv';
+import { getStorage } from './storage';
 
 const KEY_CHIP = 'home.chip.v1';
 
-let _store = null;
-function store() {
-  if (!_store) {
-    try { _store = new MMKV(); } catch (e) { console.warn('MMKV(homePrefs):', e?.message); }
-  }
-  return _store;
-}
+// BATCH5 O10:MMKV instance 收歸 storage.js 一份共用(零行為改變,本身就係
+// 同一份 default instance)。
+const store = getStorage;
 
 export function getHomeChip() {
   try { return store()?.getString(KEY_CHIP) || null; } catch (_) { return null; }

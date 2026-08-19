@@ -1,14 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef, useMemo } from 'react';
-import { MMKV } from 'react-native-mmkv';
+import { getStorage } from '../storage';
 import { enqueue, flush } from '../sync/userSync';
-
-let storage = null;
-function getStorage() {
-  if (!storage) {
-    try { storage = new MMKV(); } catch (e) { console.warn('MMKV init:', e); }
-  }
-  return storage;
-}
 
 const FavoritesCtx = createContext();
 
