@@ -1,6 +1,7 @@
 // 詩歌App v211 TrackPlayer — 背景播放 + Ode 主題(ODE-REBRAND-PLAN)
 import { COLORS as DesignColors, TYPOGRAPHY, effects } from './src/theme/designSystem';
 import { useCachedHymns } from './src/hooks/useCachedHymns';
+import { createExternalStore } from './src/hooks/externalStore';
 import LogoRing from './src/components/LogoRing';
 import React, { useState, useEffect, createContext, useContext, useRef, useCallback } from 'react';
 import OdeIcon from './src/icons/OdeIcon';
@@ -317,6 +318,14 @@ async function safeFetchHymnDetail(id) {
 //  GLOBAL PLAYER CONTEXT
 // ================================================================
 const PlayerCtx = createContext();
+
+// O1-O2-REPLAN-20260819.md §3.2 Commit B1 —— currentTime/duration 每秒轉一次
+// 係全 app 每秒 re-render 嘅唯一源頭(§1 grep 實證)。搬出 React state,移入
+// 同 useCachedHymns 共用嘅 external store,進度條抽做細 component 自己訂閱。
+// B1 呢步淨係雙寫(照舊 setCurrentTime/setDuration + 加呢個 store),行為
+// 完全不變,純結構準備。
+const progressStore = createExternalStore({ currentTime: 0, duration: 0 });
+function usePlayerProgress() { return progressStore.useStore(); }
 
 function PlayerProvider({ children }) {
   // FRONTEND-CODE-REVIEW-20260819 §4 #4 — noticeStyles.wrap 個 top 淨係靠
@@ -1384,6 +1393,7 @@ function PlayerProvider({ children }) {
           if (mounted) {
             const pos = progress.position || 0;
             setCurrentTime(pos);
+            progressStore.setState({ currentTime: pos }); // O1-B1 雙寫
             // B14 修 —— toggleShuffle 會 reset()+add() 成個 native queue,呢 1 秒
             // poll 窗口入面有陣時 getProgress() 會短暫報 duration:0(隊列啱啱重
             // 起,新 metadata 未到手),之前直接 setDuration(0) 就即刻喺 UI 度
@@ -1391,7 +1401,10 @@ function PlayerProvider({ children }) {
             // buffer(§3.6 註解提過嘅代價)。呢個 0 淨係短暫、唔係真值,唔應該
             // 覆蓋一個已知嘅正確長度 —— 淨係喺攞到正數先更新,0/undefined 就
             // 保留返上一個已知值,唔會喺 UI 度出現「肯定係假」嘅 0:00。
-            if (progress.duration > 0) setDuration(progress.duration);
+            if (progress.duration > 0) {
+              setDuration(progress.duration);
+              progressStore.setState({ duration: progress.duration }); // O1-B1 雙寫,B14 guard保留
+            }
 
             // Phase 1 量度 t1(fallback):Playing state event 冇嚟(或者轉歌時
             // state 冇離開過 Playing)就由 poll 收尾,精度 ±1s,夠做 baseline。
@@ -1859,6 +1872,7 @@ function PlayerProvider({ children }) {
     if (typeof x !== 'number') return;
     const target = (x / (SCREEN_WIDTH - 40)) * duration;
     setCurrentTime(target);
+    progressStore.setState({ currentTime: target }); // O1-B1 雙寫
     TrackPlayer.seekTo(target).catch(() => {});
   }
 
@@ -2140,6 +2154,31 @@ const hs = StyleSheet.create({
 const QUEUE_COLLAPSED_H = 78;
 const QUEUE_SNAP_POINTS = [QUEUE_COLLAPSED_H, '88%'];
 
+// O1-O2-REPLAN-20260819.md §3.2 Commit B1 —— 由 FullScreenPlayerOverlay 抽出
+// 嚟嘅細 component,自己訂閱 progressStore(唔經 PlayerCtx),播放中每秒得
+// 呢一個 component re-render;overlay 收埋時(冇 mount)零訂閱者,連一個
+// re-render 都冇。
+function ProgressSection() {
+  const { currentTime, duration } = usePlayerProgress();
+  const player = usePlayer();
+  const progressPercent = duration > 0 ? Math.min((currentTime / duration) * 100, 100) : 0;
+  return (
+    <View style={fsStyles.progressSection}>
+      <TouchableOpacity style={fsStyles.progressBarTouchArea} onPress={(e) => { player.handleProgressBarPress(e); }}>
+        <View style={fsStyles.progressBarBg}>
+          <View style={[fsStyles.progressBarFill, { width: `${progressPercent}%` }]}>
+            <View style={fsStyles.progressBarThumb} />
+          </View>
+        </View>
+      </TouchableOpacity>
+      <View style={fsStyles.timeRow}>
+        <Text style={fsStyles.timeText}>{player.formatTime(currentTime)}</Text>
+        <Text style={fsStyles.timeText}>{player.formatTime(duration)}</Text>
+      </View>
+    </View>
+  );
+}
+
 function FullScreenPlayerOverlay() {
   // 用統一嘅 useInsets:佢會幫 Android 落個底線,唔會計出 0 令 collapsed sheet
   // 貼死喺螢幕底俾導航列蓋住(見 useInsets.js)。
@@ -2264,7 +2303,6 @@ function FullScreenPlayerOverlay() {
   // 冇 disabled 狀態嘅死掣(撳落去 TrackPlayer.skipToNext() 靜靜哋失敗,冇反應)。
   // repeatMode===1(repeat-all)會 wrap 返轉頭,所以呢種情況仲係「有嘢跳」。
   const hasNext = player.repeatMode === 1 || (player.currentQueueIndex ?? 0) < queue.length - 1;
-  const progressPercent = player.duration > 0 ? Math.min((player.currentTime / player.duration) * 100, 100) : 0;
   const bottomPad = (insets?.bottom || 20) + 8;
   const safeTop = (insets?.top || StatusBar.currentHeight || 24) + 8;
 
@@ -2370,19 +2408,7 @@ function FullScreenPlayerOverlay() {
             </View>
           );
         })()}
-        <View style={fsStyles.progressSection}>
-          <TouchableOpacity style={fsStyles.progressBarTouchArea} onPress={(e) => { player.handleProgressBarPress(e); }}>
-            <View style={fsStyles.progressBarBg}>
-              <View style={[fsStyles.progressBarFill, { width: `${progressPercent}%` }]}>
-                <View style={fsStyles.progressBarThumb} />
-              </View>
-            </View>
-          </TouchableOpacity>
-          <View style={fsStyles.timeRow}>
-            <Text style={fsStyles.timeText}>{player.formatTime(player.currentTime)}</Text>
-            <Text style={fsStyles.timeText}>{player.formatTime(player.duration)}</Text>
-          </View>
-        </View>
+        <ProgressSection />
         <View style={fsStyles.controlsRow}>
           <TouchableOpacity style={fsStyles.controlBtn} onPress={player.toggleShuffle} activeOpacity={0.6}>
             <View style={{ alignItems: 'center' }}>
