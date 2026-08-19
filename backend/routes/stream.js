@@ -4,7 +4,7 @@
 
 import { Router } from 'express';
 import { Readable } from 'stream';
-import { resolveAudioUrl, bustCache, preVerifyUrl, markStreaming, unmarkStreaming, cache, warmBuffer, getBufferedChunk } from '../lib/resolveAudio.js';
+import { resolveAudioUrl, bustCache, preVerifyUrl, markStreaming, unmarkStreaming, cache, warmBuffer, getBufferedChunk, isStreaming, anyStreaming } from '../lib/resolveAudio.js';
 import { zeroFragmentedMp4Durations } from '../lib/fixFragmentedMp4Duration.js';
 
 // BG-PLAYBACK-STOPS-PLAN Fix D:純 observability helper,唔改任何 proxy 行為。
@@ -84,6 +84,10 @@ export default function streamRoutes(getDb) {
         try {
           const url = await resolveAudioUrl(yt);
           const verifiedUrl = await preVerifyUrl(yt, url);
+          // BATCH5 §7.3-B:有人聽緊:resolve+preVerify(平)已經做完落 cache,
+          // 貴嘅 warmBuffer 讓路,唔同正播嗰條 stream 爭 VPN 頻寬。每個
+          // iteration 即場 check,唔係入 loop 前check一次——中途開始播都讓。
+          if (isStreaming(yt) || anyStreaming()) continue;
           await warmBuffer(yt, verifiedUrl);
         } catch (_) {}
       }
