@@ -2003,9 +2003,8 @@ import HymnListScreen from './src/screens/HymnListScreen';
 import LibraryScreen from './src/screens/LibraryScreen'; // §2.2 詩歌庫(2026-07 併入搜尋欄,SEARCH-MERGE-PLAN)
 import MineScreen from './src/screens/MineScreen';        // §2.2 我的(新,合併 最愛+清單+帳戶)
 import AvatarButton from './src/components/AvatarButton'; // PHONE-PASSWORD-AUTH-PLAN §5.4:三頁右上角共用會員掣
-// 舊 tab 畫面(Category / Playlist / Favorites / Search)已由上面新畫面取代。
-// 檔案暫時保留喺 src/screens/ 未刪(等 Phase 3 收尾一次過清 legacy;
-// SearchScreen.js + services/searchApi.js 同樣唔再 import,一齊等清)。
+// 舊 tab 畫面(Category / Playlist / Favorites / Search)已由上面新畫面取代,
+// 對應嘅舊檔案已喺 FRONTEND-CODE-REVIEW-20260819 D1 剷晒。
 
 // ================================================================
 //  HOME SCREEN
