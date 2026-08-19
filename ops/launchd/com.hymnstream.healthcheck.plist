@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  串流健康探測(Eric 2026-08-19 拍板)。每 6 個鐘 curl 三個固定 /api/stream/<id>,
+  唔係 206 就寫警報落 docs/SUPERVISION-LOG.md。
+
+  ⚠️ 個 label 特登**唔用 com.hymnapp.\* prefix** —— 各班 checkpoint 會核對
+  `launchctl list | grep hymnapp | wc -l` 要夠 **7 個**,用 hymnapp prefix 就會變 8,
+  班次會誤以為出事。呢個 job 唔屬於 App 運行時,分開命名最清楚。
+
+  原本 Eric 講用 crontab,但 macOS TCC 擋住(crontab: Operation not permitted),
+  所以改用 launchd user agent —— 同樣係「純 shell script,唔開 Claude session」。
+-->
+<plist version="1.0">
+<dict>
+  <key>Label</key><string>com.hymnstream.healthcheck</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>/bin/bash</string>
+    <string>/Users/macbookpro/.openclaw/workspace/hymn-app/ops/lyrics/stream-healthcheck.sh</string>
+  </array>
+  <key>StartInterval</key><integer>21600</integer>
+  <key>RunAtLoad</key><false/>
+  <key>StandardOutPath</key><string>/tmp/hymn_streamhealth.log</string>
+  <key>StandardErrorPath</key><string>/tmp/hymn_streamhealth.log</string>
+</dict>
+</plist>

@@ -5985,3 +5985,19 @@ nightly 未經長期驗證,冇壞唔好喺熱路徑試新嘢。
 
 **建議(未做,等 Eric):** 加個每日串流健康檢查(curl 固定 id,唔係 206 就警報),
 今次證明咗 googlevideo 會突然對舊 client 轉態度,唔好等用戶投訴先知。
+- [2026-08-19 12:37] P線時報(keeper自動):過去1小時 OCR/whisper draft **+15**(log累計 849);重做隊剩 108;可做draft 99;producer 行緊
+
+
+
+## 2026-08-19 13:15 — 串流健康探測上線(Eric 拍板)
+
+**點解要有:** 2026-08-19 OCR 落載 403 燒咗成晚先俾人發現(靠 Eric 覺得「好似冇乜產出」)。串流層今次冇中招,但同樣風險存在 —— googlevideo 隨時對舊 client 轉態度。唔好等用戶投訴先知。
+
+- **`ops/lyrics/stream-healthcheck.sh`**:curl 三個固定 id(42 / 77 / 5431)嘅 `/api/stream/<id>`,只攞頭 64KB。**三首入面兩首以上 206 = 健康**(容忍單一首俾人落架/上游壞片,唔想扮警報)。
+- **警報策略**(避免洗版):①啱啱由健康變唔健康寫一次;②之後每 4 次連續失敗先再寫一次(6 鐘一 tick ≈ 一日一次);③恢復都報一次。警報帶埋三步診斷次序。
+- **排程:`com.hymnstream.healthcheck`(launchd,每 6 個鐘)。**
+  - ⚠️ Eric 原本講用 crontab,但 **macOS TCC 擋住**(`crontab: Operation not permitted`),所以改用 launchd user agent —— 一樣係「純 shell script,唔開 Claude session」,慳資源嘅原意冇變。
+  - ⚠️ label 特登**唔用 `com.hymnapp.*` prefix**:各班 checkpoint 核對 `grep hymnapp | wc -l` 要夠 7,用 hymnapp prefix 會變 8 令班次誤判。已實測 **`grep hymnapp` 仍然係 7**。
+- **三條路徑全部實測過**:健康(3/3 206)、失敗(死 port → 寫警報)、連續失敗(唔洗版)、恢復(寫恢復訊息)。`launchctl kickstart` 實測叫得起,13:13 跑咗一次 ok=3。
+- 📌 **一個測試教訓**:第一次測失敗路徑,我將 script 複製去 `/tmp` 改個 port —— 結果 `REPO` 解析錯,寫唔到任何檔,個測試「靜靜哋乜都冇做」而我差啲當佢過咗。已加 `HYMN_STREAM_BASE` env override,以後測失敗路徑**用真 script 唔好複製**。
+

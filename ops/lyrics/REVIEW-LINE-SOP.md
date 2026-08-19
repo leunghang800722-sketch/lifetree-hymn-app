@@ -137,6 +137,18 @@ override **只推翻「太薄」一個原因**;有第二個 reject 原因(衛生
 3. `ops/deploy/backend-restart.sh` → `launchctl list | grep hymnapp | wc -l` 要夠 **7 個**。
 4. 抽 3 首今班新 verify 嘅 id curl `/api/hymns` 確認吐到歌詞。
 
+## §5b 串流健康探測(唔使你做,但要識睇)
+
+`com.hymnstream.healthcheck`(launchd,每 6 個鐘)會 curl 三個固定 `/api/stream/<id>`,
+唔係 206 就**自動寫警報落 `docs/SUPERVISION-LOG.md`**。你開波讀 log 見到
+「🔴 串流健康警報」就代表**播放層出緊事,呢個重要過歌詞** —— 唔好當冇嘢,
+喺 ledger 記低同埋喺你嘅收爐附註提出嚟。
+
+- ⚠️ 個 label 特登**唔係 `com.hymnapp.*`**,所以 `launchctl list | grep hymnapp | wc -l`
+  **照樣要係 7**,唔會變 8。見到 8 反而係有第二個 job 出事。
+- 手動試:`ops/lyrics/stream-healthcheck.sh --verbose`;
+  想測失敗路徑就 `HYMN_STREAM_BASE=http://127.0.0.1:39999 ops/lyrics/stream-healthcheck.sh --verbose`。
+
 ## §6 ⛔ 紅線(三條線一樣)
 
 - **零 git 操作**(唔准 `git add` / `git commit` —— 多 session 共用 worktree)。ledger / SUPERVISION-LOG 照 append 但唔好 commit。
