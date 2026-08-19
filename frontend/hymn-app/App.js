@@ -1209,6 +1209,9 @@ function PlayerProvider({ children }) {
   // 一個數字就分到,唔使Xcode/device log。
   const lastTickTsRef = useRef(Date.now());
   const driftLogRef = useRef([]); // 本地ring buffer,封頂20條
+  // O1-A(O1-O2-REPLAN-20260819.md §3.3)—— 記低啱啱嗰嚿 poll 瞓覺,目標瞓咗
+  // 幾耐,俾下一個 tick 嘅 drift 探測用嚟減,唔再寫死 1000。
+  const lastPollTargetMsRef = useRef(1000);
   const handleStuckTrackEnd = useCallback(async () => {
     try {
       const idx0 = currentQueueIndexRef.current ?? 0;
@@ -1337,13 +1340,35 @@ function PlayerProvider({ children }) {
     if (!queueReady) return;
     let mounted = true;
 
+    // O1-A(O1-O2-REPLAN-20260819.md §3.3)—— 唔係 Playing/Buffering(idle)
+    // 嗰陣目標瞓 2500ms 慳電,但唔可以一瞓就瞓成 2.5 秒先醒:用 500ms 分片瞓,
+    // 每片起身check返trackStateRef,一轉活躍(撳咗play)即刻break返1s節奏,
+    // 唔會撳完play要等成2-3秒先郁進度。Watchdog唔受影響——佢哋淨係喺
+    // Playing/Buffering先計tick,嗰陣呢個函數本身都係行緊1s嗰條路。
+    async function sleepPollInterval() {
+      if (trackStateRef.current === TPState.Playing || trackStateRef.current === TPState.Buffering) {
+        lastPollTargetMsRef.current = 1000;
+        await new Promise(r => setTimeout(r, 1000));
+        return;
+      }
+      const IDLE_TARGET_MS = 2500;
+      const SLICE_MS = 500;
+      let slept = 0;
+      while (slept < IDLE_TARGET_MS) {
+        await new Promise(r => setTimeout(r, SLICE_MS));
+        slept += SLICE_MS;
+        if (trackStateRef.current === TPState.Playing || trackStateRef.current === TPState.Buffering) break;
+      }
+      lastPollTargetMsRef.current = slept;
+    }
+
     async function poll() {
       while (mounted) {
         // STREAM-LOCKSCREEN-FREEZE-OPUS5-2026-08-13 D1 —— drift探測要喺
         // try/catch外面、喺getProgress()之前計,先至唔會受native call失敗影響,
         // 亦先至量到嘅係「呢個poll loop本身隔咗幾耐先再行到」,唔係其他嘢。
         const nowTs = Date.now();
-        const drift = nowTs - lastTickTsRef.current - 1000;
+        const drift = nowTs - lastTickTsRef.current - lastPollTargetMsRef.current;
         lastTickTsRef.current = nowTs;
         if (drift > 5000) {
           driftLogRef.current.push({ ts: nowTs, driftMs: drift });
@@ -1430,7 +1455,7 @@ function PlayerProvider({ children }) {
         } catch (e) {
           // TrackPlayer not ready yet, skip
         }
-        await new Promise(r => setTimeout(r, 1000));
+        await sleepPollInterval();
       }
     }
     poll();
