@@ -89,6 +89,9 @@ export default function AdminAddHymnScreen({ onClose }) {
 
   const firedIdRef = useRef(null); // 邊個 videoId 已經 fire 過 preview,避免重複 call
   const debounceRef = useRef(null);
+  // BATCH5 S3:連貼兩條 URL(慢 A 未返、貼咗 B)舊 request 落地會蓋過新嘅,
+  // 入庫用嘅可能係 A 唔係 B。seq guard 令 await 完先 check 自己仲係咪最新一發。
+  const previewSeqRef = useRef(0);
 
   const reset = useCallback(() => {
     setPreview(null); setDup(null); setError(''); setSuccess(false);
@@ -115,11 +118,13 @@ export default function AdminAddHymnScreen({ onClose }) {
   useEffect(() => { loadAdded(); }, [loadAdded]);
 
   const runPreview = useCallback(async (id, rawUrl) => {
+    const seq = ++previewSeqRef.current;
     reset();
     setChecking(true);
     try {
       const token = getToken();
       const data = await adminPreviewHymn(token, rawUrl);
+      if (previewSeqRef.current !== seq) return; // 貼咗新 URL,呢個 response 已經過時
       if (data.exists) {
         setDup({ kind: 'exists', hymn: data.hymn });
       } else if (data.relistable) {
@@ -154,10 +159,12 @@ export default function AdminAddHymnScreen({ onClose }) {
         });
       }
     } catch (e) {
+      if (previewSeqRef.current !== seq) return;
       if (e.code === 'bad_url') setError('唔係有效嘅 YouTube 連結');
       else if (e.code === 'metadata_failed') setError('攞唔到片段資料,可能已下架或者連結唔啱');
       else setError(adminErrorMessage(e, '查詢失敗'));
     }
+    if (previewSeqRef.current !== seq) return;
     setChecking(false);
   }, [getToken, reset]);
 
@@ -167,6 +174,7 @@ export default function AdminAddHymnScreen({ onClose }) {
     const id = extractVideoId(url);
     setVideoId(id);
     if (!id) {
+      previewSeqRef.current++; // 作廢任何仲未返嘅 in-flight runPreview
       reset();
       firedIdRef.current = null;
       if (debounceRef.current) clearTimeout(debounceRef.current);
