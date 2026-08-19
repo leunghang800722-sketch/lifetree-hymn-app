@@ -27,7 +27,6 @@ import AuthScreen from './src/screens/AuthScreen';
 import AdminAddHymnScreen from './src/screens/AdminAddHymnScreen';
 import SharedPlaylistSheet from './src/screens/SharedPlaylistSheet';
 import { AdminEditHymnProvider } from './src/components/AdminEditHymnSheet';
-import { PlaylistProvider } from './src/context/PlaylistContext';
 import { setAuthToken, pullData, pushSync, flush as flushOutbox, getOwner, setOwner, clearOutbox } from './src/sync/userSync';
 import { API_BASE, DIAG_ENABLED } from './src/config.js';
 import { consumeRemotePauseExpected } from './src/playback-intent.js';
@@ -3346,9 +3345,9 @@ export default function App() {
   // BottomSheetModalProvider:加返佢就會走返 v228 嗰條 portal 路,個 hosting
   // container 冇 zIndex,又會俾 zIndex:999 嘅播放器 overlay 蓋住。詳見檔頭註解。
   const tree = (
-    <AuthProvider><AdminEditHymnProvider><FavoritesProvider><PlaylistsProvider><AddToPlaylistProvider><PlayerProvider><PlaylistProvider>
+    <AuthProvider><AdminEditHymnProvider><FavoritesProvider><PlaylistsProvider><AddToPlaylistProvider><PlayerProvider>
       <AppContent />
-    </PlaylistProvider></PlayerProvider></AddToPlaylistProvider></PlaylistsProvider></FavoritesProvider></AdminEditHymnProvider></AuthProvider>
+    </PlayerProvider></AddToPlaylistProvider></PlaylistsProvider></FavoritesProvider></AdminEditHymnProvider></AuthProvider>
   );
   const inner = SafeAreaProvider ? <SafeAreaProvider>{tree}</SafeAreaProvider> : tree;
   return <GestureHandlerRootView style={{ flex: 1 }}>{inner}</GestureHandlerRootView>;
