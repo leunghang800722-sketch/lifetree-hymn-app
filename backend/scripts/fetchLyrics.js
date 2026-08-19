@@ -132,6 +132,20 @@ const charCount = (s) => (s || '').replace(/\s/g, '').length;
 //      俾佢隔半日再試一次,夠三次先判死)。
 //   3. CC 層(--list-subs)失敗都記賬,但 **唔判 dl:dead**,淨係食 cooldown ——
 //      CC 係輕操作,失敗多數係網絡雜訊,唔應該憑呢個判一首歌死。
+// ── 403 全域封鎖偵測(2026-08-19 事故之後加)────────────────────────────
+// 事故:8/18–8/19 yt-dlp 落載全線 HTTP 403,但 `--list-subs` 完全正常。舊嘅斷路
+// 探測用 list-subs 做對照,所以**由頭到尾冇響過**,producer 空轉一晚,仲要將
+// 685 首完全冇問題嘅片判咗 `dl:dead`。實測(已知好片 gF-eDlXq3II):-f 18 / DASH /
+// bestaudio / client=ios 全部 403,出口 IP 係 Datacamp(NordVPN 機房)——
+// 即係 **googlevideo 媒體落載俾機房 IP 封,但 youtube.com metadata 唔封**,
+// 所以任何用 metadata 做嘅探測都**探唔到**呢種封鎖。
+//
+// 修法:①直接數「連續 403」,唔靠探測;②確認全域封鎖之後**唔准再記 ledger、
+// 唔准判 dl:dead**(逐首歸因喺全域封鎖下係錯);③寫 flag 檔俾 keeper 唞耐啲。
+const BLOCK_FLAG = '/tmp/lyrics-403-block';
+const CONSEC_403_TO_BLOCK = 5;
+const is403 = (e) => /HTTP Error 403|403: Forbidden/.test(String(e?.message || e || ''));
+
 const DL_LEDGER_PATH = path.join(__dirname, '..', 'data', 'lyrics-dl-failures.json');
 const DL_DEAD_AFTER = 3;
 const DL_COOLDOWN_MS = 12 * 60 * 60 * 1000;
@@ -678,7 +692,7 @@ async function runOcr(db, budget) {
 
   // 落載線(串行):原有失敗記賬/streak/對照探測/斷路邏輯全部原封保留。
   const downloader = (async () => {
-    let streak = 0;
+    let streak = 0, consec403 = 0;
     for (let i = 0; i < budget && i < cands.length; i++) {
       const c = cands[i];
       // 隊滿就等 OCR 線消化 —— 呢段等待唔會產生任何 YouTube 請求
@@ -691,6 +705,19 @@ async function runOcr(db, budget) {
       } catch (e) {
         try { fs.rmSync(dir, { recursive: true, force: true }); } catch (_) {}
         streak++;
+        if (is403(e)) {
+          consec403++;
+          if (consec403 >= CONSEC_403_TO_BLOCK) {
+            try { fs.writeFileSync(BLOCK_FLAG, `${new Date().toISOString()}\n連續 ${consec403} 次 HTTP 403\n`); } catch (_) {}
+            log(`  ⛔ 連續 ${consec403} 次 HTTP 403 —— 疑似出口 IP 俾 YouTube 封咗媒體落載。`);
+            log('     (list-subs 呢類 metadata 唔受影響,唔可以用佢做探測 —— 2026-08-19 事故教訓)');
+            log('     落載線即刻收工,唔記 ledger、唔判 dl:dead(全域封鎖唔應該歸咎個別歌)。');
+            return;
+          }
+          log(`    ⚠ 落載 403 (連續 ${consec403}/${CONSEC_403_TO_BLOCK}),未夠數判全域封鎖,暫當個別失敗`);
+        } else {
+          consec403 = 0;
+        }
         const fails = recordDlFail(c.id);
         log(`    ⚠ 落載失敗 (連續 ${streak},呢首累計 ${fails} 次):${e?.message || e}`);
         if (fails >= DL_DEAD_AFTER && !DRY) {
@@ -710,6 +737,7 @@ async function runOcr(db, budget) {
         continue;
       }
       streak = 0;
+      consec403 = 0; // 落到片 = 冇封鎖,計數歸零
       queue.push({ c, dir, videoPath });
       if (i < budget - 1) await sleep(jitter(DELAY_MS));
     }

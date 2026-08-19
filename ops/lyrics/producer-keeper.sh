@@ -18,6 +18,8 @@ BACKEND="$REPO/backend"
 DB="$BACKEND/hymns.db"
 
 STOP=/tmp/lyrics-sprint-stop
+BLOCK_FLAG=/tmp/lyrics-403-block   # fetchLyrics 偵測到全域 403 就寫呢個檔(2026-08-19 事故)
+BLOCK_COOL=5400                    # 見到 flag 就唞 90 分鐘,再試真落載探測
 LOG=/tmp/hymn_keeper.log
 FLOG=/tmp/hymn_fetchlyrics.log
 MARK=/tmp/lyrics-sprint-keeper-mark      # 上一轉開波嗰時 FLOG 嘅 byte offset
@@ -119,6 +121,25 @@ while true; do
 
   if pgrep -f 'scripts/fetchLyrics.js' >/dev/null 2>&1; then
     sleep "$TICK"; continue
+  fi
+
+  # ── 403 全域封鎖:唞夠鐘,再用**真落載**探測(唔可以用 list-subs,2026-08-19 教訓)──
+  if [[ -f "$BLOCK_FLAG" ]]; then
+    log "⛔ 見到 403 封鎖 flag($(head -1 "$BLOCK_FLAG" 2>/dev/null))→ 唞 $((BLOCK_COOL/60)) 分鐘"
+    sleep "$BLOCK_COOL"
+    probe_dir="$(mktemp -d)"
+    if "$NODE_BIN" -e '
+      const {execFileSync}=require("child_process");
+      try{ execFileSync("yt-dlp",["-f","18","--no-playlist","-o",process.argv[1]+"/p.%(ext)s",
+        "https://www.youtube.com/watch?v=gF-eDlXq3II"],{stdio:"pipe",timeout:120000}); process.exit(0); }
+      catch(e){ process.exit(/403/.test(String(e.stderr||e.message))?2:1); }' "$probe_dir" >/dev/null 2>&1; then
+      rm -rf "$probe_dir"; rm -f "$BLOCK_FLAG"
+      log "✅ 真落載探測成功 → 封鎖解除,恢復正常"
+    else
+      rm -rf "$probe_dir"
+      log "⚠ 真落載探測仍然失敗 → 繼續唞,唔重開 producer(唔好空轉燒失敗)"
+      continue
+    fi
   fi
 
   # 冇 producer 跑緊 = 上一轉(如果有)已經完,喺度結算 403 風暴掣。
