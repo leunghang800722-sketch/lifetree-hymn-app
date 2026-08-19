@@ -99,8 +99,9 @@ export default function LibraryScreen({ hymns = [], onPlayHymn, onOpenAuth }) {
   }, [hymns]);
 
   // 歌詞搜尋 lazy index:一個 hymns reference 只起一次(對照 src `hymns` identity),
-  // 淨係喺主輪 0 命中先用(fallback)。733KB 總量,起一次之後每 keystroke 只係
-  // Map.get + includes,冇 regex。
+  // 每次有 query 都同標題輪一齊搵(F6 regression fix,唔再係得 0 命中先用嘅
+  // fallback)。733KB 總量,起一次之後每 keystroke 只係 Map.get + includes,
+  // 冇 regex——所以兩輪一齊搵都仲係平。
   const lyricsIndexRef = useRef({ src: null, map: null });
   function getLyricsIndex(list) {
     if (lyricsIndexRef.current.src !== list) {
@@ -152,16 +153,18 @@ export default function LibraryScreen({ hymns = [], onPlayHymn, onOpenAuth }) {
     }
     const nq = norm(query);
     if (!nq) return base;
-    const out = base.filter((h) => (blobIndex.get(h.id) || '').includes(nq));
-    // BATCH5 O3:歌詞搜尋變第二輪 fallback——主輪(title/artist/album/performer)
-    // 有命中就唔再夾埋歌詞命中(以前係一齊出)。呢個係行為改變,見 F6 commit
-    // message;搜尋欄 placeholder「…歌詞…」照留,歌詞 fallback 仍然搵到,
-    // 淨係「主愛」呢類標題已命中就唔會夾埋歌詞命中嘅歌一齊出。
-    if (out.length === 0) {
-      const lyricsMap = getLyricsIndex(hymns);
-      return base.filter((h) => (lyricsMap.get(h.id) || '').includes(nq));
-    }
-    return out;
+    // F6 regression fix(Opus 5 驗收揪出,Eric 拍板):唔再用「標題有命中就唔搵
+    // 歌詞」嘅 fallback —— 呢個做法會令「淨記得歌詞、唔記得歌名」嘅搜尋完全
+    // 搵唔返首歌(例如「主耶穌我愛祢」標題命中 2 首,《深深愛慕祢》淨係歌詞
+    // 命中,舊邏輯就消失咗)。改做兩輪都搜、結果 merge:標題/歌手/專輯命中
+    // 排前面,歌詞命中排後面;兩輪都中嘅歌只計標題組,唔重複出。
+    const titleHits = base.filter((h) => (blobIndex.get(h.id) || '').includes(nq));
+    const titleHitIds = new Set(titleHits.map((h) => h.id));
+    const lyricsMap = getLyricsIndex(hymns);
+    const lyricsOnlyHits = base.filter(
+      (h) => !titleHitIds.has(h.id) && (lyricsMap.get(h.id) || '').includes(nq)
+    );
+    return [...titleHits, ...lyricsOnlyHits];
   }, [hymns, kidsBase, lang, kidsSubLang, query, blobIndex]);
 
   // 第二行 chips:歌手 → 團體(拍板 ✓)。data source h.org || h.artist——離線舊
