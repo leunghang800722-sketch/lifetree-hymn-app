@@ -45,9 +45,10 @@ function initSchema(db) {
     PRIMARY KEY (user_id, hymn_id)
   )`);
 
-  // 清單 id 係 client 生成嘅 TEXT('pl_<timestamp>'),用 (user_id, id) 做 PK
-  // 令前端零遷移,唔使 server↔client id remap。songs 一舊過存 JSON,唔開
-  // playlist_songs 表(母 plan §2.2 嗰個表係俾將來分享/協作先需要)。
+  // 清單 id 係 client 生成嘅 TEXT('pl_<timestamp>_<random>',BATCH5 S5 加咗
+  // random suffix 防同 tick 連撞號),用 (user_id, id) 做 PK 令前端零遷移,
+  // 唔使 server↔client id remap。songs 一舊過存 JSON,唔開 playlist_songs
+  // 表(母 plan §2.2 嗰個表係俾將來分享/協作先需要)。
   db.run(`CREATE TABLE IF NOT EXISTS playlists (
     user_id    INTEGER NOT NULL,
     id         TEXT NOT NULL,
