@@ -6,7 +6,7 @@
 // (backend 個 `hymns` view 已經幫我哋隱藏咗死鏈同非 curated 嘅歌),
 // 所以呢度收到咩就顯示咩,唔使前端再過濾一次。
 
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { View, Text, TextInput, FlatList, TouchableOpacity, StyleSheet, Image, Keyboard } from 'react-native';
 import OdeIcon from '../icons/OdeIcon';
 import { COLORS, TYPOGRAPHY, effects } from '../theme/designSystem';
@@ -68,26 +68,52 @@ export default function LibraryScreen({ hymns = [], onPlayHymn, onOpenAuth }) {
   // 兒童 tab 內語言 sub-chips(TAXONOMY-5D-PLAN §4.2)—— 淨喺 lang==='兒童' 時生效。
   const [kidsSubLang, setKidsSubLang] = useState('全部');
   // SEARCH-MERGE-PLAN:搜尋欄併入本頁,本地即時 filter,同 chip AND 夾用
+  // BATCH5 O4:queryInput 係 TextInput 即時值(clear 掣/hasQuery 用佢);
+  // query 係 debounce 200ms 之後先更新,searched/orgs/filterLabel 用呢個,
+  // 打字嗰陣唔會每個 keystroke 都重算成個庫嘅 filter。
+  const [queryInput, setQueryInput] = useState('');
   const [query, setQuery] = useState('');
+  useEffect(() => {
+    const t = setTimeout(() => setQuery(queryInput), 200);
+    return () => clearTimeout(t);
+  }, [queryInput]);
   const [focused, setFocused] = useState(false);
 
-  // 每首歌嘅 normalize 結果淨係喺 hymns 陣列變嗰陣先重算一次(1500+ 首每下
-  // 撳鍵都行 5 個 regex 會拖慢),之後搜尋淨係一個字串 includes。
-  const augmented = useMemo(() => hymns.map((h) => ({
-    ...h,
-    // 每欄 || '' 兜底:離線舊 cache 可能未有 album/title_en/performer(SEARCH-MERGE-PLAN §5、
-    // TAXONOMY-5D-PLAN §4.2 同一鐵律)。
-    // display_title 一定要包——admin 改歌名(MEMBERSHIP-PHASE2-ADMIN-PLAN)改嘅
-    // 正正係呢個欄位(唔係原始 title),漏咗就會出現「改咗個名之後用新名反而
-    // 搵唔到」(Opus 5 驗收揪出)。
-    _searchBlob: norm(h.title) + norm(h.display_title) + norm(h.title_en) + norm(h.artist) + norm(h.album) + norm(h.lyrics) + norm(h.performer),
-  })), [hymns]);
+  // BATCH5 O3:唔再 clone 成個 hymns 陣列(6232 個 object 嘅 _searchBlob 令
+  // 每次 hymns 變都要重造六千幾個 object)。改起一個 side index(id → blob),
+  // 落游全部改用原始 hymns 陣列,filter 改讀 blobIndex.get(h.id)。
+  // 主輪 blob 唔再包 norm(h.lyrics)——歌詞搜尋變第二輪 lazy fallback(見下面
+  // lyricsIndexRef),733KB 全文 join 唔使每次 hymns 變就重掃一次。
+  const blobIndex = useMemo(() => {
+    const m = new Map();
+    for (const h of hymns) {
+      // display_title 一定要包——admin 改歌名(MEMBERSHIP-PHASE2-ADMIN-PLAN)改嘅
+      // 正正係呢個欄位(唔係原始 title),漏咗就會出現「改咗個名之後用新名反而
+      // 搵唔到」(Opus 5 驗收揪出)。每欄 || '' 兜底:離線舊 cache 可能未有
+      // album/title_en/performer(SEARCH-MERGE-PLAN §5、TAXONOMY-5D-PLAN §4.2 同一鐵律)。
+      m.set(h.id, norm(h.title) + norm(h.display_title) + norm(h.title_en) + norm(h.artist) + norm(h.album) + norm(h.performer));
+    }
+    return m;
+  }, [hymns]);
+
+  // 歌詞搜尋 lazy index:一個 hymns reference 只起一次(對照 src `hymns` identity),
+  // 淨係喺主輪 0 命中先用(fallback)。733KB 總量,起一次之後每 keystroke 只係
+  // Map.get + includes,冇 regex。
+  const lyricsIndexRef = useRef({ src: null, map: null });
+  function getLyricsIndex(list) {
+    if (lyricsIndexRef.current.src !== list) {
+      const m = new Map();
+      for (const h of list) { if (h.lyrics) m.set(h.id, norm(h.lyrics)); }
+      lyricsIndexRef.current = { src: list, map: m };
+    }
+    return lyricsIndexRef.current.map;
+  }
 
   // 兒童分類嘅底庫(唔理搜尋/團體篩選)——兼容讀法:kids===1 或者舊 client 冇
   // kids 欄時嘅 lang==='兒童' 分支(§4.2)。用嚟計 sub-chips 動態出現同計數。
   const kidsBase = useMemo(
-    () => augmented.filter((h) => h.kids === 1 || h.lang === '兒童'),
-    [augmented]
+    () => hymns.filter((h) => h.kids === 1 || h.lang === '兒童'),
+    [hymns]
   );
   const kidsSubLangs = useMemo(() => {
     const counts = {};
@@ -118,14 +144,23 @@ export default function LibraryScreen({ hymns = [], onPlayHymn, onOpenAuth }) {
       base = kidsBase;
       if (kidsSubLang !== '全部') base = base.filter((h) => h.real_lang === kidsSubLang);
     } else if (lang === '全部') {
-      base = augmented;
+      base = hymns;
     } else {
-      base = augmented.filter((h) => h.lang === lang);
+      base = hymns.filter((h) => h.lang === lang);
     }
     const nq = norm(query);
     if (!nq) return base;
-    return base.filter((h) => h._searchBlob.includes(nq));
-  }, [augmented, kidsBase, lang, kidsSubLang, query]);
+    const out = base.filter((h) => (blobIndex.get(h.id) || '').includes(nq));
+    // BATCH5 O3:歌詞搜尋變第二輪 fallback——主輪(title/artist/album/performer)
+    // 有命中就唔再夾埋歌詞命中(以前係一齊出)。呢個係行為改變,見 F6 commit
+    // message;搜尋欄 placeholder「…歌詞…」照留,歌詞 fallback 仍然搵到,
+    // 淨係「主愛」呢類標題已命中就唔會夾埋歌詞命中嘅歌一齊出。
+    if (out.length === 0) {
+      const lyricsMap = getLyricsIndex(hymns);
+      return base.filter((h) => (lyricsMap.get(h.id) || '').includes(nq));
+    }
+    return out;
+  }, [hymns, kidsBase, lang, kidsSubLang, query, blobIndex]);
 
   // 第二行 chips:歌手 → 團體(拍板 ✓)。data source h.org || h.artist——離線舊
   // cache 冇 org 欄就兜底用返 artist(§4.2)。
@@ -140,7 +175,7 @@ export default function LibraryScreen({ hymns = [], onPlayHymn, onOpenAuth }) {
     return searched.filter((h) => (h.org || h.artist || '未知') === org);
   }, [searched, org]);
 
-  const hasQuery = query.trim().length > 0;
+  const hasQuery = queryInput.trim().length > 0;
   // C2 驗收觀察Ⓒ(TAXONOMY-5D-PLAN §8 C3):原本仲有 `|| (lang==='兒童' &&
   // kidsSubLang!=='全部')` 一截,但 lang==='兒童' 本身已經令 `lang!=='全部'`
   // 成立,呢截係恆真嘅死碼,冚咗唔改行為,淨係清走。
@@ -183,15 +218,15 @@ export default function LibraryScreen({ hymns = [], onPlayHymn, onOpenAuth }) {
           style={styles.searchInput}
           placeholder="搜尋歌名、歌手、歌詞、專輯"
           placeholderTextColor={COLORS.textDim}
-          value={query}
-          onChangeText={setQuery}
+          value={queryInput}
+          onChangeText={setQueryInput}
           onFocus={() => setFocused(true)}
           onBlur={() => setFocused(false)}
           onSubmitEditing={() => Keyboard.dismiss()}
           returnKeyType="search"
         />
         {hasQuery && (
-          <TouchableOpacity style={styles.clearBtn} onPress={() => setQuery('')}>
+          <TouchableOpacity style={styles.clearBtn} onPress={() => { setQueryInput(''); setQuery(''); }}>
             <OdeIcon name="close" size={18} color={COLORS.textSecondary} />
           </TouchableOpacity>
         )}
