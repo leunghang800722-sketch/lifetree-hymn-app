@@ -32,6 +32,9 @@ const MAX_TOTAL_BYTES = 300 * 1024 * 1024; // 300MB
 const MAX_FILES = 60;
 const PART_SUFFIX = '.part';
 const FINAL_SUFFIX = '.m4a';
+// BATCH5 S4:半死連線(socket 開住零 bytes)冇呢個 timeout 會令
+// currentDownloadId 永遠唔清,成個 session 預載全滅。
+const DOWNLOAD_TIMEOUT_MS = 90 * 1000;
 
 // songId(string) -> local file:// uri。淨係喺 iOS + 初始化完成先有嘢。
 const index = new Map();
@@ -170,14 +173,23 @@ export function initCache() {
 // getLocalUri() 命中過(即係可能已經變咗隊列入面嘅 file:// URL)或者啱啱
 // 落載完嘅 id,prune 唔准剷。否則舊歌重播+cache 頂 cap 嗰陣,LRU 有機會
 // 刪走 AVPlayer 打開緊/排緊隊嘅檔,搞出一單本可避免嘅 PlaybackError+跳歌。
-// 只喺 session 內生效(重開 app 清零),最壞情況係 cache 短暫超 cap,可接受。
+// 只喺 session 內生效(重開 app 清零),而家真係短暫超 cap,唔再單向增長
+// (BATCH5 O5:bounded LRU,Set 保留插入順序,delete+add 就係 touch)。
 const touchedThisSession = new Set();
+const TOUCHED_MAX = 12; // 夠冚「播緊嗰首 + 隊列下 2 首 + 聽日 2 首」有突
+function touch(id) {
+  touchedThisSession.delete(id);
+  touchedThisSession.add(id);
+  while (touchedThisSession.size > TOUCHED_MAX) {
+    touchedThisSession.delete(touchedThisSession.values().next().value);
+  }
+}
 
 // 同步查——播放器建隊列嗰刻要即刻知有冇本地檔,唔可以等 async。
 export function getLocalUri(songId) {
   if (Platform.OS !== 'ios' || !ready || songId == null) return null;
   const uri = index.get(String(songId)) || null;
-  if (uri) touchedThisSession.add(String(songId));
+  if (uri) touch(String(songId));
   return uri;
 }
 
@@ -207,6 +219,15 @@ async function downloadOne(songId) {
   const partFile = new File(dir, `${songId}${PART_SUFFIX}`);
   const controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
   currentAbortController = controller;
+  // BATCH5 S4:半死連線(socket 開住零 bytes)會令 fetch/arrayBuffer 永遠唔
+  // resolve,currentDownloadId 永遠唔清,成個 session 預載全滅。呢個 timer
+  // 要冚埋 await response.arrayBuffer()(半死連線正正係卡喺 body 度),
+  // 喺 fetch 之前開波,finally 先 clearTimeout。controller===null 嘅環境
+  // (AbortController 唔存在)就唔加 timeout,行為照舊——防禦分支。
+  let timedOut = false;
+  const timeoutId = controller
+    ? setTimeout(() => { timedOut = true; try { controller.abort(); } catch (_) {} }, DOWNLOAD_TIMEOUT_MS)
+    : null;
   try {
     const url = `${API_BASE}/api/stream/${songId}`;
     const response = await fetch(url, controller ? { signal: controller.signal } : undefined);
@@ -234,16 +255,18 @@ async function downloadOne(songId) {
     if (finalFile.exists) { try { finalFile.delete(); } catch (_) {} }
     await partFile.move(finalFile);
     index.set(String(songId), finalFile.uri);
-    touchedThisSession.add(String(songId)); // 啱啱落載完,一定就快用,prune 唔准掂
+    touch(String(songId)); // 啱啱落載完,一定就快用,prune 唔准掂
     notifyComplete(String(songId), finalFile.uri);
     prune();
   } catch (e) {
     // 被 cancelIfDownloading() 主動 abort 唔算失敗——係設計行為,只留一條
-    // 輕量 diag 供核實機制有冇郁,唔好同真失敗撈亂。
+    // 輕量 diag 供核實機制有冇郁,唔好同真失敗撈亂。timedOut 要先判斷,
+    // 同用戶主動 cancel 分開,唔好污染診斷。
     const aborted = e && (e.name === 'AbortError' || /abort/i.test(String(e.message || '')));
-    diagFail(songId, aborted ? 'aborted-for-stream' : (e?.message || 'exception'));
+    diagFail(songId, timedOut ? 'timeout' : (aborted ? 'aborted-for-stream' : (e?.message || 'exception')));
     try { if (partFile.exists) partFile.delete(); } catch (_) {}
   } finally {
+    if (timeoutId) clearTimeout(timeoutId);
     if (currentAbortController === controller) currentAbortController = null;
   }
 }
