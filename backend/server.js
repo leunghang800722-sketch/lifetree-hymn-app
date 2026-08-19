@@ -23,6 +23,7 @@ import clientLogRoutes from './routes/clientLog.js';
 import { resolveAudioUrl, refreshAudioUrl, preVerifyUrl, cache, failCache, anyStreaming, isStreaming } from './lib/resolveAudio.js';
 import { getUserDb } from './lib/userDb.js';
 import { getDb, getDataVersion, DB_PATH } from './lib/serverDb.js';
+import { getWarmCandidates } from './lib/warmLog.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -302,6 +303,7 @@ app.listen(PORT, async () => {
   }
 
   startKeepWarm();
+  startDailyWarmCron();
 });
 
 // §1c 保溫 loop —— URL 過期前自動續熱,令日常播放永遠行 warm 路徑。
@@ -454,4 +456,74 @@ function warmColdBacklog() {
     }
   }, 90 * 1000);
   if (timer.unref) timer.unref();
+}
+
+// BATCH5 §7.3-C:daily cron 預 resolve「噚日+今日」精選 —— 每日 06:30(backend
+// 部機本地時)揀 warmLog 記錄嘅熱門 id,趁朝早黃金時段(07:00-11:00)開始前
+// 消滅③段 yt-dlp 冷 spawn(淨係 resolve+preVerify,唔做 warmBuffer——bytes
+// 級數嘅 warm 留返俾 B3 tee 同用戶自己開 App 嘅 /warm 冚)。URL 壽命 ~4.5h,
+// 06:30 resolve 岩岩好冚晒朝早黃金時段。純 setTimeout 自我續期,唔用
+// node-cron(唔加依賴)。
+//
+// 純函數,抽出嚟方便 harness 測(「而家 → 下一個 HH:MM 嘅 ms」,今日未到/
+// 啱過/跨月三個時點)。now 由 caller 傳入,唔靠 Date.now()。
+function msUntilNextDailyTime(now, hour, minute) {
+  const next = new Date(now);
+  next.setHours(hour, minute, 0, 0);
+  if (next.getTime() <= now.getTime()) {
+    next.setDate(next.getDate() + 1); // Date 物件自己會跨月/跨年,唔使手動處理月尾
+  }
+  return next.getTime() - now.getTime();
+}
+
+const DAILY_WARM_HOUR = 6;
+const DAILY_WARM_MINUTE = 30;
+const DAILY_WARM_CAP = 40;
+const DAILY_WARM_SLEEP_MS = 2000; // 溫柔對 shared home IP;resolveAudioUrl 現有 429 全局冷卻照罩
+
+async function runDailyWarmJob() {
+  const ids = getWarmCandidates(DAILY_WARM_CAP);
+  if (!ids.length) {
+    console.log('☀️  daily warm cron:今日冇候選(warmLog 空),跳過');
+    return;
+  }
+  console.log(`☀️  daily warm cron 開始:${ids.length} 個候選`);
+  let success = 0;
+  for (const rawId of ids) {
+    try {
+      // 有人咁早聽緊就唔爭 —— 逐個 check(唔係 loop 前 check 一次),中途
+      // 開始播都即刻讓。
+      if (!anyStreaming()) {
+        const id = Number(rawId);
+        if (Number.isInteger(id) && id > 0) {
+          const db = await getDb();
+          const stmt = db.prepare('SELECT youtube_id FROM hymns WHERE id = ?');
+          stmt.bind([id]);
+          const found = stmt.step();
+          const row = found ? stmt.getAsObject() : null;
+          stmt.free();
+          if (row?.youtube_id) {
+            const url = await resolveAudioUrl(row.youtube_id);
+            await preVerifyUrl(row.youtube_id, url);
+            success++;
+          }
+        }
+      }
+    } catch (_) { /* resolveAudioUrl 本身已經寫咗 failCache(死鏈),呢度冇嘢再做 */ }
+    await new Promise((resolve) => setTimeout(resolve, DAILY_WARM_SLEEP_MS));
+  }
+  console.log(`☀️  daily warm cron 完成:${success}/${ids.length} 成功`);
+}
+
+function startDailyWarmCron() {
+  function scheduleNext() {
+    const delay = msUntilNextDailyTime(new Date(), DAILY_WARM_HOUR, DAILY_WARM_MINUTE);
+    const t = setTimeout(async () => {
+      try { await runDailyWarmJob(); } catch (e) { console.warn('daily warm cron job error:', e?.message); }
+      scheduleNext(); // 自我續期,下一個 06:30
+    }, delay);
+    if (t.unref) t.unref();
+  }
+  console.log(`☀️  daily warm cron 已排程:每日 ${String(DAILY_WARM_HOUR).padStart(2, '0')}:${String(DAILY_WARM_MINUTE).padStart(2, '0')} 預 resolve 「噚日+今日」精選(cap ${DAILY_WARM_CAP})`);
+  scheduleNext();
 }

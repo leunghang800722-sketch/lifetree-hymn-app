@@ -6,6 +6,7 @@ import { Router } from 'express';
 import { Readable } from 'stream';
 import { resolveAudioUrl, bustCache, preVerifyUrl, markStreaming, unmarkStreaming, cache, warmBuffer, getBufferedChunk, isStreaming, anyStreaming, adoptStreamedHead, WARM_CAP_BYTES } from '../lib/resolveAudio.js';
 import { zeroFragmentedMp4Durations } from '../lib/fixFragmentedMp4Duration.js';
+import { recordWarmIds } from '../lib/warmLog.js';
 
 // BG-PLAYBACK-STOPS-PLAN Fix D:純 observability helper,唔改任何 proxy 行為。
 // 一行 log,帶 ISO timestamp,用嚟診斷背景播放 3-4 首自動停個 bug(client abort
@@ -72,6 +73,11 @@ export default function streamRoutes(getDb) {
   router.post('/warm', async (req, res) => {
     const ids = Array.isArray(req.body?.ids) ? req.body.ids.slice(0, 10) : [];
     res.status(202).json({ warming: ids.length });
+    // BATCH5 §7.3-C:記低邊啲 id 俾 /warm 摸過,俾 daily cron(server.js
+    // startDailyWarmCron)揀「噚日+今日」精選預 resolve 用。fire-and-forget,
+    // recordWarmIds 內部 best-effort try/catch,唔會影響返上面已經 send 咗
+    // 嘅 202 response。
+    recordWarmIds(ids);
     if (!ids.length) return;
     try {
       const db = await getDb();
