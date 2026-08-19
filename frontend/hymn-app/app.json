@@ -12,6 +12,10 @@
       "bundleIdentifier": "com.hymnapp.praise",
       "buildNumber": "9",
       "runtimeVersion": "5",
+      "associatedDomains": [
+        "applinks:api.god-music.com",
+        "applinks:api.odemusics.com"
+      ],
       "infoPlist": {
         "UIBackgroundModes": [
           "audio"
