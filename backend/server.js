@@ -83,6 +83,33 @@ function buildApkFilename() {
   return 'Odely.apk';
 }
 
+// iOS Universal Links(FRONTEND-CODE-REVIEW-20260819 §4 #3)。Apple 喺裝機/
+// 定期時間打呢條 URL 攞 AASA,response 一定要係 application/json content-type
+// 但檔名唔准帶 .json 副檔名,亦唔准 redirect。呢個 route 兩個域
+// (api.god-music.com / api.odemusics.com)都會答——同一個 host-based
+// middleware 之後,兩個域打呢度都係命中呢條 route,而 details 唔記錄
+// host,所以一份內容兩個域共用得。
+// appID = <TEAM_ID>.<BUNDLE_ID>:TEAM_ID(3W5QC3PLSD)係由現役 TestFlight
+// build(appBuildVersion 8)嘅 .ipa 入面 embedded.mobileprovision 用
+// `security cms -D` 解出嚟,唔係猜嘅;BUNDLE_ID(com.hymnapp.praise)對得上
+// app.json 嘅 ios.bundleIdentifier。paths 對齊 Android intentFilters
+// 嘅 pathPrefix "/p/"(分享清單連結,見 shareRoutes)。
+app.get('/.well-known/apple-app-site-association', (req, res) => {
+  res.setHeader('Content-Type', 'application/json');
+  res.setHeader('Cache-Control', 'no-store');
+  res.json({
+    applinks: {
+      apps: [],
+      details: [
+        {
+          appID: '3W5QC3PLSD.com.hymnapp.praise',
+          paths: ['/p/*'],
+        },
+      ],
+    },
+  });
+});
+
 // Super simple APK download at root level
 app.get('/app.apk', (req, res) => {
   const filePath = path.join(__dirname, 'public', 'app.apk');
