@@ -375,6 +375,23 @@ function withWarmLock(fn) {
 // 呢個階段完全冇用戶等緊,加一次retry零代價,可以攔截住呢種一次性403,等
 // client真正播到嗰陣呢首歌已經係暖㗎。唔喺呢度加無限重試/長backoff——單次
 // 短delay就夠(呢層本身已經有前置嘅429全局冷卻,唔會同嗰層打交)。
+// BATCH5 §7.3-A:尾巴補攞邏輯抽做共用 helper,warmBuffer 同 adoptStreamedHead
+// 兩邊共用,唔抄第二份。headLen 係已經有幾多 bytes 喺手(head buf 嘅長度)——
+// 細過 totalLength 先值得補攞;唔值得補(headLen 已經冚晒或者冇 totalLength)
+// 就直接 return null。
+async function fetchTailBuf(url, totalLength, headLen) {
+  if (!totalLength || headLen >= totalLength) return null;
+  try {
+    const tailStart = Math.max(headLen, totalLength - TAIL_BYTES);
+    const tr = await fetch(url, { method: 'GET', headers: { Range: `bytes=${tailStart}-${totalLength - 1}` } });
+    if (tr.status === 200 || tr.status === 206) {
+      return { tailBuf: Buffer.from(await tr.arrayBuffer()), tailOffset: tailStart };
+    }
+    try { await tr.body?.cancel?.(); } catch (_) {}
+  } catch (_) { /* 尾巴攞唔到唔緊要,頭截照用 */ }
+  return null;
+}
+
 const WARM_RETRY_DELAY_MS = 1200;
 async function fetchHeadWithRetry(url) {
   for (let attempt = 0; attempt < 2; attempt++) {
@@ -409,23 +426,12 @@ export async function warmBuffer(youtubeId, url) {
         if (cl) totalLength = Number(cl);
       }
 
-      let tailBuf = null;
-      let tailOffset = null;
-      if (totalLength && buf.length < totalLength) {
-        // 檔案大過 12MB cap,頭截冚唔到尾——補攞返最後 TAIL_BYTES,俾
-        // AVFoundation 嘅尾巴 range probe(讀 duration/index)都有得命中記憶體。
-        // 呢個 fetch 都排喺同一個 warm lock 入面,唔會加多一條*同時*嘅連線。
-        try {
-          const tailStart = Math.max(buf.length, totalLength - TAIL_BYTES);
-          const tr = await fetch(url, { method: 'GET', headers: { Range: `bytes=${tailStart}-${totalLength - 1}` } });
-          if (tr.status === 200 || tr.status === 206) {
-            tailBuf = Buffer.from(await tr.arrayBuffer());
-            tailOffset = tailStart;
-          } else {
-            try { await tr.body?.cancel?.(); } catch (_) {}
-          }
-        } catch (_) { /* 尾巴攞唔到唔緊要,頭截照用 */ }
-      }
+      // 檔案大過 12MB cap,頭截冚唔到尾——補攞返最後 TAIL_BYTES,俾
+      // AVFoundation 嘅尾巴 range probe(讀 duration/index)都有得命中記憶體。
+      // 呢個 fetch 都排喺同一個 warm lock 入面,唔會加多一條*同時*嘅連線。
+      const tail = await fetchTailBuf(url, totalLength, buf.length);
+      const tailBuf = tail ? tail.tailBuf : null;
+      const tailOffset = tail ? tail.tailOffset : null;
 
       touchBufferEntry(youtubeId, {
         url,
@@ -449,4 +455,33 @@ export function getBufferedChunk(youtubeId, url) {
   return c;
 }
 
-export { cache, failCache, FAIL_TTL_MS, FAIL_TTL_PLAYBACK_MS };
+// BATCH5 §7.3-A:冷路徑 stream 順手收落嚟嘅頭截,採納入 bufferCache(tee)。
+// buf 必須由 byte 0 開始(caller 保證)。同 warmBuffer 共用 tail 補攞邏輯,
+// 用同一個 withWarmLock 排隊(唔會加多一條*同時*嘅 tail-fetch 連線,同
+// warmBuffer/其他 tee 一齊排喺 VPN 頻寬止血隊入面)。
+export async function adoptStreamedHead(youtubeId, url, buf, totalLength, contentType) {
+  return withWarmLock(async () => {
+    try {
+      // 已經有同 url 嘅未過期完整 entry 就唔好蓋——tee 收嘅可能係 client 早
+      // abort 剩低嘅殘缺頭截,warmBuffer 嘅完整品優先保留。
+      const existing = bufferCache.get(youtubeId);
+      if (existing && existing.expiresAt > Date.now() && existing.url === url) return;
+      try { zeroFragmentedMp4Durations(buf); } catch (_) {}
+      const tail = (totalLength && buf.length < totalLength)
+        ? await fetchTailBuf(url, totalLength, buf.length)
+        : null;
+      touchBufferEntry(youtubeId, {
+        url,
+        buf,
+        tailBuf: tail ? tail.tailBuf : null,
+        tailOffset: tail ? tail.tailOffset : null,
+        totalLength,
+        contentType: contentType || null,
+        expiresAt: Date.now() + BUFFER_TTL_MS,
+      });
+      evictBufferCacheOverflow();
+    } catch (_) { /* tee 收集失敗唔緊要,下次冷路徑再嚟 */ }
+  });
+}
+
+export { cache, failCache, FAIL_TTL_MS, FAIL_TTL_PLAYBACK_MS, WARM_CAP_BYTES };

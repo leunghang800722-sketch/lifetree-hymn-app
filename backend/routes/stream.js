@@ -4,7 +4,7 @@
 
 import { Router } from 'express';
 import { Readable } from 'stream';
-import { resolveAudioUrl, bustCache, preVerifyUrl, markStreaming, unmarkStreaming, cache, warmBuffer, getBufferedChunk, isStreaming, anyStreaming } from '../lib/resolveAudio.js';
+import { resolveAudioUrl, bustCache, preVerifyUrl, markStreaming, unmarkStreaming, cache, warmBuffer, getBufferedChunk, isStreaming, anyStreaming, adoptStreamedHead, WARM_CAP_BYTES } from '../lib/resolveAudio.js';
 import { zeroFragmentedMp4Durations } from '../lib/fixFragmentedMp4Duration.js';
 
 // BG-PLAYBACK-STOPS-PLAN Fix D:純 observability helper,唔改任何 proxy 行為。
@@ -57,6 +57,10 @@ function backoffMsFor(youtubeId) {
   if (last && now - last < RECENT_FAIL_WINDOW_MS) return 2000; // 30秒內第二次—當係持續節流,用返原本嘅2秒
   return 800; // 30秒內第一次——當係偶發,短backoff
 }
+
+// BATCH5 §7.3-A:冷路徑 tee 收集門檻——細過呢個就算(client 極早 abort),
+// 連 moov probe 都唔夠幫,唔值得叫多一次 adoptStreamedHead。
+const MIN_TEE_BYTES = 256 * 1024;
 
 export default function streamRoutes(getDb) {
   const router = Router();
@@ -484,6 +488,46 @@ export default function streamRoutes(getDb) {
     // 開始」嘅回應就 100% 覆蓋到。其餘 range(中段 seek)冇 moov,原封不動 pipe,
     // 零行為改動。
     const startsAtZero = !clientRange || /^bytes=0-/.test(clientRange);
+
+    // BATCH5 §7.3-A:冷路徑 pipe 俾 client 嗰陣,順手將頭 N MB tee 埋落
+    // bufferCache + 背景補尾巴,令 AVFoundation 第 2/3/4 條 probe 好似 warm
+    // 歌咁秒答。只喺 startsAtZero(中段 range 唔係由 0 開始,砌唔成頭截,
+    // 直接唔郁佢)。額外呢個 'data' listener 只旁聽,唔碰 pause/resume/pipe
+    // backpressure——下面 fMP4 startsAtZero 分支本身嗰個 'data' handler 照舊
+    // (tee 收 raw bytes,adoptStreamedHead 入面自己重跑 zeroFix,同
+    // warmBuffer 語義一致);bufferCache 嘅 url-match(getBufferedChunk 核對
+    // `c.url !== url`)已經防咗 format 錯配。記憶體:峰值多咗 ≤12MB × 並發
+    // 冷 stream 數;MAX_BUFFER_ENTRIES=8 嘅 LRU 照頂住 cache 本身。
+    if (startsAtZero) {
+      const teeChunks = [];
+      let teeBytes = 0;
+      let teeDone = false;
+      const teeTotalLength = (() => {
+        const cr = upstream.headers.get('content-range');
+        const m = cr && /\/(\d+)$/.exec(cr);
+        if (m) return Number(m[1]);
+        const cl = upstream.headers.get('content-length');
+        return cl ? Number(cl) : null;
+      })();
+      const teeContentType = upstream.headers.get('content-type') || null;
+      const finishTee = () => {
+        if (teeDone) return;
+        teeDone = true;
+        if (teeBytes < MIN_TEE_BYTES) return; // 太少(client 極早 abort),唔值得入 cache
+        const headBuf = Buffer.concat(teeChunks);
+        adoptStreamedHead(hymn.youtube_id, url, headBuf, teeTotalLength, teeContentType).catch(() => {});
+      };
+      body.on('data', (chunk) => {
+        if (teeDone) return;
+        teeChunks.push(chunk);
+        teeBytes += chunk.length;
+        if (teeBytes >= WARM_CAP_BYTES) finishTee(); // 夠 cap 就收皮,唔好無上限食記憶體
+      });
+      body.on('end', finishTee);
+      body.on('error', finishTee);   // abort 前收埋幾 MB 一樣有用——下條 probe 就係要呢啲
+      res.on('close', finishTee);
+    }
+
     if (startsAtZero) {
       const HEAD_BYTES = 4096;
       let head = Buffer.alloc(0);
