@@ -11,11 +11,19 @@ function getStorage() {
   return storage;
 }
 
+// BATCH5 O7:改用 AbortController——舊嘅 Promise.race 逾時之後底層 fetch
+// 連線唔會斷,慢網下會同 retry(fetchAllHymnsWithRetry)疊住背景繼續拉多
+// 幾份全量。而家逾時會真 abort 底層 fetch,throw 嘅係 AbortError(唔再
+// 係自製 Error)——呢度全部 caller(fetchAllHymns/fetchVersion)已核實
+// 只 catch 完回 null/空,冇人讀 error message,語義安全。
 async function fetchWithTimeout(url, ms = 8000) {
-  return Promise.race([
-    fetch(url),
-    new Promise((_, reject) => setTimeout(() => reject(new Error(`Timeout after ${ms}ms`)), ms)),
-  ]);
+  const controller = new AbortController();
+  const t = setTimeout(() => controller.abort(), ms);
+  try {
+    return await fetch(url, { signal: controller.signal });
+  } finally {
+    clearTimeout(t);
+  }
 }
 
 async function fetchAllHymns() {
