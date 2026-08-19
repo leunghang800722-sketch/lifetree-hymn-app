@@ -75,3 +75,40 @@ PO Token provider,可以令請求變成「有身份」,機房 IP 嘅封鎖通常
   抑或 YouTube 8/18 改咗政策,而家未查得到。
 - `player_client=web` 報「format not available」而唔係 403,值得再試下唔同 format 組合 ——
   有可能某啲 client × format 組合仲有得落。
+
+---
+
+## §6 ✅ 已解決(2026-08-19 12:07)——方案 B 變奏版
+
+**Eric 批方案 B(升級 yt-dlp)。執行時發現兩件事,結論同原本假設唔同:**
+
+1. **本機已經係最新 stable**(2026.07.04)—— upstream 冇更新嘅 stable,所以「升級」本身係 no-op。
+2. **但 nightly `2026.08.18.122307` 係 8/18 出 —— 正正就係 403 風暴開始嗰日。**
+
+### 實測對照(6 條琴晚真係 403 過嘅片)
+
+| | stable 2026.07.04 | nightly 2026.08.18 |
+|---|---|---|
+| `-f 18` | ❌ 6/6 全部 403 | ⚠ 6/6「Requested format is not available」 |
+| `-f "bv*[height<=360]+ba"` | ❌ 403 | ✅ **6/6 全部成功**(6.4M–289M) |
+
+**真根因(反轉咗 8/16 嗰個結論):YouTube 8/18 起唔再派 format 18(漸進式 mp4)**,而舊 stable 對住新版
+player 全線攞 403。唔係「機房 IP 俾封」—— 出口 IP 冇變過,係 **client 太舊**。
+
+⚠️ **2026-08-16 個註解寫住「用 format 18 避 DASH 403」,呢個結論而家完全反轉**(而家啱啱相反:
+18 冇咗,要用 DASH)。已經喺 `downloadVideoLowRes` 寫明唔好照抄舊註解。
+
+### 落咗嘅嘢
+- `backend/tools/yt-dlp-nightly`:官方 nightly standalone binary。**系統 brew 嗰個 stable 完全冇郁**,想比對隨時試得返。
+- `downloadVideoLowRes` 改用 nightly + `bv*[height<=360]+ba/bv*[height<=480]+ba/18/b[height<=480]/b`
+  (留返 `18` 喺 fallback 鏈,第日 YouTube 派返就自動用返)。timeout 由 180s 加到 300s(DASH 要 merge)。
+- 真 producer 實測 3 首:**3/3 出草稿、零 403**。12:07 重開 keeper。
+
+### ⚠️ 一個技術債要記低
+`yt-dlp-nightly` 係 **37MB binary 而家 commit 咗入 repo**。好處係任何 checkout 都即刻行得;
+壞處係**每次更新 nightly 就多一個 37MB blob**,長遠會發大 repo。
+**下次更新之前應該決定**:改做 gitignore + 寫個 `ops/lyrics/install-ytdlp.sh` 落載腳本,
+定係接受呢個 repo 一路以嚟嘅做法(`backend/public/app.apk.bak-*` 都係咁 commit)。
+
+### 方案 A(換 NordVPN 出口)唔使做
+403 唔係 IP 封鎖引起,所以**唔使掂 VPN**。§3 方案 A/C 保留做將來參考。

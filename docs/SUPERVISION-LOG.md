@@ -5422,3 +5422,536 @@ PaddleOCR 第一首歌用咗 **4 分鐘以上**(舊 Vision pipeline 約 1 分鐘
 
 新 ledger:`docs/LYRICS-CATCHUP-LEDGER.md`(基線已寫)。**額度尺唔再信「35 決定 = 1%」** —— 上個衝刺 1,186 個決定就燒到班次一個接一個死,證明個尺太樂觀。
 
+- [2026-08-17 13:28] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 3);重做隊剩 487;可做draft 9;producer 冇行
+- [2026-08-17 13:42] P線流水線實測(Fable 5):重開後首 11 分鐘出 5 首有效draft(~2.2分鐘/首,舊串行~5.5分鐘/首,**約2.5倍**);producer pid 23489 行緊,重做隊剩 482。流水線=落載單線(YouTube請求密度不變)+OCR/whisper雙線+frame分區去重(commit 6a87f0d 前一個)。keeper 每小時自動時報。
+- **心跳 2026-08-17 14:01** — verified 2812(44.1%)/ draft 30(可做 8,凍結 22)/ 重做隊剩 474 / producer 生存(pid 23415,13:28 開波跑緊 OCR budget 120)/ fetchlyrics 06:00 見過 yt-dlp 403(連續 2 次)但之後恢復落載+OCR 正常
+- [2026-08-17 14:28] P線時報(keeper自動):過去1小時 OCR/whisper draft **+25**(log累計 28);重做隊剩 462;可做draft 34;producer 行緊
+- [2026-08-17 15:28] P線時報(keeper自動):過去1小時 OCR/whisper draft **+34**(log累計 62);重做隊剩 427;可做draft 68;producer 行緊
+
+---
+
+## 2026-08-17 15:43–16:10 HKT — 每日自動歌詞校對(lyrics-daily-proofread)
+
+**現況**:export 到 **79 首 draft**(粵語 28 / 國語 51),過 10 首門檻,照做。`alignLyrics --all` 行齊 79 首。今日 draft 池整體質素好高——大批係基恩敬拜 / Endless Worship / 生命河 / 讚美之泉兒童 / 611 Worship 嘅**官方中英對照歌詞 MV**,OCR 底本乾淨,match rate 0% 只係 whisper 對唔到,唔代表底本差。
+
+**數字**:verified **2812 → 2878(+66)**;unavailable 643 → 645。draft:今日 export 嘅 79 首處理淨返 **11 首**(2 reject + 7 hold + 2 自己留),但收工時 DB draft 係 24 —— 差額 13 首(id 4884/4885/4895/4898/4905/4917/4922/4966/4987/4997/5035/5053/5064)係我行緊嗰陣 OCR 班新產出嘅,唔屬今日呢輪。
+
+**今日分佈(79 首)**
+- ✅ verify 出街:**66 首**
+- ⛔ unusable(底本判死):**2 首**
+  - id=3222《信你到尾》GSUSMM —— OCR inventory 425 行,絕大部分係 MV 報紙道具嘅英文聖經內文,歌詞行零碎冇次序,重組唔到
+  - id=4074《讓我們竭力追求》新心音樂事工 —— inventory 得 13 行,淨係何西阿書段落,主歌「竭力追求認識耶和華」完全冇入鏡,注定救唔返
+- ✗ audit reject(留 draft):**2 首**,兩單都係「天然短歌撞 45 字門檻」
+  - id=6147《馬槽歌(修詞02)》—— 44 個 CJK 字,爭 1 個字
+  - id=6179《聖靈果子歌》—— 31 個 CJK 字(成首歌就係加 5:22-23 一段經文)
+- ⏸ 語言錯配 hold:**7 首**(已 merge 落 `backend/data/lyrics-langmismatch-hold.json`,6 → 7 條)
+  - 純英文歌標咗中文:1857 願你高飛(粵語/6% CJK 行)、6128 I Love Sunshine(粵語/7%)、6602 Lift High Your Name(國語/0%)、6667 Because of You(國語/0%)
+  - 中英對照但 CJK 行佔比爭少少(<35% 門檻):7159 / 7178 Let's go(29%/27%)、7532 恩典與我同行(34%)
+- ⏭ 自己揀留 draft:**2 首**
+  - id=240《祢同在如天堂降臨》Live —— 主歌 pre-chorus 齊,但同名副歌完全冇入 OCR,出半首唔妥
+  - id=4396《無比忠心》ACM —— 得一段 verse,其餘全部係專輯 tracklist 同 branding
+
+**粵語核對(cantonhymnLookup.js,冇燒 WebSearch 額度)**:行咗 19 次查詢。
+- 直中兼內容對得上:4107《感恩讚美》、4882《頌讚祂的愛》(兩首歌詞逐行同 cantonhymn.net 官方版一致,順手校返 OCR 錯字:傳揚祿→傳揚祢、痊愈→痊癒)、6179《聖靈果子歌》
+- ⚠️ 同名唔同歌(核對唔到,靠底本自身判):4142《賜福給你》(站上係曾祥怡另一首;我哋呢首係民數記 6:24-26 祝福文,經文自證)、6147《馬槽歌》(站上粵譯版歌詞完全唔同,我哋呢首係國語傳統版)、19《安靜》(三首同名都唔係;我哋呢首係 Hillsong "Still" 粵譯,英文原詞並列自證)、191《如鷹展翅上騰》(站上粵譯版唔同,我哋呢首係生命河國語版)
+- index 揾唔到:Endless Worship 全隊(1649/1702/1815/2132/2254/3342/3345)、4145/4706/4838 等 —— 呢啲都係官方 lyrics MV,底本本身就係權威來源
+
+**Medley 處理**:3524(Jesus shall take the highest honour + I sing praises to Your name)、3727(In The Secret + I Need You More)、3763(讓我得見你的榮面 + 君王就在這裡)、4283(馬槽聖嬰 + 是為了愛)四首 title 本身已寫明係 medley,兩段都齊,冇當「拆唔開」判死,兩段照出。
+
+**重複歌**:1333/1334(榮耀都歸神羔羊)、4325/4326(生命中的每一天)、4330/4333(全然美麗)、7159/7178(Let's go)四對係同曲不同片,已用同一份歌詞。
+
+**驗證**:`ops/deploy/backend-restart.sh` 行過 deploy gate(HEAD == approved sha 386c71b),health check 200。抽 4107 / 4882 / 1649 / 4283 / 320 五首查 `/api/hymns`,全部見到今日新寫入嘅歌詞(544–1052 字元)。
+
+**Fable 5 抽查名單(8 首)**
+- id=191 《如鷹展翅上騰》[生命河粵語]
+- id=4107 《感恩讚美》[基恩敬拜]
+- id=4870 《暫別片刻》[基恩敬拜]
+- id=320 《與你面對面》[生命河靈糧堂]
+- id=1334 《榮耀都歸神羔羊》[小羊詩歌]
+- id=3728 《聖靈歡迎你同在降臨》[611 Worship]
+- id=4301 《謝飯歌》[讚美之泉兒童]
+- id=4333 《全然美麗(舞蹈版)》[讚美之泉兒童]
+
+**⚠️ 要 Eric 拍板嘅兩件事(唔係今日先出現,係結構性)**
+1. **hold 池會無限迴圈**:今日 7 條 hold 入面有 6 條(1857/6128/6602/7159/7178/7532)上一輪已經 hold 過。Hold 唔會改 lyrics_status,所以佢哋每次 export 都會再出現、每次都要人手重讀一次。要麼(a)俾 hold 條目一個終態、要麼(b)reviewLyrics --export 排除已入 hold 池嘅 id。
+2. **中英對照官方 MV 撞 35% CJK 行門檻**:7159/7178/7532 三首係正正常常嘅官方雙語字幕,只係英譯行數天然多過中文行(27–34%)。Eric 2026-08-16 已拍板「雙語對照照出街」,但呢批喺門檻邊緣俾擋。建議 35% 調到 25%,或者對「每句中文都有對應英文」呢種對稱結構特赦。
+
+**異常**:冇。冇煞停。
+- [2026-08-17 16:28] P線時報(keeper自動):過去1小時 OCR/whisper draft **+28**(log累計 90);重做隊剩 395;可做draft 26;producer 行緊
+- **心跳 2026-08-17 17:01** — verified 2870(46.0%)/ draft 53(可做 11,42 首 bi-frozen)/ 重做隊剩 376 / producer 生存(fetchLyrics --mode ocr budget 120 跑緊,兩個 paddleframe worker)/ keeper log 停喺 15:33、fetchlyrics log tail 顯示 09:01 但檔案 mtime 17:01(寫入有 buffer 延遲),OCR 實際仍在跑,正常
+- [2026-08-17 17:28] P線時報(keeper自動):過去1小時 OCR/whisper draft **+36**(log累計 126);重做隊剩 358;可做draft 58;producer 行緊
+- [2026-08-17 18:28] P線時報(keeper自動):過去1小時 OCR/whisper draft **+22**(log累計 148);重做隊剩 336;可做draft 80;producer 行緊
+- [2026-08-17 19:28] P線時報(keeper自動):過去1小時 OCR/whisper draft **+35**(log累計 183);重做隊剩 300;可做draft 113;producer 行緊
+- **心跳 2026-08-17 20:02** — verified 2870(46.0%)/ draft 144(可做 121,keeper 19:43 計)/ 重做隊剩 283 / producer 生存(19:43 開嗰輪 OCR 行緊,已跑 18 分鐘)/ log 時間戳係 UTC(比本地慢 8 個鐘),睇落似「停咗 8 個鐘」其實正常;啱啱見到 1 次 yt-dlp 403 落載失敗(連續 1,未成風暴)
+- [2026-08-17 20:28] P線時報(keeper自動):過去1小時 OCR/whisper draft **+32**(log累計 215);重做隊剩 255;可做draft 144;producer 行緊
+- [2026-08-17 21:28] P線時報(keeper自動):過去1小時 OCR/whisper draft **+40**(log累計 255);重做隊剩 216;可做draft 183;producer 行緊
+- [2026-08-17 22:28] P線時報(keeper自動):過去1小時 OCR/whisper draft **+48**(log累計 303);重做隊剩 216;可做draft 228;producer 冇行
+- **心跳 2026-08-17 23:01** — verified 2870(46.0%)/ draft 267(可做 228,keeper 22:28 計)/ 重做隊剩 216 / producer 生存(fetchLyrics --mode ocr budget 120 跑緊,paddleframe + whisper worker 都喺度)/ ⚠️verified 由 17:01 起卡死喺 2870 足足 6 個鐘,但 draft 池由 53 谷到 267(+214)—— P線(OCR 產草稿)行得好,C線(複核 apply)完全冇動過,積壓愈嚟愈大;另重做隊由 21:28 起停喺 216 冇再跌
+- [2026-08-17 23:28] P線時報(keeper自動):過去1小時 OCR/whisper draft **+45**(log累計 348);重做隊剩 216;可做draft 272;producer 行緊
+- [2026-08-18 00:28] P線時報(keeper自動):過去1小時 OCR/whisper draft **+43**(log累計 391);重做隊剩 216;可做draft 311;producer 行緊
+- [2026-08-18 01:28] P線時報(keeper自動):過去1小時 OCR/whisper draft **+16**(log累計 407);重做隊剩 215;可做draft 326;producer 行緊
+- **心跳 2026-08-18 02:01** — verified 2942(47.2%)/ draft 300(可做 326)/ 重做隊剩 215 / producer 生存 / fetchLyrics OCR 行緊(pid 33379,keeper 01:23 開 budget 120),但 /tmp/hymn_fetchlyrics.log 最新一行仍係 08-17 18:01、全檔零條 08-18 記錄(mtime 卻係 02:01),log 寫入疑似有問題,進度只可信 DB 同 keeper log
+
+## 2026-08-18 01:38–02:16 — 歌詞追趕班
+
+**成績:一班 152 個決定(151 verified + 1 delist),verified 2870 → 3021,覆蓋率 39.9% → 42.0%(分母 7188 出街歌)。** 呢個係追趕線開波以嚟單班最高產,亦係 verified 首次破 3000。
+
+### DB 前後
+
+| 指標 | 開波 01:38 | 收爐 02:16 |
+|---|---|---|
+| verified | 2870 | **3021** (+151) |
+| draft 池 | 353 | 226 |
+| 可做 draft(過 BI 濾網) | 333 | 204 |
+| unavailable | 619 | 619(冇加) |
+| 出街總數 | 7189 | 7188(delist 1 首) |
+| 重做隊未做 | 215 | 215(producer 呢一個鐘冇消化到) |
+
+### 決定拆細
+
+- **verified 151 首** —— 九批,每批 audit 完即刻 apply + sqlite 覆查,**零 race 走漏**。
+- **unusable 0 首** —— 今班冇撞到底本死症(高產 vein 底本質素好過池入面平均)。
+- **delist 1 首** —— id 6338「05 天が開きバイブルレッスン」(讚美之泉日文兒童聖經課程短片,對白教學內容),按 Eric 2026-08-09 標準自主落架。
+- **留 draft 1 首** —— id 257「我獻上讚美」audit reject:太薄(normalize 後 41 CJK < 45 門檻)。唔判 unusable,留返俾下次。
+- **langmismatch hold 0 條** —— BI 濾網喺攞料階段已經隔走 20 首,之後九批 audit 全部零 langmismatch,證實濾網行得正常。
+- **reject 合計 1/152**(99.3% 通過率)。
+
+### 做過邊啲 vein(俾下一班參考)
+
+1. **約書亞樂團(含大衛帳幕的榮耀)—— 做咗約 115 首,係今晚主力。** 呢條 vein 質素極高:官方歌詞 MV / KALA 版嘅 OCR 底本中英對照齊全,dedupe 後 u50-140 直接可以重組,幾乎唔使外部核對。**下一班可以繼續放心攻。**
+2. **讚美之泉 + 讚美之泉兒童敬拜 —— 做咗約 36 首,同樣高質**,中英雙語 + 經文卡字幕。經文卡按規矩壓成全形附註放尾（例:`（詩篇 30 篇、啟示錄 21:4）`）。剩返約 40 首未做。
+3. 未掂:小羊詩歌 51 首、新心音樂事工 26 首、基恩敬拜 21 首(粵語,可以配 cantonhymn 預篩檔)、泥土音樂 13 首。
+
+### 心得(方法上嘅實測)
+
+- **中英交錯保留係啱嘅做法**,有先例(id 221 早已 verified 用呢個格式),audit 亦唔會判 langmismatch —— 因為中文行仍然多過拉丁行。唔好剷英文譯詞(嗰個係 §3 F0 明令禁止嘅繞道)。
+- **同一首歌經常有 3 個版本**(Live / 官方歌詞MV / KALA版),draft 分別出現。歌詞可以共用,但要按各自 draft 嘅實際內容微調(例:到應許之地 6838/6839/6843 三版、大過一切的愛 6939/6942、奮戰到底 7077/7078、我受造奇妙 6932/6968、如今我信靠 6764/7113、圍繞我 6075/4316、我已得自由 6314/6492、進入豐盛 5537/6369、新的一天 6234/6463、我有喜樂 5860/6306)。**見到重複歌名唔好當死症跳過,係免費嘅第二個決定。**
+- **浮水印噪音**:「傾到全有/傾到有」(大衛帳幕)、「The Best of」、「恢復敬拜」、「LIVE WORSHIP WITH JOSHUA WORSHIP TEAM」—— dedupe 腳本剷唔走(佢哋有 CJK),要人手識別。
+- **OCR 系統性字形錯**:約書亞嘅英譯行成日將 a 讀成 o(`fode`→fade、`woves`→waves、`groce`→grace)。見到一整段 o 就知係呢個 pattern,可以整批修。
+- 唔完整嘅句(OCR 切走咗尾)**寧願略去嗰半句都唔好補字**(例 id 7172「患難像大石頭…」)。
+
+### ⚠️ 要 Eric 判嘅嘢(唔屬我範圍,已 verify 出街但分類存疑)
+
+約書亞樂團 channel 有一批**世俗流行歌/非詩歌**,歌詞底本正常所以我照 verify 咗,但佢哋出現喺詩歌 App 值唔值得留返,係分類問題:
+- id 7299「幸福頻率 / Beatitude Frequency」—— 情歌(愛情/伴侶/想你愛你)
+- id 7250「重來的力量 / The Power To Start Over」—— 情歌(感情復合)
+- id 7057「我愛我的國家 / I Love My Country」—— 中華民國愛國歌(唱「祝你生日快樂」俾國家)
+
+呢三首唔係「非歌內容」(佢哋確實係歌),所以我冇按落架標準自主 delist。**要唔要落架/另開分類,等 Eric 一句。**
+
+### producer / 環境
+
+- keeper pid 23415 全程生存,冇 stopfile,零 403 風暴。
+- keeper 呢個鐘嘅循環:01:23 開 OCR(budget 120)、00:53 因為池入面全部 cooldown/skip-orgs 轉咗 CC 補倉。**重做隊 215 首一個鐘冇郁過**,同上一份 ledger 記錄嘅「producer 出貨速度先係樽頸」一致。
+- 我全程零 WebSearch、零 cantonhymnLookup(今晚做嘅全部係國語高質底本,唔使外部核對)。
+
+### Checkpoint
+
+- `[stream]` 最後活動 UTC 09:30(本地 17:30),靜咗 8 個鐘 → 安全 restart。
+- approve gate:兩個未批 commit(56795a9 純 frontend/、96f6ad8 純 .md)冇 backend code 改動 → approve → `backend-restart.sh` 成功 → `launchctl list | grep hymnapp` = **7** 個 job。
+- live API 抽驗 6737 / 5064 / 6359 三首,全部吐到歌詞(801 / 501 / 501 字)。
+
+### Fable 5 抽查名單(今班新 verify 隨機 8 首)
+
+| id | 歌名 |
+|---|---|
+| 6737 | 【逆流前行 / Against the Flood】官方KALA版 - 約書亞樂團 |
+| 7181 | 【祢無限 / Infinity】官方歌詞MV - 約書亞樂團 |
+| 6674 | 大衛帳幕的榮耀【祂是笑臉幫助我的神】官方歌詞MV |
+| 6949 | 大衛帳幕的榮耀【主是我的力量 / The Lord Is My Strength】 |
+| 5064 | 【我們的神 You Are Our God】現場敬拜MV - 讚美之泉 |
+| 6386 | 【耶和華是我牧者】敬拜MV - 讚美之泉兒童敬拜讚美 (2) |
+| 5306 | 【生命的舵手 The Navigator of My Life】- 讚美之泉 |
+| 6359 | 【耶和華沙龍 Jehovah Shalom】敬拜MV - 讚美之泉兒童 (5) |
+
+### 收工原因
+
+**主動收爐留 buffer 做 checkpoint。** 唔係四個標準理由入面任何一個 —— 未撞 200 決定上限(做咗 152)、未夠 3 個鐘(用咗 38 分鐘)、draft 仲有 204 首可做、**全程零 rate limit 警告**。收爐純粹係為咗確保 checkpoint(approve/restart/ledger/呢份 log)做得完,唔重蹈「死之前咩都冇寫低」。
+
+**🔬 俾 Eric 嘅額度情報:Max plan 之後呢一班完全冇撞過任何限制。** 152 個決定、38 分鐘、九輪 apply,一次警告都冇。之前班次早死嘅問題睇嚟真係解決咗 —— **樽頸而家 100% 係 producer 出貨速度(重做隊 215 首一個鐘零消化),唔係複核線嘅額度。**
+- [2026-08-18 02:28] P線時報(keeper自動):過去1小時 OCR/whisper draft **+43**(log累計 450);重做隊剩 215;可做draft 215;producer 行緊
+- [2026-08-18 03:28] P線時報(keeper自動):過去1小時 OCR/whisper draft **+42**(log累計 492);重做隊剩 192;可做draft 255;producer 行緊
+- [2026-08-18 04:28] P線時報(keeper自動):過去1小時 OCR/whisper draft **+28**(log累計 520);重做隊剩 182;可做draft 279;producer 行緊
+- **心跳 2026-08-18 05:01** — verified 3021(48.4%）/ draft 319(可做 289)/ 重做隊剩 172 / producer 生存 / OCR 兩隊 paddle + yt-dlp 行緊,但 yt-dlp 403 間中彈(基恩敬拜連續兩首);注意 /tmp/hymn_fetchlyrics.log 時間戳係 UTC(比本地慢 8 個鐘),睇落似停咗其實係新鮮嘅
+- [2026-08-18 05:28] P線時報(keeper自動):過去1小時 OCR/whisper draft **+40**(log累計 560);重做隊剩 160;可做draft 318;producer 行緊
+- [2026-08-18 06:28] P線時報(keeper自動):過去1小時 OCR/whisper draft **+36**(log累計 596);重做隊剩 143;可做draft 351;producer 冇行
+- [2026-08-18 07:29] P線時報(keeper自動):過去1小時 OCR/whisper draft **+9**(log累計 605);重做隊剩 131;可做draft 358;producer 行緊
+- **心跳 2026-08-18 08:01** — verified 3021(48.4%)/ draft 404(可做 380)/ 重做隊剩 125 / producer 生存 / 正常(keeper 07:59 剛開新一輪 OCR budget 120)
+- [2026-08-18 08:29] P線時報(keeper自動):過去1小時 OCR/whisper draft **+43**(log累計 648);重做隊剩 123;可做draft 398;producer 冇行
+- [2026-08-18 09:29] P線時報(keeper自動):過去1小時 OCR/whisper draft **+4**(log累計 652);重做隊剩 118;可做draft 398;producer 冇行
+- [2026-08-18 10:29] P線時報(keeper自動):過去1小時 OCR/whisper draft **+31**(log累計 683);重做隊剩 110;可做draft 426;producer 行緊
+- **心跳 2026-08-18 11:01** — verified 3021(48.4%)/ draft 455(可做 430)/ 重做隊剩 110 / producer 生存 / ⚠️verified 由 08:01 起 3 個鐘零增長,draft 池反而 404→455,即係 OCR 生產線行緊但複核 apply 班冇落過貨
+- [2026-08-18 11:29] P線時報(keeper自動):過去1小時 OCR/whisper draft **+10**(log累計 693);重做隊剩 110;可做draft 430;producer 行緊
+- [2026-08-18 12:29] P線時報(keeper自動):過去1小時 OCR/whisper draft **+4**(log累計 697);重做隊剩 110;可做draft 432;producer 冇行
+
+## 2026-08-18 12:45 — 三線平行複核上線(Eric 拍板)
+
+**背景:** 樽頸由生產反轉去複核 —— 心跳 08:01/11:01/12:19 連續三次報 verified 卡死 **3,021**,draft 池反而由 404 谷到 **456**(可做 432)。P 線(PaddleOCR)行得好,C 線消化唔切。
+
+**做咗:** 開返 47H 衝刺嗰個 **P + R1 + R2** 平行設計,今次擴到三條複核線,**P 線維持單線唔郁**(YouTube 出口 IP)。
+
+| 線 | Task | 分區 | 開波存貨 | Restart 權 |
+|---|---|---|---|---|
+| R1 | `lyrics-line-mandarin`(`45 12,16,20,0,4,8`) | `國語` | 272 | ✅ 唯一 |
+| R2 | `lyrics-line-cantonese`(`0 13,17,21,1,5,9`) | `粵語` | 103 | ❌ |
+| R3 | `lyrics-line-english`(`15 13,17,21,1,5,9`) | `英文`+`兒童` | 57+0 | ❌ |
+
+每 4 個鐘一轉、錯開 15 分鐘;每班上限 200 決定 / 3 個鐘;收工原因必填。共用 SOP:`ops/lyrics/REVIEW-LINE-SOP.md`(commit `5507b07`)。
+
+**防撞車:** ①`lang` 欄硬分區(export 冇 lease,唯一可靠嘅分法);②DB 寫入全部經 `reviewLyrics.js --apply` 內置鎖 + apply 後即刻覆查 producer snapshot race;③**只有 R1 可以 approve/restart**;④ledger **只准 `>>` 追加**,唔准重寫(三線同時寫);⑤三線零 git 操作。
+
+**順手 disable 咗 `lyrics-catchup`** —— 佢唔分區,同三條線 100% 重疊。`lyrics-daily-proofread` 維持 enabled(Eric 之前明確要求),但佢同樣唔分區,會重複做嘢 —— **浪費唔係破壞**(apply 冪等),Eric 想慳可以隨時叫我 pause。
+
+**一個判斷寫低:** 原本 cron 排 16:00 先首發,Eric 話「即刻開始」,所以將第一轉調前到 12:45/13:00/13:15,cadence 維持 4 個鐘。
+
+
+## 2026-08-18 12:40 — 歌詞追趕班(收爐:交接三線,零複核)
+
+**結論:呢班冇做複核,係刻意嘅。** `lyrics-catchup` 已被 Eric 停用,角色由三線平行取代。
+
+- **點解零複核:** 開波三查完、export + BI 過濾完(457 draft → 432 可做)之後,查 scheduled task 發現:
+  - Eric 12:37–12:39 寫咗 `ops/lyrics/REVIEW-LINE-SOP.md`,建立 `lyrics-line-mandarin`(R1 國語,每 4 鐘 :45)、`lyrics-line-cantonese`(R2 粵語,:00)、`lyrics-line-english`(R3 英文+兒童,:15),三條**全部 enabled**。
+  - **同一時間停用咗 `lyrics-catchup`(`enabled: false`)** —— 本班係停用前最後一下觸發(lastRunAt 04:37 UTC)。
+  - 三線開波分區存貨 272 + 103 + 57 = **432**,同我量到嘅全庫可做 draft 一模一樣 → 全部貨已有主。
+  - R1 下一班 12:52 本地開波(我收爐後 12 分鐘),R2 13:04,R3 13:22。
+  - SOP §1.1 明文:「做唔屬於你分區嘅歌 = 直接違規,會同隔籬線撞單、白燒兩份額度」。故本班**零複核、零 apply、零 approve、零 restart**。
+
+- **DB 數字(12:37 快照,前=後,本班冇改動):** verified 3031、draft 702、none 3747、unavailable 685;status='ok' 7189。上一班(02:16 收爐)verified 3021 → 中間 +10 係其他線/班嘅帳。
+- **producer:** keeper pid 23415 生存,PaddleOCR 主引擎,12:29 最後一輪「池 1541、可做 draft 432 → 開 OCR(budget 120)」。冇 `/tmp/lyrics-sprint-stop`。**重做隊剩 110 首**(上一班 215 → 而家 110,即通宵消化咗 105)。
+- **決定數:** 0(verified 0 / unusable 0 / delist 0 / 扣起 0)。BI 濾網凍結 25 首(draft 本身英文為主,按 Eric 8/16 政策留 draft 唔郁)。
+- **額度:** 全程零 rate limit 警告。收工原因 = **冇貨做(準確講係「貨已有主」)**,唔係夠上限、唔係夠鐘、唔係 rate limit。
+- **留俾 R1 嘅嘢:** `[stream]` 最後活動 8/17 09:30 UTC(>24 鐘前),**冇 live QA 進行緊,restart 安全**。approve gate 未行過,由 R1 自己行。
+- **建議 Eric:** `lyrics-catchup` 既然已停用,`docs/LYRICS-CATCHUP-LEDGER.md` 之後由三線接住寫(SOP §1.5 已規定三線共用呢個 ledger、只准 `>>` 追加),唔會斷紀錄。
+- [2026-08-18 13:29] P線時報(keeper自動):過去1小時 OCR/whisper draft **+3**(log累計 700);重做隊剩 110;可做draft 209;producer 冇行
+
+## 2026-08-18 13:03–13:30 — 三線平行複核 R2 粵語線(第一班)
+
+**分區:** `lang = '粵語'`,開波存貨 103 首(全庫可做 433)。**WebSearch 用量:0 次**(SOP 規定,全部走 `cantonhymnLookup.js`)。
+
+**成績:** 94 個決定 —— **77 verified**、**4 delist**、13 首判留 draft。audit 累計 82 條入,77 過、5 reject(全部係「太薄 <45 中文字」),langmismatch **0 條**(bi-freeze 前置過濾生效)。DB 前後:全庫 verified 3021 → 3245(當中含 R1/R3 同期產出),我線淨貢獻 77。
+
+**做過邊啲 vein(俾下一班參考):**
+- **基恩敬拜 38 首:全清晒,36 verified**,最高產。佢哋官方 MV 係「一行中文 + 一行英譯」逐幀疊加,每對行重複 2–6 次,自洽度極高,係最抵做嘅 vein。出街格式跟返 id=70 已 verified 嘅本行 house style:只出中文行、經文附註用全形「（書卷 章:節）」放尾。
+- **Giggles and Tunes(香港神的教會)粵語兒歌 25 首:19 verified**。短、乾淨,但成日撞 45 字門檻。
+- 細頻道兒歌(I'm G / MrKoKei / 末世呼聲 / Jennifer Poon / jesussong)大部分一次過搞掂。
+- **ACM / Endless Worship / 生命河 / 讚美之泉 / SON Music / Milk&Honey** 各 1–3 首,全部順利。
+
+**三個要記住嘅發現:**
+1. **align `matchRate` 對粵語線幾乎冇判別力。** 67 首低分入面,基恩敬拜嗰批 whisper 只出 7–15 段(粵語 ASR 差),`matchRate=0` 係「冇料可對」唔係「OCR 錯」。我改用 lyric-video 自身嘅「中英行配對 + 重複次數」做信心指標,77 首出街零 audit reject(除咗字數)。下一班唔好見到 matchRate<0.55 就自動留 draft。
+2. **cantonhymnLookup 命中率遠低過 2026-08-12 實測嗰 57%。** 今班可用來源得 **1 首**(3914《我現已重生》Milk&Honey 譯 Hillsong,逐段對過 Verse/Pre-chorus/Chorus 次序先落)。另外 2 首(4396《無比忠心》、2121《奉獻什麼》)攞到底本、但反而**證實咗我哋自己 OCR 漏咗成個 Chorus**,所以照樣留 draft(版權紅線:唔准抄佢個文字補)。⚠️ **prescreen `hits` 唔可靠**:27 個「★有底本」入面,實測直中得 1 個,《神大愛》仲係撞到另一首同名粵語改編歌。
+3. **「太薄 <45 字」門檻食咗 5 首真·短歌**(4362 ACM小天使之歌 43 字、6147 馬槽歌 44 字、5122 賜你平安 38 字、4753 活動開始歌 33 字、4733 親近天父爸爸 29 字)。呢啲係天然短嘅兒歌/祝福歌,唔係 OCR 漏,救唔到。**如果 Eric 想要呢批,要改門檻或者開白名單,唔係複核做得到嘅嘢。**
+
+**落架 4 首(明確非歌內容,按 2026-08-09 標準做法自主執行,dry-run 對過先落):** 1616《HIS70ry》見證分享段落、2324《HIS70ry》Part 8 全場錄影(夾住講道)、3278 鍾氏兄弟專輯宣傳片、6076 角聲使團培靈佈道音樂會宣傳片。
+
+**留 draft 13 首 + 上面 5 首太薄 = 22 首(即粵語分區收爐時全部餘貨),分四類:**
+- OCR 缺字/錯字估唔到原文:4726《誰是創造者》(「紫紫跳小鳥」)、6166《小孩的讚頌》(「用我小小的◯」)、87《既然出於祢》(祢字全部認錯做林/补/称,另有五六處死字,cantonhymn 冇收)
+- OCR 碎到淨返二字詞:4727《我愛您,爸媽》、6129《耶穌大追蹤》、2148/2149 全心製作兩首、4772《嚮往神家》
+- 實錘漏咗成段:4396《無比忠心》、2121《奉獻什麼》(兩首都靠 cantonhymn 對出嚟)、4736《耶穌是我好朋友》、6167《你是牧人極愛我》、6179《聖靈果子歌》、5109《我們愛因為神先愛》(一句副歌得英文冇中文)
+- **§4 中英混合政策扣起:4742《神愛你和我》** —— draft 得英文 "God loves you and me" 一句循環,**唔 apply 亦唔判 unusable**,留 draft 等 OCR 根因方案。
+- 模糊個案交 Eric:**5964《角聲使團 感恩節 2021 手機隨意拍》** —— 係佈道會現場錄影,draft 明顯夾住兩至三首歌拆唔開,唔夠信心判 unusable。
+
+**Fable 5 抽查名單(今班新 verify 隨機 8 首):** 4966《靠主愛誇勝》、4723《奇妙你我他》、3605《愛仇敵》、5111《仰望我神》、4987《主賜平安》、4775《無字書》、3914《我現已重生》、2255《醒來吧》。
+
+**異常/交接:** 零 rate limit 警告、零 DB 撞鎖、零 git 操作、keeper pid 23415 全程生存。**R2 冇 restart 權,今班 77 首歌詞 + 4 首落架全部寫咗入 DB 但未出街,等 R1 班尾 approve + restart 一齊放。**
+
+## 2026-08-18 13:36 — 三線平行複核 R1國語線(12:52–13:36)
+
+**收工原因:夠上限(200 個決定)。**時段用咗 44 分鐘,遠未夠 3 個鐘;分區仲有 167 首可做,下一轉(16:45)接住做。
+
+**DB 數字:** verified 3021 → 3286(全庫,含 R2/R3 同期貢獻);R1 自己 178 首。draft 442、unavailable 692。
+
+**今班決定分佈(200):**
+- verified **178**
+- unusable **7** —— 7240 / 5999(whisper 幻覺 loop「演唱 李宗盛」「詞曲:李宗盛」重複幾十次)、8144(EnterCalm 禱告音樂,純器樂+經文字卡冇歌詞)、5486(《安靜敬拜時分》EP06,OCR 淨得節目浮水印)、5225(韓文專輯)、5680(日文專輯)、6464(2012 實況錄影 medley + OCR 徹底亂碼)
+- delist **1** —— 6524「讚美之泉 iPhone/iPad App 使用介紹」(功能示範+售價,明確非歌內容,已執行 delist-batch)
+- 留 draft **14** —— 257 / 6614 / 6976 / 7526 / 8142 / 8145 / 8256 / 8340 / 8348 / 5431 / 5632 / 6385 / 1974 / 2358。全部係「底本殘缺或天然短副歌 normalize 後 <45 CJK 字」,冇一首硬 apply,亦冇一首誤判 unusable
+- reject 0、langmismatch hold 0
+
+**機械驗收:** 11 批 audit 全部 100% 過。11 次 apply 之後逐批覆查 `lyrics_status<>'verified'`,**零 race**(producer in-flight 冇蓋走任何一首)。
+
+**額度:** WebSearch **用 0 次**(上限 4)。原因:今班三個 vein(約書亞樂團 46、小羊詩歌 72、讚美之泉 72)全部係官方雙語字幕 MV,OCR 底本自足,唔使外求核對。
+
+**做過嘅 vein 同心得(俾下一班參考):**
+1. **底本質素排名:小羊詩歌 > 讚美之泉 > 約書亞樂團**。小羊/讚美之泉係「一句中文一句英文」嘅專業字幕,dedupe 完幾乎可以直接出;約書亞近年 MV 用大字動態字幕,逐幀 OCR 疊出大量半截行同簡體混排,要靠「剷子字串行」先清得乾淨。
+2. **dedupe 腳本要加「子字串行剔除」** —— 只做 unique 唔夠,OCR 會留低「你信」「看顧」呢類長句嘅前綴。加咗之後約書亞嗰批可讀性大升(scratchpad `dedupe.py`)。
+3. **經文卡一律轉全形「（書卷 章:節）」放尾** —— 小羊/讚美之泉好多首前後夾住成段經文,計落 CJK 字數會虛高,但唔可以當歌詞出街。
+4. **雙語政策實操:** `lib/lyricsLangCheck.js` 已改行級判定(CJK 行 ≥35% pass),所以官方雙語照出街冇問題,今班 178 首零 langmismatch。英文行 OCR 爛到唔完整嗰幾首(6617/6671/7207 等)改出純中文,冇拼湊英文。
+5. **英文孤行處理原則(今班定嘅):** 有中文對應嘅英文行先保留;冇中文對應但明顯係真歌詞嘅英文行(例如 8205「Darkness and sin are but fleeting」)保留;唔准自己譯返中文。
+
+**⚠️ 順手發現、留俾其他班處理:**
+- **重複入庫:** 1323=1324(醫治這地)、1325=1327(那一天)、8172=8190(亙古的愛,雙語版/純中文版)、6765=7478(活水江河)、6600=6617(祢是良善 Live/官方)、343=8306(我願為祢去)、5575=6368(祢的同在 成人/兒童版)。兩邊都寫咗歌詞,唔影響用戶,但值得 dedup 班睇。
+- **8189** 係 336「全心全意敬拜祢」嘅舊版,片主自己喺標題寫「請按右上角前往更正版」—— 建議落架舊版,但因為佢係歌唔係非歌內容,冇自行 delist,等 Eric 拍板。
+- **lang 欄標錯(DB 標國語但內容係粵語):** 8143 抬頭仰望(粵)、8154 一粒麥子(粵)、8181 耶穌基督是主(粵)、8183 來充滿我(粵)、8285 獻上一生(粵)。已照國語分區做咗歌詞(內容啱),但 metadata 要 taxonomy 班修 —— **同時代表 R2 粵語線見唔到呢 5 首**。
+
+**Fable 5 抽查名單(今班新 verify 隨機 8 首):**
+| id | 歌名 |
+|---|---|
+| 219 | 找到我 / Bring Me Back(約書亞樂團) |
+| 6788 | 在我裡面的比世界更大(約書亞樂團) |
+| 8127 | 有福的人 THE BEATITUDES(小羊詩歌) |
+| 8172 | 亙古的愛 ETERNAL LOVE(小羊詩歌) |
+| 8227 | 站起來 CHILD, ARISE(小羊詩歌) |
+| 6249 | 更深之處 Take Me Deeper(讚美之泉) |
+| 6380 | 認識祢真好(讚美之泉兒童) |
+| 2117 | 和平 Peace(新心音樂事工) |
+
+**班尾 checkpoint(R1 專屬,全部做齊):**
+1. `[stream]` 最後活動 2026-08-17T09:30 UTC,距今超過 20 個鐘 → restart 安全。
+2. `approve.sh backend 5507b07` —— HEAD 同已批准 sha 完全一樣,零新 commit,一次過批准冇俾 classifier 擋。
+3. `backend-restart.sh` 過 health check(port 3001);`launchctl list | grep hymnapp` = **7** 個 job。
+4. live `/api/hymns` 抽驗:219(840 字)、8127(776 字)、6249(600 字)三首都吐到今班寫入嘅歌詞;6524 已唔喺 live 列表(delist 生效)。live 總數 6234。
+
+**異常:零。**keeper pid 23415 全程生存,冇撞 DB 鎖,冇 rate limit 警告。
+- **心跳 2026-08-18 14:01** — verified 3276(52.6%)/ draft 194(可做 169)/ 重做隊剩 110 / producer 生存 / OCR 班照行(13:54 開 budget 120),但 fetchLyrics log 停咗喺 06:01 收 yt-dlp 403,成 8 個鐘冇新 log
+- [2026-08-18 14:29] P線時報(keeper自動):過去1小時 OCR/whisper draft **+6**(log累計 706);重做隊剩 110;可做draft 169;producer 冇行
+- [2026-08-18 15:29] P線時報(keeper自動):過去1小時 OCR/whisper draft **+8**(log累計 714);重做隊剩 96;可做draft 169;producer 冇行
+- [2026-08-18 16:29] P線時報(keeper自動):過去1小時 OCR/whisper draft **+8**(log累計 722);重做隊剩 87;可做draft 169;producer 冇行
+- **心跳 2026-08-18 17:01** — verified 3292(52.8%)/ draft 177(可做 169)/ 重做隊剩 76 / producer 生存 / OCR 班行緊(重做隊 78→76 遞減中),fetchLyrics 自 08:59 冇再跑(plist 仍 disabled,尾次 403 標 dl:dead)
+
+## 2026-08-18 17:15 — 三線平行複核 R1 國語線(16:52–17:15)
+
+**DB 數字**:verified 3286 → **3345**(+59)。全庫可做 draft 169 → 101;國語分區 86 → 18(全部係本班判過嘅留 draft/reject,零新貨)。
+
+**決定分佈(86 個)**:verified 59 / unusable 9 / delist 2 / audit reject 2 / 留 draft 14。
+- 5 批,audit 5 批全過:reject 2(3474 讓我們竭力追求 44 CJK、257 我獻上讚美 41 CJK,兩首都差幾個字過唔到 45 門檻)、**langmismatch 0**。
+- apply 後逐批覆查,**producer race 零中招**(59 首全部仍係 verified)。
+- unusable 9 首分兩類:①611 Worship 現場 medley 4 首(3502/3520/3720/3725,raw 200–626 行中英交錯,拆唔開歌與歌邊界);②whisper 幻覺/語言標錯 5 首(3865 苦難中有祢、1289 十字路口、1291 我用信心抬起頭 三首都出「詞曲:李宗盛」幻覺 + 關鍵字全錯;8434 恵みの道 日語版、4348 いやしぬし イエス 日語版,兩首 DB 都標咗國語)。
+- delist 2 首:1052「詩歌默想」單集(九成係二十分鐘口述分享)、4004「心的歸屬－作者分享」Song Testimony。兩首 dry-run 對過先落,before curated=1 → after rejected,restart 後已唔喺 live 列表。
+
+**WebSearch 用量:0 次**(上限 4)。今班全部 vein(新心音樂事工/泥土音樂/611/生命河/我心旋律/讚美之泉兒童/約書亞)都有官方雙語或中文字幕底本,唔使外求。
+
+**做過嘅 vein 同心得(俾下一班參考)**:
+- **生命河靈糧堂「敬拜讚美系列」**:官方中英雙語字幕,質素同小羊/讚美之泉同級,7 首入面 7 首都做得,照 house style 只出中文行 —— 呢條 vein 值得優先。
+- **我心旋律第九專輯「邁向錫安」**:官方歌詞 MV **出簡體**,要轉返繁體先對齊全庫;專輯 tagline 卡「安慰 安慰 我的百姓」(賽 40:1)喺 4 首都出現,係 branding 唔係歌詞,一律剷走。
+- **611 Worship**:單曲(1528/1608/3765/1550)冚唱得,但現場 medley(標題有斜線嗰啲)一律死症,見到直接判 unusable 唔好糾纏。
+- **⚠️ 死症 vein 黑名單應該當啟發式,唔係硬規則**:286《看不見的時候》屬 SKILL 列明嘅「天韻詩歌」死症 vein,但底本 OCR 其實好乾淨,已照做 verified。下一班見到黑名單 artist 都值得望一眼個 dedupe view 先判。
+- **翻炒名單(第二次或以上判留 draft,建議交重做隊或者由 Eric 定係咪放寬天然短歌門檻)**:1974 全地頌讚、2358 一無牽掛、8145 天門已打開、8256 活祭、8340 祢是我的平安、8348 愛祢、5431 願祢國降臨、5632 祢的慈愛、6385 賜福與你、257 我獻上讚美。呢 10 首每轉 export 都會再出現,係國語分區「做唔空」嘅主因。
+
+**班尾 checkpoint(R1 專屬)**:[stream] 最後活動 2026-08-17 09:30 UTC(>23 鐘頭前)→ approve(HEAD 5507b07,零新 commit)→ backend-restart.sh 過 health check → launchctl 7 個 job → live /api/hymns(6232 首)抽驗 3888/8503/324/286/8611 五首都吐到歌詞。**R2/R3 呢轉寫入 DB 嘅歌詞已經一齊放咗出街。**
+
+**Fable 5 抽查名單(8 首)**:309 神的帳幕在人間、321 你是信實神、3466 敬畏祢的榮耀、3888 迎接耶穌進來、4334 彩虹、8362 讓世界看見希望、8504 打開黑暗的角落、8617 是祢教導我的手爭戰(慢版)。
+
+**異常**:零 DB 撞鎖、零 rate limit 警告、零 git 操作。keeper pid 23415 全程生存。
+- [2026-08-18 17:29] P線時報(keeper自動):過去1小時 OCR/whisper draft **+11**(log累計 733);重做隊剩 68;可做draft 95;producer 冇行
+- [2026-08-18 18:29] P線時報(keeper自動):過去1小時 OCR/whisper draft **+8**(log累計 741);重做隊剩 59;可做draft 95;producer 冇行
+- [2026-08-18 19:29] P線時報(keeper自動):過去1小時 OCR/whisper draft **+4**(log累計 745);重做隊剩 49;可做draft 95;producer 冇行
+- **心跳 2026-08-18 20:01** — verified 3339(53.6%)/ draft 120(可做 95)/ 重做隊剩 28 / producer 生存 / keeper 每 5 分鐘開 OCR(budget 120)正常;fetchLyrics 自 12:00 停咗(最後一輪 yt-dlp 403、有效草稿 0),日班仍空轉
+- [2026-08-18 20:29] P線時報(keeper自動):過去1小時 OCR/whisper draft **+11**(log累計 756);重做隊剩 17;可做draft 95;producer 冇行
+
+## 2026-08-18 21:10 — 三線平行複核 R1 國語線(20:52 開波 / 21:10 收爐)
+
+**收工原因:冇貨做**(分區真係做空,唔係提早棄班)。18 分鐘、1 批、16 個決定。
+
+- **DB verified:3345 → 3354**(+9,其中 5 首係我今班 verify,另 4 首係 R2/R3 之前寫入而今次一齊放出街)
+- **決定分佈**:verified 5 / unusable 4 / 留draft 7 / delist 0 / reject 0 / hold 0
+- **audit**:9/9 pass,reject 0、langmismatch 0。apply 後覆查 5 個 verified id 全部仍係 verified,**producer race 零中招**
+- **WebSearch**:4/4 用晒(上限就係 4)
+- **異常**:零 rate limit 警告、零 DB 撞鎖、零 git 操作
+
+### 🔬 今班方法新發現:`lyrics_timeline.whisper` 可以救「太薄」個案
+
+開波發現分區 16 首全部係前兩班判過留 draft 嘅同一批(全部 2026-08-17 用 PaddleOCR 出,即已經係最好嘅 OCR,再等重做冇用;而且佢哋唔喺 requeue-priority 名單,即係「交返重做隊」呢個講法其實唔成立,佢哋只會每轉翻炒)。
+
+查 DB 先發現:`fetchLyrics.js` 由 2026-07-27 起**每首歌都順手行 whisper**存落 `lyrics_timeline.whisper`(唔理 OCR 夠唔夠字),16 首每首都有 6–37 段轉錄。whisper 同音字錯得犀利(「祝我是一個火雞」=「主 我是一個活祭」、「葉河化為妳詩聲」=「耶和華唯祢是神」、「作者為王」=「坐著為王」),但**曲式覆蓋完整**,同 OCR(字準、覆蓋殘)啱啱互補。
+
+**用法紀律(建議寫入 SOP,唔好放寬)**:淨係當 ①OCR 已經捉到該行嘅關鍵字、whisper 只係補返虛詞/次序,或者 ②該行係公認經文 / 公有領域聖詩文本,先准還原。**whisper 獨有而且字形唔確定嘅行,一律唔出街。** 拎唔準就 WebSearch 核對曲式(唔准照抄),核對唔到就留 draft。
+
+今班靠呢招救返 5 首:257 我獻上讚美(whisper 實證 OCR 已冚全曲,46 CJK 啱啱過門檻)、8256 活祭、8340 祢是我的平安、8348 愛祢(三首 WebSearch 核對過曲式)、8640 我要唱耶和華的大慈愛(公有領域聖詩,OCR+whisper 一致)。
+
+同一招亦令四首判死判得有底氣(OCR + whisper 兩個來源都救唔返):1974 全地頌讚、2358 一無牽掛、3468 懇求聖靈來、3965 高聲頌讚主。draft 原文全部保留,Eric 想翻案隨時可以。
+
+### ⚠️ 兩件要 Eric 拍板
+
+1. **天然短詩歌俾 45 CJK 機械門檻硬擋死**。5431《願祢國降臨》27 CJK、5632《祢的慈愛》29 CJK —— 今班用 whisper 全曲轉錄**實證咗成首歌就係得嗰幾句**(唔係 OCR 漏字),屬「完整但天然短」,唔係「太薄」。除非放寬門檻或者開白名單,否則呢類歌永遠出唔到街,而且每轉都會出返嚟俾人重讀。同類:6385《賜福與你》31 CJK。
+2. **producer 已經停咗產新貨**。keeper log 連續兩轉「上一轉 OCR 池入面冇一首攻得(全部 cooldown / skip-orgs)→ 下一轉強制轉 CC 補倉」。17:22→21:10 近四個鐘,全庫可做由 95 跌到 86,全部係三條線消化,**零新增**。重做隊剩 15 首。keeper pid 23415 生存唔使重開,但個池實質榨乾,三條線之後嘅班次都會係「冇貨做」,直到 skip-orgs / cooldown 放返出嚟。
+
+### 班尾 checkpoint(R1 專屬,做齊)
+
+`[stream]` 最後活動 2026-08-17T09:30 UTC(27 鐘頭前,安全)→ approve(HEAD 5507b07 同已批准 sha 一樣,零新 commit)→ `backend-restart.sh` 過 health check → `launchctl list | grep hymnapp` = 7 個 job → live `/api/hymns` 6232 首,抽驗 257/8256/8340/8348/8640 全部吐到歌詞。**R2 17:14 批嗰 4 首(2121/2148 已 live 核實)同 R3 呢轉寫入嘅嘢已經一齊放咗出街。**
+
+### Fable 5 抽查名單(今班新 verify 全部 5 首)
+
+| id | 歌名 |
+|---|---|
+| 257 | 我獻上讚美(約書亞樂團) |
+| 8256 | 活祭(小羊詩歌) |
+| 8340 | 祢是我的平安(小羊詩歌) |
+| 8348 | 愛祢(小羊詩歌) |
+| 8640 | 我要唱耶和華的大慈愛(新心音樂事工) |
+
+## 2026-08-18 21:13 — 三線平行複核 R2 粵語線(21:04 開波 / 21:13 收爐)
+
+- **收工原因:冇貨做。** 分區(`lang='粵語'`)可做 draft 18 首,全部過晒,**0 verified、18 首判留 draft**;零 DB 寫入、零 delist、零 unusable、零 git 操作、零 rate limit 警告。WebSearch **0 次**(cantonhymnLookup 行 2 次;預篩檔 621 個 hits 入面我分區只中 6147/4396/6179 三個)。
+- DB 現況:verified 3354 / draft 363 / unavailable 705 / none 3743。全庫可做 draft 86(R3 英文 61、R1 國語 7、我 18)。
+- 18 首入面 6 首係 17:15 R2 上一班之後 producer 新出嘅貨,已逐首讀完;其餘 12 首係上兩班親手判過嗰批,今次覆核維持原判。
+- 收爐前 21:11 重 export 覆核:粵語分區仍係同一批 18 首,**新貨 0**。keeper(pid 23415)log 連續兩轉報「OCR 池入面冇一首攻得(全部 cooldown / skip-orgs)」,1069 首喺 12 鐘頭 cooldown 內 → 呢個時段內唔會再補倉,所以係真空唔係我提早棄班。
+
+### 🔴 要 Eric 拍板:45 CJK 門檻同「天然短兒歌」例外對唔上(第三次撞,今次有硬數)
+
+粵語分區 18 首入面 **10 首係「底本乾淨完整、內容核對得到、但天然短過 45 CJK」**,`auditLyricsBatch.js` 永遠 reject,每一轉 R2 都要重讀一次同一批。實測 normalize 後 CJK 字數:
+
+| id | 歌名 | CJK | 備註 |
+|---|---|---|---|
+| 6147 | 馬槽歌(修詞02) | 44 | 爭 1 個字;去重後得第一節(片入面唱兩次) |
+| 4362 | ACM小天使之歌 | 43 | 完整 |
+| 6166 | 小孩的讚頌 | 40 | 另有一個字每 frame 都漏 |
+| 5122 | 賜你平安(基恩敬拜) | 39 | 民6:24-26 祝福,完整 |
+| 4753 | 活動開始歌 | 33 | 完整 |
+| 4733 | 親近天父爸爸 | 31 | 完整 |
+| 6179 | 聖靈果子歌 | 28 | 加5:22-23,完整 |
+| 6167 | 你是牧人極愛我 | 21 | 完整 |
+| 4739 | 天父深愛我 | 13 | 真係得兩句 |
+| 4736 | 耶穌是我好朋友 | 10 | OCR 只捉到兩句 |
+
+SOP 寫明「太薄…**而唔係天然短兒歌/短副歌**」先留 draft,即係短兒歌本來係例外;但機械門檻冇呢個例外口,兩者對唔上。**我冇改門檻、冇手動 merge 入 passed、冇靠重複段落谷字數**(三樣都係明文禁)。請揀:(a) 短兒歌另設低門檻、(b) apply JSON 加 `shortSong:true` 白名單旗、(c) 維持現狀但將呢批標記走唔好再入複核隊。
+
+### 另外 8 首唔關門檻事(OCR 真係缺料)
+
+87 既然出於祢(3 處字形殘缺,cantonhymn 冇收錄)、2149 頌讚祢(半首)、4396 無比忠心(cantonhymn 對實我哋只 OCR 到上半首,**版權紅線唔准補**)、4727 我愛您爸媽(主歌逐句斷開)、4772 嚮往神家(2 句俾背景遮住)、5109 我們愛因為神先愛(副歌第三句中文成句全漏,grep raw draft 零命中)、4742 神愛你和我(draft 九成英文,按 §4 最高優先政策扣起,唔 apply 唔判 unusable)、5964 角聲使團感恩節2021(現場錄影夾 2-3 首歌,模糊個案維持留 draft 等 Eric,唔自行落架)。呢 8 首留 draft 係啱嘅 —— producer 會覆寫 draft,下次 OCR 有機會好返。
+
+- ⚠️ 留俾 R1:我今班**零 DB 寫入**,冇嘢等你 restart。
+- [2026-08-18 21:29] P線時報(keeper自動):過去1小時 OCR/whisper draft **+1**(log累計 757);重做隊剩 15;可做draft 86;producer 冇行
+
+## 2026-08-18 21:43 — 每日自動校對(lyrics-daily-proofread 21:40 班)⛔ 煞停:同三線平行複核撞分區
+
+**收工原因:冇貨做 + 排程衝突(唔係提早棄班,下面全部係硬數)。零 DB 寫入、零 delist、零 restart、零 git 操作、WebSearch 0 次、cantonhymnLookup 0 次。**
+
+### 一、現況(自己行 export 攞,冇靠隔籬線報數)
+
+- `reviewLyrics.js --export` = **111 首 draft**;`bi-freeze --filter` 後 **可做 86 首、BI 凍結扣起 25 首**。
+- 86 首可做逐個 id 對返三條線今晚嘅 ledger,**100% 重疊,零首係冇人認領**:
+
+| 分區 | 數 | 誰揸住 | 狀態 |
+|---|---|---|---|
+| 英文 | 61 | **R3 `lyrics-line-english`** | 🔴 **仲行緊**:lastRun 21:22(21 分鐘前),班期 3 個鐘 |
+| 粵語 | 18 | R2 `lyrics-line-cantonese` | 21:12–21:13 逐首親手判晒留 draft(id 全對得上) |
+| 國語 | 7 | R1 `lyrics-line-mandarin` | 21:05–21:11 逐首親手判晒留 draft/reject(id 全對得上) |
+
+國語 7 首 = 1551 / 3474 / 5431 / 5632 / 6385 / 8145 / 8517;粵語 18 首 = 87 / 2149 / 4362 / 4396 / 4727 / 4733 / 4736 / 4739 / 4742 / 4753 / 4772 / 5109 / 5122 / 5964 / 6147 / 6166 / 6167 / 6179。**兩批都係「天然短過 45 CJK」同「OCR 真係缺料」嗰兩類死症**,即係我做落去純粹係第四次翻炒同一批,燒額度零產出。
+
+### 二、點解唔硬做落去(兩條係明文紅線,唔係我怕事)
+
+1. **`ops/lyrics/REVIEW-LINE-SOP.md` §1.1**:三條線靠 `lang` 欄硬分區先至唔撞單,寫明「**做唔屬於你分區嘅歌 = 直接違規**,會同隔籬線撞單、白燒兩份額度」。我呢條線**冇分區**,一做就必然侵佔 R1/R2/R3 全部三格,而且 R3 仲喺度 in-flight,分分鐘直頭撞 `--apply`(已知 producer race:實錄 76 中 1)。
+2. **`REVIEW-LINE-SOP.md` §6 + §5**:restart 權**只有 R1 有**,而且明文禁止用 launchd 指令繞過 deploy gate。但我份 SKILL 第 5 步偏偏叫我直接 kickstart backend —— **呢兩份指示直接對撞**。Eric 8/18 拍板嘅三線 SOP 係較新嗰份,我照佢,今班零 restart。(附註:寫呢段 log 嗰陣,deploy-gate classifier 因為文字入面引咗個 launchd 命令原文而攔截咗我句 Bash,證明道擋板實係work。)
+
+### 三、🔴 要 Eric 拍板:`lyrics-daily-proofread` 應該熄咗佢
+
+呢個 task(cron `40 9,15,21`,仲係 enabled)係 8/13 單線年代嘅產物,而家已經俾 8/18 三線平行複核**完全取代**:同一個 draft 池、同一套方法,但三線有分區同單一 restart owner,佢冇。**每日三班都會好似今班咁,行到一半發現全部貨都俾人認咗,得個「煞停」log**。建議 (a) `enabled:false` 熄咗佢,或者 (b) 改寫成「三線都冇貨做嗰陣先做重做隊 / BI 凍結池」嘅補位線。喺 Eric 拍板之前,我後續每班都會照樣核數然後煞停,唔會硬闖分區。
+
+### 四、順帶覆核(唔使 Eric 做嘢,記低咗即可)
+
+- keeper pid 23415 生存,但 producer 連續幾轉「OCR 池冇一首攻得(全部 cooldown / skip-orgs)」,17:22→21:43 全庫可做 95→86 全部係三條線消化、**零新增**。R1 21:11 已經上報咗呢件事,我呢班獨立覆核到同一個數,實錘。
+- R1 21:10 班尾已經 restart 咗,R2/R3 今晚寫入嘅嘢都已經出街,**冇任何嘢卡住等 restart**。
+
+**Fable 5 抽查名單:今班零 verify,冇嘢可抽。**
+- [2026-08-18 22:33] P線時報(keeper自動):過去1小時 OCR/whisper draft **+13**(log累計 770);重做隊剩 15;可做draft 88;producer 行緊
+- **心跳 2026-08-18 23:01** — verified 3346(53.7%)/ draft 113(可做 88)/ 重做隊剩 15 / producer 生存 / keeper 22:43 正常開 OCR 批;fetchLyrics log 停喺 15:01(yt-dlp 403),仍係 disabled 冇跑,唔影響複核線
+- [2026-08-18 23:33] P線時報(keeper自動):過去1小時 OCR/whisper draft **+7**(log累計 777);重做隊剩 15;可做draft 92;producer 冇行
+- [2026-08-19 00:33] P線時報(keeper自動):過去1小時 OCR/whisper draft **+9**(log累計 786);重做隊剩 15;可做draft 99;producer 行緊
+- [2026-08-19 01:33] P線時報(keeper自動):過去1小時 OCR/whisper draft **+2**(log累計 788);重做隊剩 15;可做draft 99;producer 行緊
+- **心跳 2026-08-19 02:01** — verified 3346(53.7%)/ draft 124(可做 99)/ 重做隊剩 15 / producer 生存 / keeper 01:58 剛開新一輪 OCR(budget 120),fetchLyrics log 停留喺 08-18 18:01(plist 仍 disabled,如常)
+- [2026-08-19 02:33] P線時報(keeper自動):過去1小時 OCR/whisper draft **+4**(log累計 792);重做隊剩 15;可做draft 99;producer 行緊
+- [2026-08-19 03:33] P線時報(keeper自動):過去1小時 OCR/whisper draft **+4**(log累計 796);重做隊剩 15;可做draft 99;producer 冇行
+- [2026-08-19 04:34] P線時報(keeper自動):過去1小時 OCR/whisper draft **+5**(log累計 801);重做隊剩 15;可做draft 99;producer 冇行
+- **心跳 2026-08-19 05:01** — verified 3346(53.7%)/ draft 124(可做 99)/ 重做隊剩 15 / producer 生存 / OCR 池 1625 首全部喺 12 鐘頭 cooldown 內(ledger 判死 1),上一轉零攻,keeper 已自動轉 CC 補倉
+
+## 2026-08-19 05:19 — 三線平行複核 R1 國語線(04:52–05:19)
+
+- **DB**:verified 3355 → **3361**(+6:5 首新 verify + R2/R3 之前寫入嘅一齊出街);live /api/hymns 6232 首。
+- **決定 14**(= 全個國語分區):verified 5 / unusable 1 / delist 1 / 留 draft 7。audit 6/6 pass,reject 0、langmismatch 0,apply 後覆查零 race。
+- **分區存貨**:開波 14(全庫 99:英文 64 / 粵語 21 / 國語 14),收爐 7(全部係今班判過留 draft 嗰批,零新貨)。收工原因:**冇貨做**。
+- **WebSearch 4/4**:8145 天門已打開(命中,救返)、7886 昂首無懼(命中一半)、3474 讓我們竭力追求(冇歌詞文字)、8517 在祂沒有難成的事(冇歌詞文字)。
+- **Vein 心得(俾下一班)**:8/18 22:20 放行嘅**天韻合唱團唔再係死症** —— 9 首入面 4 首出到街(7733 看不見的時候 / 7967 猜猜我是誰 / 7600 康定情歌 / 7960 早早睡)。天韻《美麗心發現》兒童系列 MV 有兩個固定特徵:①逐幀字幕**分兩欄顯示**,dedupe view 會見到「我的」「我能」「可以」呢啲碎片獨立成行 —— 要睇返 raw draft 嘅**原始次序**先併得返正確對句(唔好淨睇 dedupe 出嚟嗰個 unique list);②片尾一定有「更多歌曲 1. 毛蟲歌 2.只有一個…」曲目卡,全部係雜訊要剷。
+- **whisper 用法**:今班再次靠 `lyrics_timeline.whisper` 做「OCR 完唔完整」嘅實證 —— 7600 康定情歌 whisper cov 96% 證實首歌 128 秒就完、根本冇「世間溜溜的女子」嗰段,即係我哋 OCR 完整,唔使補;呢個「反向用法」(證明冇嘢漏)同 8/18 嗰個「補漏」用法一樣有價值。
+- **Fable 5 抽查名單(今班新 verify 5 首全數)**:8145 天門已打開(小羊詩歌)、7733 看不見的時候(天韻)、7967 猜猜我是誰(天韻)、7600 康定情歌(天韻)、7960 早早睡(天韻,shortOk override)。
+- **異常**:零。producer 連續近 8 個鐘「OCR 池冇一首攻得(全部 cooldown)」,國語新貨接近零 —— 已喺 ledger 記低。
+- [2026-08-19 05:34] P線時報(keeper自動):過去1小時 OCR/whisper draft **+4**(log累計 805);重做隊剩 15;可做draft 87;producer 冇行
+- [2026-08-19 06:34] P線時報(keeper自動):過去1小時 OCR/whisper draft **+5**(log累計 810);重做隊剩 15;可做draft 87;producer 冇行
+- [2026-08-19 07:34] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 810);重做隊剩 15;可做draft 87;producer 冇行
+- **心跳 2026-08-19 08:01** — verified 3356(53.9%)/ draft 112(可做 87)/ 重做隊剩 15 / producer 生存 / 對上一轉(05:01)零攻之後恢復,三個鐘 +10 verified;keeper 07:59 正常開 OCR(budget 120),fetchLyrics log 停喺 00:01(plist 仍 disabled,如常)
+- [2026-08-19 08:34] P線時報(keeper自動):過去1小時 OCR/whisper draft **+10**(log累計 820);重做隊剩 15;可做draft 87;producer 冇行
+- [2026-08-19 09:34] P線時報(keeper自動):過去1小時 OCR/whisper draft **+1**(log累計 821);重做隊剩 15;可做draft 86;producer 冇行
+
+## 2026-08-19 09:50 — 每日自動校對(lyrics-daily-proofread 09:40 班)⛔ 第二次煞停:同三線平行複核撞分區
+
+**收工原因:冇貨做 + 排程衝突(同 8/18 21:43 嗰班一模一樣,唔係抄結論,下面全部係今朝自己行出嚟嘅硬數)。零 DB 寫入、零 delist、零 restart、零 git 操作、WebSearch 0 次、cantonhymnLookup 0 次。**
+
+### 一、現況(自己行 export + bi-freeze 攞)
+
+- `reviewLyrics.js --export` = **111 首 draft**;`bi-freeze --filter` 後 **可做 86 首、BI 凍結扣起 25 首**。
+- DB:verified **3367** / draft 364 / unavailable 706 / none 3729;live `/api/hymns` **6232** 首,backend 生存。
+- 86 首可做逐個 id 對返今朝三條線嘅 ledger,**再次 100% 重疊,零首冇人認領**:
+
+| 分區 | 數 | 誰揸住 | 狀態 |
+|---|---|---|---|
+| 英文+兒童 | 66 | **R3 `lyrics-line-english`** | 🔴 **仲行緊**:09:23 開波 0 決定,到我 09:50 收爐都未有收爐行 |
+| 粵語 | 16 | R2 `lyrics-line-cantonese` | 09:22–09:29 逐首親手判晒留 draft,批1逐首表 + 覆核表 id 全對得上 |
+| 國語 | 6 | R1 `lyrics-line-mandarin` | 08:53–09:08 一班做晒 7 個決定收爐,6 個 id 全部喺佢個表入面 |
+
+- 國語 6 首 = 1551 / 3474 / 6385 / 7965 / 7968 / 8517;粵語 16 首 = 87 / 2149 / 4362 / 4727 / 4733 / 4736 / 4739 / 4742 / 4753 / 4772 / 5109 / 5964 / 6147 / 6166 / 6167 / 6179。R2 個 ledger 仲寫明晒每首卡住嘅原因(4362/4733/2149/4753 命中率 55–82% 但爭字、4772 whisper 376 CJK vs OCR 2 個、87 121 CJK 爭一個字、5964 連續第四轉查唔到),即係我做落去係**第五次翻炒同一批**。
+
+### 二、點解一樣唔硬做(同上次同兩條紅線,冇變)
+
+1. **`ops/lyrics/REVIEW-LINE-SOP.md` §1.1**:三線靠 `lang` 欄硬分區,明文「做唔屬於你分區嘅歌 = 直接違規」。我呢條線冇分區,一做就侵佔三格;而且 **R3 而家 in-flight**,66 首英文/兒童直頭有 `--apply` 撞單風險(§1.3 已知 producer race)。
+2. **SOP §4**:restart 權只有 R1 有。我份 SKILL 第 5 步叫我直接 kickstart backend —— 兩份指示對撞,我照跟較新嗰份(Eric 8/18 拍板),今班零 restart。今朝亦冇嘢卡住等出街:R1 08:53 班已放行,R2 今朝 16 個決定全部係留 draft(verified 由頭到尾 3367,對得返)。
+
+### 三、🔴 仍然等 Eric 拍板:`lyrics-daily-proofread` 應該熄咗佢
+
+呢個 task(cron `40 9,15,21`,仍然 enabled)係 8/13 單線年代產物,已經俾 8/18 三線平行複核完全取代。**8/18 21:40 班同今朝 09:40 班連續兩班,行到尾都係同一個結論:貨全部俾人認咗,得個煞停 log**。建議 (a) `enabled:false`,或者 (b) 改寫成補位線(三線都冇貨做嗰陣先做重做隊 / BI 凍結池 25 首)。Eric 拍板之前,我每班照樣核數然後煞停,唔會硬闖分區。
+
+### 四、順帶覆核
+
+- keeper pid 94674 生存、producer pid 77250(OCR budget 120)行緊;09:34 P 線時報「過去一小時 +1」,可做 draft 86 —— 我獨立行 bi-freeze 攞到同一個 86,實錘。
+- BI 凍結池 25 首由 8/18 到今朝一直冇人掂(冇任何一條線嘅分區覆蓋佢),係上面建議 (b) 最現成嘅補位貨。
+
+**Fable 5 抽查名單:今班零 verify,冇嘢可抽。**
+- [2026-08-19 10:34] P線時報(keeper自動):過去1小時 OCR/whisper draft **+10**(log累計 831);重做隊剩 15;可做draft 86;producer 冇行
+- **心跳 2026-08-19 11:01** — verified 3357(53.9%)/ draft 111(可做 86)/ 重做隊剩 15 / producer 生存 / fetchLyrics 最後一班停喺 03:00 且「有效草稿 0 首」,日班仍然空轉,新料只靠 keeper 開嘅 OCR 批
+
+## 2026-08-19 11:28 — 三線平行複核 R1 國語線(11:20–11:27)
+
+- **DB 數字**:verified 3367 → **3369**(+2)。全庫可做 draft 86 → **81**。
+- **決定分佈**:6 個決定 = verified **2**、留 draft **4**、unusable 0、delist 0、reject 0、langmismatch hold 0。
+- **今班出街**:
+  - **7965 安心睡**(天韻,4 行 / 20 CJK)—— `shortOk` whisper override,底本 100% 我哋自己嘅 OCR,零第三方源。
+  - **8517 在祂沒有難成的事**(盛曉玫 / 泥土,10 行 / 91 CJK)—— whisper 做底本 + 一次 WebSearch 逐字校正四個字(「開念何花」→「看耶和華」),OCR 提供副歌次句同結尾嘅硬實證。
+- **留 draft 4 首同原因**:1551 Be Still(§4 中文歌配英文歌詞政策扣起)、3474 讓我們竭力追求(副歌四句核對唔到,第四轉)、6385 賜福與你(whisper 8 段全 [MUSIC],shortOk 第二條實證過唔到,第五轉)、7968 我的好朋友(「每天都在◯◯◯」一句 OCR 兩循環都截斷、whisper 82% 啱啱漏埋嗰段)。
+- **join bug 修復實證**:11:15 個 `join(' ')`→`join('\\n')` 修改今轉交到第一份功課。同一首 7965、同一份歌詞、同一個 audit script,上轉(09:05)原文 `✗ shortOk 實證唔過:whisper 聽到嘅 unique 內容(45)明顯多過你交嘅歌詞(20,比例 2.3×)`,今轉 `↗ whisper override 放行`。門檻同政策零改動。
+- **⚠️ 未收割嘅槓桿**:R2 分區三首苦主(6166 / 6179 / 4736)今轉冇人重交,仲喺 draft。R2 下一轉開波第一件事應該係直接交呢三首(佢自己已量度好三首全部過骨),唔使重驗。
+- **producer 狀態**:keeper pid 94674 生存,11:04 / 11:24 兩轉都正常開 OCR(budget 120,池 1256,重做隊 15),已經唔再報「全部 cooldown」。但新貨全部落英文分區。
+- **⚠️ 瓶頸轉移**:由「國語冇貨」轉做「英文 64 首 × R3 六轉全滅」。國語分區 14 個鐘只出過 14 首,而家剩 4 首死症;英文 64 首至今零人處理。建議 Eric 拍板:英文分區暫劃俾 R1,或者再等一轉睇 R3 新加嘅逐步 ledger 追蹤。
+- **WebSearch 用量**:4/4 用晒(8517 ×1 命中、7968 ×2 全滅、3474 ×1 全滅)。
+- **班尾 checkpoint**:①[stream] 最後活動 2026-08-17 09:30 UTC(50 小時前)②approve 一次過(新包含只有 a216fe4,`git show --stat` 確認純 docs)③restart 過 health check、launchctl 7 個 job ④live /api/hymns 6232 首,抽驗 7965 / 8517 / 7886 / 4396 / 5122 五首全部吐到歌詞。
+- **異常**:零 DB 撞鎖、零 race、零 git 操作、零 rate limit 警告。
+- **抽查名單(俾 Fable 5)**:7965 安心睡、8517 在祂沒有難成的事。
+- [2026-08-19 11:34] P線時報(keeper自動):過去1小時 OCR/whisper draft **+3**(log累計 834);重做隊剩 15;可做draft 81;producer 行緊
+
+## 2026-08-19 12:10 — YouTube 403 事故:根因查實 + 已解決 + producer 重開
+
+**Eric 質疑「琴晚成晚 OCR 冇做過嘢」→ 查實佢啱,而且比預期嚴重。**
+
+### 事故
+本地 8/19 00:00 之後 **draft 產出 0**,同期落載失敗凌晨三個鐘就 1,071 次。keeper 冇死、全程跑住,但**空轉**。
+
+**兩個我要認嘅設計缺陷:**
+1. keeper 個 403 斷路器**用 `--list-subs` 做探測** —— 但封鎖只喺媒體通道(googlevideo),metadata 通道正常,所以斷路器**由頭到尾冇響過**,任由 producer 燒足一晚。
+2. `dl:dead`(失敗 3 次判死)係**逐首歸因**設計,喺全域失敗下變成大殺傷力:**685 首完全冇問題嘅片俾判死**。
+
+### 真根因(推翻咗初步假設)
+初步以為係 NordVPN 機房 IP 俾封(出口 IP 係 `187.15.89.159 / AS212238 Datacamp`)。**實測證明唔係。**
+真相:**YouTube 8/18 起唔再派 format 18(漸進式 mp4)**,而本機 yt-dlp stable `2026.07.04` 對住新版 player 全線 403。
+
+實測 6 條琴晚 403 嘅片:stable **6/6 403**;nightly `2026.08.18` + DASH format **6/6 全部成功**。
+⚠️ 呢個**反轉咗 2026-08-16「用 format 18 避 DASH 403」嗰個結論** —— 註解已經改咗。
+
+### 已落地
+| 項 | 內容 |
+|---|---|
+| 685 首 reset | `dl:dead`→`cc:miss` + **同時清 dl-failures ledger 嗰 685 條**(唔清嘅話 filter 一樣剔走佢哋)。名單留喺 `backend/data/dl-dead-reset-20260819.json` 追蹤 |
+| 斷路器修好 | 直接數**連續 403 次數**(唔靠探測),夠 5 次收工 + 寫 flag + **唔記 ledger 唔判 dl:dead**;keeper 見 flag 唞 90 分鐘再用**真落載**探測 |
+| 403 解決 | 改用 `backend/tools/yt-dlp-nightly` + DASH format。系統 brew stable 冇郁 |
+| 驗證 | 真 producer 跑 3 首:**3/3 出草稿、零 403** |
+| 重開 | 12:07 keeper(pid 8368)+ caffeinate 重開,池 1,938、重做隊 123 |
+
+**方案 A(換 NordVPN 出口)唔使做** —— 根因唔係 IP。詳見 `docs/YOUTUBE-403-BLOCK-2026-08-19.md`。
+
