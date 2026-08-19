@@ -18,6 +18,26 @@ import VersionTag from '../components/VersionTag';
 
 const CURRENT_YEAR = new Date().getFullYear();
 
+// BATCH5 O11:搬出 module scope(以前每次 PhoneLoginScreen render 都會喺
+// component body 重新定義呢個 component,揀完性別會跳一 tick)。styles 係
+// module-level StyleSheet,搬出去照用到。
+function GenderChips({ gender, onSelect }) {
+  return (
+    <View style={styles.chipRow}>
+      {[{ v: 'male', l: '男' }, { v: 'female', l: '女' }].map((g) => (
+        <TouchableOpacity
+          key={g.v}
+          style={[styles.chip, gender === g.v && styles.chipActive]}
+          onPress={() => onSelect(g.v)}
+          activeOpacity={0.75}
+        >
+          <Text style={[styles.chipText, gender === g.v && styles.chipTextActive]}>{g.l}</Text>
+        </TouchableOpacity>
+      ))}
+    </View>
+  );
+}
+
 export default function PhoneLoginScreen({ onClose, onUseEmail }) {
   const { requestOtp, verifyOtpTicket, registerPhone, loginPhone, resetPassword, fetchOtpStatus, checkInviteCode } = useAuth();
   const insets = useInsets();
@@ -66,6 +86,9 @@ export default function PhoneLoginScreen({ onClose, onUseEmail }) {
   useEffect(() => () => { if (timerRef.current) clearInterval(timerRef.current); }, []);
 
   const startCooldown = useCallback(() => {
+    // BATCH5 O11:重發驗證碼連撳兩下以前會漏一條 interval(舊 timer 唔 clear
+    // 就開新嘅),cooldown 倒數會亂。
+    if (timerRef.current) clearInterval(timerRef.current);
     setCooldown(60);
     timerRef.current = setInterval(() => {
       setCooldown((c) => { if (c <= 1) { clearInterval(timerRef.current); return 0; } return c - 1; });
@@ -223,21 +246,6 @@ export default function PhoneLoginScreen({ onClose, onUseEmail }) {
     return { title: '', sub: '' };
   }, [screen, flow, phone, profileComplete, registrationMode]);
 
-  const GenderChips = () => (
-    <View style={styles.chipRow}>
-      {[{ v: 'male', l: '男' }, { v: 'female', l: '女' }].map((g) => (
-        <TouchableOpacity
-          key={g.v}
-          style={[styles.chip, gender === g.v && styles.chipActive]}
-          onPress={() => setGender(g.v)}
-          activeOpacity={0.75}
-        >
-          <Text style={[styles.chipText, gender === g.v && styles.chipTextActive]}>{g.l}</Text>
-        </TouchableOpacity>
-      ))}
-    </View>
-  );
-
   return (
     <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <TouchableOpacity style={[styles.close, { top: insets.top + 8 }]} onPress={onClose}>
@@ -377,7 +385,7 @@ export default function PhoneLoginScreen({ onClose, onUseEmail }) {
               onFocus={() => setFocused('username')} onBlur={() => setFocused(null)}
             />
             <Text style={styles.fieldLabel}>性別</Text>
-            <GenderChips />
+            <GenderChips gender={gender} onSelect={setGender} />
             <TextInput
               style={[styles.input, { marginTop: 10 }, focused === 'birthYear' && styles.inputFocused]}
               value={birthYear} onChangeText={(t) => setBirthYear(t.replace(/\D/g, '').slice(0, 4))}
@@ -416,7 +424,7 @@ export default function PhoneLoginScreen({ onClose, onUseEmail }) {
                   onFocus={() => setFocused('username')} onBlur={() => setFocused(null)}
                 />
                 <Text style={styles.fieldLabel}>性別</Text>
-                <GenderChips />
+                <GenderChips gender={gender} onSelect={setGender} />
                 <TextInput
                   style={[styles.input, { marginTop: 10 }, focused === 'birthYear' && styles.inputFocused]}
                   value={birthYear} onChangeText={(t) => setBirthYear(t.replace(/\D/g, '').slice(0, 4))}
