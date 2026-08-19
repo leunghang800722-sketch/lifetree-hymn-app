@@ -57,33 +57,13 @@ async function fetchVersion() {
   }
 }
 
-// O2 修(FRONTEND-CODE-REVIEW-20260819)—— 呢個 hook 舊版每個 mount instance
-// 都有自己嗰份 useState + useEffect,獨立行足一次 refresh()(MMKV JSON.parse
-// 幾 MB + /api/version + 可能全量 /api/hymns),而 App.js 同 MineScreen.js 兩邊
-// 各自 mount 一次,即係開機成套流程行足兩次、兩份 instance 又互相覆寫同一個
-// MMKV key。而家改做 module-level singleton:`sharedHymns`/`sharedLoading` 淨係
-// 一份,`refreshKicked` 保證成套 MMKV read + network refresh 全 app 生命週期
-// 淨係行一次(第一個掛嘅 hook instance 觸發);之後 mount 嘅 instance(依家係
-// MineScreen)只係加入 listener 訂閱返嚟嘅 state,唔會重複整套流程。
-let sharedHymns = null;
-let sharedLoading = true;
-let refreshKicked = false;
-
-const hymnsListeners = new Set();
-const loadingListeners = new Set();
-
-function broadcastHymns(next) {
-  sharedHymns = next;
-  hymnsListeners.forEach((fn) => fn(next));
-}
-function broadcastLoading(next) {
-  sharedLoading = next;
-  loadingListeners.forEach((fn) => fn(next));
-}
-
 // Admin 寫入完成即刻刷新用(MEMBERSHIP-PHASE2-ADMIN-PLAN §3.7)——admin API
-// response 已經帶埋新 dataVersion,唔使再問一次 /api/version。改完自己部機即時
+// response 已經帶埋新 dataVersion,唔使再問一次 /api/version。呢個 Set 存住
+// 每個掛緊嘅 useCachedHymns() hook 嘅 setHymns,寫入完 call notifyHymnsChanged()
+// 就即刻攞新資料、更新 MMKV、再通知晒全部掛緊嘅 hook 更新 UI(改完自己部機即時
 // 見到;其他裝置跟現有 pull-on-open 機制下次開 app 見到)。
+const hymnsListeners = new Set();
+
 export function notifyHymnsChanged(serverDataVersion) {
   (async () => {
     const s = getStorage();
@@ -95,28 +75,21 @@ export function notifyHymnsChanged(serverDataVersion) {
         s.set('allHymns', JSON.stringify(fresh));
         s.set('allHymnsVersion', dataVersion ?? serverDataVersion ?? '');
       }
-      broadcastHymns(fresh);
+      hymnsListeners.forEach((fn) => fn(fresh));
     }
   })().catch(() => {});
 }
 
 export const useCachedHymns = () => {
- const [hymns, setHymns] = useState(sharedHymns);
- const [loading, setLoading] = useState(sharedLoading);
+ const [hymns, setHymns] = useState(null);
+ const [loading, setLoading] = useState(true);
 
  useEffect(() => {
    hymnsListeners.add(setHymns);
-   loadingListeners.add(setLoading);
-   return () => {
-     hymnsListeners.delete(setHymns);
-     loadingListeners.delete(setLoading);
-   };
+   return () => { hymnsListeners.delete(setHymns); };
  }, []);
 
  useEffect(() => {
-   if (refreshKicked) return; // singleton 已經有第一個 instance 行緊/行完
-   refreshKicked = true;
-
    const s = getStorage();
 
    // Try MMKV cache first (non-blocking — even if MMKV fails, we show content)
@@ -128,8 +101,8 @@ export const useCachedHymns = () => {
        if (cached) {
          const parsed = JSON.parse(cached);
          if (Array.isArray(parsed) && parsed.length > 0) {
-           broadcastHymns(parsed);
-           broadcastLoading(false);
+           setHymns(parsed);
+           setLoading(false);
            hadCache = true;
          }
        }
@@ -154,13 +127,13 @@ export const useCachedHymns = () => {
            s.set('allHymns', JSON.stringify(fresh));
            s.set('allHymnsVersion', dataVersion ?? serverVersion ?? '');
          }
-         broadcastHymns(fresh);
+         setHymns(fresh);
        }
      }
-     if (!hadCache) broadcastLoading(false);
+     if (!hadCache) setLoading(false);
    }
 
-   refresh().catch(() => { if (!hadCache) broadcastLoading(false); });
+   refresh().catch(() => { if (!hadCache) setLoading(false); });
  }, []);
 
  return { hymns: hymns || [], loading };
