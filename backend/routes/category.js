@@ -26,11 +26,16 @@ async function queryDb(sql, params = []) {
   return results;
 }
 
-// 1. 中文名分類（lang='粵語' or '國語'）
+// 1. 中文名分類（lang='粵語' / '國語' / '台語'）
+//    ⚠️ 2026-08-19 加咗 '台語':7872 投靠者的謳咾 實錘係台語(國語版係 7704),
+//    Eric 拍板改 lang。但呢度六處查詢一直硬編死咗四個值,單改 DB 會令首歌
+//    **由所有分類頁消失**(只剩搜尋揾得返)。所以「中文名分類」同「全部中文」
+//    兩處要收埋台語 —— 佢本身就係中文歌;但**唔會**混入「國語詩歌」(lang='國語'),
+//    分類先至啱。第日再有新語言值,記住同步呢兩處。
 router.get('/chinese-name', async (req, res) => {
   try {
     const results = await queryDb(
-      `SELECT * FROM hymns WHERE lang IN ('國語', '粵語') ORDER BY title`
+      `SELECT * FROM hymns WHERE lang IN ('國語', '粵語', '台語') ORDER BY title`
     );
     res.json(results);
   } catch (error) {
@@ -120,7 +125,7 @@ router.get('/english', async (req, res) => {
 router.get('/chinese', async (req, res) => {
   try {
     const results = await queryDb(
-      `SELECT * FROM hymns WHERE lang IN ('國語', '粵語') ORDER BY title`
+      `SELECT * FROM hymns WHERE lang IN ('國語', '粵語', '台語') ORDER BY title`
     );
     res.json(results);
   } catch (error) {
