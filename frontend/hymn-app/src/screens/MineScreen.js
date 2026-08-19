@@ -80,13 +80,23 @@ export default function MineScreen({ onPlayHymn, onOpenAuth, onOpenAdminAdd, min
   // 名單 + 「加好友」掣照撳得開,私隱面問題。根因兩處:①呢度冇 user 就淨係
   // return,冇清 friendsData;②下面 render 分支冇 `user &&` guard(chip 陣列
   // 嗰邊有,兩邊唔一致)。修法:!user 就清空 friendsData(下面)。
+  //
+  // BATCH5 S2:loadFriends 唔止 effect 用,accept/reject/unfriend 都 call,
+  // 純 effect-scoped cancelled flag 唔夠(呢啲 caller 唔喺 effect 入面)。
+  // 用 seq counter——登出/切帳戶 user 變 → 下面 effect 會即刻再 call 一次
+  // loadFriends → seq 自動 +1 → 舊 in-flight response 作廢,唔使另加 invalidate。
+  const friendsLoadSeq = React.useRef(0);
   const loadFriends = React.useCallback(() => {
+    const seq = ++friendsLoadSeq.current;
     if (!user) { setFriendsData({ friends: [], incoming: [], outgoing: [] }); return; }
     setFriendsLoading(true);
     friendsList(getToken ? getToken() : null)
-      .then((r) => setFriendsData({ friends: r.friends || [], incoming: r.incoming || [], outgoing: r.outgoing || [] }))
+      .then((r) => {
+        if (friendsLoadSeq.current !== seq) return;
+        setFriendsData({ friends: r.friends || [], incoming: r.incoming || [], outgoing: r.outgoing || [] });
+      })
       .catch(() => {})
-      .finally(() => setFriendsLoading(false));
+      .finally(() => { if (friendsLoadSeq.current === seq) setFriendsLoading(false); });
   }, [user, getToken]);
 
   useEffect(() => { loadFriends(); }, [user]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -114,17 +124,28 @@ export default function MineScreen({ onPlayHymn, onOpenAuth, onOpenAdminAdd, min
   }, []);
   useEffect(() => () => { if (toastTimer.current) clearTimeout(toastTimer.current); }, []);
 
+  // BATCH5 S7a:連撳兩下 accept/reject/unfriend confirm 之前冇 guard,會撞
+  // 兩個並行請求。三個 handler 共用一個 busyRef——呢啲操作唔會同時發生
+  // (單一好友卡片一次淨係一個動作),一個 ref 夠。唔加 UI disable 樣式
+  // (polish,唔屬呢批)。
+  const friendActionBusyRef = React.useRef(false);
   const handleAccept = (friend) => {
+    if (friendActionBusyRef.current) return;
+    friendActionBusyRef.current = true;
     friendsAccept(getToken ? getToken() : null, friend.user_id)
       .then(loadFriends)
-      .catch((e) => Alert.alert('接受失敗', friendsErrorMessage(e, '請再試')));
+      .catch((e) => Alert.alert('接受失敗', friendsErrorMessage(e, '請再試')))
+      .finally(() => { friendActionBusyRef.current = false; });
   };
   // ✕(拒絕/收回)—— 靜靜刪行,對方唔知(§8 問題4);收回自己 outgoing 唔使確認,
   // 拒絕 incoming 都唔使(對方冇通知,冇尷尬)。
   const handleReject = (friend) => {
+    if (friendActionBusyRef.current) return;
+    friendActionBusyRef.current = true;
     friendsDelete(getToken ? getToken() : null, friend.user_id)
       .then(loadFriends)
-      .catch((e) => Alert.alert('操作失敗', friendsErrorMessage(e, '請再試')));
+      .catch((e) => Alert.alert('操作失敗', friendsErrorMessage(e, '請再試')))
+      .finally(() => { friendActionBusyRef.current = false; });
   };
   // 解除好友要二次確認(同刪清單一致做法,§3.2)
   const handleUnfriend = (friend) => {
@@ -132,7 +153,14 @@ export default function MineScreen({ onPlayHymn, onOpenAuth, onOpenAdminAdd, min
       { text: '取消', style: 'cancel' },
       {
         text: '解除', style: 'destructive',
-        onPress: () => friendsDelete(getToken ? getToken() : null, friend.user_id).then(loadFriends).catch((e) => Alert.alert('操作失敗', friendsErrorMessage(e, '請再試'))),
+        onPress: () => {
+          if (friendActionBusyRef.current) return;
+          friendActionBusyRef.current = true;
+          friendsDelete(getToken ? getToken() : null, friend.user_id)
+            .then(loadFriends)
+            .catch((e) => Alert.alert('操作失敗', friendsErrorMessage(e, '請再試')))
+            .finally(() => { friendActionBusyRef.current = false; });
+        },
       },
     ]);
   };

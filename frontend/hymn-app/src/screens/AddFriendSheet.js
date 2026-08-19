@@ -3,7 +3,7 @@
 // 文案/掣)/輸入邀請碼(朋友派俾自己嗰個碼,兌換即刻自動加為好友)。置中
 // dialog(照 AddToPlaylistSheet 嘅 create/rename 視覺,唔係貼底 sheet——呢度
 // 冇 FlatList,一格輸入夠晒)。
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { Modal, View, Text, TextInput, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
 import OdeIcon from '../icons/OdeIcon';
 import { COLORS } from '../theme/designSystem';
@@ -24,6 +24,10 @@ export default function AddFriendSheet({ visible, onClose, onRequested, onFriend
   }, []);
 
   const close = useCallback(() => { reset(); onClose && onClose(); }, [reset, onClose]);
+
+  // BATCH5 S7c:被外部 setVisible(false) 閂(唔經自己個 close())時,舊
+  // phone/code/result/err 會殘留,下次撳開仲見返上次嘅輸入/結果。
+  useEffect(() => { if (!visible) reset(); }, [visible, reset]);
 
   const switchMode = useCallback((m) => {
     setMode(m); setErr(''); setResult(null); setBusy(false);

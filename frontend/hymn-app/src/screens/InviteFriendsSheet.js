@@ -1,7 +1,7 @@
 // 邀請朋友加入(MEMBERSHIP-PHASE4-FRIENDS-INVITES-PLAN §2.7)—— AccountScreen
 // 「邀請朋友加入」一行撳開。列自己啲碼(未用/已用邊個用咗),「＋生成新碼」,
 // 每個未用碼有「分享」掣 → Share.share 純文字(照 §2.7 文案)。
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { Modal, View, Text, FlatList, TouchableOpacity, StyleSheet, ActivityIndicator, Share, Alert } from 'react-native';
 import OdeIcon from '../icons/OdeIcon';
 import { COLORS, TYPOGRAPHY } from '../theme/designSystem';
@@ -24,15 +24,22 @@ export default function InviteFriendsSheet({ visible, onClose }) {
   const [invites, setInvites] = useState([]);
   const [generating, setGenerating] = useState(false);
 
+  // BATCH5 S7b:load() 又係 effect 又俾 handleGenerate call,同 MineScreen
+  // loadFriends(S2)一樣要 seq counter(唔用 effect-scoped flag,因為呢度有
+  // effect 以外嘅 caller)。sheet 閂咗(visible→false)嗰陣 seq +1 作廢
+  // in-flight response。
+  const seqRef = useRef(0);
   const load = useCallback(() => {
+    const seq = ++seqRef.current;
     setLoading(true);
     listMyInvites(getToken ? getToken() : null)
-      .then((r) => setInvites(r.invites || []))
-      .catch(() => setInvites([]))
-      .finally(() => setLoading(false));
+      .then((r) => { if (seqRef.current !== seq) return; setInvites(r.invites || []); })
+      .catch(() => { if (seqRef.current !== seq) return; setInvites([]); })
+      .finally(() => { if (seqRef.current === seq) setLoading(false); });
   }, [getToken]);
 
   useEffect(() => { if (visible) load(); }, [visible, load]);
+  useEffect(() => { if (!visible) seqRef.current++; }, [visible]);
 
   const handleGenerate = useCallback(async () => {
     setGenerating(true);
