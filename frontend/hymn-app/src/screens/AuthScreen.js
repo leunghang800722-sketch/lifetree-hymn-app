@@ -1,4 +1,5 @@
-// AuthScreen — 登入／註冊分流。已登入 → AccountScreen;未登入 → email form / PhoneLoginScreen。
+// AuthScreen — 已登入 → AccountScreen;未登入 → email 登入 form / PhoneLoginScreen。
+// Email 註冊已永久封側門(D6),呢度淨係登入。
 import React, { useState, useCallback } from 'react';
 import {
   View,
@@ -24,38 +25,31 @@ import VersionTag from '../components/VersionTag';
 export default function AuthScreen({ onClose }) {
   // edge-to-edge:個 X 掣本來寫死 top:50,喺唔同機頂到狀態列(見 useInsets.js)
   const insets = useInsets();
-  const { user, register, login } = useAuth();
+  const { user, login } = useAuth();
   // PHONE_AUTH_ENABLED 開咗先預設電話登入(plan §6:電話為主,底部可切返 email)。
   // flag false(而家)→ usePhone 一路係 false,登入頁維持現有 email/password。
   const [usePhone, setUsePhone] = useState(PHONE_AUTH_ENABLED);
-  const [mode, setMode] = useState('login');
-  const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState('');
-  const [focused, setFocused] = useState(null); // 'username' | 'email' | 'password' | null
+  const [focused, setFocused] = useState(null); // 'email' | 'password' | null
 
   const handleSubmit = useCallback(async () => {
     setErr('');
     if (!email.trim()) { setErr('請輸入電郵'); return; }
     if (!password || password.length < 6) { setErr('密碼最少 6 位'); return; }
-    if (mode === 'register' && !username.trim()) { setErr('請輸入用戶名稱'); return; }
 
     setLoading(true);
     try {
-      if (mode === 'login') {
-        await login(email, password);
-      } else {
-        await register(username, email, password);
-      }
+      await login(email, password);
       if (onClose) onClose();
     } catch (e) {
       // 網絡/伺服器錯誤留返俾 Alert(§1.4.2),表單驗證錯用 inline
       Alert.alert('錯誤', e.message);
     }
     setLoading(false);
-  }, [mode, email, password, username, login, register, onClose]);
+  }, [email, password, login, onClose]);
 
   // 已登入 —— 帳戶頁(MEMBER-UI-REDESIGN-SPEC §1)
   if (user) {
@@ -79,26 +73,11 @@ export default function AuthScreen({ onClose }) {
         <View style={styles.logoArea}>
           <LogoRing size={88} style={styles.brandLogoImg} />
           <Text style={styles.logoTitle}>odely</Text>
-          <Text style={styles.logoSubtitle}>{mode === 'login' ? '歡迎回來' : '建立帳戶'}</Text>
+          <Text style={styles.logoSubtitle}>歡迎回來</Text>
         </View>
 
         {/* Form */}
         <View style={styles.form}>
-          {mode === 'register' && (
-            <View style={[styles.inputWrap, focused === 'username' && styles.inputWrapFocused]}>
-              <OdeIcon name="me" size={20} color={COLORS.textSecondary} style={styles.inputIcon} />
-              <TextInput
-                style={styles.input}
-                placeholder="用戶名稱"
-                placeholderTextColor={COLORS.textSecondary}
-                value={username}
-                onChangeText={setUsername}
-                onFocus={() => setFocused('username')}
-                onBlur={() => setFocused(null)}
-                autoCapitalize="none"
-              />
-            </View>
-          )}
           <View style={[styles.inputWrap, focused === 'email' && styles.inputWrapFocused]}>
             <OdeIcon name="email" size={20} color={COLORS.textSecondary} style={styles.inputIcon} />
             <TextInput
@@ -132,15 +111,14 @@ export default function AuthScreen({ onClose }) {
             {loading ? (
               <ActivityIndicator size="small" color={COLORS.textOnGlow} />
             ) : (
-              <Text style={styles.submitText}>{mode === 'login' ? '登入' : '註冊'}</Text>
+              <Text style={styles.submitText}>登入</Text>
             )}
           </TouchableOpacity>
         </View>
 
         {/* Email 註冊已經永久封側門(routes/auth.js /api/auth/register)——
-            呢個掣一直帶去一條死路,收埋(opus-verify local_a1403205 P3)。
-            mode 只會停喺 'login',register 分支留返俾已有帳戶但意外行到
-            'register' state 嘅邊緣情況(理論上而家唔會再發生)。 */}
+            呢個掣一直帶去一條死路,已收埋(opus-verify local_a1403205 P3;
+            FRONTEND-CODE-REVIEW-20260819 D6 剷埋成套 register 分支)。 */}
         {PHONE_AUTH_ENABLED && (
           <TouchableOpacity onPress={() => setUsePhone(true)} style={styles.linkTouch}>
             <Text style={styles.toggleText}>改用電話登入</Text>

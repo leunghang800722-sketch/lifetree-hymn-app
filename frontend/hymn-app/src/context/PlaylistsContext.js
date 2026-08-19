@@ -153,18 +153,10 @@ export const PlaylistsProvider = ({ children }) => {
     setStalePlaylistHandler(applyServerPlaylist);
   }, [applyServerPlaylist]);
 
-  const isPlaylistFull = useCallback(
-    (playlistId) => {
-      const p = playlists.find((x) => x.id === playlistId);
-      return !!p && p.songs.length >= MAX_PLAYLIST_SONGS;
-    },
-    [playlists]
-  );
-
   return (
     <PlaylistsCtx.Provider value={{
       playlists, createPlaylist, addToPlaylist, importPlaylist, renamePlaylist,
-      removeFromPlaylist, deletePlaylist, isPlaylistFull,
+      removeFromPlaylist, deletePlaylist,
       replaceAllPlaylists, MAX_PLAYLIST_SONGS,
     }}>
       {children}
