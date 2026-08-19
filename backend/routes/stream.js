@@ -290,7 +290,15 @@ export default function streamRoutes(getDb) {
             return;
           }
           try { await rest.body?.cancel?.(); } catch (_) {}
-        } catch (_) { /* 落返去下面直接收尾,buffer 都已經去到用家手上 */ }
+        } catch (_) { /* 落返去下面 —— header 應承咗嘅 bytes 送唔齊,要硬斷 */ }
+        // BATCH5 §7.5:行到呢度 = 續播 fetch 失敗(catch 或非 200/206)——
+        // header 已經應承咗 Content-Range/Content-Length 嘅完整長度,但淨係
+        // send 咗 buffered 嗰截,大過實際 body。以前呢度落返去下面
+        // finishLog(res.statusCode)+res.end(),AVFoundation 當錯誤(-12935
+        // 同源),但 log 仲報成功。硬斷條線,俾 client 見到係傳輸中斷(佢識
+        // 自己 retry),唔好扮完整收工兼 log 成功。
+        finishLog(res.statusCode, { aborted: true });
+        return res.destroy();
       }
       // 2026-08-12 覆查 STREAM-LOCKSCREEN-STOP 事件時揪出:呢度一直硬寫死
       // finishLog(200),但 clientRange 分支上面明明 `res.status(206)`——即係
