@@ -319,6 +319,10 @@ async function safeFetchHymnDetail(id) {
 const PlayerCtx = createContext();
 
 function PlayerProvider({ children }) {
+  // FRONTEND-CODE-REVIEW-20260819 §4 #4 — noticeStyles.wrap 個 top 淨係靠
+  // StatusBar.currentHeight(iOS 永遠 undefined),恆用 44 會喺 Dynamic
+  // Island 機(iPhone 14 Pro+)撞落去。改用 safe-area insets.top。
+  const noticeInsets = typeof useSafeAreaInsets === 'function' ? useSafeAreaInsets() : { top: 0 };
   const [currentHymn, setCurrentHymn] = useState(null);
   const [hymn, setHymn] = useState(null);
   const [hymns, setHymns] = useState(null);
@@ -1885,7 +1889,7 @@ function PlayerProvider({ children }) {
           (唔係入面某個 screen),邊個 tab / 全螢幕播放器開唔開住都見得到；
           pointerEvents="none" 唔會擋到底下任何 touch,計時器到就自動消失。 */}
       {noticeText && (
-        <View pointerEvents="none" style={noticeStyles.wrap}>
+        <View pointerEvents="none" style={[noticeStyles.wrap, { top: (noticeInsets.top || StatusBar.currentHeight || 44) + 12 }]}>
           <View style={noticeStyles.pill}>
             <Text style={noticeStyles.text} numberOfLines={2}>{noticeText}</Text>
           </View>
@@ -1896,7 +1900,7 @@ function PlayerProvider({ children }) {
 }
 const noticeStyles = StyleSheet.create({
   wrap: {
-    position: 'absolute', top: (StatusBar.currentHeight || 44) + 12, left: 16, right: 16,
+    position: 'absolute', left: 16, right: 16,
     alignItems: 'center', zIndex: 1000,
   },
   pill: {
