@@ -17,15 +17,27 @@
 // Consume-once 設計:markRemotePauseExpected() 之後要 consumeRemotePauseExpected()
 // 先攞到 true,攞完即刻自動清返 false。咁樣先唔會令呢支 flag 「賴死」响度,
 // 誤蓋咗第日真係「native靜靜清除意圖」嘅場景——呢支 flag 應該淨係喺
-// RemotePause/RemoteStop 啱啱好 fire 完嗰下先係 true,消費一次之後即刻歸位。
-let remotePauseExpected = false;
+// RemotePause/RemoteStop/RemoteDuck 啱啱好 fire 完嗰下先係 true,消費一次之後
+// 即刻歸位。
+//
+// F1(FRONTEND-CODE-REVIEW-20260819 Opus5 驗收發現)—— H3 改成 short-circuit
+// (consume 淨係喺對應嗰個 false event 先叫)之後,拆走咗原本「無條件consume」
+// 帶嚟嘅副作用:「過期標記自動失效」。如果 markRemotePauseExpected() 之後
+// 對應嗰個 false event 冇出現(例如 native 冇 fire 呢個 event),支旗會永遠
+// 卡喺 true,之後下一次(完全冇關係嘅)真正 unexpected false event 到嚟就會
+// 錯誤咁攞到呢個過期標記,令 D2 guard 誤判做「已預期」而唔幫用戶自動恢復。
+// 加返 TTL(3 秒——RemotePause/RemoteDuck 觸發到對應 playWhenReadyChanged
+// event 嚟到,native 應該係毫秒級,3 秒已經好闊裕)令標記自動失效,消費一次
+// 之後照舊即刻歸位(記錄時間戳為 0 = 冇 pending 標記)。
+const TTL_MS = 3000;
+let remotePauseExpectedAt = 0;
 
 export function markRemotePauseExpected() {
-  remotePauseExpected = true;
+  remotePauseExpectedAt = Date.now();
 }
 
 export function consumeRemotePauseExpected() {
-  const value = remotePauseExpected;
-  remotePauseExpected = false;
-  return value;
+  const ok = remotePauseExpectedAt > 0 && Date.now() - remotePauseExpectedAt < TTL_MS;
+  remotePauseExpectedAt = 0;
+  return ok;
 }

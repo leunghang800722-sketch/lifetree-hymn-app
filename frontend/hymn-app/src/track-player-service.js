@@ -44,6 +44,15 @@ export default async function () {
   // (OS話唔應該恢復)嗰種唔理,由用戶自己撳返play。
   TrackPlayer.addEventListener(Event.RemoteDuck, (event) => {
     logDiag('RemoteDuck', { detail: `paused=${event?.paused} permanent=${event?.permanent}` });
+    // H2(FRONTEND-CODE-REVIEW-20260819)—— native pause 呢種 interruption(電話
+    // 打入/Siri/另一個app攞走audio focus)一樣要 markRemotePauseExpected(),
+    // 唔係就會撞正App.js嗰個D2 guard,見到未預期嘅playWhenReady=false就誤判
+    // 做「native靜靜清除播放意圖」,即刻自動play()番——變成聽歌途中接電話/開
+    // 第二個app,音樂會自己響返。permanent:true(OS話唔應該恢復,好似接聽電話)
+    // 尤其要防,因為呢種情況之後冇任何『paused:false』resume event會再嚟補救。
+    if (event?.paused === true) {
+      markRemotePauseExpected();
+    }
     if (event?.paused === false && !event?.permanent) {
       TrackPlayer.play().catch(() => {});
     }
