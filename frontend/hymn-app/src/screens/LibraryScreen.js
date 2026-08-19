@@ -50,6 +50,8 @@ function Heart({ hymn }) {
 
 function Cover({ youtubeId, size = 52 }) {
   const [failed, setFailed] = useState(false);
+  // youtubeId 變咗要重試新縮圖(舊版 failed 唔會自動清,BATCH5 S6)。
+  useEffect(() => { setFailed(false); }, [youtubeId]);
   const uri = youtubeId ? `https://img.youtube.com/vi/${youtubeId}/mqdefault.jpg` : null;
   if (!uri || failed) {
     // §5.4 唔用 Emoji 做 fallback,用向量圖標

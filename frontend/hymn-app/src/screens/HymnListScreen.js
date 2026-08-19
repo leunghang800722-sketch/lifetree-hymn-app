@@ -8,7 +8,7 @@
 //   * 主色紫 #B9A6F2 = 已收藏 / 連結
 //   * 歌名 18pt(§5.3 列表可讀性)、封面縮圖、行尾心心同其他歌單一致
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   FlatList,
@@ -34,6 +34,8 @@ const MINI_PLAYER_H = 64;
 // mqdefault = 真 16:9 冇黑邊(hqdefault 係 4:3,黑邊 baked 咗入張圖)
 function Cover({ youtubeId, size = 52 }) {
   const [failed, setFailed] = useState(false);
+  // youtubeId 變咗要重試新縮圖(舊版 failed 唔會自動清,BATCH5 S6)。
+  useEffect(() => { setFailed(false); }, [youtubeId]);
   const uri = youtubeId ? `https://img.youtube.com/vi/${youtubeId}/mqdefault.jpg` : null;
   if (!uri || failed) {
     return (
