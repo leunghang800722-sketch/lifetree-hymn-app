@@ -29,7 +29,7 @@ import SharedPlaylistSheet from './src/screens/SharedPlaylistSheet';
 import { AdminEditHymnProvider } from './src/components/AdminEditHymnSheet';
 import { PlaylistProvider } from './src/context/PlaylistContext';
 import { setAuthToken, pullData, pushSync, flush as flushOutbox, getOwner, setOwner, clearOutbox } from './src/sync/userSync';
-import { API_BASE } from './src/config.js';
+import { API_BASE, DIAG_ENABLED } from './src/config.js';
 import { consumeRemotePauseExpected } from './src/playback-intent.js';
 // IOS-ANDROID-PARITY-PLAN §5 Phase 2 — iOS 本地音頻預載。呢個 module 頂層
 // 冇任何 native 依賴(expo-file-system 淨係喺 module 入面 lazy require、
@@ -200,7 +200,11 @@ let tomorrowQueuedThisSession = false;
 // fire-and-forget beacon(同warmIds()一樣寫法),將watchdog決策嗰刻嘅state
 // 送去backend,同[stream] log共用嗰條管,下次撞到就可以對返時間軸。刻意唔
 // await、唔重試——診斷本身唔可以拖累/整壞播放。
-function logDiag(event, extra) {
+// O12(FRONTEND-CODE-REVIEW-20260819)—— 根因已查完,高頻嗰批(每次轉歌
+// 3-5 個 POST)預設熄咗;`{ always: true }` 淨係俾 PlaybackError/watchdog
+// giveup/wallClockDrift 呢啲低頻高價值嘅信號用,唔受 DIAG_ENABLED 影響。
+function logDiag(event, extra, opts) {
+  if (!DIAG_ENABLED && !(opts && opts.always)) return;
   try {
     fetch(`${API_BASE}/api/client-log`, {
       method: 'POST',
@@ -917,7 +921,7 @@ function PlayerProvider({ children }) {
         repeatMode: repeatModeRef.current,
         errorSkipCount: errorSkipCountRef.current,
         detail: `code=${event?.code || ''} willRetry=${curId != null && retriedTrackRef.current !== curId}`,
-      });
+      }, { always: true });
 
       // IOS-ANDROID-PARITY-PLAN §5 Phase 2 —— 播緊嘅係本地 file:// 檔仲會撞
       // PlaybackError,理論上唔應該有(落載嗰陣已經驗過 HTTP 200 + size +
@@ -1021,9 +1025,22 @@ function PlayerProvider({ children }) {
         // (playWhenReady===false)先應用去expectPlayingRef,避免同「native
         // 靜默清除意圖」(呢個flag冇set過,event照舊淨係睇原本嗰支ref)嗰種
         // D2原本要防範嘅場景撞埋一齊、被誤判做「已預期」。
-        const remotePauseWasExpected = consumeRemotePauseExpected();
-        if (remotePauseWasExpected && event?.playWhenReady === false) {
+        // H3(FRONTEND-CODE-REVIEW-20260819)—— consumeRemotePauseExpected() 要
+        // short-circuit 喺 false event 先叫,唔可以無條件執行:如果 markRemotePauseExpected()
+        // 之後、對應嗰個 false event 到之前有一個 true event 插隊(例如 RemotePause
+        // 撞正 watchdog 嘅 play()),支旗會俾嗰個 true event 白白食咗,令真正
+        // 嗰個 false event 見唔到已 consume,又跌返去俾 D2 誤判做「未預期」再
+        // play() 一次——即係 8-17 修好嗰個「撳暫停即刻彈返播」bug 會喺 race 下復發。
+        if (event?.playWhenReady === false && consumeRemotePauseExpected()) {
           expectPlayingRef.current = false;
+        }
+        // H1(FRONTEND-CODE-REVIEW-20260819)—— 鎖屏/耳機/Control Center 撳
+        // 「播放」(RemotePlay/RemoteNext/RemotePrevious/native 自己 resume)冇
+        // 任何一條路徑會補返呢支旗,搞到 D2 守衛(下面 unexpectedly-off 嗰段)
+        // 喺呢類 resume 之後就永久失效。呢度一次過覆蓋晒所有 resume 路徑,
+        // 淨係令守衛「更加會出手」,唔會令佢誤 pause。
+        if (event?.playWhenReady === true) {
+          expectPlayingRef.current = true;
         }
         logDiag('playWhenReadyChanged', {
           appState: appStateRef.current,
@@ -1225,7 +1242,7 @@ function PlayerProvider({ children }) {
         repeatMode: repeatModeRef.current,
         errorSkipCount: errorSkipCountRef.current,
         detail: `idx=${idx0} qlen=${q0.length}`,
-      });
+      }, { always: true });
       if (repeatModeRef.current === 2) {
         // repeat-one:native 冇自動重播(上游 #1995 講嘅正正係呢個場景),手動
         // 由頭嚟過。
@@ -1274,7 +1291,7 @@ function PlayerProvider({ children }) {
         return;
       }
       console.warn('[player] mid-stream stall persists after nudge — treating as unrecoverable, skipping');
-      logDiag('handleMidStreamStall_giveup', { appState: appStateRef.current, position: lastPollPositionRef.current });
+      logDiag('handleMidStreamStall_giveup', { appState: appStateRef.current, position: lastPollPositionRef.current }, { always: true });
       await handleStuckTrackEnd();
     } catch (e) {
       console.warn('[player] mid-stream stall recovery failed:', e?.message || e);
@@ -1296,7 +1313,7 @@ function PlayerProvider({ children }) {
         return;
       }
       console.warn('[player] stuck-in-buffering persists after nudge — treating as unrecoverable, skipping');
-      logDiag('handleBufferingStuck_giveup', { appState: appStateRef.current, errorSkipCount: errorSkipCountRef.current });
+      logDiag('handleBufferingStuck_giveup', { appState: appStateRef.current, errorSkipCount: errorSkipCountRef.current }, { always: true });
       // NEXT-TRACK-LATENCY 2026-08-12 追加(Opus 5 驗收 punch list 第5點)——之前
       // 呢度冧咗都係直接 handleStuckTrackEnd() 跳落一首,冇熔斷:網絡真係斷咗嘅
       // 話,每首歌都會重複「nudge 一次、再冧就跳」,即係每 ~30-45 秒自動跳一首,
@@ -1354,7 +1371,7 @@ function PlayerProvider({ children }) {
             appState: appStateRef.current,
             trackState: trackStateRef.current,
             detail: `driftMs=${drift}`,
-          });
+          }, { always: true });
         }
         try {
           const progress = await TrackPlayer.getProgress();
@@ -1807,10 +1824,18 @@ function PlayerProvider({ children }) {
       if (position > 3) { await TrackPlayer.seekTo(0); return; } // standard UX: >3s in, prev = restart
     } catch (e) {}
     transitionT0Ref.current = { ts: Date.now(), origin: 'tapPrev', trackChangedSeen: false, hymnId: null }; // Phase 1 量度 t0
+    // H5(FRONTEND-CODE-REVIEW-20260819)—— SwiftAudioEx `previous()` 同 `next()`
+    // 係同一套實現(queue.previous()/next() → onCurrentItemChanged() → super.load(item:)),
+    // 一樣冇傳 playWhenReady:true,見上面 handleNextTrack() 嗰段完整分析。
+    // 呢度照跟 handleNextTrack 兩條路徑都明文再 play() 一次。
     try {
       await TrackPlayer.skipToPrevious();
+      expectPlayingRef.current = true;
+      await TrackPlayer.play().catch(() => {});
     } catch (e) {
       await TrackPlayer.seekTo(0); // queue head — restart instead
+      expectPlayingRef.current = true;
+      await TrackPlayer.play().catch(() => {});
     }
   }
 

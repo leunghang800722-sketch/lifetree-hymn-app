@@ -15,3 +15,10 @@ export const API_BASE = 'https://api.odemusics.com';
 // 電話 OTP 登入(PHONE-AUTH-PLAN)。2026-07-29 三條 Twilio key 已齊,
 // `/api/auth/otp/status` 確認 configured:true 先開(MEMBERSHIP-PHASE1-LOGIN-SYNC.md W3)。
 export const PHONE_AUTH_ENABLED = true;
+
+// FRONTEND-CODE-REVIEW-20260819 O12 — App.js 個 logDiag() 高頻診斷 beacon
+// (stateChange/trackChanged/nextTrackMs/playWhenReadyChanged)開關,鎖屏/
+// 中途冇聲一批根因已查完,平時毋須再打去 backend 同 OCR 爭資源。低頻高價值
+// 嗰批(PlaybackError、watchdog giveup、wallClockDrift)唔受呢個 flag 管,
+// 永遠會送。查緊新一輪 bug 先臨時開返 true。
+export const DIAG_ENABLED = false;
