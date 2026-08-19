@@ -643,6 +643,11 @@ function PlayerProvider({ children }) {
         // stuck-watchdog都唔會出手,因為native老實報緊「已經pause咗」)。之前
         // 一直冇設呢個flag(default false)。見STREAM-LOCKSCREEN-STOP-ROOTCAUSE-
         // 2026-08-12.md 續篇。
+        //
+        // ⚠️ 呢個唔係 iOS-only option——Android 邊 map 做 handleAudioFocus=true
+        // (RNTP MusicService.kt:189),1dde53d 起已生效;audio focus 場景(電話/
+        // 第二個 app 搶聲/拔耳機)同 D2 嘅互動見 FRONTEND-CODE-REVIEW-20260819
+        // §9,實測歸 consolidated testing(BATCH5-PLAN-20260819 §5.3/§6.3-7)。
         await TrackPlayer.setupPlayer({ waitForBuffer: false, autoHandleInterruptions: true });
       } catch (e) {
         // setupPlayer 喺「player 已經 set 過」嗰陣都會 reject(code
