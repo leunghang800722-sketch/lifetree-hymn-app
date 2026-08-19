@@ -1,7 +1,6 @@
 // 詩歌App v211 TrackPlayer — 背景播放 + Ode 主題(ODE-REBRAND-PLAN)
-import { COLORS as DesignColors, TYPOGRAPHY, SPACING, effects } from './src/theme/designSystem';
+import { COLORS as DesignColors, TYPOGRAPHY, effects } from './src/theme/designSystem';
 import { useCachedHymns } from './src/hooks/useCachedHymns';
-import Skeleton from './src/components/Skeleton';
 import LogoRing from './src/components/LogoRing';
 import React, { useState, useEffect, createContext, useContext, useRef, useCallback } from 'react';
 import OdeIcon from './src/icons/OdeIcon';
@@ -93,7 +92,6 @@ try {
 
 // ===== Config =====
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
-const VIDEO_HEIGHT = SCREEN_WIDTH * 9 / 16;
 
 // ===== Ode 色板 (ODE-REBRAND-PLAN) =====
 // 呢幾個常數散落用咗 60+ 次,所以唔逐個改 import,直接指返單一色板 —— 全部一次過轉色。
@@ -295,26 +293,6 @@ function FavHeart({ hymn }) {
   );
 }
 
-// ===== Fallback Hymns =====
-const FALLBACK_HYMNS = [
-  { id: 1, title: '恩典太美麗', artist: 'ACM', youtube_id: 'JlTb0Sf7xUg', lang: '粵語' },
-  { id: 2, title: '這一生最美的祝福', artist: '讚美之泉', youtube_id: 'tPf7Ig1ebL4', lang: '國語' },
-  { id: 3, title: '我要向高山舉目', artist: '玻璃海', youtube_id: 'HfE3WNcdDTk', lang: '粵語' },
-  { id: 4, title: '日光之上', artist: 'ACM', youtube_id: 'QTyqM_zFrJw', lang: '粵語' },
-  { id: 5, title: 'THE WAY (全碟)', artist: 'ACM', youtube_id: '2lE3bNC8neE', lang: '粵語' },
-  { id: 6, title: '耶和華是我的倚靠', artist: '粵語詩歌站', youtube_id: 'o_sm7zTzNRY', lang: '粵語' },
-  { id: 7, title: '深深愛祢', artist: '讚美之泉', youtube_id: 'JlTb0Sf7xUg', lang: '國語' },
-  { id: 8, title: '有一位神', artist: 'ACM', youtube_id: 'tPf7Ig1ebL4', lang: '粵語' },
-  { id: 9, title: '將天敞開', artist: '讚美之泉', youtube_id: 'HfE3WNcdDTk', lang: '國語' },
-  { id: 10, title: '祢的愛不離不棄', artist: '生命河靈糧堂', youtube_id: 'QTyqM_zFrJw', lang: '國語' },
-  { id: 11, title: '我心頌揚', artist: 'ACM', youtube_id: '2lE3bNC8neE', lang: '粵語' },
-  { id: 12, title: '勝過這世界', artist: '讚美之泉', youtube_id: 'o_sm7zTzNRY', lang: '國語' },
-  { id: 13, title: '從心合一', artist: '讚美之泉', youtube_id: 'JlTb0Sf7xUg', lang: '國語' },
-  { id: 14, title: '主的喜樂是我力量', artist: '讚美之泉', youtube_id: 'HfE3WNcdDTk', lang: '國語' },
-  { id: 15, title: '復興聖潔', artist: '讚美之泉', youtube_id: 'tPf7Ig1ebL4', lang: '國語' },
-];
-
-
 // 統一去 useInsets(唯一來源)。之前呢度自己一套 fallback(android 硬寫 20),
 // 三鍵導航列實際係 48dp,所以 tab 掣同 collapsed sheet 都會俾導航列食咗一截。
 function useBottomInset() {
@@ -335,11 +313,6 @@ async function safeFetchHymnDetail(id) {
   try { const r = await fetchWithTimeout(`${API_BASE}/api/hymns/${id}`); if (!r.ok) return null; return (await r.json())?.data || null; }
   catch (e) { return null; }
 }
-async function safeFetchAllHymns() {
-  try { const r = await fetchWithTimeout(`${API_BASE}/api/hymns`); if (!r.ok) return []; const d = (await r.json())?.data || r; return Array.isArray(d) ? d : []; }
-  catch (e) { return []; }
-}
-
 // ================================================================
 //  GLOBAL PLAYER CONTEXT
 // ================================================================
@@ -351,8 +324,6 @@ function PlayerProvider({ children }) {
   const [hymns, setHymns] = useState(null);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
-  const [isSeeking, setIsSeeking] = useState(false);
-  const [seekPercent, setSeekPercent] = useState(0);
   const [repeatMode, setRepeatMode] = useState(0); // 0=off, 1=repeat-all, 2=repeat-one
   const [isShuffled, setIsShuffled] = useState(false);
   // §3.6 — real shuffle. Rebuilds the whole TrackPlayer queue with the current
@@ -757,14 +728,6 @@ function PlayerProvider({ children }) {
     const m = Math.floor(seconds / 60), s = Math.floor(seconds % 60);
     return `${m}:${s < 10 ? '0' : ''}${s}`;
   }
-
-  // TrackPlayer init is now lazy — no eager setupPlayer on mount
-  const playerInitRef = useRef(false);
-  // setQueueReady is handled by lazyEnsurePlayer at first play
-  useEffect(() => {
-    // queueReady starts as false; lazy init sets it when player is ready
-    return () => {};
-  }, []);
 
   // Listen to TrackPlayer events — safe guard with try/catch
   // We use a custom event listener approach instead of useTrackPlayerEvents
@@ -1481,14 +1444,6 @@ function PlayerProvider({ children }) {
 
   const isPlaying = trackState === TPState.Playing || trackState === TPState.Buffering;
 
-  // Determine playback mode: 'audio' (TrackPlayer background) or 'video' (YouTube foreground)
-  // Currently all hymns are audio-only; video mode is reserved for future YouTube-based playback
-  function getPlayMode(s) {
-    // Video mode: song has mode='video' flag (not yet implemented in data model)
-    if (s && s.mode === 'video') return 'video';
-    return 'audio';
-  }
-
   // playQueue: PHASE1-PLAYER-REBUILD.md §3.2 — the single entry point for
   // "start playing this list from this index". Hands the whole list to
   // TrackPlayer at once (stable per-song URLs via toTrack/stream proxy), so
@@ -1838,14 +1793,6 @@ function PlayerProvider({ children }) {
     }
   }
 
-  function handleSeekRelease() {
-    if (!isSeeking || !duration) { setIsSeeking(false); return; }
-    const target = seekPercent * duration;
-    setCurrentTime(target);
-    TrackPlayer.seekTo(target).catch(() => {});
-    setIsSeeking(false);
-  }
-
   function handleProgressBarPress(evt) {
     if (!duration) return;
     const x = evt.nativeEvent.locationX;
@@ -1876,14 +1823,14 @@ function PlayerProvider({ children }) {
       isPlaying, currentTime, duration,
       repeatMode, isShuffled, setIsShuffled,
       currentQueueIndex, setCurrentQueueIndex, queue,
-      overlayExpanded, queueReady, isLoading, getPlayMode,
+      overlayExpanded, queueReady, isLoading,
       playQueue, playSingle, autoRadioFrom, insertBoundary,
       cmd_play, cmd_pause, togglePlayPause,
       skipToQueueIndex, reorderQueue, handleNextTrack, handlePrevTrack,
       autoplayEnabled, autoplayFlavor, applyAutoplayEnabled, applyAutoplayFlavor,
       setCurrentTime, setDuration,
-      setSeekPercent, setIsSeeking, setRepeatMode,
-      handleSeekRelease, handleProgressBarPress,
+      setRepeatMode,
+      handleProgressBarPress,
       formatTime, currentQueueIndexRef,
       showPlayer, hidePlayer, toggleShuffle,
     }}>
@@ -2100,10 +2047,6 @@ const hs = StyleSheet.create({
   brandWrap: {
     flexDirection: 'row',
     alignItems: 'center',
-  },
-  brandIcon: {
-    fontSize: 24,
-    marginRight: 10,
   },
   // ODE-HANDOFF §1/§3:header logo 環 52dp,「ode」32px Sora 200 letterSpacing 1.5,全小寫
   // CHANGE-REQUEST §2:環要由原圖放大1.6倍裁切填滿容器(LogoRing component),呢度淨係要 gap
@@ -2625,11 +2568,9 @@ function FullScreenPlayerOverlay() {
 const fsStyles = StyleSheet.create({
   // 同 pageStyles.container 一樣唔可以寫死 SCREEN_HEIGHT(見嗰邊註解)
   container: { flex: 1, backgroundColor: MAIN_BG_COLOR },
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   // queue sheet 自訂 handle 個 grabber(取代 gorhom default handleIndicator)
   queueHandleBar: { alignSelf: 'center', width: 40, height: 5, borderRadius: 3, backgroundColor: TEXT_SECONDARY, marginTop: 8, marginBottom: 6 },
   topBar: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, paddingBottom: 8 },
-  pillButton: { flex: 1, alignItems: 'center', paddingVertical: 12, paddingHorizontal: 8, borderRadius: 999, marginHorizontal: 2 },
   // §3.4 4 粒獨立膠囊 pill:黑底(卡片色)、橫排並列
   actionRow: { flexDirection: 'row', justifyContent: 'space-between', marginHorizontal: 16, marginBottom: 16 },
   pill: {
@@ -2640,7 +2581,6 @@ const fsStyles = StyleSheet.create({
   pillDisabled: { opacity: 0.45 },
   pillLabel: { fontSize: 13, fontWeight: '600', color: TEXT_PRIMARY, marginLeft: 6 },
   dismissBtn: { width: 40, height: 40, justifyContent: 'center', alignItems: 'center' },
-  dismissIcon: { fontSize: 16, color: TEXT_PRIMARY },
   // ODE-HANDOFF §1:播放器頂 title = logo 環 22dp + 「ode」17px(Sora 200)
   topBarBrand: { flexDirection: 'row', alignItems: 'center' },
   topBarBrandImg: { marginRight: 7 },
@@ -2685,7 +2625,6 @@ const fsStyles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: 'rgba(255,255,255,0.08)',
   },
-  coverFallbackIcon: { fontSize: 80, opacity: 0.6 },
   equalizerContainer: { position: 'absolute', bottom: 16, right: 20, flexDirection: 'row', alignItems: 'flex-end', gap: 4 },
   equalizerBar: { width: 5, backgroundColor: GLOW_COLOR, borderRadius: 2 },
   equalizerBar1: { height: 18 },
@@ -2693,8 +2632,6 @@ const fsStyles = StyleSheet.create({
   equalizerBar3: { height: 14 },
   equalizerBar4: { height: 22 },
   songInfo: { paddingHorizontal: 28, paddingVertical: 12, marginTop: 8 },
-  songTitle: { fontSize: 24, fontWeight: '800', color: TEXT_PRIMARY },
-  songArtist: { fontSize: 16, color: TEXT_SECONDARY, marginTop: 6 },
   progressSection: { paddingHorizontal: 28, paddingVertical: 4 },
   progressBarTouchArea: { height: 36, justifyContent: 'center' },
   progressBarBg: { height: 5, backgroundColor: 'rgba(255,255,255,0.15)', borderRadius: 3 },
@@ -2706,10 +2643,6 @@ const fsStyles = StyleSheet.create({
   controlBtn: { width: 48, height: 48, justifyContent: 'center', alignItems: 'center' },
   // BUG3(c) — ⏭ 冇嘢跳嗰陣唔再係死掣,dim 落嚟同 pillDisabled(opacity: 0.45)睇齊。
   controlBtnDisabled: { opacity: 0.45 },
-  ctrlIconShuffle: { fontSize: 32, color: TEXT_SECONDARY },
-  ctrlIconPrev: { fontSize: 32, color: TEXT_PRIMARY },
-  ctrlIconNext: { fontSize: 32, color: TEXT_PRIMARY },
-  ctrlIconActive: { color: GLOW_COLOR },
   ctrlActiveDot: { width: 4, height: 4, borderRadius: 2, backgroundColor: GLOW_COLOR, marginTop: 3 },
   // 單曲循環:repeat icon 中間疊個 Sora 200「1」(odeIcons.js repeat note)
   repeatOneBadge: {
@@ -2722,18 +2655,11 @@ const fsStyles = StyleSheet.create({
     justifyContent: 'center', alignItems: 'center',
     ...effects.playGlow, // F3(b):播放器主掣暖光外發光(ODE-HANDOFF §3)
   },
-  playBtnIcon: { fontSize: 24, color: TEXT_ON_GLOW, marginLeft: 2 },
-  handleBar: { width: 36, height: 4, backgroundColor: 'rgba(255,255,255,0.2)', borderRadius: 2, marginBottom: 8 },
-  sheetHandleRow: { flexDirection: 'row', alignItems: 'center' },
-  sheetTitle: { fontSize: 14, fontWeight: '600', color: TEXT_PRIMARY, marginRight: 8 },
   // native Modal bottom-sheet 外殼(手尾修正 v228,取代 gorhom)
   // 「正在隨機播放：」分隔線 —— 用戶揀嘅歌 vs 系統自動接落去嘅歌之間嗰條界。
   radioDivider: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, marginTop: 14, marginBottom: 6 },
   radioDividerLine: { flex: 1, height: 1, backgroundColor: DesignColors.border },
   radioDividerText: { color: GLOW_COLOR, fontSize: 13, fontWeight: '600' },
-  sheetScrim: { flex: 1, backgroundColor: 'rgba(0,0,0,0.55)', justifyContent: 'flex-end' },
-  sheetCard: { borderTopLeftRadius: 20, borderTopRightRadius: 20, overflow: 'hidden', paddingBottom: 8 },
-  sheetHandle: { width: 40, height: 5, borderRadius: 3, backgroundColor: TEXT_SECONDARY, alignSelf: 'center', marginTop: 8, marginBottom: 6 },
   // 自動播放 toggle + chips
   autoplayRow: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 8 },
   autoplayTitle: { ...TYPOGRAPHY.songTitle, fontSize: 16 },
@@ -2758,7 +2684,6 @@ const fsStyles = StyleSheet.create({
     borderRadius: 12, marginBottom: 8,
   },
   shuffleBannerText: { fontSize: 12, fontWeight: '600', color: GLOW_COLOR, marginLeft: 5 },
-  sheetCount: { fontSize: 12, color: TEXT_SECONDARY, fontWeight: '500' },
   queueItem: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 10 },
   queueItemActive: { backgroundColor: 'rgba(255,255,255,0.08)' },
   queueItemDragging: { backgroundColor: CARD_BG_COLOR, borderRadius: 10 },
@@ -2768,14 +2693,6 @@ const fsStyles = StyleSheet.create({
   queueInfo: { flex: 1, marginLeft: 10 },
   queueTitle: { fontSize: 14, fontWeight: '600', color: TEXT_PRIMARY },
   queueArtist: { fontSize: 12, color: TEXT_SECONDARY, marginTop: 2 },
-  queueDragIcon: { fontSize: 18, color: TEXT_SECONDARY, paddingLeft: 8 },
-  queuePlayingIcon: { fontSize: 14, color: GLOW_COLOR, paddingLeft: 8, fontWeight: 'bold' },
-  lyricsContainer: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: MAIN_BG_COLOR, zIndex: 100 },
-  lyricsHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, paddingTop: (StatusBar.currentHeight || 44) + 12, paddingBottom: 12 },
-  lyricsTitle: { fontSize: 18, fontWeight: '700', color: TEXT_PRIMARY },
-  lyricsClose: { fontSize: 20, color: TEXT_SECONDARY, padding: 8 },
-  lyricsScroll: { flex: 1, paddingHorizontal: 20 },
-  lyricsBody: { fontSize: 16, color: TEXT_PRIMARY, lineHeight: 28, paddingBottom: 40 },
   loadingOverlay: {
     position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
     justifyContent: 'center', alignItems: 'center',
@@ -3036,10 +2953,6 @@ function AppContent() {
 
   async function handlePlayHymn(h, opts = {}) {
     if (!h) return;
-    if (opts.mode === 'video') {
-      Linking.openURL(`https://www.youtube.com/watch?v=${h.youtube_id}`);
-      return;
-    }
     // v231 —— 兩種播放語義,由 caller 用 `opts.explicit` 講明邊種:
     //
     //  explicit: true  = 用戶揀咗**成個清單**(chip「播全部」/「睇晒」歌單頁 /
@@ -3064,7 +2977,7 @@ function AppContent() {
       // 隨機接續一律由**全庫**抽,唔用 opts.playlist 做 pool ——「今日為你預備」
       // 之類得 6 首,攞嚟做 pool 就得 5 首尾巴,太短。全庫抽先夠似 Spotify。
       // (副作用:舊 caller 傳落嚟嘅 `playlist` 喺呢條路徑會被忽略,呢個係有意嘅。)
-      playSingle(h, allSongs || FALLBACK_HYMNS);
+      playSingle(h, allSongs);
     }
     showPlayer();
   }
@@ -3361,7 +3274,6 @@ const pageStyles = StyleSheet.create({
   container: { flex: 1, backgroundColor: MAIN_BG_COLOR },
   content: { flex: 1 },
   screenWrap: { flex: 1 },
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   hymnListModal: { flex: 1, backgroundColor: MAIN_BG_COLOR },
   hymnListClose: {
     flexDirection: 'row', alignItems: 'center',
@@ -3369,5 +3281,4 @@ const pageStyles = StyleSheet.create({
     borderBottomWidth: 1, borderBottomColor: DesignColors.cardLight,
   },
   hymnListCloseText: { fontSize: 16, color: TEXT_PRIMARY, marginLeft: 8 },
-  loadingText: { color: TEXT_SECONDARY, marginTop: 16, fontSize: 15 },
 });
