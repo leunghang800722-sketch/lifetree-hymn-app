@@ -2302,6 +2302,25 @@ function FullScreenPlayerOverlay() {
   // BUG1 P0 — 統一喺呢度轉一次,下面 hasLyrics 判斷同歌詞 Modal 顯示都食呢個
   // 已經拆好行嘅版本,唔再各自 trim() 原始「|」字串。
   const lyricsText = formatLyrics(cur.lyrics);
+
+  // BATCH5 §7.3-E:冷 start 分階段 loading 文案——純 client UI,唔掂 provider
+  // 層(O1 啱啱先拆走每秒 re-render,PlayerCtx 唔准加每秒變嘅嘢),淨係喺
+  // overlay 呢個 local component 度用 local state 計時。player.isLoading
+  // 入 loading 家族超過 8 秒就轉「網絡較慢」文案;離開 loading 或者轉咗歌
+  // (cur.id 變)就清 timer 歸零。唔掂 watchdog、retry、expectPlayingRef、
+  // 任何 TrackPlayer call。
+  const [slowHint, setSlowHint] = useState(false);
+  const slowHintTimerRef = useRef(null);
+  useEffect(() => {
+    if (player.isLoading) {
+      slowHintTimerRef.current = setTimeout(() => setSlowHint(true), 8000);
+    } else {
+      setSlowHint(false);
+    }
+    return () => {
+      if (slowHintTimerRef.current) { clearTimeout(slowHintTimerRef.current); slowHintTimerRef.current = null; }
+    };
+  }, [player.isLoading, cur.id]);
   const lyricsStanzas = formatLyricsStanzas(cur.lyrics);
   // BUG3(c) P0(Eric 實測)—— 自動播放關咗 + 播緊 queue 最後一首,⏭ 之前係
   // 冇 disabled 狀態嘅死掣(撳落去 TrackPlayer.skipToNext() 靜靜哋失敗,冇反應)。
@@ -2358,7 +2377,7 @@ function FullScreenPlayerOverlay() {
         {player.isLoading && (
           <View style={fsStyles.loadingOverlay}>
             <ActivityIndicator size="large" color={GLOW_COLOR} />
-            <Text style={fsStyles.loadingText}>正在載入音訊...</Text>
+            <Text style={fsStyles.loadingText}>{slowHint ? '網絡較慢,仲努力緊…' : '正在載入音訊...'}</Text>
           </View>
         )}
       </View>
