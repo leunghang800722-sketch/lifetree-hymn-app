@@ -127,7 +127,14 @@ function whisperShortVerdict(item, row) {
     return `whisper 只聽到 ${Math.round(last)}s / ${dur}s(覆蓋 ${(coverage * 100).toFixed(0)}%),未夠 ${SHORT_OK_COVERAGE * 100}%,證明唔到「聽到尾」`;
   }
 
-  const wText = segs.map((x) => x.text || '').join(' ');
+  // ⚠️ 2026-08-19 修 join bug(R2 05:16 報、R1 09:05 獨立覆核實錘,兩條線都因為
+  // 自己分區有苦主而避嫌冇改 code):**一定要用 \n join,唔可以用空格**。
+  // uniqueContentLen() 係按 [\n。,,!!??;;] 切行嘅,而 whisper 段落本身好多時
+  // 冇標點(兒歌/短詩歌係常態)—— 空格 join 會令成個轉錄變一條切唔開嘅巨行,
+  // 「重複唱嘅段落」逐次照計做 unique,分子谷大,ratio 誤判成「OCR 漏咗嘢」,
+  // 反而誤殺真正嘅天然短歌(實錄苦主:6166 小孩的讚頌 2.0×、6179 聖靈果子歌
+  // 1.8×、7965 安心睡)。用 \n join 之後每段自成一行,重複段落先去得到重。
+  const wText = segs.map((x) => x.text || '').join('\n');
   const lyrics = (item.lyrics || '').trim();
   const isCjkSong = isCJK(lyrics);
   const wCjk = charCountCJK(wText);
