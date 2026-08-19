@@ -513,6 +513,8 @@ function PlayerProvider({ children }) {
   const playerReadyRef = useRef(false);
   const optionsAppliedRef = useRef(false);
   const initInFlightRef = useRef(null);
+  // H6 修 — playQueue() 冇並發保護嘅排隊 ref,見下面 playQueue() 定義。
+  const playQueueChainRef = useRef(Promise.resolve());
 
   // RNTP 嘅播放器選項(capabilities / 媒體通知 / swipe 走行為)。抽做一個
   // function 係因為佢而家要可以**重試**同**返前台時重新 apply**,唔再係
@@ -1592,7 +1594,23 @@ function PlayerProvider({ children }) {
   }
 
 
-  async function playQueue(list, startIndex = 0, opts = {}) {
+  // H6 修 — playQueue() 舊版一 call 就即刻做四個連續 await(lazyEnsurePlayer→
+  // reset→add→skip→play)。用戶快速撳兩首歌會有兩條 playQueue 交錯行:第二條
+  // 嘅 reset() 可能夾喺第一條嘅 add() 同 play() 中間 → queueRef/setQueue 係
+  // 第二個 list,但 native queue 係第一個 list 嘅殘留 → index 對唔上、播錯歌
+  // 或者空隊列。呢度改做同 lazyEnsurePlayer(initInFlightRef)一樣嘅排隊做法:
+  // 每次 call 都掛喺上一個嘅 promise 後面先至真正行,保證 native TrackPlayer
+  // 呼叫序列(reset/add/skip/play)唔會交錯——連續撳幾首都會逐個跑完先到
+  // 下一個,最後跑嗰個先真係播出嚟,同用戶最新一下撳嘅意圖一致。playQueueImpl
+  // 內部所有錯誤都自己 catch(唔會 reject),所以呢度唔使額外處理 chain 斷咗。
+  function playQueue(list, startIndex = 0, opts = {}) {
+    const run = () => playQueueImpl(list, startIndex, opts);
+    const next = playQueueChainRef.current.then(run, run);
+    playQueueChainRef.current = next;
+    return next;
+  }
+
+  async function playQueueImpl(list, startIndex = 0, opts = {}) {
     if (!Array.isArray(list) || list.length === 0) return;
     // 插播(Eric 2026-07-28)—— 原意係詩歌庫/搜尋(`opts.browseTap`)撳嘅歌唔算
     // 「揀咗成個清單」,淨係「掃緊街見到一首想聽」。如果而家已經有第二個真.
