@@ -1067,18 +1067,31 @@ function PlayerProvider({ children }) {
       // 全資料(包括真 lyrics);attempts 都失敗先至真係冇歌詞得 fallback 做
       // `lyrics: ''`——呢種情況歌詞 pill 應該本身就要顯示灰(冇資料判斷唔到）。
       const lib = hymnsRef.current || [];
-      const toHymn = async (t) => {
-        const found = lib.find((h) => String(h.id) === String(t.id));
-        if (found) return found;
+      const idx = typeof idxRaw === 'number' && idxRaw >= 0 ? idxRaw : 0;
+      const buildMinimal = (t) => {
         const yt = typeof t.artwork === 'string' ? (t.artwork.match(/\/vi\/([^/]+)\//)?.[1] || '') : '';
-        const detail = await safeFetchHymnDetail(t.id);
-        if (detail) return detail;
         return { id: Number(t.id) || t.id, title: t.title || '', artist: t.artist || '', youtube_id: yt, lyrics: '' };
       };
-      const rebuilt = await Promise.all(q.map(toHymn));
+      // H4 修 — 冇上限嘅 Promise.all(q.map(safeFetchHymnDetail)) 曾經可以喺
+      // 冷啟動(hymnsRef.current 仲未 load 好)一次過打幾百個 /api/hymns/:id,
+      // 塞爆手機同 backend(同 OCR 爭 CPU)。而家:① lib 未 load 好(空)就完全
+      // 唔 fetch,淨係用 track 砌最低限度 object——liveHymn lookup(上面
+      // dataVersion cache-bust 段)一旦 hymns load 好就會自動補返最新版包括
+      // 歌詞,唔需要呢度 fetch;② lib 已 load 好但單首搵唔到,先至 fetch,
+      // 亦只補 current index 前後 2 首(最多 5 個並發),其餘一樣用 minimal。
+      const NEAR_RANGE = 2;
+      const toHymn = async (t, i) => {
+        const found = lib.find((h) => String(h.id) === String(t.id));
+        if (found) return found;
+        if (lib.length === 0) return buildMinimal(t);
+        if (Math.abs(i - idx) > NEAR_RANGE) return buildMinimal(t);
+        const detail = await safeFetchHymnDetail(t.id);
+        if (detail) return detail;
+        return buildMinimal(t);
+      };
+      const rebuilt = await Promise.all(q.map((t, i) => toHymn(t, i)));
       queueRef.current = rebuilt;
       setQueue(rebuilt);
-      const idx = typeof idxRaw === 'number' && idxRaw >= 0 ? idxRaw : 0;
       currentQueueIndexRef.current = idx;
       setCurrentQueueIndex(idx);
       const cur = rebuilt[idx];
