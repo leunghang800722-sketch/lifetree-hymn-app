@@ -319,11 +319,11 @@ async function safeFetchHymnDetail(id) {
 // ================================================================
 const PlayerCtx = createContext();
 
-// O1-O2-REPLAN-20260819.md §3.2 Commit B1 —— currentTime/duration 每秒轉一次
-// 係全 app 每秒 re-render 嘅唯一源頭(§1 grep 實證)。搬出 React state,移入
-// 同 useCachedHymns 共用嘅 external store,進度條抽做細 component 自己訂閱。
-// B1 呢步淨係雙寫(照舊 setCurrentTime/setDuration + 加呢個 store),行為
-// 完全不變,純結構準備。
+// O1-O2-REPLAN-20260819.md §3.2(Commit B1+B2)—— currentTime/duration 每秒轉
+// 一次係全 app 每秒 re-render 嘅唯一源頭(§1 grep 實證),所以搬出 React
+// state,移入同 useCachedHymns 共用嘅 external store,進度條抽做細 component
+// (ProgressSection)自己訂閱。播放中每秒得 ProgressSection 一個 component
+// re-render;PlayerProvider/AppContent/三個 tab 唔再受影響。
 const progressStore = createExternalStore({ currentTime: 0, duration: 0 });
 function usePlayerProgress() { return progressStore.useStore(); }
 
@@ -335,8 +335,9 @@ function PlayerProvider({ children }) {
   const [currentHymn, setCurrentHymn] = useState(null);
   const [hymn, setHymn] = useState(null);
   const [hymns, setHymns] = useState(null);
-  const [currentTime, setCurrentTime] = useState(0);
-  const [duration, setDuration] = useState(0);
+  // currentTime/duration O1-B2(O1-O2-REPLAN-20260819.md §3.2)拔咗出去,
+  // 淨係住喺 progressStore(見 §319 附近),唔再係 React state —— 呢個先係
+  // 全 app 每秒 re-render 嘅根治位。
   const [repeatMode, setRepeatMode] = useState(0); // 0=off, 1=repeat-all, 2=repeat-one
   const [isShuffled, setIsShuffled] = useState(false);
   // §3.6 — real shuffle. Rebuilds the whole TrackPlayer queue with the current
@@ -1392,8 +1393,7 @@ function PlayerProvider({ children }) {
           const progress = await TrackPlayer.getProgress();
           if (mounted) {
             const pos = progress.position || 0;
-            setCurrentTime(pos);
-            progressStore.setState({ currentTime: pos }); // O1-B1 雙寫
+            progressStore.setState({ currentTime: pos }); // O1-B2:淨寫store
             // B14 修 —— toggleShuffle 會 reset()+add() 成個 native queue,呢 1 秒
             // poll 窗口入面有陣時 getProgress() 會短暫報 duration:0(隊列啱啱重
             // 起,新 metadata 未到手),之前直接 setDuration(0) 就即刻喺 UI 度
@@ -1402,8 +1402,7 @@ function PlayerProvider({ children }) {
             // 覆蓋一個已知嘅正確長度 —— 淨係喺攞到正數先更新,0/undefined 就
             // 保留返上一個已知值,唔會喺 UI 度出現「肯定係假」嘅 0:00。
             if (progress.duration > 0) {
-              setDuration(progress.duration);
-              progressStore.setState({ duration: progress.duration }); // O1-B1 雙寫,B14 guard保留
+              progressStore.setState({ duration: progress.duration }); // O1-B2:淨寫store,B14 guard保留
             }
 
             // Phase 1 量度 t1(fallback):Playing state event 冇嚟(或者轉歌時
@@ -1867,12 +1866,14 @@ function PlayerProvider({ children }) {
   }
 
   function handleProgressBarPress(evt) {
-    if (!duration) return;
+    // O1-B2 —— duration 唔再係 React state,module-level 讀 store 永遠新鮮,
+    // 仲順手消滅咗原本讀 state closure 嘅隱性 staleness。
+    const { duration: liveDuration } = progressStore.getSnapshot();
+    if (!liveDuration) return;
     const x = evt.nativeEvent.locationX;
     if (typeof x !== 'number') return;
-    const target = (x / (SCREEN_WIDTH - 40)) * duration;
-    setCurrentTime(target);
-    progressStore.setState({ currentTime: target }); // O1-B1 雙寫
+    const target = (x / (SCREEN_WIDTH - 40)) * liveDuration;
+    progressStore.setState({ currentTime: target });
     TrackPlayer.seekTo(target).catch(() => {});
   }
 
@@ -1894,7 +1895,7 @@ function PlayerProvider({ children }) {
   return (
     <PlayerCtx.Provider value={{
       currentHymn: activeHymn, hymn, hymns, setHymns,
-      isPlaying, currentTime, duration,
+      isPlaying,
       repeatMode, isShuffled, setIsShuffled,
       currentQueueIndex, setCurrentQueueIndex, queue,
       overlayExpanded, queueReady, isLoading,
@@ -1902,7 +1903,6 @@ function PlayerProvider({ children }) {
       cmd_play, cmd_pause, togglePlayPause,
       skipToQueueIndex, reorderQueue, handleNextTrack, handlePrevTrack,
       autoplayEnabled, autoplayFlavor, applyAutoplayEnabled, applyAutoplayFlavor,
-      setCurrentTime, setDuration,
       setRepeatMode,
       handleProgressBarPress,
       formatTime, currentQueueIndexRef,
