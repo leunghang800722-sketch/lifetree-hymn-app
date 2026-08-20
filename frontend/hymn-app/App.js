@@ -707,6 +707,18 @@ function PlayerProvider({ children }) {
   const overlayHRef = useRef(SCREEN_HEIGHT);
   const drawerAnim = useRef(new Animated.Value(SCREEN_HEIGHT)).current;
   const isAnimatingRef = useRef(false);
+  // BATCH7-1: `.start(callback)` 嘅 completion callback 有陣時永遠唔 fire
+  // (觀察到同 PlaybackError 風暴/高頻 render 相關),令 isAnimatingRef 卡死 true、
+  // showPlayer/hidePlayer 永久 no-op,用戶被困要重啟 app。呢個 timeout 係 JS-driven
+  // 保底:completion 冇喺 duration+300ms 內到,就強制當佢完成咗。
+  const animTimeoutRef = useRef(null);
+  const clearAnimTimeout = useCallback(() => {
+    if (animTimeoutRef.current != null) {
+      clearTimeout(animTimeoutRef.current);
+      animTimeoutRef.current = null;
+    }
+  }, []);
+  useEffect(() => () => clearAnimTimeout(), [clearAnimTimeout]);
 
   const onOverlayLayout = useCallback((e) => {
     const h = e?.nativeEvent?.layout?.height;
@@ -717,36 +729,47 @@ function PlayerProvider({ children }) {
   }, [drawerAnim, overlayExpanded]);
 
   const showPlayer = useCallback(() => {
-    if (overlayExpanded || isAnimatingRef.current) return;
+    // 已經穩定開住(冇動畫行緊)先算真係 no-op;仲喺度收緊嘅話要俾佢反方向。
+    if (overlayExpanded && !isAnimatingRef.current) return;
+    clearAnimTimeout();
+    drawerAnim.stopAnimation(); // 中斷緊行嘅 hide 動畫(可重入)
     isAnimatingRef.current = true;
     setOverlayExpanded(true);
-    drawerAnim.setValue(overlayHRef.current);
+    if (!overlayExpanded) drawerAnim.setValue(overlayHRef.current);
+    const finishShow = () => {
+      clearAnimTimeout();
+      isAnimatingRef.current = false;
+    };
     Animated.timing(drawerAnim, {
       toValue: 0,
       duration: 300,
       useNativeDriver: true,
-    }).start(() => {
-      isAnimatingRef.current = false;
-    });
+    }).start(finishShow); // finishShow 唔理 {finished} 係 true定 false,都要清 guard
+    animTimeoutRef.current = setTimeout(finishShow, 600);
     // Sync track state immediately so overlay shows correct icon
     TrackPlayer.getPlaybackState().then(s => {
       const val = typeof s === 'object' && s != null ? s.state : s;
       if (val != null) setTrackState(val);
     }).catch(() => {});
-  }, [overlayExpanded, drawerAnim]);
+  }, [overlayExpanded, drawerAnim, clearAnimTimeout]);
 
   const hidePlayer = useCallback(() => {
-    if (!overlayExpanded || isAnimatingRef.current) return;
+    if (!overlayExpanded) return; // 已經完全收埋,冇嘢好做
+    clearAnimTimeout();
+    drawerAnim.stopAnimation(); // 中斷緊行嘅 show 動畫(可重入)
     isAnimatingRef.current = true;
+    const finishHide = () => {
+      clearAnimTimeout();
+      setOverlayExpanded(false);
+      isAnimatingRef.current = false;
+    };
     Animated.timing(drawerAnim, {
       toValue: overlayHRef.current,
       duration: 250,
       useNativeDriver: true,
-    }).start(() => {
-      setOverlayExpanded(false);
-      isAnimatingRef.current = false;
-    });
-  }, [overlayExpanded, drawerAnim]);
+    }).start(finishHide); // finishHide 唔理 {finished} 係 true定 false,都要清 guard
+    animTimeoutRef.current = setTimeout(finishHide, 550);
+  }, [overlayExpanded, drawerAnim, clearAnimTimeout]);
 
   function formatTime(seconds) {
     if (!seconds || isNaN(seconds)) return '0:00';
