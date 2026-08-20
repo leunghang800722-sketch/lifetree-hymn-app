@@ -3,7 +3,7 @@
 // 文案/掣)/輸入邀請碼(朋友派俾自己嗰個碼,兌換即刻自動加為好友)。置中
 // dialog(照 AddToPlaylistSheet 嘅 create/rename 視覺,唔係貼底 sheet——呢度
 // 冇 FlatList,一格輸入夠晒)。
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { Modal, View, Text, TextInput, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
 import OdeIcon from '../icons/OdeIcon';
 import { COLORS } from '../theme/designSystem';
@@ -25,23 +25,35 @@ export default function AddFriendSheet({ visible, onClose, onRequested, onFriend
 
   const close = useCallback(() => { reset(); onClose && onClose(); }, [reset, onClose]);
 
+  // BATCH7 B7-8:照抄 InviteFriendsSheet(S7b)嗰套 seq counter——handleLookup
+  // 冇呢層保護嗰陣,慢網撳「搵吓」→閂 sheet→response 先返嚟,照樣 setResult,
+  // 下次撳開見到上次嘅殘留 relation card(SECOND-PASS-REVIEW-20260820.md f2)。
+  // sheet 閂咗/切 mode 都令 seq +1,令仲喺途中嘅 response 作廢。
+  const seqRef = useRef(0);
+
   // BATCH5 S7c:被外部 setVisible(false) 閂(唔經自己個 close())時,舊
   // phone/code/result/err 會殘留,下次撳開仲見返上次嘅輸入/結果。
-  useEffect(() => { if (!visible) reset(); }, [visible, reset]);
+  useEffect(() => { if (!visible) { seqRef.current++; reset(); } }, [visible, reset]);
 
   const switchMode = useCallback((m) => {
+    seqRef.current++;
     setMode(m); setErr(''); setResult(null); setBusy(false);
   }, []);
 
   const handleLookup = useCallback(async () => {
+    const seq = ++seqRef.current;
     setErr(''); setBusy(true);
     try {
       const token = getToken ? getToken() : null;
       const r = await friendsLookup(token, phone.trim());
+      if (seqRef.current !== seq) return; // sheet 閂咗或者切咗 mode,呢個 response 過時
       setResult(r);
     } catch (e) {
+      if (seqRef.current !== seq) return;
       setErr(friendsErrorMessage(e, '搵唔到'));
-    } finally { setBusy(false); }
+    } finally {
+      if (seqRef.current === seq) setBusy(false);
+    }
   }, [phone, getToken]);
 
   const handleRequest = useCallback(async () => {
