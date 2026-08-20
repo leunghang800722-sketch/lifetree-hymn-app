@@ -379,11 +379,21 @@ function withWarmLock(fn) {
 // 兩邊共用,唔抄第二份。headLen 係已經有幾多 bytes 喺手(head buf 嘅長度)——
 // 細過 totalLength 先值得補攞;唔值得補(headLen 已經冚晒或者冇 totalLength)
 // 就直接 return null。
+// BATCH7 B7-5:兩個 warm-lock fetch 冧接冇 timeout/AbortSignal——一條 hang
+// 住嘅 googlevideo 連線會塞住成個 withWarmLock 隊(每個排隊緊嘅 closure 揸住
+// 幾個 MB headBuf 唔放),15s 夠成首詩歌用嘅 range 完成,長過就當佢死咗
+// (SECOND-PASS-REVIEW-20260820.md b2)。
+const WARM_FETCH_TIMEOUT_MS = 15000;
+
 async function fetchTailBuf(url, totalLength, headLen) {
   if (!totalLength || headLen >= totalLength) return null;
   try {
     const tailStart = Math.max(headLen, totalLength - TAIL_BYTES);
-    const tr = await fetch(url, { method: 'GET', headers: { Range: `bytes=${tailStart}-${totalLength - 1}` } });
+    const tr = await fetch(url, {
+      method: 'GET',
+      headers: { Range: `bytes=${tailStart}-${totalLength - 1}` },
+      signal: AbortSignal.timeout(WARM_FETCH_TIMEOUT_MS),
+    });
     if (tr.status === 200 || tr.status === 206) {
       return { tailBuf: Buffer.from(await tr.arrayBuffer()), tailOffset: tailStart };
     }
@@ -396,7 +406,11 @@ const WARM_RETRY_DELAY_MS = 1200;
 async function fetchHeadWithRetry(url) {
   for (let attempt = 0; attempt < 2; attempt++) {
     try {
-      const r = await fetch(url, { method: 'GET', headers: { Range: `bytes=0-${WARM_CAP_BYTES - 1}` } });
+      const r = await fetch(url, {
+        method: 'GET',
+        headers: { Range: `bytes=0-${WARM_CAP_BYTES - 1}` },
+        signal: AbortSignal.timeout(WARM_FETCH_TIMEOUT_MS),
+      });
       if (r.status === 200 || r.status === 206) return r;
       try { await r.body?.cancel?.(); } catch (_) {}
       if (attempt === 0) await new Promise((resolve) => setTimeout(resolve, WARM_RETRY_DELAY_MS));
