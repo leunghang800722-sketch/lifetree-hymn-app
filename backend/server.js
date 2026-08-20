@@ -95,7 +95,7 @@ function buildApkFilename() {
 // `security cms -D` 解出嚟,唔係猜嘅;BUNDLE_ID(com.hymnapp.praise)對得上
 // app.json 嘅 ios.bundleIdentifier。paths 對齊 Android intentFilters
 // 嘅 pathPrefix "/p/"(分享清單連結,見 shareRoutes)。
-app.get('/.well-known/apple-app-site-association', (req, res) => {
+function sendAASA(req, res) {
   res.setHeader('Content-Type', 'application/json');
   res.setHeader('Cache-Control', 'no-store');
   res.json({
@@ -109,7 +109,12 @@ app.get('/.well-known/apple-app-site-association', (req, res) => {
       ],
     },
   });
-});
+}
+app.get('/.well-known/apple-app-site-association', sendAASA);
+// BATCH7 B7-6:官方標準路徑係 /.well-known/ 嗰個,但舊版 iOS/部分驗證工具會
+// fallback 去 root 冇 /.well-known/ 嗰條(SECOND-PASS-REVIEW-20260820.md b4)。
+// 加個 root alias,同一份內容。
+app.get('/apple-app-site-association', sendAASA);
 
 // Super simple APK download at root level
 app.get('/app.apk', (req, res) => {
