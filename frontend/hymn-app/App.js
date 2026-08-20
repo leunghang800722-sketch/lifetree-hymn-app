@@ -534,6 +534,8 @@ function PlayerProvider({ children }) {
   const initInFlightRef = useRef(null);
   // H6 修 — playQueue() 冇並發保護嘅排隊 ref,見下面 playQueue() 定義。
   const playQueueChainRef = useRef(Promise.resolve());
+  // BATCH7 B7-11 — playQueue() generation counter,見下面 playQueue() 定義。
+  const playQueueGenRef = useRef(0);
 
   // RNTP 嘅播放器選項(capabilities / 媒體通知 / swipe 走行為)。抽做一個
   // function 係因為佢而家要可以**重試**同**返前台時重新 apply**,唔再係
@@ -1677,8 +1679,18 @@ function PlayerProvider({ children }) {
   // 呼叫序列(reset/add/skip/play)唔會交錯——連續撳幾首都會逐個跑完先到
   // 下一個,最後跑嗰個先真係播出嚟,同用戶最新一下撳嘅意圖一致。playQueueImpl
   // 內部所有錯誤都自己 catch(唔會 reject),所以呢度唔使額外處理 chain 斷咗。
+  // BATCH7 B7-11 — 上面 H6 個排隊保證咗唔會 native call 交錯,但冇 supersede:
+  // 連環快撳 N 首歌會逐個做晒 N 次 reset+add(全隊)+play,中間每首都響一下
+  // 先到最後嗰首(SECOND-PASS-REVIEW-20260820.md f6)。加 generation counter:
+  // 輪到自己執行嗰刻先 check 係咪仲係最新一次 call——已經俾之後一次撳歌
+  // superseded 嘅就唔使再做嗰四個連續 await,直接跳過(已經開始行緊嗰個
+  // playQueueImpl 唔會中途中斷,呢個純粹擋住「仲未輪到自己執行」嘅過時隊員)。
   function playQueue(list, startIndex = 0, opts = {}) {
-    const run = () => playQueueImpl(list, startIndex, opts);
+    const myGen = ++playQueueGenRef.current;
+    const run = () => {
+      if (myGen !== playQueueGenRef.current) return Promise.resolve();
+      return playQueueImpl(list, startIndex, opts);
+    };
     const next = playQueueChainRef.current.then(run, run);
     playQueueChainRef.current = next;
     return next;
