@@ -110,6 +110,20 @@ function intentUrl(token) {
   return `intent://p/${token}#Intent;scheme=godmusic;package=${APK_PACKAGE};S.browser_fallback_url=${fallback};end`;
 }
 
+// BATCH7 B7-2:intent:// 淨係 Android Chrome 識,iOS Safari 撳落去零反應。
+// iOS 冇 intent:// 呢種語法,直接出個 custom scheme link(godmusic://,呢個
+// scheme 本身已經實測 work,見 SECOND-PASS-REVIEW-20260820.md §3.2)。裝咗 app
+// 會直接跳 app;冇裝就淨係停留喺分享頁(Safari 唔識 unregistered scheme 時
+// 通常靜靜哋冇反應,同而家 Android 冇裝 app 走 browser_fallback_url 唔同,但
+// 呢個係 iOS custom scheme 嘅固有限制,唔係呢次修法範圍)。
+function schemeUrl(token) {
+  return `godmusic://p/${token}`;
+}
+
+function isIOSUserAgent(ua) {
+  return /iPad|iPhone|iPod/.test(ua || '');
+}
+
 // Ode 色板(ODE-REBRAND-PLAN §2):靛紫底 + 暖光 CTA,冇金色、冇綠色。
 const PAGE_STYLE = `
   body { margin:0; background:#0B0913; color:#F4F1FA; font-family:-apple-system,Roboto,sans-serif; }
@@ -159,7 +173,7 @@ function renderGonePage() {
   return pageShell({ title: 'Odely 詩歌', bodyHtml });
 }
 
-function renderPlaylistPage(data, token) {
+function renderPlaylistPage(data, token, isIOS) {
   const name = escapeHtml(data.name);
   const owner = data.owner ? escapeHtml(data.owner) : null;
   const count = data.songs.length;
@@ -186,7 +200,7 @@ ${ogImageTag}`;
   <div class="brand">Odely 詩歌</div>
   <h1>${name}</h1>
   <div class="meta">${owner ? `由 ${owner} 分享 · ` : ''}${count} 首詩歌</div>
-  <a class="btn primary" href="${intentUrl(token)}">▶ 喺 App 開啟</a>
+  <a class="btn primary" href="${isIOS ? schemeUrl(token) : intentUrl(token)}">▶ 喺 App 開啟</a>
   <a class="btn secondary" href="/downloads/app.apk">⬇ 下載 App(Android)</a>
   <div class="songs">${songsHtml}</div>`;
 
@@ -246,7 +260,7 @@ export default function shareRoutes(app) {
       const db = await getUserDb();
       const data = resolveShare(db, req.params.token);
       if (!data) return res.status(410).send(renderGonePage());
-      res.status(200).send(renderPlaylistPage(data, req.params.token));
+      res.status(200).send(renderPlaylistPage(data, req.params.token, isIOSUserAgent(req.headers['user-agent'])));
     } catch (err) {
       console.error('share page error:', err);
       res.status(500).send('Server error');
