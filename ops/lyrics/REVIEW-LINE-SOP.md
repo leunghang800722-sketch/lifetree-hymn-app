@@ -78,12 +78,24 @@ node ops/lyrics/bi-freeze.mjs --filter <scratchpad>/drafts.json --out <scratchpa
 # → 讀 split/actionable.json,再自己 filter 淨低 lang == 你嘅分區
 ```
 
-**keeper 死咗要重開**(唔食 Claude 額度,係最抵嘅資源):
+**keeper 死咗要唔要重開 —— 先睇個 stop flag,唔好盲重開:**
+
 ```bash
-ls /tmp/lyrics-sprint-stop && rm -f /tmp/lyrics-sprint-stop   # 有呢個檔 keeper 一開就自殺
+cat /tmp/lyrics-sprint-stop 2>/dev/null
+```
+- **檔案存在而且第一行係 `PAUSED-BY-ERIC`** → 🛑 **呢個係刻意暫停,唔係故障。
+  唔准刪呢個檔、唔准重開 keeper。** 通常係 Eric 要用 CPU(Xcode build / 模擬器實測)。
+  你照做複核就得(複核唔食乜 CPU),喺 ledger 記低「producer 暫停中(PAUSED-BY-ERIC)」。
+- **檔案存在但冇 `PAUSED-BY-ERIC`**(舊格式殘留)→ 可以刪咗佢再重開。
+- **檔案唔存在而 keeper 真係死咗** → 重開(唔食 Claude 額度,係最抵嘅資源):
+```bash
 nohup bash ops/lyrics/producer-keeper.sh >/dev/null 2>&1 & disown
 sleep 10; pgrep -fl producer-keeper; tail -5 /tmp/hymn_keeper.log
 ```
+
+> ⚠️ 2026-08-20 差啲出事:舊版呢段寫住「見到 stop flag 就刪咗佢再開 keeper」,
+> 而 Eric 啱啱叫停 producer 去做模擬器實測 —— 下一班一開波就會自動拆咗個暫停。
+> 所以而家 flag 入面會寫明原因,**要讀完先決定**。
 ⚠️ **三條線都嚴禁自己開 `fetchLyrics.js`** —— 全程只准一個 producer。
 
 **校對方法正本:** Read `/Users/macbookpro/.claude/scheduled-tasks/lyrics47-b01/SKILL.md`
