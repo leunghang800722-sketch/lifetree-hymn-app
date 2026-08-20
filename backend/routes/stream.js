@@ -317,7 +317,10 @@ export default function streamRoutes(getDb) {
         // BATCH7 B7-3:踢走呢個 buffered entry——唔係 client 個 retry 會一直
         // 命中同一截 buffered head 先 206、再喺 buffer 之外撞返同一條死 URL,
         // 永遠跌唔落冷路徑嘅 backoff→bustCache→re-resolve 自癒鏈。
-        evictBufferedChunk(hymn.youtube_id);
+        // 但淨係喺呢條 fetch 真係壞咗先評:如果係 client 自己斷線觸發
+        // controller.abort()(signal.aborted),個 buffered chunk 本身健康,
+        // evict 只會令下個用戶白白錯過本來可以命中嘅 warm buffer。
+        if (!controller.signal.aborted) evictBufferedChunk(hymn.youtube_id);
         finishLog(res.statusCode, { aborted: true });
         return res.destroy();
       }
