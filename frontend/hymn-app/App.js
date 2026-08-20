@@ -741,6 +741,12 @@ function PlayerProvider({ children }) {
     if (!overlayExpanded) drawerAnim.setValue(overlayHRef.current);
     const finishShow = () => {
       clearAnimTimeout();
+      // BATCH7 B7-1b:timeout 保底 fire 嗰陣(completion callback 冇到)
+      // drawerAnim 可能停喺動畫行到一半嘅中途值——冇呢句嘅話 isAnimatingRef
+      // 雖然自癒返 false,但 native translateY 同 overlayExpanded=true 個
+      // 邏輯狀態對唔上,用戶見到播放器卡喺半開半收,§3.1 個場景理論上仲會
+      // 出現。強制拉去目標值,令視覺同 state 對齊。
+      drawerAnim.setValue(0);
       isAnimatingRef.current = false;
     };
     Animated.timing(drawerAnim, {
@@ -763,6 +769,9 @@ function PlayerProvider({ children }) {
     isAnimatingRef.current = true;
     const finishHide = () => {
       clearAnimTimeout();
+      // BATCH7 B7-1b:同 finishShow 一樣,timeout 保底 fire 嗰陣要強制拉去
+      // 目標值(overlayHRef.current,唔係 0——收埋方向係推落去嗰個高度)。
+      drawerAnim.setValue(overlayHRef.current);
       setOverlayExpanded(false);
       isAnimatingRef.current = false;
     };
