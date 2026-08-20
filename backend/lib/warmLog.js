@@ -49,8 +49,20 @@ export function mergeWarmLog(log, key, ids) {
 export function recordWarmIds(ids) {
   if (!Array.isArray(ids) || ids.length === 0) return;
   try {
+    // BATCH7 B7-7:req.body.ids 直接嚟自 client JSON,冇保證型別一致——
+    // `123`(number)同 `"123"`(string)喺 mergeWarmLog 個 Set dedupe 入面
+    // 會當兩個唔同 id,浪費 MAX_IDS_PER_DAY 個位、令 pickWarmCandidates 嘅
+    // 「今日為你預備」命中率打折(SECOND-PASS-REVIEW-20260820.md b5)。
+    // 統一轉做 Number,唔係合法整數嘅(NaN/浮點/垃圾輸入)直接丟。
+    // (id != null && id !== '') 行先:Number(null) === 0、Number('') === 0,
+    // 唔擋呢兩個就會將 null/空字串靜靜哋當做合法 id 0 收埋落 log。
+    const normalized = ids
+      .filter((id) => id != null && id !== '')
+      .map((id) => Number(id))
+      .filter((id) => Number.isInteger(id));
+    if (!normalized.length) return;
     const log = loadLog();
-    const next = mergeWarmLog(log, dateKey(new Date()), ids);
+    const next = mergeWarmLog(log, dateKey(new Date()), normalized);
     fs.writeFileSync(WARM_LOG_PATH, JSON.stringify(next));
   } catch (_) { /* best-effort,寫失敗唔緊要,下次 /warm 再試 */ }
 }
