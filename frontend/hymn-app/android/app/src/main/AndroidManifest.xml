@@ -4,10 +4,15 @@
        react-native-track-player 個背景播放媒體控制通知——冧咗個離開App後嘅
        mini player(2026-07-30 Eric 實測,STREAM-403-FGS-CRASH-PLAN 已知問題)。 -->
   <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
-  <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="32" tools:replace="android:maxSdkVersion"/>
-  <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW"/>
+  <!-- BATCH6 C6:App 冇任何讀寫外部儲存/懸浮窗功能,剷走呢三個權限。
+       tools:node="remove" 係叫 manifest merger 連 library manifest 帶入嚟嘅
+       同名聲明都一齊剷,齋刪行剷唔乾淨。SYSTEM_ALERT_WINDOW 喺 debug overlay
+       (src/debug/AndroidManifest.xml)有自己一份俾 dev 工具用,唔受影響
+       (overlay priority 高過 main,remove 只向下游 library 生效)。 -->
+  <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" tools:node="remove"/>
+  <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" tools:node="remove"/>
   <uses-permission android:name="android.permission.VIBRATE"/>
-  <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" android:maxSdkVersion="32" tools:replace="android:maxSdkVersion"/>
+  <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" tools:node="remove"/>
   <queries>
     <intent>
       <action android:name="android.intent.action.VIEW"/>
