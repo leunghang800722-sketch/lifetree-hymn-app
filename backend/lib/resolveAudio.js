@@ -471,10 +471,14 @@ export function evictBufferedChunk(youtubeId) {
 export async function adoptStreamedHead(youtubeId, url, buf, totalLength, contentType) {
   return withWarmLock(async () => {
     try {
-      // 已經有同 url 嘅未過期完整 entry 就唔好蓋——tee 收嘅可能係 client 早
-      // abort 剩低嘅殘缺頭截,warmBuffer 嘅完整品優先保留。
+      // 已經有同 url 嘅未過期 entry,新嚟嘅冇長過佢就唔好蓋——BATCH7 B7-4:
+      // 舊 guard 淨係睇「有冇 entry」,唔睇長度,令「最快完成嗰條 tee 永久
+      // 贏」:AVFoundation 冷開常見一條 1MB probe 最先完成,佢個 1MB stub
+      // 就霸住成個 25 分鐘 TTL,之後嚟緊嘅完整 12MB head 全部被呢句擋咗
+      // (SECOND-PASS-REVIEW-20260820.md b1)。改成:淨係新 buf 冇長過現存
+      // 嗰個先跳過,等真正大嘅 head 有機會蓋返個 stub。
       const existing = bufferCache.get(youtubeId);
-      if (existing && existing.expiresAt > Date.now() && existing.url === url) return;
+      if (existing && existing.expiresAt > Date.now() && existing.url === url && buf.length <= existing.buf.length) return;
       try { zeroFragmentedMp4Durations(buf); } catch (_) {}
       // BATCH6 C1:B2 同款「有人聽緊就讓路」——head 係正播 stream 順手抄嘅,零
       // 額外頻寬,照 adopt;補尾巴係額外一條 upstream 連線,聽緊就跳過(entry
