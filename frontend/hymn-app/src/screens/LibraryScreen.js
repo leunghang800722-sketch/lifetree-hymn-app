@@ -7,7 +7,7 @@
 // 所以呢度收到咩就顯示咩,唔使前端再過濾一次。
 
 import React, { useState, useMemo, useEffect, useRef } from 'react';
-import { View, Text, TextInput, FlatList, TouchableOpacity, StyleSheet, Image, Keyboard } from 'react-native';
+import { View, Text, TextInput, FlatList, TouchableOpacity, StyleSheet, Image, Keyboard, InteractionManager } from 'react-native';
 import OdeIcon from '../icons/OdeIcon';
 import { COLORS, TYPOGRAPHY, effects } from '../theme/designSystem';
 import { useInsets } from '../hooks/useInsets';
@@ -103,14 +103,31 @@ export default function LibraryScreen({ hymns = [], onPlayHymn, onOpenAuth }) {
   // fallback)。733KB 總量,起一次之後每 keystroke 只係 Map.get + includes,
   // 冇 regex——所以兩輪一齊搵都仲係平。
   const lyricsIndexRef = useRef({ src: null, map: null });
+  function buildLyricsIndex(list) {
+    const m = new Map();
+    for (const h of list) { if (h.lyrics) m.set(h.id, norm(h.lyrics)); }
+    return m;
+  }
   function getLyricsIndex(list) {
     if (lyricsIndexRef.current.src !== list) {
-      const m = new Map();
-      for (const h of list) { if (h.lyrics) m.set(h.id, norm(h.lyrics)); }
-      lyricsIndexRef.current = { src: list, map: m };
+      lyricsIndexRef.current = { src: list, map: buildLyricsIndex(list) };
     }
     return lyricsIndexRef.current.map;
   }
+
+  // BATCH7 B7-10:淨係靠上面 getLyricsIndex() 喺第一下搜尋嘅 render 入面先起,
+  // 會喺用戶打緊字嗰下主線程 stall 一下(norm() ~6k 首全歌詞,733KB;
+  // SECOND-PASS-REVIEW-20260820.md f5)。用 InteractionManager 喺 hymns
+  // 準備好、冇 interaction 進行緊嗰陣背景預起,用戶真正搜嗰刻多數已經現成。
+  // 上面 getLyricsIndex() 嘅 lazy fallback 冚唔變——萬一預起未完成(hymns
+  // 啱啱先載入完、用戶手快)都保證行為正確,唔會因為呢個優化搜漏歌詞。
+  useEffect(() => {
+    if (!hymns.length) return undefined;
+    const task = InteractionManager.runAfterInteractions(() => {
+      getLyricsIndex(hymns);
+    });
+    return () => task.cancel && task.cancel();
+  }, [hymns]);
 
   // 兒童分類嘅底庫(唔理搜尋/團體篩選)——兼容讀法:kids===1 或者舊 client 冇
   // kids 欄時嘅 lang==='兒童' 分支(§4.2)。用嚟計 sub-chips 動態出現同計數。
