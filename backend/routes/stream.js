@@ -4,7 +4,7 @@
 
 import { Router } from 'express';
 import { Readable } from 'stream';
-import { resolveAudioUrl, bustCache, preVerifyUrl, markStreaming, unmarkStreaming, cache, warmBuffer, getBufferedChunk, isStreaming, anyStreaming, adoptStreamedHead, WARM_CAP_BYTES } from '../lib/resolveAudio.js';
+import { resolveAudioUrl, bustCache, preVerifyUrl, markStreaming, unmarkStreaming, cache, warmBuffer, getBufferedChunk, evictBufferedChunk, isStreaming, anyStreaming, adoptStreamedHead, WARM_CAP_BYTES } from '../lib/resolveAudio.js';
 import { zeroFragmentedMp4Durations } from '../lib/fixFragmentedMp4Duration.js';
 import { recordWarmIds } from '../lib/warmLog.js';
 
@@ -311,6 +311,10 @@ export default function streamRoutes(getDb) {
         // finishLog(res.statusCode)+res.end(),AVFoundation 當錯誤(-12935
         // 同源),但 log 仲報成功。硬斷條線,俾 client 見到係傳輸中斷(佢識
         // 自己 retry),唔好扮完整收工兼 log 成功。
+        // BATCH7 B7-3:踢走呢個 buffered entry——唔係 client 個 retry 會一直
+        // 命中同一截 buffered head 先 206、再喺 buffer 之外撞返同一條死 URL,
+        // 永遠跌唔落冷路徑嘅 backoff→bustCache→re-resolve 自癒鏈。
+        evictBufferedChunk(hymn.youtube_id);
         finishLog(res.statusCode, { aborted: true });
         return res.destroy();
       }

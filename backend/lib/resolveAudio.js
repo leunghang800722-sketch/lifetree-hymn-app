@@ -455,6 +455,15 @@ export function getBufferedChunk(youtubeId, url) {
   return c;
 }
 
+// BATCH7 B7-3:stream.js fast-path 送咗 buffered 頭截之後,續播(補剩低部分)
+// fetch 失敗(例如 403 風暴)嗰陣要踢走呢個 entry——唔係 client retry 會一直
+// 命中同一截 buffered head,先送 206 再喺 buffer 之外撞返同一條死 URL,
+// 永遠跌唔落冷路徑嘅 backoff→bustCache→re-resolve 自癒鏈,要等 25 分鐘 TTL
+// 過先甩身(SECOND-PASS-REVIEW-20260820.md §3.3)。
+export function evictBufferedChunk(youtubeId) {
+  bufferCache.delete(youtubeId);
+}
+
 // BATCH5 §7.3-A:冷路徑 stream 順手收落嚟嘅頭截,採納入 bufferCache(tee)。
 // buf 必須由 byte 0 開始(caller 保證)。同 warmBuffer 共用 tail 補攞邏輯,
 // 用同一個 withWarmLock 排隊(唔會加多一條*同時*嘅 tail-fetch 連線,同
