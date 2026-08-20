@@ -519,8 +519,9 @@ export default function streamRoutes(getDb) {
       const finishTee = () => {
         if (teeDone) return;
         teeDone = true;
-        if (teeBytes < MIN_TEE_BYTES) return; // 太少(client 極早 abort),唔值得入 cache
+        if (teeBytes < MIN_TEE_BYTES) { teeChunks.length = 0; return; } // 太少唔入 cache,但都要放走啲 chunk
         const headBuf = Buffer.concat(teeChunks);
+        teeChunks.length = 0; // BATCH6 C2:concat 完即放,唔好等 response 完先由 closure 鬆手(大檔中途 cap 到會吊住 ~12MB)
         adoptStreamedHead(hymn.youtube_id, url, headBuf, teeTotalLength, teeContentType).catch(() => {});
       };
       body.on('data', (chunk) => {
