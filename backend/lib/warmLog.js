@@ -56,10 +56,16 @@ export function recordWarmIds(ids) {
     // 統一轉做 Number,唔係合法整數嘅(NaN/浮點/垃圾輸入)直接丟。
     // (id != null && id !== '') 行先:Number(null) === 0、Number('') === 0,
     // 唔擋呢兩個就會將 null/空字串靜靜哋當做合法 id 0 收埋落 log。
+    // BATCH7 B7-7 補漏:淨係擋 null/空字串仲唔夠——Number(true)===1、
+    // Number(false)===0、Number([])===0、Number(['7'])===7,呢啲 type
+    // coercion 怪招都會被 Number.isInteger 放行,當做合法 id。加 typeof
+    // guard 淨係收 number/string 先做轉型;hymn id 由 1 開始,加 id > 0
+    // 順手擋埋 0 同負數。
     const normalized = ids
       .filter((id) => id != null && id !== '')
+      .filter((id) => typeof id === 'number' || typeof id === 'string')
       .map((id) => Number(id))
-      .filter((id) => Number.isInteger(id));
+      .filter((id) => Number.isInteger(id) && id > 0);
     if (!normalized.length) return;
     const log = loadLog();
     const next = mergeWarmLog(log, dateKey(new Date()), normalized);
