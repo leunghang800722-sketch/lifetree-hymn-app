@@ -435,9 +435,10 @@ function PlayerProvider({ children }) {
   // 嘅RemotePause/RemoteStop(鎖屏/耳機/Control Center暫停/停止掣)行喺獨立
   // event-listener context,冇呢個ref可以碰,而家經playback-intent.js呢個共用
   // module,喺下面D2嘅PlaybackPlayWhenReadyChanged listener入面consume返嚟同步
-  // 呢支flag(見下面)。⚠️仍然已知缺口:RemoteDuck permanent:true分支(用戶接
-  // 聽電話等唔應該恢復嘅情況)未接駁——呢個係唔同觸發路徑,冇included喺今次
-  // 嘅fix範圍,如果第時要覆蓋要另外處理。
+  // 呢支flag(見下面)。H2(9f078d0,FRONTEND-CODE-REVIEW-20260819)已經補埋
+  // RemoteDuck permanent:true分支(用戶接聽電話等唔應該恢復嘅情況)——
+  // track-player-service.js嘅RemoteDuck handler見到paused===true就無條件
+  // markRemotePauseExpected(),唔理permanent係咪true,呢個D2 guard唔會再誤判。
   const expectPlayingRef = useRef(false);
   // BG-PLAYBACK-STOPS-PLAN Fix A — 記住上次 warmIds() 暖過嘅 id 串,防止連環
   // 換歌/撳「下一首」狂 POST /warm(同一組 3 首唔會重覆 call)。

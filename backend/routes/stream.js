@@ -4,7 +4,7 @@
 
 import { Router } from 'express';
 import { Readable } from 'stream';
-import { resolveAudioUrl, bustCache, preVerifyUrl, markStreaming, unmarkStreaming, cache, warmBuffer, getBufferedChunk, evictBufferedChunk, isStreaming, anyStreaming, adoptStreamedHead, WARM_CAP_BYTES } from '../lib/resolveAudio.js';
+import { resolveAudioUrl, bustCache, preVerifyUrl, markStreaming, unmarkStreaming, cache, warmBuffer, getBufferedChunk, evictBufferedChunk, anyStreaming, adoptStreamedHead, WARM_CAP_BYTES } from '../lib/resolveAudio.js';
 import { zeroFragmentedMp4Durations } from '../lib/fixFragmentedMp4Duration.js';
 import { recordWarmIds } from '../lib/warmLog.js';
 
@@ -97,7 +97,10 @@ export default function streamRoutes(getDb) {
           // BATCH5 §7.3-B:有人聽緊:resolve+preVerify(平)已經做完落 cache,
           // 貴嘅 warmBuffer 讓路,唔同正播嗰條 stream 爭 VPN 頻寬。每個
           // iteration 即場 check,唔係入 loop 前check一次——中途開始播都讓。
-          if (isStreaming(yt) || anyStreaming()) continue;
+          // BATCH7 B7-9:isStreaming(yt) 被 anyStreaming() 完全包含(yt 播緊
+          // 即係 streaming map size>=1),舊寫法係死 code(SECOND-PASS-REVIEW-
+          // 20260820.md b3)。
+          if (anyStreaming()) continue;
           await warmBuffer(yt, verifiedUrl);
         } catch (_) {}
       }

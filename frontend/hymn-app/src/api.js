@@ -2,10 +2,9 @@
 import { API_BASE } from './config';
 
 // ── Admin APIs(MEMBERSHIP-PHASE2-ADMIN-PLAN §3.7)──────────────────────
-// ⚠️ 呢五個 call 唔用呢個檔頭上面嗰個 authHeaders()/getToken()——嗰套
-// AsyncStorage(@hymn_app_token)同真正登入流程用嘅 AuthContext(@hymn…uth)
-// 係兩份唔同嘅存儲,實際登入唔會寫入呢邊。Admin call 一律由 caller(有
-// useAuth() 嘅畫面/sheet)傳 token 落嚟,行 AuthContext.getToken() 嗰條真.路。
+// 呢個檔案本身唔存/唔讀 token(D4 已剷咗舊嘅 authHeaders()/getToken())。
+// Admin call 一律由 caller(有 useAuth() 嘅畫面/sheet)傳 token 落嚟,行
+// AuthContext.getToken() 嗰條真.路。
 function adminAuthHeaders(token, withJson = false) {
   const headers = { Authorization: `Bearer ${token}` };
   if (withJson) headers['Content-Type'] = 'application/json';
@@ -98,8 +97,8 @@ export async function adminListDelistedHymns(token) {
 }
 
 // ── 好友 / 邀請碼 APIs(MEMBERSHIP-PHASE4-FRIENDS-INVITES-PLAN)─────────────
-// 同 admin* 一樣:唔用檔頭嗰套 authHeaders()/getToken()(AsyncStorage 舊存
-// 儲,真正登入唔會寫入),caller 由 useAuth().getToken() 傳 token 落嚟。
+// 同 admin* 一樣:呢個檔案唔存/唔讀 token,caller 由 useAuth().getToken()
+// 傳落嚟。
 function meAuthHeaders(token, withJson = false) {
   const headers = { Authorization: `Bearer ${token}` };
   if (withJson) headers['Content-Type'] = 'application/json';

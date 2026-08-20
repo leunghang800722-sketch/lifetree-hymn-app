@@ -48,18 +48,6 @@ export function AuthProvider({ children }) {
     try { await AsyncStorage.removeItem(AUTH_KEY); } catch (_) {}
   }, []);
 
-  const register = useCallback(async (username, email, password) => {
-    const resp = await fetch(`${API_BASE}/api/auth/register`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username, email, password }),
-    });
-    const data = await resp.json();
-    if (!resp.ok) throw new Error(data.message || '呢個方式已經停用,請用電話註冊');
-    await saveAuth(data.token, data.user);
-    return data;
-  }, [saveAuth]);
-
   const login = useCallback(async (email, password) => {
     const resp = await fetch(`${API_BASE}/api/auth/login`, {
       method: 'POST',
@@ -167,7 +155,7 @@ export function AuthProvider({ children }) {
 
   return (
     <AuthContext.Provider value={{
-      user, token, loading, isAdmin, register, login, logout, getToken,
+      user, token, loading, isAdmin, login, logout, getToken,
       requestOtp, verifyOtpTicket, registerPhone, loginPhone, resetPassword,
       fetchOtpStatus, checkInviteCode,
     }}>
