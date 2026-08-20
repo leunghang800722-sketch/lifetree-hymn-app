@@ -467,7 +467,11 @@ export async function adoptStreamedHead(youtubeId, url, buf, totalLength, conten
       const existing = bufferCache.get(youtubeId);
       if (existing && existing.expiresAt > Date.now() && existing.url === url) return;
       try { zeroFragmentedMp4Durations(buf); } catch (_) {}
-      const tail = (totalLength && buf.length < totalLength)
+      // BATCH6 C1:B2 同款「有人聽緊就讓路」——head 係正播 stream 順手抄嘅,零
+      // 額外頻寬,照 adopt;補尾巴係額外一條 upstream 連線,聽緊就跳過(entry
+      // tail-less 係合法狀態,尾巴 range 行返冷路徑;之後 /warm 嘅 warmBuffer
+      // 會無條件蓋寫補完整)。喺 lock 入面執行嗰刻先 check,唔係入隊嗰刻。
+      const tail = (totalLength && buf.length < totalLength && !anyStreaming())
         ? await fetchTailBuf(url, totalLength, buf.length)
         : null;
       touchBufferEntry(youtubeId, {
