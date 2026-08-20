@@ -2317,10 +2317,9 @@ function FullScreenPlayerOverlay() {
   const [slowHint, setSlowHint] = useState(false);
   const slowHintTimerRef = useRef(null);
   useEffect(() => {
+    setSlowHint(false); // BATCH6 C4:effect 每次 re-run(isLoading 變 或 cur.id 變)都由頭計過——轉歌嗰陣仲 loading 緊,舊 code 唔會行 else 分支,上一首個「網絡較慢」會漏落新歌度
     if (player.isLoading) {
       slowHintTimerRef.current = setTimeout(() => setSlowHint(true), 8000);
-    } else {
-      setSlowHint(false);
     }
     return () => {
       if (slowHintTimerRef.current) { clearTimeout(slowHintTimerRef.current); slowHintTimerRef.current = null; }
