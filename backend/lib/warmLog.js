@@ -12,8 +12,14 @@ const WARM_LOG_PATH = path.join(__dirname, '..', 'data', 'warm-daily.json');
 const MAX_IDS_PER_DAY = 50;
 const KEEP_DAYS = 3;
 
+// BATCH6 C3:改用本地日(部機 = 香港)。消費者(server.js daily cron)係本地
+// 06:30 trigger,record 同 pick 必須同一個曆先對得上;之前用 toISOString()
+// (UTC)令 HK 00:00-08:00 嘅記錄跌落前一日格。
 function dateKey(d) {
-  return d.toISOString().slice(0, 10); // "2026-08-19"
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
 }
 
 function loadLog() {
@@ -54,7 +60,7 @@ export function recordWarmIds(ids) {
 export function pickWarmCandidates(log, now, cap) {
   const today = dateKey(now);
   const yesterdayDate = new Date(now);
-  yesterdayDate.setUTCDate(yesterdayDate.getUTCDate() - 1);
+  yesterdayDate.setDate(yesterdayDate.getDate() - 1); // 本地曆,同 dateKey 一致
   const yesterday = dateKey(yesterdayDate);
   const merged = [];
   const seen = new Set();
