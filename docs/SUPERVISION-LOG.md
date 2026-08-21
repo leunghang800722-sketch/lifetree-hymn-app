@@ -6860,3 +6860,95 @@ approve 唔係問題(approved sha 已 = HEAD b2d9bf5)。複核線紅線禁 git,�
 - 歌名清理改動上線後串流健康:`/api/stream` 三首全部 **206**
 - **覆蓋率 72.2% → 80.1%**,一次過放 476 首
 
+
+## 2026-08-21 21:52 — 每日自動歌詞校對 routine(lyrics-daily-proofread)
+
+**現況:** export 得 198 首 draft(粵 31 / 國 87 / 英 78 / 兒童 2);`alignLyrics --all` 行足 3 分鐘,195 首有對齊數據,**whisperSegs=0 嘅一首都冇**。DB 收工時:verified 4897 / draft 568 / unavailable 935 / none 1769。
+
+**決定分佈(共 198 讀完):** verified **0** / unusable **12** / 留 draft 186 / demote 0 / reject 0。
+audit 12/12 一次過骨(rejects 0、langmismatch 0),apply 全中,逐條覆查 `lyrics_status='unavailable'` 已落實。
+
+**verified = 0 嘅原因(同 8-21 早兩轉一樣):** 呢個 routine 出唔到 verified 歌詞 —— 系統版權紀律禁止我複製/重寫第三方歌詞全文,而 `--apply` 要求 `lyrics` 欄填足全文先入到 DB。所以自動班嘅實際產出只能係**分流**(清死症、踢殭屍出隊列),真正嘅出街要靠 R1/R2/R3 人手線。呢件事已經係第三日一樣,建議 Eric 拍板:要就改 routine 定位做「純分流班」,要就搵第二個唔受同一限制嘅執行者。
+
+### 今轉判死嘅 12 首(判準寫喺下面,可覆查)
+判死規則(今轉自訂,寫低等後人對數):**(a)** 非歌內容/tracklist/全場錄影/默想節目、**(b)** 純器樂冇歌詞、**(c)** 語言標錯、**(d)** OCR 底本徹底亂碼 **而且** whisper segments < 20(兩個源都救唔返)。
+
+| id | 歌名 | 判死理由 | whisper segs |
+|---|---|---|---|
+| 1601 | 聖誕鉅獻歌舞劇《兩個世界．上下城》 | (a) 全場歌舞劇錄影,唔係單曲(inv 769 行對白+旁白) | 266 |
+| 7219 | 我願降服 I Surrender 專輯試聽 | (a) 純 tracklist(1.–12. 曲目表),唔係單曲 | 7 |
+| 3983 | 《沉思集》：來就上主羔羊 | (a) 主體係默想文/詩歌背景故事,歌詞得一段 | 7 |
+| 5413 | ACM Little Band 05 - 祢成就救恩 | (b) 底本淨係 YAMAHA/Roland/KORG/Marshall 樂器牌,純器樂 band | 7 |
+| 5421 | ACM樂隊系列 02 - 全屬於你 Band Cover | (b) 底本淨係 credit + Zildjian/SABIAN 鼓牌,純器樂 | 8 |
+| 6350 | あふれる力 I Am Strengthened in Him | (c) 日文兒童敬拜標咗「國語」+ OCR 全亂碼 | 9 |
+| 1912 | 耶穌的膀臂 Arms of Jesus | (d) 全首得「Yemn Chwen E」式亂碼重複 81 行 | 11 |
+| 8629 | 主耶穌,我愛祢 My Jesus, I Love Thee | (d) 底本得 Public Domain credit 亂碼,零歌詞行 | 18 |
+| 3626 | 同心圓《不是倚靠勢力》 | (d) 200 行全部「wnE / wRE / iCle」亂碼 | 16 |
+| 3632 | 同心圓《愛仇敵》(太五) | (d) 底本零歌詞,得 branding「敬拜者使團 Summit Concert」 | 15 |
+| 3635 | 同心圓《愛是...》(林前十三) | (d) 同上,零歌詞 | 12 |
+| 4791 | Psalm 92:13 - Planted \| Hillsong Kids | (d) 22 行全亂碼 + whisper 得 4 段 | 4 |
+
+**⚠️ 5 首建議 delist(唔屬呢個 routine 權限,交監督線):** `1601`(歌舞劇全場)、`7219`(專輯試聽 tracklist)、`3983`(默想節目)、`5413`+`5421`(ACM 純器樂 band cover / Little Band 系列 —— 同 INSTRUMENTAL 規劃「伴奏唔收」同一類,值得順手掃埋成個 ACM 樂隊系列)。
+
+### 特登**冇**判死嘅邊緣個案(留低理由,唔好下輪再重複讀)
+- `7146` 相信 (Acoustic Live, OCR 得 65 字)、`7152` 祢的創造 (130 字) —— OCR 極碎但 whisper 有 21/23 段,**whisper 救得返**,而且 R1 線 8-21 已記錄過 7146 有「詞曲:李宗盛」幻覺指紋,唔應該由自動班一鎚判死。
+- `7981` Do You Hear What I Hear & Emmanuel Medley —— 頭段標題卡亂碼但 **matchRate 80%**,歌詞主體讀得返,medley 但可拆。
+- `2700` 太陽之歌 —— OCR 係直排逐字打散(1507 行單字),底本睇落死,但 whisper 33 段可以救。
+- `4811` I Am a C-H-R-I-S-T-I-A-N(ws 30)、`4632` There Is Power(ws 36)、`4644` All Things(ws 56)、`4655` Stop and Go、`4636` How Great Is Our God —— OCR 差但 whisper 夠厚,留返俾人手線。
+- `1857` 願你高飛 —— 開頭大段係家書式旁白,但中英歌詞主體 OCR 到,唔算死症。
+- `627` Chris Tomlin - Indescribable —— 亂碼偵測器報 47%,實情係**和弦圖行**(G/Em/Am7)被誤判,歌詞完好。
+
+### 其他觀察
+- **KALA/伴奏版仍然收緊:** `6931`、`7071`(約書亞樂團官方 KALA 版)喺 draft 池。KALA 版有字幕所以 OCR 做到,但按 INSTRUMENTAL-CATEGORY-PLAN §8「伴奏唔收」呢兩首應該係 delist 對象,唔係校對對象。等 Phase 1 掃描嗰陣一併處理。
+- **WebSearch 用咗 0/30 次;cantonhymnLookup 冇用**(今轉冇一首行到「真歌 + low-confidence 要核對」呢一步,因為出唔到 verified)。
+- **yt-dlp / YouTube 零接觸**,全程本地。
+
+**Fable 5 抽查名單:** 今轉 verified = 0,冇新歌可抽。改為建議抽查上面 12 首判死個案入面嘅 `3983`、`5421`、`7219`、`6350` 四首,確認判死無誤(其餘 8 首係明顯亂碼)。
+
+**⛔ 冇做 restart(刻意):** 呢轉零 verified,冇嘢要出街,restart 對用戶零得益。實測 live 6094 首 / 有歌詞 **4883**,DB verified **4897**,差 14 首 —— 嗰 14 首係 R1 國語線 21:40 解封之後新做嘅,**restart 權喺 R1 線**,自動班唔應該搶行(亦避免撞正真機 QA)。留返俾 R1 下一轉一齊推。
+- [2026-08-21 21:56] P線時報(keeper自動):過去1小時 OCR/whisper draft **+41**(log累計 2818);重做隊剩 0;可做draft 142;producer 行緊
+- [2026-08-21 22:56] P線時報(keeper自動):過去1小時 OCR/whisper draft **+36**(log累計 2854);重做隊剩 0;可做draft 176;producer 行緊
+- **心跳 2026-08-21 23:01** — verified 4887(80.2%)/ draft 234(bi-frozen 179;keeper 計可做 176)/ 重做隊剩 0 / producer 生存(pid 66563,20:36 開)/ 有產出(keeper 22:56 時報過去 1 鐘 draft +36);⚠️ 唯一異常係 /tmp/hymn_fetchlyrics.log 用 tail 讀最後一行停喺 15:01(檔 mtime 23:01 有更新),log 檔可能俾覆寫成 sparse,睇進度改用 keeper 時報
+- [2026-08-21 23:56] P線時報(keeper自動):過去1小時 OCR/whisper draft **+38**(log累計 2892);重做隊剩 0;可做draft 211;producer 行緊
+- [2026-08-22 00:56] P線時報(keeper自動):過去1小時 OCR/whisper draft **+14**(log累計 2906);重做隊剩 0;可做draft 222;producer 冇行
+- [2026-08-22 01:56] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 2906);重做隊剩 0;可做draft 133;producer 冇行
+- **心跳 2026-08-22 02:01** — verified 4964(81.5%)/ draft 192(可做 133)/ 重做隊剩 0 / producer 生存(pid 11690)/ ⚠️ OCR 池抽乾:keeper 01:51 同 01:56 連續兩轉報「池入面冇一首攻得(全部 cooldown / skip-orgs)」,過去 1 鐘 draft +0(log 累計停喺 2906),下一轉已自動轉 CC 補倉,睇下一轉有冇解返
+- [2026-08-22 02:56] P線時報(keeper自動):過去1小時 OCR/whisper draft **+2**(log累計 2908);重做隊剩 0;可做draft 134;producer 冇行
+- [2026-08-22 03:56] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 2908);重做隊剩 0;可做draft 134;producer 冇行
+- [2026-08-22 04:56] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 2908);重做隊剩 0;可做draft 134;producer 冇行
+- **心跳 2026-08-22 05:01** — verified 4964(81.5%)/ draft 193(可做 134)/ 重做隊剩 0 / producer 生存 / ⚠ keeper 連續兩轉報「OCR 池冇一首攻得(全部 cooldown / skip-orgs)」、fetchlyrics log 停喺 8-21 20:56 冇新輸出,producer 實質空轉,OCR 隊抽乾未解
+- [2026-08-22 05:56] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 2908);重做隊剩 0;可做draft 128;producer 冇行
+- [2026-08-22 06:56] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 2908);重做隊剩 0;可做draft 128;producer 冇行
+- [2026-08-22 07:56] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 2908);重做隊剩 17;可做draft 135;producer 行緊
+
+## 2026-08-22 07:55 — 🆕 新工作面:重掃 879 首 `unavailable`(Eric 拍板,自主連續做)
+
+### 為咩要主動推:`unavailable` 係 terminal state
+`pickOcrCandidates` 要求 `lyrics_status='none' AND lyrics_source='cc:miss'`,所以 unavailable **永遠唔會自動重試**(90 日重試從來冇真正實現)。要重掃一定要主動 reset。
+
+### 零成本分流(唔使打 YouTube,用 DB 已有嘅 whisper timeline)
+判定式:whisper 轉錄剷走 `[MUSIC]`/`(音樂)` 呢類佔位符之後,仲有 ≥20 CJK 或 ≥60 拉丁字母
+= **首歌真係有人唱**,當時 OCR 攞唔到字係引擎問題,唔係首歌冇詞。
+
+| 桶 | 數 | 處置 |
+|---|---|---|
+| **whisper 實測有人唱歌** | **616** | ✅ 推去重掃 |
+| 疑似純音樂([MUSIC] / 空) | **254** | ❌ **唔推** —— 推咗都白做 |
+| 冇 whisper 數據 | 9 | ❌ 唔推(判唔到) |
+
+判定時期分佈亦支持假設:**565 首係 8/16 PaddleOCR 上線之前**判嘅(舊 Vision 年代)。
+
+### Pilot 先驗證,冇盲推(Eric 要求 #1)
+抽 8 首(全部 8/16 前判、whisper 有唱歌)requeue 再跑真 producer:
+**7 首出到 draft(87.5%)**,draft 長度 97–1,377 字元;第 8 首(3787)係我隻 process 撞到 10 分鐘 timeout 未輪到,唔係失敗。
+→ **假設成立**:呢批係 Vision 年代嘅假陰性,PaddleOCR 攞返到字。
+
+### 全推
+608 首 reset(616 減已做嘅 8 首)→ **OCR 池 1 → 610**。`unavailable` 由 879 → **263**(淨返純音樂嗰批 + 9 首判唔到)。
+`lyrics_draft` / `lyrics_timeline` 都冇剷,新 OCR 會覆寫,舊嘢留住做對照。名單:`backend/data/unavailable-requeue-20260822.json`。
+
+### ⚠️ 老實講明(Eric 要求 #4)
+- **「出到 draft」≠「出到街」。** 呢批 draft 好多好短(pilot 見到 97 字元嗰種),複核線會判一部分太薄/救唔返。真實出街率 = draft 率 × 複核命中率,**要等複核線行完先知,我唔會用 draft 數扮成覆蓋率**。
+- 嗰 **254 首疑似純音樂唔會推** —— 呢個就係「真 unavailable」嘅主體,唔係誤判。
+- 以 ~30 首/鐘計,610 首池要 **~20 個鐘**攻完。
+
