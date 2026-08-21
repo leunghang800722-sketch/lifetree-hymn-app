@@ -22,6 +22,26 @@ const DECORATIVE_PHRASES = [
   'lyric video', 'lyrics video', 'live worship mv', 'cantonese version',
   '現場敬拜', '现场敬拜', '堂會投稿', '堂会投稿', '廣東話版', '广东话版',
   'demo cover', '敬拜瞬間', '敬拜瞬间', 'mv', 'demo',
+  // 2026-08-21 A-level noise sweep (TITLE-NORMALIZATION-PLAN §4 A2) — same
+  // "official / lyric-version / format" marketing-tag class as the phrases
+  // above, just spelling variants the original list didn't catch yet.
+  'official live video', 'official live', 'lyric hd', 'with lyrics',
+  'kids worship', 'dance-a-long', 'dance-along', 'sing-a-long', 'sing-along',
+  '官方完整cd版', '官方動作版', '官方译本', '官方允准譯本', '官方允准译本',
+  '官方譯本', '官方歌詞', '官方歌词', 'cd version', 'dvd', 'ktv',
+  '4k uhd', 'uhd', '1080p', '4k', 'hd',
+  // 2026-08-21 A-level round 2 (TITLE-NORMALIZATION-PLAN §4 A-level gaps) —
+  // compound phrases that must be matched WHOLE (longest-first sort already
+  // handles the ordering) so their generic tail word doesn't survive as an
+  // orphan once the rest of the phrase is stripped — e.g. 'kids worship'
+  // alone leaves a stranded "Video"/"Motions" behind on channels that always
+  // append one of these tails (see id 4629, 4570/4571, 4795 in the plan's
+  // Opus5 gap list).
+  'official live version', 'kids worship motions', 'kids worship video',
+  'sing-a-long video', 'dance-a-long video',
+  // Same class as '官方完整cd版' above, just the no-CD-mention variant used
+  // by ACM's channel (e.g. "尊貴神兒女 - 官方完整版").
+  '官方完整版',
 ];
 
 // Known bilingual / short-nickname aliases for a DB `artist` value — added to
@@ -45,6 +65,14 @@ const ARTIST_ALIASES = {
 // auto-sorted) — put longer/more-specific phrases first so e.g. "盛曉玫詩歌
 // 默想" gets matched whole before "盛曉玫詩歌" can chop it up.
 const ARTIST_SCOPED_PHRASES = {
+  // 2026-08-21 bug fix: the general artist-substring pass (removeArtistSubstring,
+  // step 2 below) matches the DB artist "ACM" with no word-boundary check, so it
+  // was matching the "ACM" tail INSIDE the channel-handle "HKACM" and stripping
+  // only that, stranding an orphan "HK" in ~54 titles (e.g. "HKACM Official
+  // Music Video" → "HK"). Listing the full "HKACM" token here runs it through
+  // phraseRegex() (which IS word-boundary aware) in step 0, before step 2 ever
+  // gets a chance to chop it up — the longer, whole-word match wins.
+  'ACM': ['HKACM'],
   '全心製作 HeartPro': ['《HIS70ry 齊唱。吳秉堅之歌。》自傳第一樂章。', '見證'],
   'Heavenly Melody': ['___跟天韻合唱團一起敬拜神', '__天韻合唱團'],
   // 泥土音樂 is a label; its uploads all lead with the actual singer's name
@@ -54,7 +82,11 @@ const ARTIST_SCOPED_PHRASES = {
   '泥土音樂': ['盛曉玫詩歌默想', '盛曉玫 詩歌默想', '盛曉玫詩歌', '盛曉玫 詩歌'],
   '天弦音樂事工': ['gsus music ministry'],
   '共享詩歌ShareHymns': ['共享詩歌'],
-  'CJ and Friends': ['cj & friends'],
+  // "CJ and Friends Worship" (the artist name with a generic "Worship" tail
+  // glued on) — must be listed here, matched whole in step 0, so the general
+  // artist-substring pass (step 2) never gets the chance to strip only "CJ
+  // and Friends" and strand a bare "Worship" behind (see id 4557).
+  'CJ and Friends': ['cj & friends', 'CJ and Friends Worship'],
   'KEC Worship': ['歌鄰敬拜'],
   // Source-data typo: this one row spells the artist "Hilsong" (missing an
   // "l") so the exact-match general pass never catches it.
@@ -94,6 +126,15 @@ function stripDecorative(s) {
   for (const phrase of DECORATIVE_PHRASES_SORTED) {
     out = out.replace(phraseRegex(phrase), ' ');
   }
+  // Runtime footer some channels append, e.g. "蝴蝶片長4分22秒" / "片長：3分11秒"
+  // — never part of the song's own name, and the digits vary per video so this
+  // can't be a fixed DECORATIVE_PHRASES entry.
+  out = out.replace(/片[長长][:：]?\s*\d+\s*分\s*\d*\s*秒?/g, ' ');
+  // 基恩敬拜's yearly campaign tag "禱告更新2024"/"禱告更新2025" — the year
+  // varies per upload so this can't be a fixed DECORATIVE_PHRASES entry
+  // either (see TITLE-NORMALIZATION-PLAN §4 A6). The org's own "AGWMM"
+  // acronym is handled separately via ARTIST_SCOPED_PHRASES.
+  out = out.replace(/禱告更新\s*20\d\d/g, ' ');
   // A phrase strip can leave a bracket pair wrapping nothing (e.g. "【中英字幕】"
   // → "【 】"); collapse those rather than shipping an empty bracket.
   out = out
@@ -210,7 +251,19 @@ function trimConnectors(s) {
     // "#worship #singwithme #onewayjesus #hillsong") is never part of the
     // song's own name — but a bare "#" mid-title (rare, decorative musical
     // sharp sign) is left alone since this only matches at the true end.
-    .replace(/(?:\s*#[\w一-鿿]+)+\s*$/, '')
+    // 2026-08-21 round 2: widened from `#[\w一-鿿]+` to `[#＃]\s?[\w一-鿿぀-ヿ]*`
+    // — the original required the hashtag word to glue directly onto "#"
+    // with no space, which missed real scraped variants like "# 敬拜讚美系列
+    // 11" (a stray space after #) and "＃" (full-width hash, id 8605). The
+    // tail content is still restricted to word/CJK/kana chars (NOT a
+    // catch-all "not space or #") — an earlier version used `[^\s#＃]*` and
+    // it swallowed real trailing punctuation too, e.g. "...Series #3)" (a
+    // real series-number suffix, not a hashtag) matched "#3)" as one token,
+    // eating the closing paren and unbalancing the brackets, which tripped
+    // looksBroken()'s safety net and reverted the WHOLE title including an
+    // otherwise-correct artist-name strip (caught in this round's own
+    // dry-run diff — id 2911/2912/2913).
+    .replace(/(?:\s*[#＃]\s?[\w一-鿿぀-ヿ]*)+\s*$/, '')
     .replace(/^[\s\-–—|｜│:：·•,，、/⧸_&]+/, '')
     .replace(/[\s\-–—|｜│:：·•,，、/⧸_&]+$/, '')
     // A comma/、/&/"and" sitting right next to a dash or pipe is what's left
@@ -246,10 +299,12 @@ function trimConnectors(s) {
     // "X" as a bare connector word ("團A X 團B" = "A crossover B") orphaned at
     // the very front once the leading artist name is gone.
     .replace(/^x\s+/i, '')
-    // Whitespace left clinging to a bracket delimiter after a mid-string
-    // removal, e.g. "（ 重投豐盛專輯）" → "（重投豐盛專輯）".
-    .replace(/([【「『《（(\[])\s+/g, '$1')
-    .replace(/\s+([】」』》）)\]])/g, '$1')
+    // Whitespace — or a connector run left dangling after a mid-string
+    // removal ate everything past it, e.g. "(粵語版 - 官方譯本)" with "官方
+    // 譯本" stripped → "(粵語版 -)" — clinging to a bracket delimiter.
+    // e.g. "（ 重投豐盛專輯）" → "（重投豐盛專輯）",  "(粵語版 -)" → "(粵語版)".
+    .replace(/([【「『《（(\[])[\s\-–—|｜│/⧸:：·•,，、]+/g, '$1')
+    .replace(/[\s\-–—|｜│/⧸:：·•,，、]+([】」』》）)\]])/g, '$1')
     .replace(/\s{2,}/g, ' ')
     .trim();
 }
@@ -321,7 +376,23 @@ function splitOnLowercaseLPipe(title) {
 }
 
 function looksBroken(candidate) {
-  if (!candidate || candidate.trim().length < 2) return true;
+  const trimmedCandidate = (candidate || '').trim();
+  if (!trimmedCandidate) return true;
+  // 2026-08-21 round 2: the plain "length < 2" floor rejected a single bare
+  // CJK/kana character (e.g. "誰", a real one-word song title — see id 5506,
+  // where this round's new '官方完整版' phrase combines with the existing
+  // 'official lyric video' phrase to legitimately reduce "誰 Official Lyric
+  // Video - 官方完整版" down to just "誰"). A single CJK character is a
+  // complete word carrying real meaning, unlike a single stray Latin letter
+  // (the case this floor exists to catch, e.g. a leftover "x" or "l") — so
+  // the length-2 floor only applies when the leftover has no CJK/kana in it.
+  if (trimmedCandidate.length < 2 && !/[一-鿿぀-ヿ]/.test(trimmedCandidate)) return true;
+  // 2026-08-21 round 2: a result that's ONLY digits (e.g. a bare leading
+  // track number "10" left after stripLeadingTrackNumber() ate the number
+  // but a decorative-symbol strip emptied out everything that followed it,
+  // see id 741 raw "10 ✦") is never a usable display name on its own —
+  // fall back to the original rather than ship a lone number.
+  if (/^\d+$/.test(candidate.trim())) return true;
   // A connector at the very edge (nothing real on one side, e.g. "xxx |") means
   // its other half got cut off — broken. A connector in the MIDDLE with real
   // text both sides (e.g. "耶穌祢已得勝 / Jesus You Have Overcome", a Chinese/
@@ -356,10 +427,116 @@ function looksBroken(candidate) {
   return false;
 }
 
+// 2026-08-21 policy (TITLE-NORMALIZATION-PLAN §6 Q1, approved): unify ONLY
+// bracket width to half-width — never touch other in-sentence punctuation
+// (！？：；， etc. stay whatever width the source used). Pure character
+// substitution, not deletion, but it's the one narrow exception to the
+// "only delete" rule Eric explicitly signed off on; scope stays exactly
+// these two characters.
+function halfWidthBrackets(s) {
+  return s.replace(/（/g, '(').replace(/）/g, ')');
+}
+
+// Collapses runs of whitespace (incl. the U+3000 full-width space some scraped
+// titles carry) down to a single regular space. Applied as the very last step
+// on BOTH the success and the "looksBroken → fall back to original" path, so
+// a title that trips the safety net still isn't left with doubled/full-width
+// spaces — this is still pure deletion, consistent with the file's guarantee.
+function normalizeWhitespace(s) {
+  return s.replace(/　/g, ' ').replace(/\s{2,}/g, ' ').trim();
+}
+
+// 2026-08-21 A-level round 2 (TITLE-NORMALIZATION-PLAN §4 A3) — emoji and
+// decorative pictographs/symbols scraped titles are full of (party poppers,
+// stars, hearts, prayer-hands, weather icons, etc.). Deliberately scoped to
+// ranges that are NEVER real text in this dataset — verified against a full
+// character-frequency scan of every hymns_all.display_title (2026-08-21):
+// emoji pictograph planes, the Misc-Symbols/Dingbats/Misc-Symbols-and-Arrows
+// blocks (stars ✦✧☆★, music notes ♪♫, crosses ✝, checkmarks, weather),
+// standalone bullet •, geometric shapes ■□▲△●○◆◇ used as separators, the
+// double-exclamation ‼ ornament, emoji modifiers (skin tone / ZWJ / variation
+// selector / keycap), and invisible-artifact control chars (zero-width
+// space, word joiner, LTR/PDF embedding marks, object-replacement char) plus
+// stray Private Use Area glyphs (mojibake, never real content). Deliberately
+// EXCLUDES: Hebrew script (real scripture-quote text on 我心旋律's Torah
+// titles), Roman numerals, accented Latin letters (Portuguese/Spanish
+// titles), Mathematical Alphanumeric styled-letter blocks (still real
+// spelled-out words, e.g. "𝙋𝙍𝙊𝙅𝙀𝘾𝙏"), and CJK ideographs of any kind — all
+// confirmed present in the same scan and all real content that must survive.
+const DECORATIVE_SYMBOL_RE = new RegExp(
+  '[' +
+    '\\u{1F000}-\\u{1FFFF}' + // emoji pictograph planes
+    '\\u{2600}-\\u{27BF}' +   // Misc Symbols + Dingbats (stars ✦✧☆★, notes ♪♫, ✝, checkmarks…)
+    '\\u{2B00}-\\u{2BFF}' +   // Misc Symbols and Arrows (⭐⭕ etc.)
+    '\\u{2022}' +             // • bullet
+    '\\u{25A0}-\\u{25FF}' +   // geometric shapes ■□▲△●○◆◇ used as decorative separators
+    '\\u{203C}' +             // ‼ double exclamation ornament
+    '\\u{FE0F}' +             // emoji variation selector-16
+    '\\u{200D}' +             // zero-width joiner (emoji sequences)
+    '\\u{20E3}' +             // combining enclosing keycap (1️⃣2️⃣3️⃣)
+    '\\u{1F3FB}-\\u{1F3FF}' + // emoji skin-tone modifiers
+    '\\u{200B}' +             // zero-width space (invisible artifact)
+    '\\u{2060}' +             // word joiner (invisible artifact)
+    '\\u{202A}\\u{202C}\\u{200E}' + // LTR embedding/pop/mark (invisible bidi artifacts)
+    '\\u{FFFC}' +             // object replacement character (broken-embed artifact)
+    '\\u{E000}-\\u{F8FF}' +   // Private Use Area (mojibake glyphs, never real content)
+  ']',
+  'gu',
+);
+
+function stripDecorativeSymbols(s) {
+  return s.replace(DECORATIVE_SYMBOL_RE, ' ');
+}
+
+// 2026-08-21 A-level round 2 (§4 "行頭 track number") — a leading playlist/
+// episode index some channels bake into the raw title, e.g. "05 耶和華的心"
+// or Japanese-lesson-series titles like "04 陽はてるよ...". Two forms:
+// punctuated ("1." / "1、") always strips; a bare "digit(s) + space" only
+// strips when followed by CJK/kana content, specifically to avoid misfiring
+// on a Bible-book citation like "1 Corinthians 3:16" or "2 Peter 3:18"
+// (digit + space + capitalized English word) or a duration phrase like
+// "3 分鐘唱出..." ("3 minutes...", excluded via the negative lookahead) —
+// both real content that starts with a digit, verified against the DB scan.
+function stripLeadingTrackNumber(s) {
+  return s
+    .replace(/^\s*\d{1,3}[.,、．]\s*(?!\d)/, '')
+    .replace(/^\s*\d{1,3}\s+(?!分鐘|分鍾)(?=[一-鿿぀-ヿ])/, '');
+}
+
+// 2026-08-21 A-level round 2 (§4 A5) — a title that's ENTIRELY wrapped in one
+// matching pair of quote characters (straight or curly, either width) with
+// nothing outside them, e.g. raw "Hillsong Worship's ’Great I AM’" → (after
+// the artist-name strip) "’Great I AM’" — the quotes are redundant once the
+// title stands alone as its own field (no longer needs quoting out of a
+// sentence). Guards against stripping a quote pair that isn't a true outer
+// wrap by requiring the inner text NOT contain another occurrence of either
+// quote char (a real nested quote must be left alone).
+const QUOTE_WRAP_PAIRS = [
+  ["'", "'"], ['"', '"'], ['‘', '’'], ['’', '’'], ['“', '”'],
+];
+function stripWrappingQuotes(s) {
+  const t = s.trim();
+  for (const [open, close] of QUOTE_WRAP_PAIRS) {
+    if (t.length <= open.length + close.length) continue;
+    if (!t.startsWith(open) || !t.endsWith(close)) continue;
+    const inner = t.slice(open.length, t.length - close.length).trim();
+    if (inner && !inner.includes(open) && !inner.includes(close)) return inner;
+  }
+  return s;
+}
+
 export function cleanDisplayTitle(rawTitle, artist = '') {
   if (!rawTitle) return rawTitle;
   const original = rawTitle.trim();
-  let title = original;
+  let title = halfWidthBrackets(original);
+
+  // 2026-08-21 round 2: emoji/decorative-symbol and leading-track-number
+  // strips run FIRST, before any of the structural steps below, so a
+  // bracket-extraction or artist-substring decision downstream sees the
+  // already-decluttered text (e.g. an emoji sitting just inside a 【】 pair
+  // no longer counts against that fragment being "real content").
+  title = stripDecorativeSymbols(title);
+  title = stripLeadingTrackNumber(title);
 
   // 0. Channel-specific fixed boilerplate (exact phrases known to be repeated
   //    verbatim across every upload from this one artist) and the "l"-as-pipe
@@ -395,10 +572,31 @@ export function cleanDisplayTitle(rawTitle, artist = '') {
   // 3. Remove known decorative MV/format descriptors.
   title = stripDecorative(title);
 
+  // 3.5 Org-scoped acronym cleanup, pairing stripDecorative's dynamic
+  //     "禱告更新20xx" regex above. Deliberately runs here — AFTER bracket
+  //     extraction (step 1), never before it (e.g. via ARTIST_SCOPED_PHRASES,
+  //     which runs pre-bracket): stripping "AGWMM" pre-bracket shrank the
+  //     English half of these bilingual titles (e.g. "《神大愛》God's
+  //     Magnificent Love AGWMM") under isDecorativeFragment's non-CJK-
+  //     length-≤20 threshold, wrongly reclassifying the real English
+  //     translation as decorative channel-tag noise and deleting it outright
+  //     (caught in this round's own dry-run diff — id 4094 etc., 33 rows).
+  //     Post-bracket, the bracket decision is already made from the
+  //     untouched text, so this can only ever remove the literal acronym.
+  if (artist === '基恩敬拜') title = title.replace(/AGWMM/gi, ' ');
+
   // 4. Trim stray connector punctuation left behind.
   title = trimConnectors(title);
 
-  // 5. Safety net — never ship something broken or over-deleted.
-  if (looksBroken(title)) return original;
-  return title;
+  // 4.5 Strip a redundant quote pair wrapping the ENTIRE remaining title
+  //     (e.g. artist-prefix removal above can unwrap a raw "Artist's 'Song
+  //     Name'" down to just "'Song Name'").
+  title = stripWrappingQuotes(title);
+
+  // 5. Safety net — never ship something broken or over-deleted. Still apply
+  //    the two policy-approved, non-destructive normalizations (bracket width,
+  //    whitespace) to the fallback text — they're pure substitution/deletion,
+  //    not the kind of content change this net exists to guard against.
+  if (looksBroken(title)) return normalizeWhitespace(halfWidthBrackets(original));
+  return normalizeWhitespace(title);
 }
