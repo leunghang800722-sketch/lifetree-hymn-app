@@ -4,7 +4,7 @@
 // dialog(照 AddToPlaylistSheet 嘅 create/rename 視覺,唔係貼底 sheet——呢度
 // 冇 FlatList,一格輸入夠晒)。
 import React, { useState, useCallback, useEffect, useRef } from 'react';
-import { Modal, View, Text, TextInput, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
+import { Modal, View, Text, TextInput, TouchableOpacity, TouchableWithoutFeedback, StyleSheet, ActivityIndicator, Keyboard } from 'react-native';
 import OdeIcon from '../icons/OdeIcon';
 import { COLORS } from '../theme/designSystem';
 import { useAuth } from '../context/AuthContext';
@@ -23,7 +23,9 @@ export default function AddFriendSheet({ visible, onClose, onRequested, onFriend
     setMode('phone'); setPhone('+852'); setCode(''); setBusy(false); setErr(''); setResult(null);
   }, []);
 
-  const close = useCallback(() => { reset(); onClose && onClose(); }, [reset, onClose]);
+  // 撳「×」/撳背景閂 sheet 嗰陣一定要順手收鍵盤:phone-pad 冇 done 掣,單靠
+  // Modal unmount 唔保證 iOS 會收返個鍵盤(focus 走咗但 keyboard window 留低)。
+  const close = useCallback(() => { Keyboard.dismiss(); reset(); onClose && onClose(); }, [reset, onClose]);
 
   // BATCH7 B7-8:照抄 InviteFriendsSheet(S7b)嗰套 seq counter——handleLookup
   // 冇呢層保護嗰陣,慢網撳「搵吓」→閂 sheet→response 先返嚟,照樣 setResult,
@@ -113,6 +115,18 @@ export default function AddFriendSheet({ visible, onClose, onRequested, onFriend
 
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={close} statusBarTranslucent navigationBarTranslucent>
+      {/* ⚠️ 鍵盤 bug(Eric 2026-08-22):電話輸入框用 keyboardType="phone-pad",
+          iOS 呢個鍵盤根本冇 return/done 掣 —— 唯一收得返嘅方法就係撳輸入框以外
+          嘅地方。但原本成張 card 淨係一嚿普通 <View>,card 入面所有空白位
+          (標題行、tab 條、說明文字、輸入框下面)全部冇 responder,撳落去乜都
+          唔會發生;而鍵盤彈起之後,card 下面嗰塊 flex:1 backdrop 已經俾鍵盤
+          蓋住,撳唔到 —— 結果就係「鍵盤永遠收唔返」。
+          修法:喺 scrim 呢層加一個 TouchableWithoutFeedback。RN responder 係
+          由最深嗰個開始傾(deepest-first),所以下面兩塊 backdrop 嘅 onPress={close}
+          同埋 card 入面啲 TouchableOpacity / TextInput 全部照舊行先,呢層只會
+          食到「冇人認領」嗰啲 touch(card 空白位、card 左右兩條窄邊),
+          動作淨係收鍵盤,唔會閂 sheet —— 用戶收完鍵盤仲可以即刻撳「搵吓」。 */}
+      <TouchableWithoutFeedback accessible={false} onPress={Keyboard.dismiss}>
       <View style={styles.scrim}>
         <TouchableOpacity style={{ flex: 1 }} activeOpacity={1} onPress={close} />
         <View style={styles.card}>
@@ -175,6 +189,7 @@ export default function AddFriendSheet({ visible, onClose, onRequested, onFriend
         </View>
         <TouchableOpacity style={{ flex: 1 }} activeOpacity={1} onPress={close} />
       </View>
+      </TouchableWithoutFeedback>
     </Modal>
   );
 }

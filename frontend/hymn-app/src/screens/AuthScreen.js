@@ -11,6 +11,8 @@ import {
   ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
+  TouchableWithoutFeedback,
+  Keyboard,
 } from 'react-native';
 import OdeIcon from '../icons/OdeIcon';
 import LogoRing from '../components/LogoRing';
@@ -63,6 +65,12 @@ export default function AuthScreen({ onClose }) {
 
   return (
     <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+      {/* 同 AddFriendSheet 一樣嘅「彈鍵盤收唔返」pattern(Eric 2026-08-22 bug report):
+          呢版冇 ScrollView(PhoneLoginScreen 就有,keyboardShouldPersistTaps="handled"
+          已經自動處理咗),成塊 inner 淨係普通 <View>,撳 logo / 空白位收唔到鍵盤。
+          包一層 TouchableWithoutFeedback:deepest-first responder,兩個輸入框、
+          X 掣、登入掣、「改用電話登入」全部照舊,呢層只食冇人認領嘅 touch。 */}
+      <TouchableWithoutFeedback accessible={false} onPress={Keyboard.dismiss}>
       <View style={styles.inner}>
         {/* Close button */}
         <TouchableOpacity style={[styles.closeBtn, { top: insets.top + 8 }]} onPress={onClose}>
@@ -126,6 +134,7 @@ export default function AuthScreen({ onClose }) {
         )}
         <VersionTag style={{ marginTop: 20 }} />
       </View>
+      </TouchableWithoutFeedback>
     </KeyboardAvoidingView>
   );
 }
