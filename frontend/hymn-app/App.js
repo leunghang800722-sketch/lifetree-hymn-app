@@ -809,7 +809,43 @@ function PlayerProvider({ children }) {
         // 矩陣有洞(Paused/Ready/Loading/Ended冇watchdog管),但完全冇log過player
         // 最後停喺邊個state。呢度記低轉換(trackStateRef.current呢一刻仲係轉之前
         // 嗰個值,setTrackState(val)要等render後嘅sync effect先追上)。
-        logDiag('stateChange', { appState: appStateRef.current, detail: `from=${trackStateRef.current} to=${val}` });
+        // ⚠️ 2026-08-22 臨時開 always 上傳(Eric 拍板,攞證據用,唔係永久)——
+        // DELISTED-FAVORITES-ROOTCAUSE-20260822.md §2.3:熔斷器(連續 3/6 首載入
+        // 唔到就停+提示)實測由頭到尾冇 trip 過,15:49–15:55 連燒六首個 counter
+        // 一路喺 0/1 之間彈。懷疑 `setupPlayer({ waitForBuffer: false })` 令
+        // ExoPlayer 喺 buffer 未夠、根本未出到聲嗰陣就報 `Playing`,而下面條
+        // reset 就正正掛喺 `Playing` 度 —— 即係每次 skip 去下一首(就算下一首
+        // 一樣播唔到)都即刻清零,門檻永遠去唔到。
+        //
+        // 要分辨「真出聲」定「假 Playing」,淨係知道 state 轉咗係唔夠嘅,所以
+        // 呢度連 **reset 之前嗰刻嘅 errorSkipCount** 同 **嗰一刻嘅 position/
+        // duration** 一齊送。假 Playing 嘅簽名 = `to=playing` 但 position/
+        // duration 都係 0、而且緊接住上一首 PlaybackError。
+        //
+        // 收夠幾轉真實數據就要**改返** always 落嚟(每首歌 4-6 個 POST,唔係
+        // 長期跑嘅量)。⚠️ 呢段純粹係診斷:sync 嗰截行為一行都冇改,await
+        // getProgress() 擺喺後面獨立 async IIFE,唔會拖慢/改變 state 處理。
+        const prevSkipCount = errorSkipCountRef.current;
+        const fromState = trackStateRef.current;
+        if (val === TPState.Playing) {
+          (async () => {
+            let p = null;
+            try { p = await TrackPlayer.getProgress(); } catch (_) {}
+            logDiag('stateChange', {
+              appState: appStateRef.current,
+              position: p?.position,
+              duration: p?.duration,
+              errorSkipCount: prevSkipCount,
+              detail: `from=${fromState} to=${val}`,
+            }, { always: true });
+          })();
+        } else {
+          logDiag('stateChange', {
+            appState: appStateRef.current,
+            errorSkipCount: prevSkipCount,
+            detail: `from=${fromState} to=${val}`,
+          }, { always: true });
+        }
         setTrackState(val);
         // playQueue() (§3.2) leaves isLoading true until audio is actually
         // audible, rather than clearing it right after TrackPlayer.play()
@@ -845,7 +881,16 @@ function PlayerProvider({ children }) {
         // STREAM-MIDTRACK-SILENCE-ROOTCAUSE 續篇 —— 呢個先係「track 幾時真係轉
         // 咗」嘅唯一 client-side 真相來源;之前次診斷淨係靠 backend [stream] log
         // 反推轉歌時間,查唔到轉歌係 native 真轉定係重載緊同一首。呢度直接記低。
-        logDiag('trackChanged', { appState: appStateRef.current, hymnId: song?.id ?? null, detail: `idx=${idx}` });
+        // 同上,2026-08-22 臨時開 always(每首歌得一條,量細)——冇呢條就淨係
+        // 見到一串 stateChange,唔知邊個 to=playing 對應邊首歌、亦分唔到
+        // 「跳咗去下一首」定「同一首歌 retry」。攞夠證據要同 stateChange 一齊
+        // 改返落嚟。
+        logDiag('trackChanged', {
+          appState: appStateRef.current,
+          hymnId: song?.id ?? null,
+          errorSkipCount: errorSkipCountRef.current,
+          detail: `idx=${idx}`,
+        }, { always: true });
         // Phase 1 量度 —— 撳掣起源嘅 t0 未過期(30s)就補「track 真係轉咗」標記
         // + hymnId;冇 t0(native auto-advance)就以呢一刻做 t0。
         {

@@ -205,3 +205,54 @@ we've recovered」,但 `waitForBuffer:false` 之下 `Playing` 已經唔再等於
 3. Eric 嗰 5 個死最愛(1835/1951/2015/2420/2718)要唔要即刻手動喺 users.db 剷走
    止血(佢哋仲喺同一個 75 首隊列度,今次唔止撞一次)—— 剷完要配埋 G3(1),
    否則下次登入合併又返嚟。
+
+---
+
+## 六、執行紀錄(2026-08-22,Eric 三項全部拍板做)
+
+### 6.1 已落地
+
+| 項 | 內容 | Commit |
+|---|---|---|
+| 前端 ①(上一轉) | `playQueueImpl()` 剪走 `unavailable` 佔位項;`runLoginSync()` 唔再推佔位項上 server | `1768a5b` |
+| Backend ② | `routes/me.js` 加 `existingHymnIds()` 入口守衛,`/api/me/sync`、`POST /api/me/favorites/:id`、`PUT /api/me/playlists/:id` 三條全部核 `hymns` view | 見下 |
+| Script ③ | `backend/scripts/reconcileUserRefs.js` 一次性清死 reference | 見下 |
+| 前端 ④ | `stateChange` / `trackChanged` 臨時 `always: true`,加埋 `errorSkipCount` + `position/duration` | 見下 |
+
+### 6.2 §G2 入口守衛嘅設計取捨
+
+- **判準用「喺唔喺 `hymns` view」**,唔逐種死因分開寫:hard delete / `status='dead'` /
+  `status='rejected'` / `curated=0` 四種喺 `/api/stream` 都一律 404
+  (`routes/stream.js:120` 查嘅就係同一個 view),一條判準冚曬。
+- **同 `/api/hymns` 讀同一份 in-memory 副本**(`lib/serverDb.js` getDb),所以
+  「App 見得到」同「收得入最愛」永遠一致,唔會出現「見到但加唔到」。
+- **故意 fail-open**:讀唔到 hymns.db 就回 `null`,caller 一律當「唔過濾」。
+  寧願放幾個死 id 入嚟(前端仲有佔位 + `playQueueImpl` 剪走做第二層),
+  都唔可以因為 DB 一時讀唔到就靜靜哋剷走用戶成個最愛清單。
+- 清單 `updated_at` **唔郁**:嗰個係 LWW 比較欄,推前咗會令 client 手上真.較新
+  嘅版本被判 stale 冚走。
+
+### 6.3 Restart 前嘅夾帶檢查(Eric 明文要求)
+
+批准檔上次 backend sha = `94cf6de`。HEAD 之前有三個未批准 commit,逐個查過
+**改動檔案零 backend/ code**:
+
+| Commit | 改咗乜 | 會唔會隨 restart 上 prod |
+|---|---|---|
+| `fe4580b` 複核線 2→4 | `docs/SUPERVISION-LOG.md`、`ops/lyrics/REVIEW-LINE-SOP.md` | ❌ 純文檔 |
+| `36fccbd` 鍵盤收唔返 | `frontend/hymn-app/src/screens/{AddFriendSheet,AuthScreen}.js` | ❌ 前端,要 OTA/APK 先到用戶 |
+| `1768a5b` 佔位項唔餵落 player | `frontend/hymn-app/App.js` + 本文件 | ❌ 同上 |
+
+即係今次 restart **唯一真係上線嘅 backend 行為改動就係 §6.2 嗰個入口守衛**。
+YTDLP-UNIFY 規劃暫時得文檔冇 code,唔涉及。
+
+### 6.4 仲未做 / 殘留風險
+
+- §2.3 熔斷器根因**仲未定案** —— 今次淨係開咗 log 攞證據,冇改 reset 條件。
+  收夠幾轉真實數據要記得**改返 `always` 落嚟**(`stateChange` 每首歌 4-6 個 POST)。
+- 前端兩處修法(`1768a5b`)**未 OTA**,要等落一批。即係用戶手機而家仲係舊行為,
+  暫時靠 backend 守衛頂住「唔會再有新死 id 入庫」。
+- Restart 之後 `/api/hymns` 會由 6092 跌到 6082(server 開機時嗰份副本係
+  13:35 讀嘅,之後 pipeline 又落架咗 10 首)。呢 10 首如果有人 favourite 咗,
+  reconcile 之後嘅下一轉會變成新嘅死 reference —— 屬正常運作,由今次個守衛
+  + 定期再跑一次 reconcile 處理。
