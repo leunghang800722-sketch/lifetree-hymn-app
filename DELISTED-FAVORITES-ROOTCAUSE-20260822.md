@@ -256,3 +256,72 @@ YTDLP-UNIFY 規劃暫時得文檔冇 code,唔涉及。
   13:35 讀嘅,之後 pipeline 又落架咗 10 首)。呢 10 首如果有人 favourite 咗,
   reconcile 之後嘅下一轉會變成新嘅死 reference —— 屬正常運作,由今次個守衛
   + 定期再跑一次 reconcile 處理。
+
+---
+
+## 七、執行後驗證(2026-08-22 18:0x–18:2x)
+
+### 7.1 ⚠️ 補記:同一日**撞咗第二次**,而且解釋返 Eric 個「18:15」
+
+寫完第一版之後再掃 log,喺 **17:35:47–17:37:43 HKT**(= `09:35–09:37Z`)搵到
+**第二單一模一樣嘅事**,今次係 **id 2718**:
+
+```
+09:35:47Z ─┐ id=2718  yt=-  status=404 × 22 次
+09:37:43Z ─┘ 共 116 秒死寂
+09:37:37Z  PlaybackError hymnId=2718 errorSkipCount=0 willRetry=true
+09:37:41Z  wallClockDrift driftMs=1333966   ← 又一次背景凍咗 22 分鐘
+09:37:43Z  PlaybackError hymnId=2718 code=android-io-bad-http-status willRetry=false → skip
+09:37:43Z  id=1637 status=200  ← 跳到落一首正常播返
+```
+
+兩個結論:
+1. **§1.4 嗰句「今次唔止撞到 2015 一次」即場應驗**。2718 正正就係嗰四首
+   「本地 cache 仲有 full object、所以睇落同正常歌一模一樣、唔會標
+   `unavailable`」嘅其中一首 —— 佢**證實咗淨靠前端修法係救唔到嘅**,
+   一定要 §G2 入口守衛 + reconcile 先冚得曬。
+2. 第一版報告話「Eric 講 18:15 但 log 最後只到 17:15,可能係另一單」——
+   而家睇返,**17:35 呢單先至係佢多數見到嗰單**(時間近好多)。兩單根因、
+   簽名完全一樣,結論一個字都唔使改。
+
+### 7.2 做咗乜 / 驗證結果
+
+| 步驟 | 結果 |
+|---|---|
+| Gate:`approve.sh backend 2f4c26b --confirm` | ✅ |
+| Restart #1(部署入口守衛) | ✅ health 200 |
+| `reconcileUserRefs.js --apply` | ✅ 清 10 個死最愛 + 1 個清單死歌,備份 `users.db.bak-reconcile-20260822101121` |
+| Restart #2(令 server 重讀清乾淨嘅 users.db) | ✅ health 200 |
+| reconcile 重掃 | ✅ favorites 0、playlists 0 |
+| 端到端:推返清理前嗰 75 個(含 5 個死 id) | ✅ 拒收 5 個、70 個生 id 一個唔少 |
+| 端到端:`POST favorites/:id` 三種死 id | ✅ 全部 404 `hymn_not_found`;生 id 200 |
+| 端到端:`PUT playlists/:id` 含死歌 | ✅ 3 首剪到剩 1 首(只留生 id) |
+| Live:`/api/stream/{2015,2718,1835,1951,2420}` | ✅ 全部 404 |
+| Live:`/api/stream/{117,350}` | ✅ 206 |
+| Live:`/api/hymns` | ✅ 6082 首(restart 前個 stale 副本係 6092) |
+| Live:`/api/me/sync` 冇 token | ✅ 401 |
+
+各人最愛數目變化:user 2 = 75→70、user 3 = 2→0、user 6 = 12→9,其餘不變。
+
+### 7.3 驗證過程中整污糟咗又還原返嘅嘢(照直講)
+
+端到端 harness 嘅測試 2 加咗 `117` 落最愛再喺收尾刪返 —— 但 **117 本身就係
+Eric 原有嘅最愛**(2026-07-29 嗰批),收尾嗰下實際上係刪咗佢一首真最愛。
+即場同 e2e 前嘅 users.db 快照 diff 揪返出嚟,已經連原本嘅 `created_at`
+(`2026-07-29 04:48:31`,唔用 now,唔會打亂最愛排序)還原,並剷走 harness
+留低嗰個 soft-deleted 測試清單 `pl_e2eharness`,再 restart 一次令 server
+in-memory 副本對得返上。最後全表 diff:**favorites 同 playlists 都同快照
+逐 byte 一致**。
+
+### 7.4 殘留風險
+
+1. **前端 `1768a5b` 仲未 OTA** —— Eric 部機而家仲係舊 code。但佢下次開 app
+   前台,`onActive` 會 pull 一次,server 回嘅 70 個入面已經冇咗五個死 id,
+   `replaceAllFavorites()` 會直接冚走本地嗰五個 —— 即係**唔使等 OTA 都會自愈**。
+2. **臨時 log 要記得閂返**:`stateChange` / `trackChanged` 而家係 `always`,
+   每首歌 4-6 個 POST,`/api/client-log` 冇限速。攞夠幾轉數據就要 revert。
+3. **入口守衛擋新唔擋舊**:守衛只保證「唔會再有新死 id 入庫」。日後 pipeline
+   再落架歌(今日 restart 前後就已經由 6092 跌到 6082),舊 favorites 一樣會
+   變死 reference。要**定期再跑一次 `reconcileUserRefs.js`** —— 建議跟住
+   §G3-3 收埋落 `retireHymn()`,或者最低限度加落夜晚排程。
+4. **§2.3 熔斷器根因仍未定案**,今次只開 log 冇改邏輯。
