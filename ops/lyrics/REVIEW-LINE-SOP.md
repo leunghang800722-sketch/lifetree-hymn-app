@@ -3,10 +3,23 @@
 沿用 47H 衝刺嘅 **P + R1 + R2** 平行設計,今次擴到三條複核線。
 **P 線(producer)維持單線唔郁**(YouTube 出口 IP 係全 App 命脈,HANDOFF §2.2)。
 
-| 線 | Task | 分區(`lang` 欄) | 核對來源 | Restart 權 |
+| 線 | Task | 分區 | 核對來源 | Restart 權 |
 |---|---|---|---|---|
-| **R1** | `lyrics-line-mandarin` | `國語` | WebSearch(每班 ≤4 次) | ✅ **只有 R1 可以 approve + restart** |
-| **R2** | `lyrics-line-cantonese` | `粵語` | `cantonhymnLookup.js`(**WebSearch 0 次**) | ❌ |
+| **R1** | `lyrics-line-mandarin` | `國語` **而且 id 係單數** | WebSearch(每班 ≤4 次) | ✅ **只有 R1 可以 approve + restart** |
+| **R1b** | `lyrics-line-mandarin-b` | `國語` **而且 id 係雙數** | WebSearch(每班 ≤4 次) | ❌ |
+| **R2** | `lyrics-line-cantonese` | `粵語` **而且 id 係單數** | `cantonhymnLookup.js`(**WebSearch 0 次**) | ❌ |
+| **R2b** | `lyrics-line-cantonese-b` | `粵語` **而且 id 係雙數** | `cantonhymnLookup.js`(**WebSearch 0 次**) | ❌ |
+
+> **2026-08-22 由 2 條線加到 4 條**(Eric 拍板):producer 出貨快過複核,draft 隊列升到 400。
+> 加線方法係**喺原有 lang 分區之上再用 `id % 2` 拆一刀**:
+> ```python
+> mine = [d for d in actionable if d['lang']=='國語' and d['id'] % 2 == 1]   # R1
+> mine = [d for d in actionable if d['lang']=='國語' and d['id'] % 2 == 0]   # R1b
+> ```
+> **點解用單/雙數而唔用 id 範圍或者搶佔式 queue:**
+> - **零重疊、零協調**:唔使 lease、唔使鎖、唔使問隔籬線做緊乜,純數學保證兩條線永遠攞唔到同一首。
+> - **自動平衡**:id 分佈平均,兩邊份量差唔多(實測國語 99 / 113、粵語 34 / 36)。
+> - id 範圍分法會隨住新歌入庫而失衡;搶佔式 queue 要改 `reviewLyrics.js` 加 lease 欄,風險大好多。
 | ~~**R3**~~ | ~~`lyrics-line-english`~~ | ~~`英文` + `兒童`~~ | — | ❌ |
 
 > 🛑 **R3 英文線 2026-08-19 已停用(Eric 拍板)。** 英文/兒童分區 100% 係在版權當代敬拜歌(Yancy / Hillsong Kids / CJ and Friends / Listener Kids / Matt Redman / Chris Tomlin / Bethel…),複核 agent 嘅運作守則唔准重現在版權歌詞正文,所以呢條線**結構上做唔到嘢**(七轉零產出;早前「context 爆」嘅診斷係錯,見 SUPERVISION-LOG 2026-08-19)。66 首 draft + 池入面 39 首同類已記錄喺 `backend/data/lyrics-copyright-hold.json`,狀態「暫緩-版權」——**draft 保留唔郁**(唔 apply、唔判 unusable、唔 delist),隨時可翻案。池入面**冇任何非在版權英文歌**可以轉做,所以係暫停唔係轉線。第日收錄咗公有領域傳統聖詩先開返。
@@ -17,6 +30,9 @@
    **一定要即刻按你嗰個 `lang` filter 走晒其他語言**,咁 apply 檔天然 disjoint,零重疊。
    **做唔屬於你分區嘅歌 = 直接違規**,會同隔籬線撞單、白燒兩份額度。
 2. **DB 寫入**:全部經 `reviewLyrics.js --apply`(內置 `acquireDbLock`,即攞即放)。
+   ⚠️ 而家有 **4 條線**,撞鎖機會比 2 條線高 —— 但 apply 攞鎖只係一瞬(唔係揸住做慢嘢),
+   加上四條線嘅 cron **各自錯開至少 1 個鐘**,實際同時 apply 嘅機會好低。
+   撞到就照原本規矩:等,5 分鐘都唔得就跳去下一批,**唔准 hack、唔准刪 lock 檔**。
    撞鎖等 5 分鐘唔得就跳去下一批,**唔准 hack、唔准刪 lock 檔**
    (04:00–04:15 `checkDeadLinks` 揸鎖屬正常)。
 3. **已知 race**:producer in-flight snapshot 有機會蓋走啱 apply 嘅 verified(實錄 76 中 1)。
