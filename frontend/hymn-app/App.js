@@ -1707,6 +1707,46 @@ function PlayerProvider({ children }) {
 
   async function playQueueImpl(list, startIndex = 0, opts = {}) {
     if (!Array.isArray(list) || list.length === 0) return;
+    // 「(已下架)」佔位項唔可以餵落 TrackPlayer(2026-08-22 Eric 報「連續飛歌」)。
+    //
+    // FavoritesContext.replaceAllFavorites() 對「server 有呢個 hymn_id、但全庫
+    // 同本地 cache 兩邊都揾唔到佢」嘅 id 會留一個 { unavailable: true } 灰態
+    // 佔位(唔靜靜哋跌走,免得用戶以為心心自己唔見咗)。但 toTrack() 照樣會
+    // 幫佢砌 `/api/stream/<id>`,而 backend 嗰條 route 係查 `hymns` view,查唔到
+    // 就 404 —— 實測 id=2015 喺 17:12:02–17:13:27 俾 ExoPlayer 用退避重試撞咗
+    // 21 次 404、燒咗 86 秒死寂,先至拋 PlaybackError 跌落 skip 分支。背景
+    // 嗰陣 JS thread 俾 Doze 凍住(同一段 log 見到 driftMs 去到 21 分鐘),
+    // 三個 JS watchdog 一個都救唔到,用戶感知就係「首歌無聲然後連環飛」。
+    //
+    // 呢個 flag 淨係喺「library 同本地 cache 都冇料」先會 set,即係我哋對呢個
+    // id 一無所知,冇任何可播嘅嘢 —— 揀走佢零損失。library 未載入(空陣列)
+    // 嗰陣所有 id 都會 fallback 落本地 cache 攞返 full object,唔會誤標,所以
+    // 呢度唔會誤殺正常歌。
+    const unavailableCount = list.filter((s) => s?.unavailable).length;
+    if (unavailableCount > 0) {
+      const tapped = list[startIndex];
+      const playable = list.filter((s) => !s?.unavailable);
+      if (playable.length === 0) {
+        showNotice('呢首歌已經下架，播唔到');
+        return;
+      }
+      // 用戶撳正嗰個下架項 → 出聲提示,並由佢後面第一首播得嘅歌開始。
+      if (tapped?.unavailable) showNotice('呢首歌已經下架，跳去下一首');
+      // startIndex 要跟住重新對位:數返「startIndex 之前」仲剩低幾多首播得嘅歌。
+      const newStart = tapped?.unavailable
+        ? Math.min(list.slice(0, startIndex).filter((s) => !s?.unavailable).length, playable.length - 1)
+        : playable.findIndex((s) => String(s.id) === String(tapped.id));
+      // autoRadioFrom / insertBoundary 都係「原本 list 入面第幾個位」嘅 index,
+      // 剪走前面嘅項就要跟住縮返,唔係「正在隨機播放:」同插播分隔線會畫錯位。
+      const shift = (b) => (typeof b === 'number'
+        ? list.slice(0, b).filter((s) => !s?.unavailable).length
+        : b);
+      if (typeof opts.autoRadioFrom === 'number' || typeof opts.insertBoundary === 'number') {
+        opts = { ...opts, autoRadioFrom: shift(opts.autoRadioFrom), insertBoundary: shift(opts.insertBoundary) };
+      }
+      list = playable;
+      startIndex = newStart >= 0 ? newStart : 0;
+    }
     // 插播(Eric 2026-07-28)—— 原意係詩歌庫/搜尋(`opts.browseTap`)撳嘅歌唔算
     // 「揀咗成個清單」,淨係「掃緊街見到一首想聽」。如果而家已經有第二個真.
     // 清單播緊(唔係呢首歌本身所屬嗰個 `list`),就淨係插播嗰首,播完接返
@@ -2933,7 +2973,16 @@ function AppContent() {
 
       if (sameOwner) {
         // §2.3 登入合併:推晒本地全量,response = 合併後全量,一次過 replaceAll。
-        const favIds = (favoritesRef.current || []).map((f) => f.id);
+        // ⚠️ 「(已下架)」佔位項唔可以再推上 server(2026-08-22 實錘)。
+        // /api/me/sync 係 union merge(INSERT OR IGNORE,冇核過 hymn_id 存唔存在),
+        // 所以本地一日仲揸住嗰個死 id,就算 server 側清理過都會俾下一次登入合併
+        // 原封不動打返上去。實例:kids C4 原子換血(c4-swap-users-remap.json)
+        // 2026-08-01 已經幫 user 2 favDropped 咗 oldId 2015,但 2026-08-02 06:59:45
+        // 又由 client 推返上嚟(同一批仲有 1835/1951/2420/2718),之後就一直卡喺
+        // 最愛度 404。呢度剪走佢:server 側清理至少企得穩,唔會被合併復活。
+        // (注意呢個 filter 本身唔會刪 server 現有嗰行 —— union merge 唔識刪嘢,
+        //  已經寫咗落 users.db 嗰啲死 id 要另外做一次 reconcile,見分析文件。)
+        const favIds = (favoritesRef.current || []).filter((f) => !f?.unavailable).map((f) => f.id);
         const plList = (playlistsRef.current || []).map((p, i) => ({
           id: p.id,
           name: p.name,
