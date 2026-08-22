@@ -18,6 +18,7 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { query, isCompilation, isNonWorship, isInSongDurationBand } from './hymnDb.js';
+import { YTDLP } from './ytdlpBin.js';
 
 const exec = promisify(execCb);
 export const ENUM_DEPTH = 3000; // 遠超任何現有頻道嘅片量(最大 Asia for JESUS ~1424)
@@ -42,7 +43,7 @@ export function saveMissingCache(cache) {
 export async function getOfficialCount(channelHandle) {
   if (channelHandle.startsWith('playlist?list=')) {
     const { stdout } = await exec(
-      `yt-dlp --dump-single-json --flat-playlist --playlist-items 0 "https://www.youtube.com/${channelHandle}"`,
+      `"${YTDLP}" --dump-single-json --flat-playlist --playlist-items 0 "https://www.youtube.com/${channelHandle}"`,
       { timeout: 30000, maxBuffer: 20 * 1024 * 1024 }
     );
     const info = JSON.parse(stdout);
@@ -65,7 +66,7 @@ async function listTab(channelHandle, tab) {
   const url = `https://www.youtube.com/${channelHandle}/${tab}`;
   try {
     const { stdout } = await exec(
-      `yt-dlp --flat-playlist --playlist-end ${ENUM_DEPTH} --print "%(id)s|%(duration)s|%(title)s" "${url}"`,
+      `"${YTDLP}" --flat-playlist --playlist-end ${ENUM_DEPTH} --print "%(id)s|%(duration)s|%(title)s" "${url}"`,
       { timeout: 90000, maxBuffer: 20 * 1024 * 1024 }
     );
     return stdout.trim().split('\n').filter(Boolean).map((line) => {
@@ -86,7 +87,7 @@ export async function enumerateChannel(channelHandle) {
   if (channelHandle.startsWith('playlist?list=')) {
     const url = `https://www.youtube.com/${channelHandle}`;
     const { stdout } = await exec(
-      `yt-dlp --flat-playlist --playlist-end ${ENUM_DEPTH} --print "%(id)s|%(duration)s|%(title)s" "${url}"`,
+      `"${YTDLP}" --flat-playlist --playlist-end ${ENUM_DEPTH} --print "%(id)s|%(duration)s|%(title)s" "${url}"`,
       { timeout: 90000, maxBuffer: 20 * 1024 * 1024 }
     );
     const rows = stdout.trim().split('\n').filter(Boolean).map((line) => {

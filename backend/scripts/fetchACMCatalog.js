@@ -33,6 +33,7 @@ import { promisify } from 'util';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { YTDLP } from '../lib/ytdlpBin.js';
 
 const execFile = promisify(execFileCb);
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -87,7 +88,7 @@ const ALBUM_PLAYLISTS = [
 
 async function fetchFlatJson(url) {
   const { stdout } = await execFile(
-    'yt-dlp',
+    YTDLP,
     ['-J', '--flat-playlist', '--skip-download', url],
     { timeout: 90000, maxBuffer: 30 * 1024 * 1024 }
   );

@@ -1,6 +1,12 @@
 // 自動化詩歌搜尋 + SQL generator
 // Run: node generate_hymns.js
 // 搜尋指定團體嘅詩歌，輸出 SQL INSERT 俾 DB
+//
+// ⚠️ 2026-08-22 註:呢個係 legacy 一次性工具,而家其實**行唔到** —— backend/package.json
+// 係 "type": "module",但下面 main() 用緊 CJS 嘅 require(),一行就會 throw。冇修佢
+// (唔屬今次範圍),淨係順手將 yt-dlp 路徑統一埋(YTDLP-UNIFY-PLAN-20260822.md),
+// 免得有人日後修返佢嗰陣again 用返 bare `yt-dlp` 拉返個版本漂移出嚟。
+import { YTDLP } from './lib/ytdlpBin.js';
 
 const SEARCH_TERMS = {
   '基恩敬拜': [
@@ -34,7 +40,7 @@ async function main() {
   // Use yt-dlp via exec if available, search YouTube
   function searchYouTube(query) {
     try {
-      const result = execSync(`yt-dlp "ytsearch10:${query}" --flat-playlist --print "%(id)s|%(title)s"`, {
+      const result = execSync(`"${YTDLP}" "ytsearch10:${query}" --flat-playlist --print "%(id)s|%(title)s"`, {
         timeout: 15000,
         encoding: 'utf8',
         maxBuffer: 1024 * 1024,

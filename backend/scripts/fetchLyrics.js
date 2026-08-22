@@ -66,6 +66,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { openDb, saveDb, query, sleep, acquireDbLock, releaseDbLock, candidateSortKey } from '../lib/hymnDb.js';
 import { detectWhisperLang, runWhisperJson as runWhisperJsonShared, DEFAULT_WHISPER_MODEL_NAME } from '../lib/whisperTranscribe.js';
+import { YTDLP } from '../lib/ytdlpBin.js';
 // 2026-08-16 LYRICS-CJK-OCR-ROOTCAUSE-PLAN:合併演算法抽咗去 lib(P2 fuzzy watermark
 // + P3 行級投票喺嗰邊),中文判定共用 lyricsLangCheck.js。
 import { mergeOcrLines } from '../lib/ocrMerge.js';
@@ -335,7 +336,7 @@ function whisperLangFor(ocrText, langCol) {
 async function listManualSubs(youtubeId) {
   try {
     const { stdout } = await exec(
-      `yt-dlp --list-subs --skip-download "https://www.youtube.com/watch?v=${youtubeId}"`,
+      `"${YTDLP}" --list-subs --skip-download "https://www.youtube.com/watch?v=${youtubeId}"`,
       { timeout: 30000 }
     );
     // "Available subtitles" section = 人手;"Available automatic captions" = auto,唔要。
@@ -354,7 +355,7 @@ async function downloadSubs(youtubeId, langs) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'hymnlyr-'));
   try {
     await exec(
-      `yt-dlp --write-subs --sub-langs "${langs.join(',')}" --sub-format vtt ` +
+      `"${YTDLP}" --write-subs --sub-langs "${langs.join(',')}" --sub-format vtt ` +
       `--skip-download -o "${path.join(dir, '%(id)s')}" "https://www.youtube.com/watch?v=${youtubeId}"`,
       { timeout: 40000 }
     );
@@ -458,12 +459,17 @@ const WHISPER_MODEL = path.join(__dirname, '..', 'models', `ggml-${DEFAULT_WHISP
 // ⚠️ 2026-08-19 大改(403 事故):YouTube 8/18 起**唔再派 format 18**(漸進式 mp4),
 // 而舊 yt-dlp stable 2026.07.04 對住新版 player 全線攞 403 —— 實測 6 條琴晚 403 嘅片,
 // stable 100% 403,nightly 2026.08.18 + DASH format **6/6 全部落到**。所以兩樣一齊改:
-//   ① 用 nightly binary(backend/tools/yt-dlp-nightly,獨立檔,唔覆蓋系統 brew 嗰個)
+//   ① 用 nightly binary(唔用系統 brew 嗰個)
 //   ② format 由 `18/...` 改做 DASH 為主(`bv*+ba` 合併,ffmpeg 會 merge 返一條有音軌嘅片,
 //      whisper 照用得)
 // 2026-08-16 嗰個「用 18 避 DASH 403」嘅結論**已經反轉**,唔好照抄舊註解。
-// 系統 `yt-dlp`(stable)保留住冇郁,想比對隨時試得返。
-const YTDLP = path.join(__dirname, '..', 'tools', 'yt-dlp-nightly');
+//
+// ⚠️ 2026-08-22 更新(YTDLP-UNIFY-PLAN-20260822.md):個 binary 路徑而家由
+// `lib/ytdlpBin.js` 統一提供,唔再喺呢度自己砌一條 `tools/yt-dlp-nightly`。點解:
+// 呢個檔案自己都曾經係分裂嘅 —— 落載片用 nightly const,但上面 `--list-subs` /
+// `--write-subs` 用 bare `yt-dlp`(即 brew 版),即係同一個 script 對住兩個版本。
+// 而嗰個所謂 nightly 其實係 8/19 凍結咗嘅 snapshot,冇機制更新,brew 一升就變咗
+// 全機最舊嗰個。三個字:唔好再有第二條 path。
 const DL_FORMAT = 'bv*[height<=360]+ba/bv*[height<=480]+ba/18/b[height<=480]/b';
 
 async function downloadVideoLowRes(youtubeId, dir) {

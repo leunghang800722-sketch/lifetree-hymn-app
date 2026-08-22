@@ -10,6 +10,7 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { zeroFragmentedMp4Durations } from './fixFragmentedMp4Duration.js';
+import { YTDLP } from './ytdlpBin.js';
 
 const exec = promisify(execCb);
 
@@ -156,7 +157,7 @@ function isRateLimitError(msg) {
 
 function runStrategy(youtubeId, strat) {
   return exec(
-    `yt-dlp -f "${strat.fmt}" ${strat.extra} --get-url --no-playlist "https://www.youtube.com/watch?v=${youtubeId}"`,
+    `"${YTDLP}" -f "${strat.fmt}" ${strat.extra} --get-url --no-playlist "https://www.youtube.com/watch?v=${youtubeId}"`,
     { timeout: RESOLVE_TIMEOUT_MS }
   ).then(({ stdout }) => {
     const url = stdout.trim();
@@ -279,13 +280,28 @@ export async function refreshAudioUrl(youtubeId) {
   return promise;
 }
 
-// §4 1-byte 預驗:向 googlevideo 發 Range: bytes=0-0,收 1 byte 即棄(唔存)。
+// §4 1-byte 預驗:向 googlevideo 發 Range 攞 1 byte,收到即棄(唔存)。
 // URL 已失效(403/410)→ 即場 bust + 重 resolve,唔使等用戶撳播先發現;
 // 順手令 CDN 節點行完 TLS/定位檔案,正式播放首 byte 快啲。回傳最終有效 URL。
+//
+// ⚠️ 2026-08-22:個 offset 由 `bytes=0-0` 改咗做 2MiB(YTDLP-UNIFY-PLAN-20260822.md)。
+// 點解:嗰日全庫事故個病係「舊 yt-dlp 簽出嚟嘅 URL 只開放**頭 1MiB**,之後全 403」。
+// 舊寫法攞 offset 0 嗰 1 byte,啱啱好落喺仲開放嗰段,所以預驗**全部過**,而跟住嘅
+// 真實播放(warm 攞 bytes=0-12582911、冷路徑 forward AVFoundation 開放式 range)
+// 一過 1MiB 即死 —— 探測同真實負載唔喺同一個象限,典型假陽性。改咗之後,同一個病
+// 喺 warm 階段就會引爆現有嘅 bust + re-resolve 自癒鏈,唔使等用戶撞。
+// (同一個盲點喺 ops/lyrics/stream-healthcheck.sh 個 Layer B 都補咗。)
+const PREVERIFY_OFFSET = 2 * 1024 * 1024; // 2MiB —— 過咗「頭 1MiB」呢個病灶邊界
 export async function preVerifyUrl(youtubeId, url) {
   try {
-    const r = await fetch(url, { method: 'GET', headers: { Range: 'bytes=0-0' } });
+    const r = await fetch(url, {
+      method: 'GET',
+      headers: { Range: `bytes=${PREVERIFY_OFFSET}-${PREVERIFY_OFFSET}` },
+    });
     if (r.body) { try { await r.body.cancel(); } catch (_) {} }
+    // ⚠️ 416 = 成個檔案細過 2MiB(短歌 / 短講),**唔係** URL 死咗。呢條分支唔寫
+    // 就會將所有短歌誤判做死鏈,每次 warm 都白白 bust + 重 resolve 一次。
+    if (r.status === 416) return url;
     if (r.status === 403 || r.status === 410) {
       bustCache(youtubeId);
       return await resolveAudioUrl(youtubeId);

@@ -60,6 +60,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { openDb, saveDb, query, sleep, acquireDbLock, releaseDbLock } from '../lib/hymnDb.js';
 import { matchTitlePerformer } from '../data/knownPerformers.js';
+import { YTDLP } from '../lib/ytdlpBin.js';
 
 const execFile = promisify(execFileCb);
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -233,7 +234,7 @@ function appendSuspectedNonsong(rows) {
 async function fetchYtMeta(youtubeId) {
   try {
     const { stdout } = await execFile(
-      'yt-dlp',
+      YTDLP,
       ['-J', '--no-playlist', '--skip-download', `https://www.youtube.com/watch?v=${youtubeId}`],
       { timeout: 30000, maxBuffer: 10 * 1024 * 1024 }
     );

@@ -36,6 +36,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { openDb, saveDb, query, sleep, acquireDbLock, releaseDbLock } from '../lib/hymnDb.js';
 import { detectWhisperLang, runWhisperJson as runWhisperJsonShared, DEFAULT_WHISPER_MODEL_NAME } from '../lib/whisperTranscribe.js';
+import { YTDLP } from '../lib/ytdlpBin.js';
 
 const exec = promisify(execCb);
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -108,7 +109,7 @@ function report(db) {
 async function downloadBestAudio(youtubeId, dir) {
   const outTemplate = path.join(dir, 'audio.%(ext)s');
   await exec(
-    `yt-dlp -f "bestaudio/best" -o "${outTemplate}" "https://www.youtube.com/watch?v=${youtubeId}"`,
+    `"${YTDLP}" -f "bestaudio/best" -o "${outTemplate}" "https://www.youtube.com/watch?v=${youtubeId}"`,
     { timeout: 120000 }
   );
   const file = fs.readdirSync(dir).find((f) => f.startsWith('audio.') && !f.endsWith('.part'));
@@ -136,7 +137,7 @@ async function checkWhisperAvailable() {
 
 async function listManualSubsProbe(youtubeId) {
   try {
-    await exec(`yt-dlp --list-subs --skip-download "https://www.youtube.com/watch?v=${youtubeId}"`, { timeout: 30000 });
+    await exec(`"${YTDLP}" --list-subs --skip-download "https://www.youtube.com/watch?v=${youtubeId}"`, { timeout: 30000 });
     return { error: false };
   } catch (e) {
     return { error: !e?.stdout };

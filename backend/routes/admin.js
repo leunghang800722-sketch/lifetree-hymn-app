@@ -11,6 +11,7 @@ import requireAuth from '../lib/requireAuth.js';
 import requireAdmin from '../lib/requireAdmin.js';
 import { openDb, query, formatDuration, isInSongDurationBand, isCompilation, isNonWorship, SONG_DURATION_MIN } from '../lib/hymnDb.js';
 import { cleanDisplayTitle } from '../lib/displayTitle.js';
+import { YTDLP } from '../lib/ytdlpBin.js';
 import { resolveAudioUrl } from '../lib/resolveAudio.js';
 import { updateHymn, insertHymn, delistHymn, EDITABLE_FIELDS } from '../lib/adminHymns.js';
 import { getDataVersion } from '../lib/serverDb.js';
@@ -235,7 +236,7 @@ export default function adminRoutes(app) {
     let stdout;
     try {
       const r = await execFile(
-        'yt-dlp',
+        YTDLP,
         ['--print', '%(id)s|%(duration)s|%(title)s|%(channel)s', '--no-playlist', canonicalUrl],
         { timeout: 20000 }
       );

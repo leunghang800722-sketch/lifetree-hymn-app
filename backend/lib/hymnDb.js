@@ -9,6 +9,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { exec as execCb } from 'child_process';
 import { promisify } from 'util';
+import { YTDLP } from './ytdlpBin.js';
 
 const exec = promisify(execCb);
 
@@ -324,7 +325,7 @@ export async function listChannelVideos(channelHandle, limit) {
     ? `https://www.youtube.com/${channelHandle}`
     : `https://www.youtube.com/${channelHandle}/videos`;
   const { stdout } = await exec(
-    `yt-dlp --flat-playlist --playlist-end ${limit} --print "%(id)s|%(duration)s|%(title)s" "${url}"`,
+    `"${YTDLP}" --flat-playlist --playlist-end ${limit} --print "%(id)s|%(duration)s|%(title)s" "${url}"`,
     { timeout: 30000 }
   );
   return stdout.trim().split('\n').filter(Boolean).map((line) => {

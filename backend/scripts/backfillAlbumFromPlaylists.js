@@ -33,6 +33,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { openDb, saveDb, query, sleep, acquireDbLock, releaseDbLock } from '../lib/hymnDb.js';
 import { GROUPS } from '../data/worshipGroups.js';
+import { YTDLP } from '../lib/ytdlpBin.js';
 
 const execFile = promisify(execFileCb);
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -78,7 +79,7 @@ function findOrgConfig(orgName) {
 // ── yt-dlp -J --flat-playlist:攞一個 URL 嘅 flat JSON(唔逐條 resolve,好平)──
 async function fetchFlatJson(url) {
   const { stdout } = await execFile(
-    'yt-dlp',
+    YTDLP,
     ['-J', '--flat-playlist', '--skip-download', url],
     { timeout: 90000, maxBuffer: 30 * 1024 * 1024 }
   );

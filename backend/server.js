@@ -21,6 +21,7 @@ import friendsRoutes from './routes/friends.js';
 import invitesRoutes from './routes/invites.js';
 import clientLogRoutes from './routes/clientLog.js';
 import { resolveAudioUrl, refreshAudioUrl, preVerifyUrl, cache, failCache, anyStreaming, isStreaming } from './lib/resolveAudio.js';
+import { YTDLP } from './lib/ytdlpBin.js';
 import { getUserDb } from './lib/userDb.js';
 import { getDb, getDataVersion, DB_PATH } from './lib/serverDb.js';
 import { getWarmCandidates } from './lib/warmLog.js';
@@ -241,6 +242,20 @@ app.listen(PORT, async () => {
   console.log(`🎵 Hymn App Backend running on port ${PORT}`);
   console.log(`📡 Audio API: http://localhost:${PORT}/api/audio/:youtubeId (yt-dlp)`);
   console.log(`📡 Hymns API: http://localhost:${PORT}/api/hymns`);
+
+  // yt-dlp binary 開機自報(YTDLP-UNIFY-PLAN-20260822.md):2026-08-22 全庫播歌
+  // 事故查咗一輪先發現「串流用緊嘅 yt-dlp 版本」根本冇任何地方睇得到。而家開機
+  // 印一行,restart 之後一眼對到用緊邊個版本、邊條路徑。攞唔到版本(binary 唔見/
+  // 爛檔)就大聲嘈 —— 呢個係播歌命脈,唔可以靜靜哋壞。
+  try {
+    const { execFile } = await import('child_process');
+    const { promisify } = await import('util');
+    const { stdout } = await promisify(execFile)(YTDLP, ['--version'], { timeout: 15000 });
+    console.log(`🔧 yt-dlp: ${stdout.trim()} @ ${YTDLP}`);
+  } catch (e) {
+    console.error(`🚨 攞唔到 yt-dlp 版本(${YTDLP}):${e?.message || e} —— 串流 resolve 會冧,` +
+                  `行 ops/ytdlp/update-ytdlp.sh --apply 落返個 binary`);
+  }
   
   // Background pre-cache — deliberately NARROW.
   //
