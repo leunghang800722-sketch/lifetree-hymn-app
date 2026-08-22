@@ -13,9 +13,16 @@
 // 「單一 binary」個不變量失效,變返兩條 path,即係今次個病本身。binary 唔見咗
 // 就應該嘈,唔應該靜靜哋降級。bootstrap 見 ops/launchd/README.md。
 //
-// binary 由 ops/ytdlp/update-ytdlp.sh 管理(每日 05:30 check + canary,Eric
-// 2026-08-22 拍板保守做法:canary 過都唔自動換,等人手 --apply)。
-// 37MB standalone,唔入 git(backend/tools/.gitignore)。
+// 呢條路徑實際上係一條 **symlink**,指住 `tools/ytdlp-venv-a` 或 `-b` 入面 pip 裝
+// 嘅 yt-dlp。由 ops/ytdlp/update-ytdlp.sh 管理(每日 05:30 check + canary,Eric
+// 2026-08-22 拍板保守做法:canary 過都唔自動換,等人手 --apply;切換 = 揈條
+// symlink,rollback 就係揈返轉頭,兩樣都唔使 restart backend)。唔入 git。
+//
+// ⚠️ 點解係 pip venv 唔係規劃書寫嗰個 37MB standalone binary:實測嗰個
+// adhoc-signed Mach-O 每次 exec 都俾 macOS XprotectService 重新掃,淨係
+// `--version` 都要 26–42 秒,而下面 resolveAudio 個 RESOLVE_TIMEOUT_MS 得 12 秒
+// —— 即係每一次冷 resolve 都必定 timeout,成個串流會冧。pip venv 同一個 nightly
+// 版本得 0.17 秒。剷 xattr / 本機重簽都試過,冇用。
 //
 // env YTDLP_BIN 可以 override —— 淨係為咗實驗/版本比對(例:指返 brew 版對照),
 // 唔好喺生產排程度用。

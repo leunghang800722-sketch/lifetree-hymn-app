@@ -28,24 +28,41 @@ launchctl list | grep -iE "cloudflare|hymnapp"   # 第 2 欄 exit code，0 = 正
 ```
 **唔使 sudo。**
 
-## yt-dlp binary（2026-08-22 起統一）
+## yt-dlp（2026-08-22 起統一）
 
-全 app 只有**一個** yt-dlp:`backend/tools/yt-dlp`（37MB standalone，**唔入 git**）。
-所有 code path 經 `backend/lib/ytdlpBin.js` 攞呢條路徑；`ops/lyrics/stream-healthcheck.sh`
-同 `ops/lyrics/producer-keeper.sh` 都係指同一條。點解要統一：2026-08-22 全庫 100%
-播歌事故 = 串流用嘅 brew 版舊咗 6 個星期，而歌詞線嗰個「nightly」其實係 8/19 凍結
-snapshot，brew 一升就變咗全機最舊。詳見 `YTDLP-UNIFY-PLAN-20260822.md`。
+全 app 只有**一個** yt-dlp。Canonical path：`backend/tools/yt-dlp` —— 佢係一條
+**symlink**，指住 `backend/tools/ytdlp-venv-a` 或 `-b` 兩個 slot 其中一個入面
+pip 裝嘅 yt-dlp。所有 code path 經 `backend/lib/ytdlpBin.js` 攞呢條路徑；
+`ops/lyrics/stream-healthcheck.sh` 同 `ops/lyrics/producer-keeper.sh` 都係指同一條。
+全部**唔入 git**。點解要統一：2026-08-22 全庫 100% 播歌事故 = 串流用嘅 brew 版舊咗
+6 個星期，而歌詞線嗰個「nightly」其實係 8/19 凍結 snapshot，brew 一升就變咗全機
+最舊。詳見 `YTDLP-UNIFY-PLAN-20260822.md`。
 
-**Clean checkout / binary 唔見咗點 bootstrap**（repo 冇帶個 binary）：
+⚠️ **唔好用 yt-dlp 嘅 standalone binary（`yt-dlp_macos`，37MB）。** 2026-08-22 實測：
+嗰個 adhoc-signed Mach-O 每次 exec 都俾 macOS XprotectService 重新掃一次，淨係
+`--version` 都要 **26–42 秒**（XprotectService 食 55% CPU）。而 `resolveAudio.js` 個
+resolve timeout 係 **12 秒** —— 即係話用 standalone 嘅話每次冷 resolve 必定 timeout，
+成個串流會冧。剷 `com.apple.provenance` xattr、本機 `codesign` 重簽，兩樣都試過冇用。
+pip 裝落 venv 就冇呢個問題（一堆細 .py，冇大 Mach-O 俾人掃）：同一個 nightly 版本
+**0.17 秒**，真 resolve 2.9 秒。brew 版一路咁快都係同一個原因。
+
+**Clean checkout / venv 唔見咗點 bootstrap：**
 
 ```bash
-ops/ytdlp/update-ytdlp.sh --apply     # 落載最新 nightly + canary 三關 + 安裝
+ops/ytdlp/update-ytdlp.sh --apply     # 起 venv + pip 裝最新 nightly + canary 三關 + 揈 symlink
 ```
 
 日常唔使人手做：launchd `com.hymnstream.ytdlpupdate` 每日 05:30 check 一次。
-⚠️ **Eric 2026-08-22 拍板保守做法：canary 過都唔會自動換 binary**，只會寫通知落
-`docs/SUPERVISION-LOG.md` 等人手 `--apply`。Rollback 一句（唔使 restart backend，
-因為每次 resolve 都係逐次 spawn）：`mv backend/tools/yt-dlp.prev backend/tools/yt-dlp`。
+⚠️ **Eric 2026-08-22 拍板保守做法：canary 過都唔會自動換版本**，只會裝落閒置 slot +
+寫通知落 `docs/SUPERVISION-LOG.md`，等人手 `--apply`。
+
+**Rollback 一句**（唔使 restart backend，因為每次 resolve 都係逐次 spawn）：
+
+```bash
+cd backend/tools && ln -sfn ytdlp-venv-<另一個 slot>/bin/yt-dlp yt-dlp
+```
+
+邊個 slot 係邊個版本，睇 `backend/data/ytdlp-update.log`。
 
 ⚠️ 統一之後，plist 嗰啲 `PATH` 區塊對 **yt-dlp** 嚟講已經唔再 load-bearing（下面第 1 點），
 但 `ffmpeg` / `whisper-cli` 等其他 homebrew 工具仲要靠佢，**唔好剷**。

@@ -235,3 +235,85 @@ Layer B 個 mid-range @ 2MiB 要求條音軌 ≥2MiB(m4a ~128kbps 即 ≥ 約 2 
 - ❌ 唔加「backend 直接寫 SUPERVISION-LOG 嘅 403 streak 警報」——同 Layer B 功能重疊,警報渠道統一經 healthcheck 一個口,唔好兩把聲
 - ❌ 唔剷 brew 系統版 yt-dlp,佢降級做人手比對工具
 - ❌ 唔掂 hymns.db、唔掂 DNS/cert/token、唔喺 Eric 真機 QA 期間 restart(全部舊紀律,寫埋落派工 prompt)
+
+---
+
+## §7 執行結果(2026-08-22 晚,Opus 5)
+
+### 7.1 做咗乜
+
+| 批次 | 內容 | 狀態 |
+|---|---|---|
+| P0-a | `stream-healthcheck.sh` 加 Layer B(直打 googlevideo,64KB @ 2MiB)+ ver logging + cfg-err tag | ✅ 四條路徑實測過 |
+| P0-b | `ops/ytdlp/update-ytdlp.sh` + `com.hymnstream.ytdlpupdate`(每日 05:30) | ✅ 四條路徑實測過 |
+| P0-c | healthcheck 6h → 3h(`StartInterval` 10800) | ✅ 已 bootout+bootstrap,`launchctl print` 核過 |
+| P1 | `ytdlpBin.js` + 全部 call site 統一 + `preVerifyUrl` 2MiB + 開機 log | ✅ 已 commit + restart + 端到端驗過 |
+| P2 | `alignBackfill` / `generate_hymns` / `producer-keeper.sh` 尾巴 | ✅ 一齊做埋(scripts 逐次冷 spawn,唔使等 restart) |
+
+Call site 實際做咗 **14 個**(規劃書盤點 8 個 + 執行時另外揾到 `backfillMeta.js`、
+`backfillAlbumFromPlaylists.js`、`fetchACMCatalog.js` 三個 execFile 陣列式)。
+`grep -rn "yt-dlp" backend --include="*.js"` 剩返嘅全部係 log/錯誤字串,唔係 call site。
+
+### 7.2 ⚠️ 同規劃書唔同嘅一個實施決定:pip venv,唔係 standalone binary
+
+規劃書 §2.3(a) 寫「binary 定名 `backend/tools/yt-dlp`,37MB standalone」。**實測行唔通**:
+
+- 嗰個 adhoc-signed 37MB Mach-O,每次 exec 都俾 macOS `XprotectService` 重新掃一次。
+  淨係 `--version` 都要 **26–42 秒**(user time 得 0.6s = 全程等緊掃描;實測嗰陣
+  XprotectService 食 55% CPU、`syspolicyd` 8.7%)。
+- 而 `resolveAudio.js` 個 `RESOLVE_TIMEOUT_MS` 係 **12 秒** —— 即係話照規劃書做嘅話,
+  **每一次冷 resolve 都必定 timeout**,三個 strategy 全死,成個串流會冧。呢個會**比原本
+  個病仲衰**。
+- 舊嗰個 `yt-dlp-nightly`(8/18)一樣咁慢(38s),即係**呢個問題一路都喺度**,
+  淨係因為歌詞線係批次 job、冇人等,所以冇人為意。
+- 試過剷 `com.apple.provenance` xattr、試過本機 `codesign --force --sign -` 重簽,
+  **兩樣都冇用**。
+
+改用 **pip 裝落 venv**:同一個 nightly 版本(`2026.08.20.234504`),`--version` **0.17 秒**,
+真 resolve **2.9 秒**(12s timeout 之內好鬆動)。brew 版一路咁快都係同一個原因
+(佢係 python entry script,唔係大 Mach-O)。
+
+結構(a/b 雙 slot + symlink,點解要咁見 script 頭註釋):
+
+```
+backend/tools/yt-dlp            → symlink(全 app 唯一 canonical path)
+backend/tools/ytdlp-venv-a/     → 而家現役:nightly 2026.08.20.234504
+backend/tools/ytdlp-venv-b/     → 閒置/rollback:stable 2026.8.19
+```
+
+切換 = 揈條 symlink(原子,冇「裝到一半俾人 exec」嘅窗口);rollback = 揈返轉頭,
+唔使網絡、唔使 restart backend。
+
+### 7.3 驗證(唔止 happy path)
+
+**healthcheck 四條路徑**(用假 binary 吐過期 URL / 死 port / 唔存在路徑真造出嚟):
+① 兩層都過 → healthy(92s/tick) ② A 過 + B 全 403(=8/22 個病嘅形態)→ **第一個 tick
+就響**,警報直接指去 yt-dlp 版本 ③ A 死 + B 過 → 報「問題喺 backend 側」④ binary 唔見
+→ cfg-err,唔當 upstream fail。節流(第 1 次 + 每 4 次)實測有效。
+
+**update script 四條路徑**(真造出版本差:slot b 裝返 stable 2026.8.19):
+① up-to-date 收工 ② canary 過 + 保守模式 → **現役真係冇郁**,只寫通知
+③ canary 唔過(假 video id)→ **連 `--apply` 都擋住** ④ `--apply` → 真正揈 symlink,
+通知附 rollback 一句。
+
+**P1 驗收清單**(規劃書 §4 五條):
+1. ✅ grep 剩返全部係字串
+2. ✅ `YTDLP_BIN` env override 行到
+3. ✅ restart 後開機 log 印到版本+路徑;`/api/stream` 三首 `0-65535` **同**
+   `2097152-2162687` 全 206
+4. ✅ `preVerifyUrl` 416 分支(<2MiB 短歌)實測冇被誤 bust
+5. ✅ fetchLyrics 三步(`--list-subs` / `--write-subs` / 落載)全部指新路徑
+
+### 7.4 殘留風險 / 未做
+
+- **Legacy `.cjs` 一次性工具**(`expand_hymns*.cjs`、`e2_*.cjs`、`fix_dead_ytdlp.cjs`、
+  `tools/scrape_ytdlp.cjs`)仲用緊 bare `yt-dlp`(即 brew 版)。冇改:全部係
+  一次性 scraper,唔喺任何排程/運行時路徑。真係要再用嗰陣先順手改。
+- **`preVerifyUrl` 由 1 byte @ 0 改做 1 byte @ 2MiB**:對 <2MiB 嘅短歌會收 416,
+  已加分支當 pass。但 warm 對呢啲短歌嘅「預熱 CDN」效果會弱咗少少(唔再掂到頭段)。
+  影響極細,冇加補償邏輯 —— 加多一次 request 唔值。
+- **37MB standalone binary 一直 commit 咗落 git**(規劃書講錯咗話 untracked)。
+  而家由 HEAD 剷走 + gitignore 落閘,但 **git history 入面條 blob 仲喺度**,repo 大細
+  唔會即刻縮。冇做 history rewrite(共用 worktree 多 session,風險遠大過收益)。
+- **XProtect 每次掃大 binary** 呢個機器層面問題冇解決,淨係繞開咗。如果第日有第二個
+  大 standalone binary 入到熱路徑(例如 whisper 換 build),同一個伏會再中一次。
