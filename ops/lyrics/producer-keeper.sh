@@ -128,11 +128,20 @@ while true; do
     log "⛔ 見到 403 封鎖 flag($(head -1 "$BLOCK_FLAG" 2>/dev/null))→ 唞 $((BLOCK_COOL/60)) 分鐘"
     sleep "$BLOCK_COOL"
     probe_dir="$(mktemp -d)"
+    # ⚠️ 2026-08-22(YTDLP-UNIFY-PLAN-20260822.md)呢個探測本身壞咗兩樣,一次過修:
+    #   ① 用 bare `yt-dlp`(PATH 搵 brew 版)—— 而 producer 真正落載係用 repo binary,
+    #      即係「探測用 A 版、幹活用 B 版」,探測結果代表唔到實況。
+    #   ② `-f 18`:YouTube 2026-08-18 起已經**唔再派 format 18**(8/19 實錘)。即係話
+    #      呢個探測**注定失敗**——一旦 BLOCK_FLAG 著咗,個 producer 就永遠恢復唔返,
+    #      因為解封條件係一個冇可能過到嘅測試(靜靜哋熄咗火,冇人會見到)。
+    # 而家:統一 binary + 同 fetchLyrics.js 一樣嘅 DASH format waterfall。
     if "$NODE_BIN" -e '
       const {execFileSync}=require("child_process");
-      try{ execFileSync("yt-dlp",["-f","18","--no-playlist","-o",process.argv[1]+"/p.%(ext)s",
+      const BIN=process.argv[2];
+      const FMT="bv*[height<=360]+ba/bv*[height<=480]+ba/18/b[height<=480]/b";
+      try{ execFileSync(BIN,["-f",FMT,"--no-playlist","-o",process.argv[1]+"/p.%(ext)s",
         "https://www.youtube.com/watch?v=gF-eDlXq3II"],{stdio:"pipe",timeout:120000}); process.exit(0); }
-      catch(e){ process.exit(/403/.test(String(e.stderr||e.message))?2:1); }' "$probe_dir" >/dev/null 2>&1; then
+      catch(e){ process.exit(/403/.test(String(e.stderr||e.message))?2:1); }' "$probe_dir" "$REPO/backend/tools/yt-dlp" >/dev/null 2>&1; then
       rm -rf "$probe_dir"; rm -f "$BLOCK_FLAG"
       log "✅ 真落載探測成功 → 封鎖解除,恢復正常"
     else

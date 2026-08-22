@@ -1,1 +1,6 @@
 paddle-venv/
+
+# yt-dlp standalone binary(37MB)—— 唔准入 git,由 ops/ytdlp/update-ytdlp.sh 攞落嚟。
+# repo 冇呢個檔嘅時候點 bootstrap:見 ops/launchd/README.md「yt-dlp binary」一節。
+yt-dlp
+yt-dlp.*

@@ -28,6 +28,28 @@ launchctl list | grep -iE "cloudflare|hymnapp"   # 第 2 欄 exit code，0 = 正
 ```
 **唔使 sudo。**
 
+## yt-dlp binary（2026-08-22 起統一）
+
+全 app 只有**一個** yt-dlp:`backend/tools/yt-dlp`（37MB standalone，**唔入 git**）。
+所有 code path 經 `backend/lib/ytdlpBin.js` 攞呢條路徑；`ops/lyrics/stream-healthcheck.sh`
+同 `ops/lyrics/producer-keeper.sh` 都係指同一條。點解要統一：2026-08-22 全庫 100%
+播歌事故 = 串流用嘅 brew 版舊咗 6 個星期，而歌詞線嗰個「nightly」其實係 8/19 凍結
+snapshot，brew 一升就變咗全機最舊。詳見 `YTDLP-UNIFY-PLAN-20260822.md`。
+
+**Clean checkout / binary 唔見咗點 bootstrap**（repo 冇帶個 binary）：
+
+```bash
+ops/ytdlp/update-ytdlp.sh --apply     # 落載最新 nightly + canary 三關 + 安裝
+```
+
+日常唔使人手做：launchd `com.hymnstream.ytdlpupdate` 每日 05:30 check 一次。
+⚠️ **Eric 2026-08-22 拍板保守做法：canary 過都唔會自動換 binary**，只會寫通知落
+`docs/SUPERVISION-LOG.md` 等人手 `--apply`。Rollback 一句（唔使 restart backend，
+因為每次 resolve 都係逐次 spawn）：`mv backend/tools/yt-dlp.prev backend/tools/yt-dlp`。
+
+⚠️ 統一之後，plist 嗰啲 `PATH` 區塊對 **yt-dlp** 嚟講已經唔再 load-bearing（下面第 1 點），
+但 `ffmpeg` / `whisper-cli` 等其他 homebrew 工具仲要靠佢，**唔好剷**。
+
 ## ⚠️ 一定要知嘅坑
 1. **凡係會 exec `yt-dlp` 嘅 job，plist 都要自己 set `EnvironmentVariables/PATH`** —— launchd 預設 PATH
    冇 `/opt/homebrew/bin`。唔 set 嘅話 job **照樣「成功」執行完，但每一次 yt-dlp resolve 都靜靜哋

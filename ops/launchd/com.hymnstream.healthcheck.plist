@@ -1,8 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <!--
-  串流健康探測(Eric 2026-08-19 拍板)。每 6 個鐘 curl 三個固定 /api/stream/<id>,
-  唔係 206 就寫警報落 docs/SUPERVISION-LOG.md。
+  串流健康探測(Eric 2026-08-19 拍板)。每 3 個鐘(Eric 2026-08-22 由 6 個鐘改)行兩層探測:
+  Layer A 經 backend 攞頭 64KB、Layer B 直打 googlevideo 攞 64KB @ 2MiB
+  (8-22 全庫事故嘅病灶 range,舊版淨驗頭段所以全程假陽性)。
+  任何一層唔健康就寫警報落 docs/SUPERVISION-LOG.md。
 
   ⚠️ 個 label 特登**唔用 com.hymnapp.\* prefix** —— 各班 checkpoint 會核對
   `launchctl list | grep hymnapp | wc -l` 要夠 **7 個**,用 hymnapp prefix 就會變 8,
@@ -19,7 +21,7 @@
     <string>/bin/bash</string>
     <string>/Users/macbookpro/.openclaw/workspace/hymn-app/ops/lyrics/stream-healthcheck.sh</string>
   </array>
-  <key>StartInterval</key><integer>21600</integer>
+  <key>StartInterval</key><integer>10800</integer>
   <key>RunAtLoad</key><false/>
   <key>StandardOutPath</key><string>/tmp/hymn_streamhealth.log</string>
   <key>StandardErrorPath</key><string>/tmp/hymn_streamhealth.log</string>
