@@ -30,10 +30,17 @@ import { fileURLToPath } from 'url';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const METRICS_DIR = path.join(__dirname, '..', 'logs', 'metrics');
 const METRICS_FILE = path.join(METRICS_DIR, 'ops-metrics.json');
+const METRICS_TMP = METRICS_FILE + '.tmp';
+const METRICS_BAK = METRICS_FILE + '.bak';
 
 const TRACK_GAP_MS = 60 * 1000;   // 同一首歌隔幾耐先當「另一次開歌」
 const MAX_LASTSEEN = 4000;        // lastSeen map 上限,防長期運行漏記憶
-const FLUSH_DEBOUNCE_MS = 15000;
+// ⚠️ 2026-08-23 實測改細(15s→4s):`launchctl bootout` 係 SIGTERM 即殺,冇得
+// graceful flush(server.js 冇 SIGTERM handler,而**唔可以加** —— 一加就覆蓋咗
+// node 預設嘅「收到 SIGTERM 就死」,bootout 會殺唔死佢,要等 SIGKILL timeout,
+// 直接拖冧 backend-restart.sh)。所以只可以縮短「未寫落碟」嘅窗口:最壞情況
+// 蝕 4 秒計數,唔會蝕成份數據。
+const FLUSH_DEBOUNCE_MS = 4000;
 const SUMMARY_EVERY_MS = 30 * 60 * 1000;
 const MAX_HOURLY = 24 * 4;        // 保留 4 日逐個鐘嘅 bucket
 
@@ -87,7 +94,17 @@ function scheduleFlush() {
     flushTimer = null;
     try {
       fs.mkdirSync(METRICS_DIR, { recursive: true });
-      fs.writeFileSync(METRICS_FILE, JSON.stringify(state), 'utf8');
+      // ⚠️ 2026-08-23 實測揪出嘅真風險:原本直接 writeFileSync 落正式檔 —— 唔係
+      // atomic。restart 用 `launchctl bootout`(SIGTERM 即殺),如果啱啱撞正寫到
+      // 一半,個檔就變半截 JSON,下次開機 parse 唔到 → **靜靜哋由零開始數**,
+      // 收咗一日嘅數就咁冇咗。實測模擬過:半截檔 restart 之後 resolve.total
+      // 由 60 變返 0。
+      // 修法:①寫去 .tmp 再 rename(同一個 filesystem,rename 係 atomic —— 讀嗰邊
+      // 唔係見到舊檔就係見到新檔,冇「半截」呢個狀態)②rename 之前保住上一份
+      // 做 .bak,連 rename 都出事都仲有得救(下面 load 會 fallback)。
+      fs.writeFileSync(METRICS_TMP, JSON.stringify(state), 'utf8');
+      try { if (fs.existsSync(METRICS_FILE)) fs.copyFileSync(METRICS_FILE, METRICS_BAK); } catch (_) {}
+      fs.renameSync(METRICS_TMP, METRICS_FILE);
     } catch (e) {
       console.warn('ops-metrics flush failed:', e?.message);
     }
@@ -206,15 +223,29 @@ function summaryLine() {
 export function enablePersistence(opts = {}) {
   persist = true;
   sampler = opts.sampler || null;
-  try {
-    const raw = fs.readFileSync(METRICS_FILE, 'utf8');
-    const prev = JSON.parse(raw);
-    if (prev && prev.total && prev.hourly) {
-      // restart 唔想清零(要收 24-48 鐘頭數據),但舊檔 shape 唔啱就當冇。
-      state = { since: prev.since || state.since, total: { ...blankBucket(), ...prev.total }, hourly: prev.hourly };
-      console.log(`📊 ops-metrics:由碟載返(since=${state.since})`);
+  // 載返舊數:主檔 → .bak → 先至當新開始。⚠️ 唔可以好似以前咁 `catch (_)` 靜吞:
+  // 壞檔 = 已經蝕咗數據,一定要大聲嘈,否則睇 endpoint 嗰陣淨係見到個細數,
+  // 完全唔知係「真係咁少」定係「shape 壞咗重新數過」。
+  let loaded = false;
+  for (const [f, label] of [[METRICS_FILE, '主檔'], [METRICS_BAK, '.bak 後備']]) {
+    try {
+      const prev = JSON.parse(fs.readFileSync(f, 'utf8'));
+      if (prev && prev.total && prev.hourly) {
+        // restart 唔想清零(要收 24-48 鐘頭數據),但舊檔 shape 唔啱就當冇。
+        state = { since: prev.since || state.since, total: { ...blankBucket(), ...prev.total }, hourly: prev.hourly };
+        console.log(`📊 ops-metrics:由碟載返${label === '主檔' ? '' : '(' + label + ')'}(since=${state.since})`);
+        loaded = true;
+        break;
+      }
+    } catch (e) {
+      if (fs.existsSync(f)) {
+        console.warn(`⚠️ ops-metrics:${label}讀唔到/壞咗(${e?.message}) —— 呢部分數據已經蝕咗`);
+      }
     }
-  } catch (_) { /* 第一次冇檔,正常 */ }
+  }
+  if (!loaded && fs.existsSync(METRICS_FILE)) {
+    console.warn('🚨 ops-metrics:主檔同 .bak 都救唔返,由零開始數。');
+  }
 
   const t = setInterval(() => {
     try {
