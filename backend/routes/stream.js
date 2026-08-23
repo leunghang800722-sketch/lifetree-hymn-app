@@ -7,6 +7,7 @@ import { Readable } from 'stream';
 import { resolveAudioUrl, bustCache, preVerifyUrl, markStreaming, unmarkStreaming, cache, warmBuffer, getBufferedChunk, evictBufferedChunk, anyStreaming, adoptStreamedHead, WARM_CAP_BYTES } from '../lib/resolveAudio.js';
 import { zeroFragmentedMp4Durations } from '../lib/fixFragmentedMp4Duration.js';
 import { recordWarmIds } from '../lib/warmLog.js';
+import { recordStreamRequest } from '../lib/opsMetrics.js';
 
 // BG-PLAYBACK-STOPS-PLAN Fix D:純 observability helper,唔改任何 proxy 行為。
 // 一行 log,帶 ISO timestamp,用嚟診斷背景播放 3-4 首自動停個 bug(client abort
@@ -134,6 +135,11 @@ export default function streamRoutes(getDb) {
       const c = cache.get(hymn.youtube_id);
       return !!(c && c.expiresAt > Date.now());
     })();
+    // ⚠️ 2026-08-23 THIRD-PASS-REVIEW §5 Batch D-2:同一個 warm 判斷順手記落
+    // opsMetrics,等 warm hit rate 有得統計(下面條 [stream] log 行本來已經寫緊
+    // mode=warm|cold,但 log 檔會輪替/清走,又冚唔到「一首歌開咗幾多條 range
+    // 連線」呢個高估問題 —— opsMetrics 會分開數 track start)。純觀測,零行為改動。
+    recordStreamRequest(hymn.youtube_id, warm);
     let resolveMs = 0;
     let retried = false;
     let logged = false;

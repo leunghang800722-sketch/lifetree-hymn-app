@@ -4,6 +4,7 @@
 
 import { Router } from 'express';
 import { resolveAudioUrl, cache, failCache, FAIL_TTL_MS, FAIL_TTL_PLAYBACK_MS } from '../lib/resolveAudio.js';
+import { getOpsMetrics } from '../lib/opsMetrics.js';
 
 const router = Router();
 
@@ -98,6 +99,15 @@ router.get('/cache/stats', (req, res) => {
     failTtlPlaybackSec: FAIL_TTL_PLAYBACK_MS / 1000,
     failing,
   });
+});
+
+// GET /api/audio/cache/warm-stats — THIRD-PASS-REVIEW §5 Batch D-2/D-4 量數口。
+// 純讀 opsMetrics 嘅計數器(見 lib/opsMetrics.js),唔改任何行為。睇邊幾個數:
+//   derived.trackStartWarmRatePct —— 「開一首歌」入面幾多 % 食住暖 cache(D-2 主指標)
+//   total.keepWarm.ceiling        —— 追落後 timer 撞 CACHE_SIZE_CEILING 熄火嘅次數
+//   total.resolve.winner / rescued —— 三招 yt-dlp 邊招贏、後備招救返幾多次(D-4)
+router.get('/cache/warm-stats', (req, res) => {
+  res.json(getOpsMetrics());
 });
 
 export { cache };

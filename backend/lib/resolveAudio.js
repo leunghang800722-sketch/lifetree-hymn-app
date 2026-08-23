@@ -11,6 +11,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { zeroFragmentedMp4Durations } from './fixFragmentedMp4Duration.js';
 import { YTDLP } from './ytdlpBin.js';
+import { recordResolveAttempt, recordResolveOutcome } from './opsMetrics.js';
 
 const exec = promisify(execCb);
 
@@ -155,16 +156,29 @@ function isRateLimitError(msg) {
   return /HTTP Error 429|Too Many Requests|Sign in to confirm you.{0,3}re not a bot/i.test(String(msg || ''));
 }
 
+// ⚠️ 2026-08-23 THIRD-PASS-REVIEW §5 Batch D-4:加咗 `[resolve]` 成功行 + 逐招耗時。
+// 之前得**失敗**先有 log(下面 console.warn),所以「三招入面邊招真係做緊嘢、
+// 後備招救到幾多」無從得知——只可以靠反推,而舊統計又溝埋咗 2026-08-22 yt-dlp
+// 統一之前嗰啲壞 binary 年代嘅數,唔準。而家由呢一刻起收乾淨數據。
+// 純加 log/計數器,exec 命令、timeout、成功/失敗判斷、拋咩 error 全部冇郁。
 function runStrategy(youtubeId, strat) {
+  const t0 = Date.now();
   return exec(
     `"${YTDLP}" -f "${strat.fmt}" ${strat.extra} --get-url --no-playlist "https://www.youtube.com/watch?v=${youtubeId}"`,
     { timeout: RESOLVE_TIMEOUT_MS }
   ).then(({ stdout }) => {
     const url = stdout.trim();
-    if (url && url.startsWith('http')) return url;
+    if (url && url.startsWith('http')) {
+      const ms = Date.now() - t0;
+      recordResolveAttempt(strat.name, true, ms);
+      console.log(`[resolve] ok strategy=${strat.name} id=${youtubeId} ms=${ms}`);
+      return url;
+    }
     throw new Error(`empty url (${strat.name})`);
   }).catch((e) => {
-    console.warn(`⚠️ resolve strategy failed: strategy=${strat.name} id=${youtubeId} err=${e?.message || e}`);
+    const ms = Date.now() - t0;
+    recordResolveAttempt(strat.name, false, ms);
+    console.warn(`⚠️ resolve strategy failed: strategy=${strat.name} id=${youtubeId} ms=${ms} err=${e?.message || e}`);
     throw e;
   });
 }
@@ -175,30 +189,48 @@ async function resolveViaYtDlp(youtubeId) {
     console.warn(`⚠️ yt-dlp rate-limit 冷卻中(仲有 ${secsLeft}s)—— 跳過 ${youtubeId},唔好加重個 block`);
     throw new Error(`yt-dlp rate-limited (cooldown), skipping ${youtubeId}`);
   }
+  // D-4 觀測:一次完整 resolve(可能試幾招)嘅結局 —— 邊招最後贏、成個過程幾耐。
+  // `rescued` = 唔係第一招贏,即係後備招(tv / default-any)真係救返呢一次。
+  const resolveT0 = Date.now();
+  const firstName = STRATEGIES[0].name;
   if (RESOLVE_PARALLEL) {
     // §2a:tv + default 同時開跑,邊個先返有效 URL 用邊個。Promise.any 只喺全部
     // reject 先 reject,所以兩個都死先落去第三個順序後備。
     try {
-      return await Promise.any([
+      const parUrl = await Promise.any([
         runStrategy(youtubeId, STRATEGIES[0]),
         runStrategy(youtubeId, STRATEGIES[1]),
       ]);
+      // parallel mode 贏家名分唔到(Promise.any 唔講邊個),記做 'parallel'。
+      // 呢個 mode 預設關咗(RESOLVE_PARALLEL=1 先開),D-4 個窗口實際行順序路徑。
+      recordResolveOutcome('parallel', Date.now() - resolveT0, firstName);
+      return parUrl;
     } catch (aggErr) {
       const hitRateLimit = (aggErr?.errors || []).some((e) => isRateLimitError(e?.message));
       if (hitRateLimit) {
         ytRateLimitedUntil = Date.now() + YT_RATE_LIMIT_COOLDOWN_MS;
         console.warn(`⚠️ YouTube rate-limit/bot-check 偵測到(parallel)—— 全局冷卻 ${YT_RATE_LIMIT_COOLDOWN_MS / 1000}s,唔再試第三個 strategy`);
         console.error(`❌ All yt-dlp strategies failed for ${youtubeId}`);
+        recordResolveOutcome(null, Date.now() - resolveT0, firstName);
         throw new Error(`All yt-dlp strategies failed for ${youtubeId}`);
       }
-      try { return await runStrategy(youtubeId, STRATEGIES[2]); } catch (_) {}
+      try {
+        const lastUrl = await runStrategy(youtubeId, STRATEGIES[2]);
+        recordResolveOutcome(STRATEGIES[2].name, Date.now() - resolveT0, firstName);
+        return lastUrl;
+      } catch (_) {}
       console.error(`❌ All yt-dlp strategies failed for ${youtubeId}`);
+      recordResolveOutcome(null, Date.now() - resolveT0, firstName);
       throw new Error(`All yt-dlp strategies failed for ${youtubeId}`);
     }
   }
   // 順序後備(RESOLVE_PARALLEL=0)—— 同舊版一模一樣,加埋 429 偵測即停。
   for (const strat of STRATEGIES) {
-    try { return await runStrategy(youtubeId, strat); } catch (e) {
+    try {
+      const url = await runStrategy(youtubeId, strat);
+      recordResolveOutcome(strat.name, Date.now() - resolveT0, firstName);
+      return url;
+    } catch (e) {
       if (isRateLimitError(e?.message)) {
         ytRateLimitedUntil = Date.now() + YT_RATE_LIMIT_COOLDOWN_MS;
         console.warn(`⚠️ YouTube rate-limit/bot-check 偵測到 id=${youtubeId} strategy=${strat.name} —— 全局冷卻 ${YT_RATE_LIMIT_COOLDOWN_MS / 1000}s,停晒呢次剩低嘅 strategy`);
@@ -207,6 +239,7 @@ async function resolveViaYtDlp(youtubeId) {
     }
   }
   console.error(`❌ All yt-dlp strategies failed for ${youtubeId}`);
+  recordResolveOutcome(null, Date.now() - resolveT0, firstName);
   throw new Error(`All yt-dlp strategies failed for ${youtubeId}`);
 }
 

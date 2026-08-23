@@ -25,6 +25,7 @@ import { YTDLP } from './lib/ytdlpBin.js';
 import { getUserDb } from './lib/userDb.js';
 import { getDb, getDataVersion, DB_PATH } from './lib/serverDb.js';
 import { getWarmCandidates } from './lib/warmLog.js';
+import { enablePersistence as enableOpsMetrics, recordKeepWarmTick } from './lib/opsMetrics.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -256,6 +257,14 @@ app.listen(PORT, async () => {
     console.error(`🚨 攞唔到 yt-dlp 版本(${YTDLP}):${e?.message || e} —— 串流 resolve 會冧,` +
                   `行 ops/ytdlp/update-ytdlp.sh --apply 落返個 binary`);
   }
+
+  // ⚠️ 2026-08-23 THIRD-PASS-REVIEW §5 Batch D-2/D-4:開觀測計數器(warm 命中率、
+  // keep-warm tick 收工理由、yt-dlp 三招邊招贏)。擺喺 app.listen 而唔係
+  // warmColdBacklog() 入面,因為嗰個 function 喺 URL_KEEPWARM=0 嘅時候唔會行到 ——
+  // 量數唔應該跟住 keep-warm 一齊熄。sampler 用 callback 傳 cache.size,避免
+  // opsMetrics 反過來 import resolveAudio.js 整出循環 import。
+  // 淨係 backend server process 會 call(= 單一寫手),script 唔會,見 opsMetrics.js。
+  enableOpsMetrics({ sampler: () => ({ cacheSize: cache.size }) });
   
   // Background pre-cache — deliberately NARROW.
   //
@@ -442,10 +451,14 @@ function warmColdBacklog() {
       const today = new Date().toDateString();
       if (today !== day) { day = today; usedToday = 0; }
       const hr = new Date().getHours();
-      if (hr < 7) return;
-      if (usedToday >= MAX_PER_DAY) return;
-      if (cache.size >= CACHE_SIZE_CEILING) return; // 已經追到安全上限,唔再攤薄
-      if (anyStreaming()) return; // 同上:用戶聽緊就唔好爭頻寬
+      // ⚠️ 2026-08-23 THIRD-PASS-REVIEW §5 Batch D-2:每個 tick 因為咩理由收工,
+      // 而家有數。P2-5 講「CACHE_SIZE_CEILING=1800 落後庫存 6,053」——但係咪真係
+      // 喺度攔住,以前完全睇唔到(呢啲 return 一句 log 都冇)。`ceiling` 一路升
+      // 就係實錘。純計數器,唔改任何一句判斷同 return。
+      if (hr < 7) { recordKeepWarmTick('offHours'); return; }
+      if (usedToday >= MAX_PER_DAY) { recordKeepWarmTick('dailyCap'); return; }
+      if (cache.size >= CACHE_SIZE_CEILING) { recordKeepWarmTick('ceiling'); return; } // 已經追到安全上限,唔再攤薄
+      if (anyStreaming()) { recordKeepWarmTick('streaming'); return; } // 同上:用戶聽緊就唔好爭頻寬
 
       const now = Date.now();
       let target = null;
@@ -468,8 +481,10 @@ function warmColdBacklog() {
       try {
         const url = await resolveAudioUrl(target);
         await preVerifyUrl(target, url);
+        recordKeepWarmTick('warmed');
       } catch (_) {
         // resolveAudioUrl 本身已經寫咗 failCache(死鏈),呢度冇嘢再做。
+        recordKeepWarmTick('failed');
       }
     } catch (e) {
       console.warn('keep-warm 追落後 tick error:', e?.message);

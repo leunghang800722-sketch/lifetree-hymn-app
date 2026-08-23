@@ -33,7 +33,7 @@
 //  * 連續失敗 3 次就當 YouTube 開始擋,即刻收工(唔好死撐)
 //  * 全程沿用 Phase 2 嘅品質篩選:去重 / 合輯 / 世俗歌 / 死鏈
 //  * DB 寫入鎖(見 hymnDb.js `acquireDbLock`),同 checkDeadLinks.js 唔會撞埋手
-//  * 「有真人聽緊就縮」開關(`THROTTLE_FOR_LISTENERS`),而家未開,見下面說明
+//  * 「有真人聽緊就縮」開關(`THROTTLE_FOR_LISTENERS`),2026-08-23 已開,見下面說明
 //
 // Usage:
 //   node scripts/growLibrary.js --mode curate --budget 6 --delay 4000
@@ -94,7 +94,7 @@ const WINDOW_START = 0;   // 00:00
 const WINDOW_END = 9;     // 09:00(唔包 9 點)
 const ENFORCE_TIME_WINDOW = false;
 
-// ── 「有真人聽緊就縮」開關(2026-07-21 Eric 拍板,而家未開)────────────
+// ── 「有真人聽緊就縮」開關(2026-07-21 Eric 拍板,2026-08-23 開咗)────────
 // 而家得 Eric 一個人用 App,冇真實用戶撞資源嘅風險,所以先可以轉 24 小時、
 // 加密到 15 分鐘一次。但呢個唔會永遠咁進取 —— 將來真係有用戶,攞歌撞正
 // 播放中會爭 yt-dlp/backend 資源(同之前「攞歌搶咗播放中資源引致斷續」
@@ -102,8 +102,13 @@ const ENFORCE_TIME_WINDOW = false;
 // 止血邏輯)。呢個開關轉做 true 就會每次行動作之前,問返 backend「而家
 // 有冇人聽緊歌」(經 `/api/internal/activity`,底層直接讀 `anyStreaming()`
 // 個 refcount,唔係另起一份新狀態),有嘅話就成輪跳過,唔同真實播放爭資源。
-// **啟動方法:得一行改 `THROTTLE_FOR_LISTENERS = true`,唔使再寫過邏輯。**
-const THROTTLE_FOR_LISTENERS = false;
+// ✅ 2026-08-23 Eric 拍板開啟(THIRD-PASS-REVIEW-20260822.md §5 Batch D-3):
+// 由 2026-07-21 寫好擺喺度到而家一直係 false。開咗之後每個 tick 開工之前會問
+// 一次 backend,有人聽緊歌就成輪跳過。fail-open 設計冇變(backend 死 / timeout
+// 一律當冇人聽,唔會令排程死鎖)。growLibrary 係 launchd 每 15 分鐘開一個新
+// process,所以呢個改動**唔使 restart backend** —— 下一個 tick 就係新碼。
+// 想熄返:改 false 就得,邏輯一句都唔使郁。
+const THROTTLE_FOR_LISTENERS = true;
 const BACKEND_BASE = process.env.BACKEND_BASE || 'http://localhost:3001';
 
 async function detectActiveListeners() {
