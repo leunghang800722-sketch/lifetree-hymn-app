@@ -370,6 +370,33 @@ export function bustCache(youtubeId) {
 // 令尾巴 range probe 都命中記憶體。
 const WARM_CAP_BYTES = 12 * 1024 * 1024; // 12MB 封頂——大部份詩歌全首得 3-8MB,一次過攞晒成首歌
 const TAIL_BYTES = 512 * 1024; // 511KB 尾巴,俾 cap 都唔夠嘅大檔一個安全網,冚 AVFoundation 嘅尾巴 range probe
+
+// INSTRUMENTAL-CATEGORY-PLAN §6 P1 / §9 Phase 3b(Eric 2026-08-23 拍板:Q1=600
+// 秒、Q2=(a) 細 head + 尾):上面 12MB cap 個底層假設係「一首詩歌 3-8MB」。純
+// 音樂 tab 一出街,#739(57:58 ≈ 57MB)、#4820(25:48 ≈ 25MB)呢類 soaking 長
+// 片就有咗高流量入口。長檔攞足 12MB 要 820KB/s 先趕得切 WARM_FETCH_TIMEOUT_MS,
+// 而呢條 fetch 係喺 withWarmLock 全局串行隊入面 —— 一首長檔慢 fetch = 塞住後面
+// 所有歌嘅 warm。長檔改攞 4MB(只需 273KB/s,15 秒內好穩)+ 照補 512KB 尾,
+// 夠 AVFoundation 起播;中段行返冷路徑(佢本身一直都係咁播,唔會變差)。
+const LONG_TRACK_SECONDS = 600; // 10 分鐘 —— 跟前端 3a 嘅 MAX_PREFETCH_SECONDS 同一條線
+const LONG_WARM_CAP_BYTES = 4 * 1024 * 1024; // 長檔 head cap,夠起播就算
+
+// "M:SS"(純分鐘制,62:30 = 62 分 30 秒)同 "H:MM:SS" 都收。parse 唔到回 null。
+// 完全鏡住前端 audioPrefetch.js 嘅同名 helper(3a 嗰條閘),兩層同一個語意。
+// ⚠️ 回 null = 「唔知」,唔等於「短」—— 見 warmBuffer() 入面點處理。
+export function parseDurationSec(text) {
+  if (typeof text === 'number' && Number.isFinite(text)) return text > 0 ? text : null;
+  if (typeof text !== 'string') return null;
+  const parts = text.trim().split(':');
+  if (parts.length < 2 || parts.length > 3) return null;
+  let sec = 0;
+  for (const p of parts) {
+    if (!/^\d+$/.test(p)) return null;
+    sec = sec * 60 + Number(p);
+  }
+  return sec > 0 ? sec : null;
+}
+
 // NEXT-TRACK-LATENCY 2026-08-12 追加(Opus 5 驗收 punch list):3 分鐘 TTL 太短
 // ——warm() 喺 App.js 一開波/換歌就即刻叫,但用戶真正撳到「下一首」可能係幾
 // 分鐘之後(聽緊成首歌先轉),舊 TTL 好多時等唔切就過期,變返冷路徑。加長到
@@ -452,12 +479,12 @@ async function fetchTailBuf(url, totalLength, headLen) {
 }
 
 const WARM_RETRY_DELAY_MS = 1200;
-async function fetchHeadWithRetry(url) {
+async function fetchHeadWithRetry(url, capBytes = WARM_CAP_BYTES) {
   for (let attempt = 0; attempt < 2; attempt++) {
     try {
       const r = await fetch(url, {
         method: 'GET',
-        headers: { Range: `bytes=0-${WARM_CAP_BYTES - 1}` },
+        headers: { Range: `bytes=0-${capBytes - 1}` },
         signal: AbortSignal.timeout(WARM_FETCH_TIMEOUT_MS),
       });
       if (r.status === 200 || r.status === 206) return r;
@@ -470,10 +497,16 @@ async function fetchHeadWithRetry(url) {
   return null;
 }
 
-export async function warmBuffer(youtubeId, url) {
+// Phase 3b:durationSec 由 caller(routes/stream.js 個 POST /warm,佢本身已經
+// 逐個 id 打 DB)傳入。傳 null / 唔傳 = 「唔知長度」→ 照舊行 12MB cap ——「唔
+// 知」唔可以當長檔處理,否則一批 duration 係 NULL 嘅普通短歌會無端端只 warm
+// 到 4MB(同前端 3a 嗰條閘同一個保守方向)。
+export async function warmBuffer(youtubeId, url, durationSec = null) {
   return withWarmLock(async () => {
     try {
-      const r = await fetchHeadWithRetry(url);
+      const isLong = typeof durationSec === 'number' && durationSec > LONG_TRACK_SECONDS;
+      const capBytes = isLong ? LONG_WARM_CAP_BYTES : WARM_CAP_BYTES;
+      const r = await fetchHeadWithRetry(url, capBytes);
       if (!r) return;
       const buf = Buffer.from(await r.arrayBuffer());
       // STREAM-MIDTRACK-SILENCE-ROOTCAUSE-2026-08-12:呢截頭一定包住成個
@@ -514,6 +547,12 @@ export function getBufferedChunk(youtubeId, url) {
   const c = bufferCache.get(youtubeId);
   if (!c) return null;
   if (c.expiresAt <= Date.now() || c.url !== url) { bufferCache.delete(youtubeId); return null; }
+  // INSTRUMENTAL-CATEGORY-PLAN §6 P1(Eric 2026-08-23 拍板 Q3①):BUFFER_TTL_MS
+  // = 25 分鐘 < 長檔嘅播放長度(#739 = 57:58)—— 播到中段佢個 entry 已經自己
+  // 過期,之後連頭截都命中唔到。命中就刷新 TTL(touch-on-hit):有人真係用緊
+  // 嘅 entry 唔應該淨係因為夠鐘就被剷。正確性唔係靠 TTL 撐 —— 上面嘅 url-match
+  // 同 evictBufferedChunk() 先係安全網;記憶體上限有 MAX_BUFFER_ENTRIES 個 LRU 頂住。
+  c.expiresAt = Date.now() + BUFFER_TTL_MS;
   touchBufferEntry(youtubeId, c); // LRU:攞中就搬去最新
   return c;
 }

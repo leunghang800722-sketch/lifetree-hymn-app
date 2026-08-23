@@ -4,7 +4,7 @@
 
 import { Router } from 'express';
 import { Readable } from 'stream';
-import { resolveAudioUrl, bustCache, preVerifyUrl, markStreaming, unmarkStreaming, cache, warmBuffer, getBufferedChunk, evictBufferedChunk, anyStreaming, adoptStreamedHead, WARM_CAP_BYTES } from '../lib/resolveAudio.js';
+import { resolveAudioUrl, bustCache, preVerifyUrl, markStreaming, unmarkStreaming, cache, warmBuffer, getBufferedChunk, evictBufferedChunk, anyStreaming, adoptStreamedHead, WARM_CAP_BYTES, parseDurationSec } from '../lib/resolveAudio.js';
 import { zeroFragmentedMp4Durations } from '../lib/fixFragmentedMp4Duration.js';
 import { recordWarmIds } from '../lib/warmLog.js';
 import { recordStreamRequest } from '../lib/opsMetrics.js';
@@ -82,16 +82,23 @@ export default function streamRoutes(getDb) {
     if (!ids.length) return;
     try {
       const db = await getDb();
-      const ytIds = [];
+      // INSTRUMENTAL-CATEGORY-PLAN §9 Phase 3b:順手攞埋 duration(呢個 SELECT
+      // 本來就逐個 id 打緊,加一欄零額外 query),parse 做秒傳落 warmBuffer(),
+      // 等佢可以對長檔行細 head cap。parse 唔到就傳 null = 「唔知」,warmBuffer
+      // 收到 null 會照行返 12MB 舊路。
+      const warmTargets = [];
       for (const raw of ids) {
         const id = Number(raw);
         if (!Number.isInteger(id) || id <= 0) continue;
-        const stmt = db.prepare('SELECT youtube_id FROM hymns WHERE id = ?');
+        const stmt = db.prepare('SELECT youtube_id, duration FROM hymns WHERE id = ?');
         stmt.bind([id]);
-        if (stmt.step()) { const r = stmt.getAsObject(); if (r.youtube_id) ytIds.push(r.youtube_id); }
+        if (stmt.step()) {
+          const r = stmt.getAsObject();
+          if (r.youtube_id) warmTargets.push({ yt: r.youtube_id, durationSec: parseDurationSec(r.duration) });
+        }
         stmt.free();
       }
-      for (const yt of ytIds) {
+      for (const { yt, durationSec } of warmTargets) {
         try {
           const url = await resolveAudioUrl(yt);
           const verifiedUrl = await preVerifyUrl(yt, url);
@@ -102,7 +109,7 @@ export default function streamRoutes(getDb) {
           // 即係 streaming map size>=1),舊寫法係死 code(SECOND-PASS-REVIEW-
           // 20260820.md b3)。
           if (anyStreaming()) continue;
-          await warmBuffer(yt, verifiedUrl);
+          await warmBuffer(yt, verifiedUrl, durationSec);
         } catch (_) {}
       }
     } catch (_) { /* 背景嘢,靜靜哋收工就得 */ }
