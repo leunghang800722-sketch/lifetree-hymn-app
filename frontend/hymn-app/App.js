@@ -869,6 +869,10 @@ function PlayerProvider({ children }) {
         // 收夠幾轉真實數據就要**改返** always 落嚟(每首歌 4-6 個 POST,唔係
         // 長期跑嘅量)。⚠️ 呢段純粹係診斷:sync 嗰截行為一行都冇改,await
         // getProgress() 擺喺後面獨立 async IIFE,唔會拖慢/改變 state 處理。
+        // ✅ 2026-08-23 已閂返(THIRD-PASS-REVIEW P1-1):`{ always: true }` 剷咗,
+        // 呢兩條同下面 trackChanged 一律返去食 DIAG_ENABLED(預設 false)。由
+        // commit 到閂返之間一次都未 OTA 過,所以零真機數據損失;下次要收呢批數
+        // 就臨時開 DIAG_ENABLED,唔好再喺 call site 加 always。
         const prevSkipCount = errorSkipCountRef.current;
         const fromState = trackStateRef.current;
         // THIRD-PASS-REVIEW P2-1 —— 記低「新 track 真係開過 buffer」。
@@ -890,14 +894,14 @@ function PlayerProvider({ children }) {
               duration: p?.duration,
               errorSkipCount: prevSkipCount,
               detail: `from=${fromState} to=${val}`,
-            }, { always: true });
+            });
           })();
         } else {
           logDiag('stateChange', {
             appState: appStateRef.current,
             errorSkipCount: prevSkipCount,
             detail: `from=${fromState} to=${val}`,
-          }, { always: true });
+          });
         }
         setTrackState(val);
         // playQueue() (§3.2) leaves isLoading true until audio is actually
@@ -942,13 +946,14 @@ function PlayerProvider({ children }) {
         // 同上,2026-08-22 臨時開 always(每首歌得一條,量細)——冇呢條就淨係
         // 見到一串 stateChange,唔知邊個 to=playing 對應邊首歌、亦分唔到
         // 「跳咗去下一首」定「同一首歌 retry」。攞夠證據要同 stateChange 一齊
-        // 改返落嚟。
+        // 改返落嚟。✅ 2026-08-23 已同 stateChange 一齊閂返(P1-1),而家食
+        // DIAG_ENABLED。
         logDiag('trackChanged', {
           appState: appStateRef.current,
           hymnId: song?.id ?? null,
           errorSkipCount: errorSkipCountRef.current,
           detail: `idx=${idx}`,
-        }, { always: true });
+        });
         // Phase 1 量度 —— 撳掣起源嘅 t0 未過期(30s)就補「track 真係轉咗」標記
         // + hymnId;冇 t0(native auto-advance)就以呢一刻做 t0。
         {
