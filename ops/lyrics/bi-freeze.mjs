@@ -60,9 +60,15 @@ function readHoldIds() {
   } catch (_) { return []; }
 }
 
+// ⚠️ 純音樂 exclusion(INSTRUMENTAL-PHASE1-EXEC-20260821.md §4):instrumental=1
+// 嘅歌唔入歌詞線,所以兩條 draft query 都加咗
+// `AND (instrumental IS NULL OR instrumental = 0)`。理論上佢哋
+// lyrics_status='unavailable' 本身已經入唔到「lyrics_status='draft'」呢個條件,
+// 呢一刀係雙保險 + 語意清晰,唔係修 bug。
 async function refresh() {
   const rows = await queryDb(`SELECT id, lang, lyrics_draft FROM hymns_all
-                              WHERE curated=1 AND status!='dead' AND lyrics_status='draft'`);
+                              WHERE curated=1 AND status!='dead' AND lyrics_status='draft'
+                                AND (instrumental IS NULL OR instrumental = 0)`);
   const fromDraft = rows.filter((r) => isBilingualBlocked(r.lang, r.lyrics_draft)).map((r) => r.id);
   const fromHold = readHoldIds();
   const ids = [...new Set([...fromDraft, ...fromHold])].sort((a, b) => a - b);
@@ -86,7 +92,8 @@ function loadFrozenIds() {
 
 async function count() {
   const rows = await queryDb(`SELECT id, lang, lyrics_draft FROM hymns_all
-                              WHERE curated=1 AND status!='dead' AND lyrics_status='draft'`);
+                              WHERE curated=1 AND status!='dead' AND lyrics_status='draft'
+                                AND (instrumental IS NULL OR instrumental = 0)`);
   // 即場算,唔靠可能過時嘅名單檔 —— keeper 每 5 分鐘叫一次,要準。
   console.log(String(rows.filter((r) => !isBilingualBlocked(r.lang, r.lyrics_draft)).length));
 }

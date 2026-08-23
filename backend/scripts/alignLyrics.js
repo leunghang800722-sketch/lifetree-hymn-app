@@ -266,6 +266,11 @@ function loadSong(db, id) {
 }
 
 function pickAllCandidates(db) {
+  // ⚠️ 純音樂 exclusion **刻意唔加**(INSTRUMENTAL-PHASE1-EXEC-20260821.md §4
+  // 尾段):timeline 係人聲偵測嘅證據,continue 做落去冇壞(仲係 T2
+  // scanInstrumentalCandidates.mjs 嘅原料);而且下面條 query 淨係揀
+  // `lyrics_status IN ('draft','verified')`,instrumental 嘅歌係
+  // `'unavailable'`,天然入唔到。呢個係刻意決定,唔係漏。
   return query(db, `SELECT id FROM hymns_all
                     WHERE curated=1 AND status!='dead'
                       AND lyrics_status IN ('draft','verified') AND (lyrics_source IS NULL OR lyrics_source != 'manual')

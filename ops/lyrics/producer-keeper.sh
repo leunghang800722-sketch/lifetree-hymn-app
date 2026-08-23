@@ -176,8 +176,12 @@ while true; do
     rm -f "$MARK"
   fi
 
-  POOL="$(count "SELECT COUNT(*) FROM hymns_all WHERE curated=1 AND status!='dead' AND lyrics_status='none' AND lyrics_source='cc:miss';")"
-  CCLEFT="$(count "SELECT COUNT(*) FROM hymns_all WHERE curated=1 AND status!='dead' AND (lyrics_status IS NULL OR lyrics_status='none') AND (lyrics_source IS NULL OR lyrics_source='');")"
+  # ⚠️ 純音樂 exclusion(INSTRUMENTAL-PHASE1-EXEC-20260821.md §4):三條計數
+  # query 都加咗 `AND (instrumental IS NULL OR instrumental = 0)` —— instrumental=1
+  # 嘅歌唔入歌詞線,計埋入池會令 keeper 以為仲有貨。理論上佢哋
+  # lyrics_status='unavailable' 本身已經入唔到呢三條條件,呢一刀係雙保險。
+  POOL="$(count "SELECT COUNT(*) FROM hymns_all WHERE curated=1 AND status!='dead' AND (instrumental IS NULL OR instrumental = 0) AND lyrics_status='none' AND lyrics_source='cc:miss';")"
+  CCLEFT="$(count "SELECT COUNT(*) FROM hymns_all WHERE curated=1 AND status!='dead' AND (instrumental IS NULL OR instrumental = 0) AND (lyrics_status IS NULL OR lyrics_status='none') AND (lyrics_source IS NULL OR lyrics_source='');")"
   # ⚠️ 2026-08-16:唔可以再數 draft 總數 —— Eric 拍板將「中文歌配英文歌詞」嗰批
   # 全面扣起(唔准 apply、唔准判死,等新方法出嚟先處理),而佢哋一直留喺 draft。
   # 用總數就會出現「隊列 444 塞爆 → 熄咗 producer」但其實得 190 首做得嘅情況
@@ -185,7 +189,7 @@ while true; do
   DRAFTS="$("$NODE_BIN" "$REPO/ops/lyrics/bi-freeze.mjs" --count 2>/dev/null)"
   # script 有咩冬瓜豆腐就 fallback 返總數(保守:寧願早唞都好過亂出貨)
   if [[ -z "$DRAFTS" ]]; then
-    DRAFTS="$(count "SELECT COUNT(*) FROM hymns_all WHERE curated=1 AND status!='dead' AND lyrics_status='draft';")"
+    DRAFTS="$(count "SELECT COUNT(*) FROM hymns_all WHERE curated=1 AND status!='dead' AND (instrumental IS NULL OR instrumental = 0) AND lyrics_status='draft';")"
     log "⚠ bi-freeze --count 攞唔到數,fallback 用 draft 總數 $DRAFTS"
   fi
 

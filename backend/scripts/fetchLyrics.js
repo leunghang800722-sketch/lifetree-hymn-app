@@ -263,9 +263,16 @@ function prioritizeByRequeue(cands, label) {
 }
 
 function report(db) {
-  const rows = query(db, `SELECT lyrics_status, COUNT(*) n FROM hymns_all WHERE curated=1 AND status!='dead' GROUP BY lyrics_status`);
+  // 純音樂(instrumental=1)喺呢度**單獨數一行**,唔混入 lyrics_status 分佈 ——
+  // 佢哋根本唔入歌詞線,撈埋一齊數會令個 report 睇落好似有一堆做唔掂嘅歌。
+  const rows = query(db, `SELECT lyrics_status, COUNT(*) n FROM hymns_all
+                            WHERE curated=1 AND status!='dead'
+                              AND (instrumental IS NULL OR instrumental = 0)
+                            GROUP BY lyrics_status`);
   log('歌詞進度(curated,按 status):');
   for (const r of rows) log(`   ${r.lyrics_status || 'none'}  →  ${r.n} 首`);
+  const instr = query(db, `SELECT COUNT(*) n FROM hymns_all WHERE curated=1 AND status!='dead' AND instrumental = 1`)[0];
+  log(`   (純音樂 instrumental=1:${instr?.n ?? 0} 首,唔入歌詞線)`);
   const bySource = query(db, `SELECT lyrics_source, COUNT(*) n FROM hymns_all
                               WHERE curated=1 AND status!='dead' AND lyrics_source IS NOT NULL AND lyrics_source != ''
                               GROUP BY lyrics_source`);
@@ -303,9 +310,14 @@ async function writeLyricsRow(id, fields) {
 // 等延後——見 hymnDb.js「歌詞攞取優先次序」註解)——Array#sort 喺 Node 保證
 // stable,所以同一個 key 值入面保留返 SQL 嗰層嘅隨機次序,唔會退返做 id 順序
 // (growLibrary 教訓:唔好用 id 順序,舊 id 死亡率高)。
+// ⚠️ 純音樂 exclusion(INSTRUMENTAL-PHASE1-EXEC-20260821.md §4):
+// `instrumental=1` 嘅歌唔入歌詞線。理論上 `lyrics_status='unavailable'` 已經
+// 係終態(下面條 query 硬性要 'none'),呢一刀係**雙保險 + 語意清晰**,唔係
+// 修 bug —— 免得下手見到「instrumental 冇 exclusion」以為係漏咗。
 function pickCandidates(db) {
   const rows = query(db, `SELECT id, youtube_id, title, artist, album, org FROM hymns_all
                     WHERE curated=1 AND status!='dead'
+                      AND (instrumental IS NULL OR instrumental = 0)
                       AND (lyrics_status IS NULL OR lyrics_status='none')
                       AND (lyrics_source IS NULL OR lyrics_source='')
                     ORDER BY RANDOM()`);
@@ -318,6 +330,7 @@ function pickCandidates(db) {
 function pickOcrCandidates(db) {
   const rows = query(db, `SELECT id, youtube_id, title, artist, lang, album, org FROM hymns_all
                     WHERE curated=1 AND status!='dead'
+                      AND (instrumental IS NULL OR instrumental = 0)   -- 純音樂 exclusion,見 pickCandidates 註解
                       AND lyrics_status='none' AND lyrics_source='cc:miss'
                     ORDER BY RANDOM()`);
   return rows.sort((a, b) => candidateSortKey(a) - candidateSortKey(b));

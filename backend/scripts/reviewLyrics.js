@@ -49,9 +49,13 @@ async function doExport() {
   const outPath = arg('--out', path.join(process.cwd(), `lyrics-draft-${today()}.json`));
 
   const db = await openDb();
+  // ⚠️ 純音樂 exclusion(INSTRUMENTAL-PHASE1-EXEC-20260821.md §4):instrumental=1
+  // 嘅歌唔入複核隊。理論上佢哋 lyrics_status 係 'unavailable' 本身已經入唔到
+  // 呢條 query,呢一刀係雙保險 + 語意清晰,唔係修 bug。
   const rows = query(db, `SELECT id, title, artist, lang, lyrics_source, lyrics_draft, lyrics_checked_at
                           FROM hymns_all
                           WHERE curated=1 AND status!='dead' AND lyrics_status='draft'
+                            AND (instrumental IS NULL OR instrumental = 0)
                           ORDER BY lyrics_checked_at ASC
                           LIMIT ?`, [limit]);
 

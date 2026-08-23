@@ -20,7 +20,11 @@ let ids = [];
 try { ids = JSON.parse(fs.readFileSync(PRIORITY, 'utf8')).ids || []; } catch (_) {}
 if (!ids.length) { console.log('0'); process.exit(0); }
 
+// ⚠️ 純音樂 exclusion(INSTRUMENTAL-PHASE1-EXEC-20260821.md §4):instrumental=1
+// 嘅歌唔入重做隊。名單檔本身 2026-08-23 已經清走咗回標嘅 id,呢一刀係雙保險
+// (將來再有新回標,名單檔未清都唔會誤計)。
 const sql = `SELECT COUNT(*) FROM hymns_all WHERE id IN (${ids.join(',')})
+             AND (instrumental IS NULL OR instrumental = 0)
              AND lyrics_status='none' AND lyrics_source='cc:miss'`;
 try {
   const { stdout } = await promisify(execFile)('sqlite3', [`file:${DB}?mode=ro`, sql]);
