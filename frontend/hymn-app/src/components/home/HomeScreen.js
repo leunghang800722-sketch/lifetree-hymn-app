@@ -26,6 +26,11 @@ import { COLORS, TYPOGRAPHY, radii, effects } from '../../theme/designSystem';
 import DailyVerseCard from './DailyVerseCard';
 import { getHomeChip, saveHomeChip } from '../../homePrefs';
 import { dailyPick, dailyPickBalanced, randomShuffle } from '../../utils/dailyShuffle';
+// PHASE2.5-PRELOAD-PLAN §4 W2 —— chip 定義 + 「現用邊個 chip」嘅 fallback 邏輯而家
+// 同 App.js 嘅開機預載器共用一份,唔可以喺呢度另外抄一套(drift 咗預載就會落錯歌)。
+import { CHIP_PAGE_SIZE, buildChips } from '../../utils/homeChips';
+// W3 —— 「隨心聽」第一首偏向已經落載咗喺機入面嘅歌(iOS;Android 恆 null 自動 no-op)。
+import { getLocalUri } from '../../audioPrefetch';
 import { useFavorites } from '../../context/FavoritesContext';
 import { getDisplayTitle } from '../../utils/displayTitle';
 
@@ -42,7 +47,8 @@ const PAGE_W = SCREEN_W - PAGE_H_MARGIN * 2 - PAGE_PEEK;
 const PAGE_SNAP = PAGE_W + PAGE_GAP;
 // 每頁 4 首(唔係 5)—— 5 首嗰陣最尾一首會俾 mini player 擋住,見唔晒。
 // 頁數補返上去 5 頁,所以一個分類仍然係滑到 20 首。
-const SONGS_PER_PAGE = 4;
+// 實數喺 utils/homeChips.js(預載器都要知道「首頁嗰版」係邊幾首)。
+const SONGS_PER_PAGE = CHIP_PAGE_SIZE;
 const MAX_PAGES = 5;        // 4 × 5 = 一個分類最多滑到 20 首,再多就用「睇晒」
 // 🔴 v233:上一版 ROW_H 當咗 60(40 縮圖 + 上下 10 padding),但一行實際高度係由
 // **文字**決定,唔係縮圖:歌名 18pt(預設行高 ~24)+ 間距 2 + 歌手 14pt(~19)= ~45,
@@ -52,17 +58,6 @@ const MAX_PAGES = 5;        // 4 × 5 = 一個分類最多滑到 20 首,再多�
 const ROW_TITLE_LH = 22;
 const ROW_ARTIST_LH = 18;
 const ROW_H = 64;           // 22 + 2 + 18 = 42 文字,+ 上下 11 padding = 64
-
-// 「即刻揀歌」嘅 chips。DB 冇 playlist 表,所以喺 150 首試版庫用語言 + 關鍵字即場砌 ——
-// 現有數據下最誠實嘅做法:有真歌、撳到、播到。將來加清單淨係加一項,唔使改版面。
-const CHIP_DEFS = [
-  { id: 'cantonese', title: '粵語敬拜', match: (h) => h.lang === '粵語' },
-  { id: 'mandarin',  title: '國語敬拜', match: (h) => h.lang === '國語' },
-  { id: 'english',   title: 'English',  match: (h) => h.lang === '英文' },
-  { id: 'kids',      title: '兒童詩歌', match: (h) => h.lang === '兒童' },
-  { id: 'quiet',     title: '安靜靈修',
-    match: (h) => /(安靜|靈修|禱告|恩典|同在|安息|寧靜|Still|Peace|Quiet|Rest)/i.test(h.title || '') },
-];
 
 function Thumb({ youtubeId, size, radius = 8, icon = 'musicNote' }) {
   const [failed, setFailed] = React.useState(false);
@@ -133,12 +128,7 @@ export default function HomeScreen({ hymns = [], loading = false, onPlayHymn, on
 
   // 每一頁 = 一個分類。每頁 5 首每日輪換(日期種子,當日內唔變),salt 用 chip id,
   // 唔同分類唔會抽埋同一批。夠 3 首先開個 chip,唔好俾空清單呃人。
-  const chips = useMemo(
-    () => CHIP_DEFS
-      .map((c) => ({ ...c, songs: hymns.filter(c.match) }))
-      .filter((c) => c.songs.length >= 3),
-    [hymns]
-  );
+  const chips = useMemo(() => buildChips(hymns), [hymns]);
 
   // chip = 撳一下切分類(照舊)。記低嗰個可能已經冇咗,fallback 返第一個。
   const [chipId, setChipId] = useState(() => getHomeChip());
@@ -196,16 +186,34 @@ export default function HomeScreen({ hymns = [], loading = false, onPlayHymn, on
   // 分類用「播晒 N 首」掣或者「睇晒」頁。播緊清單時撳呢度依然係插播——
   // 由 playSingle 自己嘅插播分支處理,唔再需要 browseTap flag。「今日為你
   // 預備」/「最近加入」嗰兩行卡一直都係單曲 + 隨機接續,冇改過。
-  const play = useCallback((hymn, list, explicit) => {
-    if (onPlayHymn && hymn) onPlayHymn(hymn, list ? { playlist: list, explicit: !!explicit } : undefined);
+  const play = useCallback((hymn, list, explicit, surface) => {
+    if (onPlayHymn && hymn) onPlayHymn(hymn, list ? { playlist: list, explicit: !!explicit, surface } : undefined);
   }, [onPlayHymn]);
 
   // 隨心聽:每次撳都要唔同,所以用真隨機(唔落日期種子)。
   // 洗好副牌先交俾播放器,播放器照住個 queue 行就得。
+  //
+  // PHASE2.5-PRELOAD-PLAN §4 W3 —— 首屏最當眼嘅「唔想揀」入口:洗完牌之後,
+  // 喺副牌入面搵**第一隻**機入面已經有本地檔嘅歌,調上第一位。撳落去就係
+  // file://,即撳即出聲(~0.2s),唔使食 AVPlayer 起 asset 嗰 9 秒。
+  //   - 語義仍然係隨機:只係喺已經洗好嘅牌入面提前咗一隻「即開」嘅,
+  //     第 2 首起完全唔郁。快取有 60 首 LRU(用戶自己聽開嘅 + 每日 picks),
+  //     唔會日日都係同一首。
+  //   - 零流量成本(唔會為咗呢個去落載任何嘢)。
+  //   - findIndex 撞到第一隻就收工,所以最多只會 touch 一個 id,唔會沖走
+  //     audioPrefetch 嗰個 12 格 LRU 保護名單(見 audioPrefetch.js touch())。
+  //   - Android:getLocalUri() 恆回 null → hit = -1 → 完全冇行為改變。
   const playShuffleAll = useCallback(() => {
     if (!hasData) return;
     const shuffled = randomShuffle(hymns);
-    play(shuffled[0], shuffled, true); // 洗好副牌 = 明確嘅清單,唔好再加隨機尾巴
+    const hit = shuffled.findIndex((h) => h?.id != null && getLocalUri(h.id) != null);
+    if (hit > 0) {
+      const first = shuffled[0];
+      shuffled[0] = shuffled[hit];
+      shuffled[hit] = first;
+    }
+    // surface='shuffle' —— W4 量度用(唔靠「首數啱唔啱」去猜入口,見 App.js)。
+    play(shuffled[0], shuffled, true, 'shuffle'); // 洗好副牌 = 明確嘅清單,唔好再加隨機尾巴
   }, [hymns, hasData, play]);
 
   if (!hasData) {

@@ -48,6 +48,18 @@ let currentDownloadId = null;
 // 落載緊嗰陣,即刻 abort,唔准背景落載同即場串流爭網絡(嗰刻串流先係
 // 用戶聽緊/等緊嘅嘢,落載讓路;首歌下次做「即將播放」時自然再排隊)。
 let currentAbortController = null;
+// PHASE2.5-PRELOAD-PLAN §4 W2-2 —— 「用戶聽得到嘅串流永遠大過背景落載」。
+// 起播嗰首冇本地檔(即係就嚟行串流)嗰陣,唔止 cancel 佢自己,而係成條背景
+// 落載隊列都停低讓路:弱網之下背景搶緊 6MB 頻寬,會令本來 9.6s 嘅串流更慢,
+// 即係「做咗 Phase 2.5 反而令 miss case 衰咗」。呢個 flag 一 set,processQueue
+// 就唔開新嘅;被踢走嗰批記喺 pausedIds,等真係出咗聲(App.js 喺 state=Playing
+// 度 call resumeQueue())先重新排。
+let paused = false;
+let pausedIds = [];
+// 安全網:如果首歌永遠去唔到 Playing(load 失敗/用戶即刻撳走),冇呢個
+// timer 就成個 session 唔會再落載到任何嘢。夠鐘就自己恢復。
+let resumeTimer = null;
+const AUTO_RESUME_MS = 30 * 1000;
 
 // 落載完成通知(App.js 用嚟做隊列熱換)。
 const completeListeners = new Set();
@@ -207,6 +219,45 @@ export function onPrefetchComplete(cb) {
   return () => completeListeners.delete(cb);
 }
 
+// ⚠️ 2026-08-23 模擬器實錘(PHASE2.5 §8.1 場景 B 第 3 次重跑):`controller.abort()`
+// 之後,Expo 個 fetch/arrayBuffer 嘅 promise **唔一定** settle —— 三次重跑入面
+// 有一次係完全冇 reject:`downloadOne` 永遠停喺 await 度 → 條 finally 冇行 →
+// `currentDownloadId` 永遠唔清 → `processQueue()` 頭嗰句就 return,成個 session
+// 之後再冇任何預載(同 BATCH5 S4「半死連線」同一 class,但今次係 abort 路徑,
+// 90 秒 timeout 都救唔到:個 request 已經 abort 咗,再 abort 一次乜都唔會發生)。
+//
+// 呢個 hazard 喺 W2-2 之前就已經存在(`cancelIfDownloading()` 一樣係 abort),
+// 只不過 W2-2 令 abort 由「偶然」變成「用戶每次撳串流歌都會發生」,所以一定要修。
+//
+// 修法:唔靠底層 promise settle,自己同 abort signal 賽跑。一 abort 就即刻掟
+// AbortError 落 catch,行返 finally 清 currentDownloadId。底層個 promise 就算
+// 之後先 settle 都冇人理(race 已經幫兩邊都掛咗 handler,唔會 unhandled rejection)。
+function abortRace(controller, promise) {
+  if (!controller || !controller.signal) return promise;
+  return Promise.race([
+    promise,
+    new Promise((_, reject) => {
+      const fire = () => {
+        const err = new Error('aborted-by-controller');
+        err.name = 'AbortError';
+        reject(err);
+      };
+      try {
+        if (controller.signal.aborted) { fire(); return; }
+        if (typeof controller.signal.addEventListener === 'function') {
+          controller.signal.addEventListener('abort', fire, { once: true });
+        } else {
+          const prev = controller.signal.onabort;
+          controller.signal.onabort = (ev) => {
+            try { if (typeof prev === 'function') prev(ev); } catch (_) {}
+            fire();
+          };
+        }
+      } catch (_) { /* 掛唔到就退化返舊行為,唔可以喺呢度炸 */ }
+    }),
+  ]);
+}
+
 async function downloadOne(songId) {
   await initCache();
   let File;
@@ -230,7 +281,7 @@ async function downloadOne(songId) {
     : null;
   try {
     const url = `${API_BASE}/api/stream/${songId}`;
-    const response = await fetch(url, controller ? { signal: controller.signal } : undefined);
+    const response = await abortRace(controller, fetch(url, controller ? { signal: controller.signal } : undefined));
     if (!response || response.status !== 200) {
       diagFail(songId, `status=${response ? response.status : 'none'}`);
       return;
@@ -242,7 +293,7 @@ async function downloadOne(songId) {
       diagFail(songId, `badType=${contentType}`);
       return;
     }
-    const buf = await response.arrayBuffer();
+    const buf = await abortRace(controller, response.arrayBuffer());
     if (!buf || buf.byteLength < MIN_BYTES) {
       diagFail(songId, `tooSmall=${buf ? buf.byteLength : 0}`);
       return;
@@ -262,7 +313,12 @@ async function downloadOne(songId) {
     // 被 cancelIfDownloading() 主動 abort 唔算失敗——係設計行為,只留一條
     // 輕量 diag 供核實機制有冇郁,唔好同真失敗撈亂。timedOut 要先判斷,
     // 同用戶主動 cancel 分開,唔好污染診斷。
-    const aborted = e && (e.name === 'AbortError' || /abort/i.test(String(e.message || '')));
+    // ⚠️ 唔可以淨係認 `AbortError`/「abort」:Expo 嘅 fetch polyfill 掟出嚟嘅係
+    // `FetchRequestCanceledException: Fetch request has been canceled`(2026-08-23
+    // 模擬器實錘),name 唔係 AbortError、message 亦冇 "abort" 呢個字,結果主動
+    // 讓路會被當成真失敗上報,診斷數就冇得分「機制有郁」定「真係落載失敗」。
+    const abortMsg = String((e && (e.message || e.name)) || '');
+    const aborted = e && (e.name === 'AbortError' || /abort|cancel/i.test(abortMsg));
     diagFail(songId, timedOut ? 'timeout' : (aborted ? 'aborted-for-stream' : (e?.message || 'exception')));
     try { if (partFile.exists) partFile.delete(); } catch (_) {}
   } finally {
@@ -272,6 +328,7 @@ async function downloadOne(songId) {
 }
 
 function processQueue() {
+  if (paused) return;            // W2-2:讓路俾即場串流,等 resumeQueue() 先開波
   if (currentDownloadId) return; // 同一時間最多 1 條落載
   const id = downloadQueue.shift();
   if (id == null) return;
@@ -304,9 +361,56 @@ export function cancelIfDownloading(songId) {
   const id = String(songId);
   const qi = downloadQueue.indexOf(id);
   if (qi >= 0) downloadQueue.splice(qi, 1);
+  // W2-2:被 pauseAllForStream() 收起嗰批都要踢,唔係播緊/啱啱播完嗰首會
+  // 喺 resumeQueue() 嗰刻先復活,同「讓路」個原意撞。
+  const pi = pausedIds.indexOf(id);
+  if (pi >= 0) pausedIds.splice(pi, 1);
   if (currentDownloadId === id && currentAbortController) {
     try { currentAbortController.abort(); } catch (_) {}
   }
+}
+
+// PHASE2.5-PRELOAD-PLAN §4 W2-2 —— 無條件讓路:abort 落載緊嗰條 + 清空隊列,
+// 被踢嘅 id 記低,等 resumeQueue() 先重新排。冪等(連續 call 唔會沖走 pausedIds)。
+// 回傳被踢嘅 id 陣列,方便 caller 記 log。
+export function pauseAllForStream() {
+  if (Platform.OS !== 'ios') return [];
+  const kicked = [];
+  if (currentDownloadId != null) kicked.push(String(currentDownloadId));
+  for (const id of downloadQueue) kicked.push(String(id));
+  downloadQueue.length = 0;
+  paused = true;
+  for (const id of kicked) if (!pausedIds.includes(id)) pausedIds.push(id);
+  if (currentAbortController) {
+    // abort 之後 downloadOne 條 finally 會 call 返 processQueue(),嗰陣 paused
+    // 已經係 true,所以唔會即刻又開新一條 —— 次序唔可以掉轉。
+    try { currentAbortController.abort(); } catch (_) {}
+  }
+  if (resumeTimer) clearTimeout(resumeTimer);
+  resumeTimer = setTimeout(() => { resumeTimer = null; resumeQueue(); }, AUTO_RESUME_MS);
+  return kicked;
+}
+
+// 恢復背景落載。被踢走嗰批排喺**最後**——中間新排入嚟嘅(例如 trackChanged
+// 嘅「下 2 首」)先係最等錢使嗰啲,唔可以俾舊嘢插佢隊。
+export function resumeQueue() {
+  if (Platform.OS !== 'ios') return;
+  if (resumeTimer) { clearTimeout(resumeTimer); resumeTimer = null; }
+  paused = false;
+  const restore = pausedIds;
+  pausedIds = [];
+  for (const id of restore) {
+    if (index.has(id)) continue;
+    // ⚠️ 呢度**唔可以**用 `currentDownloadId === id` 做去重條件。abort() 係
+    // async:pause 之後即刻 resume(例如用戶撳完即刻又撳第二首)嗰陣,被 abort
+    // 嗰條嘅 finally 仲未行到,currentDownloadId 仲係佢——咁樣就會將佢當成
+    // 「仲落載緊」跳過,結果永遠冇人落載佢(scratch harness T6 實錘)。
+    // pausedIds 入面全部都係已經被踢走嘅 id,照排返入去就啱;真係撞到同一個 id
+    // 又落載緊,processQueue() 開波前嗰句 index.has() 會擋住,唔會落載兩次。
+    if (downloadQueue.includes(id)) continue;
+    downloadQueue.push(id);
+  }
+  processQueue();
 }
 
 // 本地檔 PlaybackError 用:剷檔 + 從 index 移除,令 retry/skip 跌返串流

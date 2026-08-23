@@ -39,9 +39,15 @@ import {
   prefetch as prefetchAudio,
   invalidate as invalidateAudioCache,
   cancelIfDownloading as cancelAudioPrefetch,
+  pauseAllForStream as pauseAudioPrefetchForStream,
+  resumeQueue as resumeAudioPrefetch,
   onPrefetchComplete,
 } from './src/audioPrefetch.js';
-import { dailyPickBalanced } from './src/utils/dailyShuffle';
+import { dailyPick, dailyPickBalanced } from './src/utils/dailyShuffle';
+// PHASE2.5-PRELOAD-PLAN §4 W2 —— 「即刻揀歌」現用 chip 同 HomeScreen 共用一份
+// 定義/fallback 邏輯,唔可以兩邊各自實現(drift 咗預載就會靜靜哋落錯歌)。
+import { CHIP_PAGE_SIZE, resolveActiveChip } from './src/utils/homeChips';
+import { getHomeChip } from './src/homePrefs';
 import { buildAutoplayTail, FLAVORS, poolSize } from './src/utils/autoplay';
 import { getPlayLog, getRecentIds, recordPlay } from './src/playLog';
 import { getAutoplayEnabled, setAutoplayEnabled, getAutoplayFlavor, setAutoplayFlavor } from './src/autoplayPrefs';
@@ -191,6 +197,24 @@ function warmIds(ids) {
 // 同喺呢個 file,用 module scope 傳遞,唔使搞 context/prop 鏈。
 let tomorrowHeadIds = [];
 let tomorrowQueuedThisSession = false;
+
+// PHASE2.5-PRELOAD-PLAN §4 W4 —— firstTapSurface。開機嗰陣(§3b①)計低首屏三個
+// 可預知位置嘅 id,`origin=start` 上報 nextTrackMs 嗰刻就答得返兩條問題:
+// (a) 真用戶第一撳實際撳咗邊個位,(b) 嗰個位嘅本地檔命中率有幾高。
+// 純粹收數 —— 呢輪唔會攞嚟即刻改行為(加碼預載等 1-2 星期真機數據,§10-4)。
+let todayPickIds = [];
+let chipHeadIds = [];
+let recentHeadIds = [];
+let firstStartLogged = false;
+
+function classifyFirstTapSurface(songId) {
+  if (songId == null) return 'unknown';
+  const id = String(songId);
+  if (todayPickIds.some((x) => String(x) === id)) return 'today';
+  if (chipHeadIds.some((x) => String(x) === id)) return 'chip';
+  if (recentHeadIds.some((x) => String(x) === id)) return 'recent';
+  return 'other';
+}
 
 // STREAM-MIDTRACK-SILENCE-ROOTCAUSE 續篇(2026-08-13)—— 鎖屏播25分鐘停咗嗰單,
 // 查到watchdog/PlaybackError呢幾條路徑就係疑犯,但完全冇log可以睇:TestFlight
@@ -471,20 +495,40 @@ function PlayerProvider({ children }) {
   // 嗰啲數屬於「自己停」事件,唔應該溝入轉歌延遲分佈)。
   function finishTransitionMeasure() {
     const t0 = transitionT0Ref.current;
-    if (!t0 || !t0.trackChangedSeen) return;
-    transitionT0Ref.current = null;
+    // t0.pending:getActiveTrack() 係 async,兩個 Playing event 連住嚟會重入。
+    if (!t0 || !t0.trackChangedSeen || t0.pending) return;
     const ms = Date.now() - t0.ts;
-    if (ms > 60000) return;
+    if (ms > 60000) { transitionT0Ref.current = null; return; }
+    t0.pending = true;
     TrackPlayer.getActiveTrack()
       .then((t) => {
+        t0.pending = false;
+        if (transitionT0Ref.current !== t0) return; // 期間俾新一次轉歌換走咗
         const src = t && t.url && String(t.url).indexOf('file:') === 0 ? 'local' : 'stream';
+        // THIRD-PASS-REVIEW §3.4 / P2-1 —— 假快數守衛。實錘(2026-08-22 15:16:36,
+        // id=68):beacon 報 ms=382,但同一秒 log 次序係 nextTrackMs(382ms) →
+        // from=none to=buffering → 8.4 秒後先 from=buffering to=playing。即係
+        // **舊 track 遲到嘅 Playing event** 喺 trackChanged 之後、新 track 開
+        // buffer 之前搶咗閘。呢度要求 stream 樣本一定要見過 buffering/loading
+        // 先算數;見唔到就唔清 t0,等真嗰個 Playing 嚟到再計(ms 會重新計)。
+        // source=local 豁免:本地檔真係可以 <500ms 就出聲,佢唔會 buffer。
+        if (src !== 'local' && !t0.bufferingSeen) return;
+        transitionT0Ref.current = null;
+        // W4:第一首(origin=start)先報 surface —— 轉歌(tapNext/auto)冇「入口」
+        // 呢個概念。first=1 標住成個 app session 嘅第一撳,分析嗰陣唔使靠時間戳估。
+        let extra = '';
+        if (t0.origin === 'start') {
+          const first = firstStartLogged ? 0 : 1;
+          firstStartLogged = true;
+          extra = ` surface=${t0.surface || 'unknown'} first=${first}`;
+        }
         logDiag('nextTrackMs', {
           appState: appStateRef.current,
           hymnId: typeof t0.hymnId === 'number' ? t0.hymnId : null,
-          detail: `ms=${ms} origin=${t0.origin} source=${src}`,
+          detail: `ms=${ms} origin=${t0.origin} source=${src}${extra}`,
         });
       })
-      .catch(() => {});
+      .catch(() => { t0.pending = false; });
   }
   const showNotice = useCallback((msg) => {
     setNoticeText(msg);
@@ -827,6 +871,15 @@ function PlayerProvider({ children }) {
         // getProgress() 擺喺後面獨立 async IIFE,唔會拖慢/改變 state 處理。
         const prevSkipCount = errorSkipCountRef.current;
         const fromState = trackStateRef.current;
+        // THIRD-PASS-REVIEW P2-1 —— 記低「新 track 真係開過 buffer」。
+        // finishTransitionMeasure() 靠呢支旗擋走舊 track 遲到嘅 Playing event
+        // 整出嚟嘅假快數(見嗰度嘅完整分析)。無條件 set:buffering 有機會喺
+        // trackChanged 之前就 fire(Loading → ActiveTrackChanged),唔可以要求
+        // 次序。呢度只係寫一個 boolean,零行為影響。
+        if (val === TPState.Buffering || val === TPState.Loading) {
+          const t0b = transitionT0Ref.current;
+          if (t0b) t0b.bufferingSeen = true;
+        }
         if (val === TPState.Playing) {
           (async () => {
             let p = null;
@@ -853,6 +906,11 @@ function PlayerProvider({ children }) {
         if (val === TPState.Playing) {
           // Phase 1 量度 t1(主路徑):真係播到聲嗰刻。
           finishTransitionMeasure();
+          // PHASE2.5-PRELOAD-PLAN §4 W2-2 —— 到呢一刻用戶先至真係聽到聲,背景
+          // 落載可以開返。**唔可以**擺喺 trackChanged 度做:trackChanged 幾乎
+          // 一 add/play 完即刻 fire,即係喺 AVPlayer 嗰 9 秒 load 之前,咁樣讓路
+          // 等於冇讓過。iOS-only(Android 兩個 function 都係 no-op)。
+          if (Platform.OS === 'ios') resumeAudioPrefetch();
           setIsLoading(false);
           // §3.7 — only ACTUAL audible playback proves we've recovered, so the
           // circuit breaker resets here. It must NOT reset on track-change:
@@ -899,7 +957,7 @@ function PlayerProvider({ children }) {
             t0.trackChangedSeen = true;
             t0.hymnId = song?.id ?? null;
           } else {
-            transitionT0Ref.current = { ts: Date.now(), origin: 'auto', trackChangedSeen: true, hymnId: song?.id ?? null };
+            transitionT0Ref.current = { ts: Date.now(), origin: 'auto', trackChangedSeen: true, bufferingSeen: false, hymnId: song?.id ?? null };
           }
         }
         // 2026-07-29 QUEUE-UX-4FIXES §3(Opus 5 驗收補漏)—— 插播歌播完(或者
@@ -1866,12 +1924,31 @@ function PlayerProvider({ children }) {
     try {
       // Phase 1 量度 t0 —— 用戶撳一個清單/一首歌開播,由呢刻計到出聲,就係
       // 「第一首要 load 幾耐」嘅真機數(origin=start,同轉歌數分開統計)。
-      transitionT0Ref.current = { ts: Date.now(), origin: 'start', trackChangedSeen: false, hymnId: null };
+      // W4 —— surface:caller 明確講咗就用佢(例如「隨心聽」);冇講就靠開機
+      // 計低嗰三張 id 名單反查(今日為你預備 / 現用 chip 首頁 / 最近加入頭 12)。
+      const startSongForMeasure = finalList[startIndex];
+      transitionT0Ref.current = {
+        ts: Date.now(), origin: 'start', trackChangedSeen: false, bufferingSeen: false, hymnId: null,
+        surface: opts.surface || classifyFirstTapSurface(startSongForMeasure?.id),
+      };
       // Phase 2.5 —— 就嚟播嗰首如果啱啱好背景落載緊,即刻中止讓路俾串流
       // (已落載完成嘅唔受影響,toTrack 上面已經揀咗 file://)。
+      //
+      // W2-2(PHASE2.5-PRELOAD-PLAN §4)——「讓路」由「淨係 cancel 撳嗰首」加強到
+      // 「冇本地檔就成條背景落載隊列都停低」。原則:**用戶聽得到嘅串流永遠大過
+      // 背景落載**。弱網之下背景搶緊 6MB 頻寬會令本來 9.6s 嘅串流更慢,即係做咗
+      // Phase 2.5 反而令 miss case 衰咗 —— 呢條係嗰個保險。有本地檔嗰陣就唔使
+      // 停(file:// 零網絡),照舊淨係 cancel 佢自己。
+      // 恢復點:PlaybackState 見到 Playing(真出咗聲)嗰刻,見上面。
       if (Platform.OS === 'ios') {
-        const startSong = finalList[startIndex];
-        if (startSong?.id != null) cancelAudioPrefetch(startSong.id);
+        const startSong = startSongForMeasure;
+        if (startSong?.id != null) {
+          if (getLocalAudioUri(startSong.id) == null) pauseAudioPrefetchForStream();
+          // 播緊/就嚟播嗰首本身永遠唔准喺 resume 嗰陣復活(佢已經行緊串流,
+          // 再落載多次就係同自己爭頻寬)——cancelAudioPrefetch 會連 pausedIds
+          // 一齊清。
+          cancelAudioPrefetch(startSong.id);
+        }
       }
       await lazyEnsurePlayer();
       await TrackPlayer.reset();
@@ -1907,7 +1984,7 @@ function PlayerProvider({ children }) {
   // don't reset/rebuild (that's what playQueue() is for, for a new list).
   async function skipToQueueIndex(idx) {
     if (typeof idx !== 'number' || idx < 0) return;
-    transitionT0Ref.current = { ts: Date.now(), origin: 'tapQueue', trackChangedSeen: false, hymnId: null }; // Phase 1 量度 t0
+    transitionT0Ref.current = { ts: Date.now(), origin: 'tapQueue', trackChangedSeen: false, bufferingSeen: false, hymnId: null }; // Phase 1 量度 t0
     if (Platform.OS === 'ios') {
       const target = queueRef.current[idx]; // Phase 2.5 —— 撳嗰首落載緊就中止讓路
       if (target?.id != null) cancelAudioPrefetch(target.id);
@@ -1964,7 +2041,7 @@ function PlayerProvider({ children }) {
   // 事件一路行得好,呢句最多係多餘嘅 no-op,唔會有副作用。
   async function handleNextTrack() {
     // Phase 1 量度 t0 —— 由用戶撳掣嗰刻計起,先反映到真實體感。
-    transitionT0Ref.current = { ts: Date.now(), origin: 'tapNext', trackChangedSeen: false, hymnId: null };
+    transitionT0Ref.current = { ts: Date.now(), origin: 'tapNext', trackChangedSeen: false, bufferingSeen: false, hymnId: null };
     if (Platform.OS === 'ios') {
       const nxt = queueRef.current[currentQueueIndexRef.current + 1]; // Phase 2.5 —— 就嚟播嗰首落載緊就中止讓路
       if (nxt?.id != null) cancelAudioPrefetch(nxt.id);
@@ -1988,7 +2065,7 @@ function PlayerProvider({ children }) {
       const { position } = await TrackPlayer.getProgress();
       if (position > 3) { await TrackPlayer.seekTo(0); return; } // standard UX: >3s in, prev = restart
     } catch (e) {}
-    transitionT0Ref.current = { ts: Date.now(), origin: 'tapPrev', trackChangedSeen: false, hymnId: null }; // Phase 1 量度 t0
+    transitionT0Ref.current = { ts: Date.now(), origin: 'tapPrev', trackChangedSeen: false, bufferingSeen: false, hymnId: null }; // Phase 1 量度 t0
     // H5(FRONTEND-CODE-REVIEW-20260819)—— SwiftAudioEx `previous()` 同 `next()`
     // 係同一套實現(queue.previous()/next() → onCurrentItemChanged() → super.load(item:)),
     // 一樣冇傳 playWhenReady:true,見上面 handleNextTrack() 嗰段完整分析。
@@ -3174,17 +3251,38 @@ function AppContent() {
   // §3b①:歌單一 load 好就預熱「今日為你預備」6 首(同 HomeScreen 個算法
   // 一致),令開 App 後頭幾下撳落去都係 warm。只做一次。
   // 2026-07-29 QUEUE-UX-4FIXES §4/§7-3:「繼續收聽」已剷,呢度唔再預熱嗰首。
+  //
+  // PHASE2.5-PRELOAD-PLAN §4 W2 —— 呢度同時係開機本地預載名單嘅唯一出處。
+  // 「只做一次」而家安全咗:W1 之後抽選唔再跟池飄(background refresh 換咗個
+  // 庫都唔會換歌),所以用第一份(MMKV 快取)庫算出嚟嗰批,同用戶幾秒後喺
+  // 首頁見到嗰批係同一批。
   const bootWarmedRef = useRef(false);
   useEffect(() => {
     if (bootWarmedRef.current || !allSongs?.length) return;
     bootWarmedRef.current = true;
     const ids = [];
+    let chipHeadId = null;
     try {
       const featured = allSongs.filter((h) => h.featured === 1);
       const pool = featured.length >= 6 ? featured : allSongs;
       for (const p of dailyPickBalanced(pool, 'today', 6, ['粵語', '國語', '英文'])) ids.push(p.id);
+      todayPickIds = ids.slice(); // W4 量度用
+      // W2 —— 「即刻揀歌」而家用緊嗰個 chip 嘅第一首。chip 定義同「記低嗰個
+      // 冇咗就 fallback 第一個」嘅邏輯同 HomeScreen 共用(utils/homeChips.js),
+      // 唔可以喺呢度另抄一份。dailyPick 係 top-n 排序,所以 n=1 攞到嗰首同
+      // HomeScreen 頭一版嘅第一首必定一樣。
+      const chip = resolveActiveChip(allSongs, getHomeChip());
+      if (chip) {
+        const head = dailyPick(chip.songs, chip.id, CHIP_PAGE_SIZE);
+        chipHeadIds = head.map((h) => h.id); // W4:成版 4 首都算「chip」呢個 surface
+        chipHeadId = head[0]?.id ?? null;
+      } else {
+        chipHeadIds = [];
+      }
+      // W4 —— 「最近加入」頭 12(冇 created_at,用 id 由大到細近似,同 HomeScreen 一樣)。
+      recentHeadIds = [...allSongs].sort((a, b) => b.id - a.id).slice(0, 12).map((h) => h.id);
       // Phase 2.5② —— 個清單係日期種子決定,今晚已經計到「聽日」係邊幾首。
-      // 呢度淨係計低,唔即刻落載(等用戶真係聽緊歌先排隊,見 trackChanged)。
+      // W1 之前呢個係空轉(聽朝個庫一變就成套換晒),而家先至靠得住。
       if (Platform.OS === 'ios') {
         const tmr = new Date(Date.now() + 24 * 60 * 60 * 1000);
         tomorrowHeadIds = dailyPickBalanced(pool, 'today', 6, ['粵語', '國語', '英文'], tmr)
@@ -3193,12 +3291,17 @@ function AppContent() {
       }
     } catch (_) {}
     warmIds(ids);
-    // Phase 2.5① —— 開 App 即刻背景落載今日頭 2 首。命中嘅話「開 App 第一首」
-    // 同轉歌一樣即開;未落載完用戶就撳 play 嘅話,playQueue() 會 cancel 呢度
-    // 嘅落載讓路俾串流,行為同以前一樣,冇 regression。
+    // Phase 2.5① + W2 —— 開 App 即刻背景落載呢 5 首(串行,順序就係優先序):
+    //   [今日頭1, 今日頭2, 現用chip頭1, 聽日頭1, 聽日頭2]
+    // 流量:每首 3–8MB。穩定狀態下今日嗰 2 首琴晚已經喺 disk(index.has() 零成本
+    // skip),實際新落載通常淨係 chip頭1 + 聽日 2 首 ≈ 9–18MB/日;最壞(新裝/
+    // 斷開幾日)5 首 ≈ 15–30MB。名單 cap 死 5 首,唔准喺呢度加碼——「今日其餘
+    // 4 首 / 最近加入」等 W4 真機數據先決定(§10-4)。
+    // 聽日嗰 2 首排最尾,唔會阻住今日嗰 3 首;trackChanged 嗰段(Phase 2.5②)
+    // 保留做後備,冚呢個 effect 行唔到嘅 edge case,prefetch() 自己會去重。
     if (Platform.OS === 'ios') {
-      if (ids[0] != null) prefetchAudio(ids[0]);
-      if (ids[1] != null) prefetchAudio(ids[1]);
+      const preloadIds = [ids[0], ids[1], chipHeadId, tomorrowHeadIds[0], tomorrowHeadIds[1]];
+      for (const pid of preloadIds) if (pid != null) prefetchAudio(pid);
     }
   }, [allSongs]);
 
@@ -3223,7 +3326,7 @@ function AppContent() {
       // 做死碼機關,唔會意外觸發。
       // browseTap:true(詩歌庫/搜尋)—— 插播判斷邏輯喺 playQueue() 入面做
       // (嗰度先有 queueRef 呢啲 player 內部 ref,呢個 component 冇)。
-      playQueue(list, idx, { appendAutoplayTail: !!opts.appendAutoplayTail, browseTap: !!opts.browseTap });
+      playQueue(list, idx, { appendAutoplayTail: !!opts.appendAutoplayTail, browseTap: !!opts.browseTap, surface: opts.surface });
     } else {
       // 隨機接續一律由**全庫**抽,唔用 opts.playlist 做 pool ——「今日為你預備」
       // 之類得 6 首,攞嚟做 pool 就得 5 首尾巴,太短。全庫抽先夠似 Spotify。
