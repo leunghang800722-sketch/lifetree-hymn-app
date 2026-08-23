@@ -23,6 +23,17 @@
 #      冇 TTY,eas-cli ≥19 non-interactive mode 唔帶 --environment 會直接炒
 #      "The --environment flag must be set when running in --non-interactive mode")
 #   4. 成功後 append deploy.log(兩次 publish 各自一行)。
+#   5. 每個 platform 推完即刻攞返個 update group id,append 落
+#      ~/.hymn-deploy/ota-groups.log —— ota-rollback.sh 靠呢個 log 推算
+#      「上一個 live 嘅 group」(OTA-ROLLBACK-PLAN-20260823.md §2.B)。
+#      ⚠️ 刻意**唔**改上面第 3 步嗰句 publish 指令去加 `--json`:嗰句係成個
+#      project 用咗成個月、反覆驗證過嘅精確命令,而 `--json` 會將所有非 JSON
+#      訊息掟去 stderr、改晒操作者見到嘅嘢。改為推完之後另外 call 一次純讀嘅
+#      `eas branch:view --json` 攞最新 group。
+#      (`eas channel:view --json` 唔夠用 —— 19.0.8 實測佢只吐返最新嗰**一個**
+#       group,分唔到 ios/android 兩邊。)
+#      攞唔到 group 唔算失敗:publish 本身已經成功,唔可以喺呢度炸,寫
+#      `group=unknown` 頂住,人手補返就得。
 #
 # --dry-run 行晒 1-2 但唔推,俾驗證用。
 #
@@ -48,6 +59,7 @@ cd "$REPO_ROOT"
 DEPLOY_DIR="${HYMN_DEPLOY_DIR:-$HOME/.hymn-deploy}"
 APPROVED_JSON="$DEPLOY_DIR/approved.json"
 DEPLOY_LOG="$DEPLOY_DIR/deploy.log"
+GROUPS_LOG="$DEPLOY_DIR/ota-groups.log"
 
 if [[ ! -f "$APPROVED_JSON" ]]; then
   echo "❌ 錯誤:搵唔到批准檔 $APPROVED_JSON。請先跑 ops/deploy/approve.sh ota <sha> --confirm。" >&2
@@ -107,6 +119,32 @@ for PLAT in android ios; do
   eas update --channel production --platform "$PLAT" --environment production --non-interactive --message "$MESSAGE"
   NOW="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
   echo "$NOW | ota-publish | platform=$PLAT | sha=$HEAD_SHA | message=$MESSAGE" >> "$DEPLOY_LOG"
+
+  # ── 5. 攞返啱啱推嗰個 update group id(見檔頭)──────────────────────────
+  # 純讀,失敗唔可以拖冧已經成功嘅 publish,所以成段都 `|| true`。
+  NEW_GROUP=""
+  BV_JSON="$(eas branch:view production --json --non-interactive --limit 4 2>/dev/null || true)"
+  if [[ -n "$BV_JSON" ]]; then
+    NEW_GROUP="$(printf '%s' "$BV_JSON" | PLAT="$PLAT" node -e "
+      let s=''; process.stdin.on('data',d=>s+=d).on('end',()=>{
+        let d; try { d = JSON.parse(s); } catch (e) { process.stdout.write(''); return; }
+        let ups = (d && d.currentPage) || (d && d.updates) || d;
+        if (ups && !Array.isArray(ups) && ups.updates) ups = ups.updates;
+        if (!Array.isArray(ups)) { process.stdout.write(''); return; }
+        // branch:view 由新到舊排,所以頭一個 match 就係啱啱推嗰個。
+        const hit = ups.find((u) => (u.platforms || u.platform) === process.env.PLAT);
+        process.stdout.write((hit && hit.group) || '');
+      });
+    " 2>/dev/null || true)"
+  fi
+  [[ -n "$NEW_GROUP" ]] || NEW_GROUP="unknown"
+  echo "$NOW | publish | platform=$PLAT | sha=$HEAD_SHA | group=$NEW_GROUP | message=$MESSAGE" >> "$GROUPS_LOG"
+  if [[ "$NEW_GROUP" == "unknown" ]]; then
+    echo "   ⚠️ 攞唔到 $PLAT 個 group id(publish 本身成功)。回退前要人手補返 $GROUPS_LOG,"
+    echo "      或者 rollback 嗰陣明文用 --${PLAT}-group 指定。"
+  else
+    echo "   group=$NEW_GROUP"
+  fi
 done
 
-echo "✅ OTA 推送完成(android + ios),已記錄落 $DEPLOY_LOG"
+echo "✅ OTA 推送完成(android + ios),已記錄落 $DEPLOY_LOG 同 $GROUPS_LOG"
