@@ -14,7 +14,7 @@
 import React, { createContext, useContext, useState, useCallback } from 'react';
 import {
   Modal, View, Text, TextInput, TouchableOpacity, ScrollView,
-  StyleSheet, Alert, Keyboard, KeyboardAvoidingView, Platform, Switch,
+  StyleSheet, Alert, KeyboardAvoidingView, Platform, Switch,
 } from 'react-native';
 import OdeIcon from '../icons/OdeIcon';
 import { COLORS } from '../theme/designSystem';

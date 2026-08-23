@@ -12,8 +12,15 @@
 //   * COLORS(大寫)係新舊合併嘅超集 —— 舊 key 名(background/card/accent/…)
 //     繼續用得,同時亦有新 ode key(glow/primary/surface/textMuted/…)可以
 //     直接攞,唔使再 import 多一次 `colors`(細寫)。
+//   * THIRD-PASS-REVIEW P2-6(2026-08-23):`ODE_COLORS`/`colors` 收返做檔內
+//     private(全庫零 importer,但 COLORS/iconState 內部要用);另外剷咗 7 個
+//     零 reference 嘅 export —— `ODE_COLORS`/`colors`(改 private)同
+//     `SPACING`/`typography`/`spacing`/`header`/`default`(整個剷)。
+//     ⚠️ 對外一律經 `COLORS`,唔好再開第二套色板 —— 呢個檔以前同
+//     `src/constants/theme.js` 並存,兩個 `COLORS` 撞名害過人兩次,
+//     嗰個 shim 今次一齊剷咗。
 
-export const ODE_COLORS = {
+const ODE_COLORS = {
   bg: '#0B0913',             // 主背景(原 #0B0F0E)
   surface: '#150F26',        // 卡片(原 #121A17)
   surface2: '#1E1838',       // 次層卡片
@@ -64,31 +71,9 @@ export const TYPOGRAPHY = {
   brand: { fontFamily: 'Sora-ExtraLight', fontWeight: '200', letterSpacing: 1.2 },
 };
 
-export const SPACING = { sm: 8, md: 16, lg: 24 };
-
 // ── 新 Ode 完整 token(細寫,照 docs/design-ode/odeTheme.js)──────────────
-export const colors = ODE_COLORS;
-
-export const typography = {
-  brand: { fontFamily: 'Sora-ExtraLight', fontWeight: '200', letterSpacing: 1.2 },
-  brandHeader: 30,
-  brandSplash: 40,
-  numeric: { fontFamily: 'Sora-ExtraLight', fontWeight: '200' },
-
-  ui: { fontFamily: 'Noto Sans TC' },
-  pageTitle: 26,
-  songTitle: 15.5,
-  songTitleLg: 16,
-  artist: 12.5,
-  playerTitle: 26,
-  sectionLabel: { size: 12, weight: '500', letterSpacing: 2.5, color: colors.textMuted },
-  body: 15,
-  tabLabel: 11.5,
-
-  serif: { fontFamily: 'NotoSerifTC-Regular' },
-  quote: { size: 17, lineHeight: 1.85 },
-  lyrics: { size: 19, lineHeight: 1.95 },
-};
+// 淨係俾下面 iconState 內部用;對外請用 COLORS(超集)。
+const colors = ODE_COLORS;
 
 export const radii = {
   card: 18,
@@ -98,23 +83,6 @@ export const radii = {
   coverHero: 20,
   pill: 26,
   chip: 22,
-};
-
-export const spacing = {
-  pageH: 18,
-  blockGap: 20,
-  listRowV: 10,
-  listRowH: 16,
-  bottomInset: 110,
-  tabBarHeight: 70,
-  minTouch: 44,
-};
-
-export const header = {
-  markSize: 52,
-  markGap: 13,
-  padding: { top: 12, horizontal: 18, bottom: 20 },
-  avatar: 40,
 };
 
 // F3 followup(Opus 第二輪覆核):shadowColor/shadowOpacity/shadowRadius 淨係
@@ -137,4 +105,3 @@ export const iconState = {
   danger: colors.danger,
 };
 
-export default { colors, typography, radii, spacing, header, effects, iconState, COLORS, TYPOGRAPHY, SPACING };

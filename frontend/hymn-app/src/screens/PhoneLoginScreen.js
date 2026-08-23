@@ -3,7 +3,9 @@
 // 「①電話→②OTP碼」兩步(同舊 OTP-only 版面一樣嘅 UI),分流之後:
 //   註冊:③一版過填 密碼×2 + 姓名 + 性別 + 出生年份 → register-phone
 //   忘記密碼:③新密碼×2(仲未有姓名/性別/年份先一併問)→ reset-password
-// ⚠️ 由 PHONE_AUTH_ENABLED flag 控制係咪顯示;flag false 時 AuthScreen 唔會 render 呢個。
+// ⚠️ 由 PHONE_AUTH_ENABLED flag 控制係咪顯示。個 flag 2026-08-02 上線起一直係
+// `true`(THIRD-PASS-REVIEW P3 修正:呢度舊註解讀落好似仲未開),即係呢版而家
+// 就係登入頁嘅預設;flag 改返 false 先至會唔 render。
 // 主通道 WhatsApp/SMS 由 backend 決定,前端唔理;+86 backend 回 cn_unsupported,
 // 呢度顯示「用電郵」提示。
 

@@ -37,8 +37,3 @@ export function useInsets() {
 
   return { top, bottom };
 }
-
-// 畫面 header 慣用值:inset + 一點呼吸位。
-export function useScreenTopPad(extra = 8) {
-  return useInsets().top + extra;
-}

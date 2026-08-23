@@ -29,7 +29,10 @@ export default function AuthScreen({ onClose }) {
   const insets = useInsets();
   const { user, login } = useAuth();
   // PHONE_AUTH_ENABLED 開咗先預設電話登入(plan §6:電話為主,底部可切返 email)。
-  // flag false(而家)→ usePhone 一路係 false,登入頁維持現有 email/password。
+  // ⚠️ THIRD-PASS-REVIEW P3(2026-08-23)修正:呢度原本寫住「flag false(而家)」,
+  // 但 PHONE-PASSWORD-AUTH-PLAN 2026-08-02 上線嗰陣已經改咗做 `true` 兼一直冇
+  // 郁過 —— 即係實際行為係**預設電話登入**,底部可以切返 email。個 flag 留低
+  // 純粹做 kill-switch(真要熄返就改 config.js 再 OTA)。
   const [usePhone, setUsePhone] = useState(PHONE_AUTH_ENABLED);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');

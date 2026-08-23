@@ -18,7 +18,6 @@ import {
   Modal, Dimensions, FlatList, Animated, Linking, Share, BackHandler,
   PermissionsAndroid,
 } from 'react-native';
-import { COLORS } from './src/constants/theme';
 import { FavoritesProvider, useFavorites } from './src/context/FavoritesContext';
 import { PlaylistsProvider, usePlaylists } from './src/context/PlaylistsContext';
 import { AddToPlaylistProvider, useAddToPlaylist } from './src/components/AddToPlaylistSheet';
@@ -225,6 +224,12 @@ function classifyFirstTapSurface(songId) {
 // O12(FRONTEND-CODE-REVIEW-20260819)—— 根因已查完,高頻嗰批(每次轉歌
 // 3-5 個 POST)預設熄咗;`{ always: true }` 淨係俾 PlaybackError/watchdog
 // giveup/wallClockDrift 呢啲低頻高價值嘅信號用,唔受 DIAG_ENABLED 影響。
+// 2026-08-23 更新:always 名單而家係六條 —— nextTrackMs(Phase 2.5 KPI,每次
+// 真轉歌一條,**暫時性**,收夠 baseline 要覆檢)+ PlaybackError /
+// handleStuckTrackEnd / handleMidStreamStall_giveup / handleBufferingStuck_giveup
+// / wallClockDrift(呢五條係設計上永久開)。stateChange/trackChanged 嗰三處
+// 臨時 always 已經喺 P1-1 閂返,唔好再喺 call site 加 always 嚟做臨時診斷,
+// 要收高頻數就臨時開 `src/config.js` 嘅 DIAG_ENABLED。
 function logDiag(event, extra, opts) {
   if (!DIAG_ENABLED && !(opts && opts.always)) return;
   try {
@@ -2315,7 +2320,7 @@ import AvatarButton from './src/components/AvatarButton'; // PHONE-PASSWORD-AUTH
 function HomeScreen({ hymns, loading, activeCategory, onCategoryChange, onPlayHymn, onOpenAuth, onOpenList }) {
   const homeInsets = typeof useSafeAreaInsets === 'function' ? useSafeAreaInsets() : { top: 0 };
   return (
-    <View style={{ flex: 1, backgroundColor: COLORS.bg }}>
+    <View style={{ flex: 1, backgroundColor: DesignColors.background }}>
       {/* Header — Ode 品牌 + 通知 + 頭像 */}
       <View style={[hs.header, { paddingTop: (homeInsets.top || StatusBar.currentHeight || 24) + 8 }]}>
         <View style={hs.brandWrap}>
@@ -2344,7 +2349,7 @@ const hs = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 16,
     paddingBottom: 12,
-    backgroundColor: COLORS.cardBg,
+    backgroundColor: DesignColors.card,
   },
   brandWrap: {
     flexDirection: 'row',

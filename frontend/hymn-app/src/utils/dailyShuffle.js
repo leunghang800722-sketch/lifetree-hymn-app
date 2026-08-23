@@ -6,7 +6,7 @@
 //
 // salt 令唔同區塊(今日為你預備 / 各 chip)唔會抽埋同一批歌。
 
-export function todayKey(d = new Date()) {
+function todayKey(d = new Date()) {
   const p = (n) => String(n).padStart(2, '0');
   return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
 }
@@ -21,27 +21,10 @@ function hashString(s) {
   return h >>> 0;
 }
 
-// mulberry32:細細粒嘅 seeded PRNG,夠隨機兼可重現。
-function mulberry32(a) {
-  return function () {
-    a |= 0;
-    a = (a + 0x6d2b79f5) | 0;
-    let t = Math.imul(a ^ (a >>> 15), 1 | a);
-    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-  };
-}
-
-// Fisher-Yates,用 seeded RNG(唔改原 array)。
-export function seededShuffle(list, seedStr) {
-  const rnd = mulberry32(hashString(String(seedStr)));
-  const a = [...list];
-  for (let i = a.length - 1; i > 0; i--) {
-    const j = Math.floor(rnd() * (i + 1));
-    [a[i], a[j]] = [a[j], a[i]];
-  }
-  return a;
-}
+// ⚠️ 舊嘅 `seededShuffle`(Fisher-Yates + mulberry32 seeded PRNG)喺
+// PHASE2.5-PRELOAD-PLAN §3.2 改用 hashRank 之後已經零 caller,THIRD-PASS-REVIEW
+// P3 剷咗(連同淨係服務佢嘅 mulberry32)。要睇返點解換走佢,見下面 hashRank
+// 上面嗰段;要睇返原本實作,git history 有。
 
 // PHASE2.5-PRELOAD-PLAN §3.2 —— per-song hash rank(取代「洗成個池再攞頭 n」)。
 //
