@@ -103,7 +103,20 @@ function scheduleFlush() {
       // 唔係見到舊檔就係見到新檔,冇「半截」呢個狀態)②rename 之前保住上一份
       // 做 .bak,連 rename 都出事都仲有得救(下面 load 會 fallback)。
       fs.writeFileSync(METRICS_TMP, JSON.stringify(state), 'utf8');
-      try { if (fs.existsSync(METRICS_FILE)) fs.copyFileSync(METRICS_FILE, METRICS_BAK); } catch (_) {}
+      // ⚠️ 第二輪實測補漏(2026-08-23):
+      // ① .tmp 自己都可能寫到一半(碟滿 / process 俾殺),rename 之後主檔一樣係
+      //    爛檔。所以 rename 之前**一定要 parse 返 .tmp 確認佢完整**,唔完整就
+      //    咩都唔做 —— 寧願主檔停留喺舊版本(蝕幾秒),都好過換咗個爛檔入去。
+      // ② 備份唔可以無條件 copy 主檔 —— 實測撞到:主檔壞咗、程式由 .bak 救返之後,
+      //    第一次 flush 就用嗰個爛主檔蓋走咗好嘅 .bak(親眼見到 .bak 變 400 bytes)。
+      //    所以只有主檔自己 parse 得到先准備份。
+      JSON.parse(fs.readFileSync(METRICS_TMP, 'utf8')); // 唔完整就會喺呢度拋,唔會 rename
+      try {
+        if (fs.existsSync(METRICS_FILE)) {
+          JSON.parse(fs.readFileSync(METRICS_FILE, 'utf8'));
+          fs.copyFileSync(METRICS_FILE, METRICS_BAK);
+        }
+      } catch (_) { /* 主檔壞 = 唔好用佢蓋 .bak,留返上一份好嘅 */ }
       fs.renameSync(METRICS_TMP, METRICS_FILE);
     } catch (e) {
       console.warn('ops-metrics flush failed:', e?.message);
