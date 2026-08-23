@@ -522,11 +522,19 @@ function PlayerProvider({ children }) {
           firstStartLogged = true;
           extra = ` surface=${t0.surface || 'unknown'} first=${first}`;
         }
+        // 2026-08-23 Eric 拍板開返呢條(同 P1-1 閂嗰三條分開睇待:嗰三條係
+        // 「證據已經攞夠」嘅臨時 beacon,呢條係 Phase 2.5 嘅 KPI,由 8-14 埋咗
+        // 點到而家一條真機數據都未收過 —— `DIAG_ENABLED` 由引入到今日從未
+        // ship 過 true,所以唔加 always 就等於推咗都收唔到 W4 嘅 surface/first)。
+        // 量:每次真轉歌先至一條(仲要過埋上面 bufferingSeen 守衛),同
+        // trackChanged 嗰種「一 fire 就一條」唔同級,亦遠低過 stateChange 嘅
+        // 每首 4-6 條。收夠 Phase 2.5 baseline(§8.1 講嘅冷/暖/命中分佈)之後
+        // 要返嚟覆檢,唔係當佢同 PlaybackError 嗰批一樣永久開。
         logDiag('nextTrackMs', {
           appState: appStateRef.current,
           hymnId: typeof t0.hymnId === 'number' ? t0.hymnId : null,
           detail: `ms=${ms} origin=${t0.origin} source=${src}${extra}`,
-        });
+        }, { always: true });
       })
       .catch(() => { t0.pending = false; });
   }
