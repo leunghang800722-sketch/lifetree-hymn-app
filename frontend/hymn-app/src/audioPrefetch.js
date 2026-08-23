@@ -36,6 +36,50 @@ const FINAL_SUFFIX = '.m4a';
 // currentDownloadId 永遠唔清,成個 session 預載全滅。
 const DOWNLOAD_TIMEOUT_MS = 90 * 1000;
 
+// ── 長檔閘(INSTRUMENTAL-CATEGORY-PLAN §6 P0 / Phase 3a)──────────────
+// 成套預載嘅單一假設係「一首歌 3-8MB」(backend resolveAudio.js:322 原文)。
+// 純音樂 tab 一開,soaking / 鋼琴靈修呢類長片就有咗高流量入口(#739 = 57:58
+// ≈ 57MB、#4820 = 25:48 ≈ 25MB),而呢個 module 落載係:
+//   90 秒 timeout → 落唔切就 abort → 冇失敗記憶 → **每次開 App 重試一次**,
+//   每次白燒幾十 MB 流量;而且 arrayBuffer() + Uint8Array 兩份一齊入 JS heap,
+//   長檔峰值上到 100MB+,jetsam 高危。
+// 所以超過閾值嘅歌**唔做本地全檔預載**,行返 streaming 冷路徑(佢本身一直
+// 都係咁播,唔會變差)。閾值跟 §8 Q2 拍板嘅新歌上限:10 分鐘。
+const MAX_PREFETCH_SECONDS = 10 * 60;
+
+// songId(string) -> 秒數。由 App.js 喺攞到歌單之後 call setDurationIndex()
+// 灌落嚟 —— prefetch() 四個 call site 有兩個淨係揸住 id(module-level 嘅
+// tomorrowHeadIds / boot preloadIds),與其逐個 call site 各自 parse 一次
+// duration(漏一個就等於冇閘),不如喺 prefetch() 呢個唯一收口位一次過查。
+const durationSecById = new Map();
+
+// "M:SS"(純分鐘制,62:30 = 62 分 30 秒)同 "H:MM:SS" 都收。parse 唔到回 null。
+// ⚠️ 回 null = **唔知**,唔等於「短」—— 見 prefetch() 入面點處理。
+export function parseDurationSec(text) {
+  if (typeof text === 'number' && Number.isFinite(text)) return text > 0 ? text : null;
+  if (typeof text !== 'string') return null;
+  const parts = text.trim().split(':');
+  if (parts.length < 2 || parts.length > 3) return null;
+  let sec = 0;
+  for (const p of parts) {
+    if (!/^\d+$/.test(p)) return null;
+    sec = sec * 60 + Number(p);
+  }
+  return sec > 0 ? sec : null;
+}
+
+// App.js 攞到 /api/hymns(或者 MMKV cache)之後 call 一次;之後個庫 background
+// refresh 咗再 call 一次都得(idempotent,直接覆蓋)。Android 都 call 得,
+// 呢個函數冇 native 依賴 —— 但 prefetch() 本身喺 Android 係 no-op。
+export function setDurationIndex(songs) {
+  if (!Array.isArray(songs)) return;
+  for (const h of songs) {
+    if (h == null || h.id == null) continue;
+    const sec = parseDurationSec(h.duration);
+    if (sec != null) durationSecById.set(String(h.id), sec);
+  }
+}
+
 // songId(string) -> local file:// uri。淨係喺 iOS + 初始化完成先有嘢。
 const index = new Map();
 let ready = false;
@@ -349,6 +393,11 @@ export function prefetch(songId) {
   if (Platform.OS !== 'ios' || songId == null) return;
   const id = String(songId);
   if (index.has(id)) return;
+  // §6 P0 長檔閘:知道佢長過 10 分鐘先至擋。查唔到 duration(未 call
+  // setDurationIndex / 歌 duration 係 NULL)就照舊落載 —— 「唔知」唔可以
+  // 當「長」,否則 index 未灌好嗰個窗口會靜靜哋令成個預載功能熄火。
+  const sec = durationSecById.get(id);
+  if (sec != null && sec > MAX_PREFETCH_SECONDS) return;
   if (currentDownloadId === id || downloadQueue.includes(id)) return;
   downloadQueue.push(id);
   processQueue();

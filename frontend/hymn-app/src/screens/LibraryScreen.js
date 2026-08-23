@@ -18,7 +18,10 @@ import { useAuth } from '../context/AuthContext';
 import AvatarButton from '../components/AvatarButton';
 import { getDisplayTitle } from '../utils/displayTitle';
 
-const LANGS = ['全部', '粵語', '國語', '英文', '兒童'];
+// INSTRUMENTAL-CATEGORY-PLAN §3.3 #1(Phase 2b)—— 「純音樂」擺最尾,前面
+// 四個語言 tab 嘅次序唔郁(用戶肌肉記憶)。佢唔係一個 lang 值,係讀
+// `instrumental` flag,見下面 `searched` 個 filter 鏈。
+const LANGS = ['全部', '粵語', '國語', '英文', '兒童', '純音樂'];
 // 兒童 tab 內語言 sub-chips 嘅顯示次序(TAXONOMY-5D-PLAN §4.2,Eric 補充拍板)。
 const KIDS_SUB_LANGS = ['粵語', '國語', '英文'];
 
@@ -155,18 +158,39 @@ export default function LibraryScreen({ hymns = [], onPlayHymn, onOpenAuth }) {
     }
   }, [kidsSubLangs, kidsSubLang]);
 
+  // 純音樂分區(INSTRUMENTAL-CATEGORY-PLAN §3.3 #2,Phase 2b)。
+  // ⚠️ 條件淨係 `h.instrumental === 1`,**一個 lang 條件都唔准加** ——
+  // 2026-08-23 Eric 拍板:Phase 1 回標嗰 13 首英文(Hillsong Kids)「包埋」,
+  // 照露,唔因為語言收埋。(§8 Q1「英文 org 唔收住」管嘅係 Phase 4 新入庫,
+  // 同呢度嘅存量展示係兩件事,唔好撈埋。)
+  // 舊 client / 舊 MMKV cache 冇 `instrumental` 呢個欄 → 呢度自然係空陣列,
+  // tab 揀到但冇貨,唔會爆;下次 dataVersion 一變 refetch 就有(§2a)。
+  const instrumentalBase = useMemo(
+    () => hymns.filter((h) => h.instrumental === 1),
+    [hymns]
+  );
+
   // Filter 鏈(§4.2):全庫 → 語言 chip(兒童讀 kids 兼容分支)→ 兒童 sub-lang
   // (real_lang)→ 搜尋字串 → 團體 chip(AND)。團體 chip 嘅計數 base 跟埋
   // 語言+sub-lang+搜尋重算,所以搜尋層放喺團體層之前。
   const searched = useMemo(() => {
     let base;
     if (lang === '兒童') {
+      // 2026-08-23 Eric 拍板嘅「唔撞」:**兒童 tab 唔剔走純音樂**。兒童係
+      // 「受眾」維度、純音樂係「形式」維度,兩者正交 —— Hillsong Kids 嘅
+      // 鋼琴搖籃曲就係真實交集,家長入兒童 tab 唔應該搵唔到。所以呢度
+      // 刻意冇 `&& h.instrumental !== 1`,嗰 13 首兩邊都出得,係有意嘅。
       base = kidsBase;
       if (kidsSubLang !== '全部') base = base.filter((h) => h.real_lang === kidsSubLang);
+    } else if (lang === '純音樂') {
+      base = instrumentalBase;
     } else if (lang === '全部') {
       base = hymns;
     } else {
-      base = hymns.filter((h) => h.lang === lang);
+      // 語言 tab(粵語/國語/英文)**要剔**:器樂本身冇語言,一首歌兩邊出
+      // 就令 tab 由「分區」退化做「view」。舊 cache 冇個欄 → `undefined !== 1`
+      // 為真 → 行為同改動前一模一樣,係安全方向。
+      base = hymns.filter((h) => h.lang === lang && h.instrumental !== 1);
     }
     const nq = norm(query);
     if (!nq) return base;
@@ -182,7 +206,7 @@ export default function LibraryScreen({ hymns = [], onPlayHymn, onOpenAuth }) {
       (h) => !titleHitIds.has(h.id) && (lyricsMap.get(h.id) || '').includes(nq)
     );
     return [...titleHits, ...lyricsOnlyHits];
-  }, [hymns, kidsBase, lang, kidsSubLang, query, blobIndex]);
+  }, [hymns, kidsBase, instrumentalBase, lang, kidsSubLang, query, blobIndex]);
 
   // 第二行 chips:歌手 → 團體(拍板 ✓)。data source h.org || h.artist——離線舊
   // cache 冇 org 欄就兜底用返 artist(§4.2)。

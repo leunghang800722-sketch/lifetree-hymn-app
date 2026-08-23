@@ -10,13 +10,24 @@
 
 // DB 冇 playlist 表,所以用語言 + 關鍵字即場砌 —— 現有數據下最誠實嘅做法:
 // 有真歌、撳到、播到。將來加清單淨係加一項,唔使改版面。
+// INSTRUMENTAL-CATEGORY-PLAN §8 Q4(Eric 2026-08-21 拍板)—— 「安靜靈修」chip
+// 由「純音樂」**取代**,唔係並存。舊 `quiet` 係純前端 title regex,同任何
+// backend 分類零關係,撈出嚟大部分係有人聲嘅慢歌;而家有真 flag 就唔再靠估。
+// ⚠️ 新 chip 一定要用新 id `instrumental`,唔准翻用 `quiet` —— dailyPick 攞
+// chip id 做 hash salt,翻用舊 id 會令新分類繼承舊分類嘅每日輪換 seed。
+// 舊用戶 MMKV 記住咗 `quiet` 唔使寫 migration:resolveActiveChip() 下面嗰句
+// `|| chips[0]` 會自動跌返第一個 chip。
+//
+// 語言 chip 嘅 `&& h.instrumental !== 1`:同詩歌庫語言 tab 同一條規矩
+// (2026-08-23 Eric 拍板「唔撞」)—— 語言 chip 剔走器樂,**兒童 chip 唔剔**
+// (兒童=受眾維度、純音樂=形式維度,正交)。舊 cache 冇個欄 → `undefined
+// !== 1` 為真 → 行為同改動前一樣。
 export const CHIP_DEFS = [
-  { id: 'cantonese', title: '粵語敬拜', match: (h) => h.lang === '粵語' },
-  { id: 'mandarin',  title: '國語敬拜', match: (h) => h.lang === '國語' },
-  { id: 'english',   title: 'English',  match: (h) => h.lang === '英文' },
-  { id: 'kids',      title: '兒童詩歌', match: (h) => h.lang === '兒童' },
-  { id: 'quiet',     title: '安靜靈修',
-    match: (h) => /(安靜|靈修|禱告|恩典|同在|安息|寧靜|Still|Peace|Quiet|Rest)/i.test(h.title || '') },
+  { id: 'cantonese',    title: '粵語敬拜', match: (h) => h.lang === '粵語' && h.instrumental !== 1 },
+  { id: 'mandarin',     title: '國語敬拜', match: (h) => h.lang === '國語' && h.instrumental !== 1 },
+  { id: 'english',      title: 'English',  match: (h) => h.lang === '英文' && h.instrumental !== 1 },
+  { id: 'kids',         title: '兒童詩歌', match: (h) => h.lang === '兒童' },
+  { id: 'instrumental', title: '純音樂',   match: (h) => h.instrumental === 1 },
 ];
 
 // 每頁 4 首(唔係 5)—— 5 首嗰陣最尾一首會俾 mini player 擋住,見唔晒。

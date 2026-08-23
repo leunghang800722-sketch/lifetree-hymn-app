@@ -41,6 +41,7 @@ import {
   pauseAllForStream as pauseAudioPrefetchForStream,
   resumeQueue as resumeAudioPrefetch,
   onPrefetchComplete,
+  setDurationIndex as setAudioDurationIndex,
 } from './src/audioPrefetch.js';
 import { dailyPick, dailyPickBalanced } from './src/utils/dailyShuffle';
 // PHASE2.5-PRELOAD-PLAN §4 W2 —— 「即刻揀歌」現用 chip 同 HomeScreen 共用一份
@@ -2882,7 +2883,11 @@ function FullScreenPlayerOverlay() {
                 段落間距:lyricsStanzas 每個元素係一個段落(主歌/副歌),用
                 獨立 <View> 分開再加 marginBottom,唔係淨係塞多幾個 "\n" 落
                 一嚿 Text 度 —— 段落邊界本身就係 STAGE 3 對嘴驗證 pipeline
-                寫落 DB 嗰陣已經分好,呢度只係跟住個結構畫返出嚟。 */}
+                寫落 DB 嗰陣已經分好,呢度只係跟住個結構畫返出嚟。
+                INSTRUMENTAL-CATEGORY-PLAN §3.3 #5(Phase 2e)—— 空狀態文案分兩
+                種:純音樂唔係「歌詞未做」,係本身冇歌詞(lyrics_status 落咗
+                'unavailable' 係終態,歌詞班永遠唔會補到佢),用返同一句
+                「暫無歌詞」會令用戶以為我哋執漏咗。 */}
             {lyricsStanzas.length > 0 ? (
               lyricsStanzas.map((lines, i) => (
                 <View key={i} style={{ marginBottom: i < lyricsStanzas.length - 1 ? 28 : 0 }}>
@@ -2892,7 +2897,9 @@ function FullScreenPlayerOverlay() {
                 </View>
               ))
             ) : (
-              <Text style={{ ...TYPOGRAPHY.body, color: TEXT_SECONDARY }}>暫無歌詞</Text>
+              <Text style={{ ...TYPOGRAPHY.body, color: TEXT_SECONDARY }}>
+                {cur?.instrumental === 1 ? '純音樂 · 無歌詞' : '暫無歌詞'}
+              </Text>
             )}
           </ScrollView>
         </View>
@@ -3256,6 +3263,12 @@ function AppContent() {
   // When fresh data arrives, update PlayerProvider's hymns
   useEffect(() => {
     if (allSongs && allSongs.length > 0) {
+      // INSTRUMENTAL-CATEGORY-PLAN §6 P0(Phase 3a)—— 灌 duration 落預載
+      // module,佢個長檔閘先至查得到。要喺任何 prefetchAudio() 之前 call:
+      // 呢個 effect 同下面 boot 預載嗰個都係食 `allSongs`,React 按宣告次序
+      // 行 effect,呢個喺前面(3250 vs 3280),所以開機第一批已經有數。
+      // background refresh 換咗個庫都會再行一次,新歌自然補上。
+      setAudioDurationIndex(allSongs);
       setHymns(allSongs);
     }
   }, [allSongs]);

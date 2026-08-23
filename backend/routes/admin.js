@@ -147,10 +147,14 @@ function validateField(key, value) {
   return v;
 }
 
-// kids:TAXONOMY-5D-PLAN.md §8 C2 觀察②——獨立 int 欄(0/1),唔係 string,
-// 所以要獨立驗證,唔可以行 validateField 嗰套。接受 0/1 或者 boolean
-// (前端 Switch 送 boolean/number 都兼容)。回 null = 唔啱格式。
-function validateKidsField(value) {
+// kids / instrumental:獨立 int 欄(0/1),唔係 string,所以要獨立驗證,
+// 唔可以行 validateField 嗰套(嗰度會 String() 咗佢,0 會變空字串再被
+// 判做「必填但空」)。接受 0/1 或者 boolean(前端 Switch 送 boolean、
+// script 送 number,兩邊都兼容)。回 null = 唔啱格式。
+//   kids        —— TAXONOMY-5D-PLAN.md §8 C2 觀察②
+//   instrumental —— INSTRUMENTAL-CATEGORY-PLAN §3.3 #4(Phase 2d)
+const INT_FLAG_FIELDS = new Set(['kids', 'instrumental']);
+function validateIntFlagField(value) {
   if (value === 0 || value === 1) return value;
   if (typeof value === 'boolean') return value ? 1 : 0;
   return null;
@@ -188,8 +192,8 @@ export default function adminRoutes(app) {
 
     const fields = {};
     for (const k of keys) {
-      if (k === 'kids') {
-        const v = validateKidsField(body[k]);
+      if (INT_FLAG_FIELDS.has(k)) {
+        const v = validateIntFlagField(body[k]);
         if (v === null) return res.status(400).json({ error: 'bad_field_value', field: k });
         fields[k] = v;
         continue;
@@ -302,8 +306,11 @@ export default function adminRoutes(app) {
     }
     // kids:§8 C2 觀察②,選填——冇填 insertHymn() fresh insert 預設 0、relist
     // 保留現有值,唔再由 lang==='兒童' 推斷。
+    // (instrumental 刻意**唔**喺呢條 POST 路徑收:Phase 2 決定④ = Add 畫面
+    //  唔加 UI,新器樂歌 Phase 4 走 script 落 flag,所以呢度冇 caller。
+    //  要改就用 PATCH,嗰邊 INT_FLAG_FIELDS 已經收。)
     if (body.kids !== undefined) {
-      const v = validateKidsField(body.kids);
+      const v = validateIntFlagField(body.kids);
       if (v === null) return res.status(400).json({ error: 'bad_field_value', field: 'kids' });
       fields.kids = v;
     }

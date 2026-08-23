@@ -52,7 +52,9 @@ export function AdminEditHymnProvider({ children }) {
   const [error, setError] = useState('');
   const [original, setOriginal] = useState(null); // GET 返嚟嘅原始行(俾 PATCH diff 用)
   // kids:TAXONOMY-5D-PLAN.md §8 C2 觀察②——顯式開關,唔再由 lang==='兒童' 推。
-  const [form, setForm] = useState({ display_title: '', artist: '', org: '', performer: '', category: '', lang: '粵語', album: '', title_en: '', kids: false });
+  // instrumental:INSTRUMENTAL-CATEGORY-PLAN §3.3 #4(Phase 2d)——同 kids 一樣
+  // 係獨立 int flag,唔可以由 lang 推(器樂嘅 lang 保持真語言,唔會係「純音樂」)。
+  const [form, setForm] = useState({ display_title: '', artist: '', org: '', performer: '', category: '', lang: '粵語', album: '', title_en: '', kids: false, instrumental: false });
 
   // saving 一定要喺呢度清返:落架成功嗰條路徑只係 close(),如果 close 唔清
   // saving,下次 open 返個 sheet 就會帶住 saving=true 開,儲存/落架兩個掣
@@ -79,6 +81,7 @@ export function AdminEditHymnProvider({ children }) {
         album: full.album || '',
         title_en: full.title_en || '',
         kids: Number(full.kids) === 1,
+        instrumental: Number(full.instrumental) === 1,
       });
     } catch (e) {
       setError(adminErrorMessage(e, '讀取失敗'));
@@ -96,9 +99,13 @@ export function AdminEditHymnProvider({ children }) {
     for (const key of ['display_title', 'artist', 'org', 'performer', 'category', 'lang', 'album', 'title_en']) {
       if ((form[key] || '') !== (original[key] || '')) changed[key] = form[key];
     }
-    // kids:顯式 int 開關,唔好同其他 string 欄一齊用 `|| ''` 比較(§8 C2 觀察②)。
+    // kids / instrumental:顯式 int 開關,唔好同其他 string 欄一齊用 `|| ''`
+    // 比較(§8 C2 觀察②)—— `0 || ''` 會令「由 1 改做 0」睇落似冇改過,
+    // 個關掣就永遠關唔返。
     const kidsVal = form.kids ? 1 : 0;
     if (kidsVal !== (Number(original.kids) || 0)) changed.kids = kidsVal;
+    const instrumentalVal = form.instrumental ? 1 : 0;
+    if (instrumentalVal !== (Number(original.instrumental) || 0)) changed.instrumental = instrumentalVal;
     if (!Object.keys(changed).length) { close(); return; }
 
     setSaving(true); setError('');
@@ -186,6 +193,21 @@ export function AdminEditHymnProvider({ children }) {
                     <Switch
                       value={form.kids}
                       onValueChange={(v) => setField('kids', v)}
+                      trackColor={{ false: COLORS.border, true: COLORS.glow }}
+                      thumbColor={COLORS.card}
+                    />
+                  </View>
+                </View>
+
+                {/* 純音樂(INSTRUMENTAL-CATEGORY-PLAN Phase 2d)—— 兩個開關可以
+                    同時開:「兒童 × 純音樂」係真實產品(Hillsong Kids 鋼琴搖籃
+                    曲),兩個維度正交,唔互相排除。 */}
+                <View style={styles.fieldRow}>
+                  <View style={styles.switchRow}>
+                    <Text style={styles.fieldLabel}>純音樂</Text>
+                    <Switch
+                      value={form.instrumental}
+                      onValueChange={(v) => setField('instrumental', v)}
                       trackColor={{ false: COLORS.border, true: COLORS.glow }}
                       thumbColor={COLORS.card}
                     />

@@ -23,7 +23,7 @@ const ADMIN_LOCK_WAIT_MS = 10_000;
 // org/performer:TAXONOMY-5D-PLAN.md §4.4 —— admin 編輯五維分類嘅團體/歌手。
 // kids:TAXONOMY-5D-PLAN.md §8 C2 觀察②——升做顯式 editable 欄位(0/1),UPDATE/
 // INSERT 唔准再由 lang==='兒童' 推斷(C4 換血後兒童歌 lang 係真語言)。
-export const EDITABLE_FIELDS = ['title', 'display_title', 'artist', 'category', 'lang', 'album', 'title_en', 'org', 'performer', 'kids'];
+export const EDITABLE_FIELDS = ['title', 'display_title', 'artist', 'category', 'lang', 'album', 'title_en', 'org', 'performer', 'kids', 'instrumental'];
 
 function dbBusyError() { const e = new Error('db_busy'); e.code = 'db_busy'; return e; }
 function notFoundError() { const e = new Error('not_found'); e.code = 'not_found'; return e; }

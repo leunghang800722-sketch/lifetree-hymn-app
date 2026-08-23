@@ -206,7 +206,9 @@ app.get('/api/hymns', async (req, res) => {
     // 全部係現有欄位(view_count 而家係 0,等 metadata job 填;tags 等標註 pass)。
     // album / title_en:詩歌庫頁本地搜尋要齊維度(SEARCH-MERGE-PLAN §5)。
     // org / performer / kids:TAXONOMY-5D-PLAN.md §2.2/§4.4 五維分類新欄。
-    const stmt = db.prepare('SELECT id, title, display_title, artist, youtube_id, lang, duration, lyrics, tags, view_count, created_at, album, title_en, org, performer, kids FROM hymns ORDER BY id');
+    // instrumental:INSTRUMENTAL-CATEGORY-PLAN §3.2 Phase 2a —— 純音樂 flag,
+    // 前端詩歌庫 tab + 首頁 chip 靠佢分流(Phase 1 已經回標咗 65 首)。
+    const stmt = db.prepare('SELECT id, title, display_title, artist, youtube_id, lang, duration, lyrics, tags, view_count, created_at, album, title_en, org, performer, kids, instrumental FROM hymns ORDER BY id');
     const hymns = [];
     while (stmt.step()) {
       hymns.push(stmt.getAsObject());
@@ -215,6 +217,12 @@ app.get('/api/hymns', async (req, res) => {
     // 「兒童」(舊 client filter `lang==='兒童'` 唔會斷),真語言另開 real_lang
     // 出——而家(C4 換血前)kids=1 嘅 row 喺 DB 入面 lang 本身就係「兒童」,
     // 所以呢個墊而家係 no-op,唔會改變現有 API 行為(見 §8 C1 落地後驗證)。
+    // INSTRUMENTAL-CATEGORY-PLAN §3.2 —— instrumental **刻意冇**對應嘅
+    // lang 改寫(對比上面 kids 嗰句)。舊 client 個 LANGS 冇「純音樂」呢個
+    // tab,如果將 lang 強制改做「純音樂」,呢 65 首喺舊 App 度邊個 tab 都
+    // 揀唔到 = 人間蒸發;保持真 lang 就最多係「暫時仲喺原語言 tab 度」,
+    // 而 §8 Q5 Eric 已經接受呢個過渡期行為。real_lang 上面嗰行已經一律
+    // 出街,所以呢度乜都唔使做——呢段註解就係要防止第日有人「補返對稱」。
     for (const h of hymns) {
       h.real_lang = h.lang;
       if (h.kids) h.lang = '兒童';
