@@ -1,0 +1,1136 @@
+{
+  "generated": "2026-08-24T04:53:29.698Z",
+  "org": "讚美之泉",
+  "band": [
+    120,
+    600
+  ],
+  "staleSkips": [],
+  "results": [
+    {
+      "youtube_id": "KLycCmw6ccA",
+      "raw_title": "2 HOURS【放鬆音樂 RELAX MUSIC】學習音樂 / 睡眠音樂 / 療癒音樂 / 工作音樂 / 舒壓音樂｜讚美之泉「靜」系列",
+      "flat_duration": 7028,
+      "playlist_id": "PLEY_M7xVVeAsghYdEOvB_nFi82FKhB8r7",
+      "playlist_title": "讚美之泉【安靜靈修純音樂】",
+      "instrumental_signal": "純音樂",
+      "proposed_album": null,
+      "verdict": "reject",
+      "gate": 2,
+      "why": "isCompilation; 片長 7028s 唔喺 120-600 秒"
+    },
+    {
+      "youtube_id": "oRFOBpFdBD8",
+      "raw_title": "一小時【靈修音樂 Soaking Music】全專輯連續播放「每一天我需要祢」I Need You 讚美之泉安靜系列 (4) Devotional Instrumental Album",
+      "flat_duration": 3359,
+      "playlist_id": "PLEY_M7xVVeAsghYdEOvB_nFi82FKhB8r7",
+      "playlist_title": "讚美之泉【安靜靈修純音樂】",
+      "instrumental_signal": "純音樂",
+      "proposed_album": null,
+      "verdict": "reject",
+      "gate": 2,
+      "why": "isCompilation; 片長 3359s 唔喺 120-600 秒"
+    },
+    {
+      "youtube_id": "hGfCvMdkBSw",
+      "raw_title": "兩小時 【安靜純音樂 Devotional Music】 沉靜/ 默想/ 等候｜讚美之泉「靜」系列",
+      "flat_duration": 6885,
+      "playlist_id": "PLEY_M7xVVeAsghYdEOvB_nFi82FKhB8r7",
+      "playlist_title": "讚美之泉【安靜靈修純音樂】",
+      "instrumental_signal": "純音樂",
+      "proposed_album": null,
+      "verdict": "reject",
+      "gate": 2,
+      "why": "isCompilation; 片長 6885s 唔喺 120-600 秒"
+    },
+    {
+      "youtube_id": "83zDU4of-co",
+      "raw_title": "兩小時【靈修音樂 Quiet Soaking Music】無間斷等候神純音樂｜讚美之泉「靜」系列",
+      "flat_duration": 7069,
+      "playlist_id": "PLEY_M7xVVeAsghYdEOvB_nFi82FKhB8r7",
+      "playlist_title": "讚美之泉【安靜靈修純音樂】",
+      "instrumental_signal": "純音樂",
+      "proposed_album": null,
+      "verdict": "skip",
+      "why": "已經喺庫"
+    },
+    {
+      "youtube_id": "BSiu6GlyvUg",
+      "raw_title": "||:【深愛耶穌 Loving Jesus】安靜純音樂 Devotional Music｜讚美之泉「靜」系列",
+      "flat_duration": 470,
+      "playlist_id": "PLEY_M7xVVeAsghYdEOvB_nFi82FKhB8r7",
+      "playlist_title": "讚美之泉【安靜靈修純音樂】",
+      "instrumental_signal": "純音樂",
+      "proposed_album": null,
+      "verdict": "instrumental",
+      "gate": null,
+      "why": "五重閘全過",
+      "meta": {
+        "id": "BSiu6GlyvUg",
+        "title": "||:【深愛耶穌 Loving Jesus】安靜純音樂 Devotional Music｜讚美之泉「靜」系列",
+        "duration": 469,
+        "channel": "讚美之泉 Stream Of Praise Music Ministries",
+        "upload_date": "20251115",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "詩歌歌曲。"
+          ],
+          "uniqCount": 1,
+          "coverage": 0.9637526652452025,
+          "lastT1": 452,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        },
+        "en": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "[footsteps]",
+            "[birds chirping]",
+            "[soft piano music]"
+          ],
+          "uniqCount": 3,
+          "coverage": 1.004264392324094,
+          "lastT1": 471,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    },
+    {
+      "youtube_id": "3z5ukeFlpm8",
+      "raw_title": "||:【和散那，歡迎君王  Hosanna, Here Comes The King / 奇異恩典 Amazing Grace 】安靜純音樂 Devotional Music｜讚美之泉「靜」系列",
+      "flat_duration": 445,
+      "playlist_id": "PLEY_M7xVVeAsghYdEOvB_nFi82FKhB8r7",
+      "playlist_title": "讚美之泉【安靜靈修純音樂】",
+      "instrumental_signal": "純音樂",
+      "proposed_album": null,
+      "verdict": "reject",
+      "gate": 3,
+      "why": "YouTube auto-caption 存在(157 種語言)—— 獨立引擎聽到人聲",
+      "meta": {
+        "id": "3z5ukeFlpm8",
+        "title": "||:【和散那，歡迎君王  Hosanna, Here Comes The King / 奇異恩典 Amazing Grace 】安靜純音樂 Devotional Music｜讚美之泉「靜」系列",
+        "duration": 445,
+        "channel": "讚美之泉 Stream Of Praise Music Ministries",
+        "upload_date": "20251115",
+        "auto_captions": [
+          "ab",
+          "aa",
+          "af",
+          "ak",
+          "sq",
+          "am",
+          "ar",
+          "hy",
+          "as",
+          "ay",
+          "az",
+          "bn",
+          "ba",
+          "eu",
+          "be",
+          "bho",
+          "bs",
+          "br",
+          "bg",
+          "my",
+          "ca",
+          "ceb",
+          "zh-Hans",
+          "zh-Hant",
+          "co",
+          "hr",
+          "cs",
+          "da",
+          "dv",
+          "nl",
+          "dz",
+          "en-orig",
+          "en",
+          "eo",
+          "et",
+          "ee",
+          "fo",
+          "fj",
+          "fil",
+          "fi",
+          "fr",
+          "gaa",
+          "gl",
+          "lg",
+          "ka",
+          "de",
+          "el",
+          "gn",
+          "gu",
+          "ht",
+          "ha",
+          "haw",
+          "iw",
+          "hi",
+          "hmn",
+          "hu",
+          "is",
+          "ig",
+          "id",
+          "iu",
+          "ga",
+          "it",
+          "ja",
+          "jv",
+          "kl",
+          "kn",
+          "kk",
+          "kha",
+          "km",
+          "rw",
+          "ko",
+          "kri",
+          "ku",
+          "ky",
+          "lo",
+          "la",
+          "lv",
+          "ln",
+          "lt",
+          "lua",
+          "luo",
+          "lb",
+          "mk",
+          "mg",
+          "ms",
+          "ml",
+          "mt",
+          "gv",
+          "mi",
+          "mr",
+          "mn",
+          "mfe",
+          "ne",
+          "new",
+          "nso",
+          "no",
+          "ny",
+          "oc",
+          "or",
+          "om",
+          "os",
+          "pam",
+          "ps",
+          "fa",
+          "pl",
+          "pt",
+          "pt-PT",
+          "pa",
+          "qu",
+          "ro",
+          "rn",
+          "ru",
+          "sm",
+          "sg",
+          "sa",
+          "gd",
+          "sr",
+          "crs",
+          "sn",
+          "sd",
+          "si",
+          "sk",
+          "sl",
+          "so",
+          "st",
+          "es",
+          "su",
+          "sw",
+          "ss",
+          "sv",
+          "tg",
+          "ta",
+          "tt",
+          "te",
+          "th",
+          "bo",
+          "ti",
+          "to",
+          "ts",
+          "tn",
+          "tum",
+          "tr",
+          "tk",
+          "uk",
+          "ur",
+          "ug",
+          "uz",
+          "ve",
+          "vi",
+          "war",
+          "cy",
+          "fy",
+          "wo",
+          "xh",
+          "yi",
+          "yo",
+          "zu"
+        ],
+        "manual_subs": []
+      }
+    },
+    {
+      "youtube_id": "jjI4QhyCAcM",
+      "raw_title": "||:【聖潔的羔羊 The Holy Lamb of God】安靜純音樂 Devotional Music｜讚美之泉「靜」系列",
+      "flat_duration": 525,
+      "playlist_id": "PLEY_M7xVVeAsghYdEOvB_nFi82FKhB8r7",
+      "playlist_title": "讚美之泉【安靜靈修純音樂】",
+      "instrumental_signal": "純音樂",
+      "proposed_album": null,
+      "verdict": "instrumental",
+      "gate": null,
+      "why": "五重閘全過",
+      "meta": {
+        "id": "jjI4QhyCAcM",
+        "title": "||:【聖潔的羔羊 The Holy Lamb of God】安靜純音樂 Devotional Music｜讚美之泉「靜」系列",
+        "duration": 524,
+        "channel": "讚美之泉 Stream Of Praise Music Ministries",
+        "upload_date": "20251115",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "詩歌歌曲,詩歌歌曲。",
+            "詩歌歌曲,詩歌歌曲.",
+            "詞曲 李宗盛"
+          ],
+          "uniqCount": 3,
+          "coverage": 0.9790076335877863,
+          "lastT1": 513,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        },
+        "en": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "[WATER RUNNING]",
+            "[MUSIC PLAYING]",
+            "[BIRDS CHIRPING]"
+          ],
+          "uniqCount": 3,
+          "coverage": 0.9790076335877863,
+          "lastT1": 513,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    },
+    {
+      "youtube_id": "yBKflKs6c0U",
+      "raw_title": "||:【我在這裡敬拜 Here to Worship】安靜純音樂 Devotional Music｜讚美之泉「靜」系列",
+      "flat_duration": 942,
+      "playlist_id": "PLEY_M7xVVeAsghYdEOvB_nFi82FKhB8r7",
+      "playlist_title": "讚美之泉【安靜靈修純音樂】",
+      "instrumental_signal": "純音樂",
+      "proposed_album": null,
+      "verdict": "reject",
+      "gate": 2,
+      "why": "片長 942s 唔喺 120-600 秒"
+    },
+    {
+      "youtube_id": "XzEyBseS0PM",
+      "raw_title": "兩小時【舒壓純音樂 RELAX SOAKING MUSIC】 放鬆 / 沉澱 / 默想 / 放慢腳步 ||: SOAKING LOUNGE :|| 讚美之泉 Stream of Praise",
+      "flat_duration": 7134,
+      "playlist_id": "PLEY_M7xVVeAsghYdEOvB_nFi82FKhB8r7",
+      "playlist_title": "讚美之泉【安靜靈修純音樂】",
+      "instrumental_signal": "純音樂",
+      "proposed_album": null,
+      "verdict": "reject",
+      "gate": 2,
+      "why": "isCompilation; 片長 7134s 唔喺 120-600 秒"
+    },
+    {
+      "youtube_id": "P78pMrWxjB4",
+      "raw_title": "12 HOURS【睡眠音樂 SLEEPING MUSIC】立即入睡 / 深度睡眠 / 幫助入眠 / 療癒音樂 / 舒壓音樂 Stress Relief, Relax, Sleep｜讚美之泉「靜」系列",
+      "flat_duration": 45434,
+      "playlist_id": "PLEY_M7xVVeAsghYdEOvB_nFi82FKhB8r7",
+      "playlist_title": "讚美之泉【安靜靈修純音樂】",
+      "instrumental_signal": "純音樂",
+      "proposed_album": null,
+      "verdict": "reject",
+      "gate": 2,
+      "why": "isCompilation; 片長 45434s 唔喺 120-600 秒"
+    },
+    {
+      "youtube_id": "LKfNYBKhh9s",
+      "raw_title": "【能不能 Let Me Stay】全專輯連續播放 - 讚美之泉鋼琴演奏系列 (3) by 游智婷 Sandy Yu",
+      "flat_duration": 4113,
+      "playlist_id": "PLEY_M7xVVeAsghYdEOvB_nFi82FKhB8r7",
+      "playlist_title": "讚美之泉【安靜靈修純音樂】",
+      "instrumental_signal": "純音樂",
+      "proposed_album": null,
+      "verdict": "reject",
+      "gate": 2,
+      "why": "isCompilation; 片長 4113s 唔喺 120-600 秒"
+    },
+    {
+      "youtube_id": "EQmkd_Y4O-o",
+      "raw_title": "一小時【靈修音樂 Soaking Music】全專輯連續播放 「住在祢裡面」Abiding In You 讚美之泉安靜系列 (3) Devotional Instrumental Album",
+      "flat_duration": 3795,
+      "playlist_id": "PLEY_M7xVVeAsghYdEOvB_nFi82FKhB8r7",
+      "playlist_title": "讚美之泉【安靜靈修純音樂】",
+      "instrumental_signal": "純音樂",
+      "proposed_album": null,
+      "verdict": "reject",
+      "gate": 2,
+      "why": "isCompilation; 片長 3795s 唔喺 120-600 秒"
+    },
+    {
+      "youtube_id": "QYUXI8vA2dU",
+      "raw_title": "四小時【靈修音樂 Quiet Soaking Music】無間斷等候神純弦樂｜讚美之泉「靜」系列",
+      "flat_duration": 16588,
+      "playlist_id": "PLEY_M7xVVeAsghYdEOvB_nFi82FKhB8r7",
+      "playlist_title": "讚美之泉【安靜靈修純音樂】",
+      "instrumental_signal": "純音樂",
+      "proposed_album": null,
+      "verdict": "reject",
+      "gate": 2,
+      "why": "isCompilation; 片長 16588s 唔喺 120-600 秒"
+    },
+    {
+      "youtube_id": "s5TLU-5N8Kw",
+      "raw_title": "【一生愛祢 With All My Love】全專輯連續播放 - 讚美之泉鋼琴演奏系列 (2) by 曾祥怡 Grace Tseng",
+      "flat_duration": 3868,
+      "playlist_id": "PLEY_M7xVVeAsghYdEOvB_nFi82FKhB8r7",
+      "playlist_title": "讚美之泉【安靜靈修純音樂】",
+      "instrumental_signal": "純音樂",
+      "proposed_album": null,
+      "verdict": "reject",
+      "gate": 2,
+      "why": "isCompilation; 片長 3868s 唔喺 120-600 秒"
+    },
+    {
+      "youtube_id": "JBEPx-Nhqoo",
+      "raw_title": "一小時【靈修音樂 Quiet Soaking Music】無間斷等候神純音樂｜讚美之泉「靜」系列",
+      "flat_duration": 3539,
+      "playlist_id": "PLEY_M7xVVeAsghYdEOvB_nFi82FKhB8r7",
+      "playlist_title": "讚美之泉【安靜靈修純音樂】",
+      "instrumental_signal": "純音樂",
+      "proposed_album": null,
+      "verdict": "reject",
+      "gate": 2,
+      "why": "isCompilation; 片長 3539s 唔喺 120-600 秒"
+    },
+    {
+      "youtube_id": "phqt2u63iWM",
+      "raw_title": "【單單愛慕你 Simply Loving You】全專輯連續播放 - 讚美之泉鋼琴演奏系列 (1) by 游智婷 Sandy Yu",
+      "flat_duration": 3743,
+      "playlist_id": "PLEY_M7xVVeAsghYdEOvB_nFi82FKhB8r7",
+      "playlist_title": "讚美之泉【安靜靈修純音樂】",
+      "instrumental_signal": "純音樂",
+      "proposed_album": null,
+      "verdict": "reject",
+      "gate": 2,
+      "why": "isCompilation; 片長 3743s 唔喺 120-600 秒"
+    },
+    {
+      "youtube_id": "rTTheQDKtBA",
+      "raw_title": "【恩典之路 The Path of Grace】全專輯連續播放 - 讚美之泉弦樂四重奏 (1)  String Quartet",
+      "flat_duration": 3320,
+      "playlist_id": "PLEY_M7xVVeAsghYdEOvB_nFi82FKhB8r7",
+      "playlist_title": "讚美之泉【安靜靈修純音樂】",
+      "instrumental_signal": "純音樂",
+      "proposed_album": null,
+      "verdict": "reject",
+      "gate": 2,
+      "why": "isCompilation; 片長 3320s 唔喺 120-600 秒"
+    },
+    {
+      "youtube_id": "PJWBwJMSpa0",
+      "raw_title": "一小時【舒壓純音樂 RELAX SOAKING MUSIC】 放鬆 / 沉澱 / 默想 / 放慢腳步 ||: SOAKING LOUNGE :|| 讚美之泉 Stream of Praise",
+      "flat_duration": 3698,
+      "playlist_id": "PLEY_M7xVVeAsghYdEOvB_nFi82FKhB8r7",
+      "playlist_title": "讚美之泉【安靜靈修純音樂】",
+      "instrumental_signal": "純音樂",
+      "proposed_album": null,
+      "verdict": "reject",
+      "gate": 2,
+      "why": "isCompilation; 片長 3698s 唔喺 120-600 秒"
+    },
+    {
+      "youtube_id": "1gXKPXwMrWk",
+      "raw_title": "讚美之泉弦樂專輯 String Quartet Album - 恩典之路 Path of Grace  (全專輯 連續播放)",
+      "flat_duration": 3317,
+      "playlist_id": "PLEY_M7xVVeAsghYdEOvB_nFi82FKhB8r7",
+      "playlist_title": "讚美之泉【安靜靈修純音樂】",
+      "instrumental_signal": "純音樂",
+      "proposed_album": null,
+      "verdict": "reject",
+      "gate": 2,
+      "why": "isCompilation; 片長 3317s 唔喺 120-600 秒"
+    },
+    {
+      "youtube_id": "1EtCWmrQerA",
+      "raw_title": "【祢使我生命美麗 You Have Made My Life Beautiful】全專輯連續播放 - 讚美之泉音樂演奏系列 (07)",
+      "flat_duration": 3488,
+      "playlist_id": "PLEY_M7xVVeAsghYdEOvB_nFi82FKhB8r7",
+      "playlist_title": "讚美之泉【安靜靈修純音樂】",
+      "instrumental_signal": "純音樂",
+      "proposed_album": null,
+      "verdict": "reject",
+      "gate": 2,
+      "why": "isCompilation; 片長 3488s 唔喺 120-600 秒"
+    },
+    {
+      "youtube_id": "m01Pjs7-jvE",
+      "raw_title": "一小時【靈修音樂 Soaking Music】全專輯連續播放 「Come Away With Me」  - 讚美之泉安靜系列 (1) Devotional Instrumental Album",
+      "flat_duration": 3520,
+      "playlist_id": "PLEY_M7xVVeAsghYdEOvB_nFi82FKhB8r7",
+      "playlist_title": "讚美之泉【安靜靈修純音樂】",
+      "instrumental_signal": "純音樂",
+      "proposed_album": null,
+      "verdict": "reject",
+      "gate": 2,
+      "why": "isCompilation; 片長 3520s 唔喺 120-600 秒"
+    },
+    {
+      "youtube_id": "MTarJDyoDXE",
+      "raw_title": "一小時【靈修音樂 Soaking Music】全專輯連續播放「找一個地方」I Want To Go To  Place - 讚美之泉安靜系列 (2) Devotional Instrumental",
+      "flat_duration": 3577,
+      "playlist_id": "PLEY_M7xVVeAsghYdEOvB_nFi82FKhB8r7",
+      "playlist_title": "讚美之泉【安靜靈修純音樂】",
+      "instrumental_signal": "純音樂",
+      "proposed_album": null,
+      "verdict": "reject",
+      "gate": 2,
+      "why": "isCompilation; 片長 3577s 唔喺 120-600 秒"
+    },
+    {
+      "youtube_id": "7eMtzhfOTMk",
+      "raw_title": "【賜福與你 Blessings of God Be Upon You】全專輯連續播放 - 讚美之泉音樂演奏系列 (08)",
+      "flat_duration": 3276,
+      "playlist_id": "PLEY_M7xVVeAsghYdEOvB_nFi82FKhB8r7",
+      "playlist_title": "讚美之泉【安靜靈修純音樂】",
+      "instrumental_signal": "純音樂",
+      "proposed_album": null,
+      "verdict": "reject",
+      "gate": 2,
+      "why": "isCompilation; 片長 3276s 唔喺 120-600 秒"
+    },
+    {
+      "youtube_id": "phqt2u63iWM",
+      "raw_title": "【單單愛慕你 Simply Loving You】全專輯連續播放 - 讚美之泉鋼琴演奏系列 (1) by 游智婷 Sandy Yu",
+      "flat_duration": 3743,
+      "playlist_id": "PLEY_M7xVVeAv4HoC2HhTwa-9LoeXYLBlE",
+      "playlist_title": "讚美之泉鋼琴演奏系列 Piano Album (1) 單單愛慕你 Simply Loving You",
+      "instrumental_signal": "演奏",
+      "proposed_album": "單單愛慕你",
+      "verdict": "reject",
+      "gate": 2,
+      "why": "isCompilation; 片長 3743s 唔喺 120-600 秒"
+    },
+    {
+      "youtube_id": "AFX_MHGkppY",
+      "raw_title": "【單單愛慕你 Simply Loving You】- 讚美之泉鋼琴演奏系列 (1) by 游智婷 Sandy Yu",
+      "flat_duration": 293,
+      "playlist_id": "PLEY_M7xVVeAv4HoC2HhTwa-9LoeXYLBlE",
+      "playlist_title": "讚美之泉鋼琴演奏系列 Piano Album (1) 單單愛慕你 Simply Loving You",
+      "instrumental_signal": "演奏",
+      "proposed_album": "單單愛慕你",
+      "verdict": "reject",
+      "gate": 4,
+      "why": "兩 pass 結論唔一致(zh 唔過:剩餘文字 2 行:詞曲:王智峯 / 演唱:王智峯 / en 過)",
+      "meta": {
+        "id": "AFX_MHGkppY",
+        "title": "【單單愛慕你 Simply Loving You】- 讚美之泉鋼琴演奏系列 (1) by 游智婷 Sandy Yu",
+        "duration": 293,
+        "channel": "讚美之泉 Stream Of Praise Music Ministries",
+        "upload_date": "20241231",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": false,
+          "reasons": [
+            "剩餘文字 2 行:詞曲:王智峯 / 演唱:王智峯"
+          ],
+          "uniq": [
+            "詞曲:王智峯",
+            "演唱:王智峯"
+          ],
+          "uniqCount": 2,
+          "coverage": 0.9965870307167235,
+          "lastT1": 292,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        },
+        "en": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "[MUSIC]",
+            "(water splashing)"
+          ],
+          "uniqCount": 2,
+          "coverage": 0.9977474402730374,
+          "lastT1": 292.34,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    },
+    {
+      "youtube_id": "gYglo35Ba4Q",
+      "raw_title": "【復興聖潔 Revive Holiness】- 讚美之泉鋼琴演奏系列 (1) by 游智婷 Sandy Yu",
+      "flat_duration": 342,
+      "playlist_id": "PLEY_M7xVVeAv4HoC2HhTwa-9LoeXYLBlE",
+      "playlist_title": "讚美之泉鋼琴演奏系列 Piano Album (1) 單單愛慕你 Simply Loving You",
+      "instrumental_signal": "演奏",
+      "proposed_album": "單單愛慕你",
+      "verdict": "instrumental",
+      "gate": null,
+      "why": "五重閘全過",
+      "meta": {
+        "id": "gYglo35Ba4Q",
+        "title": "【復興聖潔 Revive Holiness】- 讚美之泉鋼琴演奏系列 (1) by 游智婷 Sandy Yu",
+        "duration": 342,
+        "channel": "讚美之泉 Stream Of Praise Music Ministries",
+        "upload_date": "20241231",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "詩歌歌詞曲 李宗盛",
+            "詩歌歌曲 李宗盛"
+          ],
+          "uniqCount": 2,
+          "coverage": 0.9619883040935673,
+          "lastT1": 329,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        },
+        "en": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "[MUSIC]",
+            "[BLANK_AUDIO]"
+          ],
+          "uniqCount": 2,
+          "coverage": 1.0175438596491229,
+          "lastT1": 348,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    },
+    {
+      "youtube_id": "NqnMD5FgnDc",
+      "raw_title": "【我親愛的耶穌 My Sweet Jesus】- 讚美之泉鋼琴演奏系列 (1) by 游智婷 Sandy Yu",
+      "flat_duration": 230,
+      "playlist_id": "PLEY_M7xVVeAv4HoC2HhTwa-9LoeXYLBlE",
+      "playlist_title": "讚美之泉鋼琴演奏系列 Piano Album (1) 單單愛慕你 Simply Loving You",
+      "instrumental_signal": "演奏",
+      "proposed_album": "單單愛慕你",
+      "verdict": "instrumental",
+      "gate": null,
+      "why": "五重閘全過",
+      "meta": {
+        "id": "NqnMD5FgnDc",
+        "title": "【我親愛的耶穌 My Sweet Jesus】- 讚美之泉鋼琴演奏系列 (1) by 游智婷 Sandy Yu",
+        "duration": 229,
+        "channel": "讚美之泉 Stream Of Praise Music Ministries",
+        "upload_date": "20241231",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "詞曲:李宗盛 編曲:李宗盛",
+            "詞曲:李宗盛"
+          ],
+          "uniqCount": 2,
+          "coverage": 0.9388646288209607,
+          "lastT1": 215,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        },
+        "en": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "[MUSIC]"
+          ],
+          "uniqCount": 1,
+          "coverage": 0.982532751091703,
+          "lastT1": 225,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    },
+    {
+      "youtube_id": "GKlhl9gLAMw",
+      "raw_title": "【展開清晨的翅膀 Wings of the Dawn】- 讚美之泉鋼琴演奏系列 (1) by 游智婷 Sandy Yu",
+      "flat_duration": 343,
+      "playlist_id": "PLEY_M7xVVeAv4HoC2HhTwa-9LoeXYLBlE",
+      "playlist_title": "讚美之泉鋼琴演奏系列 Piano Album (1) 單單愛慕你 Simply Loving You",
+      "instrumental_signal": "演奏",
+      "proposed_album": "單單愛慕你",
+      "verdict": "instrumental",
+      "gate": null,
+      "why": "五重閘全過",
+      "meta": {
+        "id": "GKlhl9gLAMw",
+        "title": "【展開清晨的翅膀 Wings of the Dawn】- 讚美之泉鋼琴演奏系列 (1) by 游智婷 Sandy Yu",
+        "duration": 343,
+        "channel": "讚美之泉 Stream Of Praise Music Ministries",
+        "upload_date": "20241231",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "詞曲:李宗盛 編曲:李宗盛",
+            "詞曲:李宗盛"
+          ],
+          "uniqCount": 2,
+          "coverage": 0.9825072886297376,
+          "lastT1": 337,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        },
+        "en": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "[MUSIC]",
+            "[BLANK_AUDIO]"
+          ],
+          "uniqCount": 2,
+          "coverage": 1.0204081632653061,
+          "lastT1": 350,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    },
+    {
+      "youtube_id": "5X9oJkpU7CU",
+      "raw_title": "【主的恩典乃是一生之久 The Light of Your Grace】- 讚美之泉鋼琴演奏系列 (1) by 游智婷 Sandy Yu",
+      "flat_duration": 412,
+      "playlist_id": "PLEY_M7xVVeAv4HoC2HhTwa-9LoeXYLBlE",
+      "playlist_title": "讚美之泉鋼琴演奏系列 Piano Album (1) 單單愛慕你 Simply Loving You",
+      "instrumental_signal": "演奏",
+      "proposed_album": "單單愛慕你",
+      "verdict": "instrumental",
+      "gate": null,
+      "why": "五重閘全過",
+      "meta": {
+        "id": "5X9oJkpU7CU",
+        "title": "【主的恩典乃是一生之久 The Light of Your Grace】- 讚美之泉鋼琴演奏系列 (1) by 游智婷 Sandy Yu",
+        "duration": 412,
+        "channel": "讚美之泉 Stream Of Praise Music Ministries",
+        "upload_date": "20241231",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "詞曲:李宗盛 編曲:李宗盛",
+            "詞:李宗盛 編曲:李宗盛",
+            "演唱:李宗盛 編曲:李宗盛"
+          ],
+          "uniqCount": 3,
+          "coverage": 0.9635922330097088,
+          "lastT1": 397,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        },
+        "en": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "[MUSIC]"
+          ],
+          "uniqCount": 1,
+          "coverage": 0.9830097087378641,
+          "lastT1": 405,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    },
+    {
+      "youtube_id": "yGogd3-fsng",
+      "raw_title": "【耶穌，我的耶穌 Jesus, My Jesus】- 讚美之泉鋼琴演奏系列 (1) by 游智婷 Sandy Yu",
+      "flat_duration": 403,
+      "playlist_id": "PLEY_M7xVVeAv4HoC2HhTwa-9LoeXYLBlE",
+      "playlist_title": "讚美之泉鋼琴演奏系列 Piano Album (1) 單單愛慕你 Simply Loving You",
+      "instrumental_signal": "演奏",
+      "proposed_album": "單單愛慕你",
+      "verdict": "instrumental",
+      "gate": null,
+      "why": "五重閘全過",
+      "meta": {
+        "id": "yGogd3-fsng",
+        "title": "【耶穌，我的耶穌 Jesus, My Jesus】- 讚美之泉鋼琴演奏系列 (1) by 游智婷 Sandy Yu",
+        "duration": 402,
+        "channel": "讚美之泉 Stream Of Praise Music Ministries",
+        "upload_date": "20241231",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "詞曲:李宗盛 編曲:李宗盛",
+            "詞曲:李宗盛"
+          ],
+          "uniqCount": 2,
+          "coverage": 0.9701492537313433,
+          "lastT1": 390,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        },
+        "en": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "[MUSIC]"
+          ],
+          "uniqCount": 1,
+          "coverage": 0.9950248756218906,
+          "lastT1": 400,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    },
+    {
+      "youtube_id": "WLkaULgfYwM",
+      "raw_title": "【讚美之泉 Stream of Praise】- 讚美之泉鋼琴演奏系列 (1) by 游智婷 Sandy Yu",
+      "flat_duration": 276,
+      "playlist_id": "PLEY_M7xVVeAv4HoC2HhTwa-9LoeXYLBlE",
+      "playlist_title": "讚美之泉鋼琴演奏系列 Piano Album (1) 單單愛慕你 Simply Loving You",
+      "instrumental_signal": "演奏",
+      "proposed_album": "單單愛慕你",
+      "verdict": "instrumental",
+      "gate": null,
+      "why": "五重閘全過",
+      "meta": {
+        "id": "WLkaULgfYwM",
+        "title": "【讚美之泉 Stream of Praise】- 讚美之泉鋼琴演奏系列 (1) by 游智婷 Sandy Yu",
+        "duration": 275,
+        "channel": "讚美之泉 Stream Of Praise Music Ministries",
+        "upload_date": "20241231",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "詞曲:李宗盛 編曲:李宗盛",
+            "詞曲:李宗盛"
+          ],
+          "uniqCount": 2,
+          "coverage": 1.0072727272727273,
+          "lastT1": 277,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        },
+        "en": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "[MUSIC]"
+          ],
+          "uniqCount": 1,
+          "coverage": 1,
+          "lastT1": 275,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    },
+    {
+      "youtube_id": "3vu6JPM0ykY",
+      "raw_title": "【我愛祢，我主 I Love You My Lord】- 讚美之泉鋼琴演奏系列 (1) by 游智婷 Sandy Yu",
+      "flat_duration": 225,
+      "playlist_id": "PLEY_M7xVVeAv4HoC2HhTwa-9LoeXYLBlE",
+      "playlist_title": "讚美之泉鋼琴演奏系列 Piano Album (1) 單單愛慕你 Simply Loving You",
+      "instrumental_signal": "演奏",
+      "proposed_album": "單單愛慕你",
+      "verdict": "instrumental",
+      "gate": null,
+      "why": "五重閘全過",
+      "meta": {
+        "id": "3vu6JPM0ykY",
+        "title": "【我愛祢，我主 I Love You My Lord】- 讚美之泉鋼琴演奏系列 (1) by 游智婷 Sandy Yu",
+        "duration": 225,
+        "channel": "讚美之泉 Stream Of Praise Music Ministries",
+        "upload_date": "20241231",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "詞曲:李宗盛",
+            "編曲:李宗盛"
+          ],
+          "uniqCount": 2,
+          "coverage": 0.9777777777777777,
+          "lastT1": 220,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        },
+        "en": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "[MUSIC]"
+          ],
+          "uniqCount": 1,
+          "coverage": 1,
+          "lastT1": 225,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    },
+    {
+      "youtube_id": "CRCWryaAOm0",
+      "raw_title": "【求告祢名 Call Upon Your Name】- 讚美之泉鋼琴演奏系列 (1) by 游智婷 Sandy Yu",
+      "flat_duration": 331,
+      "playlist_id": "PLEY_M7xVVeAv4HoC2HhTwa-9LoeXYLBlE",
+      "playlist_title": "讚美之泉鋼琴演奏系列 Piano Album (1) 單單愛慕你 Simply Loving You",
+      "instrumental_signal": "演奏",
+      "proposed_album": "單單愛慕你",
+      "verdict": "reject",
+      "gate": 4,
+      "why": "兩 pass 結論唔一致(zh 唔過:剩餘文字 1 行:我就是想要你做我的朋友, 知道嗎? / en 過)",
+      "meta": {
+        "id": "CRCWryaAOm0",
+        "title": "【求告祢名 Call Upon Your Name】- 讚美之泉鋼琴演奏系列 (1) by 游智婷 Sandy Yu",
+        "duration": 331,
+        "channel": "讚美之泉 Stream Of Praise Music Ministries",
+        "upload_date": "20241231",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": false,
+          "reasons": [
+            "剩餘文字 1 行:我就是想要你做我的朋友, 知道嗎?"
+          ],
+          "uniq": [
+            "詞曲:李宗盛 詞:李宗盛 編曲:李宗盛",
+            "詞曲:李宗盛 編曲:李宗盛",
+            "我就是想要你做我的朋友, 知道嗎?"
+          ],
+          "uniqCount": 3,
+          "coverage": 1.0060422960725075,
+          "lastT1": 333,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        },
+        "en": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "[MUSIC]"
+          ],
+          "uniqCount": 1,
+          "coverage": 0.9818731117824774,
+          "lastT1": 325,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    },
+    {
+      "youtube_id": "nBwm4quoEvA",
+      "raw_title": "【被愛 Loved】- 讚美之泉鋼琴演奏系列 (1) by 游智婷 Sandy Yu",
+      "flat_duration": 274,
+      "playlist_id": "PLEY_M7xVVeAv4HoC2HhTwa-9LoeXYLBlE",
+      "playlist_title": "讚美之泉鋼琴演奏系列 Piano Album (1) 單單愛慕你 Simply Loving You",
+      "instrumental_signal": "演奏",
+      "proposed_album": "單單愛慕你",
+      "verdict": "reject",
+      "gate": 4,
+      "why": "兩 pass 都唔過(zh: 剩餘文字 1 行:MING PAO CANADA | MING PAO TOR | en: 剩餘文字 1 行:you)",
+      "meta": {
+        "id": "nBwm4quoEvA",
+        "title": "【被愛 Loved】- 讚美之泉鋼琴演奏系列 (1) by 游智婷 Sandy Yu",
+        "duration": 274,
+        "channel": "讚美之泉 Stream Of Praise Music Ministries",
+        "upload_date": "20241231",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": false,
+          "reasons": [
+            "剩餘文字 1 行:MING PAO CANADA | MING PAO TOR"
+          ],
+          "uniq": [
+            "詞曲:李宗盛 編曲:李宗盛",
+            "詞曲:李宗盛",
+            "MING PAO CANADA | MING PAO TORONTO"
+          ],
+          "uniqCount": 3,
+          "coverage": 0.9927007299270073,
+          "lastT1": 272,
+          "whisperFailed": false,
+          "garbageDropped": 1
+        },
+        "en": {
+          "pass": false,
+          "reasons": [
+            "剩餘文字 1 行:you"
+          ],
+          "uniq": [
+            "[MUSIC]",
+            "you"
+          ],
+          "uniqCount": 2,
+          "coverage": 0.992919708029197,
+          "lastT1": 272.06,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    },
+    {
+      "youtube_id": "0GV-JXwPehs",
+      "raw_title": "【秋雨之福 Autumn Blessings】- 讚美之泉鋼琴演奏系列 (1) by 游智婷 Sandy Yu",
+      "flat_duration": 336,
+      "playlist_id": "PLEY_M7xVVeAv4HoC2HhTwa-9LoeXYLBlE",
+      "playlist_title": "讚美之泉鋼琴演奏系列 Piano Album (1) 單單愛慕你 Simply Loving You",
+      "instrumental_signal": "演奏",
+      "proposed_album": "單單愛慕你",
+      "verdict": "reject",
+      "gate": 4,
+      "why": "兩 pass 結論唔一致(zh 過 / en 唔過:剩餘文字 1 行:you)",
+      "meta": {
+        "id": "0GV-JXwPehs",
+        "title": "【秋雨之福 Autumn Blessings】- 讚美之泉鋼琴演奏系列 (1) by 游智婷 Sandy Yu",
+        "duration": 336,
+        "channel": "讚美之泉 Stream Of Praise Music Ministries",
+        "upload_date": "20241231",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "詞曲:李宗盛 編曲:李宗盛",
+            "詞曲:李宗盛"
+          ],
+          "uniqCount": 2,
+          "coverage": 1.0029761904761905,
+          "lastT1": 337,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        },
+        "en": {
+          "pass": false,
+          "reasons": [
+            "剩餘文字 1 行:you"
+          ],
+          "uniq": [
+            "[MUSIC]",
+            "you"
+          ],
+          "uniqCount": 2,
+          "coverage": 1.0031547619047618,
+          "lastT1": 337.06,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    },
+    {
+      "youtube_id": "_CymvIzCyW0",
+      "raw_title": "【單單愛慕你 [二重奏] Simply Loving You [Duet]】- 讚美之泉鋼琴演奏系列 (1) by 游智婷 Sandy Yu",
+      "flat_duration": 292,
+      "playlist_id": "PLEY_M7xVVeAv4HoC2HhTwa-9LoeXYLBlE",
+      "playlist_title": "讚美之泉鋼琴演奏系列 Piano Album (1) 單單愛慕你 Simply Loving You",
+      "instrumental_signal": "演奏",
+      "proposed_album": "單單愛慕你",
+      "verdict": "instrumental",
+      "gate": null,
+      "why": "五重閘全過",
+      "meta": {
+        "id": "_CymvIzCyW0",
+        "title": "【單單愛慕你 [二重奏] Simply Loving You [Duet]】- 讚美之泉鋼琴演奏系列 (1) by 游智婷 Sandy Yu",
+        "duration": 291,
+        "channel": "讚美之泉 Stream Of Praise Music Ministries",
+        "upload_date": "20241231",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "詞曲:李宗盛 編曲:李宗盛",
+            "詞曲:李宗盛"
+          ],
+          "uniqCount": 2,
+          "coverage": 0.9450171821305842,
+          "lastT1": 275,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        },
+        "en": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "[MUSIC]",
+            "[BLANK_AUDIO]"
+          ],
+          "uniqCount": 2,
+          "coverage": 1.0309278350515463,
+          "lastT1": 300,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    }
+  ]
+}

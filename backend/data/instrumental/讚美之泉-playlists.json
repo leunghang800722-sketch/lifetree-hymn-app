@@ -1,0 +1,241 @@
+[
+  {
+    "playlist_id": "PLEY_M7xVVeAsghYdEOvB_nFi82FKhB8r7",
+    "playlist_title": "讚美之泉【安靜靈修純音樂】",
+    "instrumental_signal": "純音樂",
+    "member_count": 23,
+    "matched_in_db": 1,
+    "fresh_count": 22,
+    "fresh_pass_gate2": 3,
+    "fetch_error": null,
+    "approved": true,
+    "proposed_album": null,
+    "signed_by": "Claude Opus 5 (Phase 4 T5, P4 拍板由我哋簽 / Eric 事後抽驗)",
+    "signed_at": "2026-08-24T04:37:28.743Z",
+    "fresh_sample": [
+      {
+        "id": "BSiu6GlyvUg",
+        "title": "||:【深愛耶穌 Loving Jesus】安靜純音樂 Devotional Music｜讚美之泉「靜」系列",
+        "duration": 470
+      },
+      {
+        "id": "3z5ukeFlpm8",
+        "title": "||:【和散那，歡迎君王  Hosanna, Here Comes The King / 奇異恩典 Amazing Grace 】安靜純音樂 Devotional Music｜讚美之泉「靜」系列",
+        "duration": 445
+      },
+      {
+        "id": "jjI4QhyCAcM",
+        "title": "||:【聖潔的羔羊 The Holy Lamb of God】安靜純音樂 Devotional Music｜讚美之泉「靜」系列",
+        "duration": 525
+      }
+    ],
+    "sign_note": "讚美之泉「靜」系列 Devotional Music 單曲。呢條 playlist 係主題合集唔係專輯,官網冇對應 slug —— proposed_album 故意留 null(唔准砌一個唔存在嘅專輯名),album 欄留空,將來 admin 可補。"
+  },
+  {
+    "playlist_id": "PLEY_M7xVVeAtZd0QmWKdXADzVi3xIJX3y",
+    "playlist_title": "第一屆讚美之泉台北青少年弦樂團",
+    "instrumental_signal": "弦樂",
+    "member_count": 5,
+    "matched_in_db": 5,
+    "fresh_count": 0,
+    "fresh_pass_gate2": 0,
+    "fetch_error": null,
+    "approved": false,
+    "proposed_album": null,
+    "signed_by": null,
+    "signed_at": null,
+    "fresh_sample": []
+  },
+  {
+    "playlist_id": "PLEY_M7xVVeAu6lyjqT4AePfPR7TsPq7vS",
+    "playlist_title": "SOAKING LOUNGE 舒壓純音樂 | 讚美之泉 Stream of Praise Music",
+    "instrumental_signal": "純音樂",
+    "member_count": 3,
+    "matched_in_db": 0,
+    "fresh_count": 3,
+    "fresh_pass_gate2": 0,
+    "fetch_error": null,
+    "approved": false,
+    "proposed_album": null,
+    "signed_by": null,
+    "signed_at": null,
+    "fresh_sample": []
+  },
+  {
+    "playlist_id": "PLEY_M7xVVeAvNucI-ifvz98pXlRqT-_qX",
+    "playlist_title": "讚美之泉安靜系列 (4) Instrumental - 每一天我需要祢",
+    "instrumental_signal": "安靜系列",
+    "member_count": 1,
+    "matched_in_db": 0,
+    "fresh_count": 1,
+    "fresh_pass_gate2": 0,
+    "fetch_error": null,
+    "approved": false,
+    "proposed_album": null,
+    "signed_by": null,
+    "signed_at": null,
+    "fresh_sample": []
+  },
+  {
+    "playlist_id": "PLEY_M7xVVeAt8co-5W6qn8lkgkjQwhHdE",
+    "playlist_title": "讚美之泉安靜系列 (3) Instrumental - 住在祢裡面",
+    "instrumental_signal": "安靜系列",
+    "member_count": 1,
+    "matched_in_db": 0,
+    "fresh_count": 1,
+    "fresh_pass_gate2": 0,
+    "fetch_error": null,
+    "approved": false,
+    "proposed_album": null,
+    "signed_by": null,
+    "signed_at": null,
+    "fresh_sample": []
+  },
+  {
+    "playlist_id": "PLEY_M7xVVeAsKQIJvXTZC99SvVXhdFbrv",
+    "playlist_title": "讚美之泉音樂演奏系列  Instrumental Album (全專輯連續播放)",
+    "instrumental_signal": "演奏",
+    "member_count": 2,
+    "matched_in_db": 0,
+    "fresh_count": 2,
+    "fresh_pass_gate2": 0,
+    "fetch_error": null,
+    "approved": false,
+    "proposed_album": null,
+    "signed_by": null,
+    "signed_at": null,
+    "fresh_sample": []
+  },
+  {
+    "playlist_id": "PLEY_M7xVVeAvebgjYj9PF6IMSNuE1IQms",
+    "playlist_title": "讚美之泉鋼琴演奏系列 Piano Album (3) 能不能 Let Me Stay",
+    "instrumental_signal": "演奏",
+    "member_count": 9,
+    "matched_in_db": 6,
+    "fresh_count": 3,
+    "fresh_pass_gate2": 0,
+    "fetch_error": null,
+    "approved": false,
+    "proposed_album": null,
+    "signed_by": null,
+    "signed_at": null,
+    "fresh_sample": []
+  },
+  {
+    "playlist_id": "PLEY_M7xVVeAtcpTnwCkjjAo9ERtzDsY_C",
+    "playlist_title": "讚美之泉鋼琴演奏系列 Piano Album (2) 一生愛祢 With All My Love",
+    "instrumental_signal": "演奏",
+    "member_count": 12,
+    "matched_in_db": 11,
+    "fresh_count": 1,
+    "fresh_pass_gate2": 0,
+    "fetch_error": null,
+    "approved": false,
+    "proposed_album": null,
+    "signed_by": null,
+    "signed_at": null,
+    "fresh_sample": []
+  },
+  {
+    "playlist_id": "PLEY_M7xVVeAuscbqFZai1JIo4v_nCMReS",
+    "playlist_title": "讚美之泉安靜系列專輯 (2) Instrumental - 找一個地方 I Want to Go to a Place",
+    "instrumental_signal": "安靜系列",
+    "member_count": 10,
+    "matched_in_db": 9,
+    "fresh_count": 1,
+    "fresh_pass_gate2": 0,
+    "fetch_error": null,
+    "approved": false,
+    "proposed_album": null,
+    "signed_by": null,
+    "signed_at": null,
+    "fresh_sample": []
+  },
+  {
+    "playlist_id": "PLEY_M7xVVeAtrN_t0NxTmc2nFZP_7MuXQ",
+    "playlist_title": "讚美之泉音樂演奏系列 Instrumental String Quartet 弦樂四重奏專輯 (1) 恩典之路 The Path of Grace",
+    "instrumental_signal": "演奏",
+    "member_count": 13,
+    "matched_in_db": 12,
+    "fresh_count": 1,
+    "fresh_pass_gate2": 0,
+    "fetch_error": null,
+    "approved": false,
+    "proposed_album": null,
+    "signed_by": null,
+    "signed_at": null,
+    "fresh_sample": []
+  },
+  {
+    "playlist_id": "PLEY_M7xVVeAv4HoC2HhTwa-9LoeXYLBlE",
+    "playlist_title": "讚美之泉鋼琴演奏系列 Piano Album (1) 單單愛慕你 Simply Loving You",
+    "instrumental_signal": "演奏",
+    "member_count": 13,
+    "matched_in_db": 0,
+    "fresh_count": 13,
+    "fresh_pass_gate2": 12,
+    "fetch_error": null,
+    "approved": true,
+    "proposed_album": "單單愛慕你",
+    "signed_by": "Claude Opus 5 (Phase 4 T5, P4 拍板由我哋簽 / Eric 事後抽驗)",
+    "signed_at": "2026-08-24T04:37:28.744Z",
+    "fresh_sample": [
+      {
+        "id": "AFX_MHGkppY",
+        "title": "【單單愛慕你 Simply Loving You】- 讚美之泉鋼琴演奏系列 (1) by 游智婷 Sandy Yu",
+        "duration": 293
+      },
+      {
+        "id": "gYglo35Ba4Q",
+        "title": "【復興聖潔 Revive Holiness】- 讚美之泉鋼琴演奏系列 (1) by 游智婷 Sandy Yu",
+        "duration": 342
+      },
+      {
+        "id": "NqnMD5FgnDc",
+        "title": "【我親愛的耶穌 My Sweet Jesus】- 讚美之泉鋼琴演奏系列 (1) by 游智婷 Sandy Yu",
+        "duration": 230
+      },
+      {
+        "id": "GKlhl9gLAMw",
+        "title": "【展開清晨的翅膀 Wings of the Dawn】- 讚美之泉鋼琴演奏系列 (1) by 游智婷 Sandy Yu",
+        "duration": 343
+      },
+      {
+        "id": "5X9oJkpU7CU",
+        "title": "【主的恩典乃是一生之久 The Light of Your Grace】- 讚美之泉鋼琴演奏系列 (1) by 游智婷 Sandy Yu",
+        "duration": 412
+      },
+      {
+        "id": "yGogd3-fsng",
+        "title": "【耶穌，我的耶穌 Jesus, My Jesus】- 讚美之泉鋼琴演奏系列 (1) by 游智婷 Sandy Yu",
+        "duration": 403
+      },
+      {
+        "id": "WLkaULgfYwM",
+        "title": "【讚美之泉 Stream of Praise】- 讚美之泉鋼琴演奏系列 (1) by 游智婷 Sandy Yu",
+        "duration": 276
+      },
+      {
+        "id": "3vu6JPM0ykY",
+        "title": "【我愛祢，我主 I Love You My Lord】- 讚美之泉鋼琴演奏系列 (1) by 游智婷 Sandy Yu",
+        "duration": 225
+      }
+    ],
+    "sign_note": "sop.org/music/pa01/ 實查:專輯名「單單愛慕你 Simply Loving You」,系列「音樂演奏 (01)」,2003-06-01,12 tracks —— 同呢個 playlist 過閘嘅 12 首逐首對得上 12/12。官方正式發行器樂專輯。"
+  },
+  {
+    "playlist_id": "PLEY_M7xVVeAuTp_mKv2fnb84uHpvhjJOQ",
+    "playlist_title": "讚美之泉安靜系列專輯 Instrumental (1) Come Away With Me",
+    "instrumental_signal": "安靜系列",
+    "member_count": 11,
+    "matched_in_db": 10,
+    "fresh_count": 1,
+    "fresh_pass_gate2": 0,
+    "fetch_error": null,
+    "approved": false,
+    "proposed_album": null,
+    "signed_by": null,
+    "signed_at": null,
+    "fresh_sample": []
+  }
+]

@@ -1,0 +1,32 @@
+[
+  {
+    "playlist_id": "PLDVOijLsRYgkw8w-rsglTcbKOcMC5xBgN",
+    "playlist_title": "天韻【QT音樂】詩歌演奏",
+    "instrumental_signal": "演奏",
+    "member_count": 4,
+    "matched_in_db": 3,
+    "fresh_count": 1,
+    "fresh_pass_gate2": 0,
+    "fetch_error": null,
+    "approved": false,
+    "proposed_album": null,
+    "signed_by": null,
+    "signed_at": null,
+    "fresh_sample": []
+  },
+  {
+    "playlist_id": "PLDVOijLsRYgnws1PJK8pWeuqaTUQG-xeF",
+    "playlist_title": "天韻演奏",
+    "instrumental_signal": "演奏",
+    "member_count": 5,
+    "matched_in_db": 4,
+    "fresh_count": 1,
+    "fresh_pass_gate2": 0,
+    "fetch_error": null,
+    "approved": false,
+    "proposed_album": null,
+    "signed_by": null,
+    "signed_at": null,
+    "fresh_sample": []
+  }
+]

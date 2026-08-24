@@ -1,0 +1,39 @@
+[2026-08-24 12:43:44] verify:org=讚美之泉,approved 2/12 條 playlist,DB 已有 7964 個 youtube_id
+[2026-08-24 12:43:44] 
+▶ playlist「讚美之泉【安靜靈修純音樂】」(簽嗰陣 member=23)
+[2026-08-24 12:43:46]   [1] ||:【深愛耶穌 Loving Jesus】安靜純音樂 Devotional Music｜讚美之泉「靜」系列
+[2026-08-24 12:44:59]       ✓ 兩 pass 都過(zh cov=96% uniq=1 / en cov=100% uniq=3)
+[2026-08-24 12:45:02]   [2] ||:【和散那，歡迎君王  Hosanna, Here Comes The King / 奇異恩典 Amazi
+[2026-08-24 12:45:05]       ✗ 閘3:有 auto-caption(ab,aa,af…共 157 種)= 有人聲,硬拒
+[2026-08-24 12:45:09]   [3] ||:【聖潔的羔羊 The Holy Lamb of God】安靜純音樂 Devotional Music｜讚
+[2026-08-24 12:46:25]       ✓ 兩 pass 都過(zh cov=98% uniq=3 / en cov=98% uniq=3)
+[2026-08-24 12:46:29] 
+▶ playlist「讚美之泉鋼琴演奏系列 Piano Album (1) 單單愛慕你 Simply Loving You」(簽嗰陣 member=13)
+[2026-08-24 12:46:31]   [4] 【單單愛慕你 Simply Loving You】- 讚美之泉鋼琴演奏系列 (1) by 游智婷 Sandy 
+[2026-08-24 12:47:12]       ✗ 閘4:兩 pass 結論唔一致(zh 唔過:剩餘文字 2 行:詞曲:王智峯 / 演唱:王智峯 / en 過)
+[2026-08-24 12:47:15]   [5] 【復興聖潔 Revive Holiness】- 讚美之泉鋼琴演奏系列 (1) by 游智婷 Sandy Yu
+[2026-08-24 12:47:49]       ✓ 兩 pass 都過(zh cov=96% uniq=2 / en cov=102% uniq=2)
+[2026-08-24 12:47:54]   [6] 【我親愛的耶穌 My Sweet Jesus】- 讚美之泉鋼琴演奏系列 (1) by 游智婷 Sandy Yu
+[2026-08-24 12:48:19]       ✓ 兩 pass 都過(zh cov=94% uniq=2 / en cov=98% uniq=1)
+[2026-08-24 12:48:24]   [7] 【展開清晨的翅膀 Wings of the Dawn】- 讚美之泉鋼琴演奏系列 (1) by 游智婷 Sand
+[2026-08-24 12:48:54]       ✓ 兩 pass 都過(zh cov=98% uniq=2 / en cov=102% uniq=2)
+[2026-08-24 12:48:56]   [8] 【主的恩典乃是一生之久 The Light of Your Grace】- 讚美之泉鋼琴演奏系列 (1) by
+[2026-08-24 12:49:35]       ✓ 兩 pass 都過(zh cov=96% uniq=3 / en cov=98% uniq=1)
+[2026-08-24 12:49:39]   [9] 【耶穌，我的耶穌 Jesus, My Jesus】- 讚美之泉鋼琴演奏系列 (1) by 游智婷 Sandy 
+[2026-08-24 12:50:13]       ✓ 兩 pass 都過(zh cov=97% uniq=2 / en cov=100% uniq=1)
+[2026-08-24 12:50:17]   [10] 【讚美之泉 Stream of Praise】- 讚美之泉鋼琴演奏系列 (1) by 游智婷 Sandy Yu
+[2026-08-24 12:50:43]       ✓ 兩 pass 都過(zh cov=101% uniq=2 / en cov=100% uniq=1)
+[2026-08-24 12:50:45]   [11] 【我愛祢，我主 I Love You My Lord】- 讚美之泉鋼琴演奏系列 (1) by 游智婷 Sand
+[2026-08-24 12:51:10]       ✓ 兩 pass 都過(zh cov=98% uniq=2 / en cov=100% uniq=1)
+[2026-08-24 12:51:13]   [12] 【求告祢名 Call Upon Your Name】- 讚美之泉鋼琴演奏系列 (1) by 游智婷 Sandy
+[2026-08-24 12:51:48]       ✗ 閘4:兩 pass 結論唔一致(zh 唔過:剩餘文字 1 行:我就是想要你做我的朋友, 知道嗎? / en 過)
+[2026-08-24 12:51:52]   [13] 【被愛 Loved】- 讚美之泉鋼琴演奏系列 (1) by 游智婷 Sandy Yu
+[2026-08-24 12:52:19]       ✗ 閘4:兩 pass 都唔過(zh: 剩餘文字 1 行:MING PAO CANADA | MING PAO TOR | en: 剩餘文字 1 行:you)
+[2026-08-24 12:52:23]   [14] 【秋雨之福 Autumn Blessings】- 讚美之泉鋼琴演奏系列 (1) by 游智婷 Sandy Yu
+[2026-08-24 12:52:53]       ✗ 閘4:兩 pass 結論唔一致(zh 過 / en 唔過:剩餘文字 1 行:you)
+[2026-08-24 12:52:58]   [15] 【單單愛慕你 [二重奏] Simply Loving You [Duet]】- 讚美之泉鋼琴演奏系列 (1) 
+[2026-08-24 12:53:24]       ✓ 兩 pass 都過(zh cov=95% uniq=2 / en cov=103% uniq=2)
+[2026-08-24 12:53:29] 
+完成:過閘 10 首、拒 25 首、已喺庫 skip 1 首
+[2026-08-24 12:53:29] → /Users/macbookpro/.openclaw/workspace/hymn-app/backend/data/instrumental/讚美之泉-verify.json
+[2026-08-24 12:53:29] → /Users/macbookpro/.openclaw/workspace/hymn-app/backend/data/instrumental/讚美之泉-ingest-report.md
