@@ -4,13 +4,17 @@
     "slug": "hymn-app",
     "version": "1.5.1",
     "orientation": "portrait",
+    "platforms": [
+      "ios",
+      "android"
+    ],
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "scheme": "godmusic",
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.hymnapp.praise",
-      "buildNumber": "9",
+      "buildNumber": "13",
       "runtimeVersion": "5",
       "associatedDomains": [
         "applinks:api.god-music.com",
@@ -20,15 +24,12 @@
         "UIBackgroundModes": [
           "audio"
         ],
-        "LSApplicationQueriesSchemes": [
-          "youtube"
-        ],
         "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {
       "package": "com.hymnapp.praise",
-      "versionCode": 54,
+      "versionCode": 55,
       "adaptiveIcon": {
         "foregroundImage": "./assets/android-icon-foreground.png",
         "monochromeImage": "./assets/android-icon-monochrome.png",
@@ -59,11 +60,7 @@
         }
       ]
     },
-    "web": {
-      "favicon": "./assets/favicon.png"
-    },
     "plugins": [
-      "expo-web-browser",
       [
         "expo-font",
         {

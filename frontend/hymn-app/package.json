@@ -3,7 +3,6 @@
   "version": "1.0.0",
   "main": "index.js",
   "dependencies": {
-    "@expo/metro-runtime": "~56.0.12",
     "@gorhom/bottom-sheet": "^5.2.14",
     "@react-native-async-storage/async-storage": "2.2.0",
     "expo": "~56.0.19",
@@ -11,11 +10,8 @@
     "expo-constants": "~56.0.15",
     "expo-file-system": "~56.0.9",
     "expo-font": "~56.0.7",
-    "expo-status-bar": "~56.0.4",
     "expo-updates": "~56.0.24",
-    "expo-web-browser": "~56.0.6",
     "react": "19.2.3",
-    "react-dom": "19.2.3",
     "react-native": "0.85.3",
     "react-native-draggable-flatlist": "^4.0.3",
     "react-native-gesture-handler": "^2.31.2",
@@ -24,18 +20,17 @@
     "react-native-safe-area-context": "~5.7.0",
     "react-native-svg": "15.15.4",
     "react-native-track-player": "^4.1.2",
-    "react-native-web": "^0.21.2",
     "react-native-worklets": "0.8.3"
   },
   "scripts": {
     "start": "expo start",
     "android": "expo run:android",
     "ios": "expo run:ios",
-    "web": "expo start --web",
     "postinstall": "patch-package"
   },
   "private": true,
   "devDependencies": {
-    "patch-package": "^8.0.1"
+    "patch-package": "^8.0.1",
+    "react-dom": "19.2.3"
   }
 }
