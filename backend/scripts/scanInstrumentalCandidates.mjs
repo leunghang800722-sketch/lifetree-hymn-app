@@ -98,10 +98,18 @@ const SOFT_LATIN = 90;
 const TITLE_INSTRUMENTAL_ZH = [
   '演奏', '純音樂', '樂器', '弦樂', '管弦', '鋼琴曲', '琴韻',
   '禱告音樂', '靈修音樂', '默想音樂', '冥想音樂', '安靜系列',
+  // 2026-08-24 MORE-SOURCES §7 Q2+Q3 拍板:org 白名單加 ACM/鹹蛋/泥土/天弦/
+  // 角聲,而且「演繹型器樂 cover」算純音樂。呢批 org 嘅器樂片用嘅係「鋼琴版/
+  // 結他版」呢類後綴,舊名單接唔到(天弦 3224-3233 十首婚禮詩歌鋼琴版就係咁漏)。
+  '鋼琴版', '結他版', '吉他版', '演奏版', '靜默有時',
 ];
 const TITLE_INSTRUMENTAL_EN = [
   /\binstrumental\b/i, /\bstring quartet\b/i, /\blullab(y|ies)\b/i,
   /\bpiano (lullaby|cover|solo|version|instrumental)\b/i, /\bsoaking\b/i,
+  // 同上(Q3 器樂 cover 算):鹹蛋「Guitar cover」、角聲「Devotional Music
+  // [Piano Cover by …]」、發行 metadata 直出嘅「(Piano/Guitar Version)」後綴。
+  /\bguitar (cover|solo|version|instrumental)\b/i, /\bdevotional music\b/i,
+  /\((piano|guitar|instrumental)[^)]*version[^)]*\)/i,
 ];
 // Q3 拍板唔收 —— 就算兩條證據齊都唔自動標
 const TITLE_BLACKLIST = ['伴奏', '卡拉OK', 'KALA版', 'karaoke', 'backing track'];

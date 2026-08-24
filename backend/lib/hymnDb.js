@@ -300,8 +300,18 @@ export function isNonWorship(title = '', artist = '', opts = {}) {
   if (enList.some((p) => t.includes(p))) return true;
   if (NON_SONG_FORMAT_PATTERNS_EN.some((p) => t.includes(p))) return true;
   if (instrumentalLine) {
-    if (INSTRUMENTAL_LINE_EXTRA_ZH.some((p) => title.includes(p))) return true;
-    if (INSTRUMENTAL_LINE_EXTRA_EN.some((p) => t.includes(p))) return true;
+    // 2026-08-24 MORE-SOURCES §7 Q5 拍板 + §6 R4:呢批 extra 係「曲風/場景」型
+    // exclude(輕音樂/冥想/助眠…),本意係擋雜片,但**會撞正式發行嘅專輯名**
+    // (泥土《泥土音樂盛曉玫精選 鋼琴輕音樂》iTunes 正式發行 20 首)。
+    // 規則:發行商級專輯證據(iTunes artistName exact-match + 器樂專輯名)成立
+    // 嘅候選傳 `albumEvidence: true`,豁免呢批曲風 exclude —— 「專輯級證據優先
+    // 於片級 blacklist」。
+    // ⚠️ 只豁免曲風類。上面嘅「伴奏/karaoke/教學/琴譜/樂譜/tutorial/sheet
+    //    music」全部照擋(§8 Q3 舊拍板唔受影響),所以呢個豁免唔會開後門。
+    if (!opts.albumEvidence) {
+      if (INSTRUMENTAL_LINE_EXTRA_ZH.some((p) => title.includes(p))) return true;
+      if (INSTRUMENTAL_LINE_EXTRA_EN.some((p) => t.includes(p))) return true;
+    }
   }
   return false;
 }
