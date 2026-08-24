@@ -55,16 +55,46 @@ const CREDITS_LINE_RE = /^\s*(詞曲|作詞|作曲|編曲|演唱|主唱|歌手|�
 const KNOWN_HALLUCINATION_LINES = [
   /^我就是想要你做我的(女)?朋友[，,。?？]?$/,
   /^知道嗎[?？]?$/,
+  /^我只想跟你說一句話$/,
+  /^我愛你[…\.]*$/,
 ];
+// ②d 2026-08-24 N4 實跑再補:whisper 喺**靜音**上面會背誦佢訓練資料入面嘅
+// YouTube 樣板文 —— 頻道 promo(「欢迎订阅我的频道…打赏支持」)、字幕組
+// 水印、明報/明鏡呢類廣告字幕。呢批一定唔會係詩歌歌詞。
+// 精度實測(scan-20260824d ground truth):`vocal` 212 首命中 **0**、
+// `hard` 0、`soft` 0、`observe` 2 —— 零假陽性。
+// (喺存量庫入面罕見,因為有人聲嘅歌 whisper 會轉錄真歌詞;呢個 pattern
+//  主要係為新歌入庫線而設。)
+// 分「強」「弱」兩級 —— 弱訊號單獨一個唔可以判死。實測踩過:
+// 「我要訂閱這份愛」淨係中一個弱訊號(訂閱)就俾判做 promo,但佢完全可以
+// 係一句真歌詞。所以:**強訊號一個就夠**(品牌名/字幕組,唔可能係歌詞),
+// **弱訊號要夾夠兩個唔同嘅**先算(真 promo 樣板文一定夾住幾個)。
+const PROMO_STRONG_RE = [
+  /明镜|明鏡|明報|MING\s*PAO/i,
+  /本字幕由|字幕組|字幕组|字幕由.*提供/,
+];
+const PROMO_WEAK_RE = [
+  /订阅|訂閱/, /点赞|點贊|點讚/, /转发|轉發/, /打赏|打賞/, /请不吝|請不吝/,
+  /关注我们|關注我們/, /感谢观看|感謝觀看|谢谢观看|謝謝觀看/, /我的频道|我的頻道/,
+];
+const isPromoLine = (raw) => PROMO_STRONG_RE.some((re) => re.test(raw))
+  || PROMO_WEAK_RE.filter((re) => re.test(raw)).length >= 2;
 // whisper 有時會將幾句幻覺**夾埋一個 segment** 出(實測:
 // `我就是想要你做我的朋友, 知道嗎?` 係一行)。所以要按標點拆開,
 // **每一小節都係已知幻覺**先算 —— 有任何一節係真嘢就唔算。
 const splitClauses = (line) => String(line || '')
   .split(/[，,。.、；;？?！!\s]+/).map((x) => x.trim()).filter(Boolean);
 const isKnownHallucinationClause = (c) =>
-  CREDITS_LINE_RE.test(c) || KNOWN_HALLUCINATION_LINES.some((re) => re.test(c));
+  CREDITS_LINE_RE.test(c) || KNOWN_HALLUCINATION_LINES.some((re) => re.test(c))
+  || isPromoLine(c);
 export const isCreditsLine = (line) => {
-  const parts = splitClauses(line);
+  const raw = String(line || '').trim();
+  if (!raw) return false;
+  // ⚠️ promo 樣板文要**成行**比對,唔可以拆節 —— `splitClauses` 會連空白都拆,
+  //    「MING PAO CANADA | MING PAO TOR」拆完變 ["MING","PAO","CANADA",…],
+  //    逐節就冇一節配得中 `/MING\s*PAO/`(實測踩過)。
+  if (isPromoLine(raw)) return true;
+  const parts = splitClauses(raw);
   return parts.length > 0 && parts.every(isKnownHallucinationClause);
 };
 

@@ -64,6 +64,9 @@ const LIMIT = Number(arg('--limit', 0)) || Infinity;
 //   `releases`  = `discoverInstrumentalReleases.mjs`(/releases + Topic + iTunes)
 const SOURCE = arg('--source', 'playlists');
 const ONLY_RELEASE = arg('--release', null);   // 淨係跑一張專輯(R6 分批 apply)
+// `--ids a,b,c` 淨係驗指定嘅 youtube_id,而且**結果 merge 返入舊 verify.json**
+// (唔會覆寫其餘已驗過嘅)。用喺「補驗少量漏網」呢類情況,唔使成 org 重跑。
+const ONLY_IDS = arg('--ids', null) ? new Set(arg('--ids', '').split(',').map((x) => x.trim()).filter(Boolean)) : null;
 const DELAY_MS = Number(arg('--delay', 3000));
 
 // 器樂線片長 band(§8 Q2 拍板 10 分鐘硬上限 + P1 拍板 120 秒下限)
@@ -184,6 +187,7 @@ async function runVerify() {
 
     for (const m of members) {
       if (done >= LIMIT) break;
+      if (ONLY_IDS && !ONLY_IDS.has(m.id)) continue;
       const base = {
         youtube_id: m.id, raw_title: m.title || '', flat_duration: m.duration ?? null,
         playlist_id: c.playlist_id, playlist_title: c.playlist_title,
@@ -258,7 +262,16 @@ async function runVerify() {
   }
   try { fs.rmSync(tmpRoot, { recursive: true, force: true }); } catch (_) {}
 
-  const out = { generated: new Date().toISOString(), org: ORG, band: [BAND_MIN, BAND_MAX], staleSkips, results };
+  let merged = results;
+  if (ONLY_IDS && fs.existsSync(verifyPath(ORG))) {
+    // 補驗模式:攞返舊結果,淨係換走今次驗過嗰幾條,其餘原封不動
+    const prev = JSON.parse(fs.readFileSync(verifyPath(ORG), 'utf8'));
+    const now = new Map(results.map((r) => [r.youtube_id, r]));
+    merged = (prev.results || []).map((r) => now.get(r.youtube_id) || r);
+    for (const r of results) if (!merged.find((x) => x.youtube_id === r.youtube_id)) merged.push(r);
+    log(`補驗模式:merge 返舊 verify.json(舊 ${(prev.results || []).length} 條 → 而家 ${merged.length} 條)`);
+  }
+  const out = { generated: new Date().toISOString(), org: ORG, band: [BAND_MIN, BAND_MAX], staleSkips, results: merged };
   fs.writeFileSync(verifyPath(ORG), JSON.stringify(out, null, 2), 'utf8');
   const pass = results.filter((r) => r.verdict === 'instrumental').length;
   const rej = results.filter((r) => r.verdict === 'reject').length;
@@ -331,6 +344,45 @@ async function runApply() {
   }
 }
 
+// ── rejudge:零網絡重判 ───────────────────────────────────────────────
+// 用途:靜音指紋庫更新之後(例如加咗 YouTube promo 幻覺 pattern),唔使重新
+// 落片跑 whisper,直接攞 verify.json 入面存住嘅 unique 行重跑一次判定。
+// ⚠️ 只可以重判 `uniqCount <= uniq.length` 嘅(即係 unique 行冇被 slice 截),
+//    截咗嘅一律唔郁,report 標明要重跑 verify。
+function runRejudge() {
+  if (!fs.existsSync(verifyPath(ORG))) { console.error(`搵唔到 ${verifyPath(ORG)}`); process.exit(1); }
+  const v = JSON.parse(fs.readFileSync(verifyPath(ORG), 'utf8'));
+  let flipped = 0, truncated = 0, unchanged = 0;
+  for (const r of v.results) {
+    if (r.verdict !== 'reject' || r.gate !== 4 || !r.whisper) continue;
+    const passes = {};
+    let ok = true;
+    for (const lang of ['zh', 'en']) {
+      const w = r.whisper[lang];
+      if (!w) { ok = false; break; }
+      if (w.uniqCount > (w.uniq || []).length) { truncated++; ok = false; break; }
+      const vocalMarks = (w.uniq || []).filter(hasVocalMark);
+      const residual = (w.uniq || []).filter((t) => !isSilenceLine(t));
+      const covOk = w.coverage != null && w.coverage >= HARD_COVERAGE;
+      passes[lang] = !vocalMarks.length && !residual.length && covOk && (w.uniq || []).length > 0;
+      if (!passes[lang]) r.whisper[lang].rejudge_reasons =
+        [...(vocalMarks.length ? [`vocalMark:${vocalMarks.join('/')}`] : []),
+         ...(residual.length ? [`剩餘文字:${residual.map((t) => t.slice(0, 30)).join(' / ')}`] : []),
+         ...(covOk ? [] : [`coverage ${w.coverage == null ? 'null' : (w.coverage * 100).toFixed(0) + '%'}`])];
+    }
+    if (!ok) continue;
+    if (passes.zh && passes.en) {
+      r.verdict = 'instrumental'; r.gate = null;
+      r.why = '五重閘全過(rejudge:指紋庫更新後零網絡重判)';
+      flipped++;
+      log(`  ↻ 翻案:${(r.meta?.title || r.raw_title).slice(0, 50)}`);
+    } else unchanged++;
+  }
+  fs.writeFileSync(verifyPath(ORG), JSON.stringify(v, null, 2), 'utf8');
+  log(`rejudge:翻案 ${flipped} 首、維持拒收 ${unchanged} 首、unique 行俾截咗唔敢判 ${truncated} 首`);
+  writeReport(v);
+}
+
 // ── report ───────────────────────────────────────────────────────────
 function writeReport(v) {
   const L = [];
@@ -380,5 +432,6 @@ function writeReport(v) {
 if (!ORG) { console.error('要帶 --org <name>'); process.exit(1); }
 if (MODE_VERIFY) await runVerify();
 else if (MODE_APPLY) await runApply();
+else if (process.argv.includes('--rejudge')) runRejudge();
 else if (MODE_REPORT) { writeReport(JSON.parse(fs.readFileSync(verifyPath(ORG), 'utf8'))); }
-else { console.error('要帶 --verify / --apply / --report'); process.exit(1); }
+else { console.error('要帶 --verify / --apply / --report / --rejudge'); process.exit(1); }
