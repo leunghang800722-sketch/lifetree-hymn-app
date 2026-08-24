@@ -257,14 +257,52 @@ export const INSTRUMENTAL_TUTORIAL_PATTERNS_EN = ['tutorial', 'instrumental', 's
 // curated=1 誤殺(青吶特會 4 中 0、年度異象 2 中 0)。
 export const NON_SONG_FORMAT_PATTERNS_ZH = ['創意教室', '創意學校', '家長學生見證', '工作坊', '異象片', '優勢好好玩', '青吶特會', '年度異象'];
 export const NON_SONG_FORMAT_PATTERNS_EN = ['word absurd', 'song story'];
-export function isNonWorship(title = '', artist = '') {
+// ── 器樂線(純音樂 Phase 4)專用 gate config ────────────────────────────
+// INSTRUMENTAL-CATEGORY-PLAN-20260821.md §4.1 Layer 2 / PHASE4-PLAN §3.3。
+//
+// 點解要 per-line config 而唔係剷走全局 blacklist:`INSTRUMENTAL_TUTORIAL_
+// PATTERNS_*` 同時擋緊教學/琴譜/宣傳片,佢護緊主庫,剷咗成個庫即刻中招。
+// 所以器樂線行嘅係「豁免幾個字眼 + 加返自己嗰批 exclude」,主庫零影響。
+//
+// ⚠️ 呢個 opts 係**第三個 optional 參數**:唔傳 opts 嘅 caller(全部 9 個現有
+// caller)行為同改之前一模一樣,一個都唔使改。
+//
+// 豁免:呢兩個字眼喺器樂線就係標題本身,唔係雜訊訊號。
+//   ·「演奏」本身唔喺任何 blacklist 入面(實查 2026-08-24),唔使豁免。
+//   ·「伴奏 / karaoke / backing track」**唔豁免** —— §8 Q3 Eric 拍板唔收。
+const INSTRUMENTAL_LINE_EXEMPT_ZH = new Set(['純音樂']);
+const INSTRUMENTAL_LINE_EXEMPT_EN = new Set(['instrumental']);
+// 器樂線專用 exclude —— 官方 playlist 都可能混咗呢類非敬拜器樂。
+// ⚠️ 跟返上面同一條紀律:完整詞組(2+字),唔用單字。落地前對全庫 curated
+// regression 過(PHASE4-PLAN §8 checklist),命中名單人眼掃。
+export const INSTRUMENTAL_LINE_EXTRA_ZH = [
+  '時代曲', '流行曲', '懷舊金曲', '金曲串燒', '輕音樂',
+  '冥想音樂', '瑜伽', '助眠', '白噪音', '鋼琴譜', '純音樂教學',
+];
+export const INSTRUMENTAL_LINE_EXTRA_EN = [
+  'meditation music', 'yoga', 'sleep music', 'white noise',
+  'study music', 'relaxing music', 'lofi', 'lo-fi',
+];
+
+export function isNonWorship(title = '', artist = '', opts = {}) {
+  const instrumentalLine = opts.line === 'instrumental';
   if (SECULAR_ARTISTS.includes((artist || '').toLowerCase().trim())) return true;
   if (/(dance tutorial|dance choreograph|choreography|relay dance|dance cover)/i.test(title)) return true;
-  if (INSTRUMENTAL_TUTORIAL_PATTERNS_ZH.some((p) => title.includes(p))) return true;
+  const zhList = instrumentalLine
+    ? INSTRUMENTAL_TUTORIAL_PATTERNS_ZH.filter((p) => !INSTRUMENTAL_LINE_EXEMPT_ZH.has(p))
+    : INSTRUMENTAL_TUTORIAL_PATTERNS_ZH;
+  if (zhList.some((p) => title.includes(p))) return true;
   if (NON_SONG_FORMAT_PATTERNS_ZH.some((p) => title.includes(p))) return true;
   const t = title.toLowerCase();
-  if (INSTRUMENTAL_TUTORIAL_PATTERNS_EN.some((p) => t.includes(p))) return true;
+  const enList = instrumentalLine
+    ? INSTRUMENTAL_TUTORIAL_PATTERNS_EN.filter((p) => !INSTRUMENTAL_LINE_EXEMPT_EN.has(p))
+    : INSTRUMENTAL_TUTORIAL_PATTERNS_EN;
+  if (enList.some((p) => t.includes(p))) return true;
   if (NON_SONG_FORMAT_PATTERNS_EN.some((p) => t.includes(p))) return true;
+  if (instrumentalLine) {
+    if (INSTRUMENTAL_LINE_EXTRA_ZH.some((p) => title.includes(p))) return true;
+    if (INSTRUMENTAL_LINE_EXTRA_EN.some((p) => t.includes(p))) return true;
+  }
   return false;
 }
 
@@ -350,9 +388,14 @@ export const SONG_DURATION_MAX = 600;
 // 片嗰種,例如「聖靈 我們歡迎祢降臨｜聖靈我們歡迎祢｜充滿在這裡｜611 Worship」)
 // 要全收,唔跟標準片長上限。淨係俾**呢一個頻道**用 `maxOverride`(worshipGroups.js
 // 個 `durationCapSec` 傳落嚟),全局預設完全冇郁。
-export function isInSongDurationBand(seconds, maxOverride) {
+// 2026-08-24 純音樂 Phase 4 (§3.4):加 `minOverride` 第三個 **optional** 參數。
+// 器樂線傳 (sec, 600, 120) —— §8 Q2 拍板 10 分鐘硬上限、§P1 拍板 120 秒下限
+// (比主庫嘅 75 秒**嚴**,即係器樂線唔會收到主庫收唔到嘅短片,方向安全)。
+// 唔傳第三個參數嘅 6 個現有 caller 行為完全唔變。
+export function isInSongDurationBand(seconds, maxOverride, minOverride) {
   const max = maxOverride ?? SONG_DURATION_MAX;
-  return seconds != null && seconds >= SONG_DURATION_MIN && seconds <= max;
+  const min = minOverride ?? SONG_DURATION_MIN;
+  return seconds != null && seconds >= min && seconds <= max;
 }
 
 // duration 欄現存資料用 "m:ss"(例如 "4:32")顯示格式,前端直接讀嚟顯示

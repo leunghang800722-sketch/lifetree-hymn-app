@@ -430,9 +430,11 @@ async function discoverFromGroup(db, group, budget) {
       // 真語言落 lang 唔准再寫「兒童」(category 保留 group.lang 原封不動,
       // 歷史遺留欄唔郁,見 §2.3)。611 Kids Worship 嘅 kidsLang 係「粵語/國語」
       // 雙值——channel:null 永遠去唔到呢度,暫時唔使特殊處理(§8 C1 註明)。
+      // 2026-08-24 純音樂 Phase 4 §3.2:`instrumental` 明寫 0(理由同
+      // lib/backfillCore.js 嗰條 INSERT 一樣,唔靠 column default)。
       db.run(
-        `INSERT INTO hymns_all (title, display_title, artist, category, youtube_id, lang, curated, status, last_checked, fail_streak, duration, org, kids)
-         VALUES (?, ?, ?, ?, ?, ?, 1, 'ok', ?, 0, ?, ?, ?)`,
+        `INSERT INTO hymns_all (title, display_title, artist, category, youtube_id, lang, curated, status, last_checked, fail_streak, duration, org, kids, instrumental)
+         VALUES (?, ?, ?, ?, ?, ?, 1, 'ok', ?, 0, ?, ?, ?, 0)`,
         [v.title, cleanDisplayTitle(v.title, group.name), group.name, group.lang, v.id, group.kidsLang || group.lang, today(), formatDuration(v.duration), group.org ?? group.name, group.priority === 4 ? 1 : 0]
       );
       saveDb(db);

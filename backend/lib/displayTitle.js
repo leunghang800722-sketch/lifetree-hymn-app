@@ -497,10 +497,15 @@ function stripDecorativeSymbols(s) {
 // (digit + space + capitalized English word) or a duration phrase like
 // "3 分鐘唱出..." ("3 minutes...", excluded via the negative lookahead) —
 // both real content that starts with a digit, verified against the DB scan.
+//
+// 2026-08-24 純音樂 Phase 4 (4a) — 個 negative lookahead 本來淨係擋「分鐘」,
+// 器樂片好興用「1 小時鋼琴敬拜音樂」呢類時長前綴,有空格嗰種寫法會被當成
+// track number 食咗個「1」變「小時鋼琴敬拜音樂」。加埋「小時/小时」落 lookahead。
+// (「1小時」黐埋寫本身唔中呢條規則 —— 冇空格,安全。)
 function stripLeadingTrackNumber(s) {
   return s
     .replace(/^\s*\d{1,3}[.,、．]\s*(?!\d)/, '')
-    .replace(/^\s*\d{1,3}\s+(?!分鐘|分鍾)(?=[一-鿿぀-ヿ])/, '');
+    .replace(/^\s*\d{1,3}\s+(?!分鐘|分鍾|小時|小时)(?=[一-鿿぀-ヿ])/, '');
 }
 
 // 2026-08-21 A-level round 2 (§4 A5) — a title that's ENTIRELY wrapped in one

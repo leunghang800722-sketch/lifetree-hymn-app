@@ -51,9 +51,12 @@ export async function backfillGroupFromList(db, group, list, budget, opts = {}) 
       // TAXONOMY-5D-PLAN.md §3.5:同 growLibrary.js discover 路徑一致嘅
       // org/kids/kidsLang 規則(呢個 function 係 Tier1 自動 backfill +
       // backfillFromList.js 人手工具共用嘅同一條 code path)。
+      // 2026-08-24 純音樂 Phase 4 §3.2:`instrumental` 一定要喺 INSERT 明寫,
+      // 唔可以靠 column default —— 呢條路徑唔會收器樂(器樂行
+      // scripts/ingestInstrumental.mjs 自己條路),所以永遠寫 0。
       db.run(
-        `INSERT INTO hymns_all (title, display_title, artist, category, youtube_id, lang, curated, status, last_checked, fail_streak, duration, org, kids)
-         VALUES (?, ?, ?, ?, ?, ?, 1, 'ok', ?, 0, ?, ?, ?)`,
+        `INSERT INTO hymns_all (title, display_title, artist, category, youtube_id, lang, curated, status, last_checked, fail_streak, duration, org, kids, instrumental)
+         VALUES (?, ?, ?, ?, ?, ?, 1, 'ok', ?, 0, ?, ?, ?, 0)`,
         [v.title, cleanDisplayTitle(v.title, group.name), group.name, group.lang, v.id, group.kidsLang || group.lang, today(), formatDuration(v.duration), group.org ?? group.name, group.priority === 4 ? 1 : 0]
       );
       saveDb(db);

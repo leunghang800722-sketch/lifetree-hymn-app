@@ -47,7 +47,15 @@ export function detectWhisperLang(referenceText) {
 //   wavPath: 16kHz mono wav 路徑
 //   modelPath: ggml-*.bin 絕對路徑
 //   lang: 'zh' | 'en'(由 detectWhisperLang 決定,唔准 'auto')
-export async function runWhisperJson(wavPath, modelPath, lang, { timeout = 420000 } = {}) {
+// 2026-08-24 純音樂 Phase 4 §4 閘 4 加咗 `keepRawSegs`:
+//   🔴 點解要加 —— 下面個垃圾過濾器(`lang === 'zh'` 嗰 branch)會將 CJK 佔比
+//   <30% 嘅段當雜訊剷走,剷超過一半就回 `{ segs: [], failed: true }`。**純器樂
+//   片成首歌全部係 `[MUSIC]` 佔位符,CJK 佔比 = 0%**,即係器樂判定最需要嗰批
+//   證據會被過濾器食清光,而且同「whisper 真係炒咗」返一模一樣嘅結果,分唔開。
+//   器樂線傳 `keepRawSegs: true` 攞返未過濾嘅 `rawSegs`(額外欄,唔改 `segs`
+//   本身),歌詞線唔傳 = 預設 false = 行為同改之前**完全一樣**。
+//   ⚠️ 唔准改個預設值。
+export async function runWhisperJson(wavPath, modelPath, lang, { timeout = 420000, keepRawSegs = false } = {}) {
   const outBase = wavPath.replace(/\.wav$/, '');
   const promptArg = lang === 'zh' ? ` --prompt "${ZH_INITIAL_PROMPT}"` : '';
   await exec(
@@ -66,7 +74,8 @@ export async function runWhisperJson(wavPath, modelPath, lang, { timeout = 42000
     }))
     .filter((s) => s.text);
 
-  if (!rawSegs.length) return { segs: [], lang, garbageDropped: 0, failed: false };
+  const raw = keepRawSegs ? { rawSegs } : {};
+  if (!rawSegs.length) return { segs: [], lang, garbageDropped: 0, failed: false, ...raw };
 
   // 垃圾偵測淨係 zh 歌先做——英文歌嘅 CJK 比例天然係 0,唔可以用呢條規則篩佢。
   if (lang === 'zh') {
@@ -74,9 +83,9 @@ export async function runWhisperJson(wavPath, modelPath, lang, { timeout = 42000
     const garbageDropped = rawSegs.length - clean.length;
     if (garbageDropped / rawSegs.length > 0.5) {
       // 成首歌大部分 segment 都係垃圾(亂碼/幻覺)→ 當轉錄失敗,唔好寫垃圾落 timeline。
-      return { segs: [], lang, garbageDropped, failed: true };
+      return { segs: [], lang, garbageDropped, failed: true, ...raw };
     }
-    return { segs: clean, lang, garbageDropped, failed: false };
+    return { segs: clean, lang, garbageDropped, failed: false, ...raw };
   }
-  return { segs: rawSegs, lang, garbageDropped: 0, failed: false };
+  return { segs: rawSegs, lang, garbageDropped: 0, failed: false, ...raw };
 }

@@ -97,7 +97,42 @@ const MUSIC_PLACEHOLDERS = new Set([
   'upbeatmusic', 'softmusic', 'softpianomusic', 'pianomusic', 'gentlemusic', 'gentlepianomusic',
   'instrumentalmusic', 'softinstrumentalmusic', 'calmmusic', 'slowmusic', 'musiccontinues',
   'watertrickling', 'windblowing', 'birdschirping',
+  // 2026-08-24 Phase 1.5:`watertrickling` 嘅同類環境音變體。實測(scan-20260824)
+  // `vocal` 0 / `observe` 0 命中,同 `watertrickling` 同一個 class,安全。
+  // ⚠️ **冇加 `you`** —— 實測 `vocal` 2 / `observe` 30 命中(#4287 兒童歌、
+  // #5213 韓文歌詞 MV 呢批確定有人聲嘅片都吐 `[MUSIC] / you`),加咗會誤收。
+  'waterrunning', 'watersplashing',
 ]);
+
+// ── 2026-08-24 Phase 1.5:「幻覺型靜音」指紋(PHASE4-PLAN §1)────────────
+// 第一輪掃描(2026-08-23)將呢批一律判 soft「幻覺型 —— 證明唔到冇人聲」。之後
+// 實驗室實錘咗佢哋根本就係 whisper 對「冇人聲」嘅預設輸出:
+//   · 6 秒**純數碼靜音** wav → `-l zh` 吐「詞曲 李宗盛」、`-l en` 吐「you」
+//   · 25 秒**合成純音樂** wav → `-l zh` 吐「詩歌歌曲。」、`-l en` 吐「[Music]」
+//   (2026-08-24 用 lib/whisperTranscribe.js + ggml-medium 實跑)
+// 兩類:
+//   A 類 · prompt 迴響 —— `詩歌歌詞的錄音`/`粵語或國語敬拜讚美詩歌` 逐字就係
+//          lib/whisperTranscribe.js 個 ZH_INITIAL_PROMPT,whisper 聽唔到嘢就
+//          原封不動吐返出嚟。
+//   B 類 · credits loop 幻覺 —— `詞曲李宗盛`/`陳零九`/`韋禮安`/`張淑莉`。
+// 判準:成條 unique 行嘅 tokenKey **完全由 prompt 詞彙 + credits 詞彙砌成**
+// (anchored,唔准 substring)——真歌詞行一定會夾雜其他字,砌唔出。
+// 精度實測(對 scan-20260823.json):`vocal` 215 首命中 **0**;`soft` 43、
+// `observe` 146。
+// 🔴 **但呢個指紋唔可以單獨判死**:`observe`(807 首 verified、確定有人聲)
+// 入面中咗 146 首 —— 即係「whisper 吐呢啲」= **whisper 聽唔到人聲**,唔等於
+// 冇人聲(whisper 對非華語人聲交白卷係常態)。所以佢淨係做「靜音白名單」成員,
+// 第二條獨立證據(titleEvidence)照樣係硬要求,同 Phase 1 一模一樣。
+const HALLUCINATED_SILENCE_VOCAB = [
+  '以下是', '詩歌', '歌詞', '歌曲', '歌手', '錄音', '粵語', '國語', '台語', '英文',
+  '或', '與', '和', '敬拜', '讚美', '聖歌', '音樂', '的',
+  '作詞', '作曲', '編曲', '詞', '曲', '演唱', '主唱',
+  '李宗盛', '陳零九', '韋禮安', '張淑莉',
+];
+const HALLUCINATED_SILENCE_RE = new RegExp(`^(?:${HALLUCINATED_SILENCE_VOCAB.join('|')})+$`);
+const isHallucinatedSilence = (line) => HALLUCINATED_SILENCE_RE.test(tokenKey(line));
+// 「靜音行」= 佔位符 OR 幻覺型。兩者喺 report 分開數,唔混淆。
+const isSilenceLine = (line) => MUSIC_PLACEHOLDERS.has(tokenKey(line)) || isHallucinatedSilence(line);
 
 // 人聲/現場觀眾嘅**正面**證據 —— 中一條就唔係器樂,連擦邊都唔入
 const VOCAL_MARK_RE = /sing|speech|speak|vocal|applau|cheer|laugh|gasp|audience|foreign|nonenglish|chant|choir|humming|narrat|talking|crowd|whisper(ing)?voice/;
@@ -199,8 +234,14 @@ function analyse(r) {
     cjkUniq: cjkCount(uniqText), latinUniq: latinCount(uniqText),
     cjkRaw: cjkCount(wText), latinRaw: latinCount(wText),
     placeholderOnly: uniq.length > 0 && uniq.every((l) => MUSIC_PLACEHOLDERS.has(tokenKey(l))),
+    // Phase 1.5:佔位符 ∪ 幻覺型。`hallucinatedSilence` = 靠幻覺指紋先入到閘
+    // 嗰批(report 要同純佔位符型分開數)。
+    silenceOnly: uniq.length > 0 && uniq.every(isSilenceLine),
+    hallucinatedSilence: uniq.length > 0 && uniq.every(isSilenceLine) && !uniq.every((l) => MUSIC_PLACEHOLDERS.has(tokenKey(l))),
     vocalMarks: uniq.filter((l) => VOCAL_MARK_RE.test(tokenKey(l))).slice(0, 3),
-    sample: uniq.slice(0, 3).map((s) => s.slice(0, 40)),
+    // Phase 1.5:由 3 行加到 8 行 —— 第一輪個 JSON 只存 3 行,`uniqSegs >= 4`
+    // 嗰批喺 JSON 上面覆核唔到「係咪全部 unique 行都係靜音指紋」,要重掃先睇到。
+    sample: uniq.slice(0, 8).map((s) => s.slice(0, 40)),
     parseErr,
   };
 }
@@ -229,10 +270,12 @@ function verdict(a) {
   if (a.vocalMarks.length) return { level: 'vocal', why: `whisper 標到人聲/觀眾聲(${a.vocalMarks.join(', ')})—— 判定唔係器樂` };
   if (quietProven && a.hasLyricsText) return { level: 'soft', why: 'whisper 實錘靜,但 `lyrics` 欄有出街歌詞(8033 型風險)—— 唔自動標' };
   if (quietProven && a.isDraft) return { level: 'soft', why: 'whisper 實錘靜,但 lyrics_status=draft(四條複核線手頭活貨)—— 唔自動標,唔喺人哋隊列中間抽歌' };
-  if (quietProven && !a.placeholderOnly) return { level: 'soft', why: `whisper 靜但係**幻覺型**(unique 行:${a.sample.join(' / ').slice(0, 60)})—— 證明唔到冇人聲,唔自動標` };
+  // Phase 1.5:由 `placeholderOnly` 放寬做 `silenceOnly`(佔位符 ∪ 幻覺指紋)。
+  // 唔中任何一種靜音指紋 = 真係有唔明嘅文字 → 照舊 soft。
+  if (quietProven && !a.silenceOnly) return { level: 'soft', why: `whisper 靜但係**認唔到嘅文字**(unique 行:${a.sample.join(' / ').slice(0, 60)})—— 證明唔到冇人聲,唔自動標` };
   if (quietProven && a.titleEvidence.blacklisted) return { level: 'soft', why: `whisper 佔位符型全程靜,但歌名中咗 Q3 blacklist「${a.titleEvidence.blacklisted}」(伴奏/karaoke 唔收)—— 唔自動標` };
   if (quietProven && !a.titleEvidence.ok) return { level: 'soft', why: `whisper 佔位符型全程靜,但歌名/專輯冇器樂訊號 —— 得一條證據,唔自動標(whisper 對非英文人聲交白卷都係吐 [MUSIC],#5202 韓文/#5642 日文歌詞 MV 就係咁誤中)` };
-  if (quietProven) return { level: 'hard', why: `whisper實錘(佔位符型)cov=${(a.coverage * 100).toFixed(0)}% uniqSegs=${a.uniqSegs} cjk=${a.cjkUniq} latin=${a.latinUniq} 標記=${a.sample.join('/')};歌名證據「${a.titleEvidence.hit}」` };
+  if (quietProven) return { level: 'hard', why: `whisper實錘(${a.hallucinatedSilence ? '幻覺型靜音·Phase1.5' : '佔位符型'})cov=${(a.coverage * 100).toFixed(0)}% uniqSegs=${a.uniqSegs} cjk=${a.cjkUniq} latin=${a.latinUniq} 標記=${a.sample.join('/')};歌名證據「${a.titleEvidence.hit}」` };
 
   if (a.segs === 0) return { level: 'soft', why: 'whisper 冇任何段落(whisper:[] 或者冇 timeline)—— 實證唔到,人手睇' };
   if (!a.durSec) return { level: 'soft', why: `duration 解唔到(${JSON.stringify(a.duration)})—— 計唔到覆蓋率` };

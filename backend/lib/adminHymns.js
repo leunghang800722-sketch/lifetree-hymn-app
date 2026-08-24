@@ -172,12 +172,18 @@ export async function insertHymn(fields) {
     // lang——admin add 表單嘅語言 chips 有「兒童」選項純係語言值,唔代表 kids)。
     const orgVal = (fields.org && fields.org.trim()) || fields.artist;
     const kidsVal = kidsProvided ? fields.kids : 0;
+    // 2026-08-24 純音樂 Phase 4 §3.2:admin 加歌表單有「純音樂」掣
+    // (EDITABLE_FIELDS 已經有 `instrumental`),但舊版 INSERT 冇呢一欄,
+    // 即係 admin 加完一定要再入去改多次先落到 flag。而家 INSERT 直接收,
+    // 冇明確傳就 0(同 kids 一樣紀律,唔靠 column default)。
+    const instrumentalProvided = Object.prototype.hasOwnProperty.call(fields, 'instrumental') && fields.instrumental != null;
+    const instrumentalVal = instrumentalProvided ? (Number(fields.instrumental) ? 1 : 0) : 0;
 
     db.run(
-      `INSERT INTO hymns_all (title, display_title, artist, category, youtube_id, lang, album, title_en, curated, status, last_checked, fail_streak, duration, org, kids)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1, 'ok', ?, 0, ?, ?, ?)`,
+      `INSERT INTO hymns_all (title, display_title, artist, category, youtube_id, lang, album, title_en, curated, status, last_checked, fail_streak, duration, org, kids, instrumental)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1, 'ok', ?, 0, ?, ?, ?, ?)`,
       [fields.title, fields.display_title, fields.artist, fields.category, fields.youtube_id, fields.lang,
-        fields.album || '', fields.title_en || '', today, durationFormatted, orgVal, kidsVal]
+        fields.album || '', fields.title_en || '', today, durationFormatted, orgVal, kidsVal, instrumentalVal]
     );
     // ⚠️ last_insert_rowid() 一定要喺 saveDb() 之前攞——saveDb() 入面嘅
     // db.export() 會 close+reopen sql.js 個 connection,令 last_insert_rowid()
