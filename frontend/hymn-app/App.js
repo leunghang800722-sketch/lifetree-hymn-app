@@ -42,6 +42,7 @@ import {
   resumeQueue as resumeAudioPrefetch,
   onPrefetchComplete,
   setDurationIndex as setAudioDurationIndex,
+  setPinProvider as setAudioPinProvider,
 } from './src/audioPrefetch.js';
 import { dailyPick, dailyPickBalanced } from './src/utils/dailyShuffle';
 // PHASE2.5-PRELOAD-PLAN §4 W2 —— 「即刻揀歌」現用 chip 同 HomeScreen 共用一份
@@ -558,6 +559,16 @@ function PlayerProvider({ children }) {
   useEffect(() => {
     if (Platform.OS !== 'ios') return;
     initAudioCache();
+    // ROOTFIX-2026-08-24 防線A —— 話俾 prune() 知隊列而家參照緊邊啲 id:由
+    // 「倒數三首」(curIdx−3,Eric 拍板)起到隊尾,pin 住唔准剷。用 ref 現讀,
+    // 唔使跟 queue state 重新註冊;id 統一 String()(cache 檔名係 string)。
+    // 再舊嘅(curIdx−4 之前)交防線B/B′自癒——production 實錘(2026-08-24)
+    // 隊列 70 首時第 4/5 首個檔俾 prune 剷走,呢個 provider 就係嗰單嘅根治。
+    setAudioPinProvider(() => {
+      const q = queueRef.current || [];
+      const from = Math.max(0, (currentQueueIndexRef.current ?? 0) - 3);
+      return new Set(q.slice(from).map((s) => String(s?.id)));
+    });
     const unsubscribe = onPrefetchComplete((songId) => {
       (async () => {
         try {
@@ -583,7 +594,7 @@ function PlayerProvider({ children }) {
         } catch (_) {}
       })();
     });
-    return unsubscribe;
+    return () => { unsubscribe(); setAudioPinProvider(null); };
   }, []);
 
   // Lazy TrackPlayer initialization — runs on first play, not on mount
@@ -1067,19 +1078,47 @@ function PlayerProvider({ children }) {
         detail: `code=${event?.code || ''} willRetry=${curId != null && retriedTrackRef.current !== curId}`,
       }, { always: true });
 
-      // IOS-ANDROID-PARITY-PLAN §5 Phase 2 —— 播緊嘅係本地 file:// 檔仲會撞
-      // PlaybackError,理論上唔應該有(落載嗰陣已經驗過 HTTP 200 + size +
-      // content-type),但保險起見:剷咗個壞檔 + 從 index 移除,令呢首歌下次
-      // 唔會再摸到同一個壞本地檔,跌返串流路徑。下面現有 retry/skip 邏輯
-      // 完全不變,呢度淨係做清理,唔改流程走向。
-      if (Platform.OS === 'ios' && curId != null) {
+      // ROOTFIX-2026-08-24 防線B —— 播緊嘅係本地 file:// 檔而撞 PlaybackError
+      // (檔壞咗/俾系統清咗/任何未預見原因冇咗):舊版剷完檔就跌落共用
+      // retry(),而 TrackPlayer.retry() reload 嘅係隊列入面**同一條死 file://**,
+      // 必然二次爆然後跳歌(production 實錘 2026-08-24:連環死 file:// 令
+      // 「聽完第 1、2 首之後播唔到」)。而家自成一條「換 URL 重播」路:
+      //   1. invalidate:剷壞檔 + 剔 index → 下面 toTrack() 必然回 stream URL;
+      //   2. retriedTrackRef = curId:呢次熱換當「已 retry」,stream 版再爆
+      //      先至跌落下面原有 skip/熔斷流程(嗰邊一行都冇改);
+      //   3. TrackPlayer.load():RNTP 4.1.2 官方「原位替換 current track」API,
+      //      唔郁隊列其他 entries、唔 reset、唔跳 index;load() 唔得就行
+      //      remove/add/skip 三步後備(同 onPrefetchComplete 熱換同款)。
+      // 成條路自己爆錯就由外層 catch 兜住跌返落原有 retry/skip 流程——嗰陣
+      // retriedTrackRef 已 set,即刻入 skip 分支,唔會再撞死同一條死 URL。
+      if (Platform.OS === 'ios' && curId != null && curSong) {
         try {
           const activeTrack = await TrackPlayer.getActiveTrack();
           const activeUrl = activeTrack?.url;
           if (activeUrl && String(activeUrl).indexOf('file:') === 0) {
             invalidateAudioCache(curId);
+            retriedTrackRef.current = curId;
+            const freshTrack = toTrack(curSong); // index 已剔 → 必然 stream URL
+            logDiag('localFallback', {
+              appState: appStateRef.current,
+              hymnId: curId,
+              position: diagProgress?.position,
+              duration: diagProgress?.duration,
+              detail: `code=${event?.code || ''}`,
+            }, { always: true });
+            try {
+              await TrackPlayer.load(freshTrack);
+            } catch (loadErr) {
+              if (typeof curIdx !== 'number') throw loadErr;
+              await TrackPlayer.remove(curIdx);
+              await TrackPlayer.add(freshTrack, curIdx);
+              await TrackPlayer.skip(curIdx);
+            }
+            expectPlayingRef.current = true;
+            await TrackPlayer.play();
+            return;
           }
-        } catch (_) {}
+        } catch (_) { /* 自癒失敗 → 跌落下面原有 retry/skip(見上面註解第 2 點) */ }
       }
 
       // 呢首歌未 retry 過 → retry 一次先,唔即刻放棄跳下一首。

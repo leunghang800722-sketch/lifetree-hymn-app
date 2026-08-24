@@ -225,11 +225,25 @@ export function initCache() {
   return initPromise;
 }
 
-// Fable5 review 補(2026-08-14)—— prune 保護名單:本 session 內俾
-// getLocalUri() 命中過(即係可能已經變咗隊列入面嘅 file:// URL)或者啱啱
-// 落載完嘅 id,prune 唔准剷。否則舊歌重播+cache 頂 cap 嗰陣,LRU 有機會
-// 刪走 AVPlayer 打開緊/排緊隊嘅檔,搞出一單本可避免嘅 PlaybackError+跳歌。
-// 只喺 session 內生效(重開 app 清零),而家真係短暫超 cap,唔再單向增長
+// ROOTFIX-2026-08-24 防線A —— queue-aware pin(主保護)。App.js 開機註冊一個
+// provider,prune() 每輪開波問一次「隊列而家參照緊邊啲 id」(由「上一首再倒數
+// 三首」= curIdx−3 起計到隊尾,Eric 2026-08-24 拍板),pin 住嘅檔唔准剷。
+// 點解唔係擴大下面個 12 格名單:隊列長度冇上限,任何固定數都冚唔切(production
+// 實錘:2026-08-24 隊列 70 首,第 4/5 首嘅檔俾 prune 剷走,燒死喺隊列嘅 file://
+// 變死 URL)。有界性:prune 只會對「已經喺 cache 目錄」嘅檔 check pin,所以
+// 被 pin 而佔住格嘅檔數 ≤ cache 現有檔數;播過嘅跌出 curIdx−3 窗口就變返可剷,
+// 最壞只係短暫超 cap 幾個檔,唔會單向增長。provider throw / 未註冊一律當冇
+// pin(退化返舊行為),呢度唔准炸。
+let pinProvider = null;
+export function setPinProvider(fn) {
+  pinProvider = (typeof fn === 'function') ? fn : null;
+}
+
+// Fable5 review 補(2026-08-14)—— prune 第二層保護:本 session 內俾
+// getLocalUri() 命中過或者啱啱落載完嘅 id,prune 唔准剷。防線A(上面)接手咗
+// 「隊列參照緊」呢個主場景之後,呢個名單淨返一個崗位:冚「啱啱落載完、
+// notifyComplete 熱換仲未行完、隊列 entry 仲未變 file://」嗰條窄窗,12 格
+// 綽綽有餘。只喺 session 內生效(重開 app 清零),短暫超 cap 唔會單向增長
 // (BATCH5 O5:bounded LRU,Set 保留插入順序,delete+add 就係 touch)。
 const touchedThisSession = new Set();
 const TOUCHED_MAX = 12; // 夠冚「播緊嗰首 + 隊列下 2 首 + 聽日 2 首」有突
@@ -242,10 +256,26 @@ function touch(id) {
 }
 
 // 同步查——播放器建隊列嗰刻要即刻知有冇本地檔,唔可以等 async。
+// ROOTFIX-2026-08-24 防線B′ —— 出貨前 sync 驗個檔真係仲喺 disk(File#exists
+// 係 sync property,建隊列嗰刻用得)。index 同 disk 之間嘅 stale 窗口(iOS
+// 系統清 Caches、prune/外部剷咗檔但 index 未剔)喺入口截死,唔會再燒一條
+// 指住空氣嘅 file:// 落 native 隊列。驗唔到(getFS 爆)就當有,交防線B
+// (App.js PlaybackError 自癒)兜底。
 export function getLocalUri(songId) {
   if (Platform.OS !== 'ios' || !ready || songId == null) return null;
-  const uri = index.get(String(songId)) || null;
-  if (uri) touch(String(songId));
+  const id = String(songId);
+  const uri = index.get(id) || null;
+  if (!uri) return null;
+  try {
+    const { File } = getFS();
+    const f = new File(getCacheDir(), `${id}${FINAL_SUFFIX}`);
+    if (!f.exists) {
+      index.delete(id);
+      diagFail(id, 'cacheStale');
+      return null;
+    }
+  } catch (_) { /* 驗唔到就照出貨,防線B 兜 */ }
+  touch(id);
   return uri;
 }
 
@@ -496,16 +526,30 @@ function prune() {
     sized.sort((a, b) => a.mtime - b.mtime); // 舊嘅先(LRU 先剷)
     let total = sized.reduce((s, x) => s + x.size, 0);
     let count = sized.length;
+    // ROOTFIX-2026-08-24 防線A —— 每輪 prune 開波 snapshot 一次 pin set(唔喺
+    // loop 入面逐個檔問,provider 讀 queueRef 係 O(n) 一次過就夠)。任何唔對路
+    // (throw / 回嘅嘢冇 .has)一律當冇 pin,行為退化返舊版,唔准炸落載鏈。
+    let pinned = null;
+    try {
+      pinned = pinProvider ? pinProvider() : null;
+      if (pinned && typeof pinned.has !== 'function') pinned = null;
+    } catch (_) { pinned = null; }
+    let skippedPinned = 0;
     for (let i = 0; i < sized.length && (count > MAX_FILES || total > MAX_TOTAL_BYTES); i++) {
       const { entry, size } = sized[i];
       try {
         const name = entry.name || '';
-        if (touchedThisSession.has(idFromFinalName(name))) continue; // 保護名單,見上面
+        const id = idFromFinalName(name);
+        if (pinned && pinned.has(id)) { skippedPinned += 1; continue; } // 防線A:隊列參照緊,唔准剷
+        if (touchedThisSession.has(id)) continue; // 第二層保護,見上面
         entry.delete();
-        index.delete(idFromFinalName(name));
+        index.delete(id);
         total -= size;
         count -= 1;
       } catch (_) {}
     }
+    // 取證 log(§6):防線A 真係出過手先報一條,低量,俾真機數據答「pin 範圍
+    // 係咪太闊/prune 有冇被完全卡死」。
+    if (skippedPinned > 0) diagFail(null, `pruneSkipPinned=${skippedPinned}`);
   } catch (_) {}
 }
