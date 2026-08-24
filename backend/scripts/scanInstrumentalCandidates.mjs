@@ -67,6 +67,7 @@ import path from 'path';
 import { execFileSync } from 'child_process';
 import { fileURLToPath } from 'url';
 import { normCompare } from '../lib/textSimilarity.js';
+import { tokenKey, MUSIC_PLACEHOLDERS, isSilenceLine, VOCAL_MARK_RE } from '../lib/instrumentalSilence.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const DB_PATH = path.join(__dirname, '..', 'hymns.db');
@@ -87,55 +88,10 @@ const SOFT_CJK = 45;
 const SOFT_LATIN = 90;
 
 // ── whisper 音效標記分類(實測 2026-08-23 全庫 unique 行詞彙表打出嚟)──
-// tokenKey:剝走所有標點/括號/空白,淨返字母數字同 CJK,再細楷。
-// `[MUSIC]`→`music`、`>>[APPLAUSE]`→`applause`、`♪Well turn up our song♪`→`wellturnupoursong`
-const tokenKey = (s) => String(s || '').toLowerCase().replace(/[^a-z0-9一-鿿㐀-䶿]/g, '');
-
-// 「whisper 聽唔到人聲」嘅佔位符/環境音標記 —— 全部 unique 行都係呢啲先准自動標
-const MUSIC_PLACEHOLDERS = new Set([
-  'music', 'musicplaying', 'musicplays', 'blankaudio', 'silence', 'nospeech', 'pause', 'sound',
-  'upbeatmusic', 'softmusic', 'softpianomusic', 'pianomusic', 'gentlemusic', 'gentlepianomusic',
-  'instrumentalmusic', 'softinstrumentalmusic', 'calmmusic', 'slowmusic', 'musiccontinues',
-  'watertrickling', 'windblowing', 'birdschirping',
-  // 2026-08-24 Phase 1.5:`watertrickling` 嘅同類環境音變體。實測(scan-20260824)
-  // `vocal` 0 / `observe` 0 命中,同 `watertrickling` 同一個 class,安全。
-  // ⚠️ **冇加 `you`** —— 實測 `vocal` 2 / `observe` 30 命中(#4287 兒童歌、
-  // #5213 韓文歌詞 MV 呢批確定有人聲嘅片都吐 `[MUSIC] / you`),加咗會誤收。
-  'waterrunning', 'watersplashing',
-]);
-
-// ── 2026-08-24 Phase 1.5:「幻覺型靜音」指紋(PHASE4-PLAN §1)────────────
-// 第一輪掃描(2026-08-23)將呢批一律判 soft「幻覺型 —— 證明唔到冇人聲」。之後
-// 實驗室實錘咗佢哋根本就係 whisper 對「冇人聲」嘅預設輸出:
-//   · 6 秒**純數碼靜音** wav → `-l zh` 吐「詞曲 李宗盛」、`-l en` 吐「you」
-//   · 25 秒**合成純音樂** wav → `-l zh` 吐「詩歌歌曲。」、`-l en` 吐「[Music]」
-//   (2026-08-24 用 lib/whisperTranscribe.js + ggml-medium 實跑)
-// 兩類:
-//   A 類 · prompt 迴響 —— `詩歌歌詞的錄音`/`粵語或國語敬拜讚美詩歌` 逐字就係
-//          lib/whisperTranscribe.js 個 ZH_INITIAL_PROMPT,whisper 聽唔到嘢就
-//          原封不動吐返出嚟。
-//   B 類 · credits loop 幻覺 —— `詞曲李宗盛`/`陳零九`/`韋禮安`/`張淑莉`。
-// 判準:成條 unique 行嘅 tokenKey **完全由 prompt 詞彙 + credits 詞彙砌成**
-// (anchored,唔准 substring)——真歌詞行一定會夾雜其他字,砌唔出。
-// 精度實測(對 scan-20260823.json):`vocal` 215 首命中 **0**;`soft` 43、
-// `observe` 146。
-// 🔴 **但呢個指紋唔可以單獨判死**:`observe`(807 首 verified、確定有人聲)
-// 入面中咗 146 首 —— 即係「whisper 吐呢啲」= **whisper 聽唔到人聲**,唔等於
-// 冇人聲(whisper 對非華語人聲交白卷係常態)。所以佢淨係做「靜音白名單」成員,
-// 第二條獨立證據(titleEvidence)照樣係硬要求,同 Phase 1 一模一樣。
-const HALLUCINATED_SILENCE_VOCAB = [
-  '以下是', '詩歌', '歌詞', '歌曲', '歌手', '錄音', '粵語', '國語', '台語', '英文',
-  '或', '與', '和', '敬拜', '讚美', '聖歌', '音樂', '的',
-  '作詞', '作曲', '編曲', '詞', '曲', '演唱', '主唱',
-  '李宗盛', '陳零九', '韋禮安', '張淑莉',
-];
-const HALLUCINATED_SILENCE_RE = new RegExp(`^(?:${HALLUCINATED_SILENCE_VOCAB.join('|')})+$`);
-const isHallucinatedSilence = (line) => HALLUCINATED_SILENCE_RE.test(tokenKey(line));
-// 「靜音行」= 佔位符 OR 幻覺型。兩者喺 report 分開數,唔混淆。
-const isSilenceLine = (line) => MUSIC_PLACEHOLDERS.has(tokenKey(line)) || isHallucinatedSilence(line);
-
-// 人聲/現場觀眾嘅**正面**證據 —— 中一條就唔係器樂,連擦邊都唔入
-const VOCAL_MARK_RE = /sing|speech|speak|vocal|applau|cheer|laugh|gasp|audience|foreign|nonenglish|chant|choir|humming|narrat|talking|crowd|whisper(ing)?voice/;
+// 2026-08-24 Phase 4 T7:呢批指紋抽咗去 `lib/instrumentalSilence.js`,同新歌
+// 入庫線(`scripts/ingestInstrumental.mjs`)共用同一套判定 —— 兩條線唔可以各自
+// 維護一套,唔係就冇得對數。詳細註解(點解 `you` 唔可以入白名單、實驗室實錘
+// 數據)全部搬咗過去嗰邊。
 
 // ── 第二道獨立證據:歌名/專輯嘅器樂訊號(見檔頭 (e))──────────────
 // 全部係**完整詞組**,唔用單字(PLAN §10.5「bare 見證」前科)。
