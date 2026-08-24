@@ -42,6 +42,32 @@ export const HALLUCINATED_SILENCE_VOCAB = [
 export const HALLUCINATED_SILENCE_RE = new RegExp(`^(?:${HALLUCINATED_SILENCE_VOCAB.join('|')})+$`);
 export const isHallucinatedSilence = (line) => HALLUCINATED_SILENCE_RE.test(tokenKey(line));
 
+// ②b 2026-08-24 MORE-SOURCES N4 實跑補:上面個 B 類係**寫死藝人名**
+// (李宗盛/陳零九/韋禮安/張淑莉),實跑即刻撞到名單以外嘅新變體
+// (`詞曲:王智峯` / `演唱:王智峯`)。改用**結構規則**取代逐個名補:
+// 成行係「credits 角色 + 冒號(可有可無)+ 2-4 個中文字」= credits 行,
+// 唔可能係唱出嚟嘅歌詞。
+// 精度實測(scan-20260824b ground truth):`vocal` 212 首命中 **0**,
+// `hard`(已實錘器樂)12、`soft` 18、`observe` 94。
+const CREDITS_LINE_RE = /^\s*(詞曲|作詞|作曲|編曲|演唱|主唱|歌手|製作|監製|詞|曲)\s*[:：]?\s*[一-鿿]{2,4}\s*$/;
+// ②c 同場加映:whisper 喺靜音上會背誦流行歌歌詞碎片,呢兩句係實測反覆出現
+// 嘅固定幻覺(`vocal` 0 / `observe` 4 / `soft` 6)。
+const KNOWN_HALLUCINATION_LINES = [
+  /^我就是想要你做我的(女)?朋友[，,。?？]?$/,
+  /^知道嗎[?？]?$/,
+];
+// whisper 有時會將幾句幻覺**夾埋一個 segment** 出(實測:
+// `我就是想要你做我的朋友, 知道嗎?` 係一行)。所以要按標點拆開,
+// **每一小節都係已知幻覺**先算 —— 有任何一節係真嘢就唔算。
+const splitClauses = (line) => String(line || '')
+  .split(/[，,。.、；;？?！!\s]+/).map((x) => x.trim()).filter(Boolean);
+const isKnownHallucinationClause = (c) =>
+  CREDITS_LINE_RE.test(c) || KNOWN_HALLUCINATION_LINES.some((re) => re.test(c));
+export const isCreditsLine = (line) => {
+  const parts = splitClauses(line);
+  return parts.length > 0 && parts.every(isKnownHallucinationClause);
+};
+
 // ③ 人聲/現場觀眾嘅**正面**證據 —— 中一條即刻唔係器樂
 export const VOCAL_MARK_RE = /sing|speech|speak|vocal|applau|cheer|laugh|gasp|audience|foreign|nonenglish|chant|choir|humming|narrat|talking|crowd|whisper(ing)?voice/;
 export const hasVocalMark = (line) => VOCAL_MARK_RE.test(tokenKey(line));
@@ -61,6 +87,7 @@ export const isBracketSoundTag = (line) => BRACKET_TAG_RE.test(String(line || ''
 
 // ⑤ 一條行係咪「靜音行」= 佔位符 OR 幻覺型 OR 括號音效標籤
 export const isSilenceLine = (line) =>
-  MUSIC_PLACEHOLDERS.has(tokenKey(line)) || isHallucinatedSilence(line) || isBracketSoundTag(line);
+  MUSIC_PLACEHOLDERS.has(tokenKey(line)) || isHallucinatedSilence(line)
+  || isBracketSoundTag(line) || isCreditsLine(line);
 
 

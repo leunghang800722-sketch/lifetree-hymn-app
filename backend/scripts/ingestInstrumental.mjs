@@ -59,6 +59,11 @@ const MODE_REPORT = process.argv.includes('--report');
 const ORG = arg('--org', null);
 const DRY = process.argv.includes('--dry');
 const LIMIT = Number(arg('--limit', 0)) || Infinity;
+// 2026-08-24 MORE-SOURCES:白名單有兩個來源 ——
+//   `playlists` = `discoverInstrumentalPlaylists.mjs`(人手 playlist tab)
+//   `releases`  = `discoverInstrumentalReleases.mjs`(/releases + Topic + iTunes)
+const SOURCE = arg('--source', 'playlists');
+const ONLY_RELEASE = arg('--release', null);   // 淨係跑一張專輯(R6 分批 apply)
 const DELAY_MS = Number(arg('--delay', 3000));
 
 // 器樂線片長 band(§8 Q2 拍板 10 分鐘硬上限 + P1 拍板 120 秒下限)
@@ -72,8 +77,8 @@ const jitter = (b) => Math.round(b * (0.7 + Math.random() * 0.9));
 const mdEsc = (s) => String(s || '').replace(/\|/g, '\\|').replace(/\n/g, ' ');
 const today = () => new Date().toISOString().slice(0, 10);
 
-const whitelistPath = (org) => path.join(DATA_DIR, `${org}-playlists.json`);
-const verifyPath = (org) => path.join(DATA_DIR, `${org}-verify.json`);
+const whitelistPath = (org) => path.join(DATA_DIR, SOURCE === 'releases' ? `${org}-releases.json` : `${org}-playlists.json`);
+const verifyPath = (org) => path.join(DATA_DIR, SOURCE === 'releases' ? `${org}-verify-releases.json` : `${org}-verify.json`);
 const reportPath = (org) => path.join(DATA_DIR, `${org}-ingest-report.md`);
 
 function findOrgConfig(orgName) {
@@ -131,8 +136,15 @@ async function runVerify() {
   if (!fs.existsSync(whitelistPath(ORG))) { console.error(`搵唔到白名單 ${whitelistPath(ORG)},未 discover 過`); process.exit(1); }
   if (!fs.existsSync(WHISPER_MODEL)) { console.error(`搵唔到 whisper model ${WHISPER_MODEL}`); process.exit(1); }
 
-  const whitelist = JSON.parse(fs.readFileSync(whitelistPath(ORG), 'utf8'));
-  const approved = whitelist.filter((c) => c.approved === true);
+  const raw = JSON.parse(fs.readFileSync(whitelistPath(ORG), 'utf8'));
+  // 兩種白名單 shape 統一做同一個介面,落面條 pipeline 唔使分
+  const whitelist = raw.map((c) => (SOURCE === 'releases'
+    ? { playlist_id: c.release_id, playlist_title: c.release_title, member_count: c.member_count,
+        approved: c.approved, instrumental_signal: c.instrumental_signal, proposed_album: c.proposed_album,
+        album_evidence: c.album_evidence !== false, preMembers: c.members }
+    : { ...c, album_evidence: false, preMembers: null }));
+  const approved = whitelist.filter((c) => c.approved === true)
+    .filter((c) => !ONLY_RELEASE || c.playlist_id === ONLY_RELEASE);
   if (!approved.length) { log('白名單冇任何 approved:true,收工(冇碰 DB、冇落片)'); return; }
 
   // 閘 1:instrumental_signal 必填
@@ -178,12 +190,17 @@ async function runVerify() {
         instrumental_signal: c.instrumental_signal, proposed_album: c.proposed_album ?? null,
       };
       if (inDb.has(m.id)) { results.push({ ...base, verdict: 'skip', why: '已經喺庫' }); continue; }
+      // releases 來源:discover 段已經行過閘 2 + §6 R2 dedup,唔過嗰啲唔使再落網絡
+      if (c.preMembers) {
+        const pre = c.preMembers.find((x) => x.youtube_id === m.id);
+        if (pre && !pre.pass_pre) { results.push({ ...base, verdict: 'reject', gate: 2, why: pre.reasons.join('; ') }); continue; }
+      }
 
       // 閘 2
       const t = m.title || '';
       const g2 = [];
       if (isCompilation(t)) g2.push('isCompilation');
-      if (isNonWorship(t, ORG, { line: 'instrumental' })) g2.push('isNonWorship(器樂線)');
+      if (isNonWorship(t, ORG, { line: 'instrumental', albumEvidence: c.album_evidence })) g2.push('isNonWorship(器樂線)');
       if (m.duration != null && !isInSongDurationBand(m.duration, BAND_MAX, BAND_MIN)) g2.push(`片長 ${m.duration}s 唔喺 ${BAND_MIN}-${BAND_MAX} 秒`);
       if (g2.length) { results.push({ ...base, verdict: 'reject', gate: 2, why: g2.join('; ') }); continue; }
 
