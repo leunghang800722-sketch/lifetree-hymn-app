@@ -50,6 +50,13 @@ export const isHallucinatedSilence = (line) => HALLUCINATED_SILENCE_RE.test(toke
 // 精度實測(scan-20260824b ground truth):`vocal` 212 首命中 **0**,
 // `hard`(已實錘器樂)12、`soft` 18、`observe` 94。
 const CREDITS_LINE_RE = /^\s*(詞曲|作詞|作曲|編曲|演唱|主唱|歌手|製作|監製|詞|曲)\s*[:：]?\s*[一-鿿]{2,4}\s*$/;
+// ②b-2 2026-08-24 N4 實跑再補:專輯內頁 credits 唔止詞曲演唱,仲有混音/母帶/
+// 製作人/樂手分軌(實測撞到「混音:張宇 / 母帶:張宇 / 製作人:張宇」)。
+// ⚠️ 呢批**強制要有冒號**先算 —— 冇冒號嘅話「鋼琴聲響起」「和聲讚美主」
+//    呢類真歌詞會中招(已驗:加咗冒號要求之後全部 false)。
+// 精度實測(scan-20260824g):hard/soft/vocal/observe **全部 0 命中** ——
+// 呢個 pattern 純粹係為新歌入庫線而設,唔會郁到存量任何一首。
+const CREDITS_ROLE_COLON_RE = /^\s*(混音|母帶|母带|製作人|制作人|錄音|录音|混音師|配唱|和聲|和声|吉他|鋼琴|钢琴|弦樂|弦乐|鼓|貝斯|贝斯|監製|监制|統籌|统筹|企劃|企划|美術|美术|攝影|摄影)\s*[:：]\s*[一-鿿A-Za-z]{2,8}\s*$/;
 // ②c 同場加映:whisper 喺靜音上會背誦流行歌歌詞碎片,呢兩句係實測反覆出現
 // 嘅固定幻覺(`vocal` 0 / `observe` 4 / `soft` 6)。
 const KNOWN_HALLUCINATION_LINES = [
@@ -72,6 +79,15 @@ const KNOWN_HALLUCINATION_LINES = [
 const PROMO_STRONG_RE = [
   /明镜|明鏡|明報|MING\s*PAO/i,
   /本字幕由|字幕組|字幕组|字幕由.*提供/,
+  // 2026-08-24 N4 讚美之泉批再補(全部對 ground truth 實測 hard/soft/vocal/
+  // observe **四個都 0 命中**,即係純為新歌線而設,郁唔到存量):
+  /优优独播剧场|優優獨播劇場|YoYo\s*Television/i,   // YouTube 劇場頻道水印
+  /Amara\.org/i,                                    // 字幕協作平台
+  /由.{1,20}社群提供的字幕/,
+  /^(中文)?字幕\s*[:：].{1,20}$/,                    // 「字幕:J Chong」
+  /^(出品|發行|发行|導演|导演|策劃|策划)\s*[:：].{1,20}$/,
+  /每週固定.{0,10}部影片|每周固定.{0,10}部影片/,
+  /喜歡我的影片請訂閱|喜欢我的影片请订阅/,
 ];
 const PROMO_WEAK_RE = [
   /订阅|訂閱/, /点赞|點贊|點讚/, /转发|轉發/, /打赏|打賞/, /请不吝|請不吝/,
@@ -85,7 +101,7 @@ const isPromoLine = (raw) => PROMO_STRONG_RE.some((re) => re.test(raw))
 const splitClauses = (line) => String(line || '')
   .split(/[，,。.、；;？?！!\s]+/).map((x) => x.trim()).filter(Boolean);
 const isKnownHallucinationClause = (c) =>
-  CREDITS_LINE_RE.test(c) || KNOWN_HALLUCINATION_LINES.some((re) => re.test(c))
+  CREDITS_LINE_RE.test(c) || CREDITS_ROLE_COLON_RE.test(c) || KNOWN_HALLUCINATION_LINES.some((re) => re.test(c))
   || isPromoLine(c);
 export const isCreditsLine = (line) => {
   const raw = String(line || '').trim();
