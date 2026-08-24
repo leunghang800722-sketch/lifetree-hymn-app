@@ -552,17 +552,52 @@ const paddleReady = () => fs.existsSync(PADDLE_PY) && fs.existsSync(PADDLEFRAME)
 // 一次過 OCR 成首歌嘅 frame(model 載入 ~5 秒,逐張叫就嘥晒),再行 lib/paddleAdapter.js
 // 嘅行級 filter(score/拼音/殘影/位置級 watermark)。回傳 string[][](同 Vision
 // 路徑一樣 shape,餵 mergeOcrLines);出錯回傳 null(調用方 fallback 去 Vision)。
-async function ocrFramesPaddle(framePaths) {
+// 2026-08-24 加:每個 paddle process 嘅 BLAS/OMP 線程上限 = 效能核 ÷ 並行 OCR 線。
+// 08-17→08-22 部機出咗 26 個 Python SIGSEGV,全部係兩個 paddle process 各自向全部
+// 核開 Accelerate thread,喺 cblas_sgemm 爆(詳情見 tools/paddleframe.py 頂)。
+// sysctl 一個 run 只查一次。
+let _paddleThreadCap = null;
+async function paddleThreadCap() {
+  if (_paddleThreadCap !== null) return _paddleThreadCap;
+  let perf = 4;
   try {
-    const { stdout } = await exec(
-      `"${PADDLE_PY}" "${PADDLEFRAME}" ${framePaths.map((f) => `"${f}"`).join(' ')}`,
-      { timeout: 10 * 60 * 1000, maxBuffer: 64 * 1024 * 1024 }
-    );
-    return paddleEntriesToFrameLines(JSON.parse(stdout));
-  } catch (e) {
-    log(`    ⚠ PaddleOCR 行唔到(fallback 返 Vision):${String(e?.message || e).slice(0, 200)}`);
-    return null;
+    const { stdout } = await exec('sysctl -n hw.perflevel0.logicalcpu');
+    perf = Number(String(stdout).trim()) || 4;
+  } catch (_) {
+    /* 唔係 Apple Silicon / sysctl 冇呢個 key → 用 4 兜底 */
   }
+  _paddleThreadCap = Math.max(1, Math.floor(perf / Math.max(1, OCR_SONG_CONCURRENCY)));
+  return _paddleThreadCap;
+}
+
+// 俾 signal 殺死先值得重試 —— Accelerate 嗰種爆法係間歇性,同 frame 內容無關,
+// 原地再行一次多數就過到。timeout(exec 自己送 SIGTERM)、JSON 壞、venv 冧
+// 呢啲重試幾多次都係一樣結果,唔好嘥多 10 分鐘,即刻 fallback Vision。
+const PADDLE_RETRY_SIGNALS = new Set(['SIGSEGV', 'SIGBUS', 'SIGABRT', 'SIGILL']);
+
+async function ocrFramesPaddle(framePaths) {
+  const cmd = `"${PADDLE_PY}" "${PADDLEFRAME}" ${framePaths.map((f) => `"${f}"`).join(' ')}`;
+  const opts = {
+    timeout: 10 * 60 * 1000,
+    maxBuffer: 64 * 1024 * 1024,
+    env: { ...process.env, PADDLE_CPU_THREADS: String(await paddleThreadCap()) },
+  };
+  for (let attempt = 0; attempt < 2; attempt++) {
+    try {
+      const { stdout } = await exec(cmd, opts);
+      return paddleEntriesToFrameLines(JSON.parse(stdout));
+    } catch (e) {
+      const retryable = PADDLE_RETRY_SIGNALS.has(e?.signal) && attempt === 0;
+      const why = String(e?.message || e).slice(0, 200);
+      if (retryable) {
+        log(`    ⚠ PaddleOCR 爆咗(${e.signal}),重試一次:${why}`);
+        continue;
+      }
+      log(`    ⚠ PaddleOCR 行唔到(fallback 返 Vision):${why}`);
+      return null;
+    }
+  }
+  return null;
 }
 
 async function extractAudioWav(videoPath, dir) {

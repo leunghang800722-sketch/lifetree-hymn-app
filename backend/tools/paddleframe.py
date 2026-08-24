@@ -26,10 +26,42 @@
 import json
 import sys
 import os
+import subprocess
 
 # paddle 嘅 C++ 層會向 stdout/stderr 噴 log,污染 JSON 輸出 —— 全部收聲。
 os.environ.setdefault("GLOG_minloglevel", "3")
 os.environ.setdefault("FLAGS_minloglevel", "3")
+
+
+# ── BLAS 線程上限(2026-08-24「Python 未預期的結束」彈窗根因)─────────────
+# 2026-08-17 → 08-22 部 backend Mac 出咗 26 個一模一樣嘅 Python crash report,
+# 堆疊全部係:PaddleOCR conv → phi::funcs::Blas::GEMM → cblas_sgemm →
+# libBLAS.dylib(Apple Accelerate,行 dispatch_apply 並行)→ SIGSEGV。
+# 唔係 OOM、唔係俾人 kill:fetchLyrics.js 開 --ocr-concurrency 條 OCR 線,每條線
+# 一個 paddle process,而每個 process 嘅 Accelerate 都各自向**全部**核開 thread
+# (10 核機 = 2×10 條 BLAS thread 搶 10 個核),oversubscribe 到 Accelerate 內部爆。
+# 爆完 fetchLyrics.js 會靜靜 fallback 去 Vision —— job 唔會停、唔使人手救,但嗰
+# 首歌就落咗去讀藝術字體最差嗰個引擎(正正係當初轉 Paddle 嘅原因),所以要根治。
+#
+# ⚠️ 呢啲 env **一定要喺 import numpy/paddle 之前設**(Accelerate 開機讀一次就
+# 定死),所以擺喺 module 頂,唔可以搬落 main() 嗰段 import 後面。
+def _thread_cap():
+    env = (os.environ.get("PADDLE_CPU_THREADS") or "").strip()
+    if env.isdigit() and int(env) > 0:
+        return int(env)
+    # 冇人指定 → 效能核一半兜底(正路由 fetchLyrics.js 計「效能核 ÷ 並行線」傳落嚟)
+    try:
+        perf = int(subprocess.check_output(["sysctl", "-n", "hw.perflevel0.logicalcpu"]))
+    except Exception:
+        perf = os.cpu_count() or 4
+    return max(1, perf // 2)
+
+
+# 只郁 VECLIB_MAXIMUM_THREADS(Accelerate/vecLib,即係爆嗰個)。OMP_NUM_THREADS
+# 唔好掂:paddle 自己管 OpenMP,你一設佢就喺 stderr 嘈「set to N, not 1」,而且
+# OpenMP 唔係 crash 現場;paddle 自己嗰個 pool 用下面 cpu_threads 夾。
+PADDLE_THREADS = _thread_cap()
+os.environ.setdefault("VECLIB_MAXIMUM_THREADS", str(PADDLE_THREADS))
 
 def main():
     frames = sys.argv[1:]
@@ -45,11 +77,14 @@ def main():
     # chinese_cht:繁體主力(粵語/國語詩歌 MV 大多數繁體;簡體字幕實測都認到大部分,
     # 認唔到嗰啲 fetchLyrics.js 有 Vision fallback 兜底)。三個 doc-級前處理全部熄:
     # 字幕 frame 唔會歪/唔會係文檔,熄咗慳一截時間。
+    # cpu_threads:paddle 自己嗰個 intra-op thread pool,同上面啲 env(Accelerate/
+    # OMP)一齊夾死,先至真係唔會兩個 process 各自食晒 10 個核。
     ocr = PaddleOCR(
         lang="chinese_cht",
         use_doc_orientation_classify=False,
         use_doc_unwarping=False,
         use_textline_orientation=False,
+        cpu_threads=PADDLE_THREADS,
     )
 
     # 連續 frame 去重(2026-08-17 24h 追趕加):歌詞 MV 好多時成十秒畫面完全唔郁,
