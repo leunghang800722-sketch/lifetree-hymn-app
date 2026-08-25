@@ -83,3 +83,21 @@ memory/
 # 體積大、隨時可以用 scripts/updateCantonhymnIndex.js 重建,而且入面係第三方歌詞全文,
 # 版權紀律上唔應該 commit 入 repo(HANDOFF.md §2.0)
 backend/data/lyrics-verify-cache/
+
+# ── 2026-08-25 備份整理(GitHub 同步)──────────────────────────────
+# APK 舊版備份 —— 每個 79-105MB,唔可以入 repo(*.apk 規則接唔到 .apk.bak-* 尾綴)
+*.apk.bak*
+
+# users.db 備份快照 —— 同 backend/users.db 一樣含密碼 hash/電話/email
+backend/users.db.bak*
+
+# DB lock 檔嘅事故備份 + 舊 .mjs 備份 —— 純現場快照,唔係 code
+backend/hymns.db.lock*
+*.mjs.bak-*
+
+# backend 執行時狀態/日誌 —— server 一路寫緊,commit 咗只會日日 dirty
+backend/data/stream-health-state.json
+backend/data/stream-health.log
+backend/data/warm-daily.json
+backend/data/ytdlp-update.log
+backend/data/**/*.log
