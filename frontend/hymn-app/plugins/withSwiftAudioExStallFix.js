@@ -87,17 +87,30 @@ function withSwiftAudioExStallFix(config) {
         return config;
       }
 
-      const postInstallRegex = /(post_install do \|installer\|\n)([\s\S]*?)(\n(\s*)end\n)/;
-      const match = contents.match(postInstallRegex);
-      if (!match) {
+      // 2026-08-25(NATIVE-STALL-WATCHDOG 落地時實蹺)—— 舊版 lazy regex 搵
+      // 「post_install 後第一個 end」:得一個 plugin 嗰陣冇事,第二個 plugin
+      // 加入之後,後執行嗰個會 match 到先執行嗰個 snippet 嘅**內部** end,
+      // 將自己成段塞入人哋嘅 conditional 度(靜靜哋永不執行)。改成用縮排
+      // 對齊搵 post_install 自己嘅收尾 end(嵌套 end 縮排必定更深),任何
+      // plugin 次序都安全。withSwiftAudioExStallWatchdog.js 同款。
+      const headMatch = /^([ \t]*)post_install do \|installer\|[ \t]*$/m.exec(contents);
+      if (!headMatch) {
         throw new Error(
           `[withSwiftAudioExStallFix] Could not find a "post_install do |installer|" block in ${podfilePath} to inject into.`
         );
       }
-
-      const [full, head, body, tailEnd] = match;
-      const patched = head + body + rubyPatchSnippet() + tailEnd;
-      contents = contents.replace(full, patched);
+      const indent = headMatch[1];
+      const afterHead = headMatch.index + headMatch[0].length;
+      const closeRe = new RegExp(`^${indent}end[ \\t]*$`, 'm');
+      const rest = contents.slice(afterHead);
+      const closeMatch = closeRe.exec(rest);
+      if (!closeMatch) {
+        throw new Error(
+          `[withSwiftAudioExStallFix] Could not find the closing "end" of the post_install block in ${podfilePath}.`
+        );
+      }
+      const insertAt = afterHead + closeMatch.index;
+      contents = contents.slice(0, insertAt) + rubyPatchSnippet() + contents.slice(insertAt);
 
       fs.writeFileSync(podfilePath, contents);
       return config;

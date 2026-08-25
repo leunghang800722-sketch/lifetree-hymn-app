@@ -471,6 +471,8 @@ function PlayerProvider({ children }) {
   // track-player-service.js嘅RemoteDuck handler見到paused===true就無條件
   // markRemotePauseExpected(),唔理permanent係咪true,呢個D2 guard唔會再誤判。
   const expectPlayingRef = useRef(false);
+  // D2 anti-fight(NATIVE-STALL-WATCHDOG):上次「unexpected playWhenReady-off」時間戳
+  const unexpectedOffAtRef = useRef(0);
   // BG-PLAYBACK-STOPS-PLAN Fix A — 記住上次 warmIds() 暖過嘅 id 串,防止連環
   // 換歌/撳「下一首」狂 POST /warm(同一組 3 首唔會重覆 call)。
   const lastWarmedKeyRef = useRef('');
@@ -1231,8 +1233,21 @@ function PlayerProvider({ children }) {
           detail: `playWhenReady=${event?.playWhenReady} expected=${expectPlayingRef.current}`,
         });
         if (event?.playWhenReady === false && expectPlayingRef.current === true) {
-          console.warn('[player] playWhenReady quietly turned off unexpectedly — resuming');
-          TrackPlayer.play().catch(() => {});
+          // NATIVE-STALL-WATCHDOG W3 實測(2026-08-25):native 熔斷嘅 pause 會俾
+          // 呢度當「無故熄」自動 resume,兩邊打交無限 loop(skips 衝到 7)。
+          // 60 秒內第二次 unexpected-off 就接受現實(多數係 native 層刻意
+          // pause——stall 熔斷/queueEnd),唔再搶;D2 原本要防嘅「一次性靜默
+          // 熄」場景唔受影響(嗰種一分鐘內唔會嚟兩次,第一次照救)。
+          const nowTs = Date.now();
+          if (nowTs - (unexpectedOffAtRef.current || 0) < 60000) {
+            expectPlayingRef.current = false;
+            console.warn('[player] repeated unexpected playWhenReady-off within 60s — accepting pause');
+            logDiag('playWhenReadyOffAccepted', { appState: appStateRef.current }, { always: true });
+          } else {
+            unexpectedOffAtRef.current = nowTs;
+            console.warn('[player] playWhenReady quietly turned off unexpectedly — resuming');
+            TrackPlayer.play().catch(() => {});
+          }
         }
       } catch (_) {}
     });
@@ -1428,7 +1443,6 @@ function PlayerProvider({ children }) {
   // 幾耐,俾下一個 tick 嘅 drift 探測用嚟減,唔再寫死 1000。
   const lastPollTargetMsRef = useRef(1000);
   const handleStuckTrackEnd = useCallback(async () => {
-    if (global.__TEMP_DISABLE_JS_WATCHDOGS) return; // TEMP-W-TEST
     try {
       const idx0 = currentQueueIndexRef.current ?? 0;
       const q0 = queueRef.current || [];
@@ -1480,7 +1494,6 @@ function PlayerProvider({ children }) {
   // PlaybackActiveTrackChanged 個 effect)個 flag 會reset,新歌有自己一次
   // nudge 機會。
   const handleMidStreamStall = useCallback(async () => {
-    if (global.__TEMP_DISABLE_JS_WATCHDOGS) return; // TEMP-W-TEST
     try {
       if (!midStallNudgedRef.current) {
         midStallNudgedRef.current = true;
@@ -1505,7 +1518,6 @@ function PlayerProvider({ children }) {
   // 同 track-end 一樣嘅 skip/repeat 邏輯(唔好一直卡喺同一首歌等 iOS 自己收
   // 背景權)。
   const handleBufferingStuck = useCallback(async () => {
-    if (global.__TEMP_DISABLE_JS_WATCHDOGS) return; // TEMP-W-TEST
     try {
       if (!bufferingNudgedRef.current) {
         bufferingNudgedRef.current = true;

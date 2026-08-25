@@ -70,7 +70,8 @@
           ]
         }
       ],
-      "./plugins/withSwiftAudioExStallFix.js"
+      "./plugins/withSwiftAudioExStallFix.js",
+      "./plugins/withSwiftAudioExStallWatchdog.js"
     ],
     "extra": {
       "eas": {
