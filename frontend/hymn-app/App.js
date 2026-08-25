@@ -1428,6 +1428,7 @@ function PlayerProvider({ children }) {
   // 幾耐,俾下一個 tick 嘅 drift 探測用嚟減,唔再寫死 1000。
   const lastPollTargetMsRef = useRef(1000);
   const handleStuckTrackEnd = useCallback(async () => {
+    if (global.__TEMP_DISABLE_JS_WATCHDOGS) return; // TEMP-W-TEST
     try {
       const idx0 = currentQueueIndexRef.current ?? 0;
       const q0 = queueRef.current || [];
@@ -1479,6 +1480,7 @@ function PlayerProvider({ children }) {
   // PlaybackActiveTrackChanged 個 effect)個 flag 會reset,新歌有自己一次
   // nudge 機會。
   const handleMidStreamStall = useCallback(async () => {
+    if (global.__TEMP_DISABLE_JS_WATCHDOGS) return; // TEMP-W-TEST
     try {
       if (!midStallNudgedRef.current) {
         midStallNudgedRef.current = true;
@@ -1503,6 +1505,7 @@ function PlayerProvider({ children }) {
   // 同 track-end 一樣嘅 skip/repeat 邏輯(唔好一直卡喺同一首歌等 iOS 自己收
   // 背景權)。
   const handleBufferingStuck = useCallback(async () => {
+    if (global.__TEMP_DISABLE_JS_WATCHDOGS) return; // TEMP-W-TEST
     try {
       if (!bufferingNudgedRef.current) {
         bufferingNudgedRef.current = true;
@@ -1623,7 +1626,13 @@ function PlayerProvider({ children }) {
 
             const dur = progress.duration || 0;
             const nearEnd = dur > 0 && pos >= dur - 1.5;
-            const stalled = pos > 0 && Math.abs(pos - lastPollPositionRef.current) < 0.05;
+            // D3-1(STREAM-LOCKSCREEN-FREEZE-OPUS5 §D3,Eric 2026-08-25 拍板)——
+            // 拆走 `pos > 0` 呢個前置:佢令「轉歌之後卡死喺 0:00 但 native 仲聲稱
+            // Playing」永遠唔入呢個 watchdog(§4.3 覆蓋矩陣嘅洞)。誤判風險有限:
+            // claimsActive 仍然係 Playing-only(起播慢嗰陣 native 報 Loading/
+            // Buffering,唔會入呢度),真・Playing 而 position 連續 3 秒釘死喺
+            // 0.00 就係病,唔係慢。
+            const stalled = Math.abs(pos - lastPollPositionRef.current) < 0.05;
             // 淨係 Playing 先算——Buffering 有可能係正常等緊data未到(RNTP
             // 呢種情況會轉 state=Buffering,唔會停留喺 Playing),唔想同
             // 「聲稱播放緊但native卡死」撞埋一齊誤判。
@@ -1656,7 +1665,11 @@ function PlayerProvider({ children }) {
             // 就係 0,唔可以當停頓訊號)。呢個分支專門頂「native 老實報緊
             // Buffering,但其實卡喺 retry storm 永遠出唔到嚟」嗰種缺口——上面
             // 兩個 watchdog 淨係 Playing 先觸發,呢種情況一個都唔會出手。
-            if (trackStateRef.current === TPState.Buffering) {
+            // D3-2(同上拍板)—— RNTP 嘅 `loading` 同 `buffering` 係兩個唔同
+            // state,而轉歌一定經 loading;之前淨係計 Buffering,「卡死喺 loading
+            // 出唔到嚟」(例如 resolve 死鏈)就冇 watchdog 管。兩個 state 共用
+            // 同一個 counter/門檻——nudge/skip 語義一樣。
+            if (trackStateRef.current === TPState.Buffering || trackStateRef.current === TPState.Loading) {
               bufferingStuckTicksRef.current += 1;
               if (!bufferingNudgedRef.current && bufferingStuckTicksRef.current >= BUFFERING_STUCK_NUDGE_TICKS) {
                 bufferingStuckTicksRef.current = 0;
@@ -2453,6 +2466,11 @@ function ProgressSection() {
   );
 }
 
+// C(Eric 2026-08-25)—— 循環模式嘅文字名。三個模式淨係靠 icon 顏色、一粒 4dp
+// 圓點同一個「1」分辨,Eric 實測「睇唔出而家係邊個模式」;呢行字係唯一一個
+// 唔使靠眼力嘅回饋。index 對應 repeatMode 0/1/2(見 PlayerCtx 個 useState 註解)。
+const REPEAT_MODE_LABELS = ['唔循環', '循環播放全部', '單曲循環'];
+
 function FullScreenPlayerOverlay() {
   // 用統一嘅 useInsets:佢會幫 Android 落個底線,唔會計出 0 令 collapsed sheet
   // 貼死喺螢幕底俾導航列蓋住(見 useInsets.js)。
@@ -2590,6 +2608,33 @@ function FullScreenPlayerOverlay() {
       if (slowHintTimerRef.current) { clearTimeout(slowHintTimerRef.current); slowHintTimerRef.current = null; }
     };
   }, [player.isLoading, cur.id]);
+
+  // C(Eric 2026-08-25)—— 撳循環掣即刻淡入一行文字,1.5 秒後淡出。
+  // ⚠️ 個容器高度**寫死**(唔用條件 render),字淡走咗之後照樣佔位,唔會令
+  // 下面成排控制掣同 sheet 跳上跳落。
+  // ⚠️ 用 useNativeDriver —— opacity 行得,而且 JS thread 忙緊(轉歌/解析)
+  // 嗰陣個淡入淡出唔會窒。
+  const [repeatHint, setRepeatHint] = useState('');
+  const repeatHintOpacity = useRef(new Animated.Value(0)).current;
+  const repeatHintTimerRef = useRef(null);
+  useEffect(() => () => {
+    if (repeatHintTimerRef.current) { clearTimeout(repeatHintTimerRef.current); repeatHintTimerRef.current = null; }
+  }, []);
+  const cycleRepeatMode = useCallback(() => {
+    const next = ((player.repeatMode ?? 0) + 1) % 3;
+    player.setRepeatMode?.(next);
+    setRepeatHint(REPEAT_MODE_LABELS[next]);
+    // 連撳幾下:清走上一次個「1.5 秒後淡出」timer,亦要 stopAnimation() 截停
+    // 仲行緊嗰段淡出,否則新一次淡入會俾舊嗰段 timing 蓋返落去變半透明。
+    if (repeatHintTimerRef.current) clearTimeout(repeatHintTimerRef.current);
+    repeatHintOpacity.stopAnimation();
+    Animated.timing(repeatHintOpacity, { toValue: 1, duration: 140, useNativeDriver: true }).start();
+    repeatHintTimerRef.current = setTimeout(() => {
+      repeatHintTimerRef.current = null;
+      Animated.timing(repeatHintOpacity, { toValue: 0, duration: 260, useNativeDriver: true }).start();
+    }, 1500);
+  }, [player.repeatMode, player.setRepeatMode, repeatHintOpacity]);
+
   const lyricsStanzas = formatLyricsStanzas(cur.lyrics);
   // BUG3(c) P0(Eric 實測)—— 自動播放關咗 + 播緊 queue 最後一首,⏭ 之前係
   // 冇 disabled 狀態嘅死掣(撳落去 TrackPlayer.skipToNext() 靜靜哋失敗,冇反應)。
@@ -2701,6 +2746,11 @@ function FullScreenPlayerOverlay() {
           );
         })()}
         <ProgressSection />
+        <View style={fsStyles.repeatHintRow} pointerEvents="none">
+          <Animated.Text style={[fsStyles.repeatHintText, { opacity: repeatHintOpacity }]}>
+            {repeatHint}
+          </Animated.Text>
+        </View>
         <View style={fsStyles.controlsRow}>
           <TouchableOpacity style={fsStyles.controlBtn} onPress={player.toggleShuffle} activeOpacity={0.6}>
             <View style={{ alignItems: 'center' }}>
@@ -2722,15 +2772,20 @@ function FullScreenPlayerOverlay() {
           >
             <OdeIcon name="next" size={32} color={TEXT_PRIMARY} />
           </TouchableOpacity>
-          <TouchableOpacity style={fsStyles.controlBtn} onPress={() => player.setRepeatMode?.((player.repeatMode + 1) % 3)} activeOpacity={0.6}>
+          <TouchableOpacity style={fsStyles.controlBtn} onPress={cycleRepeatMode} activeOpacity={0.6}>
             <View style={{ alignItems: 'center' }}>
               {/* odeIcons.js repeat note:單曲循環(repeatMode===2)= 同一個 repeat
-                  icon 中間疊一個 Sora 200「1」,唔另畫新 icon。 */}
+                  icon 中間疊一個「1」,唔另畫新 icon。字款/置中見下面
+                  fsStyles.repeatOneBadge(B,Eric 2026-08-25 由 Sora 200 改粗)。 */}
               <View>
                 <OdeIcon
                   name="repeat"
                   size={32}
-                  color={player.repeatMode > 0 ? GLOW_COLOR : 'rgba(255,255,255,0.6)'}
+                  // A(Eric 2026-08-25)—— 熄燈色由寫死嘅 rgba(255,255,255,0.6)
+                  // (疊落 #0B0913 實際渲染 ≈ #9D9BA1,光到似著住一半)改用
+                  // TEXT_SECONDARY,同隔籬粒 shuffle 掣同一套「熄燈」語言,
+                  // 順便合返 designSystem.js 開頭「唔准寫死 hex」嗰條規矩。
+                  color={player.repeatMode > 0 ? GLOW_COLOR : TEXT_SECONDARY}
                 />
                 {player.repeatMode === 2 && (
                   <Text style={fsStyles.repeatOneBadge}>1</Text>
@@ -3022,16 +3077,31 @@ const fsStyles = StyleSheet.create({
   progressBarThumb: { width: 14, height: 14, borderRadius: 7, backgroundColor: GLOW_COLOR, position: 'absolute', right: -7, top: '50%', marginTop: -7 },
   timeRow: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 4 },
   timeText: { fontSize: 12, color: TEXT_SECONDARY },
+  // C —— 循環模式文字提示。高度寫死 18,冇字嗰陣照佔位(見 cycleRepeatMode 註解)。
+  repeatHintRow: { height: 18, justifyContent: 'center', alignItems: 'center' },
+  repeatHintText: { fontSize: 13, fontWeight: '600', color: GLOW_COLOR, letterSpacing: 0.5 },
   controlsRow: { flexDirection: 'row', justifyContent: 'space-evenly', alignItems: 'center', paddingVertical: 10, paddingHorizontal: 20 },
   controlBtn: { width: 48, height: 48, justifyContent: 'center', alignItems: 'center' },
   // BUG3(c) — ⏭ 冇嘢跳嗰陣唔再係死掣,dim 落嚟同 pillDisabled(opacity: 0.45)睇齊。
   controlBtnDisabled: { opacity: 0.45 },
   ctrlActiveDot: { width: 4, height: 4, borderRadius: 2, backgroundColor: GLOW_COLOR, marginTop: 3 },
-  // 單曲循環:repeat icon 中間疊個 Sora 200「1」(odeIcons.js repeat note)
+  // 單曲循環:repeat icon 中間疊個「1」(odeIcons.js repeat note —— 唔另畫 icon)。
+  // B(Eric 2026-08-25)兩處改動:
+  //  1. 字重由 Sora ExtraLight 200 / 13px 改做**系統字 700 / 14px**。舊嗰個係
+  //     全 App 最幼嗰隻字款,喺 32dp 圖示中間細過個箭嘴,Eric 影相形容成
+  //     「一粒細圓點」——即係根本認唔出係「1」。⚠️ 唔可以齋齋喺原本嗰句加
+  //     fontWeight:'700' —— Android 只 bundle 咗 Sora-ExtraLight.ttf 呢一個
+  //     字重,指名 fontFamily 之後 fontWeight 會俾 ignore(或者出 fake bold),
+  //     所以要連 fontFamily 一齊拎走,行返系統字(同 radioDividerText 等
+  //     一眾 fontWeight:'600' 嘅位一樣做法)。
+  //  2. `textAlignVertical` 喺 RN **淨係 Android 有效**,iOS 完全唔理 → 個
+  //     絕對定位鋪滿 32×32 嘅 Text 喺 iOS 會貼住頂,撞正個環嘅上邊橫線,
+  //     睇落似汙糟嘢多過似「1」(TestFlight build 13 中招)。改用
+  //     lineHeight = 圖示尺寸(32)做真正跨平台垂直置中。
   repeatOneBadge: {
     position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
-    textAlign: 'center', textAlignVertical: 'center',
-    fontFamily: 'Sora-ExtraLight', fontWeight: '200', fontSize: 13, color: GLOW_COLOR,
+    textAlign: 'center', lineHeight: 32,
+    fontWeight: '700', fontSize: 14, color: GLOW_COLOR,
   },
   playBtn: {
     width: 68, height: 68, borderRadius: 34, backgroundColor: GLOW_COLOR,
