@@ -11,6 +11,24 @@
 
 export const RADIO_LEN = 30;
 
+// ROOTFIX 後續(Eric 2026-08-25 拍板)—— 隨心聽/自動接續池排除 >10 分鐘長檔。
+// 實證:2026-08-25 04:07Z 背景自動接續輪到 35 分鐘現場錄音(id 1722),長檔
+// 設計上冇本地預載(audioPrefetch MAX_PREFETCH_SECONDS 同一個閘),背景冷
+// stream 撞正慢網就入 AVPlayer stall-retry 風暴,用戶感知「播播下自己停咗」。
+// 隨機池入面呢類長檔係結構性溫床,索性唔抽。
+//   - 閾值同預載閘一致(10 分鐘),兩個閘用同一把尺:抽得中嘅歌就預載得到。
+//   - duration parse 唔到(null)= 唔知,唔可以當長(同預載閘同一原則)。
+//   - ⚠️ 只適用於「隨機抽」嘅池(全部/熱門/隨心 + 隨心聽洗牌)。有 tag 嘅
+//     真類別(個人創作/純音樂)**唔 filter**:用戶明確揀咗嗰類,而且純音樂
+//     嘅 soaking/鋼琴長片係 INSTRUMENTAL-CATEGORY-PLAN 特登起嘅入口,
+//     有自己嘅長檔串流分流(Phase 3b),唔可以喺呢度陰乾佢。
+import { parseDurationSec } from '../audioPrefetch';
+export const MAX_AUTOPLAY_TRACK_SECONDS = 10 * 60;
+export function isTooLongForAutoplay(song) {
+  const sec = parseDurationSec(song?.duration);
+  return sec != null && sec > MAX_AUTOPLAY_TRACK_SECONDS;
+}
+
 // ===== Chip 設定(單一來源)=====
 // §Eric(v244):五粒 chip 全部常設顯示,唔再按庫存門檻隱藏(舊 CHIP_MIN_POOL 已廢)。
 // 加新分類 = 加一行:
@@ -83,7 +101,8 @@ export function buildAutoplayTail(flavor, hymn, allSongs = [], opts = {}) {
     // fall through → 下面「全部」uniform 邏輯
   }
 
-  const pool = dedupeByYoutube(allSongs.filter((s) => s.id !== curId));
+  // 長檔閘(見檔頭 isTooLongForAutoplay 註解)—— 只落喺隨機抽嘅通用池。
+  const pool = dedupeByYoutube(allSongs.filter((s) => s.id !== curId && !isTooLongForAutoplay(s)));
 
   // 熱門:view_count 分三段加權
   if (flavor === '熱門') {

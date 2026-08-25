@@ -29,6 +29,7 @@ import { dailyPick, dailyPickBalanced, randomShuffle } from '../../utils/dailySh
 // PHASE2.5-PRELOAD-PLAN §4 W2 —— chip 定義 + 「現用邊個 chip」嘅 fallback 邏輯而家
 // 同 App.js 嘅開機預載器共用一份,唔可以喺呢度另外抄一套(drift 咗預載就會落錯歌)。
 import { CHIP_PAGE_SIZE, buildChips } from '../../utils/homeChips';
+import { isTooLongForAutoplay } from '../../utils/autoplay';
 // W3 —— 「隨心聽」第一首偏向已經落載咗喺機入面嘅歌(iOS;Android 恆 null 自動 no-op)。
 import { getLocalUri } from '../../audioPrefetch';
 import { useFavorites } from '../../context/FavoritesContext';
@@ -205,7 +206,11 @@ export default function HomeScreen({ hymns = [], loading = false, onPlayHymn, on
   //   - Android:getLocalUri() 恆回 null → hit = -1 → 完全冇行為改變。
   const playShuffleAll = useCallback(() => {
     if (!hasData) return;
-    const shuffled = randomShuffle(hymns);
+    // 長檔閘(Eric 2026-08-25 拍板)—— 隨心聽唔抽 >10 分鐘長檔,同自動接續
+    // 池同一把尺(utils/autoplay.js isTooLongForAutoplay 註解有成單事故背景)。
+    // 防呆:全庫都係長檔(理論情況)就唔 filter,個掣唔可以變死掣。
+    const pool = hymns.filter((h) => !isTooLongForAutoplay(h));
+    const shuffled = randomShuffle(pool.length > 0 ? pool : hymns);
     const hit = shuffled.findIndex((h) => h?.id != null && getLocalUri(h.id) != null);
     if (hit > 0) {
       const first = shuffled[0];
