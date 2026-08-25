@@ -1,0 +1,495 @@
+{
+  "generated": "2026-08-24T07:18:02.873Z",
+  "org": "鹹蛋音樂事工",
+  "band": [
+    120,
+    600
+  ],
+  "staleSkips": [],
+  "results": [
+    {
+      "youtube_id": "n3k69wpH7vw",
+      "raw_title": "每一口呼吸 (Piano Version)",
+      "flat_duration": 343,
+      "playlist_id": "OLAK5uy_mU0uYPqlYa2vdZrC-QOa4dmllQ4ufKS7w",
+      "playlist_title": "一小時靈修音樂 (Vol. 1)",
+      "instrumental_signal": "靈修音樂",
+      "proposed_album": "一小時靈修音樂 (Vol. 1)",
+      "verdict": "instrumental",
+      "gate": null,
+      "why": "五重閘全過",
+      "meta": {
+        "id": "n3k69wpH7vw",
+        "title": "每一口呼吸 (Piano Version)",
+        "duration": 343,
+        "channel": "Salted Egg Music Ministry",
+        "upload_date": "20260526",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "詞曲:李宗盛 編曲:李宗盛",
+            "詞曲:李宗盛"
+          ],
+          "uniqCount": 2,
+          "coverage": 0.9766763848396501,
+          "lastT1": 335,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        },
+        "en": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "[MUSIC]",
+            "[BLANK_AUDIO]"
+          ],
+          "uniqCount": 2,
+          "coverage": 1.0145772594752187,
+          "lastT1": 348,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    },
+    {
+      "youtube_id": "BYfw86kU_bQ",
+      "raw_title": "祢坐著為王 (Piano Version)",
+      "flat_duration": 279,
+      "playlist_id": "OLAK5uy_mU0uYPqlYa2vdZrC-QOa4dmllQ4ufKS7w",
+      "playlist_title": "一小時靈修音樂 (Vol. 1)",
+      "instrumental_signal": "靈修音樂",
+      "proposed_album": "一小時靈修音樂 (Vol. 1)",
+      "verdict": "instrumental",
+      "gate": null,
+      "why": "五重閘全過",
+      "meta": {
+        "id": "BYfw86kU_bQ",
+        "title": "祢坐著為王 (Piano Version)",
+        "duration": 278,
+        "channel": "Salted Egg Music Ministry",
+        "upload_date": "20260526",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "詞:李宗盛 曲:李宗盛",
+            "詞:李宗盛",
+            "我就是想要你做我的朋友, 知道嗎?"
+          ],
+          "uniqCount": 3,
+          "coverage": 1.0107913669064748,
+          "lastT1": 281,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        },
+        "en": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "[MUSIC]"
+          ],
+          "uniqCount": 1,
+          "coverage": 0.9892086330935251,
+          "lastT1": 275,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    },
+    {
+      "youtube_id": "S0MMEJEwC2g",
+      "raw_title": "遇見光 (Piano Version)",
+      "flat_duration": 225,
+      "playlist_id": "OLAK5uy_mU0uYPqlYa2vdZrC-QOa4dmllQ4ufKS7w",
+      "playlist_title": "一小時靈修音樂 (Vol. 1)",
+      "instrumental_signal": "靈修音樂",
+      "proposed_album": "一小時靈修音樂 (Vol. 1)",
+      "verdict": "instrumental",
+      "gate": null,
+      "why": "五重閘全過",
+      "meta": {
+        "id": "S0MMEJEwC2g",
+        "title": "遇見光 (Piano Version)",
+        "duration": 224,
+        "channel": "Salted Egg Music Ministry",
+        "upload_date": "20260526",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "詞:李宗盛 曲:李宗盛",
+            "詞:李宗盛"
+          ],
+          "uniqCount": 2,
+          "coverage": 0.9419642857142857,
+          "lastT1": 211,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        },
+        "en": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "[MUSIC]"
+          ],
+          "uniqCount": 1,
+          "coverage": 0.9821428571428571,
+          "lastT1": 220,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    },
+    {
+      "youtube_id": "YAnxBy1tfVE",
+      "raw_title": "諸天述說 (Piano Version)",
+      "flat_duration": 405,
+      "playlist_id": "OLAK5uy_mU0uYPqlYa2vdZrC-QOa4dmllQ4ufKS7w",
+      "playlist_title": "一小時靈修音樂 (Vol. 1)",
+      "instrumental_signal": "靈修音樂",
+      "proposed_album": "一小時靈修音樂 (Vol. 1)",
+      "verdict": "instrumental",
+      "gate": null,
+      "why": "五重閘全過",
+      "meta": {
+        "id": "YAnxBy1tfVE",
+        "title": "諸天述說 (Piano Version)",
+        "duration": 404,
+        "channel": "Salted Egg Music Ministry",
+        "upload_date": "20260526",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "詞:李宗盛 曲:李宗盛",
+            "詞:李宗盛"
+          ],
+          "uniqCount": 2,
+          "coverage": 1.0024752475247525,
+          "lastT1": 405,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        },
+        "en": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "[MUSIC]"
+          ],
+          "uniqCount": 1,
+          "coverage": 0.9900990099009901,
+          "lastT1": 400,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    },
+    {
+      "youtube_id": "MAYTZi86b74",
+      "raw_title": "浮沉 (Piano Version)",
+      "flat_duration": 266,
+      "playlist_id": "OLAK5uy_mU0uYPqlYa2vdZrC-QOa4dmllQ4ufKS7w",
+      "playlist_title": "一小時靈修音樂 (Vol. 1)",
+      "instrumental_signal": "靈修音樂",
+      "proposed_album": "一小時靈修音樂 (Vol. 1)",
+      "verdict": "instrumental",
+      "gate": null,
+      "why": "五重閘全過",
+      "meta": {
+        "id": "MAYTZi86b74",
+        "title": "浮沉 (Piano Version)",
+        "duration": 265,
+        "channel": "Salted Egg Music Ministry",
+        "upload_date": "20260526",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "詞:李宗盛 曲:李宗盛",
+            "詞:李宗盛",
+            "我就是想要你做我的朋友, 知道嗎?"
+          ],
+          "uniqCount": 3,
+          "coverage": 1.0113207547169811,
+          "lastT1": 268,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        },
+        "en": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "[MUSIC]"
+          ],
+          "uniqCount": 1,
+          "coverage": 1.0188679245283019,
+          "lastT1": 270,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    },
+    {
+      "youtube_id": "-CdKC8Bg6JQ",
+      "raw_title": "客西馬尼園 (Piano Version)",
+      "flat_duration": 417,
+      "playlist_id": "OLAK5uy_mU0uYPqlYa2vdZrC-QOa4dmllQ4ufKS7w",
+      "playlist_title": "一小時靈修音樂 (Vol. 1)",
+      "instrumental_signal": "靈修音樂",
+      "proposed_album": "一小時靈修音樂 (Vol. 1)",
+      "verdict": "instrumental",
+      "gate": null,
+      "why": "五重閘全過",
+      "meta": {
+        "id": "-CdKC8Bg6JQ",
+        "title": "客西馬尼園 (Piano Version)",
+        "duration": 416,
+        "channel": "Salted Egg Music Ministry",
+        "upload_date": "20260526",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "詞曲:李宗盛 編曲:李宗盛",
+            "詞曲:李宗盛"
+          ],
+          "uniqCount": 2,
+          "coverage": 0.9543269230769231,
+          "lastT1": 397,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        },
+        "en": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "[MUSIC]"
+          ],
+          "uniqCount": 1,
+          "coverage": 1.0096153846153846,
+          "lastT1": 420,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    },
+    {
+      "youtube_id": "zpzzlt22_oU",
+      "raw_title": "大能的恩典 (Piano Version)",
+      "flat_duration": 275,
+      "playlist_id": "OLAK5uy_mU0uYPqlYa2vdZrC-QOa4dmllQ4ufKS7w",
+      "playlist_title": "一小時靈修音樂 (Vol. 1)",
+      "instrumental_signal": "靈修音樂",
+      "proposed_album": "一小時靈修音樂 (Vol. 1)",
+      "verdict": "instrumental",
+      "gate": null,
+      "why": "五重閘全過",
+      "meta": {
+        "id": "zpzzlt22_oU",
+        "title": "大能的恩典 (Piano Version)",
+        "duration": 275,
+        "channel": "Salted Egg Music Ministry",
+        "upload_date": "20260526",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "詞:李宗盛 曲:李宗盛",
+            "詞:李宗盛",
+            "曲:李宗盛"
+          ],
+          "uniqCount": 3,
+          "coverage": 0.9818181818181818,
+          "lastT1": 270,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        },
+        "en": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "[MUSIC]"
+          ],
+          "uniqCount": 1,
+          "coverage": 1,
+          "lastT1": 275,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    },
+    {
+      "youtube_id": "ixzKto0Qc1M",
+      "raw_title": "光照 (Piano Version)",
+      "flat_duration": 373,
+      "playlist_id": "OLAK5uy_mU0uYPqlYa2vdZrC-QOa4dmllQ4ufKS7w",
+      "playlist_title": "一小時靈修音樂 (Vol. 1)",
+      "instrumental_signal": "靈修音樂",
+      "proposed_album": "一小時靈修音樂 (Vol. 1)",
+      "verdict": "instrumental",
+      "gate": null,
+      "why": "五重閘全過",
+      "meta": {
+        "id": "ixzKto0Qc1M",
+        "title": "光照 (Piano Version)",
+        "duration": 372,
+        "channel": "Salted Egg Music Ministry",
+        "upload_date": "20260526",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "詞:李宗盛 曲:李宗盛",
+            "詞:李宗盛"
+          ],
+          "uniqCount": 2,
+          "coverage": 0.967741935483871,
+          "lastT1": 360,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        },
+        "en": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "[MUSIC]"
+          ],
+          "uniqCount": 1,
+          "coverage": 0.9946236559139785,
+          "lastT1": 370,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    },
+    {
+      "youtube_id": "RGHNm6CX9IA",
+      "raw_title": "微小的禱告 (Piano Version)",
+      "flat_duration": 292,
+      "playlist_id": "OLAK5uy_mU0uYPqlYa2vdZrC-QOa4dmllQ4ufKS7w",
+      "playlist_title": "一小時靈修音樂 (Vol. 1)",
+      "instrumental_signal": "靈修音樂",
+      "proposed_album": "一小時靈修音樂 (Vol. 1)",
+      "verdict": "instrumental",
+      "gate": null,
+      "why": "五重閘全過",
+      "meta": {
+        "id": "RGHNm6CX9IA",
+        "title": "微小的禱告 (Piano Version)",
+        "duration": 292,
+        "channel": "Salted Egg Music Ministry",
+        "upload_date": "20260526",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "詞曲:李宗盛 編曲:李宗盛",
+            "詞曲:李宗盛"
+          ],
+          "uniqCount": 2,
+          "coverage": 0.9486301369863014,
+          "lastT1": 277,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        },
+        "en": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "[MUSIC]"
+          ],
+          "uniqCount": 1,
+          "coverage": 1.0102739726027397,
+          "lastT1": 295,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    },
+    {
+      "youtube_id": "Rw59yO2xunM",
+      "raw_title": "我在這裏 (Piano Version)",
+      "flat_duration": 408,
+      "playlist_id": "OLAK5uy_mU0uYPqlYa2vdZrC-QOa4dmllQ4ufKS7w",
+      "playlist_title": "一小時靈修音樂 (Vol. 1)",
+      "instrumental_signal": "靈修音樂",
+      "proposed_album": "一小時靈修音樂 (Vol. 1)",
+      "verdict": "instrumental",
+      "gate": null,
+      "why": "五重閘全過",
+      "meta": {
+        "id": "Rw59yO2xunM",
+        "title": "我在這裏 (Piano Version)",
+        "duration": 408,
+        "channel": "Salted Egg Music Ministry",
+        "upload_date": "20260526",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "詞曲:李宗盛 編曲:李宗盛",
+            "詞曲:李宗盛"
+          ],
+          "uniqCount": 2,
+          "coverage": 0.9681372549019608,
+          "lastT1": 395,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        },
+        "en": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "[MUSIC]"
+          ],
+          "uniqCount": 1,
+          "coverage": 0.9681372549019608,
+          "lastT1": 395,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    }
+  ]
+}

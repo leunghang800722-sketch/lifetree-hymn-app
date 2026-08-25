@@ -1,0 +1,6179 @@
+{
+  "generated": "2026-08-24T09:56:00.423Z",
+  "org": "讚美之泉",
+  "band": [
+    120,
+    600
+  ],
+  "staleSkips": [],
+  "results": [
+    {
+      "youtube_id": "ewGg7R4vUHE",
+      "raw_title": "每一天我需要祢 I Need You",
+      "flat_duration": 504,
+      "playlist_id": "OLAK5uy_lVRMl-CabRvCnPn8Wc0OYAzPN4h8Hb_to",
+      "playlist_title": "每一天我需要祢 I Need You (安靜演奏專輯4)",
+      "instrumental_signal": "演奏",
+      "proposed_album": "每一天我需要祢 (安靜演奏專輯4)",
+      "verdict": "instrumental",
+      "gate": null,
+      "why": "五重閘全過",
+      "meta": {
+        "id": "ewGg7R4vUHE",
+        "title": "每一天我需要祢 I Need You",
+        "duration": 504,
+        "channel": "讚美之泉 Stream Of Praise Music Ministries",
+        "upload_date": "20231116",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "詞曲:李宗盛 編曲:李宗盛",
+            "詞曲:李宗盛"
+          ],
+          "uniqCount": 2,
+          "coverage": 0.9623015873015873,
+          "lastT1": 485,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        },
+        "en": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "(birds chirping)",
+            "(gentle music)"
+          ],
+          "uniqCount": 2,
+          "coverage": 0.9817857142857143,
+          "lastT1": 494.82,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    },
+    {
+      "youtube_id": "wlxOUQJnOqA",
+      "raw_title": "盡情地微笑 Smile",
+      "flat_duration": 409,
+      "playlist_id": "OLAK5uy_lVRMl-CabRvCnPn8Wc0OYAzPN4h8Hb_to",
+      "playlist_title": "每一天我需要祢 I Need You (安靜演奏專輯4)",
+      "instrumental_signal": "演奏",
+      "proposed_album": "每一天我需要祢 (安靜演奏專輯4)",
+      "verdict": "instrumental",
+      "gate": null,
+      "why": "五重閘全過",
+      "meta": {
+        "id": "wlxOUQJnOqA",
+        "title": "盡情地微笑 Smile",
+        "duration": 409,
+        "channel": "讚美之泉 Stream Of Praise Music Ministries",
+        "upload_date": "20231116",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "詞曲:李宗盛 編曲:李宗盛",
+            "詞:李宗盛 編曲:李宗盛"
+          ],
+          "uniqCount": 2,
+          "coverage": 0.9706601466992665,
+          "lastT1": 397,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        },
+        "en": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "(birds chirping)",
+            "(gentle music)"
+          ],
+          "uniqCount": 2,
+          "coverage": 0.9598533007334963,
+          "lastT1": 392.58,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    },
+    {
+      "youtube_id": "eoXWiyts_jE",
+      "raw_title": "天父 My Abba Father",
+      "flat_duration": 403,
+      "playlist_id": "OLAK5uy_lVRMl-CabRvCnPn8Wc0OYAzPN4h8Hb_to",
+      "playlist_title": "每一天我需要祢 I Need You (安靜演奏專輯4)",
+      "instrumental_signal": "演奏",
+      "proposed_album": "每一天我需要祢 (安靜演奏專輯4)",
+      "verdict": "instrumental",
+      "gate": null,
+      "why": "五重閘全過",
+      "meta": {
+        "id": "eoXWiyts_jE",
+        "title": "天父 My Abba Father",
+        "duration": 403,
+        "channel": "讚美之泉 Stream Of Praise Music Ministries",
+        "upload_date": "20231116",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "詞曲:李宗盛 編曲:李宗盛",
+            "詞曲:李宗盛"
+          ],
+          "uniqCount": 2,
+          "coverage": 0.9553349875930521,
+          "lastT1": 385,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        },
+        "en": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "[MUSIC]"
+          ],
+          "uniqCount": 1,
+          "coverage": 0.9925558312655087,
+          "lastT1": 400,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    },
+    {
+      "youtube_id": "nFFrX_3jhOg",
+      "raw_title": "祢是聖潔 You Are Holy",
+      "flat_duration": 400,
+      "playlist_id": "OLAK5uy_lVRMl-CabRvCnPn8Wc0OYAzPN4h8Hb_to",
+      "playlist_title": "每一天我需要祢 I Need You (安靜演奏專輯4)",
+      "instrumental_signal": "演奏",
+      "proposed_album": "每一天我需要祢 (安靜演奏專輯4)",
+      "verdict": "reject",
+      "gate": 4,
+      "why": "兩 pass 結論唔一致(zh 唔過:剩餘文字 10 行:詩歌歌詩歌詩歌詩歌詞的錄音。 / 詩歌詩歌詩歌詩歌詩歌詩詞的錄音。 / 詩歌詩歌詩歌詩詩歌詩詞的錄音。 / en 過)",
+      "meta": {
+        "id": "nFFrX_3jhOg",
+        "title": "祢是聖潔 You Are Holy",
+        "duration": 400,
+        "channel": "讚美之泉 Stream Of Praise Music Ministries",
+        "upload_date": "20231116",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": false,
+          "reasons": [
+            "剩餘文字 10 行:詩歌歌詩歌詩歌詩歌詞的錄音。 / 詩歌詩歌詩歌詩歌詩歌詩詞的錄音。 / 詩歌詩歌詩歌詩詩歌詩詞的錄音。"
+          ],
+          "uniq": [
+            "詩歌歌詩歌詩歌詩歌詞的錄音。",
+            "詩歌詩歌詩歌詞的錄音。",
+            "詩歌詩歌詩歌詩歌詞的錄音。",
+            "詩歌詩歌詩歌詩歌詩歌詞的錄音。",
+            "詩歌詩歌詩歌詩歌詩歌詩詞的錄音。",
+            "詩歌詩歌詩歌詩詩歌詩詞的錄音。",
+            "詩歌詩歌詩詩詩詩詩詩詩詩的錄音。",
+            "詩歌詩詩詩詩詩詩詩詩的錄音。",
+            "詩歌詩詩詩詩詩詩詩詩詩詩的錄音。",
+            "詩歌詩的錄音。"
+          ],
+          "uniqCount": 13,
+          "coverage": 0.98,
+          "lastT1": 392,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        },
+        "en": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "(soft piano music)",
+            "(birds chirping)"
+          ],
+          "uniqCount": 2,
+          "coverage": 0.9823000000000001,
+          "lastT1": 392.92,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    },
+    {
+      "youtube_id": "nynnRHl9wCU",
+      "raw_title": "在至高之處 In the Highest",
+      "flat_duration": 391,
+      "playlist_id": "OLAK5uy_lVRMl-CabRvCnPn8Wc0OYAzPN4h8Hb_to",
+      "playlist_title": "每一天我需要祢 I Need You (安靜演奏專輯4)",
+      "instrumental_signal": "演奏",
+      "proposed_album": "每一天我需要祢 (安靜演奏專輯4)",
+      "verdict": "reject",
+      "gate": 4,
+      "why": "兩 pass 結論唔一致(zh 唔過:剩餘文字 1 行:謝謝收看! / en 過)",
+      "meta": {
+        "id": "nynnRHl9wCU",
+        "title": "在至高之處 In the Highest",
+        "duration": 391,
+        "channel": "讚美之泉 Stream Of Praise Music Ministries",
+        "upload_date": "20231116",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": false,
+          "reasons": [
+            "剩餘文字 1 行:謝謝收看!"
+          ],
+          "uniq": [
+            "詩歌歌曲、詩歌歌曲、詩歌歌曲。",
+            "詩歌曲、詩歌歌曲、詩歌歌曲。",
+            "詩歌歌曲,詩歌歌曲。",
+            "詩歌歌曲,詩歌歌曲,詩歌歌曲,詩歌歌曲。",
+            "詩歌歌曲,詩歌歌曲.",
+            "詩歌歌曲,詩歌歌曲,詩歌歌曲。",
+            "謝謝收看!"
+          ],
+          "uniqCount": 7,
+          "coverage": 1.0025575447570332,
+          "lastT1": 392,
+          "whisperFailed": false,
+          "garbageDropped": 0,
+          "rejudge_reasons": [
+            "剩餘文字:謝謝收看!"
+          ]
+        },
+        "en": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "(birds chirping)",
+            "(gentle music)",
+            "[BLANK_AUDIO]"
+          ],
+          "uniqCount": 3,
+          "coverage": 1.0230179028132993,
+          "lastT1": 400,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    },
+    {
+      "youtube_id": "-d86wKmdxKQ",
+      "raw_title": "榮耀的呼召 Glorious Calling",
+      "flat_duration": 488,
+      "playlist_id": "OLAK5uy_lVRMl-CabRvCnPn8Wc0OYAzPN4h8Hb_to",
+      "playlist_title": "每一天我需要祢 I Need You (安靜演奏專輯4)",
+      "instrumental_signal": "演奏",
+      "proposed_album": "每一天我需要祢 (安靜演奏專輯4)",
+      "verdict": "instrumental",
+      "gate": null,
+      "why": "五重閘全過",
+      "meta": {
+        "id": "-d86wKmdxKQ",
+        "title": "榮耀的呼召 Glorious Calling",
+        "duration": 488,
+        "channel": "讚美之泉 Stream Of Praise Music Ministries",
+        "upload_date": "20231116",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "詞曲:李宗盛 編曲:李宗盛",
+            "演唱:李宗盛",
+            "詞曲:李宗盛"
+          ],
+          "uniqCount": 3,
+          "coverage": 0.9979508196721312,
+          "lastT1": 487,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        },
+        "en": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "(soft piano music)",
+            "(water trickling)"
+          ],
+          "uniqCount": 2,
+          "coverage": 0.9772950819672132,
+          "lastT1": 476.92,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    },
+    {
+      "youtube_id": "OT5muxYM3og",
+      "raw_title": "君王就在這裡 Worthy Is the King",
+      "flat_duration": 400,
+      "playlist_id": "OLAK5uy_lVRMl-CabRvCnPn8Wc0OYAzPN4h8Hb_to",
+      "playlist_title": "每一天我需要祢 I Need You (安靜演奏專輯4)",
+      "instrumental_signal": "演奏",
+      "proposed_album": "每一天我需要祢 (安靜演奏專輯4)",
+      "verdict": "reject",
+      "gate": 4,
+      "why": "兩 pass 結論唔一致(zh 唔過:剩餘文字 6 行:詩歌歌詩歌詩歌詩歌詞的錄音。 / 詩歌詩歌詩歌詩歌詩歌詩歌詩的錄音。 / 詩歌詩歌詩歌詩歌詩歌詩歌詩歌詩的錄音。 / en 過)",
+      "meta": {
+        "id": "OT5muxYM3og",
+        "title": "君王就在這裡 Worthy Is the King",
+        "duration": 400,
+        "channel": "讚美之泉 Stream Of Praise Music Ministries",
+        "upload_date": "20231116",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": false,
+          "reasons": [
+            "剩餘文字 6 行:詩歌歌詩歌詩歌詩歌詞的錄音。 / 詩歌詩歌詩歌詩歌詩歌詩歌詩的錄音。 / 詩歌詩歌詩歌詩歌詩歌詩歌詩歌詩的錄音。"
+          ],
+          "uniq": [
+            "詩歌歌詩歌詩歌詩歌詞的錄音。",
+            "詩歌詩歌詩歌詞的錄音。",
+            "詩歌詩歌詩歌詩歌詩歌詞的錄音。",
+            "詩歌詩歌詩歌詩歌詩歌詩歌詩的錄音。",
+            "詩歌詩歌詩歌詩歌詩歌詩歌詩歌詩的錄音。",
+            "詩歌詩歌詩歌詩歌詩歌詩的錄音。",
+            "詩歌詩歌詩歌詩詩歌詩的錄音。",
+            "放入冰箱中冷却1小时"
+          ],
+          "uniqCount": 8,
+          "coverage": 1,
+          "lastT1": 400,
+          "whisperFailed": false,
+          "garbageDropped": 0,
+          "rejudge_reasons": [
+            "剩餘文字:詩歌歌詩歌詩歌詩歌詞的錄音。 / 詩歌詩歌詩歌詩歌詩歌詩歌詩的錄音。 / 詩歌詩歌詩歌詩歌詩歌詩歌詩歌詩的錄音。 / 詩歌詩歌詩歌詩歌詩歌詩的錄音。 / 詩歌詩歌詩歌詩詩歌詩的錄音。 / 放入冰箱中冷却1小时"
+          ]
+        },
+        "en": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "[MUSIC]"
+          ],
+          "uniqCount": 1,
+          "coverage": 0.9875,
+          "lastT1": 395,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    },
+    {
+      "youtube_id": "f-La6A3k7Qw",
+      "raw_title": "讚美中信心不斷升起 Let Faith Arise In Our Praises",
+      "flat_duration": 363,
+      "playlist_id": "OLAK5uy_lVRMl-CabRvCnPn8Wc0OYAzPN4h8Hb_to",
+      "playlist_title": "每一天我需要祢 I Need You (安靜演奏專輯4)",
+      "instrumental_signal": "演奏",
+      "proposed_album": "每一天我需要祢 (安靜演奏專輯4)",
+      "verdict": "instrumental",
+      "gate": null,
+      "why": "五重閘全過",
+      "meta": {
+        "id": "f-La6A3k7Qw",
+        "title": "讚美中信心不斷升起 Let Faith Arise In Our Praises",
+        "duration": 363,
+        "channel": "讚美之泉 Stream Of Praise Music Ministries",
+        "upload_date": "20231116",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "詞曲:李宗盛 編曲:李宗盛",
+            "詞曲:李宗盛",
+            "MING PAO CANADA | MING PAO TORONTO"
+          ],
+          "uniqCount": 3,
+          "coverage": 1,
+          "lastT1": 363,
+          "whisperFailed": false,
+          "garbageDropped": 1
+        },
+        "en": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "[MUSIC]"
+          ],
+          "uniqCount": 1,
+          "coverage": 0.9641873278236914,
+          "lastT1": 350,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    },
+    {
+      "youtube_id": "D9t7YBBbOX0",
+      "raw_title": "一閃一閃亮晶晶 Twinkle, Twinkle Medley (一閃一閃亮晶晶 / 聖靈的果子 /...",
+      "flat_duration": 611,
+      "playlist_id": "OLAK5uy_kMXi4loVXHI_tsxP6MzWCUAmtJwLF9_sE",
+      "playlist_title": "住在祢裡面 Abiding In You",
+      "instrumental_signal": "iTunes 器樂專輯「住在祢裡面 (安靜演奏專輯3)」",
+      "proposed_album": "住在祢裡面 (安靜演奏專輯3)",
+      "verdict": "reject",
+      "gate": 2,
+      "why": "isCompilation; 片長 611s 唔喺 120-600"
+    },
+    {
+      "youtube_id": "EuuKnpMkz70",
+      "raw_title": "所有的榮耀歸於祢 All The Glory",
+      "flat_duration": 346,
+      "playlist_id": "OLAK5uy_kMXi4loVXHI_tsxP6MzWCUAmtJwLF9_sE",
+      "playlist_title": "住在祢裡面 Abiding In You",
+      "instrumental_signal": "iTunes 器樂專輯「住在祢裡面 (安靜演奏專輯3)」",
+      "proposed_album": "住在祢裡面 (安靜演奏專輯3)",
+      "verdict": "instrumental",
+      "gate": null,
+      "why": "五重閘全過",
+      "meta": {
+        "id": "EuuKnpMkz70",
+        "title": "所有的榮耀歸於祢 All The Glory",
+        "duration": 346,
+        "channel": "讚美之泉 Stream Of Praise Music Ministries",
+        "upload_date": "20220723",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "詞曲 李宗盛"
+          ],
+          "uniqCount": 1,
+          "coverage": 0.9653179190751445,
+          "lastT1": 334,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        },
+        "en": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "[water flowing]",
+            "[music playing]"
+          ],
+          "uniqCount": 2,
+          "coverage": 0.9971098265895953,
+          "lastT1": 345,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    },
+    {
+      "youtube_id": "9HgDAm4UHZE",
+      "raw_title": "愛祢，是我一生的呼召 I Live My Life To Love You",
+      "flat_duration": 348,
+      "playlist_id": "OLAK5uy_kMXi4loVXHI_tsxP6MzWCUAmtJwLF9_sE",
+      "playlist_title": "住在祢裡面 Abiding In You",
+      "instrumental_signal": "iTunes 器樂專輯「住在祢裡面 (安靜演奏專輯3)」",
+      "proposed_album": "住在祢裡面 (安靜演奏專輯3)",
+      "verdict": "instrumental",
+      "gate": null,
+      "why": "五重閘全過",
+      "meta": {
+        "id": "9HgDAm4UHZE",
+        "title": "愛祢，是我一生的呼召 I Live My Life To Love You",
+        "duration": 347,
+        "channel": "讚美之泉 Stream Of Praise Music Ministries",
+        "upload_date": "20220723",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "詩歌歌曲,詩歌歌曲。",
+            "詩歌歌曲,詩歌歌曲."
+          ],
+          "uniqCount": 2,
+          "coverage": 0.9567723342939481,
+          "lastT1": 332,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        },
+        "en": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "(birds chirping)",
+            "(gentle piano music)"
+          ],
+          "uniqCount": 2,
+          "coverage": 0.9598847262247838,
+          "lastT1": 333.08,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    },
+    {
+      "youtube_id": "Lt6Bcd5uD1o",
+      "raw_title": "祢是何等榮美 Jesus, My Everything",
+      "flat_duration": 430,
+      "playlist_id": "OLAK5uy_kMXi4loVXHI_tsxP6MzWCUAmtJwLF9_sE",
+      "playlist_title": "住在祢裡面 Abiding In You",
+      "instrumental_signal": "iTunes 器樂專輯「住在祢裡面 (安靜演奏專輯3)」",
+      "proposed_album": "住在祢裡面 (安靜演奏專輯3)",
+      "verdict": "instrumental",
+      "gate": null,
+      "why": "五重閘全過",
+      "meta": {
+        "id": "Lt6Bcd5uD1o",
+        "title": "祢是何等榮美 Jesus, My Everything",
+        "duration": 429,
+        "channel": "讚美之泉 Stream Of Praise Music Ministries",
+        "upload_date": "20220723",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "詞曲:李宗盛",
+            "演唱:李宗盛"
+          ],
+          "uniqCount": 2,
+          "coverage": 0.9906759906759907,
+          "lastT1": 425,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        },
+        "en": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "(water lapping)",
+            "(soft guitar music)",
+            "(birds chirping)"
+          ],
+          "uniqCount": 3,
+          "coverage": 0.9906759906759907,
+          "lastT1": 425,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    },
+    {
+      "youtube_id": "vX1QybdLgRY",
+      "raw_title": "How Awesome You Are [主祢真偉大]",
+      "flat_duration": 407,
+      "playlist_id": "OLAK5uy_kMXi4loVXHI_tsxP6MzWCUAmtJwLF9_sE",
+      "playlist_title": "住在祢裡面 Abiding In You",
+      "instrumental_signal": "iTunes 器樂專輯「住在祢裡面 (安靜演奏專輯3)」",
+      "proposed_album": "住在祢裡面 (安靜演奏專輯3)",
+      "verdict": "instrumental",
+      "gate": null,
+      "why": "五重閘全過",
+      "meta": {
+        "id": "vX1QybdLgRY",
+        "title": "How Awesome You Are [主祢真偉大]",
+        "duration": 407,
+        "channel": "讚美之泉 Stream Of Praise Music Ministries",
+        "upload_date": "20220723",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "詞曲:李宗盛 編曲:李宗盛",
+            "詞曲:李宗盛"
+          ],
+          "uniqCount": 2,
+          "coverage": 0.9705159705159705,
+          "lastT1": 395,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        },
+        "en": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "(birds chirping)",
+            "(gentle music)"
+          ],
+          "uniqCount": 2,
+          "coverage": 0.9645700245700245,
+          "lastT1": 392.58,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    },
+    {
+      "youtube_id": "-xGK-xCRM7s",
+      "raw_title": "住在祢裡面 Abiding In You",
+      "flat_duration": 404,
+      "playlist_id": "OLAK5uy_kMXi4loVXHI_tsxP6MzWCUAmtJwLF9_sE",
+      "playlist_title": "住在祢裡面 Abiding In You",
+      "instrumental_signal": "iTunes 器樂專輯「住在祢裡面 (安靜演奏專輯3)」",
+      "proposed_album": "住在祢裡面 (安靜演奏專輯3)",
+      "verdict": "instrumental",
+      "gate": null,
+      "why": "五重閘全過",
+      "meta": {
+        "id": "-xGK-xCRM7s",
+        "title": "住在祢裡面 Abiding In You",
+        "duration": 403,
+        "channel": "讚美之泉 Stream Of Praise Music Ministries",
+        "upload_date": "20220723",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "詩歌歌曲 詩歌歌曲",
+            "詩歌曲 詩歌歌曲"
+          ],
+          "uniqCount": 2,
+          "coverage": 0.9751861042183623,
+          "lastT1": 393,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        },
+        "en": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "[MUSIC]"
+          ],
+          "uniqCount": 1,
+          "coverage": 0.9925558312655087,
+          "lastT1": 400,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    },
+    {
+      "youtube_id": "NGcSYEysv-M",
+      "raw_title": "更像祢 More Like You",
+      "flat_duration": 441,
+      "playlist_id": "OLAK5uy_kMXi4loVXHI_tsxP6MzWCUAmtJwLF9_sE",
+      "playlist_title": "住在祢裡面 Abiding In You",
+      "instrumental_signal": "iTunes 器樂專輯「住在祢裡面 (安靜演奏專輯3)」",
+      "proposed_album": "住在祢裡面 (安靜演奏專輯3)",
+      "verdict": "instrumental",
+      "gate": null,
+      "why": "五重閘全過",
+      "meta": {
+        "id": "NGcSYEysv-M",
+        "title": "更像祢 More Like You",
+        "duration": 440,
+        "channel": "讚美之泉 Stream Of Praise Music Ministries",
+        "upload_date": "20220723",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "詩歌歌曲、詩歌歌曲、詩歌歌曲。",
+            "詩歌曲、詩歌歌曲、詩歌歌曲。",
+            "詩歌歌曲。"
+          ],
+          "uniqCount": 3,
+          "coverage": 0.9590909090909091,
+          "lastT1": 422,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        },
+        "en": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "(birds chirping)",
+            "(acoustic guitar music)"
+          ],
+          "uniqCount": 2,
+          "coverage": 0.9623181818181819,
+          "lastT1": 423.42,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    },
+    {
+      "youtube_id": "gn8IGysQlk8",
+      "raw_title": "最好的朋友 My Savior And My Friend",
+      "flat_duration": 385,
+      "playlist_id": "OLAK5uy_kMXi4loVXHI_tsxP6MzWCUAmtJwLF9_sE",
+      "playlist_title": "住在祢裡面 Abiding In You",
+      "instrumental_signal": "iTunes 器樂專輯「住在祢裡面 (安靜演奏專輯3)」",
+      "proposed_album": "住在祢裡面 (安靜演奏專輯3)",
+      "verdict": "instrumental",
+      "gate": null,
+      "why": "五重閘全過",
+      "meta": {
+        "id": "gn8IGysQlk8",
+        "title": "最好的朋友 My Savior And My Friend",
+        "duration": 385,
+        "channel": "讚美之泉 Stream Of Praise Music Ministries",
+        "upload_date": "20220723",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "詞曲:李宗盛 編曲:李宗盛",
+            "詞曲:李宗盛"
+          ],
+          "uniqCount": 2,
+          "coverage": 0.9948051948051948,
+          "lastT1": 383,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        },
+        "en": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "[water flowing]",
+            "[music]"
+          ],
+          "uniqCount": 2,
+          "coverage": 1,
+          "lastT1": 385,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    },
+    {
+      "youtube_id": "QMKdRtRkGJQ",
+      "raw_title": "煉淨我 Cleanse Me, Lord",
+      "flat_duration": 425,
+      "playlist_id": "OLAK5uy_kMXi4loVXHI_tsxP6MzWCUAmtJwLF9_sE",
+      "playlist_title": "住在祢裡面 Abiding In You",
+      "instrumental_signal": "iTunes 器樂專輯「住在祢裡面 (安靜演奏專輯3)」",
+      "proposed_album": "住在祢裡面 (安靜演奏專輯3)",
+      "verdict": "reject",
+      "gate": 4,
+      "why": "兩 pass 結論唔一致(zh 唔過:剩餘文字 6 行:詩歌歌詩歌詩歌詞的錄音,粵語或國語敬拜讚美詩歌。 / 詩歌歌詩歌詩歌詩詞的錄音,粵語或國語敬拜讚美詩歌。 / 詩歌歌詩歌詩詞的錄音,粵語或國語敬拜讚美詩歌。 / en 過)",
+      "meta": {
+        "id": "QMKdRtRkGJQ",
+        "title": "煉淨我 Cleanse Me, Lord",
+        "duration": 425,
+        "channel": "讚美之泉 Stream Of Praise Music Ministries",
+        "upload_date": "20220723",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": false,
+          "reasons": [
+            "剩餘文字 6 行:詩歌歌詩歌詩歌詞的錄音,粵語或國語敬拜讚美詩歌。 / 詩歌歌詩歌詩歌詩詞的錄音,粵語或國語敬拜讚美詩歌。 / 詩歌歌詩歌詩詞的錄音,粵語或國語敬拜讚美詩歌。"
+          ],
+          "uniq": [
+            "詩歌歌詩歌詩歌詞的錄音,粵語或國語敬拜讚美詩歌。",
+            "詩歌歌詩歌詩歌詩詞的錄音,粵語或國語敬拜讚美詩歌。",
+            "詩歌歌詩歌詩詞的錄音,粵語或國語敬拜讚美詩歌。",
+            "詩歌歌詩詩詞的錄音,粵語或國語敬拜讚美詩歌。",
+            "詩歌歌詩詞的錄音,粵語或國語敬拜讚美詩歌。",
+            "我會在你身邊的, 永遠都不會放過你, 永遠都不會放過你…"
+          ],
+          "uniqCount": 6,
+          "coverage": 1.011764705882353,
+          "lastT1": 430,
+          "whisperFailed": false,
+          "garbageDropped": 0,
+          "rejudge_reasons": [
+            "剩餘文字:詩歌歌詩歌詩歌詞的錄音,粵語或國語敬拜讚美詩歌。 / 詩歌歌詩歌詩歌詩詞的錄音,粵語或國語敬拜讚美詩歌。 / 詩歌歌詩歌詩詞的錄音,粵語或國語敬拜讚美詩歌。 / 詩歌歌詩詩詞的錄音,粵語或國語敬拜讚美詩歌。 / 詩歌歌詩詞的錄音,粵語或國語敬拜讚美詩歌。 / 我會在你身邊的, 永遠都不會放過你, 永遠都不會放過你…"
+          ]
+        },
+        "en": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "[BIRDS CHIRPING]",
+            "[MUSIC PLAYING]"
+          ],
+          "uniqCount": 2,
+          "coverage": 0.9870588235294118,
+          "lastT1": 419.5,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    },
+    {
+      "youtube_id": "tJRBF-Tf49M",
+      "raw_title": "賜福與你 Blessings Of God Be Upon You",
+      "flat_duration": 211,
+      "playlist_id": "OLAK5uy_mLoq4E2Qb3lQWAD5pNxkppV0Nq1PZnxho",
+      "playlist_title": "賜福與你 Blessings Of God Be Upon You",
+      "instrumental_signal": "iTunes 器樂專輯「賜福與你 (演奏專輯8)」",
+      "proposed_album": "賜福與你 (演奏專輯8)",
+      "verdict": "reject",
+      "gate": 4,
+      "why": "兩 pass 結論唔一致(zh 過 / en 唔過:剩餘文字 1 行:you)",
+      "meta": {
+        "id": "tJRBF-Tf49M",
+        "title": "賜福與你 Blessings Of God Be Upon You",
+        "duration": 211,
+        "channel": "讚美之泉 Stream Of Praise Music Ministries",
+        "upload_date": "20200419",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "詞曲:李宗盛 編曲:李宗盛",
+            "詞曲:李宗盛"
+          ],
+          "uniqCount": 2,
+          "coverage": 0.995260663507109,
+          "lastT1": 210,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        },
+        "en": {
+          "pass": false,
+          "reasons": [
+            "剩餘文字 1 行:you"
+          ],
+          "uniq": [
+            "[MUSIC]",
+            "you"
+          ],
+          "uniqCount": 2,
+          "coverage": 1.0050236966824644,
+          "lastT1": 212.06,
+          "whisperFailed": false,
+          "garbageDropped": 0,
+          "rejudge_reasons": [
+            "剩餘文字:you"
+          ]
+        }
+      }
+    },
+    {
+      "youtube_id": "3NVTa81UTho",
+      "raw_title": "歌頌 Sing And Praise",
+      "flat_duration": 216,
+      "playlist_id": "OLAK5uy_mLoq4E2Qb3lQWAD5pNxkppV0Nq1PZnxho",
+      "playlist_title": "賜福與你 Blessings Of God Be Upon You",
+      "instrumental_signal": "iTunes 器樂專輯「賜福與你 (演奏專輯8)」",
+      "proposed_album": "賜福與你 (演奏專輯8)",
+      "verdict": "instrumental",
+      "gate": null,
+      "why": "五重閘全過",
+      "meta": {
+        "id": "3NVTa81UTho",
+        "title": "歌頌 Sing And Praise",
+        "duration": 216,
+        "channel": "讚美之泉 Stream Of Praise Music Ministries",
+        "upload_date": "20200419",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "詞曲:李宗盛 編曲:李宗盛",
+            "詞曲:李宗盛"
+          ],
+          "uniqCount": 2,
+          "coverage": 1.0046296296296295,
+          "lastT1": 217,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        },
+        "en": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "[MUSIC]",
+            "[BLANK_AUDIO]"
+          ],
+          "uniqCount": 2,
+          "coverage": 1.0185185185185186,
+          "lastT1": 220,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    },
+    {
+      "youtube_id": "XiJCDvemw-A",
+      "raw_title": "我的天堂 My Heaven",
+      "flat_duration": 315,
+      "playlist_id": "OLAK5uy_mLoq4E2Qb3lQWAD5pNxkppV0Nq1PZnxho",
+      "playlist_title": "賜福與你 Blessings Of God Be Upon You",
+      "instrumental_signal": "iTunes 器樂專輯「賜福與你 (演奏專輯8)」",
+      "proposed_album": "賜福與你 (演奏專輯8)",
+      "verdict": "reject",
+      "gate": 2,
+      "why": "org 內已有同名器樂版 #5922"
+    },
+    {
+      "youtube_id": "GHTTx8bx0Us",
+      "raw_title": "耶和華靠近傷心的人 The Lord Is Close To The Broken",
+      "flat_duration": 269,
+      "playlist_id": "OLAK5uy_mLoq4E2Qb3lQWAD5pNxkppV0Nq1PZnxho",
+      "playlist_title": "賜福與你 Blessings Of God Be Upon You",
+      "instrumental_signal": "iTunes 器樂專輯「賜福與你 (演奏專輯8)」",
+      "proposed_album": "賜福與你 (演奏專輯8)",
+      "verdict": "instrumental",
+      "gate": null,
+      "why": "五重閘全過",
+      "meta": {
+        "id": "GHTTx8bx0Us",
+        "title": "耶和華靠近傷心的人 The Lord Is Close To The Broken",
+        "duration": 269,
+        "channel": "讚美之泉 Stream Of Praise Music Ministries",
+        "upload_date": "20200419",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "詞曲:李宗盛 編曲:李宗盛",
+            "詞曲:李宗盛",
+            "詞:李宗盛"
+          ],
+          "uniqCount": 3,
+          "coverage": 0.9107806691449815,
+          "lastT1": 245,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        },
+        "en": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "[MUSIC]",
+            "[BLANK_AUDIO]"
+          ],
+          "uniqCount": 2,
+          "coverage": 1.0223048327137547,
+          "lastT1": 275,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    },
+    {
+      "youtube_id": "vXhWhOuBGzo",
+      "raw_title": "我高舉雙手 I Give You My All",
+      "flat_duration": 200,
+      "playlist_id": "OLAK5uy_mLoq4E2Qb3lQWAD5pNxkppV0Nq1PZnxho",
+      "playlist_title": "賜福與你 Blessings Of God Be Upon You",
+      "instrumental_signal": "iTunes 器樂專輯「賜福與你 (演奏專輯8)」",
+      "proposed_album": "賜福與你 (演奏專輯8)",
+      "verdict": "instrumental",
+      "gate": null,
+      "why": "五重閘全過",
+      "meta": {
+        "id": "vXhWhOuBGzo",
+        "title": "我高舉雙手 I Give You My All",
+        "duration": 199,
+        "channel": "讚美之泉 Stream Of Praise Music Ministries",
+        "upload_date": "20200419",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "詞曲:李宗盛 編曲:李宗盛",
+            "詞曲:李宗盛",
+            "詞:李宗盛"
+          ],
+          "uniqCount": 3,
+          "coverage": 0.9195979899497487,
+          "lastT1": 183,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        },
+        "en": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "[MUSIC]"
+          ],
+          "uniqCount": 1,
+          "coverage": 0.9849246231155779,
+          "lastT1": 196,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    },
+    {
+      "youtube_id": "dPUpQ5ZmOEg",
+      "raw_title": "祢的最愛 Your Beloved",
+      "flat_duration": 285,
+      "playlist_id": "OLAK5uy_mLoq4E2Qb3lQWAD5pNxkppV0Nq1PZnxho",
+      "playlist_title": "賜福與你 Blessings Of God Be Upon You",
+      "instrumental_signal": "iTunes 器樂專輯「賜福與你 (演奏專輯8)」",
+      "proposed_album": "賜福與你 (演奏專輯8)",
+      "verdict": "instrumental",
+      "gate": null,
+      "why": "五重閘全過",
+      "meta": {
+        "id": "dPUpQ5ZmOEg",
+        "title": "祢的最愛 Your Beloved",
+        "duration": 284,
+        "channel": "讚美之泉 Stream Of Praise Music Ministries",
+        "upload_date": "20200419",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "詞曲:李宗盛 編曲:李宗盛",
+            "詞:李宗盛 編曲:李宗盛"
+          ],
+          "uniqCount": 2,
+          "coverage": 0.9753521126760564,
+          "lastT1": 277,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        },
+        "en": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "[MUSIC]"
+          ],
+          "uniqCount": 1,
+          "coverage": 0.9507042253521126,
+          "lastT1": 270,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    },
+    {
+      "youtube_id": "oMyU-0SqT8A",
+      "raw_title": "這是聖潔之地 This Is Holy Ground",
+      "flat_duration": 418,
+      "playlist_id": "OLAK5uy_mLoq4E2Qb3lQWAD5pNxkppV0Nq1PZnxho",
+      "playlist_title": "賜福與你 Blessings Of God Be Upon You",
+      "instrumental_signal": "iTunes 器樂專輯「賜福與你 (演奏專輯8)」",
+      "proposed_album": "賜福與你 (演奏專輯8)",
+      "verdict": "instrumental",
+      "gate": null,
+      "why": "五重閘全過",
+      "meta": {
+        "id": "oMyU-0SqT8A",
+        "title": "這是聖潔之地 This Is Holy Ground",
+        "duration": 418,
+        "channel": "讚美之泉 Stream Of Praise Music Ministries",
+        "upload_date": "20200419",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "詞曲:李宗盛 編曲:李宗盛",
+            "詞曲:李宗盛"
+          ],
+          "uniqCount": 2,
+          "coverage": 0.9497607655502392,
+          "lastT1": 397,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        },
+        "en": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "[MUSIC]"
+          ],
+          "uniqCount": 1,
+          "coverage": 0.992822966507177,
+          "lastT1": 415,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    },
+    {
+      "youtube_id": "NvIEUKCCGLE",
+      "raw_title": "煉淨我 Cleanse Me, Lord",
+      "flat_duration": 262,
+      "playlist_id": "OLAK5uy_mLoq4E2Qb3lQWAD5pNxkppV0Nq1PZnxho",
+      "playlist_title": "賜福與你 Blessings Of God Be Upon You",
+      "instrumental_signal": "iTunes 器樂專輯「賜福與你 (演奏專輯8)」",
+      "proposed_album": "賜福與你 (演奏專輯8)",
+      "verdict": "reject",
+      "gate": 4,
+      "why": "兩 pass 結論唔一致(zh 過 / en 唔過:剩餘文字 1 行:you)",
+      "meta": {
+        "id": "NvIEUKCCGLE",
+        "title": "煉淨我 Cleanse Me, Lord",
+        "duration": 261,
+        "channel": "讚美之泉 Stream Of Praise Music Ministries",
+        "upload_date": "20200419",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "詩歌歌曲,詩歌歌曲。"
+          ],
+          "uniqCount": 1,
+          "coverage": 0.9386973180076629,
+          "lastT1": 245,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        },
+        "en": {
+          "pass": false,
+          "reasons": [
+            "剩餘文字 1 行:you"
+          ],
+          "uniq": [
+            "[MUSIC]",
+            "you"
+          ],
+          "uniqCount": 2,
+          "coverage": 1.0040613026819925,
+          "lastT1": 262.06,
+          "whisperFailed": false,
+          "garbageDropped": 0,
+          "rejudge_reasons": [
+            "剩餘文字:you"
+          ]
+        }
+      }
+    },
+    {
+      "youtube_id": "Fhu5HdQNU5M",
+      "raw_title": "天父的花園 The Father's Garden",
+      "flat_duration": 168,
+      "playlist_id": "OLAK5uy_mLoq4E2Qb3lQWAD5pNxkppV0Nq1PZnxho",
+      "playlist_title": "賜福與你 Blessings Of God Be Upon You",
+      "instrumental_signal": "iTunes 器樂專輯「賜福與你 (演奏專輯8)」",
+      "proposed_album": "賜福與你 (演奏專輯8)",
+      "verdict": "instrumental",
+      "gate": null,
+      "why": "五重閘全過",
+      "meta": {
+        "id": "Fhu5HdQNU5M",
+        "title": "天父的花園 The Father's Garden",
+        "duration": 167,
+        "channel": "讚美之泉 Stream Of Praise Music Ministries",
+        "upload_date": "20200419",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "詞曲:李宗盛 編曲:李宗盛",
+            "詞曲:李宗盛"
+          ],
+          "uniqCount": 2,
+          "coverage": 0.9580838323353293,
+          "lastT1": 160,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        },
+        "en": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "[MUSIC]"
+          ],
+          "uniqCount": 1,
+          "coverage": 0.9281437125748503,
+          "lastT1": 155,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    },
+    {
+      "youtube_id": "v6PK5CLZhPA",
+      "raw_title": "我要歌唱 I Will Sing",
+      "flat_duration": 207,
+      "playlist_id": "OLAK5uy_mLoq4E2Qb3lQWAD5pNxkppV0Nq1PZnxho",
+      "playlist_title": "賜福與你 Blessings Of God Be Upon You",
+      "instrumental_signal": "iTunes 器樂專輯「賜福與你 (演奏專輯8)」",
+      "proposed_album": "賜福與你 (演奏專輯8)",
+      "verdict": "instrumental",
+      "gate": null,
+      "why": "五重閘全過",
+      "meta": {
+        "id": "v6PK5CLZhPA",
+        "title": "我要歌唱 I Will Sing",
+        "duration": 207,
+        "channel": "讚美之泉 Stream Of Praise Music Ministries",
+        "upload_date": "20200419",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "詞曲:張宇文 編曲:張宇文",
+            "詞曲:張宇文"
+          ],
+          "uniqCount": 2,
+          "coverage": 0.9178743961352657,
+          "lastT1": 190,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        },
+        "en": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "[MUSIC]",
+            "[BLANK_AUDIO]"
+          ],
+          "uniqCount": 2,
+          "coverage": 1.038647342995169,
+          "lastT1": 215,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    },
+    {
+      "youtube_id": "SEk3xtQdV78",
+      "raw_title": "喜樂泉源 Fountain Of Joy",
+      "flat_duration": 232,
+      "playlist_id": "OLAK5uy_mLoq4E2Qb3lQWAD5pNxkppV0Nq1PZnxho",
+      "playlist_title": "賜福與你 Blessings Of God Be Upon You",
+      "instrumental_signal": "iTunes 器樂專輯「賜福與你 (演奏專輯8)」",
+      "proposed_album": "賜福與你 (演奏專輯8)",
+      "verdict": "instrumental",
+      "gate": null,
+      "why": "五重閘全過",
+      "meta": {
+        "id": "SEk3xtQdV78",
+        "title": "喜樂泉源 Fountain Of Joy",
+        "duration": 232,
+        "channel": "讚美之泉 Stream Of Praise Music Ministries",
+        "upload_date": "20200419",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "詞曲:李宗盛 編曲:李宗盛",
+            "詞:李宗盛 編曲:李宗盛"
+          ],
+          "uniqCount": 2,
+          "coverage": 0.9310344827586207,
+          "lastT1": 216,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        },
+        "en": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "[MUSIC]"
+          ],
+          "uniqCount": 1,
+          "coverage": 0.9482758620689655,
+          "lastT1": 220,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    },
+    {
+      "youtube_id": "qkGLTwyV0U4",
+      "raw_title": "滿有能力 I Am Strengthened In Him",
+      "flat_duration": 235,
+      "playlist_id": "OLAK5uy_mLoq4E2Qb3lQWAD5pNxkppV0Nq1PZnxho",
+      "playlist_title": "賜福與你 Blessings Of God Be Upon You",
+      "instrumental_signal": "iTunes 器樂專輯「賜福與你 (演奏專輯8)」",
+      "proposed_album": "賜福與你 (演奏專輯8)",
+      "verdict": "instrumental",
+      "gate": null,
+      "why": "五重閘全過(rejudge:指紋庫更新後零網絡重判)",
+      "meta": {
+        "id": "qkGLTwyV0U4",
+        "title": "滿有能力 I Am Strengthened In Him",
+        "duration": 235,
+        "channel": "讚美之泉 Stream Of Praise Music Ministries",
+        "upload_date": "20200419",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": false,
+          "reasons": [
+            "剩餘文字 1 行:製作人:張彥霖"
+          ],
+          "uniq": [
+            "詞曲:張彥霖",
+            "編曲:張彥霖",
+            "製作人:張彥霖",
+            "我就是想要你做我的女朋友"
+          ],
+          "uniqCount": 4,
+          "coverage": 1.004255319148936,
+          "lastT1": 236,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        },
+        "en": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "[MUSIC]"
+          ],
+          "uniqCount": 1,
+          "coverage": 0.9574468085106383,
+          "lastT1": 225,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    },
+    {
+      "youtube_id": "ez_PrJNVjbw",
+      "raw_title": "最美的禮物 The Most Precious Gift",
+      "flat_duration": 264,
+      "playlist_id": "OLAK5uy_mLoq4E2Qb3lQWAD5pNxkppV0Nq1PZnxho",
+      "playlist_title": "賜福與你 Blessings Of God Be Upon You",
+      "instrumental_signal": "iTunes 器樂專輯「賜福與你 (演奏專輯8)」",
+      "proposed_album": "賜福與你 (演奏專輯8)",
+      "verdict": "instrumental",
+      "gate": null,
+      "why": "五重閘全過",
+      "meta": {
+        "id": "ez_PrJNVjbw",
+        "title": "最美的禮物 The Most Precious Gift",
+        "duration": 263,
+        "channel": "讚美之泉 Stream Of Praise Music Ministries",
+        "upload_date": "20200419",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "詞曲:李宗盛 編曲:李宗盛",
+            "詞曲:李宗盛"
+          ],
+          "uniqCount": 2,
+          "coverage": 0.9391634980988594,
+          "lastT1": 247,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        },
+        "en": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "[MUSIC]",
+            "[BLANK_AUDIO]"
+          ],
+          "uniqCount": 2,
+          "coverage": 1.026615969581749,
+          "lastT1": 270,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    },
+    {
+      "youtube_id": "8Dkn5M57BnY",
+      "raw_title": "祢是何等榮美 Jesus, My Everything",
+      "flat_duration": 284,
+      "playlist_id": "OLAK5uy_l6IN-usV9SQohmBdDLzGYeNZTtj-IY_nY",
+      "playlist_title": "你使我生命美麗 You Have Made My Life Beautiful",
+      "instrumental_signal": "iTunes 器樂專輯「你使我生命美麗 (演奏專輯7)」",
+      "proposed_album": "你使我生命美麗 (演奏專輯7)",
+      "verdict": "instrumental",
+      "gate": null,
+      "why": "五重閘全過",
+      "meta": {
+        "id": "8Dkn5M57BnY",
+        "title": "祢是何等榮美 Jesus, My Everything",
+        "duration": 283,
+        "channel": "讚美之泉 Stream Of Praise Music Ministries",
+        "upload_date": "20200419",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "詞曲:李宗盛 編曲:李宗盛",
+            "詞曲:李宗盛"
+          ],
+          "uniqCount": 2,
+          "coverage": 0.9787985865724381,
+          "lastT1": 277,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        },
+        "en": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "[MUSIC PLAYING]",
+            "(gentle music)"
+          ],
+          "uniqCount": 2,
+          "coverage": 0.9631802120141342,
+          "lastT1": 272.58,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    },
+    {
+      "youtube_id": "iIEO8mEZEy4",
+      "raw_title": "我要歡唱 Lord, I Will Sing",
+      "flat_duration": 238,
+      "playlist_id": "OLAK5uy_l6IN-usV9SQohmBdDLzGYeNZTtj-IY_nY",
+      "playlist_title": "你使我生命美麗 You Have Made My Life Beautiful",
+      "instrumental_signal": "iTunes 器樂專輯「你使我生命美麗 (演奏專輯7)」",
+      "proposed_album": "你使我生命美麗 (演奏專輯7)",
+      "verdict": "reject",
+      "gate": 2,
+      "why": "org 內已有同名器樂版 #5796"
+    },
+    {
+      "youtube_id": "V20uWvq1Tdo",
+      "raw_title": "哀哭變為跳舞 Mourning Into Dancing",
+      "flat_duration": 224,
+      "playlist_id": "OLAK5uy_l6IN-usV9SQohmBdDLzGYeNZTtj-IY_nY",
+      "playlist_title": "你使我生命美麗 You Have Made My Life Beautiful",
+      "instrumental_signal": "iTunes 器樂專輯「你使我生命美麗 (演奏專輯7)」",
+      "proposed_album": "你使我生命美麗 (演奏專輯7)",
+      "verdict": "reject",
+      "gate": 4,
+      "why": "兩 pass 結論唔一致(zh 唔過:剩餘文字 1 行:Zither Harp / en 過)",
+      "meta": {
+        "id": "V20uWvq1Tdo",
+        "title": "哀哭變為跳舞 Mourning Into Dancing",
+        "duration": 223,
+        "channel": "讚美之泉 Stream Of Praise Music Ministries",
+        "upload_date": "20200419",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": false,
+          "reasons": [
+            "剩餘文字 1 行:Zither Harp"
+          ],
+          "uniq": [
+            "詞曲:李宗盛 編曲:李宗盛",
+            "詞:李宗盛 編曲:李宗盛",
+            "Zither Harp"
+          ],
+          "uniqCount": 3,
+          "coverage": 0.9820627802690582,
+          "lastT1": 219,
+          "whisperFailed": false,
+          "garbageDropped": 1,
+          "rejudge_reasons": [
+            "剩餘文字:Zither Harp"
+          ]
+        },
+        "en": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "[MUSIC]"
+          ],
+          "uniqCount": 1,
+          "coverage": 0.9865470852017937,
+          "lastT1": 220,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    },
+    {
+      "youtube_id": "ufiew-E-ejU",
+      "raw_title": "祢使我生命美麗 You Have Made My Life Beautiful",
+      "flat_duration": 280,
+      "playlist_id": "OLAK5uy_l6IN-usV9SQohmBdDLzGYeNZTtj-IY_nY",
+      "playlist_title": "你使我生命美麗 You Have Made My Life Beautiful",
+      "instrumental_signal": "iTunes 器樂專輯「你使我生命美麗 (演奏專輯7)」",
+      "proposed_album": "你使我生命美麗 (演奏專輯7)",
+      "verdict": "reject",
+      "gate": 4,
+      "why": "兩 pass 結論唔一致(zh 唔過:剩餘文字 1 行:我愛你 詞曲 李宗盛 / en 過)",
+      "meta": {
+        "id": "ufiew-E-ejU",
+        "title": "祢使我生命美麗 You Have Made My Life Beautiful",
+        "duration": 279,
+        "channel": "讚美之泉 Stream Of Praise Music Ministries",
+        "upload_date": "20200419",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": false,
+          "reasons": [
+            "剩餘文字 1 行:我愛你 詞曲 李宗盛"
+          ],
+          "uniq": [
+            "我愛你 詞曲 李宗盛",
+            "詞曲 李宗盛"
+          ],
+          "uniqCount": 2,
+          "coverage": 0.985663082437276,
+          "lastT1": 275,
+          "whisperFailed": false,
+          "garbageDropped": 0,
+          "rejudge_reasons": [
+            "剩餘文字:我愛你 詞曲 李宗盛"
+          ]
+        },
+        "en": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "[MUSIC]"
+          ],
+          "uniqCount": 1,
+          "coverage": 0.967741935483871,
+          "lastT1": 270,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    },
+    {
+      "youtube_id": "9hCGbtxBPmM",
+      "raw_title": "生命的話語 Speak To Me",
+      "flat_duration": 292,
+      "playlist_id": "OLAK5uy_l6IN-usV9SQohmBdDLzGYeNZTtj-IY_nY",
+      "playlist_title": "你使我生命美麗 You Have Made My Life Beautiful",
+      "instrumental_signal": "iTunes 器樂專輯「你使我生命美麗 (演奏專輯7)」",
+      "proposed_album": "你使我生命美麗 (演奏專輯7)",
+      "verdict": "reject",
+      "gate": 2,
+      "why": "org 內已有同名器樂版 #5795"
+    },
+    {
+      "youtube_id": "Eff2m4JR3NU",
+      "raw_title": "耶穌我愛祢 Jesus, I Love You",
+      "flat_duration": 281,
+      "playlist_id": "OLAK5uy_l6IN-usV9SQohmBdDLzGYeNZTtj-IY_nY",
+      "playlist_title": "你使我生命美麗 You Have Made My Life Beautiful",
+      "instrumental_signal": "iTunes 器樂專輯「你使我生命美麗 (演奏專輯7)」",
+      "proposed_album": "你使我生命美麗 (演奏專輯7)",
+      "verdict": "instrumental",
+      "gate": null,
+      "why": "五重閘全過",
+      "meta": {
+        "id": "Eff2m4JR3NU",
+        "title": "耶穌我愛祢 Jesus, I Love You",
+        "duration": 281,
+        "channel": "讚美之泉 Stream Of Praise Music Ministries",
+        "upload_date": "20200419",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "詞曲:李宗盛 編曲:李宗盛",
+            "詞曲:李宗盛",
+            "詞:李宗盛"
+          ],
+          "uniqCount": 3,
+          "coverage": 0.9786476868327402,
+          "lastT1": 275,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        },
+        "en": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "[MUSIC]"
+          ],
+          "uniqCount": 1,
+          "coverage": 0.9608540925266904,
+          "lastT1": 270,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    },
+    {
+      "youtube_id": "hsPdMRgpFCc",
+      "raw_title": "我敬拜祢 I Worship You",
+      "flat_duration": 268,
+      "playlist_id": "OLAK5uy_l6IN-usV9SQohmBdDLzGYeNZTtj-IY_nY",
+      "playlist_title": "你使我生命美麗 You Have Made My Life Beautiful",
+      "instrumental_signal": "iTunes 器樂專輯「你使我生命美麗 (演奏專輯7)」",
+      "proposed_album": "你使我生命美麗 (演奏專輯7)",
+      "verdict": "instrumental",
+      "gate": null,
+      "why": "五重閘全過",
+      "meta": {
+        "id": "hsPdMRgpFCc",
+        "title": "我敬拜祢 I Worship You",
+        "duration": 268,
+        "channel": "讚美之泉 Stream Of Praise Music Ministries",
+        "upload_date": "20200419",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "詞曲:李宗盛 編曲:李宗盛",
+            "詞曲:李宗盛"
+          ],
+          "uniqCount": 2,
+          "coverage": 0.9216417910447762,
+          "lastT1": 247,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        },
+        "en": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "[MUSIC]"
+          ],
+          "uniqCount": 1,
+          "coverage": 1.007462686567164,
+          "lastT1": 270,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    },
+    {
+      "youtube_id": "r3QTbJrebbY",
+      "raw_title": "因著十架 By The Cross",
+      "flat_duration": 255,
+      "playlist_id": "OLAK5uy_l6IN-usV9SQohmBdDLzGYeNZTtj-IY_nY",
+      "playlist_title": "你使我生命美麗 You Have Made My Life Beautiful",
+      "instrumental_signal": "iTunes 器樂專輯「你使我生命美麗 (演奏專輯7)」",
+      "proposed_album": "你使我生命美麗 (演奏專輯7)",
+      "verdict": "reject",
+      "gate": 4,
+      "why": "兩 pass 結論唔一致(zh 唔過:剩餘文字 3 行:混音:李宗盛 / 和聲:李宗盛 / 封面:李宗盛 / en 過)",
+      "meta": {
+        "id": "r3QTbJrebbY",
+        "title": "因著十架 By The Cross",
+        "duration": 255,
+        "channel": "讚美之泉 Stream Of Praise Music Ministries",
+        "upload_date": "20200419",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": false,
+          "reasons": [
+            "剩餘文字 3 行:混音:李宗盛 / 和聲:李宗盛 / 封面:李宗盛"
+          ],
+          "uniq": [
+            "詞曲:李宗盛 編曲:李宗盛",
+            "詞曲:李宗盛",
+            "詞:李宗盛",
+            "演唱:李宗盛",
+            "混音:李宗盛",
+            "監製:李宗盛",
+            "和聲:李宗盛",
+            "封面:李宗盛",
+            "我就是想要你做我的朋友, 知道嗎?"
+          ],
+          "uniqCount": 9,
+          "coverage": 1.003921568627451,
+          "lastT1": 256,
+          "whisperFailed": false,
+          "garbageDropped": 0,
+          "rejudge_reasons": [
+            "剩餘文字:封面:李宗盛"
+          ]
+        },
+        "en": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "[MUSIC]"
+          ],
+          "uniqCount": 1,
+          "coverage": 0.9607843137254902,
+          "lastT1": 245,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    },
+    {
+      "youtube_id": "1X1RAi4OFiY",
+      "raw_title": "永遠尊貴 All Honor To You",
+      "flat_duration": 340,
+      "playlist_id": "OLAK5uy_l6IN-usV9SQohmBdDLzGYeNZTtj-IY_nY",
+      "playlist_title": "你使我生命美麗 You Have Made My Life Beautiful",
+      "instrumental_signal": "iTunes 器樂專輯「你使我生命美麗 (演奏專輯7)」",
+      "proposed_album": "你使我生命美麗 (演奏專輯7)",
+      "verdict": "reject",
+      "gate": 4,
+      "why": "兩 pass 都唔過(zh: 剩餘文字 1 行:製作人:李宗盛 | en: 剩餘文字 1 行:you)",
+      "meta": {
+        "id": "1X1RAi4OFiY",
+        "title": "永遠尊貴 All Honor To You",
+        "duration": 340,
+        "channel": "讚美之泉 Stream Of Praise Music Ministries",
+        "upload_date": "20200419",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": false,
+          "reasons": [
+            "剩餘文字 1 行:製作人:李宗盛"
+          ],
+          "uniq": [
+            "詞曲:李宗盛 編曲:李宗盛",
+            "詞曲:李宗盛",
+            "製作人:李宗盛"
+          ],
+          "uniqCount": 3,
+          "coverage": 0.9911764705882353,
+          "lastT1": 337,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        },
+        "en": {
+          "pass": false,
+          "reasons": [
+            "剩餘文字 1 行:you"
+          ],
+          "uniq": [
+            "[MUSIC]",
+            "you"
+          ],
+          "uniqCount": 2,
+          "coverage": 0.9913529411764705,
+          "lastT1": 337.06,
+          "whisperFailed": false,
+          "garbageDropped": 0,
+          "rejudge_reasons": [
+            "剩餘文字:you"
+          ]
+        }
+      }
+    },
+    {
+      "youtube_id": "RK57fCMi6yM",
+      "raw_title": "祢的愛 Your Love",
+      "flat_duration": 285,
+      "playlist_id": "OLAK5uy_l6IN-usV9SQohmBdDLzGYeNZTtj-IY_nY",
+      "playlist_title": "你使我生命美麗 You Have Made My Life Beautiful",
+      "instrumental_signal": "iTunes 器樂專輯「你使我生命美麗 (演奏專輯7)」",
+      "proposed_album": "你使我生命美麗 (演奏專輯7)",
+      "verdict": "instrumental",
+      "gate": null,
+      "why": "五重閘全過",
+      "meta": {
+        "id": "RK57fCMi6yM",
+        "title": "祢的愛 Your Love",
+        "duration": 284,
+        "channel": "讚美之泉 Stream Of Praise Music Ministries",
+        "upload_date": "20200419",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "詞曲:李宗盛 編曲:李宗盛",
+            "詞曲:李宗盛",
+            "詞:李宗盛"
+          ],
+          "uniqCount": 3,
+          "coverage": 0.9753521126760564,
+          "lastT1": 277,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        },
+        "en": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "[MUSIC]"
+          ],
+          "uniqCount": 1,
+          "coverage": 0.9859154929577465,
+          "lastT1": 280,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    },
+    {
+      "youtube_id": "FLmU0hM28pI",
+      "raw_title": "最珍貴的角落 Precious Corner",
+      "flat_duration": 251,
+      "playlist_id": "OLAK5uy_l6IN-usV9SQohmBdDLzGYeNZTtj-IY_nY",
+      "playlist_title": "你使我生命美麗 You Have Made My Life Beautiful",
+      "instrumental_signal": "iTunes 器樂專輯「你使我生命美麗 (演奏專輯7)」",
+      "proposed_album": "你使我生命美麗 (演奏專輯7)",
+      "verdict": "instrumental",
+      "gate": null,
+      "why": "五重閘全過",
+      "meta": {
+        "id": "FLmU0hM28pI",
+        "title": "最珍貴的角落 Precious Corner",
+        "duration": 251,
+        "channel": "讚美之泉 Stream Of Praise Music Ministries",
+        "upload_date": "20200419",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "詞曲:李宗盛 編曲:李宗盛",
+            "詞曲:李宗盛"
+          ],
+          "uniqCount": 2,
+          "coverage": 0.9840637450199203,
+          "lastT1": 247,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        },
+        "en": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "[MUSIC]"
+          ],
+          "uniqCount": 1,
+          "coverage": 0.9760956175298805,
+          "lastT1": 245,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    },
+    {
+      "youtube_id": "qFDFQSphTPg",
+      "raw_title": "再一次 Once Again",
+      "flat_duration": 258,
+      "playlist_id": "OLAK5uy_l6IN-usV9SQohmBdDLzGYeNZTtj-IY_nY",
+      "playlist_title": "你使我生命美麗 You Have Made My Life Beautiful",
+      "instrumental_signal": "iTunes 器樂專輯「你使我生命美麗 (演奏專輯7)」",
+      "proposed_album": "你使我生命美麗 (演奏專輯7)",
+      "verdict": "instrumental",
+      "gate": null,
+      "why": "五重閘全過",
+      "meta": {
+        "id": "qFDFQSphTPg",
+        "title": "再一次 Once Again",
+        "duration": 258,
+        "channel": "讚美之泉 Stream Of Praise Music Ministries",
+        "upload_date": "20200419",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "詞曲:李宗盛 編曲:李宗盛",
+            "詞曲:李宗盛"
+          ],
+          "uniqCount": 2,
+          "coverage": 0.9573643410852714,
+          "lastT1": 247,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        },
+        "en": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "(upbeat music)"
+          ],
+          "uniqCount": 1,
+          "coverage": 0.9402325581395349,
+          "lastT1": 242.58,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    },
+    {
+      "youtube_id": "aTHOP8F1IoI",
+      "raw_title": "震動天地 Shake The Heaven And Earth",
+      "flat_duration": 233,
+      "playlist_id": "OLAK5uy_l6IN-usV9SQohmBdDLzGYeNZTtj-IY_nY",
+      "playlist_title": "你使我生命美麗 You Have Made My Life Beautiful",
+      "instrumental_signal": "iTunes 器樂專輯「你使我生命美麗 (演奏專輯7)」",
+      "proposed_album": "你使我生命美麗 (演奏專輯7)",
+      "verdict": "instrumental",
+      "gate": null,
+      "why": "五重閘全過",
+      "meta": {
+        "id": "aTHOP8F1IoI",
+        "title": "震動天地 Shake The Heaven And Earth",
+        "duration": 233,
+        "channel": "讚美之泉 Stream Of Praise Music Ministries",
+        "upload_date": "20200419",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "詞曲:李宗盛"
+          ],
+          "uniqCount": 1,
+          "coverage": 0.9141630901287554,
+          "lastT1": 213,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        },
+        "en": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "(upbeat rock music)",
+            "(upbeat music)"
+          ],
+          "uniqCount": 2,
+          "coverage": 0.9037768240343348,
+          "lastT1": 210.58,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    },
+    {
+      "youtube_id": "mXR8VH3mfWg",
+      "raw_title": "似乎在天堂 Just Like Heaven",
+      "flat_duration": 321,
+      "playlist_id": "OLAK5uy_nfsP8-uIqbzLYvLNv-3cpBH1LE1IFhcAU",
+      "playlist_title": "祢恩典不離開 Your Grace",
+      "instrumental_signal": "iTunes 器樂專輯「祢恩典不離開 (演奏專輯6)」",
+      "proposed_album": "祢恩典不離開 (演奏專輯6)",
+      "verdict": "instrumental",
+      "gate": null,
+      "why": "五重閘全過",
+      "meta": {
+        "id": "mXR8VH3mfWg",
+        "title": "似乎在天堂 Just Like Heaven",
+        "duration": 320,
+        "channel": "讚美之泉 Stream Of Praise Music Ministries",
+        "upload_date": "20200419",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "詞曲:李宗盛 編曲:李宗盛",
+            "詞曲:李宗盛"
+          ],
+          "uniqCount": 2,
+          "coverage": 0.959375,
+          "lastT1": 307,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        },
+        "en": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "[MUSIC]"
+          ],
+          "uniqCount": 1,
+          "coverage": 1.015625,
+          "lastT1": 325,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    },
+    {
+      "youtube_id": "SCCJXqHFblM",
+      "raw_title": "寶貴十架 Precious Cross",
+      "flat_duration": 258,
+      "playlist_id": "OLAK5uy_nfsP8-uIqbzLYvLNv-3cpBH1LE1IFhcAU",
+      "playlist_title": "祢恩典不離開 Your Grace",
+      "instrumental_signal": "iTunes 器樂專輯「祢恩典不離開 (演奏專輯6)」",
+      "proposed_album": "祢恩典不離開 (演奏專輯6)",
+      "verdict": "reject",
+      "gate": 2,
+      "why": "org 內已有同名器樂版 #5911"
+    },
+    {
+      "youtube_id": "wa1COMamgXw",
+      "raw_title": "祢的慈愛 Unfailing Love",
+      "flat_duration": 231,
+      "playlist_id": "OLAK5uy_nfsP8-uIqbzLYvLNv-3cpBH1LE1IFhcAU",
+      "playlist_title": "祢恩典不離開 Your Grace",
+      "instrumental_signal": "iTunes 器樂專輯「祢恩典不離開 (演奏專輯6)」",
+      "proposed_album": "祢恩典不離開 (演奏專輯6)",
+      "verdict": "instrumental",
+      "gate": null,
+      "why": "五重閘全過",
+      "meta": {
+        "id": "wa1COMamgXw",
+        "title": "祢的慈愛 Unfailing Love",
+        "duration": 231,
+        "channel": "讚美之泉 Stream Of Praise Music Ministries",
+        "upload_date": "20200419",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "詞曲:李宗盛 編曲:李宗盛",
+            "詞:李宗盛 編曲:李宗盛"
+          ],
+          "uniqCount": 2,
+          "coverage": 0.9307359307359307,
+          "lastT1": 215,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        },
+        "en": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "[MUSIC]"
+          ],
+          "uniqCount": 1,
+          "coverage": 0.9523809523809523,
+          "lastT1": 220,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    },
+    {
+      "youtube_id": "o4WOuJrdHeQ",
+      "raw_title": "Come Away With Me",
+      "flat_duration": 290,
+      "playlist_id": "OLAK5uy_nfsP8-uIqbzLYvLNv-3cpBH1LE1IFhcAU",
+      "playlist_title": "祢恩典不離開 Your Grace",
+      "instrumental_signal": "iTunes 器樂專輯「祢恩典不離開 (演奏專輯6)」",
+      "proposed_album": "祢恩典不離開 (演奏專輯6)",
+      "verdict": "reject",
+      "gate": 4,
+      "why": "兩 pass 結論唔一致(zh 唔過:剩餘文字 2 行:詩歌歌詩歌詩歌詩歌詩歌。 / Zither Harp / en 過)",
+      "meta": {
+        "id": "o4WOuJrdHeQ",
+        "title": "Come Away With Me",
+        "duration": 289,
+        "channel": "讚美之泉 Stream Of Praise Music Ministries",
+        "upload_date": "20200419",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": false,
+          "reasons": [
+            "剩餘文字 2 行:詩歌歌詩歌詩歌詩歌詩歌。 / Zither Harp"
+          ],
+          "uniq": [
+            "詩歌歌詩歌詩歌詩歌詩歌。",
+            "詩歌詩歌詩歌詩歌。",
+            "詩歌詩歌詩歌詩歌詩歌詩歌。",
+            "詩歌詩歌詩歌詩歌.",
+            "詩歌詩歌詩歌詩歌詩歌詩歌.",
+            "Zither Harp"
+          ],
+          "uniqCount": 6,
+          "coverage": 0.9965397923875432,
+          "lastT1": 288,
+          "whisperFailed": false,
+          "garbageDropped": 5,
+          "rejudge_reasons": [
+            "剩餘文字:詩歌歌詩歌詩歌詩歌詩歌。 / Zither Harp"
+          ]
+        },
+        "en": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "[MUSIC PLAYING]"
+          ],
+          "uniqCount": 1,
+          "coverage": 0.946159169550173,
+          "lastT1": 273.44,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    },
+    {
+      "youtube_id": "YB1FYNscV34",
+      "raw_title": "我要常常喜樂 I Will Always Rejoice",
+      "flat_duration": 260,
+      "playlist_id": "OLAK5uy_nfsP8-uIqbzLYvLNv-3cpBH1LE1IFhcAU",
+      "playlist_title": "祢恩典不離開 Your Grace",
+      "instrumental_signal": "iTunes 器樂專輯「祢恩典不離開 (演奏專輯6)」",
+      "proposed_album": "祢恩典不離開 (演奏專輯6)",
+      "verdict": "reject",
+      "gate": 4,
+      "why": "兩 pass 結論唔一致(zh 唔過:剩餘文字 1 行:你不想跟他一起玩吗? / en 過)",
+      "meta": {
+        "id": "YB1FYNscV34",
+        "title": "我要常常喜樂 I Will Always Rejoice",
+        "duration": 259,
+        "channel": "讚美之泉 Stream Of Praise Music Ministries",
+        "upload_date": "20200419",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": false,
+          "reasons": [
+            "剩餘文字 1 行:你不想跟他一起玩吗?"
+          ],
+          "uniq": [
+            "詞曲:張震嶽 詞:張震嶽 編曲:張震嶽",
+            "詞曲:張震嶽 編曲:張震嶽",
+            "你不想跟他一起玩吗?"
+          ],
+          "uniqCount": 3,
+          "coverage": 1,
+          "lastT1": 259,
+          "whisperFailed": false,
+          "garbageDropped": 0,
+          "rejudge_reasons": [
+            "剩餘文字:你不想跟他一起玩吗?"
+          ]
+        },
+        "en": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "[MUSIC]"
+          ],
+          "uniqCount": 1,
+          "coverage": 0.9652509652509652,
+          "lastT1": 250,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    },
+    {
+      "youtube_id": "tpeVbXsgKZE",
+      "raw_title": "聖靈降下恩雨 Holy Spirit Rain Down",
+      "flat_duration": 325,
+      "playlist_id": "OLAK5uy_nfsP8-uIqbzLYvLNv-3cpBH1LE1IFhcAU",
+      "playlist_title": "祢恩典不離開 Your Grace",
+      "instrumental_signal": "iTunes 器樂專輯「祢恩典不離開 (演奏專輯6)」",
+      "proposed_album": "祢恩典不離開 (演奏專輯6)",
+      "verdict": "instrumental",
+      "gate": null,
+      "why": "五重閘全過",
+      "meta": {
+        "id": "tpeVbXsgKZE",
+        "title": "聖靈降下恩雨 Holy Spirit Rain Down",
+        "duration": 324,
+        "channel": "讚美之泉 Stream Of Praise Music Ministries",
+        "upload_date": "20200419",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "詞曲:李宗盛 編曲:李宗盛",
+            "詞:李宗盛 編曲:李宗盛"
+          ],
+          "uniqCount": 2,
+          "coverage": 0.941358024691358,
+          "lastT1": 305,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        },
+        "en": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "[MUSIC PLAYING]"
+          ],
+          "uniqCount": 1,
+          "coverage": 0.9681481481481482,
+          "lastT1": 313.68,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    },
+    {
+      "youtube_id": "6zNr6nf0bPI",
+      "raw_title": "敬拜祢 We Worship You",
+      "flat_duration": 311,
+      "playlist_id": "OLAK5uy_nfsP8-uIqbzLYvLNv-3cpBH1LE1IFhcAU",
+      "playlist_title": "祢恩典不離開 Your Grace",
+      "instrumental_signal": "iTunes 器樂專輯「祢恩典不離開 (演奏專輯6)」",
+      "proposed_album": "祢恩典不離開 (演奏專輯6)",
+      "verdict": "reject",
+      "gate": 4,
+      "why": "兩 pass 結論唔一致(zh 過 / en 唔過:剩餘文字 1 行:you)",
+      "meta": {
+        "id": "6zNr6nf0bPI",
+        "title": "敬拜祢 We Worship You",
+        "duration": 310,
+        "channel": "讚美之泉 Stream Of Praise Music Ministries",
+        "upload_date": "20200419",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "詞曲:李宗盛 編曲:李宗盛",
+            "詞曲:李宗盛"
+          ],
+          "uniqCount": 2,
+          "coverage": 0.9903225806451613,
+          "lastT1": 307,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        },
+        "en": {
+          "pass": false,
+          "reasons": [
+            "剩餘文字 1 行:you"
+          ],
+          "uniq": [
+            "[MUSIC]",
+            "you"
+          ],
+          "uniqCount": 2,
+          "coverage": 1.0066451612903227,
+          "lastT1": 312.06,
+          "whisperFailed": false,
+          "garbageDropped": 0,
+          "rejudge_reasons": [
+            "剩餘文字:you"
+          ]
+        }
+      }
+    },
+    {
+      "youtube_id": "z1rxwmRTos8",
+      "raw_title": "求聽我呼求 Hear My Voice",
+      "flat_duration": 236,
+      "playlist_id": "OLAK5uy_nfsP8-uIqbzLYvLNv-3cpBH1LE1IFhcAU",
+      "playlist_title": "祢恩典不離開 Your Grace",
+      "instrumental_signal": "iTunes 器樂專輯「祢恩典不離開 (演奏專輯6)」",
+      "proposed_album": "祢恩典不離開 (演奏專輯6)",
+      "verdict": "instrumental",
+      "gate": null,
+      "why": "五重閘全過",
+      "meta": {
+        "id": "z1rxwmRTos8",
+        "title": "求聽我呼求 Hear My Voice",
+        "duration": 235,
+        "channel": "讚美之泉 Stream Of Praise Music Ministries",
+        "upload_date": "20200419",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "詞曲:李宗盛 編曲:李宗盛",
+            "演唱:李宗盛",
+            "詞曲:李宗盛"
+          ],
+          "uniqCount": 3,
+          "coverage": 0.9361702127659575,
+          "lastT1": 220,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        },
+        "en": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "[MUSIC]",
+            "[BLANK_AUDIO]"
+          ],
+          "uniqCount": 2,
+          "coverage": 1.0425531914893618,
+          "lastT1": 245,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    },
+    {
+      "youtube_id": "TLMUlXr6wks",
+      "raw_title": "祢恩典不離開 Your Grace",
+      "flat_duration": 219,
+      "playlist_id": "OLAK5uy_nfsP8-uIqbzLYvLNv-3cpBH1LE1IFhcAU",
+      "playlist_title": "祢恩典不離開 Your Grace",
+      "instrumental_signal": "iTunes 器樂專輯「祢恩典不離開 (演奏專輯6)」",
+      "proposed_album": "祢恩典不離開 (演奏專輯6)",
+      "verdict": "reject",
+      "gate": 2,
+      "why": "org 內已有同名器樂版 #5797"
+    },
+    {
+      "youtube_id": "a3kby45nhAs",
+      "raw_title": "我相信 I Believe",
+      "flat_duration": 281,
+      "playlist_id": "OLAK5uy_nfsP8-uIqbzLYvLNv-3cpBH1LE1IFhcAU",
+      "playlist_title": "祢恩典不離開 Your Grace",
+      "instrumental_signal": "iTunes 器樂專輯「祢恩典不離開 (演奏專輯6)」",
+      "proposed_album": "祢恩典不離開 (演奏專輯6)",
+      "verdict": "instrumental",
+      "gate": null,
+      "why": "五重閘全過",
+      "meta": {
+        "id": "a3kby45nhAs",
+        "title": "我相信 I Believe",
+        "duration": 281,
+        "channel": "讚美之泉 Stream Of Praise Music Ministries",
+        "upload_date": "20200419",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "詞曲:李宗盛 編曲:李宗盛",
+            "詞曲:李宗盛"
+          ],
+          "uniqCount": 2,
+          "coverage": 0.9786476868327402,
+          "lastT1": 275,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        },
+        "en": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "[MUSIC]"
+          ],
+          "uniqCount": 1,
+          "coverage": 0.9608540925266904,
+          "lastT1": 270,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    },
+    {
+      "youtube_id": "QUppHvQlsKY",
+      "raw_title": "祢是我的一切 You Are Everything To Me",
+      "flat_duration": 307,
+      "playlist_id": "OLAK5uy_nfsP8-uIqbzLYvLNv-3cpBH1LE1IFhcAU",
+      "playlist_title": "祢恩典不離開 Your Grace",
+      "instrumental_signal": "iTunes 器樂專輯「祢恩典不離開 (演奏專輯6)」",
+      "proposed_album": "祢恩典不離開 (演奏專輯6)",
+      "verdict": "instrumental",
+      "gate": null,
+      "why": "五重閘全過(rejudge:指紋庫更新後零網絡重判)",
+      "meta": {
+        "id": "QUppHvQlsKY",
+        "title": "祢是我的一切 You Are Everything To Me",
+        "duration": 307,
+        "channel": "讚美之泉 Stream Of Praise Music Ministries",
+        "upload_date": "20200419",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": false,
+          "reasons": [
+            "剩餘文字 1 行:吉他:李宗盛"
+          ],
+          "uniq": [
+            "詞曲:李宗盛 編曲:李宗盛",
+            "詞曲:李宗盛",
+            "吉他:李宗盛"
+          ],
+          "uniqCount": 3,
+          "coverage": 1,
+          "lastT1": 307,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        },
+        "en": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "[MUSIC]"
+          ],
+          "uniqCount": 1,
+          "coverage": 0.9609120521172638,
+          "lastT1": 295,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    },
+    {
+      "youtube_id": "Buq5qybjHDk",
+      "raw_title": "喔！十字架 In The Cross",
+      "flat_duration": 251,
+      "playlist_id": "OLAK5uy_nfsP8-uIqbzLYvLNv-3cpBH1LE1IFhcAU",
+      "playlist_title": "祢恩典不離開 Your Grace",
+      "instrumental_signal": "iTunes 器樂專輯「祢恩典不離開 (演奏專輯6)」",
+      "proposed_album": "祢恩典不離開 (演奏專輯6)",
+      "verdict": "instrumental",
+      "gate": null,
+      "why": "五重閘全過",
+      "meta": {
+        "id": "Buq5qybjHDk",
+        "title": "喔！十字架 In The Cross",
+        "duration": 251,
+        "channel": "讚美之泉 Stream Of Praise Music Ministries",
+        "upload_date": "20200419",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "詞曲:李宗盛 編曲:李宗盛",
+            "詞曲:李宗盛"
+          ],
+          "uniqCount": 2,
+          "coverage": 0.9760956175298805,
+          "lastT1": 245,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        },
+        "en": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "[MUSIC PLAYING]"
+          ],
+          "uniqCount": 1,
+          "coverage": 0.9695617529880478,
+          "lastT1": 243.36,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    },
+    {
+      "youtube_id": "QPsG5BayMSk",
+      "raw_title": "揀選 Chosen",
+      "flat_duration": 207,
+      "playlist_id": "OLAK5uy_nfsP8-uIqbzLYvLNv-3cpBH1LE1IFhcAU",
+      "playlist_title": "祢恩典不離開 Your Grace",
+      "instrumental_signal": "iTunes 器樂專輯「祢恩典不離開 (演奏專輯6)」",
+      "proposed_album": "祢恩典不離開 (演奏專輯6)",
+      "verdict": "instrumental",
+      "gate": null,
+      "why": "五重閘全過",
+      "meta": {
+        "id": "QPsG5BayMSk",
+        "title": "揀選 Chosen",
+        "duration": 206,
+        "channel": "讚美之泉 Stream Of Praise Music Ministries",
+        "upload_date": "20200419",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "詞曲:李宗盛 編曲:李宗盛",
+            "詞曲:李宗盛"
+          ],
+          "uniqCount": 2,
+          "coverage": 0.9077669902912622,
+          "lastT1": 187,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        },
+        "en": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "[MUSIC]"
+          ],
+          "uniqCount": 1,
+          "coverage": 0.970873786407767,
+          "lastT1": 200,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    },
+    {
+      "youtube_id": "jOlmWRJ3anM",
+      "raw_title": "聖誕之願 A Wish For Christmas",
+      "flat_duration": 258,
+      "playlist_id": "OLAK5uy_nfsP8-uIqbzLYvLNv-3cpBH1LE1IFhcAU",
+      "playlist_title": "祢恩典不離開 Your Grace",
+      "instrumental_signal": "iTunes 器樂專輯「祢恩典不離開 (演奏專輯6)」",
+      "proposed_album": "祢恩典不離開 (演奏專輯6)",
+      "verdict": "instrumental",
+      "gate": null,
+      "why": "五重閘全過",
+      "meta": {
+        "id": "jOlmWRJ3anM",
+        "title": "聖誕之願 A Wish For Christmas",
+        "duration": 258,
+        "channel": "讚美之泉 Stream Of Praise Music Ministries",
+        "upload_date": "20200419",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "詞曲:李宗盛 編曲:李宗盛",
+            "詞曲:李宗盛"
+          ],
+          "uniqCount": 2,
+          "coverage": 0.9418604651162791,
+          "lastT1": 243,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        },
+        "en": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "[MUSIC PLAYING]"
+          ],
+          "uniqCount": 1,
+          "coverage": 0.9432558139534885,
+          "lastT1": 243.36,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    },
+    {
+      "youtube_id": "-KfEY4ZLVvY",
+      "raw_title": "親近祢 Close To You",
+      "flat_duration": 347,
+      "playlist_id": "OLAK5uy_nTE68KV2r_tsKPctJT61DabAIHy93uetI",
+      "playlist_title": "深深愛祢 Deeper In Love",
+      "instrumental_signal": "iTunes 器樂專輯「深深愛祢 (演奏專輯5)」",
+      "proposed_album": "深深愛祢 (演奏專輯5)",
+      "verdict": "reject",
+      "gate": 2,
+      "why": "org 內已有同名器樂版 #5904"
+    },
+    {
+      "youtube_id": "EcXcTtzSxYE",
+      "raw_title": "深深愛祢 Deeper In Love",
+      "flat_duration": 241,
+      "playlist_id": "OLAK5uy_nTE68KV2r_tsKPctJT61DabAIHy93uetI",
+      "playlist_title": "深深愛祢 Deeper In Love",
+      "instrumental_signal": "iTunes 器樂專輯「深深愛祢 (演奏專輯5)」",
+      "proposed_album": "深深愛祢 (演奏專輯5)",
+      "verdict": "instrumental",
+      "gate": null,
+      "why": "五重閘全過",
+      "meta": {
+        "id": "EcXcTtzSxYE",
+        "title": "深深愛祢 Deeper In Love",
+        "duration": 241,
+        "channel": "讚美之泉 Stream Of Praise Music Ministries",
+        "upload_date": "20200419",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "詞曲:李宗盛 編曲:李宗盛",
+            "詞曲:李宗盛",
+            "我就是想要你做我的朋友, 知道嗎?"
+          ],
+          "uniqCount": 3,
+          "coverage": 1.008298755186722,
+          "lastT1": 243,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        },
+        "en": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "[MUSIC]"
+          ],
+          "uniqCount": 1,
+          "coverage": 1.016597510373444,
+          "lastT1": 245,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    },
+    {
+      "youtube_id": "OZvihnMEsDI",
+      "raw_title": "祢的同在 Your Presence",
+      "flat_duration": 314,
+      "playlist_id": "OLAK5uy_nTE68KV2r_tsKPctJT61DabAIHy93uetI",
+      "playlist_title": "深深愛祢 Deeper In Love",
+      "instrumental_signal": "iTunes 器樂專輯「深深愛祢 (演奏專輯5)」",
+      "proposed_album": "深深愛祢 (演奏專輯5)",
+      "verdict": "reject",
+      "gate": 2,
+      "why": "org 內已有同名器樂版 #5812"
+    },
+    {
+      "youtube_id": "NMEslRwVeDE",
+      "raw_title": "我心切切渴慕祢 My Heart Shall Long For You",
+      "flat_duration": 297,
+      "playlist_id": "OLAK5uy_nTE68KV2r_tsKPctJT61DabAIHy93uetI",
+      "playlist_title": "深深愛祢 Deeper In Love",
+      "instrumental_signal": "iTunes 器樂專輯「深深愛祢 (演奏專輯5)」",
+      "proposed_album": "深深愛祢 (演奏專輯5)",
+      "verdict": "reject",
+      "gate": 2,
+      "why": "org 內已有同名器樂版 #5800"
+    },
+    {
+      "youtube_id": "shtW8ChJRU4",
+      "raw_title": "主的喜樂是我力量 The Joy Of The Lord Is My Strength",
+      "flat_duration": 259,
+      "playlist_id": "OLAK5uy_nTE68KV2r_tsKPctJT61DabAIHy93uetI",
+      "playlist_title": "深深愛祢 Deeper In Love",
+      "instrumental_signal": "iTunes 器樂專輯「深深愛祢 (演奏專輯5)」",
+      "proposed_album": "深深愛祢 (演奏專輯5)",
+      "verdict": "reject",
+      "gate": 2,
+      "why": "org 內已有同名器樂版 #5801"
+    },
+    {
+      "youtube_id": "0EaSM5TDQps",
+      "raw_title": "全地當讚美 The Whole Earth Will Sing",
+      "flat_duration": 208,
+      "playlist_id": "OLAK5uy_nTE68KV2r_tsKPctJT61DabAIHy93uetI",
+      "playlist_title": "深深愛祢 Deeper In Love",
+      "instrumental_signal": "iTunes 器樂專輯「深深愛祢 (演奏專輯5)」",
+      "proposed_album": "深深愛祢 (演奏專輯5)",
+      "verdict": "instrumental",
+      "gate": null,
+      "why": "五重閘全過",
+      "meta": {
+        "id": "0EaSM5TDQps",
+        "title": "全地當讚美 The Whole Earth Will Sing",
+        "duration": 208,
+        "channel": "讚美之泉 Stream Of Praise Music Ministries",
+        "upload_date": "20200419",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "詞曲:張宇文 編曲:張宇文",
+            "詞曲:張宇文"
+          ],
+          "uniqCount": 2,
+          "coverage": 0.9134615384615384,
+          "lastT1": 190,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        },
+        "en": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "[MUSIC]"
+          ],
+          "uniqCount": 1,
+          "coverage": 0.9615384615384616,
+          "lastT1": 200,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    },
+    {
+      "youtube_id": "urYUqrDf5kE",
+      "raw_title": "耶穌，耶穌 Jesus, Jesus",
+      "flat_duration": 319,
+      "playlist_id": "OLAK5uy_nTE68KV2r_tsKPctJT61DabAIHy93uetI",
+      "playlist_title": "深深愛祢 Deeper In Love",
+      "instrumental_signal": "iTunes 器樂專輯「深深愛祢 (演奏專輯5)」",
+      "proposed_album": "深深愛祢 (演奏專輯5)",
+      "verdict": "instrumental",
+      "gate": null,
+      "why": "五重閘全過",
+      "meta": {
+        "id": "urYUqrDf5kE",
+        "title": "耶穌，耶穌 Jesus, Jesus",
+        "duration": 319,
+        "channel": "讚美之泉 Stream Of Praise Music Ministries",
+        "upload_date": "20200419",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "詞曲:王晨宇",
+            "編曲:王晨宇"
+          ],
+          "uniqCount": 2,
+          "coverage": 0.9905956112852664,
+          "lastT1": 316,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        },
+        "en": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "[MUSIC]"
+          ],
+          "uniqCount": 1,
+          "coverage": 0.987460815047022,
+          "lastT1": 315,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    },
+    {
+      "youtube_id": "BWHIXylSYOo",
+      "raw_title": "深觸我心 How Precious You Are To Me",
+      "flat_duration": 278,
+      "playlist_id": "OLAK5uy_nTE68KV2r_tsKPctJT61DabAIHy93uetI",
+      "playlist_title": "深深愛祢 Deeper In Love",
+      "instrumental_signal": "iTunes 器樂專輯「深深愛祢 (演奏專輯5)」",
+      "proposed_album": "深深愛祢 (演奏專輯5)",
+      "verdict": "instrumental",
+      "gate": null,
+      "why": "五重閘全過",
+      "meta": {
+        "id": "BWHIXylSYOo",
+        "title": "深觸我心 How Precious You Are To Me",
+        "duration": 277,
+        "channel": "讚美之泉 Stream Of Praise Music Ministries",
+        "upload_date": "20200419",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "詞曲:李宗盛 編曲:李宗盛",
+            "詞曲:李宗盛",
+            "詞:李宗盛"
+          ],
+          "uniqCount": 3,
+          "coverage": 0.9927797833935018,
+          "lastT1": 275,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        },
+        "en": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "[MUSIC]"
+          ],
+          "uniqCount": 1,
+          "coverage": 0.9747292418772563,
+          "lastT1": 270,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    },
+    {
+      "youtube_id": "Czs2xIsV9vM",
+      "raw_title": "慈愛天父 God Of Mercy",
+      "flat_duration": 280,
+      "playlist_id": "OLAK5uy_nTE68KV2r_tsKPctJT61DabAIHy93uetI",
+      "playlist_title": "深深愛祢 Deeper In Love",
+      "instrumental_signal": "iTunes 器樂專輯「深深愛祢 (演奏專輯5)」",
+      "proposed_album": "深深愛祢 (演奏專輯5)",
+      "verdict": "instrumental",
+      "gate": null,
+      "why": "五重閘全過",
+      "meta": {
+        "id": "Czs2xIsV9vM",
+        "title": "慈愛天父 God Of Mercy",
+        "duration": 280,
+        "channel": "讚美之泉 Stream Of Praise Music Ministries",
+        "upload_date": "20200419",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "詞曲:李宗盛 編曲:李宗盛",
+            "詞曲:李宗盛"
+          ],
+          "uniqCount": 2,
+          "coverage": 0.9821428571428571,
+          "lastT1": 275,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        },
+        "en": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "[MUSIC]"
+          ],
+          "uniqCount": 1,
+          "coverage": 0.9464285714285714,
+          "lastT1": 265,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    },
+    {
+      "youtube_id": "KMUiGND9zW4",
+      "raw_title": "求主充滿我 Come And Fill Me Up",
+      "flat_duration": 259,
+      "playlist_id": "OLAK5uy_nTE68KV2r_tsKPctJT61DabAIHy93uetI",
+      "playlist_title": "深深愛祢 Deeper In Love",
+      "instrumental_signal": "iTunes 器樂專輯「深深愛祢 (演奏專輯5)」",
+      "proposed_album": "深深愛祢 (演奏專輯5)",
+      "verdict": "instrumental",
+      "gate": null,
+      "why": "五重閘全過",
+      "meta": {
+        "id": "KMUiGND9zW4",
+        "title": "求主充滿我 Come And Fill Me Up",
+        "duration": 259,
+        "channel": "讚美之泉 Stream Of Praise Music Ministries",
+        "upload_date": "20200419",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "詞曲:呂宏斌",
+            "演唱:呂宏斌"
+          ],
+          "uniqCount": 2,
+          "coverage": 0.9575289575289575,
+          "lastT1": 248,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        },
+        "en": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "[MUSIC]"
+          ],
+          "uniqCount": 1,
+          "coverage": 0.9420849420849421,
+          "lastT1": 244,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    },
+    {
+      "youtube_id": "OInhvdDxT7s",
+      "raw_title": "禱告 I Pray",
+      "flat_duration": 390,
+      "playlist_id": "OLAK5uy_nTE68KV2r_tsKPctJT61DabAIHy93uetI",
+      "playlist_title": "深深愛祢 Deeper In Love",
+      "instrumental_signal": "iTunes 器樂專輯「深深愛祢 (演奏專輯5)」",
+      "proposed_album": "深深愛祢 (演奏專輯5)",
+      "verdict": "reject",
+      "gate": 4,
+      "why": "兩 pass 結論唔一致(zh 過 / en 唔過:剩餘文字 1 行:you)",
+      "meta": {
+        "id": "OInhvdDxT7s",
+        "title": "禱告 I Pray",
+        "duration": 390,
+        "channel": "讚美之泉 Stream Of Praise Music Ministries",
+        "upload_date": "20200419",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "詞曲:李宗盛 編曲:李宗盛",
+            "詞曲:李宗盛"
+          ],
+          "uniqCount": 2,
+          "coverage": 0.9358974358974359,
+          "lastT1": 365,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        },
+        "en": {
+          "pass": false,
+          "reasons": [
+            "剩餘文字 1 行:you"
+          ],
+          "uniq": [
+            "[MUSIC]",
+            "you"
+          ],
+          "uniqCount": 2,
+          "coverage": 0.9924615384615385,
+          "lastT1": 387.06,
+          "whisperFailed": false,
+          "garbageDropped": 0,
+          "rejudge_reasons": [
+            "剩餘文字:you"
+          ]
+        }
+      }
+    },
+    {
+      "youtube_id": "8T-cYIdpg7E",
+      "raw_title": "主我跟祢走 Lord, I Walk With You",
+      "flat_duration": 252,
+      "playlist_id": "OLAK5uy_nTE68KV2r_tsKPctJT61DabAIHy93uetI",
+      "playlist_title": "深深愛祢 Deeper In Love",
+      "instrumental_signal": "iTunes 器樂專輯「深深愛祢 (演奏專輯5)」",
+      "proposed_album": "深深愛祢 (演奏專輯5)",
+      "verdict": "instrumental",
+      "gate": null,
+      "why": "五重閘全過",
+      "meta": {
+        "id": "8T-cYIdpg7E",
+        "title": "主我跟祢走 Lord, I Walk With You",
+        "duration": 251,
+        "channel": "讚美之泉 Stream Of Praise Music Ministries",
+        "upload_date": "20200419",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "詞曲:李宗盛 編曲:李宗盛",
+            "詞曲:李宗盛"
+          ],
+          "uniqCount": 2,
+          "coverage": 0.9760956175298805,
+          "lastT1": 245,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        },
+        "en": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "[MUSIC]"
+          ],
+          "uniqCount": 1,
+          "coverage": 0.9760956175298805,
+          "lastT1": 245,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    },
+    {
+      "youtube_id": "WxTOO0PWXi0",
+      "raw_title": "祢美好應許 Your Promise",
+      "flat_duration": 217,
+      "playlist_id": "OLAK5uy_nTE68KV2r_tsKPctJT61DabAIHy93uetI",
+      "playlist_title": "深深愛祢 Deeper In Love",
+      "instrumental_signal": "iTunes 器樂專輯「深深愛祢 (演奏專輯5)」",
+      "proposed_album": "深深愛祢 (演奏專輯5)",
+      "verdict": "reject",
+      "gate": 4,
+      "why": "兩 pass 結論唔一致(zh 過 / en 唔過:剩餘文字 1 行:you)",
+      "meta": {
+        "id": "WxTOO0PWXi0",
+        "title": "祢美好應許 Your Promise",
+        "duration": 216,
+        "channel": "讚美之泉 Stream Of Praise Music Ministries",
+        "upload_date": "20200419",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "詞曲:李宗盛 編曲:李宗盛",
+            "詞曲:李宗盛",
+            "MING PAO CANADA | MING PAO TORONTO"
+          ],
+          "uniqCount": 3,
+          "coverage": 0.9907407407407407,
+          "lastT1": 214,
+          "whisperFailed": false,
+          "garbageDropped": 1
+        },
+        "en": {
+          "pass": false,
+          "reasons": [
+            "剩餘文字 1 行:you"
+          ],
+          "uniq": [
+            "[MUSIC]",
+            "you"
+          ],
+          "uniqCount": 2,
+          "coverage": 1.0049074074074074,
+          "lastT1": 217.06,
+          "whisperFailed": false,
+          "garbageDropped": 0,
+          "rejudge_reasons": [
+            "剩餘文字:you"
+          ]
+        }
+      }
+    },
+    {
+      "youtube_id": "kcVlZ-9LkJ0",
+      "raw_title": "耶和華是我牧者 Lord, You Are My Shepherd",
+      "flat_duration": 289,
+      "playlist_id": "OLAK5uy_nTE68KV2r_tsKPctJT61DabAIHy93uetI",
+      "playlist_title": "深深愛祢 Deeper In Love",
+      "instrumental_signal": "iTunes 器樂專輯「深深愛祢 (演奏專輯5)」",
+      "proposed_album": "深深愛祢 (演奏專輯5)",
+      "verdict": "instrumental",
+      "gate": null,
+      "why": "五重閘全過",
+      "meta": {
+        "id": "kcVlZ-9LkJ0",
+        "title": "耶和華是我牧者 Lord, You Are My Shepherd",
+        "duration": 289,
+        "channel": "讚美之泉 Stream Of Praise Music Ministries",
+        "upload_date": "20200419",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "詞曲:李宗盛 詞:李宗盛 編曲:李宗盛",
+            "詞曲:李宗盛 編曲:李宗盛"
+          ],
+          "uniqCount": 2,
+          "coverage": 0.9515570934256056,
+          "lastT1": 275,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        },
+        "en": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "[MUSIC]"
+          ],
+          "uniqCount": 1,
+          "coverage": 0.9515570934256056,
+          "lastT1": 275,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    },
+    {
+      "youtube_id": "IDS63eHYNQ8",
+      "raw_title": "展開清晨的翅膀 Wings Of The Dawn",
+      "flat_duration": 318,
+      "playlist_id": "OLAK5uy_n5mAnRtzrwbZDRI_ROP0H8VOtD-e1UrGM",
+      "playlist_title": "這一生最美的祝福 The Gift Of Knowing You",
+      "instrumental_signal": "iTunes 器樂專輯「這一生最美的祝福 (演奏專輯4)」",
+      "proposed_album": "這一生最美的祝福 (演奏專輯4)",
+      "verdict": "reject",
+      "gate": 2,
+      "why": "org 內已有同名器樂版 #5804"
+    },
+    {
+      "youtube_id": "wmwm36KPwC4",
+      "raw_title": "祢使我雙腳跳舞 Set My Feet To Dancing",
+      "flat_duration": 254,
+      "playlist_id": "OLAK5uy_n5mAnRtzrwbZDRI_ROP0H8VOtD-e1UrGM",
+      "playlist_title": "這一生最美的祝福 The Gift Of Knowing You",
+      "instrumental_signal": "iTunes 器樂專輯「這一生最美的祝福 (演奏專輯4)」",
+      "proposed_album": "這一生最美的祝福 (演奏專輯4)",
+      "verdict": "instrumental",
+      "gate": null,
+      "why": "五重閘全過",
+      "meta": {
+        "id": "wmwm36KPwC4",
+        "title": "祢使我雙腳跳舞 Set My Feet To Dancing",
+        "duration": 253,
+        "channel": "讚美之泉 Stream Of Praise Music Ministries",
+        "upload_date": "20200419",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "詞曲:李宗盛 編曲:李宗盛",
+            "詞:李宗盛 編曲:李宗盛"
+          ],
+          "uniqCount": 2,
+          "coverage": 0.9762845849802372,
+          "lastT1": 247,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        },
+        "en": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "[MUSIC]"
+          ],
+          "uniqCount": 1,
+          "coverage": 0.9881422924901185,
+          "lastT1": 250,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    },
+    {
+      "youtube_id": "ALEcmXcBqiQ",
+      "raw_title": "奇妙的愛 Amazing Love",
+      "flat_duration": 284,
+      "playlist_id": "OLAK5uy_n5mAnRtzrwbZDRI_ROP0H8VOtD-e1UrGM",
+      "playlist_title": "這一生最美的祝福 The Gift Of Knowing You",
+      "instrumental_signal": "iTunes 器樂專輯「這一生最美的祝福 (演奏專輯4)」",
+      "proposed_album": "這一生最美的祝福 (演奏專輯4)",
+      "verdict": "instrumental",
+      "gate": null,
+      "why": "五重閘全過",
+      "meta": {
+        "id": "ALEcmXcBqiQ",
+        "title": "奇妙的愛 Amazing Love",
+        "duration": 284,
+        "channel": "讚美之泉 Stream Of Praise Music Ministries",
+        "upload_date": "20200419",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "詞曲:李宗盛 編曲:李宗盛",
+            "詞曲:李宗盛"
+          ],
+          "uniqCount": 2,
+          "coverage": 0.9507042253521126,
+          "lastT1": 270,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        },
+        "en": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "[MUSIC]"
+          ],
+          "uniqCount": 1,
+          "coverage": 0.9507042253521126,
+          "lastT1": 270,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    },
+    {
+      "youtube_id": "A7H-h4Dibjg",
+      "raw_title": "在祢手中 In Your Hands",
+      "flat_duration": 231,
+      "playlist_id": "OLAK5uy_n5mAnRtzrwbZDRI_ROP0H8VOtD-e1UrGM",
+      "playlist_title": "這一生最美的祝福 The Gift Of Knowing You",
+      "instrumental_signal": "iTunes 器樂專輯「這一生最美的祝福 (演奏專輯4)」",
+      "proposed_album": "這一生最美的祝福 (演奏專輯4)",
+      "verdict": "instrumental",
+      "gate": null,
+      "why": "五重閘全過",
+      "meta": {
+        "id": "A7H-h4Dibjg",
+        "title": "在祢手中 In Your Hands",
+        "duration": 230,
+        "channel": "讚美之泉 Stream Of Praise Music Ministries",
+        "upload_date": "20200419",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "詞曲:李宗盛 編曲:李宗盛",
+            "詞曲:李宗盛",
+            "詞:李宗盛"
+          ],
+          "uniqCount": 3,
+          "coverage": 0.9260869565217391,
+          "lastT1": 213,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        },
+        "en": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "[MUSIC]"
+          ],
+          "uniqCount": 1,
+          "coverage": 0.9565217391304348,
+          "lastT1": 220,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    },
+    {
+      "youtube_id": "EoGi8beTSNs",
+      "raw_title": "在主愛中 In God's Love",
+      "flat_duration": 231,
+      "playlist_id": "OLAK5uy_n5mAnRtzrwbZDRI_ROP0H8VOtD-e1UrGM",
+      "playlist_title": "這一生最美的祝福 The Gift Of Knowing You",
+      "instrumental_signal": "iTunes 器樂專輯「這一生最美的祝福 (演奏專輯4)」",
+      "proposed_album": "這一生最美的祝福 (演奏專輯4)",
+      "verdict": "instrumental",
+      "gate": null,
+      "why": "五重閘全過",
+      "meta": {
+        "id": "EoGi8beTSNs",
+        "title": "在主愛中 In God's Love",
+        "duration": 231,
+        "channel": "讚美之泉 Stream Of Praise Music Ministries",
+        "upload_date": "20200419",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "詞曲:李宗盛 編曲:李宗盛",
+            "詞曲:李宗盛",
+            "詞:李宗盛"
+          ],
+          "uniqCount": 3,
+          "coverage": 0.9307359307359307,
+          "lastT1": 215,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        },
+        "en": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "[MUSIC]"
+          ],
+          "uniqCount": 1,
+          "coverage": 0.9523809523809523,
+          "lastT1": 220,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    },
+    {
+      "youtube_id": "y5TCp3dDMF4",
+      "raw_title": "這一生最美的祝福 The Gift Of Knowing You",
+      "flat_duration": 271,
+      "playlist_id": "OLAK5uy_n5mAnRtzrwbZDRI_ROP0H8VOtD-e1UrGM",
+      "playlist_title": "這一生最美的祝福 The Gift Of Knowing You",
+      "instrumental_signal": "iTunes 器樂專輯「這一生最美的祝福 (演奏專輯4)」",
+      "proposed_album": "這一生最美的祝福 (演奏專輯4)",
+      "verdict": "reject",
+      "gate": 4,
+      "why": "兩 pass 結論唔一致(zh 唔過:剩餘文字 1 行:你不想要我做你的女朋友吗? / en 過)",
+      "meta": {
+        "id": "y5TCp3dDMF4",
+        "title": "這一生最美的祝福 The Gift Of Knowing You",
+        "duration": 271,
+        "channel": "讚美之泉 Stream Of Praise Music Ministries",
+        "upload_date": "20200419",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": false,
+          "reasons": [
+            "剩餘文字 1 行:你不想要我做你的女朋友吗?"
+          ],
+          "uniq": [
+            "詞曲:李宗盛 編曲:李宗盛",
+            "詞曲:李宗盛",
+            "你不想要我做你的女朋友吗?"
+          ],
+          "uniqCount": 3,
+          "coverage": 1.003690036900369,
+          "lastT1": 272,
+          "whisperFailed": false,
+          "garbageDropped": 0,
+          "rejudge_reasons": [
+            "剩餘文字:你不想要我做你的女朋友吗?"
+          ]
+        },
+        "en": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "[MUSIC]"
+          ],
+          "uniqCount": 1,
+          "coverage": 0.996309963099631,
+          "lastT1": 270,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    },
+    {
+      "youtube_id": "gMaxn6giQo4",
+      "raw_title": "萬物充滿祢的恩典 All Creation Filled By Your Love",
+      "flat_duration": 304,
+      "playlist_id": "OLAK5uy_n5mAnRtzrwbZDRI_ROP0H8VOtD-e1UrGM",
+      "playlist_title": "這一生最美的祝福 The Gift Of Knowing You",
+      "instrumental_signal": "iTunes 器樂專輯「這一生最美的祝福 (演奏專輯4)」",
+      "proposed_album": "這一生最美的祝福 (演奏專輯4)",
+      "verdict": "instrumental",
+      "gate": null,
+      "why": "五重閘全過",
+      "meta": {
+        "id": "gMaxn6giQo4",
+        "title": "萬物充滿祢的恩典 All Creation Filled By Your Love",
+        "duration": 304,
+        "channel": "讚美之泉 Stream Of Praise Music Ministries",
+        "upload_date": "20200419",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "詞曲:李宗盛 編曲:李宗盛",
+            "詞:李宗盛 編曲:李宗盛",
+            "編曲:李宗盛",
+            "詞曲:李宗盛",
+            "詞:李宗盛",
+            "MING PAO CANADA | MING PAO TORONTO"
+          ],
+          "uniqCount": 6,
+          "coverage": 0.993421052631579,
+          "lastT1": 302,
+          "whisperFailed": false,
+          "garbageDropped": 1
+        },
+        "en": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "[MUSIC]"
+          ],
+          "uniqCount": 1,
+          "coverage": 0.9703947368421053,
+          "lastT1": 295,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    },
+    {
+      "youtube_id": "xMVKsXbnjKU",
+      "raw_title": "主禱文 The Lord's Prayer",
+      "flat_duration": 322,
+      "playlist_id": "OLAK5uy_n5mAnRtzrwbZDRI_ROP0H8VOtD-e1UrGM",
+      "playlist_title": "這一生最美的祝福 The Gift Of Knowing You",
+      "instrumental_signal": "iTunes 器樂專輯「這一生最美的祝福 (演奏專輯4)」",
+      "proposed_album": "這一生最美的祝福 (演奏專輯4)",
+      "verdict": "instrumental",
+      "gate": null,
+      "why": "五重閘全過(rejudge:指紋庫更新後零網絡重判)",
+      "meta": {
+        "id": "xMVKsXbnjKU",
+        "title": "主禱文 The Lord's Prayer",
+        "duration": 322,
+        "channel": "讚美之泉 Stream Of Praise Music Ministries",
+        "upload_date": "20200419",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": false,
+          "reasons": [
+            "剩餘文字 4 行:導演:王晨宇 / 混音:王晨宇 / 母帶:王晨宇"
+          ],
+          "uniq": [
+            "詞曲:王晨宇",
+            "演唱:王晨宇",
+            "編曲:王晨宇",
+            "導演:王晨宇",
+            "混音:王晨宇",
+            "母帶:王晨宇",
+            "製作人:王晨宇",
+            "監製:王晨宇"
+          ],
+          "uniqCount": 8,
+          "coverage": 0.9875776397515528,
+          "lastT1": 318,
+          "whisperFailed": false,
+          "garbageDropped": 0,
+          "rejudge_reasons": [
+            "剩餘文字:導演:王晨宇"
+          ]
+        },
+        "en": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "[MUSIC]"
+          ],
+          "uniqCount": 1,
+          "coverage": 0.9782608695652174,
+          "lastT1": 315,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    },
+    {
+      "youtube_id": "DMPSaAealfE",
+      "raw_title": "我願觸動祢心弦 Lord, I Want To Touch Your Heart",
+      "flat_duration": 344,
+      "playlist_id": "OLAK5uy_n5mAnRtzrwbZDRI_ROP0H8VOtD-e1UrGM",
+      "playlist_title": "這一生最美的祝福 The Gift Of Knowing You",
+      "instrumental_signal": "iTunes 器樂專輯「這一生最美的祝福 (演奏專輯4)」",
+      "proposed_album": "這一生最美的祝福 (演奏專輯4)",
+      "verdict": "instrumental",
+      "gate": null,
+      "why": "五重閘全過",
+      "meta": {
+        "id": "DMPSaAealfE",
+        "title": "我願觸動祢心弦 Lord, I Want To Touch Your Heart",
+        "duration": 344,
+        "channel": "讚美之泉 Stream Of Praise Music Ministries",
+        "upload_date": "20200419",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "詞曲:李宗盛 編曲:李宗盛",
+            "詞曲:李宗盛"
+          ],
+          "uniqCount": 2,
+          "coverage": 0.9738372093023255,
+          "lastT1": 335,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        },
+        "en": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "[MUSIC]"
+          ],
+          "uniqCount": 1,
+          "coverage": 1.002906976744186,
+          "lastT1": 345,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    },
+    {
+      "youtube_id": "uuGUCIZ-bzU",
+      "raw_title": "更深渴慕祢 Deeper Longing",
+      "flat_duration": 303,
+      "playlist_id": "OLAK5uy_n5mAnRtzrwbZDRI_ROP0H8VOtD-e1UrGM",
+      "playlist_title": "這一生最美的祝福 The Gift Of Knowing You",
+      "instrumental_signal": "iTunes 器樂專輯「這一生最美的祝福 (演奏專輯4)」",
+      "proposed_album": "這一生最美的祝福 (演奏專輯4)",
+      "verdict": "reject",
+      "gate": 4,
+      "why": "兩 pass 結論唔一致(zh 唔過:剩餘文字 1 行:你不想要我做你的女朋友吗? / en 過)",
+      "meta": {
+        "id": "uuGUCIZ-bzU",
+        "title": "更深渴慕祢 Deeper Longing",
+        "duration": 302,
+        "channel": "讚美之泉 Stream Of Praise Music Ministries",
+        "upload_date": "20200419",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": false,
+          "reasons": [
+            "剩餘文字 1 行:你不想要我做你的女朋友吗?"
+          ],
+          "uniq": [
+            "詞曲:李宗盛 編曲:李宗盛",
+            "詞曲:李宗盛",
+            "你不想要我做你的女朋友吗?"
+          ],
+          "uniqCount": 3,
+          "coverage": 1,
+          "lastT1": 302,
+          "whisperFailed": false,
+          "garbageDropped": 0,
+          "rejudge_reasons": [
+            "剩餘文字:你不想要我做你的女朋友吗?"
+          ]
+        },
+        "en": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "[MUSIC]"
+          ],
+          "uniqCount": 1,
+          "coverage": 0.9768211920529801,
+          "lastT1": 295,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    },
+    {
+      "youtube_id": "2Te7PvlbIkM",
+      "raw_title": "主的恩典乃是一生之久 The Light Of Your Grace",
+      "flat_duration": 336,
+      "playlist_id": "OLAK5uy_n5mAnRtzrwbZDRI_ROP0H8VOtD-e1UrGM",
+      "playlist_title": "這一生最美的祝福 The Gift Of Knowing You",
+      "instrumental_signal": "iTunes 器樂專輯「這一生最美的祝福 (演奏專輯4)」",
+      "proposed_album": "這一生最美的祝福 (演奏專輯4)",
+      "verdict": "reject",
+      "gate": 2,
+      "why": "org 內已有同名器樂版 #8655"
+    },
+    {
+      "youtube_id": "pLg3GSlEvEA",
+      "raw_title": "願為主閃亮 Shine For The Lord",
+      "flat_duration": 290,
+      "playlist_id": "OLAK5uy_n5mAnRtzrwbZDRI_ROP0H8VOtD-e1UrGM",
+      "playlist_title": "這一生最美的祝福 The Gift Of Knowing You",
+      "instrumental_signal": "iTunes 器樂專輯「這一生最美的祝福 (演奏專輯4)」",
+      "proposed_album": "這一生最美的祝福 (演奏專輯4)",
+      "verdict": "instrumental",
+      "gate": null,
+      "why": "五重閘全過",
+      "meta": {
+        "id": "pLg3GSlEvEA",
+        "title": "願為主閃亮 Shine For The Lord",
+        "duration": 290,
+        "channel": "讚美之泉 Stream Of Praise Music Ministries",
+        "upload_date": "20200419",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "詞曲:李宗盛 編曲:李宗盛",
+            "詞曲:李宗盛"
+          ],
+          "uniqCount": 2,
+          "coverage": 0.9655172413793104,
+          "lastT1": 280,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        },
+        "en": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "[MUSIC]",
+            "[BLANK_AUDIO]"
+          ],
+          "uniqCount": 2,
+          "coverage": 1.0172413793103448,
+          "lastT1": 295,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    },
+    {
+      "youtube_id": "gFCFR0TU6fY",
+      "raw_title": "仰望恩典 Upon Your Grace",
+      "flat_duration": 360,
+      "playlist_id": "OLAK5uy_n5mAnRtzrwbZDRI_ROP0H8VOtD-e1UrGM",
+      "playlist_title": "這一生最美的祝福 The Gift Of Knowing You",
+      "instrumental_signal": "iTunes 器樂專輯「這一生最美的祝福 (演奏專輯4)」",
+      "proposed_album": "這一生最美的祝福 (演奏專輯4)",
+      "verdict": "instrumental",
+      "gate": null,
+      "why": "五重閘全過",
+      "meta": {
+        "id": "gFCFR0TU6fY",
+        "title": "仰望恩典 Upon Your Grace",
+        "duration": 359,
+        "channel": "讚美之泉 Stream Of Praise Music Ministries",
+        "upload_date": "20200419",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "詞曲:李宗盛 編曲:李宗盛",
+            "詞曲:李宗盛"
+          ],
+          "uniqCount": 2,
+          "coverage": 0.9331476323119777,
+          "lastT1": 335,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        },
+        "en": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "[MUSIC]"
+          ],
+          "uniqCount": 1,
+          "coverage": 0.9610027855153204,
+          "lastT1": 345,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    },
+    {
+      "youtube_id": "84BD85hLVII",
+      "raw_title": "單單愛慕你 Simply Loving You",
+      "flat_duration": 293,
+      "playlist_id": "OLAK5uy_n6dUL5R9nbWhUS-H3vYOs0267yEuQuWdQ",
+      "playlist_title": "單單愛慕你 Simply Loving You",
+      "instrumental_signal": "iTunes 器樂專輯「單單愛慕你 (鋼琴演奏專輯1)」",
+      "proposed_album": "單單愛慕你 (鋼琴演奏專輯1)",
+      "verdict": "reject",
+      "gate": 2,
+      "why": "org 內已有同名器樂版 #8659"
+    },
+    {
+      "youtube_id": "V3HbbhWr9Ig",
+      "raw_title": "復興聖潔 Revive Holiness",
+      "flat_duration": 342,
+      "playlist_id": "OLAK5uy_n6dUL5R9nbWhUS-H3vYOs0267yEuQuWdQ",
+      "playlist_title": "單單愛慕你 Simply Loving You",
+      "instrumental_signal": "iTunes 器樂專輯「單單愛慕你 (鋼琴演奏專輯1)」",
+      "proposed_album": "單單愛慕你 (鋼琴演奏專輯1)",
+      "verdict": "reject",
+      "gate": 2,
+      "why": "org 內已有同名器樂版 #8652"
+    },
+    {
+      "youtube_id": "HwF0zemuYGE",
+      "raw_title": "我親愛的耶穌 My Sweet Jesus",
+      "flat_duration": 230,
+      "playlist_id": "OLAK5uy_n6dUL5R9nbWhUS-H3vYOs0267yEuQuWdQ",
+      "playlist_title": "單單愛慕你 Simply Loving You",
+      "instrumental_signal": "iTunes 器樂專輯「單單愛慕你 (鋼琴演奏專輯1)」",
+      "proposed_album": "單單愛慕你 (鋼琴演奏專輯1)",
+      "verdict": "reject",
+      "gate": 2,
+      "why": "org 內已有同名器樂版 #5916"
+    },
+    {
+      "youtube_id": "7X_nDp1uzaw",
+      "raw_title": "展開清晨的翅膀 Wings Of The Dawn",
+      "flat_duration": 343,
+      "playlist_id": "OLAK5uy_n6dUL5R9nbWhUS-H3vYOs0267yEuQuWdQ",
+      "playlist_title": "單單愛慕你 Simply Loving You",
+      "instrumental_signal": "iTunes 器樂專輯「單單愛慕你 (鋼琴演奏專輯1)」",
+      "proposed_album": "單單愛慕你 (鋼琴演奏專輯1)",
+      "verdict": "reject",
+      "gate": 2,
+      "why": "org 內已有同名器樂版 #5804"
+    },
+    {
+      "youtube_id": "2nXQ_y1SVBM",
+      "raw_title": "主的恩典乃是一生之久 The Light Of Your Grace",
+      "flat_duration": 412,
+      "playlist_id": "OLAK5uy_n6dUL5R9nbWhUS-H3vYOs0267yEuQuWdQ",
+      "playlist_title": "單單愛慕你 Simply Loving You",
+      "instrumental_signal": "iTunes 器樂專輯「單單愛慕你 (鋼琴演奏專輯1)」",
+      "proposed_album": "單單愛慕你 (鋼琴演奏專輯1)",
+      "verdict": "reject",
+      "gate": 2,
+      "why": "org 內已有同名器樂版 #8655"
+    },
+    {
+      "youtube_id": "nRLNFvceRKA",
+      "raw_title": "耶穌，我的耶穌 Jesus, My Jesus",
+      "flat_duration": 402,
+      "playlist_id": "OLAK5uy_n6dUL5R9nbWhUS-H3vYOs0267yEuQuWdQ",
+      "playlist_title": "單單愛慕你 Simply Loving You",
+      "instrumental_signal": "iTunes 器樂專輯「單單愛慕你 (鋼琴演奏專輯1)」",
+      "proposed_album": "單單愛慕你 (鋼琴演奏專輯1)",
+      "verdict": "reject",
+      "gate": 2,
+      "why": "org 內已有同名器樂版 #8656"
+    },
+    {
+      "youtube_id": "HAPM5NOZTcU",
+      "raw_title": "讚美之泉 Stream Of Praise",
+      "flat_duration": 276,
+      "playlist_id": "OLAK5uy_n6dUL5R9nbWhUS-H3vYOs0267yEuQuWdQ",
+      "playlist_title": "單單愛慕你 Simply Loving You",
+      "instrumental_signal": "iTunes 器樂專輯「單單愛慕你 (鋼琴演奏專輯1)」",
+      "proposed_album": "單單愛慕你 (鋼琴演奏專輯1)",
+      "verdict": "reject",
+      "gate": 2,
+      "why": "org 內已有同名器樂版 #4160"
+    },
+    {
+      "youtube_id": "DmdkUf6if_w",
+      "raw_title": "我愛祢，我主 I Love You, My Lord",
+      "flat_duration": 225,
+      "playlist_id": "OLAK5uy_n6dUL5R9nbWhUS-H3vYOs0267yEuQuWdQ",
+      "playlist_title": "單單愛慕你 Simply Loving You",
+      "instrumental_signal": "iTunes 器樂專輯「單單愛慕你 (鋼琴演奏專輯1)」",
+      "proposed_album": "單單愛慕你 (鋼琴演奏專輯1)",
+      "verdict": "reject",
+      "gate": 2,
+      "why": "org 內已有同名器樂版 #8658"
+    },
+    {
+      "youtube_id": "9yYd0baf2go",
+      "raw_title": "求告祢名 Call On Your Name",
+      "flat_duration": 331,
+      "playlist_id": "OLAK5uy_n6dUL5R9nbWhUS-H3vYOs0267yEuQuWdQ",
+      "playlist_title": "單單愛慕你 Simply Loving You",
+      "instrumental_signal": "iTunes 器樂專輯「單單愛慕你 (鋼琴演奏專輯1)」",
+      "proposed_album": "單單愛慕你 (鋼琴演奏專輯1)",
+      "verdict": "instrumental",
+      "gate": null,
+      "why": "五重閘全過",
+      "meta": {
+        "id": "9yYd0baf2go",
+        "title": "求告祢名 Call On Your Name",
+        "duration": 331,
+        "channel": "讚美之泉 Stream Of Praise Music Ministries",
+        "upload_date": "20200419",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "詩歌歌曲,詩歌歌曲。"
+          ],
+          "uniqCount": 1,
+          "coverage": 0.9667673716012085,
+          "lastT1": 320,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        },
+        "en": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "[MUSIC]"
+          ],
+          "uniqCount": 1,
+          "coverage": 0.9818731117824774,
+          "lastT1": 325,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    },
+    {
+      "youtube_id": "UTCfFQxxFBo",
+      "raw_title": "被愛 Loved",
+      "flat_duration": 274,
+      "playlist_id": "OLAK5uy_n6dUL5R9nbWhUS-H3vYOs0267yEuQuWdQ",
+      "playlist_title": "單單愛慕你 Simply Loving You",
+      "instrumental_signal": "iTunes 器樂專輯「單單愛慕你 (鋼琴演奏專輯1)」",
+      "proposed_album": "單單愛慕你 (鋼琴演奏專輯1)",
+      "verdict": "instrumental",
+      "gate": null,
+      "why": "五重閘全過",
+      "meta": {
+        "id": "UTCfFQxxFBo",
+        "title": "被愛 Loved",
+        "duration": 274,
+        "channel": "讚美之泉 Stream Of Praise Music Ministries",
+        "upload_date": "20200419",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "詞曲:李宗盛 編曲:李宗盛",
+            "詞:李宗盛 編曲:李宗盛",
+            "MING PAO CANADA | MING PAO TORONTO"
+          ],
+          "uniqCount": 3,
+          "coverage": 0.9927007299270073,
+          "lastT1": 272,
+          "whisperFailed": false,
+          "garbageDropped": 1
+        },
+        "en": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "[MUSIC]",
+            "[BLANK_AUDIO]"
+          ],
+          "uniqCount": 2,
+          "coverage": 1.0218978102189782,
+          "lastT1": 280,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    },
+    {
+      "youtube_id": "3Cob27fGadg",
+      "raw_title": "秋雨之福 Autumn Blessings",
+      "flat_duration": 336,
+      "playlist_id": "OLAK5uy_n6dUL5R9nbWhUS-H3vYOs0267yEuQuWdQ",
+      "playlist_title": "單單愛慕你 Simply Loving You",
+      "instrumental_signal": "iTunes 器樂專輯「單單愛慕你 (鋼琴演奏專輯1)」",
+      "proposed_album": "單單愛慕你 (鋼琴演奏專輯1)",
+      "verdict": "instrumental",
+      "gate": null,
+      "why": "五重閘全過",
+      "meta": {
+        "id": "3Cob27fGadg",
+        "title": "秋雨之福 Autumn Blessings",
+        "duration": 336,
+        "channel": "讚美之泉 Stream Of Praise Music Ministries",
+        "upload_date": "20200419",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "詞曲:王晨宇",
+            "演唱:王晨宇",
+            "作詞:王晨宇"
+          ],
+          "uniqCount": 3,
+          "coverage": 1,
+          "lastT1": 336,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        },
+        "en": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "[MUSIC PLAYING]",
+            "[BIRDS CHIRPING]"
+          ],
+          "uniqCount": 2,
+          "coverage": 0.9921428571428572,
+          "lastT1": 333.36,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    },
+    {
+      "youtube_id": "cd4pzIy2CjI",
+      "raw_title": "單單愛慕你 Simply Loving You (二重奏 Duet)",
+      "flat_duration": 292,
+      "playlist_id": "OLAK5uy_n6dUL5R9nbWhUS-H3vYOs0267yEuQuWdQ",
+      "playlist_title": "單單愛慕你 Simply Loving You",
+      "instrumental_signal": "iTunes 器樂專輯「單單愛慕你 (鋼琴演奏專輯1)」",
+      "proposed_album": "單單愛慕你 (鋼琴演奏專輯1)",
+      "verdict": "reject",
+      "gate": 2,
+      "why": "org 內已有同名器樂版 #8659"
+    },
+    {
+      "youtube_id": "mipDs1GUbT8",
+      "raw_title": "雲上太陽 The Sun Above The Clouds",
+      "flat_duration": 285,
+      "playlist_id": "OLAK5uy_lmODbeyV_bIRmSXjDKwvNU-UDwaQax2m8",
+      "playlist_title": "雲上太陽 The Sun Above The Clouds",
+      "instrumental_signal": "iTunes 器樂專輯「雲上太陽 (演奏專輯3)」",
+      "proposed_album": "雲上太陽 (演奏專輯3)",
+      "verdict": "instrumental",
+      "gate": null,
+      "why": "五重閘全過",
+      "meta": {
+        "id": "mipDs1GUbT8",
+        "title": "雲上太陽 The Sun Above The Clouds",
+        "duration": 285,
+        "channel": "讚美之泉 Stream Of Praise Music Ministries",
+        "upload_date": "20200419",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "詞曲:李宗盛 編曲:李宗盛",
+            "詞曲:李宗盛"
+          ],
+          "uniqCount": 2,
+          "coverage": 0.9649122807017544,
+          "lastT1": 275,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        },
+        "en": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "[MUSIC]"
+          ],
+          "uniqCount": 1,
+          "coverage": 0.9473684210526315,
+          "lastT1": 270,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    },
+    {
+      "youtube_id": "vIatuUn0EP8",
+      "raw_title": "我心要稱謝耶和華 My Heart Will Praise The Lord",
+      "flat_duration": 290,
+      "playlist_id": "OLAK5uy_lmODbeyV_bIRmSXjDKwvNU-UDwaQax2m8",
+      "playlist_title": "雲上太陽 The Sun Above The Clouds",
+      "instrumental_signal": "iTunes 器樂專輯「雲上太陽 (演奏專輯3)」",
+      "proposed_album": "雲上太陽 (演奏專輯3)",
+      "verdict": "reject",
+      "gate": 4,
+      "why": "兩 pass 結論唔一致(zh 過 / en 唔過:剩餘文字 1 行:you)",
+      "meta": {
+        "id": "vIatuUn0EP8",
+        "title": "我心要稱謝耶和華 My Heart Will Praise The Lord",
+        "duration": 290,
+        "channel": "讚美之泉 Stream Of Praise Music Ministries",
+        "upload_date": "20200419",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "詞曲:李宗盛 編曲:李宗盛",
+            "詞:李宗盛 編曲:李宗盛"
+          ],
+          "uniqCount": 2,
+          "coverage": 0.9482758620689655,
+          "lastT1": 275,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        },
+        "en": {
+          "pass": false,
+          "reasons": [
+            "剩餘文字 1 行:you"
+          ],
+          "uniq": [
+            "[MUSIC]",
+            "you"
+          ],
+          "uniqCount": 2,
+          "coverage": 0.9898620689655172,
+          "lastT1": 287.06,
+          "whisperFailed": false,
+          "garbageDropped": 0,
+          "rejudge_reasons": [
+            "剩餘文字:you"
+          ]
+        }
+      }
+    },
+    {
+      "youtube_id": "hLowln_1VkM",
+      "raw_title": "主，懇求祢 Lord, Guide Me",
+      "flat_duration": 299,
+      "playlist_id": "OLAK5uy_lmODbeyV_bIRmSXjDKwvNU-UDwaQax2m8",
+      "playlist_title": "雲上太陽 The Sun Above The Clouds",
+      "instrumental_signal": "iTunes 器樂專輯「雲上太陽 (演奏專輯3)」",
+      "proposed_album": "雲上太陽 (演奏專輯3)",
+      "verdict": "instrumental",
+      "gate": null,
+      "why": "五重閘全過",
+      "meta": {
+        "id": "hLowln_1VkM",
+        "title": "主，懇求祢 Lord, Guide Me",
+        "duration": 299,
+        "channel": "讚美之泉 Stream Of Praise Music Ministries",
+        "upload_date": "20200419",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "詞曲:李宗盛 編曲:李宗盛",
+            "詞曲:李宗盛"
+          ],
+          "uniqCount": 2,
+          "coverage": 0.9264214046822743,
+          "lastT1": 277,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        },
+        "en": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "[MUSIC]"
+          ],
+          "uniqCount": 1,
+          "coverage": 1.0033444816053512,
+          "lastT1": 300,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    },
+    {
+      "youtube_id": "PYXxl1K4rXY",
+      "raw_title": "天堂在我心 Heaven Is In My Heart",
+      "flat_duration": 213,
+      "playlist_id": "OLAK5uy_lmODbeyV_bIRmSXjDKwvNU-UDwaQax2m8",
+      "playlist_title": "雲上太陽 The Sun Above The Clouds",
+      "instrumental_signal": "iTunes 器樂專輯「雲上太陽 (演奏專輯3)」",
+      "proposed_album": "雲上太陽 (演奏專輯3)",
+      "verdict": "instrumental",
+      "gate": null,
+      "why": "五重閘全過(rejudge:指紋庫更新後零網絡重判)",
+      "meta": {
+        "id": "PYXxl1K4rXY",
+        "title": "天堂在我心 Heaven Is In My Heart",
+        "duration": 213,
+        "channel": "讚美之泉 Stream Of Praise Music Ministries",
+        "upload_date": "20200419",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": false,
+          "reasons": [
+            "剩餘文字 1 行:优优独播剧场——YoYo Television Series"
+          ],
+          "uniq": [
+            "詞曲:李宗盛 編曲:李宗盛",
+            "詞曲:李宗盛",
+            "优优独播剧场——YoYo Television Series Exclusive"
+          ],
+          "uniqCount": 3,
+          "coverage": 1.0024413145539905,
+          "lastT1": 213.52,
+          "whisperFailed": false,
+          "garbageDropped": 1,
+          "rejudge_reasons": [
+            "剩餘文字:优优独播剧场——YoYo Television Series"
+          ]
+        },
+        "en": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "[MUSIC]",
+            "[BLANK_AUDIO]"
+          ],
+          "uniqCount": 2,
+          "coverage": 1.0234741784037558,
+          "lastT1": 218,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    },
+    {
+      "youtube_id": "looBGr3uz8M",
+      "raw_title": "讚美耶和華 Praise Jehovah",
+      "flat_duration": 324,
+      "playlist_id": "OLAK5uy_lmODbeyV_bIRmSXjDKwvNU-UDwaQax2m8",
+      "playlist_title": "雲上太陽 The Sun Above The Clouds",
+      "instrumental_signal": "iTunes 器樂專輯「雲上太陽 (演奏專輯3)」",
+      "proposed_album": "雲上太陽 (演奏專輯3)",
+      "verdict": "reject",
+      "gate": 4,
+      "why": "兩 pass 結論唔一致(zh 唔過:剩餘文字 2 行:這首詩歌詞的詞曲名字是《創世》這首詩歌。 / 這首詩歌曲名字是《創世》。 / en 過)",
+      "meta": {
+        "id": "looBGr3uz8M",
+        "title": "讚美耶和華 Praise Jehovah",
+        "duration": 323,
+        "channel": "讚美之泉 Stream Of Praise Music Ministries",
+        "upload_date": "20200419",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": false,
+          "reasons": [
+            "剩餘文字 2 行:這首詩歌詞的詞曲名字是《創世》這首詩歌。 / 這首詩歌曲名字是《創世》。"
+          ],
+          "uniq": [
+            "這首詩歌詞的詞曲名字是《創世》這首詩歌。",
+            "這首詩歌曲名字是《創世》。"
+          ],
+          "uniqCount": 2,
+          "coverage": 0.9845201238390093,
+          "lastT1": 318,
+          "whisperFailed": false,
+          "garbageDropped": 0,
+          "rejudge_reasons": [
+            "剩餘文字:這首詩歌詞的詞曲名字是《創世》這首詩歌。 / 這首詩歌曲名字是《創世》。"
+          ]
+        },
+        "en": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "[MUSIC]"
+          ],
+          "uniqCount": 1,
+          "coverage": 0.9907120743034056,
+          "lastT1": 320,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    },
+    {
+      "youtube_id": "eWW2oi4Kc2k",
+      "raw_title": "全新的你 A New You",
+      "flat_duration": 343,
+      "playlist_id": "OLAK5uy_lmODbeyV_bIRmSXjDKwvNU-UDwaQax2m8",
+      "playlist_title": "雲上太陽 The Sun Above The Clouds",
+      "instrumental_signal": "iTunes 器樂專輯「雲上太陽 (演奏專輯3)」",
+      "proposed_album": "雲上太陽 (演奏專輯3)",
+      "verdict": "instrumental",
+      "gate": null,
+      "why": "五重閘全過",
+      "meta": {
+        "id": "eWW2oi4Kc2k",
+        "title": "全新的你 A New You",
+        "duration": 342,
+        "channel": "讚美之泉 Stream Of Praise Music Ministries",
+        "upload_date": "20200419",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "詞曲:李宗盛 編曲:李宗盛",
+            "詞曲:李宗盛",
+            "詞:李宗盛"
+          ],
+          "uniqCount": 3,
+          "coverage": 0.9590643274853801,
+          "lastT1": 328,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        },
+        "en": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "[MUSIC]"
+          ],
+          "uniqCount": 1,
+          "coverage": 1.0087719298245614,
+          "lastT1": 345,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    },
+    {
+      "youtube_id": "RQ4M2BODNSg",
+      "raw_title": "我一生要讚美祢 I Will Praise You All My Life",
+      "flat_duration": 291,
+      "playlist_id": "OLAK5uy_lmODbeyV_bIRmSXjDKwvNU-UDwaQax2m8",
+      "playlist_title": "雲上太陽 The Sun Above The Clouds",
+      "instrumental_signal": "iTunes 器樂專輯「雲上太陽 (演奏專輯3)」",
+      "proposed_album": "雲上太陽 (演奏專輯3)",
+      "verdict": "reject",
+      "gate": 4,
+      "why": "兩 pass 結論唔一致(zh 唔過:剩餘文字 5 行:製作人:李宗盛 / 混音:李宗盛 / 出品:Patreon / en 過)",
+      "meta": {
+        "id": "RQ4M2BODNSg",
+        "title": "我一生要讚美祢 I Will Praise You All My Life",
+        "duration": 290,
+        "channel": "讚美之泉 Stream Of Praise Music Ministries",
+        "upload_date": "20200419",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": false,
+          "reasons": [
+            "剩餘文字 5 行:製作人:李宗盛 / 混音:李宗盛 / 出品:Patreon"
+          ],
+          "uniq": [
+            "詞曲:李宗盛 編曲:李宗盛",
+            "製作人:李宗盛",
+            "混音:李宗盛",
+            "出品:Patreon",
+            "監製:李宗盛",
+            "導演:李宗盛",
+            "製作公司:XZ Music"
+          ],
+          "uniqCount": 7,
+          "coverage": 0.9862068965517241,
+          "lastT1": 286,
+          "whisperFailed": false,
+          "garbageDropped": 1,
+          "rejudge_reasons": [
+            "剩餘文字:製作公司:XZ Music"
+          ]
+        },
+        "en": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "[MUSIC]"
+          ],
+          "uniqCount": 1,
+          "coverage": 0.9655172413793104,
+          "lastT1": 280,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    },
+    {
+      "youtube_id": "ZKZLEaCtCnY",
+      "raw_title": "主啊，我要跟隨祢 Lord, I Want To Follow You",
+      "flat_duration": 368,
+      "playlist_id": "OLAK5uy_lmODbeyV_bIRmSXjDKwvNU-UDwaQax2m8",
+      "playlist_title": "雲上太陽 The Sun Above The Clouds",
+      "instrumental_signal": "iTunes 器樂專輯「雲上太陽 (演奏專輯3)」",
+      "proposed_album": "雲上太陽 (演奏專輯3)",
+      "verdict": "instrumental",
+      "gate": null,
+      "why": "五重閘全過",
+      "meta": {
+        "id": "ZKZLEaCtCnY",
+        "title": "主啊，我要跟隨祢 Lord, I Want To Follow You",
+        "duration": 368,
+        "channel": "讚美之泉 Stream Of Praise Music Ministries",
+        "upload_date": "20200419",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "詞曲:李宗盛 編曲:李宗盛",
+            "詞曲:李宗盛",
+            "詞:李宗盛"
+          ],
+          "uniqCount": 3,
+          "coverage": 0.9782608695652174,
+          "lastT1": 360,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        },
+        "en": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "[MUSIC]",
+            "[BLANK_AUDIO]"
+          ],
+          "uniqCount": 2,
+          "coverage": 1.0190217391304348,
+          "lastT1": 375,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    },
+    {
+      "youtube_id": "B2Yp3krW3lI",
+      "raw_title": "全能的創造主 Wonderful Creator",
+      "flat_duration": 302,
+      "playlist_id": "OLAK5uy_lmODbeyV_bIRmSXjDKwvNU-UDwaQax2m8",
+      "playlist_title": "雲上太陽 The Sun Above The Clouds",
+      "instrumental_signal": "iTunes 器樂專輯「雲上太陽 (演奏專輯3)」",
+      "proposed_album": "雲上太陽 (演奏專輯3)",
+      "verdict": "reject",
+      "gate": 4,
+      "why": "兩 pass 結論唔一致(zh 唔過:剩餘文字 1 行:我就是想要你做我的朋友, 讓我做你的朋友, 讓我做你的朋友。 / en 過)",
+      "meta": {
+        "id": "B2Yp3krW3lI",
+        "title": "全能的創造主 Wonderful Creator",
+        "duration": 302,
+        "channel": "讚美之泉 Stream Of Praise Music Ministries",
+        "upload_date": "20200419",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": false,
+          "reasons": [
+            "剩餘文字 1 行:我就是想要你做我的朋友, 讓我做你的朋友, 讓我做你的朋友。"
+          ],
+          "uniq": [
+            "詞曲:李宗盛 編曲:李宗盛",
+            "詞曲:李宗盛",
+            "我就是想要你做我的朋友, 讓我做你的朋友, 讓我做你的朋友。"
+          ],
+          "uniqCount": 3,
+          "coverage": 1.009933774834437,
+          "lastT1": 305,
+          "whisperFailed": false,
+          "garbageDropped": 0,
+          "rejudge_reasons": [
+            "剩餘文字:我就是想要你做我的朋友, 讓我做你的朋友, 讓我做你的朋友。"
+          ]
+        },
+        "en": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "[MUSIC]"
+          ],
+          "uniqCount": 1,
+          "coverage": 0.9735099337748344,
+          "lastT1": 294,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    },
+    {
+      "youtube_id": "x9hyX-Ze2H8",
+      "raw_title": "我和我的家 As For Me And My House",
+      "flat_duration": 272,
+      "playlist_id": "OLAK5uy_lmODbeyV_bIRmSXjDKwvNU-UDwaQax2m8",
+      "playlist_title": "雲上太陽 The Sun Above The Clouds",
+      "instrumental_signal": "iTunes 器樂專輯「雲上太陽 (演奏專輯3)」",
+      "proposed_album": "雲上太陽 (演奏專輯3)",
+      "verdict": "instrumental",
+      "gate": null,
+      "why": "五重閘全過(rejudge:指紋庫更新後零網絡重判)",
+      "meta": {
+        "id": "x9hyX-Ze2H8",
+        "title": "我和我的家 As For Me And My House",
+        "duration": 272,
+        "channel": "讚美之泉 Stream Of Praise Music Ministries",
+        "upload_date": "20200419",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": false,
+          "reasons": [
+            "剩餘文字 1 行:优优独播剧场——YoYo Television Series"
+          ],
+          "uniq": [
+            "詞曲:李宗盛 編曲:李宗盛",
+            "詞曲:李宗盛",
+            "优优独播剧场——YoYo Television Series Exclusive"
+          ],
+          "uniqCount": 3,
+          "coverage": 1.0220588235294117,
+          "lastT1": 278,
+          "whisperFailed": false,
+          "garbageDropped": 1,
+          "rejudge_reasons": [
+            "剩餘文字:优优独播剧场——YoYo Television Series"
+          ]
+        },
+        "en": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "[MUSIC]"
+          ],
+          "uniqCount": 1,
+          "coverage": 0.9926470588235294,
+          "lastT1": 270,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    },
+    {
+      "youtube_id": "gspTLpN3Pxw",
+      "raw_title": "我主我的神 My Lord, My God",
+      "flat_duration": 281,
+      "playlist_id": "OLAK5uy_lmODbeyV_bIRmSXjDKwvNU-UDwaQax2m8",
+      "playlist_title": "雲上太陽 The Sun Above The Clouds",
+      "instrumental_signal": "iTunes 器樂專輯「雲上太陽 (演奏專輯3)」",
+      "proposed_album": "雲上太陽 (演奏專輯3)",
+      "verdict": "instrumental",
+      "gate": null,
+      "why": "五重閘全過",
+      "meta": {
+        "id": "gspTLpN3Pxw",
+        "title": "我主我的神 My Lord, My God",
+        "duration": 281,
+        "channel": "讚美之泉 Stream Of Praise Music Ministries",
+        "upload_date": "20200419",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "詞曲:張宇文 編曲:張宇文",
+            "詞曲:張宇文"
+          ],
+          "uniqCount": 2,
+          "coverage": 0.99644128113879,
+          "lastT1": 280,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        },
+        "en": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "[MUSIC]",
+            "[BLANK_AUDIO]"
+          ],
+          "uniqCount": 2,
+          "coverage": 1.0213523131672597,
+          "lastT1": 287,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    },
+    {
+      "youtube_id": "6LLoFJ0CzxI",
+      "raw_title": "專心仰望耶穌 Focus On Jesus",
+      "flat_duration": 244,
+      "playlist_id": "OLAK5uy_lmODbeyV_bIRmSXjDKwvNU-UDwaQax2m8",
+      "playlist_title": "雲上太陽 The Sun Above The Clouds",
+      "instrumental_signal": "iTunes 器樂專輯「雲上太陽 (演奏專輯3)」",
+      "proposed_album": "雲上太陽 (演奏專輯3)",
+      "verdict": "instrumental",
+      "gate": null,
+      "why": "五重閘全過(rejudge:指紋庫更新後零網絡重判)",
+      "meta": {
+        "id": "6LLoFJ0CzxI",
+        "title": "專心仰望耶穌 Focus On Jesus",
+        "duration": 244,
+        "channel": "讚美之泉 Stream Of Praise Music Ministries",
+        "upload_date": "20200419",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": false,
+          "reasons": [
+            "剩餘文字 2 行:优优独播剧场——YoYo Television Series / 字幕:J Chong"
+          ],
+          "uniq": [
+            "詞曲:張宇文 詞:張宇文 編曲:張宇文",
+            "詞曲:張宇文 詞曲:張宇文",
+            "优优独播剧场——YoYo Television Series Exclusive",
+            "字幕:J Chong"
+          ],
+          "uniqCount": 4,
+          "coverage": 1,
+          "lastT1": 244,
+          "whisperFailed": false,
+          "garbageDropped": 2,
+          "rejudge_reasons": [
+            "剩餘文字:优优独播剧场——YoYo Television Series / 字幕:J Chong"
+          ]
+        },
+        "en": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "[MUSIC]",
+            "[BLANK_AUDIO]"
+          ],
+          "uniqCount": 2,
+          "coverage": 1.0245901639344261,
+          "lastT1": 250,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    },
+    {
+      "youtube_id": "o_mY9-W6a2k",
+      "raw_title": "傾聽我的心 Listen To My Heart",
+      "flat_duration": 401,
+      "playlist_id": "OLAK5uy_lmODbeyV_bIRmSXjDKwvNU-UDwaQax2m8",
+      "playlist_title": "雲上太陽 The Sun Above The Clouds",
+      "instrumental_signal": "iTunes 器樂專輯「雲上太陽 (演奏專輯3)」",
+      "proposed_album": "雲上太陽 (演奏專輯3)",
+      "verdict": "reject",
+      "gate": 4,
+      "why": "兩 pass 結論唔一致(zh 唔過:剩餘文字 1 行:Zither Harp / en 過)",
+      "meta": {
+        "id": "o_mY9-W6a2k",
+        "title": "傾聽我的心 Listen To My Heart",
+        "duration": 401,
+        "channel": "讚美之泉 Stream Of Praise Music Ministries",
+        "upload_date": "20200419",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": false,
+          "reasons": [
+            "剩餘文字 1 行:Zither Harp"
+          ],
+          "uniq": [
+            "詞曲:李宗盛 編曲:李宗盛",
+            "詞曲:李宗盛",
+            "Zither Harp"
+          ],
+          "uniqCount": 3,
+          "coverage": 0.9925187032418953,
+          "lastT1": 398,
+          "whisperFailed": false,
+          "garbageDropped": 1,
+          "rejudge_reasons": [
+            "剩餘文字:Zither Harp"
+          ]
+        },
+        "en": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "[MUSIC]"
+          ],
+          "uniqCount": 1,
+          "coverage": 0.9850374064837906,
+          "lastT1": 395,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    },
+    {
+      "youtube_id": "bGXhmaDAjOA",
+      "raw_title": "把冷漠變成愛 Fill Our Heart With Love",
+      "flat_duration": 253,
+      "playlist_id": "OLAK5uy_lmODbeyV_bIRmSXjDKwvNU-UDwaQax2m8",
+      "playlist_title": "雲上太陽 The Sun Above The Clouds",
+      "instrumental_signal": "iTunes 器樂專輯「雲上太陽 (演奏專輯3)」",
+      "proposed_album": "雲上太陽 (演奏專輯3)",
+      "verdict": "instrumental",
+      "gate": null,
+      "why": "五重閘全過",
+      "meta": {
+        "id": "bGXhmaDAjOA",
+        "title": "把冷漠變成愛 Fill Our Heart With Love",
+        "duration": 253,
+        "channel": "讚美之泉 Stream Of Praise Music Ministries",
+        "upload_date": "20200419",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "詞曲:李宗盛 編曲:李宗盛",
+            "詞曲:李宗盛"
+          ],
+          "uniqCount": 2,
+          "coverage": 0.9881422924901185,
+          "lastT1": 250,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        },
+        "en": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "[MUSIC]"
+          ],
+          "uniqCount": 1,
+          "coverage": 0.9881422924901185,
+          "lastT1": 250,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    },
+    {
+      "youtube_id": "_XKsiAU7ZdY",
+      "raw_title": "愛，我願意 I Receive Your Love",
+      "flat_duration": 375,
+      "playlist_id": "OLAK5uy_l6uB9pF7xLn5g1Sa2C0v1-T3k3r0v6qvk",
+      "playlist_title": "愛，我願意 I Receive Your Love",
+      "instrumental_signal": "iTunes 器樂專輯「愛,我願意 (演奏專輯2)」",
+      "proposed_album": "愛,我願意 (演奏專輯2)",
+      "verdict": "reject",
+      "gate": 4,
+      "why": "兩 pass 結論唔一致(zh 唔過:剩餘文字 2 行:詩歌歌曲、詩歌歌曲、詩歌歌歌曲。 / * 鸡蛋 - 1 颗 / en 過)",
+      "meta": {
+        "id": "_XKsiAU7ZdY",
+        "title": "愛，我願意 I Receive Your Love",
+        "duration": 374,
+        "channel": "讚美之泉 Stream Of Praise Music Ministries",
+        "upload_date": "20200419",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": false,
+          "reasons": [
+            "剩餘文字 2 行:詩歌歌曲、詩歌歌曲、詩歌歌歌曲。 / * 鸡蛋 - 1 颗"
+          ],
+          "uniq": [
+            "詩歌歌曲、詩歌歌曲、詩歌歌歌曲。",
+            "詩歌歌曲、詩歌歌曲、詩歌歌曲。",
+            "詩歌歌曲,詩歌歌曲。",
+            "詩歌歌曲,詩歌歌曲,詩歌歌曲。",
+            "詩歌歌曲。",
+            "* 鸡蛋 - 1 颗"
+          ],
+          "uniqCount": 6,
+          "coverage": 1.0053475935828877,
+          "lastT1": 376,
+          "whisperFailed": false,
+          "garbageDropped": 0,
+          "rejudge_reasons": [
+            "剩餘文字:詩歌歌曲、詩歌歌曲、詩歌歌歌曲。 / * 鸡蛋 - 1 颗"
+          ]
+        },
+        "en": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "[MUSIC PLAYING]"
+          ],
+          "uniqCount": 1,
+          "coverage": 0.9715508021390374,
+          "lastT1": 363.36,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    },
+    {
+      "youtube_id": "ZY2Bw6nchLg",
+      "raw_title": "注目看耶穌 Look Upon Jesus",
+      "flat_duration": 329,
+      "playlist_id": "OLAK5uy_l6uB9pF7xLn5g1Sa2C0v1-T3k3r0v6qvk",
+      "playlist_title": "愛，我願意 I Receive Your Love",
+      "instrumental_signal": "iTunes 器樂專輯「愛,我願意 (演奏專輯2)」",
+      "proposed_album": "愛,我願意 (演奏專輯2)",
+      "verdict": "reject",
+      "gate": 2,
+      "why": "org 內已有同名器樂版 #5988"
+    },
+    {
+      "youtube_id": "vCybaxnnx0g",
+      "raw_title": "給我清潔的心 Create In Me A Clean Heart",
+      "flat_duration": 307,
+      "playlist_id": "OLAK5uy_l6uB9pF7xLn5g1Sa2C0v1-T3k3r0v6qvk",
+      "playlist_title": "愛，我願意 I Receive Your Love",
+      "instrumental_signal": "iTunes 器樂專輯「愛,我願意 (演奏專輯2)」",
+      "proposed_album": "愛,我願意 (演奏專輯2)",
+      "verdict": "reject",
+      "gate": 4,
+      "why": "兩 pass 結論唔一致(zh 唔過:剩餘文字 1 行:詩歌歌詩歌詩歌詩歌詞的錄音。 / en 過)",
+      "meta": {
+        "id": "vCybaxnnx0g",
+        "title": "給我清潔的心 Create In Me A Clean Heart",
+        "duration": 307,
+        "channel": "讚美之泉 Stream Of Praise Music Ministries",
+        "upload_date": "20200419",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": false,
+          "reasons": [
+            "剩餘文字 1 行:詩歌歌詩歌詩歌詩歌詞的錄音。"
+          ],
+          "uniq": [
+            "詩歌歌詩歌詩歌詩歌詞的錄音。",
+            "詩歌詩歌詩歌詩歌的錄音。",
+            "詩歌詩歌詩歌詩歌詩歌的錄音。",
+            "詩歌詩歌詩歌詩歌詩歌.",
+            "我愛你 詞:李宗盛 曲:李宗盛",
+            "我愛你 詞:李宗盛"
+          ],
+          "uniqCount": 6,
+          "coverage": 0.996742671009772,
+          "lastT1": 306,
+          "whisperFailed": false,
+          "garbageDropped": 0,
+          "rejudge_reasons": [
+            "剩餘文字:詩歌歌詩歌詩歌詩歌詞的錄音。"
+          ]
+        },
+        "en": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "[MUSIC]"
+          ],
+          "uniqCount": 1,
+          "coverage": 0.9771986970684039,
+          "lastT1": 300,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    },
+    {
+      "youtube_id": "AqR9nQS5qlo",
+      "raw_title": "一世人跟隨祢 I Will Follow You All My Life",
+      "flat_duration": 285,
+      "playlist_id": "OLAK5uy_l6uB9pF7xLn5g1Sa2C0v1-T3k3r0v6qvk",
+      "playlist_title": "愛，我願意 I Receive Your Love",
+      "instrumental_signal": "iTunes 器樂專輯「愛,我願意 (演奏專輯2)」",
+      "proposed_album": "愛,我願意 (演奏專輯2)",
+      "verdict": "instrumental",
+      "gate": null,
+      "why": "五重閘全過",
+      "meta": {
+        "id": "AqR9nQS5qlo",
+        "title": "一世人跟隨祢 I Will Follow You All My Life",
+        "duration": 285,
+        "channel": "讚美之泉 Stream Of Praise Music Ministries",
+        "upload_date": "20200419",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "詞曲:李宗盛 編曲:李宗盛",
+            "詞曲:李宗盛"
+          ],
+          "uniqCount": 2,
+          "coverage": 0.9719298245614035,
+          "lastT1": 277,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        },
+        "en": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "[MUSIC]"
+          ],
+          "uniqCount": 1,
+          "coverage": 0.9473684210526315,
+          "lastT1": 270,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    },
+    {
+      "youtube_id": "CIpM8aOx2lE",
+      "raw_title": "平安的七月夜 Peaceful July",
+      "flat_duration": 269,
+      "playlist_id": "OLAK5uy_l6uB9pF7xLn5g1Sa2C0v1-T3k3r0v6qvk",
+      "playlist_title": "愛，我願意 I Receive Your Love",
+      "instrumental_signal": "iTunes 器樂專輯「愛,我願意 (演奏專輯2)」",
+      "proposed_album": "愛,我願意 (演奏專輯2)",
+      "verdict": "reject",
+      "gate": 2,
+      "why": "org 內已有同名器樂版 #5913"
+    },
+    {
+      "youtube_id": "fJEMjJ1eZ2A",
+      "raw_title": "與祢有約 The Promise",
+      "flat_duration": 204,
+      "playlist_id": "OLAK5uy_l6uB9pF7xLn5g1Sa2C0v1-T3k3r0v6qvk",
+      "playlist_title": "愛，我願意 I Receive Your Love",
+      "instrumental_signal": "iTunes 器樂專輯「愛,我願意 (演奏專輯2)」",
+      "proposed_album": "愛,我願意 (演奏專輯2)",
+      "verdict": "instrumental",
+      "gate": null,
+      "why": "五重閘全過",
+      "meta": {
+        "id": "fJEMjJ1eZ2A",
+        "title": "與祢有約 The Promise",
+        "duration": 204,
+        "channel": "讚美之泉 Stream Of Praise Music Ministries",
+        "upload_date": "20200419",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "詞曲:張宇文 編曲:張宇文",
+            "詞曲:張宇文"
+          ],
+          "uniqCount": 2,
+          "coverage": 0.9166666666666666,
+          "lastT1": 187,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        },
+        "en": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "(upbeat music)"
+          ],
+          "uniqCount": 1,
+          "coverage": 0.895,
+          "lastT1": 182.58,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    },
+    {
+      "youtube_id": "a4UvtNwPLA8",
+      "raw_title": "彩虹下的約定 The Covenant Under The Rainbow",
+      "flat_duration": 239,
+      "playlist_id": "OLAK5uy_l6uB9pF7xLn5g1Sa2C0v1-T3k3r0v6qvk",
+      "playlist_title": "愛，我願意 I Receive Your Love",
+      "instrumental_signal": "iTunes 器樂專輯「愛,我願意 (演奏專輯2)」",
+      "proposed_album": "愛,我願意 (演奏專輯2)",
+      "verdict": "instrumental",
+      "gate": null,
+      "why": "五重閘全過",
+      "meta": {
+        "id": "a4UvtNwPLA8",
+        "title": "彩虹下的約定 The Covenant Under The Rainbow",
+        "duration": 239,
+        "channel": "讚美之泉 Stream Of Praise Music Ministries",
+        "upload_date": "20200419",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "詞曲:李宗盛 編曲:李宗盛",
+            "詞曲:李宗盛",
+            "詞:李宗盛"
+          ],
+          "uniqCount": 3,
+          "coverage": 0.9079497907949791,
+          "lastT1": 217,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        },
+        "en": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "[MUSIC]",
+            "[BLANK_AUDIO]"
+          ],
+          "uniqCount": 2,
+          "coverage": 1.0251046025104602,
+          "lastT1": 245,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    },
+    {
+      "youtube_id": "xvZxgV4kTsA",
+      "raw_title": "尋找 Searching",
+      "flat_duration": 218,
+      "playlist_id": "OLAK5uy_l6uB9pF7xLn5g1Sa2C0v1-T3k3r0v6qvk",
+      "playlist_title": "愛，我願意 I Receive Your Love",
+      "instrumental_signal": "iTunes 器樂專輯「愛,我願意 (演奏專輯2)」",
+      "proposed_album": "愛,我願意 (演奏專輯2)",
+      "verdict": "instrumental",
+      "gate": null,
+      "why": "五重閘全過",
+      "meta": {
+        "id": "xvZxgV4kTsA",
+        "title": "尋找 Searching",
+        "duration": 218,
+        "channel": "讚美之泉 Stream Of Praise Music Ministries",
+        "upload_date": "20200419",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "詞:李宗盛 曲:李宗盛",
+            "歌曲:李宗盛"
+          ],
+          "uniqCount": 2,
+          "coverage": 0.9862385321100917,
+          "lastT1": 215,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        },
+        "en": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "[MUSIC]"
+          ],
+          "uniqCount": 1,
+          "coverage": 1.0091743119266054,
+          "lastT1": 220,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    },
+    {
+      "youtube_id": "2sqeQnCXDSg",
+      "raw_title": "這是耶和華所定的日子 This Is The Day",
+      "flat_duration": 179,
+      "playlist_id": "OLAK5uy_l6uB9pF7xLn5g1Sa2C0v1-T3k3r0v6qvk",
+      "playlist_title": "愛，我願意 I Receive Your Love",
+      "instrumental_signal": "iTunes 器樂專輯「愛,我願意 (演奏專輯2)」",
+      "proposed_album": "愛,我願意 (演奏專輯2)",
+      "verdict": "instrumental",
+      "gate": null,
+      "why": "五重閘全過",
+      "meta": {
+        "id": "2sqeQnCXDSg",
+        "title": "這是耶和華所定的日子 This Is The Day",
+        "duration": 179,
+        "channel": "讚美之泉 Stream Of Praise Music Ministries",
+        "upload_date": "20200419",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "詞曲:李宗盛 編曲:李宗盛",
+            "詞曲:李宗盛"
+          ],
+          "uniqCount": 2,
+          "coverage": 0.8659217877094972,
+          "lastT1": 155,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        },
+        "en": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "[MUSIC]"
+          ],
+          "uniqCount": 1,
+          "coverage": 0.9217877094972067,
+          "lastT1": 165,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    },
+    {
+      "youtube_id": "eiEE9rYm33M",
+      "raw_title": "一切歌頌讚美 Praise The Lord",
+      "flat_duration": 211,
+      "playlist_id": "OLAK5uy_l6uB9pF7xLn5g1Sa2C0v1-T3k3r0v6qvk",
+      "playlist_title": "愛，我願意 I Receive Your Love",
+      "instrumental_signal": "iTunes 器樂專輯「愛,我願意 (演奏專輯2)」",
+      "proposed_album": "愛,我願意 (演奏專輯2)",
+      "verdict": "reject",
+      "gate": 4,
+      "why": "兩 pass 結論唔一致(zh 過 / en 唔過:剩餘文字 1 行:you)",
+      "meta": {
+        "id": "eiEE9rYm33M",
+        "title": "一切歌頌讚美 Praise The Lord",
+        "duration": 210,
+        "channel": "讚美之泉 Stream Of Praise Music Ministries",
+        "upload_date": "20200419",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "詞曲:邰智源",
+            "演唱:邰智源"
+          ],
+          "uniqCount": 2,
+          "coverage": 0.9714285714285714,
+          "lastT1": 204,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        },
+        "en": {
+          "pass": false,
+          "reasons": [
+            "剩餘文字 1 行:you"
+          ],
+          "uniq": [
+            "(upbeat music)",
+            "you"
+          ],
+          "uniqCount": 2,
+          "coverage": 1.0098095238095237,
+          "lastT1": 212.06,
+          "whisperFailed": false,
+          "garbageDropped": 0,
+          "rejudge_reasons": [
+            "剩餘文字:you"
+          ]
+        }
+      }
+    },
+    {
+      "youtube_id": "mKPXp0gfd0M",
+      "raw_title": "我的心，你要稱頌耶和華 Praise The Lord All My Soul",
+      "flat_duration": 307,
+      "playlist_id": "OLAK5uy_l6uB9pF7xLn5g1Sa2C0v1-T3k3r0v6qvk",
+      "playlist_title": "愛，我願意 I Receive Your Love",
+      "instrumental_signal": "iTunes 器樂專輯「愛,我願意 (演奏專輯2)」",
+      "proposed_album": "愛,我願意 (演奏專輯2)",
+      "verdict": "reject",
+      "gate": 4,
+      "why": "兩 pass 結論唔一致(zh 唔過:剩餘文字 1 行:詩歌歌曲、詩歌歌曲、詩歌歌歌曲。 / en 過)",
+      "meta": {
+        "id": "mKPXp0gfd0M",
+        "title": "我的心，你要稱頌耶和華 Praise The Lord All My Soul",
+        "duration": 307,
+        "channel": "讚美之泉 Stream Of Praise Music Ministries",
+        "upload_date": "20200419",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": false,
+          "reasons": [
+            "剩餘文字 1 行:詩歌歌曲、詩歌歌曲、詩歌歌歌曲。"
+          ],
+          "uniq": [
+            "詩歌歌曲、詩歌歌曲、詩歌歌歌曲。",
+            "詩歌歌曲、詩歌歌曲、詩歌歌曲。",
+            "詩歌歌曲,詩歌歌曲。"
+          ],
+          "uniqCount": 3,
+          "coverage": 1.009771986970684,
+          "lastT1": 310,
+          "whisperFailed": false,
+          "garbageDropped": 0,
+          "rejudge_reasons": [
+            "剩餘文字:詩歌歌曲、詩歌歌曲、詩歌歌歌曲。"
+          ]
+        },
+        "en": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "[MUSIC]"
+          ],
+          "uniqCount": 1,
+          "coverage": 0.9609120521172638,
+          "lastT1": 295,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    },
+    {
+      "youtube_id": "6rC6CYtbBZA",
+      "raw_title": "馨香晚祭 The Evening Sacrifice",
+      "flat_duration": 371,
+      "playlist_id": "OLAK5uy_l6uB9pF7xLn5g1Sa2C0v1-T3k3r0v6qvk",
+      "playlist_title": "愛，我願意 I Receive Your Love",
+      "instrumental_signal": "iTunes 器樂專輯「愛,我願意 (演奏專輯2)」",
+      "proposed_album": "愛,我願意 (演奏專輯2)",
+      "verdict": "instrumental",
+      "gate": null,
+      "why": "五重閘全過",
+      "meta": {
+        "id": "6rC6CYtbBZA",
+        "title": "馨香晚祭 The Evening Sacrifice",
+        "duration": 371,
+        "channel": "讚美之泉 Stream Of Praise Music Ministries",
+        "upload_date": "20200419",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "詞曲:李宗盛 編曲:李宗盛",
+            "詞曲:李宗盛"
+          ],
+          "uniqCount": 2,
+          "coverage": 0.9892183288409704,
+          "lastT1": 367,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        },
+        "en": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "[MUSIC PLAYING]"
+          ],
+          "uniqCount": 1,
+          "coverage": 0.9794070080862534,
+          "lastT1": 363.36,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    },
+    {
+      "youtube_id": "B2LgWWoWtng",
+      "raw_title": "起來吧! Arise!",
+      "flat_duration": 265,
+      "playlist_id": "OLAK5uy_l6uB9pF7xLn5g1Sa2C0v1-T3k3r0v6qvk",
+      "playlist_title": "愛，我願意 I Receive Your Love",
+      "instrumental_signal": "iTunes 器樂專輯「愛,我願意 (演奏專輯2)」",
+      "proposed_album": "愛,我願意 (演奏專輯2)",
+      "verdict": "instrumental",
+      "gate": null,
+      "why": "五重閘全過",
+      "meta": {
+        "id": "B2LgWWoWtng",
+        "title": "起來吧! Arise!",
+        "duration": 265,
+        "channel": "讚美之泉 Stream Of Praise Music Ministries",
+        "upload_date": "20200419",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "詞曲:李宗盛 編曲:李宗盛",
+            "詞曲:李宗盛",
+            "詞:李宗盛"
+          ],
+          "uniqCount": 3,
+          "coverage": 0.9245283018867925,
+          "lastT1": 245,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        },
+        "en": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "[MUSIC]"
+          ],
+          "uniqCount": 1,
+          "coverage": 1,
+          "lastT1": 265,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    },
+    {
+      "youtube_id": "zvhK84GlsrQ",
+      "raw_title": "賜我自由 Grant Me Freedom",
+      "flat_duration": 337,
+      "playlist_id": "OLAK5uy_l6uB9pF7xLn5g1Sa2C0v1-T3k3r0v6qvk",
+      "playlist_title": "愛，我願意 I Receive Your Love",
+      "instrumental_signal": "iTunes 器樂專輯「愛,我願意 (演奏專輯2)」",
+      "proposed_album": "愛,我願意 (演奏專輯2)",
+      "verdict": "instrumental",
+      "gate": null,
+      "why": "五重閘全過",
+      "meta": {
+        "id": "zvhK84GlsrQ",
+        "title": "賜我自由 Grant Me Freedom",
+        "duration": 337,
+        "channel": "讚美之泉 Stream Of Praise Music Ministries",
+        "upload_date": "20200419",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "詞曲:李宗盛 編曲:李宗盛",
+            "詞曲:李宗盛"
+          ],
+          "uniqCount": 2,
+          "coverage": 0.9940652818991098,
+          "lastT1": 335,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        },
+        "en": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "[MUSIC]",
+            "(gentle music)"
+          ],
+          "uniqCount": 2,
+          "coverage": 0.9995845697329377,
+          "lastT1": 336.86,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    },
+    {
+      "youtube_id": "Z9m63_o6aVw",
+      "raw_title": "我對祢的愛永不變 My Love For You Will Never Change",
+      "flat_duration": 304,
+      "playlist_id": "OLAK5uy_l6uB9pF7xLn5g1Sa2C0v1-T3k3r0v6qvk",
+      "playlist_title": "愛，我願意 I Receive Your Love",
+      "instrumental_signal": "iTunes 器樂專輯「愛,我願意 (演奏專輯2)」",
+      "proposed_album": "愛,我願意 (演奏專輯2)",
+      "verdict": "reject",
+      "gate": 4,
+      "why": "兩 pass 結論唔一致(zh 唔過:剩餘文字 1 行:你不想要我做你的女朋友吗? / en 過)",
+      "meta": {
+        "id": "Z9m63_o6aVw",
+        "title": "我對祢的愛永不變 My Love For You Will Never Change",
+        "duration": 304,
+        "channel": "讚美之泉 Stream Of Praise Music Ministries",
+        "upload_date": "20200419",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": false,
+          "reasons": [
+            "剩餘文字 1 行:你不想要我做你的女朋友吗?"
+          ],
+          "uniq": [
+            "詞曲:李宗盛 編曲:李宗盛",
+            "詞曲:李宗盛",
+            "你不想要我做你的女朋友吗?"
+          ],
+          "uniqCount": 3,
+          "coverage": 0.993421052631579,
+          "lastT1": 302,
+          "whisperFailed": false,
+          "garbageDropped": 0,
+          "rejudge_reasons": [
+            "剩餘文字:你不想要我做你的女朋友吗?"
+          ]
+        },
+        "en": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "[MUSIC]"
+          ],
+          "uniqCount": 1,
+          "coverage": 0.9703947368421053,
+          "lastT1": 295,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    },
+    {
+      "youtube_id": "OzT01t0O_lA",
+      "raw_title": "你們要讚美耶和華 Praise The Lord All Ye People",
+      "flat_duration": 118,
+      "playlist_id": "OLAK5uy_nnjWafEc-GvrixXCEehfFs5jKuGKut6Ww",
+      "playlist_title": "生命的凱歌 Victorious Life",
+      "instrumental_signal": "iTunes 器樂專輯「生命的凱歌 (演奏專輯1)」",
+      "proposed_album": "生命的凱歌 (演奏專輯1)",
+      "verdict": "reject",
+      "gate": 2,
+      "why": "片長 118s 唔喺 120-600"
+    },
+    {
+      "youtube_id": "9Lh9GQUdU8w",
+      "raw_title": "快樂頌 Joyful, Joyful, We Adore Thee",
+      "flat_duration": 82,
+      "playlist_id": "OLAK5uy_nnjWafEc-GvrixXCEehfFs5jKuGKut6Ww",
+      "playlist_title": "生命的凱歌 Victorious Life",
+      "instrumental_signal": "iTunes 器樂專輯「生命的凱歌 (演奏專輯1)」",
+      "proposed_album": "生命的凱歌 (演奏專輯1)",
+      "verdict": "reject",
+      "gate": 2,
+      "why": "片長 82s 唔喺 120-600"
+    },
+    {
+      "youtube_id": "h_o0qVny4TE",
+      "raw_title": "你們要讚美耶和華 Praise The Lord All Ye People (Reprise)",
+      "flat_duration": 83,
+      "playlist_id": "OLAK5uy_nnjWafEc-GvrixXCEehfFs5jKuGKut6Ww",
+      "playlist_title": "生命的凱歌 Victorious Life",
+      "instrumental_signal": "iTunes 器樂專輯「生命的凱歌 (演奏專輯1)」",
+      "proposed_album": "生命的凱歌 (演奏專輯1)",
+      "verdict": "reject",
+      "gate": 2,
+      "why": "片長 83s 唔喺 120-600"
+    },
+    {
+      "youtube_id": "uVE7eOzPjGU",
+      "raw_title": "讓讚美飛揚 Let Praise Arise",
+      "flat_duration": 123,
+      "playlist_id": "OLAK5uy_nnjWafEc-GvrixXCEehfFs5jKuGKut6Ww",
+      "playlist_title": "生命的凱歌 Victorious Life",
+      "instrumental_signal": "iTunes 器樂專輯「生命的凱歌 (演奏專輯1)」",
+      "proposed_album": "生命的凱歌 (演奏專輯1)",
+      "verdict": "instrumental",
+      "gate": null,
+      "why": "五重閘全過(rejudge:指紋庫更新後零網絡重判)",
+      "meta": {
+        "id": "uVE7eOzPjGU",
+        "title": "讓讚美飛揚 Let Praise Arise",
+        "duration": 123,
+        "channel": "讚美之泉 Stream Of Praise Music Ministries",
+        "upload_date": "20200419",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": false,
+          "reasons": [
+            "剩餘文字 1 行:中文字幕:J Chong"
+          ],
+          "uniq": [
+            "詞曲:李宗盛 編曲:李宗盛",
+            "詞曲:李宗盛",
+            "中文字幕:J Chong"
+          ],
+          "uniqCount": 3,
+          "coverage": 0.9853658536585366,
+          "lastT1": 121.2,
+          "whisperFailed": false,
+          "garbageDropped": 0,
+          "rejudge_reasons": [
+            "剩餘文字:中文字幕:J Chong"
+          ]
+        },
+        "en": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "[MUSIC PLAYING]",
+            "(upbeat music)"
+          ],
+          "uniqCount": 2,
+          "coverage": 0.9965853658536585,
+          "lastT1": 122.58,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    },
+    {
+      "youtube_id": "5hQOOXGFwf4",
+      "raw_title": "新造的人 A New Creation",
+      "flat_duration": 153,
+      "playlist_id": "OLAK5uy_nnjWafEc-GvrixXCEehfFs5jKuGKut6Ww",
+      "playlist_title": "生命的凱歌 Victorious Life",
+      "instrumental_signal": "iTunes 器樂專輯「生命的凱歌 (演奏專輯1)」",
+      "proposed_album": "生命的凱歌 (演奏專輯1)",
+      "verdict": "instrumental",
+      "gate": null,
+      "why": "五重閘全過(rejudge:指紋庫更新後零網絡重判)",
+      "meta": {
+        "id": "5hQOOXGFwf4",
+        "title": "新造的人 A New Creation",
+        "duration": 153,
+        "channel": "讚美之泉 Stream Of Praise Music Ministries",
+        "upload_date": "20200419",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": false,
+          "reasons": [
+            "剩餘文字 1 行:每週固定3~4部影片 喜歡我的影片請訂閱或按讚"
+          ],
+          "uniq": [
+            "詞曲:李宗盛 編曲:李宗盛",
+            "詞曲:李宗盛",
+            "每週固定3~4部影片 喜歡我的影片請訂閱或按讚"
+          ],
+          "uniqCount": 3,
+          "coverage": 0.9992156862745097,
+          "lastT1": 152.88,
+          "whisperFailed": false,
+          "garbageDropped": 0,
+          "rejudge_reasons": [
+            "剩餘文字:每週固定3~4部影片 喜歡我的影片請訂閱或按讚"
+          ]
+        },
+        "en": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "(upbeat music)"
+          ],
+          "uniqCount": 1,
+          "coverage": 0.9972549019607844,
+          "lastT1": 152.58,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    },
+    {
+      "youtube_id": "bx9XXdpk7W8",
+      "raw_title": "唯有主耶穌的寶血 Only The Blood",
+      "flat_duration": 91,
+      "playlist_id": "OLAK5uy_nnjWafEc-GvrixXCEehfFs5jKuGKut6Ww",
+      "playlist_title": "生命的凱歌 Victorious Life",
+      "instrumental_signal": "iTunes 器樂專輯「生命的凱歌 (演奏專輯1)」",
+      "proposed_album": "生命的凱歌 (演奏專輯1)",
+      "verdict": "reject",
+      "gate": 2,
+      "why": "片長 91s 唔喺 120-600"
+    },
+    {
+      "youtube_id": "lyAgcXhyn5M",
+      "raw_title": "認識祢真好 It'S Good To Know You",
+      "flat_duration": 258,
+      "playlist_id": "OLAK5uy_nnjWafEc-GvrixXCEehfFs5jKuGKut6Ww",
+      "playlist_title": "生命的凱歌 Victorious Life",
+      "instrumental_signal": "iTunes 器樂專輯「生命的凱歌 (演奏專輯1)」",
+      "proposed_album": "生命的凱歌 (演奏專輯1)",
+      "verdict": "instrumental",
+      "gate": null,
+      "why": "五重閘全過",
+      "meta": {
+        "id": "lyAgcXhyn5M",
+        "title": "認識祢真好 It'S Good To Know You",
+        "duration": 257,
+        "channel": "讚美之泉 Stream Of Praise Music Ministries",
+        "upload_date": "20200419",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "作詞:李宗盛 / 作曲:李宗盛",
+            "詞:李宗盛 / 編曲:李宗盛",
+            "詞:李宗盛 / 音樂:李宗盛",
+            "詞:李宗盛 / 歌曲:李宗盛",
+            "詞:李宗盛 / 詞:李宗盛"
+          ],
+          "uniqCount": 5,
+          "coverage": 0.9610894941634242,
+          "lastT1": 247,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        },
+        "en": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "(birds chirping)",
+            "(gentle music)"
+          ],
+          "uniqCount": 2,
+          "coverage": 0.9438910505836576,
+          "lastT1": 242.58,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    },
+    {
+      "youtube_id": "103leEpsj2Y",
+      "raw_title": "有一位神 There Is A God",
+      "flat_duration": 317,
+      "playlist_id": "OLAK5uy_nnjWafEc-GvrixXCEehfFs5jKuGKut6Ww",
+      "playlist_title": "生命的凱歌 Victorious Life",
+      "instrumental_signal": "iTunes 器樂專輯「生命的凱歌 (演奏專輯1)」",
+      "proposed_album": "生命的凱歌 (演奏專輯1)",
+      "verdict": "reject",
+      "gate": 2,
+      "why": "org 內已有同名器樂版 #5915"
+    },
+    {
+      "youtube_id": "l20XgdDPpuA",
+      "raw_title": "【全然向祢 All For You】官方敬拜卡拉OK版MV (無人聲 純樂器伴奏 / 伴唱 Instrumental) - 讚美之泉敬拜讚美 (1)",
+      "flat_duration": 284,
+      "playlist_id": "OLAK5uy_nnjWafEc-GvrixXCEehfFs5jKuGKut6Ww",
+      "playlist_title": "生命的凱歌 Victorious Life",
+      "instrumental_signal": "iTunes 器樂專輯「生命的凱歌 (演奏專輯1)」",
+      "proposed_album": "生命的凱歌 (演奏專輯1)",
+      "verdict": "reject",
+      "gate": 2,
+      "why": "isNonWorship(器樂線)"
+    },
+    {
+      "youtube_id": "pbm0B6Kwga0",
+      "raw_title": "愛喜樂生命 Love, Joy, And Life",
+      "flat_duration": 272,
+      "playlist_id": "OLAK5uy_nnjWafEc-GvrixXCEehfFs5jKuGKut6Ww",
+      "playlist_title": "生命的凱歌 Victorious Life",
+      "instrumental_signal": "iTunes 器樂專輯「生命的凱歌 (演奏專輯1)」",
+      "proposed_album": "生命的凱歌 (演奏專輯1)",
+      "verdict": "reject",
+      "gate": 4,
+      "why": "兩 pass 結論唔一致(zh 唔過:剩餘文字 1 行:你不想要我做你的女朋友吗? / en 過)",
+      "meta": {
+        "id": "pbm0B6Kwga0",
+        "title": "愛喜樂生命 Love, Joy, And Life",
+        "duration": 271,
+        "channel": "讚美之泉 Stream Of Praise Music Ministries",
+        "upload_date": "20200419",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": false,
+          "reasons": [
+            "剩餘文字 1 行:你不想要我做你的女朋友吗?"
+          ],
+          "uniq": [
+            "詞曲:李宗盛 編曲:李宗盛",
+            "詞曲:李宗盛",
+            "你不想要我做你的女朋友吗?"
+          ],
+          "uniqCount": 3,
+          "coverage": 1.003690036900369,
+          "lastT1": 272,
+          "whisperFailed": false,
+          "garbageDropped": 0,
+          "rejudge_reasons": [
+            "剩餘文字:你不想要我做你的女朋友吗?"
+          ]
+        },
+        "en": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "[MUSIC]"
+          ],
+          "uniqCount": 1,
+          "coverage": 0.996309963099631,
+          "lastT1": 270,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    },
+    {
+      "youtube_id": "q5PzljzaGl0",
+      "raw_title": "序曲 Prelude",
+      "flat_duration": 128,
+      "playlist_id": "OLAK5uy_nnjWafEc-GvrixXCEehfFs5jKuGKut6Ww",
+      "playlist_title": "生命的凱歌 Victorious Life",
+      "instrumental_signal": "iTunes 器樂專輯「生命的凱歌 (演奏專輯1)」",
+      "proposed_album": "生命的凱歌 (演奏專輯1)",
+      "verdict": "instrumental",
+      "gate": null,
+      "why": "五重閘全過",
+      "meta": {
+        "id": "q5PzljzaGl0",
+        "title": "序曲 Prelude",
+        "duration": 128,
+        "channel": "讚美之泉 Stream Of Praise Music Ministries",
+        "upload_date": "20200419",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "詞曲 李宗盛"
+          ],
+          "uniqCount": 1,
+          "coverage": 0.9765625,
+          "lastT1": 125,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        },
+        "en": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "(crickets chirping)",
+            "(water splashing)",
+            "(gentle music)"
+          ],
+          "uniqCount": 3,
+          "coverage": 0.95765625,
+          "lastT1": 122.58,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    },
+    {
+      "youtube_id": "eAxE8J9_bZ4",
+      "raw_title": "舉目向山 I Lift Up My Eyes To The Mountains",
+      "flat_duration": 287,
+      "playlist_id": "OLAK5uy_nnjWafEc-GvrixXCEehfFs5jKuGKut6Ww",
+      "playlist_title": "生命的凱歌 Victorious Life",
+      "instrumental_signal": "iTunes 器樂專輯「生命的凱歌 (演奏專輯1)」",
+      "proposed_album": "生命的凱歌 (演奏專輯1)",
+      "verdict": "reject",
+      "gate": 4,
+      "why": "兩 pass 結論唔一致(zh 唔過:剩餘文字 5 行:由 Amara.org 社群提供的字幕 / 混音:李宗盛 / 製作人:李宗盛 / en 過)",
+      "meta": {
+        "id": "eAxE8J9_bZ4",
+        "title": "舉目向山 I Lift Up My Eyes To The Mountains",
+        "duration": 286,
+        "channel": "讚美之泉 Stream Of Praise Music Ministries",
+        "upload_date": "20200419",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": false,
+          "reasons": [
+            "剩餘文字 5 行:由 Amara.org 社群提供的字幕 / 混音:李宗盛 / 製作人:李宗盛"
+          ],
+          "uniq": [
+            "由 Amara.org 社群提供的字幕",
+            "詞曲:李宗盛",
+            "編曲:李宗盛",
+            "演唱:李宗盛",
+            "混音:李宗盛",
+            "製作人:李宗盛",
+            "和聲:李宗盛",
+            "Zither Harp"
+          ],
+          "uniqCount": 8,
+          "coverage": 0.9825174825174825,
+          "lastT1": 281,
+          "whisperFailed": false,
+          "garbageDropped": 5,
+          "rejudge_reasons": [
+            "剩餘文字:Zither Harp"
+          ]
+        },
+        "en": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "[MUSIC PLAYING]"
+          ],
+          "uniqCount": 1,
+          "coverage": 0.9675524475524476,
+          "lastT1": 276.72,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    },
+    {
+      "youtube_id": "5IBh6bKEvrc",
+      "raw_title": "主賜福如春雨 Rain Of Blessings",
+      "flat_duration": 188,
+      "playlist_id": "OLAK5uy_nnjWafEc-GvrixXCEehfFs5jKuGKut6Ww",
+      "playlist_title": "生命的凱歌 Victorious Life",
+      "instrumental_signal": "iTunes 器樂專輯「生命的凱歌 (演奏專輯1)」",
+      "proposed_album": "生命的凱歌 (演奏專輯1)",
+      "verdict": "instrumental",
+      "gate": null,
+      "why": "五重閘全過",
+      "meta": {
+        "id": "5IBh6bKEvrc",
+        "title": "主賜福如春雨 Rain Of Blessings",
+        "duration": 188,
+        "channel": "讚美之泉 Stream Of Praise Music Ministries",
+        "upload_date": "20200419",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "詞曲:李宗盛 編曲:李宗盛",
+            "詞曲:李宗盛"
+          ],
+          "uniqCount": 2,
+          "coverage": 0.9840425531914894,
+          "lastT1": 185,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        },
+        "en": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "[MUSIC]",
+            "[BLANK_AUDIO]"
+          ],
+          "uniqCount": 2,
+          "coverage": 1.0106382978723405,
+          "lastT1": 190,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    },
+    {
+      "youtube_id": "qUMxOZnL3nA",
+      "raw_title": "從今天起 From This Day On",
+      "flat_duration": 258,
+      "playlist_id": "OLAK5uy_nnjWafEc-GvrixXCEehfFs5jKuGKut6Ww",
+      "playlist_title": "生命的凱歌 Victorious Life",
+      "instrumental_signal": "iTunes 器樂專輯「生命的凱歌 (演奏專輯1)」",
+      "proposed_album": "生命的凱歌 (演奏專輯1)",
+      "verdict": "instrumental",
+      "gate": null,
+      "why": "五重閘全過",
+      "meta": {
+        "id": "qUMxOZnL3nA",
+        "title": "從今天起 From This Day On",
+        "duration": 258,
+        "channel": "讚美之泉 Stream Of Praise Music Ministries",
+        "upload_date": "20200419",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "詞曲:李宗盛 編曲:李宗盛",
+            "詞:李宗盛 編曲:李宗盛"
+          ],
+          "uniqCount": 2,
+          "coverage": 0.9573643410852714,
+          "lastT1": 247,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        },
+        "en": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "[MUSIC]",
+            "[BLANK_AUDIO]"
+          ],
+          "uniqCount": 2,
+          "coverage": 1.0271317829457365,
+          "lastT1": 265,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    },
+    {
+      "youtube_id": "Db0h2sOWXOE",
+      "raw_title": "除祢以外 Whom Have I But You?",
+      "flat_duration": 279,
+      "playlist_id": "OLAK5uy_nnjWafEc-GvrixXCEehfFs5jKuGKut6Ww",
+      "playlist_title": "生命的凱歌 Victorious Life",
+      "instrumental_signal": "iTunes 器樂專輯「生命的凱歌 (演奏專輯1)」",
+      "proposed_album": "生命的凱歌 (演奏專輯1)",
+      "verdict": "instrumental",
+      "gate": null,
+      "why": "五重閘全過(rejudge:指紋庫更新後零網絡重判)",
+      "meta": {
+        "id": "Db0h2sOWXOE",
+        "title": "除祢以外 Whom Have I But You?",
+        "duration": 278,
+        "channel": "讚美之泉 Stream Of Praise Music Ministries",
+        "upload_date": "20200419",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": false,
+          "reasons": [
+            "剩餘文字 1 行:詞:李宗盛 導演:李宗盛"
+          ],
+          "uniq": [
+            "詞曲:李宗盛 編曲:李宗盛",
+            "詞:李宗盛 曲:李宗盛",
+            "詞:李宗盛 編曲:李宗盛",
+            "詞:李宗盛 導演:李宗盛",
+            "編曲:李宗盛"
+          ],
+          "uniqCount": 5,
+          "coverage": 0.9892086330935251,
+          "lastT1": 275,
+          "whisperFailed": false,
+          "garbageDropped": 0,
+          "rejudge_reasons": [
+            "剩餘文字:詞:李宗盛 導演:李宗盛"
+          ]
+        },
+        "en": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "[MUSIC]"
+          ],
+          "uniqCount": 1,
+          "coverage": 0.9892086330935251,
+          "lastT1": 275,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    },
+    {
+      "youtube_id": "rLv9tQ2DBcQ",
+      "raw_title": "光明之子 Children Of Light",
+      "flat_duration": 223,
+      "playlist_id": "OLAK5uy_nnjWafEc-GvrixXCEehfFs5jKuGKut6Ww",
+      "playlist_title": "生命的凱歌 Victorious Life",
+      "instrumental_signal": "iTunes 器樂專輯「生命的凱歌 (演奏專輯1)」",
+      "proposed_album": "生命的凱歌 (演奏專輯1)",
+      "verdict": "reject",
+      "gate": 4,
+      "why": "兩 pass 結論唔一致(zh 唔過:剩餘文字 5 行:混音:張宇 / 母帶:張宇 / 製作人:張宇 / en 過)",
+      "meta": {
+        "id": "rLv9tQ2DBcQ",
+        "title": "光明之子 Children Of Light",
+        "duration": 223,
+        "channel": "讚美之泉 Stream Of Praise Music Ministries",
+        "upload_date": "20200419",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": false,
+          "reasons": [
+            "剩餘文字 5 行:混音:張宇 / 母帶:張宇 / 製作人:張宇"
+          ],
+          "uniq": [
+            "詞曲:張宇",
+            "編曲:張宇",
+            "混音:張宇",
+            "母帶:張宇",
+            "製作人:張宇",
+            "監製:張宇",
+            "製作出品:大白",
+            "製作出品:張宇"
+          ],
+          "uniqCount": 8,
+          "coverage": 0.968609865470852,
+          "lastT1": 216,
+          "whisperFailed": false,
+          "garbageDropped": 0,
+          "rejudge_reasons": [
+            "剩餘文字:製作出品:大白 / 製作出品:張宇"
+          ]
+        },
+        "en": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "[MUSIC]"
+          ],
+          "uniqCount": 1,
+          "coverage": 0.9641255605381166,
+          "lastT1": 215,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    },
+    {
+      "youtube_id": "oroyVlScdT4",
+      "raw_title": "犧牲的愛 The Sacrificial Love",
+      "flat_duration": 280,
+      "playlist_id": "OLAK5uy_nnjWafEc-GvrixXCEehfFs5jKuGKut6Ww",
+      "playlist_title": "生命的凱歌 Victorious Life",
+      "instrumental_signal": "iTunes 器樂專輯「生命的凱歌 (演奏專輯1)」",
+      "proposed_album": "生命的凱歌 (演奏專輯1)",
+      "verdict": "instrumental",
+      "gate": null,
+      "why": "五重閘全過",
+      "meta": {
+        "id": "oroyVlScdT4",
+        "title": "犧牲的愛 The Sacrificial Love",
+        "duration": 280,
+        "channel": "讚美之泉 Stream Of Praise Music Ministries",
+        "upload_date": "20200419",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "詞曲:張宇辰"
+          ],
+          "uniqCount": 1,
+          "coverage": 0.974642857142857,
+          "lastT1": 272.9,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        },
+        "en": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "(soft piano music)"
+          ],
+          "uniqCount": 1,
+          "coverage": 0.9747142857142858,
+          "lastT1": 272.92,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    },
+    {
+      "youtube_id": "NWzCza75uD8",
+      "raw_title": "生命的凱歌 Victorious Life",
+      "flat_duration": 303,
+      "playlist_id": "OLAK5uy_nnjWafEc-GvrixXCEehfFs5jKuGKut6Ww",
+      "playlist_title": "生命的凱歌 Victorious Life",
+      "instrumental_signal": "iTunes 器樂專輯「生命的凱歌 (演奏專輯1)」",
+      "proposed_album": "生命的凱歌 (演奏專輯1)",
+      "verdict": "reject",
+      "gate": 4,
+      "why": "兩 pass 結論唔一致(zh 過 / en 唔過:剩餘文字 1 行:you)",
+      "meta": {
+        "id": "NWzCza75uD8",
+        "title": "生命的凱歌 Victorious Life",
+        "duration": 303,
+        "channel": "讚美之泉 Stream Of Praise Music Ministries",
+        "upload_date": "20200419",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "詞曲:李宗盛 編曲:李宗盛",
+            "詞:李宗盛 曲:李宗盛",
+            "詞曲:李宗盛 演唱:李宗盛",
+            "曲:李宗盛 演唱:李宗盛",
+            "(CC字幕製作:貝爾)"
+          ],
+          "uniqCount": 5,
+          "coverage": 0.9966996699669967,
+          "lastT1": 302,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        },
+        "en": {
+          "pass": false,
+          "reasons": [
+            "剩餘文字 1 行:you"
+          ],
+          "uniq": [
+            "[MUSIC PLAYING]",
+            "you"
+          ],
+          "uniqCount": 2,
+          "coverage": 0.9968976897689769,
+          "lastT1": 302.06,
+          "whisperFailed": false,
+          "garbageDropped": 0,
+          "rejudge_reasons": [
+            "剩餘文字:you"
+          ]
+        }
+      }
+    }
+  ]
+}

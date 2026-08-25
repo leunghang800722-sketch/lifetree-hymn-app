@@ -1,0 +1,597 @@
+[
+  {
+    "collectionId": 1791105078,
+    "album": "齊唱新歌 8",
+    "artist": "HKACM",
+    "trackCount": 10,
+    "releaseDate": "1989-01-01T08:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": false
+    }
+  },
+  {
+    "collectionId": 1791094131,
+    "album": "齊唱新歌 9",
+    "artist": "HKACM",
+    "trackCount": 10,
+    "releaseDate": "1990-01-01T08:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": false
+    }
+  },
+  {
+    "collectionId": 1791094143,
+    "album": "齊唱新歌 10",
+    "artist": "HKACM",
+    "trackCount": 10,
+    "releaseDate": "1992-01-01T08:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": false
+    }
+  },
+  {
+    "collectionId": 1783076957,
+    "album": "齊唱短歌 1",
+    "artist": "HKACM",
+    "trackCount": 13,
+    "releaseDate": "1993-01-01T08:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": false
+    }
+  },
+  {
+    "collectionId": 1783079582,
+    "album": "齊唱短歌 2",
+    "artist": "HKACM",
+    "trackCount": 16,
+    "releaseDate": "1994-01-01T08:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": false
+    }
+  },
+  {
+    "collectionId": 1783734930,
+    "album": "荊棘的冠冕",
+    "artist": "HKACM",
+    "trackCount": 15,
+    "releaseDate": "1994-01-01T08:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": false
+    }
+  },
+  {
+    "collectionId": 1783733865,
+    "album": "中國的呼喚",
+    "artist": "HKACM",
+    "trackCount": 12,
+    "releaseDate": "1994-01-01T08:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": false
+    }
+  },
+  {
+    "collectionId": 1783078131,
+    "album": "齊唱短歌 3",
+    "artist": "HKACM",
+    "trackCount": 14,
+    "releaseDate": "1995-01-01T08:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": false
+    }
+  },
+  {
+    "collectionId": 1791093484,
+    "album": "齊唱新歌 11",
+    "artist": "HKACM",
+    "trackCount": 10,
+    "releaseDate": "1996-01-01T08:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": false
+    }
+  },
+  {
+    "collectionId": 1783079391,
+    "album": "齊唱短歌 4",
+    "artist": "HKACM",
+    "trackCount": 14,
+    "releaseDate": "1996-01-01T08:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": false
+    }
+  },
+  {
+    "collectionId": 1783734582,
+    "album": "歌聲飄揚",
+    "artist": "HKACM",
+    "trackCount": 13,
+    "releaseDate": "1996-01-01T08:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": false
+    }
+  },
+  {
+    "collectionId": 1791093902,
+    "album": "齊唱新歌 12",
+    "artist": "HKACM",
+    "trackCount": 12,
+    "releaseDate": "1997-01-01T08:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": false
+    }
+  },
+  {
+    "collectionId": 1783079390,
+    "album": "齊唱短歌(國語)",
+    "artist": "HKACM",
+    "trackCount": 16,
+    "releaseDate": "1997-01-01T08:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": false
+    }
+  },
+  {
+    "collectionId": 1789917082,
+    "album": "祢是王",
+    "artist": "HKACM",
+    "trackCount": 19,
+    "releaseDate": "1998-01-01T08:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": false
+    }
+  },
+  {
+    "collectionId": 1791233878,
+    "album": "祢是王 (國語版)",
+    "artist": "HKACM",
+    "trackCount": 19,
+    "releaseDate": "1998-01-01T08:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": false
+    }
+  },
+  {
+    "collectionId": 1787983669,
+    "album": "大祭司",
+    "artist": "HKACM",
+    "trackCount": 16,
+    "releaseDate": "1999-01-01T08:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": false
+    }
+  },
+  {
+    "collectionId": 1783734839,
+    "album": "心曲 (Instrumental)",
+    "artist": "HKACM",
+    "trackCount": 16,
+    "releaseDate": "2000-01-01T08:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": true,
+      "hit": "心曲"
+    }
+  },
+  {
+    "collectionId": 1790403616,
+    "album": "頌讚主生辰",
+    "artist": "HKACM",
+    "trackCount": 7,
+    "releaseDate": "2000-01-01T08:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": false
+    }
+  },
+  {
+    "collectionId": 1783529486,
+    "album": "生趣",
+    "artist": "HKACM",
+    "trackCount": 15,
+    "releaseDate": "2001-01-01T08:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": false
+    }
+  },
+  {
+    "collectionId": 1791526390,
+    "album": "齊唱新歌 13",
+    "artist": "HKACM",
+    "trackCount": 10,
+    "releaseDate": "2003-01-01T08:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": false
+    }
+  },
+  {
+    "collectionId": 6230825,
+    "album": "The Hottnezz",
+    "artist": "ACM",
+    "trackCount": 12,
+    "releaseDate": "2003-11-15T08:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": false
+    }
+  },
+  {
+    "collectionId": 1783516654,
+    "album": "渴慕你的靈",
+    "artist": "HKACM",
+    "trackCount": 12,
+    "releaseDate": "2004-01-01T08:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": false
+    }
+  },
+  {
+    "collectionId": 1787979688,
+    "album": "同在的神-以馬內利",
+    "artist": "HKACM",
+    "trackCount": 14,
+    "releaseDate": "2004-01-01T08:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": false
+    }
+  },
+  {
+    "collectionId": 1787979343,
+    "album": "敬拜 Crossover",
+    "artist": "HKACM",
+    "trackCount": 13,
+    "releaseDate": "2005-01-01T08:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": false
+    }
+  },
+  {
+    "collectionId": 1787979091,
+    "album": "得勝者",
+    "artist": "HKACM",
+    "trackCount": 11,
+    "releaseDate": "2006-01-01T08:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": false
+    }
+  },
+  {
+    "collectionId": 1791093745,
+    "album": "齊唱新歌 14",
+    "artist": "HKACM",
+    "trackCount": 10,
+    "releaseDate": "2006-01-01T08:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": false
+    }
+  },
+  {
+    "collectionId": 1783087104,
+    "album": "齊唱兒歌 1",
+    "artist": "HKACM",
+    "trackCount": 12,
+    "releaseDate": "2007-01-01T08:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": false
+    }
+  },
+  {
+    "collectionId": 1783736475,
+    "album": "神恩",
+    "artist": "HKACM",
+    "trackCount": 20,
+    "releaseDate": "2008-01-01T08:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": false
+    }
+  },
+  {
+    "collectionId": 1787978463,
+    "album": "我願意 - EP",
+    "artist": "HKACM",
+    "trackCount": 6,
+    "releaseDate": "2008-01-01T08:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": false
+    }
+  },
+  {
+    "collectionId": 1783516409,
+    "album": "寧聲",
+    "artist": "HKACM",
+    "trackCount": 12,
+    "releaseDate": "2009-01-01T08:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": false
+    }
+  },
+  {
+    "collectionId": 1787979119,
+    "album": "錫安城",
+    "artist": "HKACM",
+    "trackCount": 8,
+    "releaseDate": "2009-01-01T08:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": false
+    }
+  },
+  {
+    "collectionId": 1783085924,
+    "album": "齊唱兒歌 2",
+    "artist": "HKACM",
+    "trackCount": 10,
+    "releaseDate": "2009-03-01T08:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": false
+    }
+  },
+  {
+    "collectionId": 1783088428,
+    "album": "齊唱兒歌 3",
+    "artist": "HKACM",
+    "trackCount": 12,
+    "releaseDate": "2011-10-15T07:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": false
+    }
+  },
+  {
+    "collectionId": 1785595955,
+    "album": "絲絃樂章",
+    "artist": "HKACM",
+    "trackCount": 14,
+    "releaseDate": "2013-01-01T08:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": false
+    }
+  },
+  {
+    "collectionId": 640936094,
+    "album": "Space Battleship Yamato - Single",
+    "artist": "ACM",
+    "trackCount": 1,
+    "releaseDate": "2013-05-01T07:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": false
+    }
+  },
+  {
+    "collectionId": 1783088120,
+    "album": "齊唱兒歌4-小小敬拜者 (大衛篇)",
+    "artist": "HKACM",
+    "trackCount": 12,
+    "releaseDate": "2015-10-17T07:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": false
+    }
+  },
+  {
+    "collectionId": 1783085207,
+    "album": "齊唱兒歌 5 我是主的小門徒",
+    "artist": "HKACM",
+    "trackCount": 8,
+    "releaseDate": "2018-08-17T07:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": false
+    }
+  },
+  {
+    "collectionId": 1783084917,
+    "album": "齊唱兒歌 2020 - EP",
+    "artist": "HKACM",
+    "trackCount": 5,
+    "releaseDate": "2020-12-14T08:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": false
+    }
+  },
+  {
+    "collectionId": 1575354031,
+    "album": "Tinkelin - Single",
+    "artist": "ACM",
+    "trackCount": 1,
+    "releaseDate": "2021-07-07T07:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": false
+    }
+  },
+  {
+    "collectionId": 1785597931,
+    "album": "心靈歸家",
+    "artist": "HKACM",
+    "trackCount": 14,
+    "releaseDate": "2021-07-28T07:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": false
+    }
+  },
+  {
+    "collectionId": 1590349176,
+    "album": "Pensándote - Single",
+    "artist": "ACM",
+    "trackCount": 1,
+    "releaseDate": "2021-10-15T07:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": false
+    }
+  },
+  {
+    "collectionId": 1605477256,
+    "album": "DANS L'BINKS (feat. D***y) - Single",
+    "artist": "ACM",
+    "trackCount": 1,
+    "releaseDate": "2022-01-24T08:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": false
+    }
+  },
+  {
+    "collectionId": 1608531178,
+    "album": "Shuurgandait - Single",
+    "artist": "ACM",
+    "trackCount": 1,
+    "releaseDate": "2022-02-05T08:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": false
+    }
+  },
+  {
+    "collectionId": 1613431069,
+    "album": "Ветер Перемен (Cover) - Single",
+    "artist": "ACM",
+    "trackCount": 1,
+    "releaseDate": "2022-03-08T08:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": false
+    }
+  },
+  {
+    "collectionId": 1668054046,
+    "album": "Origine (feat. Tony Mendez)",
+    "artist": "ACM",
+    "trackCount": 10,
+    "releaseDate": "2023-02-20T08:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": false
+    }
+  },
+  {
+    "collectionId": 1700719787,
+    "album": "Bandolera - Single",
+    "artist": "ACM",
+    "trackCount": 1,
+    "releaseDate": "2023-06-09T07:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": false
+    }
+  },
+  {
+    "collectionId": 1694572128,
+    "album": "Martian Congress (feat. Tony Mendez, Rick Morrison & Moses Hazan) [Live Version] - Single",
+    "artist": "ACM",
+    "trackCount": 1,
+    "releaseDate": "2023-07-17T07:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": false
+    }
+  },
+  {
+    "collectionId": 1696508293,
+    "album": "Qubiquitous (feat. Tony Mendez) - Single",
+    "artist": "ACM",
+    "trackCount": 1,
+    "releaseDate": "2023-07-28T07:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": false
+    }
+  },
+  {
+    "collectionId": 1702859215,
+    "album": "Dysfunctional Conjunction - Single",
+    "artist": "ACM",
+    "trackCount": 1,
+    "releaseDate": "2023-08-16T07:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": false
+    }
+  },
+  {
+    "collectionId": 1783078383,
+    "album": "齊唱兒歌 6",
+    "artist": "HKACM",
+    "trackCount": 12,
+    "releaseDate": "2023-12-01T08:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": false
+    }
+  },
+  {
+    "collectionId": 1732700646,
+    "album": "Si me preguntan por ti - Single",
+    "artist": "ACM",
+    "trackCount": 1,
+    "releaseDate": "2024-03-01T08:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": false
+    }
+  },
+  {
+    "collectionId": 1791234409,
+    "album": "THE WAY",
+    "artist": "HKACM",
+    "trackCount": 8,
+    "releaseDate": "2024-12-27T08:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": false
+    }
+  },
+  {
+    "collectionId": 1808352115,
+    "album": "Dime que si - Single",
+    "artist": "ACM",
+    "trackCount": 1,
+    "releaseDate": "2025-04-16T07:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": false
+    }
+  },
+  {
+    "collectionId": 1834112770,
+    "album": "On The Road - Single",
+    "artist": "ACM",
+    "trackCount": 1,
+    "releaseDate": "2025-08-18T07:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": false
+    }
+  }
+]

@@ -1,0 +1,508 @@
+[
+  {
+    "collectionId": 1545344315,
+    "album": "野地的花",
+    "artist": "天韻合唱團",
+    "trackCount": 13,
+    "releaseDate": "1980-04-01T08:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": false
+    }
+  },
+  {
+    "collectionId": 1544934562,
+    "album": "好消息",
+    "artist": "天韻合唱團",
+    "trackCount": 12,
+    "releaseDate": "1980-12-01T08:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": false
+    }
+  },
+  {
+    "collectionId": 1546819561,
+    "album": "為主我要吟詩",
+    "artist": "天韻合唱團",
+    "trackCount": 11,
+    "releaseDate": "1982-12-01T08:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": false
+    }
+  },
+  {
+    "collectionId": 1546819826,
+    "album": "風和愛",
+    "artist": "天韻合唱團",
+    "trackCount": 12,
+    "releaseDate": "1983-04-01T08:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": false
+    }
+  },
+  {
+    "collectionId": 1549652900,
+    "album": "是愛",
+    "artist": "天韻合唱團",
+    "trackCount": 12,
+    "releaseDate": "1985-07-01T07:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": false
+    }
+  },
+  {
+    "collectionId": 1550703632,
+    "album": "弦外之歌",
+    "artist": "天韻合唱團",
+    "trackCount": 10,
+    "releaseDate": "1988-09-01T07:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": false
+    }
+  },
+  {
+    "collectionId": 1549652087,
+    "album": "溪邊的樹",
+    "artist": "天韻合唱團",
+    "trackCount": 16,
+    "releaseDate": "1990-12-01T08:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": false
+    }
+  },
+  {
+    "collectionId": 1570218821,
+    "album": "溪邊的樹 (閩南語)",
+    "artist": "天韻合唱團",
+    "trackCount": 16,
+    "releaseDate": "1991-02-01T08:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": false
+    }
+  },
+  {
+    "collectionId": 1550575702,
+    "album": "給我真正的自由",
+    "artist": "天韻合唱團",
+    "trackCount": 14,
+    "releaseDate": "1992-03-01T08:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": false
+    }
+  },
+  {
+    "collectionId": 1550575586,
+    "album": "不為明天憂慮",
+    "artist": "天韻合唱團",
+    "trackCount": 13,
+    "releaseDate": "1993-11-01T08:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": false
+    }
+  },
+  {
+    "collectionId": 1550576150,
+    "album": "莫得為明日掛慮 (閩南語)",
+    "artist": "天韻合唱團",
+    "trackCount": 13,
+    "releaseDate": "1993-11-01T08:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": false
+    }
+  },
+  {
+    "collectionId": 1557160760,
+    "album": "給我換顆心",
+    "artist": "天韻合唱團",
+    "trackCount": 11,
+    "releaseDate": "1995-05-01T07:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": false
+    }
+  },
+  {
+    "collectionId": 1743118465,
+    "album": "希望在轉角",
+    "artist": "天韻合唱團",
+    "trackCount": 11,
+    "releaseDate": "1997-08-01T07:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": false
+    }
+  },
+  {
+    "collectionId": 1575195472,
+    "album": "另一種情歌",
+    "artist": "天韻合唱團",
+    "trackCount": 13,
+    "releaseDate": "1998-08-01T07:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": false
+    }
+  },
+  {
+    "collectionId": 1527408710,
+    "album": "歡唱",
+    "artist": "天韻合唱團",
+    "trackCount": 12,
+    "releaseDate": "2000-08-01T07:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": false
+    }
+  },
+  {
+    "collectionId": 1527553592,
+    "album": "伊的疼惜",
+    "artist": "天韻合唱團",
+    "trackCount": 12,
+    "releaseDate": "2002-03-01T08:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": false
+    }
+  },
+  {
+    "collectionId": 1527550241,
+    "album": "聽見",
+    "artist": "天韻合唱團",
+    "trackCount": 12,
+    "releaseDate": "2003-02-01T08:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": false
+    }
+  },
+  {
+    "collectionId": 1527952396,
+    "album": "等你願意",
+    "artist": "天韻合唱團",
+    "trackCount": 11,
+    "releaseDate": "2003-02-01T08:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": false
+    }
+  },
+  {
+    "collectionId": 1536710623,
+    "album": "咱是一場戲",
+    "artist": "天韻合唱團",
+    "trackCount": 13,
+    "releaseDate": "2004-08-01T07:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": false
+    }
+  },
+  {
+    "collectionId": 1570073520,
+    "album": "神奇大讚",
+    "artist": "天韻合唱團",
+    "trackCount": 13,
+    "releaseDate": "2005-12-01T08:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": false
+    }
+  },
+  {
+    "collectionId": 1538111716,
+    "album": "把愛留下",
+    "artist": "天韻合唱團",
+    "trackCount": 12,
+    "releaseDate": "2006-02-01T08:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": false
+    }
+  },
+  {
+    "collectionId": 1570015210,
+    "album": "一粒小種籽 - EP",
+    "artist": "天韻合唱團",
+    "trackCount": 6,
+    "releaseDate": "2007-04-01T07:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": false
+    }
+  },
+  {
+    "collectionId": 1542017029,
+    "album": "祢的手永遠比我大",
+    "artist": "天韻合唱團",
+    "trackCount": 11,
+    "releaseDate": "2007-12-01T08:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": false
+    }
+  },
+  {
+    "collectionId": 1542018127,
+    "album": "穿越的聲音",
+    "artist": "天韻合唱團",
+    "trackCount": 15,
+    "releaseDate": "2009-02-01T08:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": false
+    }
+  },
+  {
+    "collectionId": 1506904032,
+    "album": "祢是我一切",
+    "artist": "天韻合唱團",
+    "trackCount": 15,
+    "releaseDate": "2011-12-01T08:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": false
+    }
+  },
+  {
+    "collectionId": 1508272632,
+    "album": "佳哉有祢",
+    "artist": "天韻合唱團",
+    "trackCount": 15,
+    "releaseDate": "2013-07-01T07:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": false
+    }
+  },
+  {
+    "collectionId": 1499945684,
+    "album": "信心是一種看見",
+    "artist": "天韻合唱團",
+    "trackCount": 9,
+    "releaseDate": "2013-08-01T07:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": false
+    }
+  },
+  {
+    "collectionId": 1569762941,
+    "album": "祢降生的那個夜晚",
+    "artist": "天韻合唱團",
+    "trackCount": 10,
+    "releaseDate": "2014-12-01T08:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": false
+    }
+  },
+  {
+    "collectionId": 1570073968,
+    "album": "美麗心發現(一)",
+    "artist": "天韻合唱團",
+    "trackCount": 9,
+    "releaseDate": "2016-01-01T08:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": false
+    }
+  },
+  {
+    "collectionId": 1502056066,
+    "album": "永恆有約",
+    "artist": "天韻合唱團",
+    "trackCount": 10,
+    "releaseDate": "2016-06-01T07:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": false
+    }
+  },
+  {
+    "collectionId": 1571429425,
+    "album": "美麗心發現(二)",
+    "artist": "天韻合唱團",
+    "trackCount": 8,
+    "releaseDate": "2016-12-01T08:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": false
+    }
+  },
+  {
+    "collectionId": 1656655595,
+    "album": "天韻十大點播金曲",
+    "artist": "天韻合唱團",
+    "trackCount": 10,
+    "releaseDate": "2020-03-01T08:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": false
+    }
+  },
+  {
+    "collectionId": 1656655627,
+    "album": "更新",
+    "artist": "天韻合唱團",
+    "trackCount": 9,
+    "releaseDate": "2020-05-28T07:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": false
+    }
+  },
+  {
+    "collectionId": 1542307908,
+    "album": "Amazing Love",
+    "artist": "天韻合唱團",
+    "trackCount": 8,
+    "releaseDate": "2020-11-04T08:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": false
+    }
+  },
+  {
+    "collectionId": 1656655499,
+    "album": "因愛啟程",
+    "artist": "天韻合唱團",
+    "trackCount": 9,
+    "releaseDate": "2022-01-11T08:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": false
+    }
+  },
+  {
+    "collectionId": 1638067225,
+    "album": "將心比星 - Single",
+    "artist": "天韻合唱團",
+    "trackCount": 1,
+    "releaseDate": "2022-08-08T07:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": false
+    }
+  },
+  {
+    "collectionId": 1651790933,
+    "album": "逆轉",
+    "artist": "天韻合唱團",
+    "trackCount": 9,
+    "releaseDate": "2022-11-16T08:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": false
+    }
+  },
+  {
+    "collectionId": 1701968332,
+    "album": "Kosekelela",
+    "artist": "天韻",
+    "trackCount": 12,
+    "releaseDate": "2023-08-09T07:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": false
+    }
+  },
+  {
+    "collectionId": 1826769710,
+    "album": "Jesus I Need You - Single",
+    "artist": "天韻合唱團",
+    "trackCount": 1,
+    "releaseDate": "2025-07-14T07:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": false
+    }
+  },
+  {
+    "collectionId": 6772093223,
+    "album": "Eres Mi Esperanza (feat. Barak 4:12 Worship Band) - Single",
+    "artist": "天韻合唱團",
+    "trackCount": 1,
+    "releaseDate": "2025-09-12T07:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": false
+    }
+  },
+  {
+    "collectionId": 1840361395,
+    "album": "祢真偉大 How Great Thou Art - Single",
+    "artist": "天韻合唱團",
+    "trackCount": 1,
+    "releaseDate": "2025-09-29T07:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": false
+    }
+  },
+  {
+    "collectionId": 1848076872,
+    "album": "喜樂如旗X基督精兵前進 - Single",
+    "artist": "天韻合唱團",
+    "trackCount": 1,
+    "releaseDate": "2025-10-27T07:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": false
+    }
+  },
+  {
+    "collectionId": 1856189904,
+    "album": "三一頌組曲 - Single",
+    "artist": "天韻合唱團",
+    "trackCount": 1,
+    "releaseDate": "2025-12-04T08:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": false
+    }
+  },
+  {
+    "collectionId": 1884862474,
+    "album": "每一天有祢 - Single",
+    "artist": "天韻合唱團",
+    "trackCount": 1,
+    "releaseDate": "2026-03-24T07:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": false
+    }
+  },
+  {
+    "collectionId": 1894452037,
+    "album": "怎能不讚美祢 - Single",
+    "artist": "天韻合唱團",
+    "trackCount": 1,
+    "releaseDate": "2026-04-22T07:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": false
+    }
+  },
+  {
+    "collectionId": 6771330441,
+    "album": "超越星河的愛 - Single",
+    "artist": "天韻合唱團",
+    "trackCount": 1,
+    "releaseDate": "2026-05-26T07:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": false
+    }
+  }
+]
