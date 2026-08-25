@@ -36,9 +36,24 @@ log(`輸入 ${items.length} 條`);
 const byOrg = new Map();
 for (const it of items) { if (!byOrg.has(it.org)) byOrg.set(it.org, []); byOrg.get(it.org).push(it); }
 
+// 🔴 2026-08-25 事故修正:一定要**先攞 DB 鎖再 openDb()**,同 growLibrary.js
+//    (:664 acquireDbLock → :670 openDb)一模一樣嘅次序。
+//    點解:`backfillGroupFromList()` 每收一首就 `saveDb()` 一次,而 `saveDb`
+//    係由 `openDb()` 嗰刻嘅**記憶體快照**成個檔案覆寫落碟 —— 即係我個 process
+//    開咗之後,任何其他 session 寫入嘅嘢都會俾我一 save 就冚。
+//    實際後果(2026-08-25 12:10-12:21):隔籬 session 用 locked delistHymn 落架
+//    咗 #1722,俾我呢個無鎖 run 覆寫返 curated=1,佢個寫入完全冇咗;我自己個
+//    process 亦都撞到 `hymns.db.tmp` rename ENOENT 死咗(兩邊同時
+//    write-tmp-then-rename)。
+//    ⚠️ 呢度會揸住鎖做網絡(逐首 resolveAudioUrl)—— 同 growLibrary 一樣,
+//    係呢條 code path 嘅既定做法(鎖有 stale timeout 兜底)。
+const lockToken = await acquireDbLock('catalogGapApply');
+if (!lockToken) { console.error('攞唔到 DB 鎖,收工(下次再試)'); process.exit(1); }
+process.on('exit', () => { try { releaseDbLock(lockToken); } catch (_) {} });
+
 const db = await openDb();
 const before = query(db, "SELECT COUNT(*) n FROM hymns_all WHERE curated=1 AND status='ok'")[0].n;
-log(`入庫前 curated ok:${before}`);
+log(`入庫前 curated ok:${before}(已攞鎖)`);
 
 const applied = [];
 for (const [org, list] of byOrg) {
@@ -55,10 +70,9 @@ for (const [org, list] of byOrg) {
 
 // ── 第二 pass:補 album(鎖內零網絡)────────────────────────────────
 if (!DRY && applied.length) {
-  const token = await acquireDbLock('catalogGapApply-album');
-  if (token) {
-    try {
-      const d2 = await openDb();
+  {
+    {
+      const d2 = db;   // 已經揸住鎖,唔好再開多個 snapshot(會冚返自己啱啱寫嘅嘢)
       let n = 0;
       for (const x of applied) {
         if (!x.album) continue;
@@ -70,14 +84,14 @@ if (!DRY && applied.length) {
         }
       }
       if (n) { saveDb(d2); log(`album 補咗 ${n} 條`); }
-    } finally { releaseDbLock(token); }
-  } else log('⚠ 攞唔到鎖,album 補唔到(唔影響已入庫嘅歌)');
+    }
+  }
 }
 
-const db3 = await openDb();
-const after = query(db3, "SELECT COUNT(*) n FROM hymns_all WHERE curated=1 AND status='ok'")[0].n;
+const after = query(db, "SELECT COUNT(*) n FROM hymns_all WHERE curated=1 AND status='ok'")[0].n;
 log(`入庫後 curated ok:${after}(淨增 ${after - before})`);
 if (!DRY) {
   fs.writeFileSync(path.join(DATA_DIR, `applied-${new Date().toISOString().slice(0, 10).replace(/-/g, '')}.json`),
     JSON.stringify(applied, null, 2), 'utf8');
 }
+releaseDbLock(lockToken);
