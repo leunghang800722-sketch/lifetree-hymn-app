@@ -30,6 +30,12 @@
 // append,任何一個對唔上就 raise 令 pod install 直接 fail,唔准靜靜出無 patch build。
 // 全部改動限 iOS pod 源碼:JS 零改動、Android 零改動、runtimeVersion 5 不變。
 
+// ⚠️ 改呢個 plugin 前必讀:ruby 入面嘅冪等閘係 `unless content.include?('SWStallWatchdog')`。
+// 如果 ios/Pods/SwiftAudioEx 已經帶住舊版 patch,pod install 會靜靜跳過(唔 raise、唔出
+// Pod::UI 訊息),直接出一隻舊 Swift 數字嘅 build。任何改動之後,本地測試前必須清走
+// ios/Pods/SwiftAudioEx(或成個 ios/ 重新 prebuild),再肉眼核對 patched 後嘅
+// Pods/.../AudioPlayer.swift 真係有新內容。EAS 雲端 build 係乾淨 checkout,唔受影響。
+// (2026-08-29 Opus5 驗收 B-note;嗰次冇中招,補呢句防下次。)
 const { withDangerousMod } = require('@expo/config-plugins');
 const fs = require('fs');
 const path = require('path');
