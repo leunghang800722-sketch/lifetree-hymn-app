@@ -458,6 +458,12 @@ function PlayerProvider({ children }) {
   const repeatModeRef = useRef(0);
   const isShuffledRef = useRef(false);
   const errorSkipCountRef = useRef(0); // §3.7 — consecutive PlaybackError count
+  // NATIVE-STALL-FG-SPEEDUP-PLAN-20260829.md §4.2 —— 「呢首 track 有冇試過真
+  // 播放」旗標,喺 poll loop 見到 position>0.5 就 set true(見下面),
+  // PlaybackActiveTrackChanged 轉去下一首嗰刻讀舊值、清返 false 俾新 track。
+  // 淨係 iOS build>=15(NATIVE_WD_V2)先會寫呢支 ref,其他平台永遠停留喺
+  // 初始值,唔會影響任何現有邏輯(冇任何舊 code 讀呢支 ref)。
+  const trackHasPlayedRef = useRef(false);
   // STREAM-LOCKSCREEN-FREEZE-OPUS5-2026-08-13 D2 —— 「呢個app自己有冇主動叫過
   // pause()」嘅意圖旗標。呢個file入面嘅pause()/play() call site全部直接set
   // 呢支flag(§4.4 揪出嘅native quiet-shutoff聽`Event.PlaybackPlayWhenReadyChanged`
@@ -963,6 +969,11 @@ function PlayerProvider({ children }) {
       try {
         if (typeof event?.index !== 'number') return;
         const idx = event.index;
+        // NATIVE-STALL-FG-SPEEDUP-PLAN-20260829.md §4.2 —— 舊 track 有冇播過,
+        // 要喺呢一刻(重置之前)攞定,亦要喺任何 await 之前做(呢個 handler 頭
+        // 幾行完全同步,唔會俾 poll loop 嗰個 async tick 搶閘覆寫)。
+        const prevTrackHasPlayed = trackHasPlayedRef.current;
+        if (NATIVE_WD_V2) trackHasPlayedRef.current = false; // 新 track 重新計
         currentQueueIndexRef.current = idx;
         setCurrentQueueIndex(idx);
         const song = queueRef.current[idx];
@@ -985,11 +996,43 @@ function PlayerProvider({ children }) {
         // + hymnId;冇 t0(native auto-advance)就以呢一刻做 t0。
         {
           const t0 = transitionT0Ref.current;
-          if (t0 && !t0.trackChangedSeen && Date.now() - t0.ts <= 30000) {
+          const wasAnticipatedByJs = !!(t0 && !t0.trackChangedSeen && Date.now() - t0.ts <= 30000);
+          if (wasAnticipatedByJs) {
             t0.trackChangedSeen = true;
             t0.hymnId = song?.id ?? null;
           } else {
             transitionT0Ref.current = { ts: Date.now(), origin: 'auto', trackChangedSeen: true, bufferingSeen: false, hymnId: song?.id ?? null };
+          }
+          // NATIVE-STALL-FG-SPEEDUP-PLAN-20260829.md §4.2 —— native 前台 watchdog
+          // 嘅 skip 唔經任何 JS TrackPlayer.* API(見 plugins/
+          // withSwiftAudioExStallWatchdog.js escalate()),JS 完全冇辦法直接聽到
+          // 呢個訊號,只能反推:「track 換咗,但 JS 完全冇預期(!wasAnticipatedByJs,
+          // 冇一個 tap/watchdog-skip 落嘅 pending t0)」+「舊 track 從未真正播過
+          // (!prevTrackHasPlayed)」= native 靜靜哋跳咗一首死歌。真・native
+          // auto-advance(一首歌自然播完)一定滿足咗 prevTrackHasPlayed,唔會
+          // 撞入呢度;用戶/JS watchdog 主動發起嘅轉track 全部會經 transitionT0Ref
+          // 標記做「有預期」(見 handleStuckTrackEnd/PlaybackError 嗰幾個
+          // NATIVE_WD_V2 guard),都唔會撞入嚟——所以呢度唔會同 bufferingStuck/
+          // PlaybackError 已經加過嘅數 double count。淨係前台計(appStateRef
+          // === 'active'):背景嗰陣 native 自己嘅 20s/8s/3-strike 熔斷已經係
+          // 唯一防線,JS 呢套前台 UX 熔斷唔應該搶佢戲(彈唔到 Alert 都冇意義)。
+          if (NATIVE_WD_V2 && appStateRef.current === 'active' && !wasAnticipatedByJs && !prevTrackHasPlayed) {
+            errorSkipCountRef.current += 1;
+            logDiag('nativeSkipAttributed', {
+              appState: appStateRef.current,
+              hymnId: song?.id ?? null,
+              errorSkipCount: errorSkipCountRef.current,
+              detail: `idx=${idx}`,
+            }, { always: true });
+            // 現有前台 threshold=3 彈 Alert 嗰套照用(同 §3.7/PlaybackError 完全
+            // 同一個門檻同同一句文案),唔可以等 PlaybackError 嗰邊嘅 check 執行
+            // ——native skip 冇跟 PlaybackError 事件,嗰段 code 唔會行到。
+            if (errorSkipCountRef.current >= 3) {
+              expectPlayingRef.current = false; // D2 — 呢個係我哋主動叫嘅pause
+              await TrackPlayer.pause().catch(() => {});
+              Alert.alert('播放中斷', '連續幾首歌都載入唔到，請檢查網絡或者稍後再試');
+              errorSkipCountRef.current = 0;
+            }
           }
         }
         // 2026-07-29 QUEUE-UX-4FIXES §3(Opus 5 驗收補漏)—— 插播歌播完(或者
@@ -1108,6 +1151,12 @@ function PlayerProvider({ children }) {
               duration: diagProgress?.duration,
               detail: `code=${event?.code || ''}`,
             }, { always: true });
+            // NATIVE-STALL-FG-SPEEDUP §4.2 —— 呢個熱換(load/remove+add+skip)
+            // 可能會令 active index 睇落好似「轉咗」,標記做 JS 自己發起,避免
+            // PlaybackActiveTrackChanged 誤判做 native skip 加多一次計數。
+            if (NATIVE_WD_V2) {
+              transitionT0Ref.current = { ts: Date.now(), origin: 'jsRecover', trackChangedSeen: false, bufferingSeen: false, hymnId: null };
+            }
             try {
               await TrackPlayer.load(freshTrack);
             } catch (loadErr) {
@@ -1155,6 +1204,12 @@ function PlayerProvider({ children }) {
         // BUG2(c)P0 — 單首歌失敗唔好再用會擋住成個畫面嘅白色系統 Alert,
         // 改用輕量、非阻擋、自動消失嘅提示。
         showNotice('呢首歌暫時載入唔到，跳去下一首');
+        // NATIVE-STALL-FG-SPEEDUP §4.2 —— 呢個 skip 已經喺上面加咗
+        // errorSkipCountRef,標記做 JS 發起,PlaybackActiveTrackChanged 見到
+        // 唔可以再計多一次(避免 double count)。
+        if (NATIVE_WD_V2) {
+          transitionT0Ref.current = { ts: Date.now(), origin: 'jsRecover', trackChangedSeen: false, bufferingSeen: false, hymnId: null };
+        }
         try { await TrackPlayer.skipToNext(); } catch (e) { /* queue tail, repeat off — nothing to skip to */ }
         return;
       }
@@ -1178,6 +1233,10 @@ function PlayerProvider({ children }) {
         errorSkipCountRef.current = 0;
         pendingPlaybackNoticeRef.current = '背景播放中斷：連續多首歌載入唔到，已暫停';
         return;
+      }
+      // NATIVE-STALL-FG-SPEEDUP §4.2 —— 同上,背景路徑一樣要標記,唔准 double count。
+      if (NATIVE_WD_V2) {
+        transitionT0Ref.current = { ts: Date.now(), origin: 'jsRecover', trackChangedSeen: false, bufferingSeen: false, hymnId: null };
       }
       try { await TrackPlayer.skipToNext(); } catch (e) { /* queue tail, repeat off — nothing to skip to */ }
     });
@@ -1422,6 +1481,12 @@ function PlayerProvider({ children }) {
   // 呢首歌/呢段串流救唔返,跌落去同 handleStuckTrackEnd 一樣嘅 skip/repeat 邏輯。
   const bufferingStuckTicksRef = useRef(0);
   const bufferingNudgedRef = useRef(false);
+  // NATIVE-STALL-FG-SPEEDUP-PLAN-20260829.md §4.1 —— 前台 10 秒緩衝提示
+  // (iOS build>=15 only)。獨立於下面 noticeText/showNotice(嗰套 2.8 秒自動
+  // 消失,唔啱呢度「要跟住仲係咪卡緊」精確 show/hide 嘅需要)。ref 鏡像俾
+  // poll loop 讀(避免將 state 擺入 effect deps 令 poll loop 重新掛載)。
+  const slowLoadNoticeRef = useRef(false);
+  const [slowLoadNotice, setSlowLoadNotice] = useState(false);
   const BUFFERING_STUCK_NUDGE_TICKS = 15;
   // NEXT-TRACK-LATENCY 2026-08-12 追加(Opus 5 驗收 punch list 第6點)——原本
   // 15+15=30 秒就會跳,同 backend 死鏈嘅最壞 resolve+retry 時間(RESOLVE_TIMEOUT_MS
@@ -1469,6 +1534,18 @@ function PlayerProvider({ children }) {
       const q = queueRef.current || [];
       const hasNext = repeatModeRef.current === 1 || idx < q.length - 1;
       if (hasNext) {
+        // NATIVE-STALL-FG-SPEEDUP-PLAN-20260829.md §4.2 —— 呢個 skip 係 JS 自己
+        // 嘅 watchdog(mid-stream stall / buffering stuck / 近尾卡死)發起,唔係
+        // native 前台 watchdog 靜靜哋跳嘅嗰種。要喺 PlaybackActiveTrackChanged
+        // 度俾人認得出「呢次轉track JS 有預期」,唔好誤判做「native 冧咗」再加多
+        // 一次 errorSkipCountRef(嗰個熔斷已經喺 handleBufferingStuck/
+        // PlaybackError 自己嗰陣加咗,呢度唔可以再計——見§4.2「唔准double
+        // count」)。重用現成嘅 transitionT0Ref 機制(同 tapNext/tapQueue 果套
+        // 一樣),淨係 NATIVE_WD_V2 先寫,Android/舊 build 嘅 origin=auto 標籤
+        // 完全唔變。
+        if (NATIVE_WD_V2) {
+          transitionT0Ref.current = { ts: Date.now(), origin: 'jsRecover', trackChangedSeen: false, bufferingSeen: false, hymnId: null };
+        }
         await TrackPlayer.skipToNext();
         // 見 handleNextTrack() 嗰句一樣嘅原因(SwiftAudioEx QueuedAudioPlayer.next()
         // 冇 playWhenReady:true,單靠佢自己嗰套 preserve-existing-flag 邏輯響呢個
@@ -1562,6 +1639,12 @@ function PlayerProvider({ children }) {
     midStallTicksRef.current = 0;
     bufferingNudgedRef.current = false;
     bufferingStuckTicksRef.current = 0;
+    // NATIVE-STALL-FG-SPEEDUP §4.1 —— 新 track 上場,舊 track 嘅緩衝提示唔應該
+    // 留喺度(例如用戶手動跳去下一首,新歌先啱啱開始 loading,唔算「卡」)。
+    if (NATIVE_WD_V2 && slowLoadNoticeRef.current) {
+      slowLoadNoticeRef.current = false;
+      setSlowLoadNotice(false);
+    }
   }, [currentQueueIndex]);
 
   // Progress — poll TrackPlayer.getProgress() directly instead of useProgress hook
@@ -1614,6 +1697,8 @@ function PlayerProvider({ children }) {
           if (mounted) {
             const pos = progress.position || 0;
             progressStore.setState({ currentTime: pos }); // O1-B2:淨寫store
+            // NATIVE-STALL-FG-SPEEDUP §4.2 —— 「呢首 track 真係播過」嘅最簡單訊號。
+            if (NATIVE_WD_V2 && pos > 0.5) trackHasPlayedRef.current = true;
             // B14 修 —— toggleShuffle 會 reset()+add() 成個 native queue,呢 1 秒
             // poll 窗口入面有陣時 getProgress() 會短暫報 duration:0(隊列啱啱重
             // 起,新 metadata 未到手),之前直接 setDuration(0) 就即刻喺 UI 度
@@ -1683,6 +1768,13 @@ function PlayerProvider({ children }) {
             // 同一個 counter/門檻——nudge/skip 語義一樣。
             if (trackStateRef.current === TPState.Buffering || trackStateRef.current === TPState.Loading) {
               bufferingStuckTicksRef.current += 1;
+              // NATIVE-STALL-FG-SPEEDUP-PLAN-20260829.md §4.1 —— 10 秒非阻斷提示,
+              // 純粹UI,唔郁落面 nudge(15)/skip(30,累計45秒)呢條階梯任何數字。
+              // 前台 + iOS build>=15 先顯示;呢個 tick 節奏本身同 nudge/skip 共用
+              // 同一個 counter,>=10 一定喺 nudge(>=15)之前先到。
+              if (NATIVE_WD_V2 && appStateRef.current === 'active' && bufferingStuckTicksRef.current >= 10) {
+                if (!slowLoadNoticeRef.current) { slowLoadNoticeRef.current = true; setSlowLoadNotice(true); }
+              }
               if (!bufferingNudgedRef.current && bufferingStuckTicksRef.current >= BUFFERING_STUCK_NUDGE_TICKS) {
                 bufferingStuckTicksRef.current = 0;
                 handleBufferingStuck();
@@ -1692,6 +1784,13 @@ function PlayerProvider({ children }) {
               }
             } else {
               bufferingStuckTicksRef.current = 0;
+              // 一離開 buffering/loading(真出咗聲,或者轉咗第二個 state)—— 提示
+              // 即刻收起,唔使等 §4.1 果邊嘅 2.8 秒 timeout 呢套機制(呢個係獨立
+              // state,由呢度直接精準控制)。
+              if (NATIVE_WD_V2 && slowLoadNoticeRef.current) {
+                slowLoadNoticeRef.current = false;
+                setSlowLoadNotice(false);
+              }
             }
           }
         } catch (e) {
@@ -2230,6 +2329,17 @@ function PlayerProvider({ children }) {
         <View pointerEvents="none" style={[noticeStyles.wrap, { top: (noticeInsets.top || StatusBar.currentHeight || 44) + 12 }]}>
           <View style={noticeStyles.pill}>
             <Text style={noticeStyles.text} numberOfLines={2}>{noticeText}</Text>
+          </View>
+        </View>
+      )}
+
+      {/* NATIVE-STALL-FG-SPEEDUP-PLAN-20260829.md §4.1 —— 前台 10 秒緩衝提示
+          (iOS build>=15 only)。同上面 noticeText 共用視覺語言(noticeStyles)
+          但係獨立 state,精準跟住「仲係咪卡緊」show/hide,唔靠 timeout。 */}
+      {slowLoadNotice && (
+        <View pointerEvents="none" style={[noticeStyles.wrap, { top: (noticeInsets.top || StatusBar.currentHeight || 44) + 12 }]}>
+          <View style={noticeStyles.pill}>
+            <Text style={noticeStyles.text} numberOfLines={2}>載入緩慢，重試緊…</Text>
           </View>
         </View>
       )}
@@ -3669,6 +3779,17 @@ try {
 } catch (e) {
   // native module 未存在（現役 APK 53）—— 靜默，等同「查唔到，唔出 banner」
 }
+
+// NATIVE-STALL-FG-SPEEDUP-PLAN-20260829.md §2/§4 —— 統一 gate。build 15 先帶
+// 「前台 stall watchdog 10s/5s 加速」嘅 native patch;所有依賴呢個加速嘅 JS
+// 新行為（10 秒緩衝提示、native-skip 指紋計入 errorSkipCountRef）都要 gate 喺
+// 呢條後面。刻意重用上面已經 guard 過嘅 `_nativeBuildVersion`（iOS 呢邊
+// expo-application 老早已經 linked 入 Podfile.lock，唔會炸，純粹想同一個
+// 已驗證嘅 guarded 變量嚟源，日後一齊查/一齊拆）。Android 或者 iOS build<15
+// 呢條 const 恆為 false —— 底下所有 NATIVE_WD_V2 gate 嘅新行為完全 dormant，
+// 即使呢段 code 意外經 OTA 派咗出去都對現役 build 14 零影響（老闆 §2 拍板嘅
+// 安全網:一次過出 JS+native，唔准分開派）。
+const NATIVE_WD_V2 = Platform.OS === 'ios' && Number(_nativeBuildVersion ?? 0) >= 15;
 
 function ApkUpdateBanner() {
   const { isUpdatePending } = Updates.useUpdates();
