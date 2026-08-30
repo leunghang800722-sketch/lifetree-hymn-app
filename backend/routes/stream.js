@@ -16,6 +16,54 @@ function logLine(fields) {
   console.log(`[stream] ${new Date().toISOString()} ${Object.entries(fields).map(([k, v]) => `${k}=${v}`).join(' ')}`);
 }
 
+// NATIVE-STALL-ROOTFIX-PLAN-20260830 §6 Phase A:純 log 補完,零行為改動。
+// `[stream]` 個 log line 係空格分隔嘅 `k=v`——Range/UA header 理論上唔會帶
+// 空格或者控制字元(`bytes=0-` 呢類值本身安全),但保險起見,凡係塞入呢個
+// helper 嘅字串一律淨係保留 printable ASCII(0x21-0x7e,即冇空格嘅可見字
+// 符),其餘(空格/控制字元/非 ASCII)一律換做 `_`,防止整亂 log 格式或者
+// 拆 log 嘅工具。
+function sanitizeLogToken(s, maxLen) {
+  if (s == null || s === '') return '-';
+  let out = String(s);
+  if (maxLen) out = out.slice(0, maxLen);
+  return out.replace(/[^\x21-\x7e]/g, '_');
+}
+
+// NATIVE-STALL-ROOTFIX-PLAN-20260830 §5 H2:由 resolveAudioUrl() 攞返嚟嗰條
+// googlevideo URL 嘅 query string 攞 itag/clen——答「今日 resolve 出嚟嗰個
+// format variant 係咪有問題」。url 未 resolve/resolve 失敗/parse 唔到就
+// 一律 `-`,唔會拋錯累到成個 request 死。
+function extractItagClen(u) {
+  try {
+    if (!u) return { itag: '-', clen: '-' };
+    const parsed = new URL(u);
+    return {
+      itag: parsed.searchParams.get('itag') || '-',
+      clen: parsed.searchParams.get('clen') || '-',
+    };
+  } catch (_) {
+    return { itag: '-', clen: '-' };
+  }
+}
+
+// NATIVE-STALL-ROOTFIX-PLAN-20260830 §6 Phase A:「呢條 request 真係寫咗幾多
+// body bytes 俾 client」用 res.socket.bytesWritten 喺 request 開始/結束嗰陣
+// 嘅差值嚟估。語義聲明:呢個數包埋 HTTP header bytes(唔淨係 body)——單一
+// request 嘅 header 通常得幾百 bytes,對分辨「load storm 入面條片攞幾多
+// KB 就俾 client abort」呢個問題嚟講唔傷大雅;keep-alive 令同一條 socket
+// 服務多個 request 時,呢個差值淨係計返「呢個 request 生命週期入面」嘅嗰
+// 段(即係 request 開始嗰刻嘅 bytesWritten 做 baseline,喺 finishLog 嗰刻
+// 再讀一次計差),唔會同同一 socket 上其他 request 嘅 bytes 混埋。
+// res.socket 喺 close 之後可能已經俾 GC/detach 做 null,要防禦性讀。
+function computeSentBytes(res, bytesWrittenStart) {
+  try {
+    if (!res.socket) return '-';
+    return Math.max(0, res.socket.bytesWritten - bytesWrittenStart);
+  } catch (_) {
+    return '-';
+  }
+}
+
 // STREAM-MIDTRACK-SILENCE-ROOTCAUSE-2026-08-12 §5.2:兩條 googlevideo URL 係咪
 // 同一個 itag/檔案大細(即係「換條 URL 但唔係換咗 format」)。攞唔到 itag 就保守
 // 放行(true),唔好阻住現有 retry 行為——呢個 check 淨係用嚟攔「肯定唔同」嘅情況。
@@ -118,9 +166,20 @@ export default function streamRoutes(getDb) {
   router.get('/:hymnId', async (req, res) => {
     // BG-PLAYBACK-STOPS-PLAN Fix D:純 observability,零行為改動。
     const reqStart = Date.now();
+    // NATIVE-STALL-ROOTFIX-PLAN-20260830 §6 Phase A:baseline 要喺呢個
+    // request 一開始就攞(喺任何 write 之前),先可以喺 finishLog 嗰刻計到
+    // 「呢個 request 自己」寫咗幾多 bytes。純讀,零行為改動。
+    const bytesWrittenStart = (() => {
+      try { return res.socket ? res.socket.bytesWritten : 0; } catch (_) { return 0; }
+    })();
+    // NATIVE-STALL-ROOTFIX-PLAN-20260830 §6 Phase A:呢個 field 全程用嚟答
+    // 「呢條係咪 Phase B native rescue(`?swr=`)打嚟嘅請求」,喺 server side
+    // 令 rescue 請求現形,唔使淨係靠 client log。
+    const wd = (req.query && req.query.swr !== undefined) ? 1 : 0;
+    const uaShort = sanitizeLogToken(req.headers['user-agent'], 20);
     const id = Number(req.params.hymnId);
     if (!Number.isInteger(id) || id <= 0) {
-      logLine({ id: req.params.hymnId, yt: '-', mode: '-', resolve_ms: 0, ttfb_ms: Date.now() - reqStart, total_ms: Date.now() - reqStart, status: 400, aborted: false, retried: false });
+      logLine({ id: req.params.hymnId, yt: '-', mode: '-', resolve_ms: 0, ttfb_ms: Date.now() - reqStart, total_ms: Date.now() - reqStart, status: 400, aborted: false, retried: false, range: sanitizeLogToken(req.headers.range), sent: computeSentBytes(res, bytesWrittenStart), itag: '-', clen: '-', wd, ua: uaShort });
       return res.status(400).json({ error: 'bad id' });
     }
 
@@ -132,7 +191,7 @@ export default function streamRoutes(getDb) {
     stmt.free();
 
     if (!hymn?.youtube_id) {
-      logLine({ id, yt: '-', mode: '-', resolve_ms: 0, ttfb_ms: Date.now() - reqStart, total_ms: Date.now() - reqStart, status: 404, aborted: false, retried: false });
+      logLine({ id, yt: '-', mode: '-', resolve_ms: 0, ttfb_ms: Date.now() - reqStart, total_ms: Date.now() - reqStart, status: 404, aborted: false, retried: false, range: sanitizeLogToken(req.headers.range), sent: computeSentBytes(res, bytesWrittenStart), itag: '-', clen: '-', wd, ua: uaShort });
       return res.status(404).json({ error: 'not found' });
     }
 
@@ -161,6 +220,11 @@ export default function streamRoutes(getDb) {
     const finishLog = (status, extra = {}) => {
       if (logged) return;
       logged = true;
+      // NATIVE-STALL-ROOTFIX-PLAN-20260830 §6 Phase A:`url` 係外層 `let`
+      // (下面先聲明/賦值),但 finishLog 呢個 closure 一定要等到 `let url;`
+      // 個聲明語句行完之後先會被 call 到(所有 call site 都喺嗰句之後),
+      // 所以呢度讀 `url` 唔會撞 TDZ——會攞返 retry 之後最新嗰條 URL。
+      const { itag, clen } = extractItagClen(url);
       logLine({
         id,
         yt: hymn.youtube_id,
@@ -171,6 +235,12 @@ export default function streamRoutes(getDb) {
         status,
         aborted: extra.aborted ?? false,
         retried,
+        range: sanitizeLogToken(req.headers.range),
+        sent: computeSentBytes(res, bytesWrittenStart),
+        itag,
+        clen,
+        wd,
+        ua: uaShort,
       });
     };
 
