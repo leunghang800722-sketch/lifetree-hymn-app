@@ -29,6 +29,14 @@ const KIDS_SUB_LANGS = ['粵語', '國語', '英文'];
 // query 同歌名嘅比對(Eric 實測「神我屬」搵唔到,SUPERVISION-LOG 2026-07-27 17:30)。
 const norm = (s) => (s || '').toLowerCase().replace(/[^\p{L}\p{N}]/gu, '');
 
+// 歌詞搜尋同音字 fold(2026-08-30 拍板)—— 粵語敬拜歌詞「祢/你/袮」讀音
+// 一樣,唔同歌用邊個字全睇作者習慣(實測《祢是何等榮美》全曲淨用「祢」,
+// 打「你」搜完全0命中)。**淨喺歌詞比對用**,唔可以搬去 blobIndex(歌名/
+// 歌手/專輯)嗰路——短字串 fold 咗 false positive 比例會高好多,而且歌名
+// 冇呢個問題。呢個function淨係影響「邊行歌詞算撞中」,原始歌詞文字顯示
+// 完全唔郁。
+const foldHomophone = (s) => s.replace(/[祢袮]/g, '你');
+
 // 同播放清單 / 歌單頁一致:喺清單度直接加最愛,唔使入返播放頁(款式照搬 HymnListScreen)
 function Heart({ hymn }) {
   const { isFavorite, toggleFavorite } = useFavorites() || {};
@@ -108,7 +116,7 @@ export default function LibraryScreen({ hymns = [], onPlayHymn, onOpenAuth }) {
   const lyricsIndexRef = useRef({ src: null, map: null });
   function buildLyricsIndex(list) {
     const m = new Map();
-    for (const h of list) { if (h.lyrics) m.set(h.id, norm(h.lyrics)); }
+    for (const h of list) { if (h.lyrics) m.set(h.id, foldHomophone(norm(h.lyrics))); }
     return m;
   }
   function getLyricsIndex(list) {
@@ -202,8 +210,11 @@ export default function LibraryScreen({ hymns = [], onPlayHymn, onOpenAuth }) {
     const titleHits = base.filter((h) => (blobIndex.get(h.id) || '').includes(nq));
     const titleHitIds = new Set(titleHits.map((h) => h.id));
     const lyricsMap = getLyricsIndex(hymns);
+    // 歌詞呢一路先 fold 同音字(祢/你/袮),歌名/歌手/專輯嗰路(titleHits,
+    // 上面)唔受影響——nq 保持原字元。
+    const nqLyrics = foldHomophone(nq);
     const lyricsOnlyHits = base.filter(
-      (h) => !titleHitIds.has(h.id) && (lyricsMap.get(h.id) || '').includes(nq)
+      (h) => !titleHitIds.has(h.id) && (lyricsMap.get(h.id) || '').includes(nqLyrics)
     );
     return [...titleHits, ...lyricsOnlyHits];
   }, [hymns, kidsBase, instrumentalBase, lang, kidsSubLang, query, blobIndex]);
