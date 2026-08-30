@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  歌詞複核殭屍session reaper(LYRICS-ZOMBIE-REAPER-EXEC-20260830.md T1,
+  Eric 2026-08-30拍板)。4條歌詞複核scheduled task(lyrics-line-mandarin/-b/
+  lyrics-line-cantonese/-b)嘅claude process班班準時完成但唔會exit,runner又
+  唔reap,每日楼24條殭屍。呢個job每15分鐘掃一次自我登記registry
+  (/tmp/hymn-lyrics-sessions/),對登記超過3.5小時嘅session做SIGTERM→30秒→
+  SIGKILL;第二層掃`until pgrep sleep`輪詢shell(self-match永遠唔完嘅已知病)。
+
+  ⚠️ 個 label 特登**唔用 com.hymnapp.* prefix**(同 com.hymnstream.healthcheck
+  嘅先例一樣):SOP §5同R1 SKILL.md嘅班尾checkpoint會核對
+  `launchctl list | grep hymnapp | wc -l` 要==8,加咗hymnapp label會整跛佢。
+
+  模式開關:`ops/lyrics/.reaper-armed`(repo入面,已加落.gitignore)存在=armed,
+  唔存在=dry-run(淨係log「WOULD KILL」)。第一晚一定係dry-run,等Fable5驗完
+  先由人手create呢個flag file arm佢。
+-->
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.hymnops.lyricreaper</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>/bin/bash</string>
+    <string>/Users/macbookpro/.openclaw/workspace/hymn-app/ops/lyrics/session-reaper.sh</string>
+  </array>
+  <key>StartInterval</key>
+  <integer>900</integer>
+  <key>RunAtLoad</key>
+  <true/>
+  <key>StandardOutPath</key>
+  <string>/tmp/hymn_lyric_reaper.log</string>
+  <key>StandardErrorPath</key>
+  <string>/tmp/hymn_lyric_reaper.log</string>
+</dict>
+</plist>

@@ -101,3 +101,7 @@ backend/data/stream-health.log
 backend/data/warm-daily.json
 backend/data/ytdlp-update.log
 backend/data/**/*.log
+
+# 歌詞殭屍session reaper armed flag(LYRICS-ZOMBIE-REAPER-EXEC-20260830.md T1)——
+# 存在=armed(真殺)、唔存在=dry-run,純本機運行時開關,唔准入repo。
+ops/lyrics/.reaper-armed

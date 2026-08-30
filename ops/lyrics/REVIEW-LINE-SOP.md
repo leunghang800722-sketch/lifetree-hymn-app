@@ -53,6 +53,10 @@
   (47H 衝刺十二班得四班交到功課,就係因為死之前咩都冇寫低)。
 - **你分區嘅可做 draft < 10 → 即刻收工**。**嚴禁 until-loop 等隊列**
   (試過蝕 4 個半鐘),producer 自己會追上嚟,下一轉自然有貨。
+- 🆕 **「冇貨做」新定義(Eric 2026-08-30拍板)**:開波第一件事(§2c 步驟0b)行
+  `node ops/lyrics/queuecheck.mjs <你嘅線>` 查你分區可做 draft,**exit 1(<10)= 即刻收工**,
+  **嚴禁轉軌掃 verified、嚴禁寫新掃描器、嚴禁全庫掃描**——之前幾個星期嘅「draft見底轉軌」
+  慣例同「唔准自行收工」嘅舊 feedback,呢一條凌駕。
 - 🔬 **收工原因必填,四揀一**:`夠上限` / `夠鐘` / `冇貨做` / `撞 rate limit`。
   撞 rate limit 要抄低**原文警告字句** + **當時做咗幾多個決定**
   (Eric 靠呢個判斷 Max plan 有冇真係解決班次早死)。
@@ -74,9 +78,47 @@
   逐首 print,睇完即刻判。align 數據只准攞當前批嘅 id。
 - **每批做完即刻 audit + apply + append ledger 先攞下一批** —— 死喺第 N 批都保得住頭 N-1 批。
 
+## §2c 🆕 殭屍session根治:自我登記/自我了斷(Eric 2026-08-30拍板)
+
+**背景:** 4條線嘅 session model 層面班班準時收爐(有收爐報告),但 claude process 完成之後
+唔會 exit、runner 又唔 reap,每日楼 24 條殭屍,~1.5 日積到 76 條。詳見
+`LYRICS-ZOMBIE-REAPER-EXEC-20260830.md`。
+
+**開波第一件事(喺 §3 步驟1 之前,逐字用,`<線名>` 換返自己嗰條 R1/R1b/R2/R2b):**
+```bash
+mkdir -p /tmp/hymn-lyrics-sessions && CPID=$(ps -o ppid= -p $$ | tr -d ' ') && echo "$CPID:$(date +%s):<線名>" > /tmp/hymn-lyrics-sessions/<線名>-$CPID.pid
+```
+呢個 registry 俾 `ops/lyrics/session-reaper.sh`(launchd `com.hymnops.lyricreaper`,每15分鐘)
+對登記超過 3.5 小時嘅 session 做 SIGTERM→30秒→SIGKILL。
+⚠️ **個 label 特登唔用 `com.hymnapp.*` prefix**(同 `com.hymnstream.healthcheck` 嘅先例一樣)——
+§5 R1 checkpoint 嗰句 `launchctl list | grep hymnapp | wc -l` 照樣係 **8**,唔會計到呢個 job。
+
+**跟住即刻做隊列速查(§2「冇貨做」新定義):**
+```bash
+node ops/lyrics/queuecheck.mjs <線名>
+```
+exit 1(<10)→ ledger 記低「冇貨做,跳過」→ 即刻做底下嘅「自我了斷」。
+exit 0(≥10)→ 照 §3 正常流程做落去。
+
+**收工最後一步(寫完 ledger/memory 之後,逐字用,`<線名>` 換返自己):**
+```bash
+rm -f /tmp/hymn-lyrics-sessions/<線名>-*.pid; kill $(ps -o ppid= -p $$ | tr -d ' ')
+```
+呢句令 claude process 真正 exit,俾 scheduled task runner 可以 reap。**唔止「冇貨」嗰單先做** ——
+每次收工(夠上限/夠鐘/冇貨做/撞 rate limit)都要做呢一步。
+
+**兩條新紅線:**
+- **嚴禁用 until/sleep 輪詢等自己個 script**:長跑 script 用 Bash `run_in_background`,harness
+  完咗會自動通知你。
+- **嚴禁 `pgrep -f <字串>` 當個字串出現喺你自己命令行入面**(self-match,永遠唔完——
+  2026-08-30 嗰個 28.5 小時殭屍就係咁嚟)。
+
 ## §3 每班流程
 
 ```bash
+# 0a. 自我登記 + 0b. 隊列速查 —— 見 §2c,喺步驟1之前逐字做
+#     (queuecheck exit 1 就跳去 §2c「收工最後一步」,唔做落面嘅步驟)
+
 # 1. 開波三查
 date '+%Y-%m-%d %H:%M'
 tail -20 docs/LYRICS-CATCHUP-LEDGER.md
@@ -164,7 +206,7 @@ override **只推翻「太薄」一個原因**;有第二個 reject 原因(衛生
 
 1. `[stream]` 20 分鐘靜音檢查(`tail -200 /tmp/hymn_backend.log | grep "^\[stream\]" | tail -5`,時間戳係 **UTC**,本地 = UTC+8)。有播放活動 → **唔好 restart**,ledger 寫明押後。
 2. `ops/deploy/approve.sh backend "$(git rev-parse HEAD)" --confirm`(classifier 間中亂擋,同一句重試最多 3 次,再唔得等 5 分鐘)。見到其他 session 嘅 backend commit 你唔明 → **skip restart**,下轉補。
-3. `ops/deploy/backend-restart.sh` → `launchctl list | grep hymnapp | wc -l` 要夠 **7 個**。
+3. `ops/deploy/backend-restart.sh` → `launchctl list | grep hymnapp | wc -l` 要夠 **8 個**(2026-08-25 加咗 `com.hymnapp.dbautosync` 之後由 7 變 8;清單:backend / backfillmeta / alignbackfill / albumsearch / dbautosync / deadlinkcheck / growlibrary / usersbackup)。
 4. 抽 3 首今班新 verify 嘅 id curl `/api/hymns` 確認吐到歌詞。
 
 ## §5b 串流健康探測(唔使你做,但要識睇)
@@ -175,7 +217,7 @@ override **只推翻「太薄」一個原因**;有第二個 reject 原因(衛生
 喺 ledger 記低同埋喺你嘅收爐附註提出嚟。
 
 - ⚠️ 個 label 特登**唔係 `com.hymnapp.*`**,所以 `launchctl list | grep hymnapp | wc -l`
-  **照樣要係 7**,唔會變 8。見到 8 反而係有第二個 job 出事。
+  **照樣係 8**(唔會計到佢)。
 - 手動試:`ops/lyrics/stream-healthcheck.sh --verbose`;
   想測失敗路徑就 `HYMN_STREAM_BASE=http://127.0.0.1:39999 ops/lyrics/stream-healthcheck.sh --verbose`。
 
