@@ -102,10 +102,13 @@ exit 0(≥10)→ 照 §3 正常流程做落去。
 
 **收工最後一步(寫完 ledger/memory 之後,逐字用,`<線名>` 換返自己):**
 ```bash
-rm -f /tmp/hymn-lyrics-sessions/<線名>-*.pid; kill $(ps -o ppid= -p $$ | tr -d ' ')
+CPID=$(ps -o ppid= -p $$ | tr -d ' '); rm -f /tmp/hymn-lyrics-sessions/<線名>-$CPID.pid; kill $CPID
 ```
 呢句令 claude process 真正 exit,俾 scheduled task runner 可以 reap。**唔止「冇貨」嗰單先做** ——
 每次收工(夠上限/夠鐘/冇貨做/撞 rate limit)都要做呢一步。
+⚠️ **一定要用自己個 `$CPID` 精準刪自己嗰個檔,唔准用 glob(`R1-*.pid`)** —— glob 會連
+同線另一個 session(例如舊班仲未俾 reaper 追到嘅殭屍)嘅登記一齊剷咗,令嗰隻殭屍
+脫離 reaper 監控(2026-08-30 Eric 覆查揪出嘅真 bug)。
 
 **兩條新紅線:**
 - **嚴禁用 until/sleep 輪詢等自己個 script**:長跑 script 用 Bash `run_in_background`,harness

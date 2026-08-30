@@ -152,7 +152,9 @@ for f in "$REGISTRY"/*.pid; do
     desc="線名=$line_name pid=$pid 登記epoch=$reg_epoch 存活=${hours}h(閾值3.5h) registry=$base"
     logln "pid=$pid ($line_name) 存活${hours}h > 3.5h閾值 → 觸發reap"
     kill_or_log "$pid" "$desc"
-    rm -f "$f"
+    # ⚠️ dry-run唔准刪entry:如果今晚dry-run期間有真殭屍形成,entry要留低
+    # 等聽日arm咗之後嗰個cycle先真殺真刪,唔係就永遠冇人再追呢隻殭屍。
+    (( armed == 1 )) && rm -f "$f"
   else
     young_hours=$(awk "BEGIN{printf \"%.2f\", $age/3600}")
     logln "pid=$pid ($line_name) 存活${young_hours}h,未過閾值,跳過"
