@@ -252,3 +252,88 @@ timing/行為結果反映緊實際會出街嗰份code嘅真實運作,唔係我�
   重做一次(方法已寫晒喺§3/§4)。
 - **未做**(§7紅線明文要求停低):app.json buildNumber bump、EAS build、
   eas submit——留俾Fable5判斷之後另行派工。
+
+---
+
+## §8 執行記錄(2026-08-30,規劃書§8 Addendum:Loading快路修復)
+
+### 改咗乜
+
+`frontend/hymn-app/App.js` 兩個位加咗規劃書§8寫死嘅condition(`sleepPollInterval()`,
+poll effect入面):
+
+1. ~1671-1673行(快路check,原本`Playing || Buffering`即刻1s瞓):加
+   `|| (NATIVE_WD_V2 && trackStateRef.current === TPState.Loading)`。
+2. ~1685-1689行(500ms分片瞓嗰個while loop嘅break check):同一個condition加多一次
+   ——規劃書§8明文提過「兩個位都要改,分片瞓嗰個while嘅break都要識醒」,已核對兩處
+   都改咗(唔係得一半)。
+3. 更新咗兩段註釋:
+   - O1-A註釋(~1656-1666行):加多幾句解釋點解Loading喺`NATIVE_WD_V2`下攞去1s
+     快路、build≤14/Android點解維持2.5s(§2「一次過出」紀律)。
+   - D3-2 counter註釋(~1769-1776行):加多一段講明「tick=1秒」呢個假設淨係喺
+     `NATIVE_WD_V2`先成立,舊build/Android嘅counter tick唔等於1秒係現狀非新bug。
+
+冇加任何新state/新counter/新gate常數——`NATIVE_WD_V2`沿用build 15嗰個已有gate,
+改動完全鎖死喺規劃書列明嘅兩個if condition + 兩段註釋。
+
+### 驗證方法
+
+冇模擬器attach權限(同§3同一個限制),用§8明文容許嘅「邏輯harness/單元式驗證」:
+寫咗`scratchpad/t7-harness.js`,用Node `vm`模組**直接由App.js live source用
+brace-counting抽出`sleepPollInterval()`嗰段原文**(唔係重打一份copy,避免test同
+真code drift),餵fake `trackStateRef`/`TPState`/`NATIVE_WD_V2`/`lastPollTargetMsRef`,
+用mocked `setTimeout`(唔真係等,即刻resolve但累計virtual ms)量每個state組合實際
+attribute幾多毫秒。另外用`@babel/core` + `babel-preset-expo`(project已有依賴,冇裝
+新嘢)對成個`App.js` `parseSync()`一次,確認改動冇整壞語法。
+
+跑法:`node scratchpad/t7-harness.js`(scratchpad路徑:
+`/private/tmp/claude-501/.../scratchpad/t7-harness.js`,harness本身唔入repo)。
+
+### 結果——30/30 PASS
+
+**T7(gate on,Loading→1s節奏)**:
+- Loading + `NATIVE_WD_V2=true`,連續10個tick(banner門檻)→ 累計1s×10=**10000ms**
+  (即banner喺~10秒觸發,`lastPollTargetMsRef`每次寫`1000`)。PASS。
+- Loading + `NATIVE_WD_V2=true`,連續15個tick(nudge門檻)→ 累計**15000ms**
+  (即nudge喺~15秒觸發,同規劃書§2「~15秒跳歌」嘅前置條件對齊)。PASS。
+
+**Gate off回歸(build≤14/Android行為零改變)**:
+- Loading + `NATIVE_WD_V2=false`,單次呼叫 → **2500ms**(舊idle節奏),
+  `lastPollTargetMsRef=2500`。PASS。
+- Loading + `NATIVE_WD_V2=false`,連續10個tick → 累計**25000ms**——啱啱好對應
+  規劃書§8背景描述「banner 10 tick=25s」嗰個修復前病徵數字,證明冇gate嗰邊
+  行為完全冇變(仍然係「壞」嗰個舊數,即係冇被呢次改動意外拉快)。PASS。
+
+**Idle states回歸(Paused/Stopped/None/Ready/Ended,gate on同off各試一次)**:
+10種組合(5個state × 2個gate值)全部維持**2500ms** + `lastPollTargetMsRef=2500`,
+即呢啲state完全唔受`NATIVE_WD_V2`影響,亦冇被Loading嘅新condition意外波及。
+PASS(10/10)。
+
+**Playing/Buffering唔受影響**:4種組合(2個state × 2個gate值)全部**1000ms**,
+同改動前行為一致。PASS(4/4)。
+
+**Drift探測寫啱目標值**:上面每個case都一併斷言咗`lastPollTargetMsRef.current`
+(快路寫`1000`、idle滿瞓寫`2500`),即`wallClockDrift`探測邏輯喺兩條路都用啱
+嘅baseline,唔會誤報drift。PASS。
+
+**額外自加場景(§8冇明文要求,但係§8改動嘅直接推論,順手驗埋)**——分片瞓
+中途轉Loading:狀態由`none`開始瞓緊2.5s idle節奏,喺第一個500ms slice之後
+先flip去`loading`,驗到while loop嘅break condition即刻生效,只瞓咗
+**500ms**就跳出(冇死等成2.5秒先醒)。PASS,證明§8提到「分片瞓嗰個while嘅
+break都要識醒」呢句要求確實做到,唔係得快路改咗、慢路漏咗。
+
+**現有T1-T6結論唔受影響**:呢次改動冇掂native watchdog(plugins/
+withSwiftAudioExStallWatchdog.js)、冇掂`errorSkipCountRef`/nudge/skip嘅
+tick門檻常數(`BUFFERING_STUCK_NUDGE_TICKS`/`BUFFERING_STUCK_SKIP_TICKS`
+本身數值冇改),淨係改「一個tick等唔等於1秒」,§3/§4已驗嘅native
+決定性harness(47/47)、gate off dormant等結論全部原封不動。
+
+### 待Fable5判嘅事項
+
+冇。§8規劃書寫得好明確(兩個condition位+兩段註釋+驗證要求全部逐條列晒),
+今次改動範圍冇撞到任何規劃書冇cover嘅決策點。
+
+### commit
+
+`git commit -- frontend/hymn-app/App.js NATIVE-STALL-FG-SPEEDUP-EXEC-20260829.md`
+(hash見下面Sonnet5回報)。冇夾帶其他session嘅檔。

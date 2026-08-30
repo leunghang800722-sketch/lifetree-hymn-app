@@ -1658,8 +1658,20 @@ function PlayerProvider({ children }) {
     // 每片起身check返trackStateRef,一轉活躍(撳咗play)即刻break返1s節奏,
     // 唔會撳完play要等成2-3秒先郁進度。Watchdog唔受影響——佢哋淨係喺
     // Playing/Buffering先計tick,嗰陣呢個函數本身都係行緊1s嗰條路。
+    // NATIVE-STALL-FG-SPEEDUP-PLAN-20260829.md §8 Addendum(Opus5驗收D-note1)——
+    // `Loading` 原本跌入呢度嘅2.5秒idle節奏,令1769行嗰個buffering/loading
+    // counter嘅「tick=1秒」假設喺Loading狀態失效(banner 10 tick會變25s、
+    // nudge 15 tick變37.5s、skip累計變112s)。前台+iOS build>=15
+    // (`NATIVE_WD_V2`)先至將 Loading 都攞去行1秒快路,同 Playing/Buffering睇齊;
+    // build≤14/Android唔滿足呢個gate,維持原本2.5秒idle節奏——呢個唔係漏,
+    // 係刻意gate住,避免OTA一推就令Android/舊build嘅JS ladder實際時序提前變
+    // (§2「一次過出」紀律)。
     async function sleepPollInterval() {
-      if (trackStateRef.current === TPState.Playing || trackStateRef.current === TPState.Buffering) {
+      if (
+        trackStateRef.current === TPState.Playing ||
+        trackStateRef.current === TPState.Buffering ||
+        (NATIVE_WD_V2 && trackStateRef.current === TPState.Loading)
+      ) {
         lastPollTargetMsRef.current = 1000;
         await new Promise(r => setTimeout(r, 1000));
         return;
@@ -1670,7 +1682,11 @@ function PlayerProvider({ children }) {
       while (slept < IDLE_TARGET_MS) {
         await new Promise(r => setTimeout(r, SLICE_MS));
         slept += SLICE_MS;
-        if (trackStateRef.current === TPState.Playing || trackStateRef.current === TPState.Buffering) break;
+        if (
+          trackStateRef.current === TPState.Playing ||
+          trackStateRef.current === TPState.Buffering ||
+          (NATIVE_WD_V2 && trackStateRef.current === TPState.Loading)
+        ) break;
       }
       lastPollTargetMsRef.current = slept;
     }
@@ -1766,6 +1782,11 @@ function PlayerProvider({ children }) {
             // state,而轉歌一定經 loading;之前淨係計 Buffering,「卡死喺 loading
             // 出唔到嚟」(例如 resolve 死鏈)就冇 watchdog 管。兩個 state 共用
             // 同一個 counter/門檻——nudge/skip 語義一樣。
+            // §8 Addendum —— 呢個「tick=1秒」嘅假設淨係喺 `NATIVE_WD_V2`
+            // (前台+iOS build>=15)先成立,因為`sleepPollInterval()`嗰邊已經
+            // 將 Loading 攞埋去1秒快路;build<=14/Android嘅 Loading 仍然行
+            // 2.5秒idle節奏,即係呢個counter嘅tick喺嗰啲環境唔等於1秒
+            // (banner/nudge/skip嘅實際秒數會被拉長,係現狀,唔係新引入嘅bug)。
             if (trackStateRef.current === TPState.Buffering || trackStateRef.current === TPState.Loading) {
               bufferingStuckTicksRef.current += 1;
               // NATIVE-STALL-FG-SPEEDUP-PLAN-20260829.md §4.1 —— 10 秒非阻斷提示,
