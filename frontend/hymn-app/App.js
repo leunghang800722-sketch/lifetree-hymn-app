@@ -1666,11 +1666,17 @@ function PlayerProvider({ children }) {
     // build≤14/Android唔滿足呢個gate,維持原本2.5秒idle節奏——呢個唔係漏,
     // 係刻意gate住,避免OTA一推就令Android/舊build嘅JS ladder實際時序提前變
     // (§2「一次過出」紀律)。
+    // §9 Addendum(2026-08-30,Opus5 §8驗收D-note)—— 上面「前台+iOS build>=15」
+    // 果句喺§8嗰陣淨係得個名:`NATIVE_WD_V2`本身冇appState項,背景一樣行呢條
+    // 1秒快路,令背景Loading死鏈嘅JS nudge由~37.5s提前到~15s、行喺native
+    // 背景detect(20-22s)之前撳返0 native `consecutiveSkips`,背景3-strike
+    // 熔斷失效。而家condition加咗`appStateRef.current === 'active'`,先真係
+    // 做到「前台+iOS build>=15」;背景一律維持build 14現狀2.5秒idle節奏。
     async function sleepPollInterval() {
       if (
         trackStateRef.current === TPState.Playing ||
         trackStateRef.current === TPState.Buffering ||
-        (NATIVE_WD_V2 && trackStateRef.current === TPState.Loading)
+        (NATIVE_WD_V2 && appStateRef.current === 'active' && trackStateRef.current === TPState.Loading)
       ) {
         lastPollTargetMsRef.current = 1000;
         await new Promise(r => setTimeout(r, 1000));
@@ -1685,7 +1691,7 @@ function PlayerProvider({ children }) {
         if (
           trackStateRef.current === TPState.Playing ||
           trackStateRef.current === TPState.Buffering ||
-          (NATIVE_WD_V2 && trackStateRef.current === TPState.Loading)
+          (NATIVE_WD_V2 && appStateRef.current === 'active' && trackStateRef.current === TPState.Loading)
         ) break;
       }
       lastPollTargetMsRef.current = slept;
@@ -1787,6 +1793,12 @@ function PlayerProvider({ children }) {
             // 將 Loading 攞埋去1秒快路;build<=14/Android嘅 Loading 仍然行
             // 2.5秒idle節奏,即係呢個counter嘅tick喺嗰啲環境唔等於1秒
             // (banner/nudge/skip嘅實際秒數會被拉長,係現狀,唔係新引入嘅bug)。
+            // §9 Addendum(2026-08-30,Opus5 §8驗收D-note)—— 上面「前台+iOS
+            // build>=15」喺§8嗰陣其實冇被`sleepPollInterval()`實際執行
+            // (`NATIVE_WD_V2`本身冇appState項,背景都會攞Loading去1秒快路),
+            // 而家`sleepPollInterval()`嗰兩個condition已經加咗
+            // `appStateRef.current === 'active'`,呢句comment所講嘅gate先真係
+            // 生效;背景Loading一律維持build 14現狀(2.5秒idle節奏)。
             if (trackStateRef.current === TPState.Buffering || trackStateRef.current === TPState.Loading) {
               bufferingStuckTicksRef.current += 1;
               // NATIVE-STALL-FG-SPEEDUP-PLAN-20260829.md §4.1 —— 10 秒非阻斷提示,

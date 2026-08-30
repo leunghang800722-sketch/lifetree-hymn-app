@@ -289,7 +289,7 @@ attribute幾多毫秒。另外用`@babel/core` + `babel-preset-expo`(project已�
 跑法:`node scratchpad/t7-harness.js`(scratchpad路徑:
 `/private/tmp/claude-501/.../scratchpad/t7-harness.js`,harness本身唔入repo)。
 
-### 結果——30/30 PASS
+### 結果——31/31 PASS(§9修正:原文寫30/30數錯咗,Opus5數過實際係31條check)
 
 **T7(gate on,Loading→1s節奏)**:
 - Loading + `NATIVE_WD_V2=true`,連續10個tick(banner門檻)→ 累計1s×10=**10000ms**
@@ -332,6 +332,103 @@ tick門檻常數(`BUFFERING_STUCK_NUDGE_TICKS`/`BUFFERING_STUCK_SKIP_TICKS`
 
 冇。§8規劃書寫得好明確(兩個condition位+兩段註釋+驗證要求全部逐條列晒),
 今次改動範圍冇撞到任何規劃書冇cover嘅決策點。
+
+### commit
+
+`git commit -- frontend/hymn-app/App.js NATIVE-STALL-FG-SPEEDUP-EXEC-20260829.md`
+(hash見下面Sonnet5回報)。冇夾帶其他session嘅檔。
+
+## §9 執行記錄(2026-08-30,規劃書§9 Addendum:Loading快路收窄返前台限定)
+
+### 背景
+
+Opus5 §8驗收發現spec錯述(Fable5責任):§8規劃書同comment都寫「前台+iOS
+build>=15」,但`NATIVE_WD_V2`本身冇appState項,所以§8實際落地嘅condition
+喺背景一樣生效。離散事件模擬證實後果:背景Loading死鏈嘅JS nudge由~37.5s
+提前到~15s,行喺native背景detect(20-22s)之前,每個cycle經`onUserPlay`撳返0
+native `consecutiveSkips`,令背景3-strike熔斷失效(build 14燒2首84s停;唔修
+會一直燒落去)。
+
+### 改咗乜
+
+`frontend/hymn-app/App.js`,`sleepPollInterval()`(poll effect入面)兩個
+condition位——快路check(原~1671-1674,家陣1677-1680)同500ms分片瞓嗰個while
+嘅break check(原~1685-1689,家陣1692-1695)——Loading項各加咗
+`appStateRef.current === 'active' &&`,即:
+
+```
+(NATIVE_WD_V2 && appStateRef.current === 'active' && trackStateRef.current === TPState.Loading)
+```
+
+兩個位逐字一致(harness有斷言呢一點,見下面)。`appStateRef`喺呢個poll effect
+本身已經有(`wallClockDrift`探測嗰段一路都讀緊`appStateRef.current`),唔使新增
+ref或者新增AppState listener。
+
+同步修正咗兩段comment:
+1. O1-A/§8 comment(~1661-1668行)——加多一段§9 Addendum註釋,講明§8嗰陣
+   「前台+iOS build>=15」淨係得個名(`NATIVE_WD_V2`冇appState項),而家加咗
+   `appStateRef.current === 'active'`先真係做到。
+2. D3-2/§8 counter comment(~1785-1789行附近)——同樣加多一段,講明
+   `sleepPollInterval()`而家先真係執行到「前台+iOS build>=15」呢個gate。
+
+冇加任何新state/新counter/新gate常數,冇掂native(plugins/)、backend/、
+app.json、eas——改動鎖死喺規劃書§9列明嘅兩個condition位+兩段comment。
+
+### 驗證方法
+
+延續§8嗰個`scratchpad/t7-harness.js`(唔入repo),加咗`appStateRef`落sandbox
+(`makeSandbox({ NATIVE_WD_V2, appState })`),原有嘅gate on/off、idle五態、
+Playing/Buffering、mid-slice break case全部加多一個`appState`維度重跑,另外
+針對§9驗證要求(a)-(e)逐條加專門check:
+
+- **(a)** gate on + `appState=active` + Loading → 單tick斷言1000ms
+  (`§9(a) gate-on+active+Loading: single tick = 1000ms`)。
+- **(b)** gate on + `appState=background` + Loading → 單tick斷言2500ms、
+  連續10 tick斷言25000ms(還原build 14嘅背景3-strike視窗)
+  (`§9(b) gate-on+background+Loading: ...`)。
+- **(c)** gate on + `appState=active` + Loading行緊1s快路,中途
+  `appStateRef.current`轉`'background'`(模擬真實poll loop入面呢個ref由獨立
+  嘅AppState listener寫、`sleepPollInterval()`每次call先讀一次呢個實際結構),
+  斷言下一個tick跌返2500ms
+  (`§9(c) step1/step2 ...`)。
+- **(d)** gate off:Loading喺`appState=active`同`appState=background`兩個值
+  下都斷言2500ms/25000ms唔變,證明呢個修法冇喺gate off路徑引入任何新分支。
+- **(e)** idle五態(paused/stopped/none/ready/ended)×gate(true/false)×
+  appState(active/background)=20組全部斷言2500ms;Playing/Buffering×gate×
+  appState=8組全部斷言1000ms;另外顯式重申兩個`lastPollTargetMsRef`
+  headline值(1000/2500)畀`wallClockDrift`探測用嘅baseline做記錄。
+
+另外新加兩個mid-slice case(唔喺§9(a)-(e)明文之內,但係§9修法嘅直接推論,
+順手驗埋):分片瞓中途轉Loading,`appState=active`會即刻break(500ms,同§8
+時代行為一致);`appState=background`就唔會break,照瞓晒2500ms——證明
+「Loading快路淨係前台先生效」呢件事同時喺快路check**同**分片break check
+兩個位都真係做到,唔係得一半。
+
+harness仲加咗一條逐字斷言:由App.js抽出嚟嘅`sleepPollInterval()`源碼入面,
+`(NATIVE_WD_V2 && appStateRef.current === 'active' && trackStateRef.current === TPState.Loading)`
+呢串字要啱啱好出現兩次(快路+分片break),防止兩個位改到唔一致而漏檢。
+
+跑法不變:`node scratchpad/t7-harness.js`(scratchpad路徑同§8,harness本身
+唔入repo)。另外`node --check frontend/hymn-app/App.js`確認改動冇整壞語法。
+
+### 結果——70/70 PASS(包含1條逐字一致性check + 69條data check)
+
+全部PASS,冇FAIL。§9(a)-(e)五條驗證要求逐條有對應check且全過;§8舊有嘅
+T7/gate-off/idle/Playing-Buffering/mid-slice結論喺加咗appState維度之後
+全部維持唔變(即appState唔會意外波及Playing/Buffering或者gate off路徑)。
+
+### 現有結論唔受影響
+
+呢次改動冇掂native watchdog(`plugins/withSwiftAudioExStallWatchdog.js`)、
+`errorSkipCountRef`/nudge/skip嘅tick門檻常數數值、backend/、app.json、eas
+config——§3/§4已驗嘅native決定性harness(47/47)、§8嘅T7/gate off/idle/
+Playing-Buffering結論全部原封不動,淨係將Loading快路嘅生效範圍由「build>=15」
+收窄返「前台+build>=15」。
+
+### 待Fable5/Opus5判嘅事項
+
+冇。§9規劃書寫得好明確(兩個condition位逐字寫死+兩段comment位置+五條驗證
+要求全部列晒),今次改動範圍冇撞到任何規劃書冇cover嘅決策點。
 
 ### commit
 
