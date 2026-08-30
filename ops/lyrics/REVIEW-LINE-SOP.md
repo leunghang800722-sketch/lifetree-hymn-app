@@ -99,6 +99,8 @@ node ops/lyrics/queuecheck.mjs <線名>
 ```
 exit 1(<10)→ ledger 記低「冇貨做,跳過」→ 即刻做底下嘅「自我了斷」。
 exit 0(≥10)→ 照 §3 正常流程做落去。
+exit 2(queuecheck 本身壞咗)→ **唔准當冇貨**,人手照 §3 步驟2 自己行 export→bi-freeze→filter
+判斷隊列,並喺 ledger 記低「queuecheck 壞咗(⛔行)」。
 
 **收工最後一步(寫完 ledger/memory 之後,逐字用,`<線名>` 換返自己):**
 ```bash

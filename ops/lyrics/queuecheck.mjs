@@ -11,7 +11,9 @@
 // 輸出:
 //   R1: count=N
 //   ids=1,3,5,...
-// exit 0 = count>=10(有貨做);exit 1 = count<10(冇貨,即刻收工)。
+// exit 0 = count>=10(有貨做);exit 1 = count<10(冇貨,即刻收工);
+// exit 2 = queuecheck本身壞咗(export/bi-freeze行失敗、揀錯線名等)——**唔准當冇貨**,
+// 人手照SOP §3步驟2自己行export→bi-freeze→filter判斷隊列。
 //
 // ⚠️ export temp檔一律用 os.tmpdir(),唔准寫落 backend/(deploy gate 紅線)。
 
@@ -42,6 +44,10 @@ const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'hymn-queuecheck-'));
 const exportFile = path.join(tmpDir, 'export.json');
 const splitDir = path.join(tmpDir, 'split');
 
+// ⚠️ N1(Opus5驗收揪出):`process.exit()` 直接終結process,唔會等JS引擎行埋
+// 呢輪嘅 `finally` —— 之前喺 try 入面直接 exit,每次call都漏低823K temp dir。
+// 而家改做:exitCode存變量,try/catch/finally入面唔准exit,清完temp先真exit。
+let exitCode = 2;
 try {
   // SOP §3 步驟2:export draft → bi-freeze 過濾中英錯配凍結池
   execFileSync('node', ['scripts/reviewLyrics.js', '--export', '--out', exportFile], {
@@ -65,10 +71,16 @@ try {
   console.log(`${line}: count=${ids.length}`);
   console.log(`ids=${ids.join(',')}`);
 
-  process.exit(ids.length >= 10 ? 0 : 1);
+  exitCode = ids.length >= 10 ? 0 : 1;
 } catch (err) {
   console.error(`[queuecheck] 出錯:${err.message}`);
-  process.exit(2);
+  // execFileSync嘅stdio係pipe,錯誤原因會匿咗喺err.stderr,之前冇印出嚟好難查。
+  if (err.stderr) {
+    const stderrText = Buffer.isBuffer(err.stderr) ? err.stderr.toString('utf8') : String(err.stderr);
+    if (stderrText.trim()) console.error(`[queuecheck] stderr:\n${stderrText}`);
+  }
+  exitCode = 2;
 } finally {
   fs.rmSync(tmpDir, { recursive: true, force: true });
 }
+process.exit(exitCode);
