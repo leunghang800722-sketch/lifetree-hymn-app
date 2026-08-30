@@ -47,18 +47,31 @@ function extractItagClen(u) {
 }
 
 // NATIVE-STALL-ROOTFIX-PLAN-20260830 §6 Phase A:「呢條 request 真係寫咗幾多
-// body bytes 俾 client」用 res.socket.bytesWritten 喺 request 開始/結束嗰陣
-// 嘅差值嚟估。語義聲明:呢個數包埋 HTTP header bytes(唔淨係 body)——單一
+// body bytes 俾 client」用 socket.bytesWritten 喺 request 開始/結束嗰陣嘅
+// 差值嚟估。語義聲明:呢個數包埋 HTTP header bytes(唔淨係 body)——單一
 // request 嘅 header 通常得幾百 bytes,對分辨「load storm 入面條片攞幾多
 // KB 就俾 client abort」呢個問題嚟講唔傷大雅;keep-alive 令同一條 socket
 // 服務多個 request 時,呢個差值淨係計返「呢個 request 生命週期入面」嘅嗰
 // 段(即係 request 開始嗰刻嘅 bytesWritten 做 baseline,喺 finishLog 嗰刻
 // 再讀一次計差),唔會同同一 socket 上其他 request 嘅 bytes 混埋。
-// res.socket 喺 close 之後可能已經俾 GC/detach 做 null,要防禦性讀。
-function computeSentBytes(res, bytesWrittenStart) {
+//
+// 2026-08-30 Fable5 真機驗收揪出嘅 bug 修正:原本呢度傳緊 `res` 入嚟、喺
+// call 嗰刻先讀 `res.socket`——但 response 完成/close 之後 Node 會將
+// `res.socket` detach 做 null(呢個係新版 Node 嘅正常行為,唔係邊度整
+// 錯),即係「正路」(送完/送咗一截先俾 client abort)嘅 request 反而
+// 100% 量唔到,得返 `-`,同呢個 field 存在嘅目的(答§5 H3「storm 請求送
+// 咗幾多 bytes 先俾 abort」)完全相反。修法:call site 喺 request 一開始
+// (baseline 嗰刻,`res.socket` 實在生)就將 socket **object reference**
+// 揸實(唔淨係讀個數),之後成程都用返呢個揸實嘅 reference 讀
+// `.bytesWritten`——socket object 就算之後俾 res detach(`res.socket`
+// 變 null),呢個 reference 本身仲喺度、`.bytesWritten` 依然讀得到(佢淨
+// 係一個計數器 property,唔會因為 detach 而清零/消失)。防禦性 null check
+// 保留:sock 本身喺極端情況(例如 request 開始嗰刻已經冇 socket)都可能
+// 係 null。
+function computeSentBytes(sock, bytesWrittenStart) {
   try {
-    if (!res.socket) return '-';
-    return Math.max(0, res.socket.bytesWritten - bytesWrittenStart);
+    if (!sock) return '-';
+    return Math.max(0, sock.bytesWritten - bytesWrittenStart);
   } catch (_) {
     return '-';
   }
@@ -169,8 +182,17 @@ export default function streamRoutes(getDb) {
     // NATIVE-STALL-ROOTFIX-PLAN-20260830 §6 Phase A:baseline 要喺呢個
     // request 一開始就攞(喺任何 write 之前),先可以喺 finishLog 嗰刻計到
     // 「呢個 request 自己」寫咗幾多 bytes。純讀,零行為改動。
+    //
+    // 2026-08-30 Fable5 真機驗收 bug fix:呢度一定要揸實 `res.socket`
+    // 個 **object reference**(`sock`),唔可以淨係讀個 bytesWritten 數字
+    // 就算數——response 完成/close 之後 Node 會將 `res.socket` 本身
+    // detach 做 null,如果 finishLog 嗰刻先再問 `res.socket`,好多時已經
+    // 攞唔返個 socket、成個 sent 就報 `-`(呢個 request 生命週期入面
+    // `res.socket` 一定生,喺呢度攞落嚟嘅 reference 之後點都仲讀到
+    // `.bytesWritten`)。
+    const sock = res.socket;
     const bytesWrittenStart = (() => {
-      try { return res.socket ? res.socket.bytesWritten : 0; } catch (_) { return 0; }
+      try { return sock ? sock.bytesWritten : 0; } catch (_) { return 0; }
     })();
     // NATIVE-STALL-ROOTFIX-PLAN-20260830 §6 Phase A:呢個 field 全程用嚟答
     // 「呢條係咪 Phase B native rescue(`?swr=`)打嚟嘅請求」,喺 server side
@@ -179,7 +201,7 @@ export default function streamRoutes(getDb) {
     const uaShort = sanitizeLogToken(req.headers['user-agent'], 20);
     const id = Number(req.params.hymnId);
     if (!Number.isInteger(id) || id <= 0) {
-      logLine({ id: req.params.hymnId, yt: '-', mode: '-', resolve_ms: 0, ttfb_ms: Date.now() - reqStart, total_ms: Date.now() - reqStart, status: 400, aborted: false, retried: false, range: sanitizeLogToken(req.headers.range), sent: computeSentBytes(res, bytesWrittenStart), itag: '-', clen: '-', wd, ua: uaShort });
+      logLine({ id: req.params.hymnId, yt: '-', mode: '-', resolve_ms: 0, ttfb_ms: Date.now() - reqStart, total_ms: Date.now() - reqStart, status: 400, aborted: false, retried: false, range: sanitizeLogToken(req.headers.range), sent: computeSentBytes(sock, bytesWrittenStart), itag: '-', clen: '-', wd, ua: uaShort });
       return res.status(400).json({ error: 'bad id' });
     }
 
@@ -191,7 +213,7 @@ export default function streamRoutes(getDb) {
     stmt.free();
 
     if (!hymn?.youtube_id) {
-      logLine({ id, yt: '-', mode: '-', resolve_ms: 0, ttfb_ms: Date.now() - reqStart, total_ms: Date.now() - reqStart, status: 404, aborted: false, retried: false, range: sanitizeLogToken(req.headers.range), sent: computeSentBytes(res, bytesWrittenStart), itag: '-', clen: '-', wd, ua: uaShort });
+      logLine({ id, yt: '-', mode: '-', resolve_ms: 0, ttfb_ms: Date.now() - reqStart, total_ms: Date.now() - reqStart, status: 404, aborted: false, retried: false, range: sanitizeLogToken(req.headers.range), sent: computeSentBytes(sock, bytesWrittenStart), itag: '-', clen: '-', wd, ua: uaShort });
       return res.status(404).json({ error: 'not found' });
     }
 
@@ -236,7 +258,7 @@ export default function streamRoutes(getDb) {
         aborted: extra.aborted ?? false,
         retried,
         range: sanitizeLogToken(req.headers.range),
-        sent: computeSentBytes(res, bytesWrittenStart),
+        sent: computeSentBytes(sock, bytesWrittenStart),
         itag,
         clen,
         wd,
