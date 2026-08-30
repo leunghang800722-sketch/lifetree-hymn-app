@@ -14,7 +14,7 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.hymnapp.praise",
-      "buildNumber": "15",
+      "buildNumber": "16",
       "runtimeVersion": "5",
       "associatedDomains": [
         "applinks:api.god-music.com",
