@@ -401,6 +401,7 @@ export function parseDurationSec(text) {
 // ——warm() 喺 App.js 一開波/換歌就即刻叫,但用戶真正撳到「下一首」可能係幾
 // 分鐘之後(聽緊成首歌先轉),舊 TTL 好多時等唔切就過期,變返冷路徑。加長到
 // 25 分鐘,俾夠晒 lead time,對記憶體嘅代價由下面嘅 LRU 上限頂住。
+const BUFFER_TTL_MS = 25 * 60 * 1000; // ⚠️ 紅線:呢個數 W1 唔准郁(見 §1.3)
 // STARTUP-ROOTFIX-EXEC-BC-20260831 §1 W1:8 格對 6,400 首庫嚟講細得誇張(App
 // 自己個預載器一開機就抽 5 首、加 skip cascade,一輪就洗清)。實測證實嘅平
 // 槓桿:唯一一次串流成功嘅 attempt 亦係唯一一次 backend 由記憶體派貨(§0)。
