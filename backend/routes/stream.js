@@ -125,6 +125,13 @@ function backoffMsFor(youtubeId) {
 // 連 moov probe 都唔夠幫,唔值得叫多一次 adoptStreamedHead。
 const MIN_TEE_BYTES = 256 * 1024;
 
+// W4(BACKEND-CACHE-FIX-EXEC-20260831 §2.2 Design B)dedup 守衛——見下面
+// `!startsAtZero` 分支嘅完整解釋。呢個 Set 只有兩條 mutation 路:排隊前
+// `.add()`,`warmBuffer()` 個 promise 落地(唔理成定敗)喺 `.finally()` 度
+// `.delete()`。兩條路都喺同一個函數入面,冇第三條分支可以漏——2026-08-31
+// 覆查過(對應紅線 §4-7 逐條 mutation 路徑要求)。
+const w4RescueInFlight = new Set(); // youtubeId 現正排緊/跑緊背景 rescue warm
+
 export default function streamRoutes(getDb) {
   const router = Router();
 
@@ -206,7 +213,11 @@ export default function streamRoutes(getDb) {
     }
 
     const db = await getDb();
-    const stmt = db.prepare('SELECT youtube_id FROM hymns WHERE id = ?');
+    // W4(BACKEND-CACHE-FIX-EXEC-20260831 §2.2 Design B):加返 `duration` 呢一
+    // 欄——下面嘅背景 rescue warm 要用嚟揀 warmBuffer() 嘅 capBytes(長檔 4MB
+    // vs 普通 12MB,同 /warm 路由 §520 個判斷一致),同一條 query 順手攞埋,
+    // 唔使加多一次 DB round-trip。
+    const stmt = db.prepare('SELECT youtube_id, duration FROM hymns WHERE id = ?');
     stmt.bind([id]);
     const found = stmt.step();
     const hymn = found ? stmt.getAsObject() : null;
@@ -216,6 +227,8 @@ export default function streamRoutes(getDb) {
       logLine({ id, yt: '-', mode: '-', resolve_ms: 0, ttfb_ms: Date.now() - reqStart, total_ms: Date.now() - reqStart, status: 404, aborted: false, retried: false, range: sanitizeLogToken(req.headers.range), sent: computeSentBytes(sock, bytesWrittenStart), itag: '-', clen: '-', wd, ua: uaShort });
       return res.status(404).json({ error: 'not found' });
     }
+    // W4:同 /warm 路由(§162 一帶)一樣嘅 parse,俾下面背景 rescue warm 用。
+    const durationSec = parseDurationSec(hymn.duration);
 
     // warm|cold 係「行呢個 request 之前」個 cache 狀態(唔改 resolveAudio.js
     // 任何行為,只係讀返佢已經 export 咗嘅 cache Map)。
@@ -652,6 +665,42 @@ export default function streamRoutes(getDb) {
       body.on('end', finishTee);
       body.on('error', finishTee);   // abort 前收埋幾 MB 一樣有用——下條 probe 就係要呢啲
       res.on('close', finishTee);
+    } else if (!buffered) {
+      // W4(BACKEND-CACHE-FIX-EXEC-20260831 §2.2)——`startsAtZero` 呢個閘令
+      // 中段 range(clientRange 唔係由 byte 0 開始)完全冇 tee:實測 id=795
+      // 一條 `bytes=131072-10542852` 送咗 7.68MB,一個 byte 都冇入過
+      // bufferCache(見上面派工單原文)。呢種情況會出現通常係因為之前一條
+      // byte-0 probe 收得太少(細過 MIN_TEE_BYTES 就直接棄),之後嚟緊嗰條
+      // 續播 range 就注定行冷路徑,永遠冚唔到。
+      //
+      // 揀 Design B(平行開一條 byte-0 warm),棄 Design A(cache entry 加
+      // `bufOffset`)嘅原因:Design A 要幫 `getBufferedChunk`/`buf`/`tailBuf`
+      // 呢套已經驗過嘅語義加多一種 offset 算術,一錯就可能撞到紅線
+      // 「zeroFragmentedMp4Durations() 只准對 offset-0 buffer 用」(檔中間
+      // 冇 moov,盲改會爛 bytes)。Design B 完全重用 warmBuffer() 呢條已經
+      // 驗過嘅 byte-0 head fetch,零 offset 算術、零 zeroFix 風險。
+      //
+      // 冇跟派工單字面「即刻平行開」:呢一刻 `anyStreaming()` 一定係 true
+      // (呢個 handler 頭先自己 markStreaming() 咗呢首歌),字面「即刻」= 呢
+      // 條 path 會撞正自己個「有人聽緊就讓路」guard,永遠 fire 唔到,變咗
+      // dead code(違反 §4-8 紅線)。改成:等呢個 response 完(`res` 'close',
+      // 呢一刻上面嘅 `doUnmark()` 應該已經行咗,呢個 request 自己嘅
+      // streaming 登記已經甩咗),先照 adoptStreamedHead 個 `!anyStreaming()`
+      // 讓路慣例再 check 一次——先真正拉 warm:唔會同呢條自己嘅 live pipe
+      // 爭緊嘅頻寬打交(唔係「即刻平行」,而係「呢炮播完先追」),亦唔會同
+      // 其他 track 嘅串流爭。`w4RescueInFlight` dedup:AVFoundation 冷播一
+      // 首歌成日會開多過一條非零 offset range 連線,每條都會行到呢個分支,
+      // 唔應該逐條都各自排一次 warmBuffer。
+      const rescueYt = hymn.youtube_id;
+      const rescueUrl = url;
+      const rescueDurationSec = durationSec;
+      res.on('close', () => {
+        if (w4RescueInFlight.has(rescueYt)) return; // 另一條 range 請求已經排緊
+        if (anyStreaming()) return; // 呢一刻仲有嘢播緊(自己另一條連線,或者第二首)——讓路
+        if (getBufferedChunk(rescueYt, rescueUrl)) return; // 已經有人 warm 咗(順帶 touch TTL,唔緊要)
+        w4RescueInFlight.add(rescueYt);
+        warmBuffer(rescueYt, rescueUrl, rescueDurationSec).finally(() => { w4RescueInFlight.delete(rescueYt); });
+      });
     }
 
     if (startsAtZero) {

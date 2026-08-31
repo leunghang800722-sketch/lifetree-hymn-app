@@ -414,7 +414,14 @@ const MAX_BUFFER_ENTRIES = 40;
 // 短講/短歌埋單都可能細過 1MB,40 格喺最壞情況(全部撞 12MB WARM_CAP_BYTES
 // 上限)先至等於 480MB,但實測絕大部份詩歌 3-8MB,真實尖峰遠低於呢個數。
 // 呢個閘保證即使 40 格全部係大檔,都唔會無底洞噉食記憶體。
-const MAX_BUFFER_TOTAL_BYTES = 256 * 1024 * 1024; // 256MB
+// BACKEND-CACHE-FIX-EXEC-20260831 §1:256MB → 128MB。實測 `/api/audio/cache/
+// warm-stats` 穩態 13 格/59MB/RSS ~151MB(2026-08-31 量,同 STARTUP-ROOTFIX-
+// EXEC-BC 交付報告嘅 13格/59MB/RSS141MB 基本吻合,呢部 Mac 一直都有呢個穩態
+// 特徵),而 `vm.swapusage` 同一刻仲用緊 3.74GB/5GB——記憶體壓力持續存在。
+// 128MB 對住 59MB 實測穩態仍然有 ~2.2× headroom,W4 加嘅背景 rescue warm
+// (見 routes/stream.js)最多都係再加返 40 格入面嘅幾格,唔會單憑呢個改動就
+// 撞到呢條新上限。
+const MAX_BUFFER_TOTAL_BYTES = 128 * 1024 * 1024; // 128MB
 const bufferCache = new Map(); // youtubeId -> { url, buf, tailBuf, tailOffset, totalLength, contentType, expiresAt }
 let bufferCacheTotalBytes = 0; // touchBufferEntry/evictBufferCacheOverflow 維護,唔喺其他地方直接改
 
@@ -567,7 +574,15 @@ export async function warmBuffer(youtubeId, url, durationSec = null) {
 export function getBufferedChunk(youtubeId, url) {
   const c = bufferCache.get(youtubeId);
   if (!c) return null;
-  if (c.expiresAt <= Date.now() || c.url !== url) { bufferCache.delete(youtubeId); return null; }
+  // BACKEND-CACHE-FIX-EXEC-20260831 §1 W3:呢度以前直接 `bufferCache.delete()`,
+  // 冇扣返 `bufferCacheTotalBytes`(:419 註釋自己都寫住總字節數唔准喺呢度以外
+  // 直接改)。expiresAt 過期/url 唔match 呢兩條路每次 getBufferedChunk() miss
+  // 都會行到,長期運作落嚟 phantom bytes 只會加唔會減,總字節數最終會遠超實際
+  // Map 入面嘅內容,令 evictBufferCacheOverflow() 嘅字節閘形同虛設(格數閘
+  // 仲頂住,但字節預算個保證失效)。改用 evictBufferedChunk() ——佢本身已經
+  // 有齊「扣字節 + delete」兩步,同 evictBufferCacheOverflow()/touchBufferEntry
+  // 用緊嘅同一套記帳邏輯,唔會再有第二份重複代碼分岔。
+  if (c.expiresAt <= Date.now() || c.url !== url) { evictBufferedChunk(youtubeId); return null; }
   // INSTRUMENTAL-CATEGORY-PLAN §6 P1(Eric 2026-08-23 拍板 Q3①):BUFFER_TTL_MS
   // = 25 分鐘 < 長檔嘅播放長度(#739 = 57:58)—— 播到中段佢個 entry 已經自己
   // 過期,之後連頭截都命中唔到。命中就刷新 TTL(touch-on-hit):有人真係用緊
