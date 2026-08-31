@@ -50,6 +50,14 @@ function blankBucket() {
       req: 0, warm: 0, cold: 0,               // 逐個 HTTP request(含每條 range)
       startReq: 0, startWarm: 0, startCold: 0, // 逐次「開一首歌」——睇呢個
     },
+    // STARTUP-ROOTFIX-EXEC-BC-20260831 §1.2.4:上面 stream.warm/cold 數嘅係
+    // 「URL resolve cache」(resolveAudio.js 個 `cache` Map,答「使唔使重新
+    // yt-dlp resolve」)。W1 擴大嘅係另一層 —— 記憶體 `bufferCache`(答「呢個
+    // range 攞唔攞到即刻由記憶體吐,唔使開新 googlevideo 連線」),兩層命中
+    // 完全獨立(URL 冷都可以 buffer 熱、反之亦然)。逐個 range request 數
+    // (rangeStart != null 先算一次「有做過查詢」),量返擴大 40 格/256MB
+    // 之後真係有冇提升命中。
+    bufferCache: { req: 0, hit: 0, entries: null, totalBytes: null, rssKb: null },
     keepWarm: { tick: 0, ceiling: 0, dailyCap: 0, streaming: 0, offHours: 0, warmed: 0, failed: 0 },
     resolve: {
       total: 0, ok: 0, fail: 0, rescued: 0,
@@ -154,6 +162,20 @@ export function recordStreamRequest(youtubeId, warm) {
   } catch (_) { /* 觀測代碼永遠唔可以拖冧播放路徑 */ }
 }
 
+// ── W1(STARTUP-ROOTFIX-EXEC-BC-20260831 §1.2.4):bufferCache(記憶體暖
+// buffer)命中率 —— 同上面 stream.warm/cold(URL resolve cache)係獨立一層。
+// 淨係喺 stream.js 真係做咗一次 getBufferedChunk() 查詢(rangeStart != null)
+// 先叫,hit = 呢個 range 真係由記憶體吐到(bufSource 非 null)。
+export function recordBufferCacheHit(hit) {
+  try {
+    for (const b of buckets()) {
+      b.bufferCache.req++;
+      if (hit) b.bufferCache.hit++;
+    }
+    scheduleFlush();
+  } catch (_) {}
+}
+
 // ── D-2:keep-warm 追落後 timer 每個 tick 嘅結局 ──────────────────
 // reason ∈ ceiling | dailyCap | streaming | offHours | warmed | failed
 export function recordKeepWarmTick(reason) {
@@ -208,6 +230,7 @@ export function getOpsMetrics() {
     trackStartWarmRatePct: rate(b.stream.startWarm, b.stream.startReq),
     resolveRescuedRatePct: rate(b.resolve.rescued, b.resolve.ok),
     resolveOkAvgMs: b.resolve.ok > 0 ? Math.round(b.resolve.okMsSum / b.resolve.ok) : null,
+    bufferCacheHitRatePct: rate(b.bufferCache.hit, b.bufferCache.req), // W1
   });
   out.derived = derive(state.total);
   out.derivedHourly = Object.fromEntries(
@@ -269,6 +292,17 @@ export function enablePersistence(opts = {}) {
             b.cacheSize.last = s.cacheSize;
             if (b.cacheSize.min == null || s.cacheSize < b.cacheSize.min) b.cacheSize.min = s.cacheSize;
             if (b.cacheSize.max == null || s.cacheSize > b.cacheSize.max) b.cacheSize.max = s.cacheSize;
+          }
+        }
+        // W1:bufferCache 實際格數/字節數 + process RSS——純 gauge(呢刻嘅
+        // snapshot),唔係逐個 request 計嘅計數器,所以直接覆寫 last,唔 sum。
+        if (s.bufferCacheStats || typeof s.rssKb === 'number') {
+          for (const b of buckets()) {
+            if (s.bufferCacheStats) {
+              b.bufferCache.entries = s.bufferCacheStats.entries;
+              b.bufferCache.totalBytes = s.bufferCacheStats.totalBytes;
+            }
+            if (typeof s.rssKb === 'number') b.bufferCache.rssKb = s.rssKb;
           }
         }
       }

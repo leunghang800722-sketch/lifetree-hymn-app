@@ -401,23 +401,43 @@ export function parseDurationSec(text) {
 // ——warm() 喺 App.js 一開波/換歌就即刻叫,但用戶真正撳到「下一首」可能係幾
 // 分鐘之後(聽緊成首歌先轉),舊 TTL 好多時等唔切就過期,變返冷路徑。加長到
 // 25 分鐘,俾夠晒 lead time,對記憶體嘅代價由下面嘅 LRU 上限頂住。
-const BUFFER_TTL_MS = 25 * 60 * 1000;
-// bufferCache 冇上限會愈食愈多記憶體(封頂 12MB × 冇限首數)。加返 LRU:
-// 上限 8 首(約 8×12MB=96MB 頂闩,絕大部份歌實際細過 cap 所以遠低於呢個數),
-// Map 保留插入順序嘅特性攞嚟做 LRU——攞中(getBufferedChunk)/寫入(warmBuffer)
-// 都會 delete 完再 set,將個 entry 搬去「最新」尾,行到上限就踢最舊(頭)嗰個。
-const MAX_BUFFER_ENTRIES = 8;
+// STARTUP-ROOTFIX-EXEC-BC-20260831 §1 W1:8 格對 6,400 首庫嚟講細得誇張(App
+// 自己個預載器一開機就抽 5 首、加 skip cascade,一輪就洗清)。實測證實嘅平
+// 槓桿:唯一一次串流成功嘅 attempt 亦係唯一一次 backend 由記憶體派貨(§0)。
+// 由 8 → 40 格,並且加返總字節閘(見下面 MAX_BUFFER_TOTAL_BYTES)—— 純數格
+// 冇預算(8 格可以係 8×3MB 都可以係 8×12MB,差 4 倍),雙閘先真係鎖得住尖峰
+// 記憶體。40/256MB 呢兩個數已經用真實 backend 度過 RSS(落 patch 前後 + 塞滿
+// buffer 之後),量出嚟嘅結果同覆核紀律見 STARTUP-ROOTFIX-EXEC-BC 交付報告。
+const MAX_BUFFER_ENTRIES = 40;
+// 雙閘嘅第二條:總字節數上限。單靠格數冇預算——短歌 3MB、長檔 head 4MB、
+// 短講/短歌埋單都可能細過 1MB,40 格喺最壞情況(全部撞 12MB WARM_CAP_BYTES
+// 上限)先至等於 480MB,但實測絕大部份詩歌 3-8MB,真實尖峰遠低於呢個數。
+// 呢個閘保證即使 40 格全部係大檔,都唔會無底洞噉食記憶體。
+const MAX_BUFFER_TOTAL_BYTES = 256 * 1024 * 1024; // 256MB
 const bufferCache = new Map(); // youtubeId -> { url, buf, tailBuf, tailOffset, totalLength, contentType, expiresAt }
+let bufferCacheTotalBytes = 0; // touchBufferEntry/evictBufferCacheOverflow 維護,唔喺其他地方直接改
 
-function touchBufferEntry(youtubeId, entry) {
-  bufferCache.delete(youtubeId);
-  bufferCache.set(youtubeId, entry);
+function entryByteSize(entry) {
+  if (!entry) return 0;
+  return (entry.buf ? entry.buf.length : 0) + (entry.tailBuf ? entry.tailBuf.length : 0);
 }
 
+function touchBufferEntry(youtubeId, entry) {
+  const existing = bufferCache.get(youtubeId);
+  if (existing) bufferCacheTotalBytes -= entryByteSize(existing);
+  bufferCache.delete(youtubeId);
+  bufferCache.set(youtubeId, entry);
+  bufferCacheTotalBytes += entryByteSize(entry);
+}
+
+// 雙閘:格數 OR 總字節數,兩個任何一個超咗就踢最舊(Map 插入順序 = LRU 順序,
+// 同 touchBufferEntry 嘅「攞中/寫入都搬去尾」配合)。
 function evictBufferCacheOverflow() {
-  while (bufferCache.size > MAX_BUFFER_ENTRIES) {
+  while (bufferCache.size > MAX_BUFFER_ENTRIES || bufferCacheTotalBytes > MAX_BUFFER_TOTAL_BYTES) {
     const oldestKey = bufferCache.keys().next().value;
     if (oldestKey === undefined) break;
+    const oldest = bufferCache.get(oldestKey);
+    bufferCacheTotalBytes -= entryByteSize(oldest);
     bufferCache.delete(oldestKey);
   }
 }
@@ -563,7 +583,15 @@ export function getBufferedChunk(youtubeId, url) {
 // 永遠跌唔落冷路徑嘅 backoff→bustCache→re-resolve 自癒鏈,要等 25 分鐘 TTL
 // 過先甩身(SECOND-PASS-REVIEW-20260820.md §3.3)。
 export function evictBufferedChunk(youtubeId) {
+  const existing = bufferCache.get(youtubeId);
+  if (existing) bufferCacheTotalBytes -= entryByteSize(existing);
   bufferCache.delete(youtubeId);
+}
+
+// W1 觀測:俾 opsMetrics sampler 讀,量返而家 bufferCache 實際食緊幾多格/幾多
+// bytes(唔係 cache.size 嗰個 URL cache)。純讀,唔改任何行為。
+export function getBufferCacheStats() {
+  return { entries: bufferCache.size, totalBytes: bufferCacheTotalBytes };
 }
 
 // BATCH5 §7.3-A:冷路徑 stream 順手收落嚟嘅頭截,採納入 bufferCache(tee)。

@@ -7,7 +7,7 @@ import { Readable } from 'stream';
 import { resolveAudioUrl, bustCache, preVerifyUrl, markStreaming, unmarkStreaming, cache, warmBuffer, getBufferedChunk, evictBufferedChunk, anyStreaming, adoptStreamedHead, WARM_CAP_BYTES, parseDurationSec } from '../lib/resolveAudio.js';
 import { zeroFragmentedMp4Durations } from '../lib/fixFragmentedMp4Duration.js';
 import { recordWarmIds } from '../lib/warmLog.js';
-import { recordStreamRequest } from '../lib/opsMetrics.js';
+import { recordStreamRequest, recordBufferCacheHit } from '../lib/opsMetrics.js';
 
 // BG-PLAYBACK-STOPS-PLAN Fix D:純 observability helper,唔改任何 proxy 行為。
 // 一行 log,帶 ISO timestamp,用嚟診斷背景播放 3-4 首自動停個 bug(client abort
@@ -366,6 +366,10 @@ export default function streamRoutes(getDb) {
       return null;
     })();
     const buffered = bufSource ? bufferedChunk : null;
+    // W1(STARTUP-ROOTFIX-EXEC-BC-20260831 §1.2.4):bufferCache 命中率,獨立
+    // 於上面 `warm`(URL resolve cache)嘅另一層觀測。淨係喺真係做咗查詢
+    // (rangeStart != null,即 getBufferedChunk 有被 call 到)先計一次。
+    if (rangeStart != null) recordBufferCacheHit(!!buffered);
     if (buffered) {
       const { totalLength, contentType } = buffered;
       const { arr, base } = bufSource;

@@ -20,7 +20,7 @@ import shareRoutes from './routes/share.js';
 import friendsRoutes from './routes/friends.js';
 import invitesRoutes from './routes/invites.js';
 import clientLogRoutes from './routes/clientLog.js';
-import { resolveAudioUrl, refreshAudioUrl, preVerifyUrl, cache, failCache, anyStreaming, isStreaming } from './lib/resolveAudio.js';
+import { resolveAudioUrl, refreshAudioUrl, preVerifyUrl, cache, failCache, anyStreaming, isStreaming, getBufferCacheStats } from './lib/resolveAudio.js';
 import { YTDLP } from './lib/ytdlpBin.js';
 import { getUserDb } from './lib/userDb.js';
 import { getDb, getDataVersion, DB_PATH } from './lib/serverDb.js';
@@ -272,7 +272,14 @@ app.listen(PORT, async () => {
   // 量數唔應該跟住 keep-warm 一齊熄。sampler 用 callback 傳 cache.size,避免
   // opsMetrics 反過來 import resolveAudio.js 整出循環 import。
   // 淨係 backend server process 會 call(= 單一寫手),script 唔會,見 opsMetrics.js。
-  enableOpsMetrics({ sampler: () => ({ cacheSize: cache.size }) });
+  // W1(STARTUP-ROOTFIX-EXEC-BC-20260831):順手加返 bufferCache 格數/字節數 +
+  // process RSS 落 sampler——40 格/256MB 呢兩個數擴大咗之後,要有得直接喺
+  // ops-metrics.json 睇到實際食緊幾多,唔使每次都手動 ps。
+  enableOpsMetrics({ sampler: () => ({
+    cacheSize: cache.size,
+    bufferCacheStats: getBufferCacheStats(),
+    rssKb: process.memoryUsage().rss / 1024,
+  }) });
   
   // Background pre-cache — deliberately NARROW.
   //
