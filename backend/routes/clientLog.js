@@ -38,7 +38,15 @@ export default function clientLogRoutes(app) {
         trackState: String(b.trackState ?? '').slice(0, 20),
         repeatMode: Number.isFinite(b.repeatMode) ? b.repeatMode : null,
         errorSkipCount: Number.isFinite(b.errorSkipCount) ? b.errorSkipCount : null,
-        detail: String(b.detail || '').slice(0, 120),
+        // STARTUP-ROOTFIX-EXEC-BC-20260831 §2.4:native `beacon()` 嘅 detail
+        // 加咗 loadedSec=/f=/etaSec=/bytesXfer=/likelyKeepUp=/sinceUseful= 六個
+        // 新欄位之後,實測(見交付報告)worst case ~178 字,舊 120 上限會靜靜
+        // truncate 埋新欄位——即係今次成個驗收要睇嘅數會憑空冇咗。300 留返
+        // 充裕 headroom。
+        detail: String(b.detail || '').slice(0, 300),
+        // NATIVE-STALL-PROGRESS-PREDICATE-PLAN-20260831 v4 §4-3:JS logDiag()
+        // 而家每條都帶 platform,等以後唔使再靠 ua= 反查對號分兩部機。
+        platform: String(b.platform || '').slice(0, 10),
       };
       logLine(safe);
       appendClientLog(safe); // 持久化底(backend/logs/client-log/),唔會俾 /tmp 清走影響
