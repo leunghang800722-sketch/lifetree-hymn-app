@@ -238,9 +238,24 @@ function logDiag(event, extra, opts) {
     fetch(`${API_BASE}/api/client-log`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ event, clientTs: new Date().toISOString(), ...extra }),
+      // NATIVE-STALL-PROGRESS-PREDICATE-PLAN-20260831 v4 §4-3(STARTUP-ROOTFIX-
+      // EXEC-BC-20260831 §2.4):加 platform 落每一條 client-log,兩部機
+      // telemetry 撈埋一齊要靠 backend ua= 反查對號嘅盲點由呢度收工。
+      body: JSON.stringify({ event, clientTs: new Date().toISOString(), platform: Platform.OS, ...extra }),
     }).catch(() => {});
   } catch (_) {}
+}
+
+// STARTUP-ROOTFIX-EXEC-BC-20260831 §2.3 —— JS 側嘅「唔驚動 breaker」nudge。
+// TrackPlayer.play() 最終會行到 native AudioPlayer.play(),嗰度 build 16 patch
+// 咗嘅 swStallWatchdog.onUserPlay() 會將呢個當做「用戶明文撳播」去 reset
+// breakerLatched/consecutiveSkips——一個自動 nudge 假扮成用戶意圖係唔啱嘅。
+// react-native-track-player 官方已經 export 咗 setPlayWhenReady(),直接寫
+// AudioPlayer.playWhenReady 個 setter,完全唔經 play(),天然就唔會觸發
+// onUserPlay(native AVPlayerWrapper.swift/RNTrackPlayer.swift 已核實,見
+// STARTUP-ROOTFIX-EXEC-BC-20260831 交付報告)。
+function swNudgePlay() {
+  return TrackPlayer.setPlayWhenReady(true);
 }
 
 // ===== CoverImage with fallback =====
@@ -1600,7 +1615,16 @@ function PlayerProvider({ children }) {
         bufferingNudgedRef.current = true;
         console.warn('[player] stuck-in-buffering detected — nudging play()');
         expectPlayingRef.current = true;
-        await TrackPlayer.play().catch(() => {});
+        // STARTUP-ROOTFIX-EXEC-BC-20260831 §2.3:build 17 起,呢個自動 nudge
+        // 唔可以再用 TrackPlayer.play()——嗰條路會撞落 native watchdog 嘅
+        // onUserPlay(),當呢下自動動作係「用戶明文撳播」去 reset
+        // breakerLatched/consecutiveSkips。改用 swNudgePlay()(setPlayWhenReady,
+        // 唔經 play())。build<17/Android 冇呢個顧慮,行返原本嘅 TrackPlayer.play()。
+        if (NATIVE_WD_V3) {
+          await swNudgePlay().catch(() => {});
+        } else {
+          await TrackPlayer.play().catch(() => {});
+        }
         return;
       }
       console.warn('[player] stuck-in-buffering persists after nudge — treating as unrecoverable, skipping');
@@ -3823,6 +3847,13 @@ try {
 // 即使呢段 code 意外經 OTA 派咗出去都對現役 build 14 零影響（老闆 §2 拍板嘅
 // 安全網:一次過出 JS+native，唔准分開派）。
 const NATIVE_WD_V2 = Platform.OS === 'ios' && Number(_nativeBuildVersion ?? 0) >= 15;
+
+// STARTUP-ROOTFIX-EXEC-BC-20260831 §2.3 —— build 17 帶嘅 progress-predicate
+// watchdog(三層階梯 T0 nudge/T1 reload/T2 skip + S1 veto + ETA 閘)。跟
+// NATIVE_WD_V2 同一個 guarded 變量嚟源、同一個「一次過出 JS+native」安全網:
+// build<17 或者 Android,呢條 const 恆為 false,底下 NATIVE_WD_V3 gate 嘅新
+// 行為完全 dormant。
+const NATIVE_WD_V3 = Platform.OS === 'ios' && Number(_nativeBuildVersion ?? 0) >= 17;
 
 function ApkUpdateBanner() {
   const { isUpdatePending } = Updates.useUpdates();
