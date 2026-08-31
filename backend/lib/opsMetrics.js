@@ -268,7 +268,18 @@ export function enablePersistence(opts = {}) {
       const prev = JSON.parse(fs.readFileSync(f, 'utf8'));
       if (prev && prev.total && prev.hourly) {
         // restart 唔想清零(要收 24-48 鐘頭數據),但舊檔 shape 唔啱就當冇。
-        state = { since: prev.since || state.since, total: { ...blankBucket(), ...prev.total }, hourly: prev.hourly };
+        // W1(2026-08-31)實測揪出嘅 bug:之前淨係 `total` 有做
+        // `{...blankBucket(), ...prev.total}` 補漏欄位,`hourly` 入面逐個
+        // bucket 完全冇補——舊碟上啲 bucket 冇 `bufferCache` 呢個新加嘅
+        // top-level key,`getOpsMetrics()` 嘅 `derivedHourly` 一 map 到就
+        // `Cannot read properties of undefined (reading 'hit')` 炸咗成個
+        // `/api/audio/cache/warm-stats` endpoint。而家 `total` 同每個
+        // `hourly[k]` 都經 `normalizeBucket()`(淺層 `{...blankBucket(), ...b}`)
+        // 補齊缺欄,日後再加新 top-level bucket 欄都唔會再撞同一種炸。
+        const normalizeBucket = (b) => ({ ...blankBucket(), ...(b || {}) });
+        const normalizedHourly = {};
+        for (const [hk, hv] of Object.entries(prev.hourly)) normalizedHourly[hk] = normalizeBucket(hv);
+        state = { since: prev.since || state.since, total: normalizeBucket(prev.total), hourly: normalizedHourly };
         console.log(`📊 ops-metrics:由碟載返${label === '主檔' ? '' : '(' + label + ')'}(since=${state.since})`);
         loaded = true;
         break;
