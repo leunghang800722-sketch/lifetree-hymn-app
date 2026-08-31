@@ -529,8 +529,14 @@ async function fetchHeadWithRetry(url, capBytes = WARM_CAP_BYTES) {
 // 逐個 id 打 DB)傳入。傳 null / 唔傳 = 「唔知長度」→ 照舊行 12MB cap ——「唔
 // 知」唔可以當長檔處理,否則一批 duration 係 NULL 嘅普通短歌會無端端只 warm
 // 到 4MB(同前端 3a 嗰條閘同一個保守方向)。
-export async function warmBuffer(youtubeId, url, durationSec = null) {
+// BUILD17-FIX-EXEC-20260831 §2-1:`onDequeue` 係可選嘅第四個參數——喺
+// withWarmLock 個隊排到呢個 call、真正開始 fetch 之前果一刻 fire 一次,
+// 俾 caller(stream.js W4 rescue)可以拆返「排隊等咗幾耐」(queueMs)同
+// 「真正 fetch 使咗幾耐」(fetchMs)。冇傳就乜都唔做,對現有 caller
+// (routes/stream.js:180 POST /warm)零行為改動。
+export async function warmBuffer(youtubeId, url, durationSec = null, onDequeue = null) {
   return withWarmLock(async () => {
+    if (typeof onDequeue === 'function') { try { onDequeue(); } catch (_) {} }
     try {
       const isLong = typeof durationSec === 'number' && durationSec > LONG_TRACK_SECONDS;
       const capBytes = isLong ? LONG_WARM_CAP_BYTES : WARM_CAP_BYTES;

@@ -694,12 +694,63 @@ export default function streamRoutes(getDb) {
       const rescueYt = hymn.youtube_id;
       const rescueUrl = url;
       const rescueDurationSec = durationSec;
+      const rescueId = id;
+      // BUILD17-FIX-EXEC-20260831 §1:拆走咗「!writableFinished 就唔追」個
+      // guard(BUILD17-PREP §2 P2 嗰版)——真機 log 實測 288 條非零起點 range
+      // 入面 193 條(67%)`aborted=true`,而派工單立案嘅 id=190/id=795 兩單
+      // mid-file range **全部**都係 `aborted=true`,即係嗰版 guard 對呢兩單
+      // 根本 fire 唔到(0 次),仲要令 log 喺最需要嘅場景全盲。真正嘅
+      // 「用戶 skip 走人」已經由下面 `anyStreaming()`(下一首開始咗串流)擋
+      // 緊,唔使呢句幫手。留返 `!writableFinished` 做遙測欄 `clientAborted`
+      // (0/1),等日後有數據分析「aborted 之後 fire 到底幫定害」,唔再靠估。
       res.on('close', () => {
-        if (w4RescueInFlight.has(rescueYt)) return; // 另一條 range 請求已經排緊
-        if (anyStreaming()) return; // 呢一刻仲有嘢播緊(自己另一條連線,或者第二首)——讓路
-        if (getBufferedChunk(rescueYt, rescueUrl)) return; // 已經有人 warm 咗(順帶 touch TTL,唔緊要)
-        w4RescueInFlight.add(rescueYt);
-        warmBuffer(rescueYt, rescueUrl, rescueDurationSec).finally(() => { w4RescueInFlight.delete(rescueYt); });
+        // §2 P2 hardening(保留):呢個 handler 冇被上面任何 try/catch 包住,靠
+        // server.js:241 個 global uncaughtException 兜底(只 log 唔死進程)
+        // ——拋錯機會極低但屬於缺口,補齊 try/catch。
+        try {
+          const clientAborted = !res.writableFinished ? 1 : 0;
+          // BUILD17-PREP-EXEC-20260831 §1 P1:純 observability——分清三個
+          // guard 邊個 skip 咗,同「真係 fire 咗」嘅耗時/成效,答返派工單
+          // 「W4 起飛係幫緊定害緊」嗰條問題。
+          if (w4RescueInFlight.has(rescueYt)) { // 另一條 range 請求已經排緊
+            console.log(`[w4rescue] ${new Date().toISOString()} id=${rescueId} yt=${rescueYt} fired=0 skipped=inFlight clientAborted=${clientAborted}`);
+            return;
+          }
+          if (anyStreaming()) { // 呢一刻仲有嘢播緊(自己另一條連線,或者第二首)——讓路
+            console.log(`[w4rescue] ${new Date().toISOString()} id=${rescueId} yt=${rescueYt} fired=0 skipped=anyStreaming clientAborted=${clientAborted}`);
+            return;
+          }
+          if (getBufferedChunk(rescueYt, rescueUrl)) { // 已經有人 warm 咗(順帶 touch TTL,唔緊要)
+            console.log(`[w4rescue] ${new Date().toISOString()} id=${rescueId} yt=${rescueYt} fired=0 skipped=alreadyBuffered clientAborted=${clientAborted}`);
+            return;
+          }
+          w4RescueInFlight.add(rescueYt);
+          const rescueStart = Date.now();
+          let dequeueAt = null; // BUILD17-FIX §2-1:withWarmLock 真正拎到隊嗰刻先賦值
+          warmBuffer(rescueYt, rescueUrl, rescueDurationSec, () => { dequeueAt = Date.now(); }).finally(() => {
+            w4RescueInFlight.delete(rescueYt);
+            try {
+              const finishedAt = Date.now();
+              // BUILD17-FIX §2-1:舊版 `ms=` 混咗 withWarmLock 嘅排隊等待時間
+              // (可以俾前面一個 15s timeout 嘅 warm 拖到 15000)同真正 fetch
+              // 耗時,兩樣意義完全唔同——一個答「爭緊頻寬」,一個答「今次
+              // fetch 快唔快」。拆開兩欄,`dequeueAt` 冇賦值(理論上唔會,
+              // withWarmLock 一定會執行 callback)就當全程都算 queueMs,
+              // fetchMs=0,唔好整咗個 NaN。
+              const queueMs = (dequeueAt != null ? dequeueAt : finishedAt) - rescueStart;
+              const fetchMs = dequeueAt != null ? (finishedAt - dequeueAt) : 0;
+              // warmBuffer() 本身吞晒錯誤(冇 return 值分成敗),用返
+              // getBufferedChunk() 讀完之後嘅 cache 狀態做 `ok` 嘅依據——
+              // 答嘅係「呢首歌而家暖唔暖」(而唔係「呢次 warmBuffer() call
+              // 本身成唔成功」,兩者好多情況一致但唔係定義相同)。
+              // BUILD17-FIX §2-2:`bytes=` 補返 `tailBuf`——之前淨計
+              // `c.buf.length`,>cap 檔實際多扯咗嘅尾截(最多 512KB)冇報。
+              const c = getBufferedChunk(rescueYt, rescueUrl);
+              const bytes = c ? (c.buf.length + (c.tailBuf ? c.tailBuf.length : 0)) : 0;
+              console.log(`[w4rescue] ${new Date().toISOString()} id=${rescueId} yt=${rescueYt} fired=1 queueMs=${queueMs} fetchMs=${fetchMs} bytes=${bytes} ok=${c ? 1 : 0} clientAborted=${clientAborted}`);
+            } catch (_) {}
+          });
+        } catch (_) {}
       });
     }
 
