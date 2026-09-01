@@ -141,13 +141,21 @@ function getAlbumCoverUrlHi(youtubeId) {
 // 手動改成 true 嚟做模擬器實測,呢個檔案出街嗰刻必須係 false。
 let HLS_ENABLED = false;
 
-function toTrack(song) {
+// HLS-EXEC-D-FIXES-20260901 §1.2:第二個參數俾 PlaybackError handler 嘅 D2
+// 降級分支用——`forceProgressive: true` 令呢次 toTrack() 一定跳過 HLS 分支
+// (唔理 HLS_ENABLED 定係咪 true),即刻攞返 `/api/stream/:id`。本地檔命中
+// 判斷（下面）唔受影響,一樣可以贏。
+function toTrack(song, opts) {
   let url = `${API_BASE}/api/stream/${song.id}`;
   // HLS-ROOTFIX-PLAN-20260901 §2.1:純 iOS(§2.2 拍板 Android 一個字唔准
   // 改)。AVPlayer 由 `.m3u8` 副檔名 + Content-Type 自己認出 HLS,呢度淨係
   // 換條 URL,零 native 改動。
-  if (Platform.OS === 'ios' && HLS_ENABLED) {
-    url = `${API_BASE}/api/hls/${song.id}.m3u8`;
+  // HLS-EXEC-D-FIXES-20260901 §3.2(b):playlist route 由 `/api/hls/:id.m3u8`
+  // 搬去 `/api/stream/:id.m3u8`——同一個 handler(routes/hls.js),但 URL
+  // 字面帶住 `/api/stream/`,令 native `hymnId(for:)`(只認呢個 prefix)可以
+  // parse 到 hid,唔使掂任何 native code。實測見 D4 交付。
+  if (Platform.OS === 'ios' && HLS_ENABLED && !(opts && opts.forceProgressive)) {
+    url = `${API_BASE}/api/stream/${song.id}.m3u8`;
   }
   if (Platform.OS === 'ios') {
     // IOS-ANDROID-PARITY-PLAN §5 Phase 2 本身嘅本地預載命中判斷——完全冇改
@@ -250,6 +258,11 @@ function classifyFirstTapSurface(songId) {
 // / wallClockDrift(呢五條係設計上永久開)。stateChange/trackChanged 嗰三處
 // 臨時 always 已經喺 P1-1 閂返,唔好再喺 call site 加 always 嚟做臨時診斷,
 // 要收高頻數就臨時開 `src/config.js` 嘅 DIAG_ENABLED。
+// HLS-EXEC-PREWINDOW-20260901 §3 W-c 更新:加咗第七條 midStallNudge(第一次
+// nudge 嗰刻,永久開)——同 handleMidStreamStall_giveup 一樣低頻(每首歌最多
+// fire 一次,仲要喺 nudge 救唔返先會再 fire giveup),派工單 §3 明文批准
+// always:true。之前呢個 nudge 淨係 console.warn 冇 beacon,令「HLS seek 完
+// 假報 Playing」呢個診斷假設結構上冇資料可以證實。
 function logDiag(event, extra, opts) {
   if (!DIAG_ENABLED && !(opts && opts.always)) return;
   try {
@@ -463,7 +476,7 @@ function PlayerProvider({ children }) {
       currentQueueIndexRef.current = 0;
       setCurrentQueueIndex(0);
       await TrackPlayer.reset();
-      await TrackPlayer.add(newQ.map(toTrack));
+      await TrackPlayer.add(newQ.map((s) => toTrack(s)));
       // Restore position BEFORE resuming. play() must be the last action here:
       // seeking right after play() left the player stalled at 0:00 (the queue
       // was correct but playback sat paused).
@@ -525,6 +538,11 @@ function PlayerProvider({ children }) {
   // 係要再 retry 定係死心跳下一首。存 song id(唔係 index),因為 retry() 唔會
   // 改變 index,兩次錯誤事件個 index 一樣,靠 id 分辨「係咪同一首」。
   const retriedTrackRef = useRef(null);
+  // HLS-EXEC-D-FIXES-20260901 §1.2 D2 —— 記低「呢首歌已經因為 HLS playlist
+  // 播唔到而降級去 progressive 過未」,同 retriedTrackRef 一樣存 song id、
+  // 一樣淨係記「最近一次」(唔係 Set)。目的:一首歌只准降級一次,唔准
+  // HLS↔progressive 嚟回彈(§1.2 第4點紅線)。
+  const hlsDowngradedTrackRef = useRef(null);
   // IOS-ANDROID-PARITY-PLAN Phase 1 —— 轉歌感知延遲真機量度。t0 喺「轉歌動作」
   // 嗰刻 set(用戶撳掣優先;native auto-advance 就用 PlaybackActiveTrackChanged
   // 嗰刻),t1 = 之後第一次 state=Playing。t1 必須「見過 trackChanged」先算數
@@ -991,6 +1009,13 @@ function PlayerProvider({ children }) {
           // BUG2 P0 — 呢首歌真係播到聲,清埋 retry flag,下次撞返嚟(例如
           // repeat/prev)先至又攞多一次 retry 機會,唔會永久鎖死。
           retriedTrackRef.current = null;
+          // HLS-EXEC-PREWINDOW-20260901 §2 W-b —— hlsDowngradedTrackRef
+          // 之前全檔淨係 set(:1236 附近)冇 reset,令一首歌喺 app 一世人
+          // 淨係降級得一次:用戶稍後再撳返同一首、又撞 404 → 唔會再降級
+          // → 打回原形跳歌。同 retriedTrackRef 一齊喺「真播到聲」呢一刻
+          // 清返,令「一首歌只准降級一次」個保證收窄返做「一次播放之內」
+          // (派工單原意),唔係一世人一次。
+          hlsDowngradedTrackRef.current = null;
         }
       } catch (e) {}
     });
@@ -1176,7 +1201,14 @@ function PlayerProvider({ children }) {
           if (activeUrl && String(activeUrl).indexOf('file:') === 0) {
             invalidateAudioCache(curId);
             retriedTrackRef.current = curId;
-            const freshTrack = toTrack(curSong); // index 已剔 → 必然 stream URL
+            // HLS-EXEC-PREWINDOW-20260901 §5 W-e —— 呢個 comment 之前寫
+            // 「index 已剔 → 必然 stream URL」,HLS 落地之後已經係錯:
+            // toTrack(curSong) 冇帶 opts,iOS + HLS_ENABLED 之下會攞返
+            // `.m3u8` playlist URL,唔一定係 progressive stream URL。呢度
+            // 冇加 `{ forceProgressive: true }`——單純 file:// 本地播放失敗
+            // fallback,同 HLS 播唔到嗰個獨立分支(hlsDowngradedTrackRef)
+            // 語義唔同,故意唔改行為,淨係修返個過時 comment。
+            const freshTrack = toTrack(curSong);
             logDiag('localFallback', {
               appState: appStateRef.current,
               hymnId: curId,
@@ -1187,6 +1219,49 @@ function PlayerProvider({ children }) {
             // NATIVE-STALL-FG-SPEEDUP §4.2 —— 呢個熱換(load/remove+add+skip)
             // 可能會令 active index 睇落好似「轉咗」,標記做 JS 自己發起,避免
             // PlaybackActiveTrackChanged 誤判做 native skip 加多一次計數。
+            if (NATIVE_WD_V2) {
+              transitionT0Ref.current = { ts: Date.now(), origin: 'jsRecover', trackChangedSeen: false, bufferingSeen: false, hymnId: null };
+            }
+            try {
+              await TrackPlayer.load(freshTrack);
+            } catch (loadErr) {
+              if (typeof curIdx !== 'number') throw loadErr;
+              await TrackPlayer.remove(curIdx);
+              await TrackPlayer.add(freshTrack, curIdx);
+              await TrackPlayer.skip(curIdx);
+            }
+            expectPlayingRef.current = true;
+            await TrackPlayer.play();
+            return;
+          }
+
+          // HLS-EXEC-D-FIXES-20260901 §1 D2 —— `.m3u8` 播唔到(no-sidx 404 /
+          // 起播失敗 / 任何原因)本身唔會入上面 file:// 分支,舊代碼會跌落
+          // 通用 retry()(重試同一條播唔到嘅 .m3u8)→ errorSkipCount 熔斷/
+          // 跳歌,用戶感受係「撳落歌A冇聲、自己跳咗去B」——而且 no-sidx 係
+          // 「同一首歌隨機」(resolveAudioUrl() 每次可能揀唔同 format
+          // variant),理論上任何一首歌、任何一次撳落去都可能中。
+          // 而家一見到 activeUrl 係 HLS playlist,即刻換返 `/api/stream/:id`
+          // progressive URL 重播同一首歌:
+          //   - 唔計 errorSkipCount(§1.2 第2點:呢次唔係「呢首歌壞咗」,
+          //     係「HLS 路行唔通」);
+          //   - 一定要有 log/beacon(`hlsFallback`),否則唔知實地發生率;
+          //   - hlsDowngradedTrackRef 保證同一首歌只降級一次,唔准
+          //     HLS↔progressive 嚟回彈(§1.2 第4點紅線)——降級之後再撞
+          //     PlaybackError(即係 progressive 版都播唔到),跌落下面原有
+          //     retry-once/skip 流程,正常計 errorSkipCount。
+          const isHlsUrl = activeUrl && /\.m3u8(\?|$)/.test(String(activeUrl));
+          if (isHlsUrl && hlsDowngradedTrackRef.current !== curId) {
+            hlsDowngradedTrackRef.current = curId;
+            retriedTrackRef.current = curId; // 呢次熱換當「已 retry」,同 file:// 分支一致
+            const freshTrack = toTrack(curSong, { forceProgressive: true });
+            logDiag('hlsFallback', {
+              appState: appStateRef.current,
+              hymnId: curId,
+              position: diagProgress?.position,
+              duration: diagProgress?.duration,
+              detail: `code=${event?.code || ''} from=${String(activeUrl)}`,
+            }, { always: true });
             if (NATIVE_WD_V2) {
               transitionT0Ref.current = { ts: Date.now(), origin: 'jsRecover', trackChangedSeen: false, bufferingSeen: false, hymnId: null };
             }
@@ -1529,6 +1604,43 @@ function PlayerProvider({ children }) {
   // 唔會再同正常(雖然好慢)嘅 resolve 撞埋。
   const BUFFERING_STUCK_SKIP_TICKS = 30;
   const lastPollPositionRef = useRef(-1);
+  // HLS-EXEC-D-FIXES-20260901 §2 D3 —— mid-stream-stall watchdog 嘅
+  // 「有冇有效進展」訊號,見下面 stalled 判斷。iOS-only(見下面用法),
+  // Android/progressive 行為完全唔變。
+  const lastPollBufferedRef = useRef(-1);
+  // HLS-EXEC-PREWINDOW-20260901 §4 W-d —— `bufferedAdvancing` 淨係要
+  // bytes 仲喺度 append 落 loadedTimeRanges 就永遠 true,JS watchdog 就永久
+  // 唔出手。呢個正正就係「backend 送緊但 AVFoundation 消化唔到」嗰隻追咗
+  // 成星期嘅病(2026-09-01 02:04Z 真機log:backend 1 毫秒送咗成個檔三次,
+  // client 全程 itemNil=1)——冇 cap 就係喺 JS 層親手重開返呢個洞。
+  // bufferedAdvancingCreditRef 數緊「連續幾多個 tick position 凍住,但靠
+  // buffered 仲喺度長大嚟抵銷咗 stalled 判斷」;抵銷夠 N=12 個 tick 就唔
+  // 再賞面,即刻交返俾底層純 position 判斷(等同冇呢個 D3 訊號嗰陣嘅舊行為
+  // ——position 再凍多 3 個 tick 就會 nudge,再 3 個就 giveup)。
+  // N=12 係初值(≈12秒),量完覺得唔啱要報返,唔好硬跟。
+  const bufferedAdvancingCreditRef = useRef(0);
+  const BUFFERED_ADVANCING_CAP_TICKS = 12;
+  // HLS-EXEC-PREWINDOW-20260901 §4 W-d —— 向後 seek 個窿(Opus5 揾到):
+  // AVPlayerWrapper.swift:128 `bufferedPosition` 攞 `loadedTimeRanges` 入面
+  // 「時間上最後」嗰個 range 嘅 end(即係跨全部 range 揾最大 end 時間),
+  // 唔係跟緊家陣播緊嗰個 range。向後大幅 seek(例如 86%→10%)之後,舊
+  // range(86% 嗰段)嘅 end 喺數值上仍然係全片最大,`bufferedPosition` 會
+  // 卡死喺嗰個舊值唔郁,直到新位置嘅 range 追過返嗰個舊 end 為止——期間
+  // `bufferedAdvancing` 恆等於 false,D3 嗰個「buffered 仲喺度長大」保護
+  // 完全幫唔到手,同呢個 D3 訊號未加之前一模一樣(退化,唔係新病)。
+  // 呢度**唔改 native**:靠喺 poll loop 本身偵測「position 突然大幅倒退」
+  // (即係啱啱發生咗一次向後 seek),開一個短暫 grace window,window 之內
+  // 完全跳過 stalled 判斷(唔理 position/buffered 點,當冇事)——畀
+  // AVFoundation 有時間真正開始由新位置攞緊 data。Grace 過咗之後跌返落
+  // 正常 position-based 判斷(同冇呢個 fix 之前一樣嘅 3-tick 門檻),真係
+  // stall 仍然會俾捉到,唔會永久收埋個 watchdog。
+  // ⚠️ 呢個做法冇修到 native 個 `.last` bug 本身(bufferedPosition 呢個
+  // 數值喺向後 seek 之後仍然會誤導——例如 UI 度顯示嘅「已緩衝」條會睇落
+  // 好古怪),淨係補住 watchdog 誤判嗰單。6 ticks(≈6秒,等於一次完整
+  // nudge+giveup 循環)係初值,未喺真機/模擬器驗證過夠唔夠,量完要報返。
+  const backwardSeekGraceTicksRef = useRef(0);
+  const BACKWARD_SEEK_GRACE_TICKS = 6;
+  const BACKWARD_SEEK_JUMP_THRESHOLD_SEC = 2; // 分辨「真係向後seek」同「poll抖動」
   // STREAM-LOCKSCREEN-FREEZE-OPUS5-2026-08-13 D1 —— Opus5 核實過RN喺background
   // 唔會節流JS timer(CADisplayLink轉NSTimer照跑),真正停係iOS成個process
   // suspend咗。呢個poll loop理論上應該全速1秒一tick,如果兩個tick之間嘅
@@ -1603,12 +1715,25 @@ function PlayerProvider({ children }) {
   // skip/repeat 邏輯,唔好一直喺同一首歌度死等。track 一轉(見下面
   // PlaybackActiveTrackChanged 個 effect)個 flag 會reset,新歌有自己一次
   // nudge 機會。
-  const handleMidStreamStall = useCallback(async () => {
+  const handleMidStreamStall = useCallback(async (ticksAtTrigger) => {
     try {
       if (!midStallNudgedRef.current) {
         midStallNudgedRef.current = true;
         const pos = lastPollPositionRef.current;
         console.warn('[player] mid-stream stall detected @', pos, '— nudging seek+play');
+        // HLS-EXEC-PREWINDOW-20260901 §3 W-c —— 之前呢個第一次 nudge 淨係
+        // console.warn,冇 logDiag,全日 client-log 出現 0 個 nudge、只有
+        // giveup(見下面)——即係 D3 個「HLS 之下 seek 完 AVPlayer 會假報
+        // Playing」診斷假設結構上永遠冇得證實(冇資料)。呢度補返個 beacon,
+        // 同 giveup 一樣低頻事件,用 always:true。
+        const curSongNow = queueRef.current[currentQueueIndexRef.current];
+        logDiag('midStallNudge', {
+          appState: appStateRef.current,
+          hymnId: curSongNow?.id ?? null,
+          position: pos,
+          bufferedNow: lastPollBufferedRef.current,
+          detail: `ticks=${ticksAtTrigger ?? '?'}`,
+        }, { always: true });
         expectPlayingRef.current = true;
         await TrackPlayer.seekTo(Math.max(0, pos + 0.3));
         await TrackPlayer.play().catch(() => {});
@@ -1681,6 +1806,13 @@ function PlayerProvider({ children }) {
     midStallTicksRef.current = 0;
     bufferingNudgedRef.current = false;
     bufferingStuckTicksRef.current = 0;
+    // HLS-EXEC-PREWINDOW-20260901 §4 W-d —— 新 track 上場,舊 track 遺留低嘅
+    // 「連續抵銷夠幾多個 tick」/「向後 seek grace 仲有幾多 tick」都要歸零,
+    // 唔好累到新歌一開波就用緊舊歌嘅狀態(track boundary 本身喺 poll loop
+    // 個 prevPos/pos 比較會被當成一次大幅「向後跳」,唔靠呢度 reset 都唔會
+    // 出事——但呢度做埋令個語義乾淨返,同其餘幾個 ticks ref 一致)。
+    bufferedAdvancingCreditRef.current = 0;
+    backwardSeekGraceTicksRef.current = 0;
     // NATIVE-STALL-FG-SPEEDUP §4.1 —— 新 track 上場,舊 track 嘅緩衝提示唔應該
     // 留喺度(例如用戶手動跳去下一首,新歌先啱啱開始 loading,唔算「卡」)。
     if (NATIVE_WD_V2 && slowLoadNoticeRef.current) {
@@ -1793,12 +1925,55 @@ function PlayerProvider({ children }) {
             // claimsActive 仍然係 Playing-only(起播慢嗰陣 native 報 Loading/
             // Buffering,唔會入呢度),真・Playing 而 position 連續 3 秒釘死喺
             // 0.00 就係病,唔係慢。
-            const stalled = Math.abs(pos - lastPollPositionRef.current) < 0.05;
+            // HLS-EXEC-D-FIXES-20260901 §2 D3 —— 診斷實錘(真機 log,
+            // 2026-09-01 03:40:20-23):seek 之後 AVPlayer/RNTP 喺 HLS 之下
+            // 會喺真正拉到新 segment 之前就報 `state=Playing`(progressive
+            // 之下呢段等待期正確報 Buffering,唔會入呢個 Playing-only 分支
+            // ——見下面 claimsActive 個 comment)。淨睇 position 郁唔郁分辨
+            // 唔到「真係卡死」同「HLS seek 緊等緊新segment但已經有data落緊
+            // 嚟」,backend log 喺嗰 3 秒之間持續送緊 segment(range 逐條
+            // 遞增、ttfb 1-6ms),position 凍咗但唔係病。
+            // 判準改做「有冇有效進展」(NATIVE-STALL-PROGRESS-PREDICATE-PLAN
+            // v4 同一原則,呢度係 JS 層獨立實作):position 凍咗,但
+            // `buffered`(loadedTimeRanges 映射出嚟嘅已落貨秒數)仲喺度長
+            // 大,即係 segment request 仲流緊,唔算 stalled。`buffered`都凍
+            // 埋先算真 stall——負控見 exec-d-fixes-raw.md(人工造嘅真 stall
+            // 兩個都凍,watchdog 一樣出手)。
+            // 淨係 iOS 開:Android 完全冇呢個 bug(純 progressive,冇 HLS),
+            // `bufferedAdvancing` 恆等於 false 令 Android `stalled` 運算
+            // 同今日一模一樣,一個字都冇變(§5 紅線)。
+            const bufferedNow = progress.buffered || 0;
+            const prevPos = lastPollPositionRef.current;
+            const posFrozenThisTick = Math.abs(pos - prevPos) < 0.05;
+            // HLS-EXEC-PREWINDOW-20260901 §4 W-d —— 向後 seek grace:呢個
+            // tick 之前(prevPos)同而家(pos)一比,發現大幅倒退,就當「啱啱
+            // 發生咗一次向後 seek」,開個短暫 grace window(見上面 ref 個
+            // comment)。prevPos<0(poll loop 頭一個 tick,sentinel -1)唔算。
+            const backwardSeekJustHappened = prevPos >= 0 && (prevPos - pos) > BACKWARD_SEEK_JUMP_THRESHOLD_SEC;
+            if (backwardSeekJustHappened) {
+              backwardSeekGraceTicksRef.current = BACKWARD_SEEK_GRACE_TICKS;
+            }
+            const inBackwardSeekGrace = backwardSeekGraceTicksRef.current > 0;
+            if (backwardSeekGraceTicksRef.current > 0) backwardSeekGraceTicksRef.current -= 1;
+
+            // W-d cap:抵銷夠 N 個 tick 就唔再賞面 bufferedAdvancing(詳見上面
+            // bufferedAdvancingCreditRef 個 comment)。
+            if (posFrozenThisTick) {
+              bufferedAdvancingCreditRef.current += 1;
+            } else {
+              bufferedAdvancingCreditRef.current = 0;
+            }
+            const bufferedGrowingThisTick = bufferedNow - lastPollBufferedRef.current > 0.05;
+            const bufferedAdvancing = Platform.OS === 'ios'
+              && bufferedGrowingThisTick
+              && bufferedAdvancingCreditRef.current <= BUFFERED_ADVANCING_CAP_TICKS;
+            const stalled = !inBackwardSeekGrace && posFrozenThisTick && !bufferedAdvancing;
             // 淨係 Playing 先算——Buffering 有可能係正常等緊data未到(RNTP
             // 呢種情況會轉 state=Buffering,唔會停留喺 Playing),唔想同
             // 「聲稱播放緊但native卡死」撞埋一齊誤判。
             const claimsActive = trackStateRef.current === TPState.Playing;
             lastPollPositionRef.current = pos;
+            lastPollBufferedRef.current = bufferedNow;
             if (stalled && claimsActive) {
               if (nearEnd) {
                 midStallTicksRef.current = 0;
@@ -1811,8 +1986,12 @@ function PlayerProvider({ children }) {
                 stuckEndTicksRef.current = 0;
                 midStallTicksRef.current += 1;
                 if (midStallTicksRef.current >= 3) {
+                  // HLS-EXEC-PREWINDOW-20260901 §3 W-c —— 攞真正觸發嗰下嘅
+                  // tick 數落嚟俾 handleMidStreamStall() 做 log(下面 reset
+                  // 咗之後個 ref 已經係 0,冇得再讀)。
+                  const ticksAtTrigger = midStallTicksRef.current;
                   midStallTicksRef.current = 0;
-                  handleMidStreamStall();
+                  handleMidStreamStall(ticksAtTrigger);
                 }
               }
             } else {
@@ -1998,7 +2177,7 @@ function PlayerProvider({ children }) {
         // removeUpcomingTracks 會連 head 喺 curIdx 之後嗰截一齊剷埋(native queue
         // 淨返 [0..curIdx]),所以要 add 返落去,唔係 JS queue 同 native 會對唔上。
         const rest = head.slice(curIdx + 1);
-        if (rest.length) await TrackPlayer.add(rest.map(toTrack));
+        if (rest.length) await TrackPlayer.add(rest.map((s) => toTrack(s)));
         queueRef.current = head; setQueue(head);
         setAutoRadioFrom(null);
       } catch (e) { console.warn('autoplay off error:', e?.message); }
@@ -2031,7 +2210,7 @@ function PlayerProvider({ children }) {
       await TrackPlayer.removeUpcomingTracks();
       // native queue 而家淨返 [0..curIdx],所以 head 剩低嗰截同新尾巴都要 add 返。
       const rest = [...head.slice(curIdx + 1), ...tail];
-      if (rest.length) await TrackPlayer.add(rest.map(toTrack));
+      if (rest.length) await TrackPlayer.add(rest.map((s) => toTrack(s)));
       const newQ = [...head, ...tail];
       queueRef.current = newQ; setQueue(newQ);
       setAutoRadioFrom(tail.length ? headLen : null);
@@ -2209,7 +2388,7 @@ function PlayerProvider({ children }) {
       }
       await lazyEnsurePlayer();
       await TrackPlayer.reset();
-      await TrackPlayer.add(finalList.map(toTrack));
+      await TrackPlayer.add(finalList.map((s) => toTrack(s)));
       if (startIndex > 0) await TrackPlayer.skip(startIndex);
       expectPlayingRef.current = true;
       await TrackPlayer.play();

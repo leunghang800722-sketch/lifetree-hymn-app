@@ -57,9 +57,22 @@ app.use('/api/home', homeRoutes);
 app.use('/api/search', searchRoutes);
 app.use('/api/category', categoryRoutes);
 app.use('/api/audio', audioRoutes);
+// HLS-EXEC-D-FIXES-20260901 §3.2(b) D4 —— 加多一個 mount,將 hls router 掛埋
+// `/api/stream`(同一個 factory 再 call 一次,新 Router 實例但共用
+// module-level `playlistCache`)。**要喺 streamRoutes 個 mount 之前**:hls
+// router 入面淨係得 `/:hymnId.m3u8` 呢條 route,對冇 `.m3u8` 尾嘅請求
+// (`/api/stream/795`)佢會 fall through(冇 route match,Express 自動
+// next() 去下一個 mounted middleware),所以順序上擺喺前面唔會影響
+// `/api/stream/:id` 半個字節。實測(scratch Express harness,已刪)確認:
+// `/api/stream/795.m3u8` 攞到 `req.params.hymnId==="795"`(冇 `.m3u8` 尾巴
+// 污染),`/api/stream/795` 完全唔受影響、query string(`?swr=`)亦唔影響
+// 邊條 route 中。目的:playlist URL 而家字面帶住 `/api/stream/`,令 native
+// `hymnId(for:)`(AudioPlayer.swift,只認呢個 prefix)可以 parse 到
+// hid,唔使掂任何 native code(§3.1(b) 個 hid=- 遙測缺口)。
+app.use('/api/stream', hlsRoutes(getDb));
 app.use('/api/stream', streamRoutes(getDb));
-// HLS-ROOTFIX-PLAN-20260901 §1.4:新 route,獨立掛載,零改動 /api/stream/:id
-// 本身(streamRoutes 完全冇動)。階段 A/B 唔出街,`hlsEnabled` 喺
+// HLS-ROOTFIX-PLAN-20260901 §1.4:原本 route,繼續掛住做後備/相容(有 log
+// 就知道有冇嘢仲用緊呢條舊路)。階段 A/B 唔出街,`hlsEnabled` 喺
 // backend/public/app-version.json 出嘅時候一律 false(見 A4)。
 app.use('/api/hls', hlsRoutes(getDb));
 // 用戶數據行獨立 users.db(MEMBERSHIP-PLAN §2.1)——唔搭 hymns.db 順風車,
