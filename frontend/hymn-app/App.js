@@ -1571,6 +1571,19 @@ function PlayerProvider({ children }) {
   const stuckEndTicksRef = useRef(0);
   const midStallTicksRef = useRef(0);
   const midStallNudgedRef = useRef(false);
+  // EXEC-B123-20260901 B3 —— 記低 nudge fire 嗰刻嘅 position,等 poll loop
+  // 度可以判斷「nudge 之後係咪真係郁咗 ≥1 秒」,郁咗就補返一次 nudge 額
+  // (見下面 handleMidStreamStall + poll loop 兩處用法)。
+  const midStallNudgeAnchorPosRef = useRef(null);
+  // EXEC-B123-FIX-20260901 B3-nudge-budget-cap(第四件,不記名派工單提到嘅
+  // 「順手」項)—— B3 補嘅 reset 路(下面 poll loop)本身冇上限:「播1秒→
+  // 凍3秒(未夠3個frozen tick嗰陣位置郁咗少少)→補返nudge額」呢個序列理論上
+  // 可以一首歌無限次重複,永遠唔會跌落 giveup(修呢張單之前,同一首歌第二次
+  // 凍就直接跳歌,而家反而可能「賴死唔走」)。加返一個 per-track 上限,見下面
+  // `handleMidStreamStall` 遞增、poll loop reset block 睇呢個上限、track-change
+  // effect 歸零。
+  const midStallNudgeCountRef = useRef(0);
+  const MAX_MID_STALL_NUDGES_PER_TRACK = 3;
   // STREAM-LOCKSCREEN-STOP-ROOTCAUSE-2026-08-12 —— 上面兩個 watchdog(track-end/
   // mid-stream stall)淨係喺 native state 聲稱 `Playing` 先會觸發(下面
   // `claimsActive` 個 gate)。但 2026-08-12 真機撞到嘅「鎖屏播幾首歌後 widget
@@ -1614,12 +1627,72 @@ function PlayerProvider({ children }) {
   // 成星期嘅病(2026-09-01 02:04Z 真機log:backend 1 毫秒送咗成個檔三次,
   // client 全程 itemNil=1)——冇 cap 就係喺 JS 層親手重開返呢個洞。
   // bufferedAdvancingCreditRef 數緊「連續幾多個 tick position 凍住,但靠
-  // buffered 仲喺度長大嚟抵銷咗 stalled 判斷」;抵銷夠 N=12 個 tick 就唔
+  // buffered 仲喺度長大嚟抵銷咗 stalled 判斷」;抵銷夠 N 個 tick 就唔
   // 再賞面,即刻交返俾底層純 position 判斷(等同冇呢個 D3 訊號嗰陣嘅舊行為
   // ——position 再凍多 3 個 tick 就會 nudge,再 3 個就 giveup)。
-  // N=12 係初值(≈12秒),量完覺得唔啱要報返,唔好硬跟。
+  // EXEC-B123-20260901 B2 —— 原本 N=12 令 nudge 要等到 tick≈15(12+3)先
+  // fire,對上 native watchdog 嘅 skip 死線(≈16s)淨返 ~1s margin,而 nudge
+  // 本身由 fire 到 recovered 要 1.80–1.83s(真機實錘 id=4436/5407,兩單
+  // native skip 都喺 nudge fire 之後 0.1–0.43s 內斬到,即係「自己人打交」,
+  // 唔關 HLS 事)。收窄去 N=4:nudge 提早去 tick≈7(4+3),留返 ~9s margin
+  // 俾 native 死線,遠夠 nudge 嘅 1.8s recovery 用。
+  //
+  // EXEC-B123-FIX-20260901 更正(上一版呢度寫「已經 smoke 過冇假觸發」係
+  // 假嘅——嗰次 smoke 從未做成,詳見下面獨立段落,唔准淨係信呢句 comment):
+  //
+  // 靜態論證(讀 code 得出,唔係量出嚟):`bufferedAdvancingCreditRef` 淨係喺
+  // `posFrozenThisTick` 為 true(position 連續兩個 tick 之間差 <0.05)先會
+  // `+= 1`,一有真實移動即刻歸零(見下面 `else { ...current = 0; }`)。
+  // `BUFFERED_ADVANCING_CAP_TICKS` 呢個常數淨係喺 `bufferedAdvancing` 嗰條
+  // 運算式用到,而 `bufferedAdvancing` 淨係喺 `stalled` 運算式用到——一首歌
+  // 正常播緊(position 逐 tick 郁),`posFrozenThisTick` 永遠 false,呢個
+  // counter 永遠停喺 0,CAP 12 定 4 完全冇分別:CAP 呢個常數喺健康播放路徑上
+  // 結構上唔會被讀到,淨係喺 position 已經凍咗(真・stall 已經開始)先會
+  // 影響「仲信唔信 buffered 仲喺度長大」呢個判斷幾耐。
+  //
+  // Live 佐證(生產 client-log,唔係設計好嘅 smoke test):2026-09-01 全日
+  // `midStallNudge` beacon 共 45 條,扣走 1 條(hymnId=708,09:03:35Z——同一
+  // 分鐘撞正另一個 session 用緊同一部模擬器做緊 HLS 實測,唔當乾淨數據,
+  // 見下面「模擬器實測」段)淨返 44 條,全部 `position=0`(冷開場)——一條都
+  // 冇喺歌已經播緊、position>0 嗰陣觸發。呢個支持「CAP 提早咗冇引致健康
+  // 播放中途假觸發」嘅結論,但呢個係翻查生產 log 得出嚟嘅事後統計,唔係
+  // 專門設計嘅獨立 smoke test,冇覆蓋到「一首歌播到中途先撞正 stall」呢類
+  // 場景嘅假陽性風險。
+  //
+  // 模擬器實測(progressive smoke)——未做,唔係「非範圍」,係做唔到:三次
+  // 試喺 iPhone 17 Pro 模擬器(FF770D48-ED92-48AD-93D8-79FEA46CAA55)用
+  // Release config 重 build 裝返新 JS,三次都失敗(CocoaPods encoding 錯誤 →
+  // 加 LANG env 後撞 code-signing 錯誤 → 改行 xcodebuild 直起,起緊嗰陣發現
+  // backend log 顯示另一個 session 同一分鐘用緊同一部模擬器做緊 D1-D5 HLS
+  // 實測,即刻停手唔撞人哋)。完整過程見 `scratchpad/exec-b123-raw.md`
+  // 「模擬器實測(B2 progressive smoke)」段。
+  //
+  // ⚠️ `HLS_ENABLED`(App.js:142)唔係常數——佢係 `let`,`/api/app-version`
+  // 每次開 app 都會用 `data.hlsEnabled` 覆寫(見下面呢個 effect),backend
+  // 一個 flag 就可以令 `.m3u8` 路徑喺**冇任何前端 rebuild**之下變 live,
+  // 唔可以當佢係「呢個 build 永遠行唔到 HLS」嘅保證。
   const bufferedAdvancingCreditRef = useRef(0);
-  const BUFFERED_ADVANCING_CAP_TICKS = 12;
+  const BUFFERED_ADVANCING_CAP_TICKS = 4;
+  // EXEC-B123-FIX-20260901 B2-giveup-race(Opus5 揾到,零測試)—— 上面 CAP
+  // 12→4 令 nudge 提早去 t≈7s,但 giveup(nudge 之後再凍幾多 tick 就
+  // handleMidStreamStall_giveup→handleStuckTrackEnd()→skipToNext())之前
+  // 一路用同一個「3 tick」門檻,即係 giveup 都跟住提早去 t≈7+3=10s。而 native
+  // EXEC-B123-FIX-20260901 B2-giveup-race —— ⚠️ 試過拉長 post-nudge giveup
+  // 門檻(`MID_STALL_GIVEUP_TICKS = 9`),已經 revert,唔好再試。原因(Opus5
+  // 用 App.js 2086-2185 逐字 slice + 生產 log 對數推翻):
+  //   1. 個論證自打嘴巴:聲稱 giveup 落 t≈16「喺 native 15-17s window 之後」,
+  //      但 16 就喺 15-17 之內。
+  //   2. 連個 16 都係錯——原本個 harness 硬寫 posSeries 全 0,冇 model 到
+  //      nudge 自己個副作用。真身 nudge 係 `seekTo(pos + 0.3)`,下個 tick
+  //      position 郁咗 0.3 → posFrozenThisTick=false → credit 同 midStallTicks
+  //      一齊歸零。真機實錘:07:08:19.974 midStallNudge → 07:08:20.057
+  //      nativeStall pos=0.3。真數係:純 stall 路 giveup 由 t=8 搬去 t=14,
+  //      啱啱插入 native 嘅 abandon+reload 窗(t=10→16)正中間,反而製造
+  //      zombie asset(memory 實錘會喺 mediaserverd 風暴 7-43 秒)。
+  //   3. 用返 3:每一條路都「唔差過今日」。storm 路 giveup 落 t≈16 撞 native
+  //      skip——但今日已經係咁,唔係新引入,而且一日只 fire 4 次。
+  // 真正嘅贏面係 `BUFFERED_ADVANCING_CAP_TICKS` 12→4(nudge 由 t≈16 撞正
+  // native skip,搬到 t≈8),嗰個有真機 log 對得到數,保留。
   // HLS-EXEC-PREWINDOW-20260901 §4 W-d —— 向後 seek 個窿(Opus5 揾到):
   // AVPlayerWrapper.swift:128 `bufferedPosition` 攞 `loadedTimeRanges` 入面
   // 「時間上最後」嗰個 range 嘅 end(即係跨全部 range 揾最大 end 時間),
@@ -1652,7 +1725,17 @@ function PlayerProvider({ children }) {
   // O1-A(O1-O2-REPLAN-20260819.md §3.3)—— 記低啱啱嗰嚿 poll 瞓覺,目標瞓咗
   // 幾耐,俾下一個 tick 嘅 drift 探測用嚟減,唔再寫死 1000。
   const lastPollTargetMsRef = useRef(1000);
-  const handleStuckTrackEnd = useCallback(async () => {
+  const handleStuckTrackEnd = useCallback(async (opts) => {
+    // EXEC-B123-FIX-20260901 B1-nearEnd-race(Opus5 揾到,零測試)—— 呢個
+    // function 有三個 caller:mid-stream stall giveup(1805 行)/buffering
+    // stuck giveup(1857 行)/poll loop 嘅 `nearEnd` 分支(2060 行,pos>=
+    // dur-1.5,即「歌播完但 native 唔肯過下一首」嗰種)。下面新加嘅 hlsFallback
+    // 分支原本冧硬喺最頂、喺 repeat/skip 判斷之前,冇分辨呢三種 caller——一首
+    // HLS 歌播到 3:58/4:00 先卡死,會俾呢個分支當「呢段 HLS 播唔到」熱換
+    // progressive URL 由 0:00 重播成首歌,唔係去下一首(poll loop 原本設計
+    // 嘅正確行為)。`nearEnd` caller 傳 `{ nearEnd: true }`,下面用嚟閂咗
+    // hlsFallback 分支,跌返落原有 repeat/skip 流程。
+    const isNearEndCall = !!(opts && opts.nearEnd);
     try {
       const idx0 = currentQueueIndexRef.current ?? 0;
       const q0 = queueRef.current || [];
@@ -1665,8 +1748,62 @@ function PlayerProvider({ children }) {
         duration: diagProgress?.duration,
         repeatMode: repeatModeRef.current,
         errorSkipCount: errorSkipCountRef.current,
-        detail: `idx=${idx0} qlen=${q0.length}`,
+        detail: `idx=${idx0} qlen=${q0.length} nearEnd=${isNearEndCall}`,
       }, { always: true });
+
+      // EXEC-B123-20260901 B1 —— `hlsFallback` 降級分支之前淨係掛喺
+      // `PlaybackError` 事件度(見上面 unsubscribeError),但實測 `PlaybackError`
+      // 全日 0 命中(所有窗口),即係嗰段降級 code 結構上永遠行唔到。實際
+      // 發生嘅係:AVPlayer 卡喺 `duration=0` 嘅幻影 Playing,唔拋
+      // `PlaybackError`,反而由呢度(通用 stuck-track-end watchdog)直接
+      // `skipToNext()` 跳去完全唔相干嘅下一首(實測發生率 4.6–7.3%,見
+      // exec-b123-raw.md)。呢度加返同款分支,喺任何 skip/repeat 決定**之前**
+      // 攔截:如果而家播緊嘅係 `.m3u8` 而且呢首歌未降級過,熱換返同一首歌嘅
+      // progressive URL,唔跳去第二首。同 PlaybackError 嗰段共用
+      // `hlsDowngradedTrackRef`(同一支計數器,同一個「只降級一次」保證)。
+      // ⚠️ EXEC-B123-FIX-20260901:淨係 `!isNearEndCall` 先行呢個分支——nearEnd
+      // caller 已經確認呢首歌播到尾,唔係「HLS 段播唔到」,應該直接落去下面
+      // 原有 repeat/skip 邏輯過下一首,唔好由 0:00 重播同一首歌。
+      const curId0 = q0[idx0]?.id ?? null;
+      if (Platform.OS === 'ios' && curId0 != null && !isNearEndCall) {
+        try {
+          const activeTrack0 = await TrackPlayer.getActiveTrack();
+          const activeUrl0 = activeTrack0?.url;
+          const isHlsUrl0 = activeUrl0 && /\.m3u8(\?|$)/.test(String(activeUrl0));
+          if (isHlsUrl0 && hlsDowngradedTrackRef.current !== curId0) {
+            hlsDowngradedTrackRef.current = curId0;
+            // EXEC-B123-FIX-20260901 —— 原版(PlaybackError 嗰段,App.js:1256)
+            // 同一個熱換模式明文寫低 `retriedTrackRef.current = curId`「呢次熱換
+            // 當『已 retry』」,B1 呢度複製漏咗呢一句。補返:唔係同一支計數器
+            // 就會令之後(如果進度版都爆)PlaybackError 嗰段誤判「未 retry 過」
+            // 再多等一次 retry() 先至跌落 skip,同 file:// 分支/HLS 分支兩個
+            // 已有先例唔一致。
+            retriedTrackRef.current = curId0;
+            const freshTrack0 = toTrack(q0[idx0], { forceProgressive: true });
+            logDiag('hlsFallback', {
+              appState: appStateRef.current,
+              hymnId: curId0,
+              position: diagProgress?.position,
+              duration: diagProgress?.duration,
+              detail: `from=stuckTrackEnd url=${String(activeUrl0)}`,
+            }, { always: true });
+            if (NATIVE_WD_V2) {
+              transitionT0Ref.current = { ts: Date.now(), origin: 'jsRecover', trackChangedSeen: false, bufferingSeen: false, hymnId: null };
+            }
+            try {
+              await TrackPlayer.load(freshTrack0);
+            } catch (loadErr) {
+              await TrackPlayer.remove(idx0);
+              await TrackPlayer.add(freshTrack0, idx0);
+              await TrackPlayer.skip(idx0);
+            }
+            expectPlayingRef.current = true;
+            await TrackPlayer.play();
+            return;
+          }
+        } catch (_) { /* 自癒失敗 → 跌落下面原有 repeat/skip 流程 */ }
+      }
+
       if (repeatModeRef.current === 2) {
         // repeat-one:native 冇自動重播(上游 #1995 講嘅正正係呢個場景),手動
         // 由頭嚟過。
@@ -1719,7 +1856,15 @@ function PlayerProvider({ children }) {
     try {
       if (!midStallNudgedRef.current) {
         midStallNudgedRef.current = true;
+        // EXEC-B123-FIX-20260901 B3-nudge-budget-cap —— 每次真係 fire 一次
+        // nudge(唔係 giveup 嗰個 branch)就計一次,配合下面 poll loop reset
+        // block 嘅上限,防止「播1秒→凍3秒→nudge」喺同一首歌無限循環。
+        midStallNudgeCountRef.current += 1;
         const pos = lastPollPositionRef.current;
+        // EXEC-B123-20260901 B3 —— 記低呢刻嘅 position 做「復原錨點」,poll
+        // loop 見到 position 由呢個錨點郁咗 ≥1 秒就當呢次 nudge 真係救返
+        // 咗,補返一次額(見下面 poll loop)。
+        midStallNudgeAnchorPosRef.current = pos;
         console.warn('[player] mid-stream stall detected @', pos, '— nudging seek+play');
         // HLS-EXEC-PREWINDOW-20260901 §3 W-c —— 之前呢個第一次 nudge 淨係
         // console.warn,冇 logDiag,全日 client-log 出現 0 個 nudge、只有
@@ -1804,6 +1949,8 @@ function PlayerProvider({ children }) {
   useEffect(() => {
     midStallNudgedRef.current = false;
     midStallTicksRef.current = 0;
+    midStallNudgeAnchorPosRef.current = null; // EXEC-B123-20260901 B3
+    midStallNudgeCountRef.current = 0; // EXEC-B123-FIX-20260901 B3-nudge-budget-cap
     bufferingNudgedRef.current = false;
     bufferingStuckTicksRef.current = 0;
     // HLS-EXEC-PREWINDOW-20260901 §4 W-d —— 新 track 上場,舊 track 遺留低嘅
@@ -1972,6 +2119,35 @@ function PlayerProvider({ children }) {
             // 呢種情況會轉 state=Buffering,唔會停留喺 Playing),唔想同
             // 「聲稱播放緊但native卡死」撞埋一齊誤判。
             const claimsActive = trackStateRef.current === TPState.Playing;
+            // EXEC-B123-20260901 B3 —— 之前 midStallNudgedRef 一世淨係喺
+            // track 換咗(currentQueueIndex effect)先 reset,同一首歌原位
+            // 熱換(TrackPlayer.load()/repeat-one)完全唔改 index,凍多一次
+            // 就零次 nudge 直入 giveup。呢度補第二條 reset 路:nudge 之後
+            // position 真係由錨點郁咗 ≥1 秒(唔係 <0.05 嗰種 poll 抖動),即係
+            // 呢首歌已經救返,補返一次 nudge 額俾佢,下次先至又要凍夠 3 tick
+            // 先 giveup,唔使一路死等 native 死線。
+            // ⚠️ EXEC-B123-FIX-20260901 兩條補丁:
+            //   1) 加 `Platform.OS === 'ios'` gate——呢個 reset block 冧原本
+            //      冇 platform 分流,派工單框住嘅範圍係「iOS stall 修」,
+            //      Android 嘅 nudge budget 行為唔喺呢張單度改(同上面
+            //      `bufferedAdvancing` 本身已經係 `Platform.OS === 'ios'`
+            //      gate 一致,呢度補返冇改過嘅一段)。
+            //   2) 加 `midStallNudgeCountRef.current < MAX_MID_STALL_NUDGES_PER_TRACK`
+            //      上限——冇呢條,「播1秒→凍3秒(未夠3個frozen tick位置郁咗
+            //      少少)→補額」呢個序列可以一首歌無限重複,永遠唔跌落
+            //      giveup(修呢張單之前,同一首歌第二次凍就直接跳歌;而家
+            //      如果冇上限反而會「賴死唔走」)。攞夠 3 次 nudge 額之後,
+            //      呢個 track 唔再補額,下次凍夠門檻就正常 giveup。
+            if (
+              Platform.OS === 'ios' &&
+              midStallNudgedRef.current &&
+              midStallNudgeAnchorPosRef.current != null &&
+              pos - midStallNudgeAnchorPosRef.current >= 1 &&
+              midStallNudgeCountRef.current < MAX_MID_STALL_NUDGES_PER_TRACK
+            ) {
+              midStallNudgedRef.current = false;
+              midStallNudgeAnchorPosRef.current = null;
+            }
             lastPollPositionRef.current = pos;
             lastPollBufferedRef.current = bufferedNow;
             if (stalled && claimsActive) {
@@ -1980,12 +2156,19 @@ function PlayerProvider({ children }) {
                 stuckEndTicksRef.current += 1;
                 if (stuckEndTicksRef.current >= 3) {
                   stuckEndTicksRef.current = 0;
-                  handleStuckTrackEnd();
+                  // EXEC-B123-FIX-20260901 B1-nearEnd-race —— 傳 nearEnd:true,
+                  // 令 handleStuckTrackEnd() 閂咗 B1 hlsFallback 分支(見上面
+                  // function 頭嘅 comment),唔好由 0:00 重播成首歌。
+                  handleStuckTrackEnd({ nearEnd: true });
                 }
               } else {
                 stuckEndTicksRef.current = 0;
                 midStallTicksRef.current += 1;
-                if (midStallTicksRef.current >= 3) {
+                // EXEC-B123-FIX-20260901 —— 拉長 post-nudge 門檻嗰個嘗試已
+                // revert(理由見上面 BUFFERED_ADVANCING_CAP_TICKS 附近個
+                // comment)。兩個 round 一律 3 tick,同出街現狀一致。
+                const midStallThreshold = 3;
+                if (midStallTicksRef.current >= midStallThreshold) {
                   // HLS-EXEC-PREWINDOW-20260901 §3 W-c —— 攞真正觸發嗰下嘅
                   // tick 數落嚟俾 handleMidStreamStall() 做 log(下面 reset
                   // 咗之後個 ref 已經係 0,冇得再讀)。
