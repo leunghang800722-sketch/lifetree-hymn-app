@@ -7,7 +7,7 @@
 // 所以呢度收到咩就顯示咩,唔使前端再過濾一次。
 
 import React, { useState, useMemo, useEffect, useRef } from 'react';
-import { View, Text, TextInput, FlatList, TouchableOpacity, StyleSheet, Image, Keyboard, InteractionManager } from 'react-native';
+import { View, Text, TextInput, FlatList, TouchableOpacity, TouchableWithoutFeedback, StyleSheet, Image, Keyboard, InteractionManager } from 'react-native';
 import OdeIcon from '../icons/OdeIcon';
 import { COLORS, TYPOGRAPHY, effects } from '../theme/designSystem';
 import { useInsets } from '../hooks/useInsets';
@@ -260,6 +260,14 @@ export default function LibraryScreen({ hymns = [], onPlayHymn, onOpenAuth }) {
 
   return (
     <View style={[styles.container, { paddingTop: insets.top + 8 }]}>
+      {/* 「iOS 搜尋鍵盤收唔返」(Eric 2026-09-01 bug report)—— 同 AuthScreen /
+          AddFriendSheet 一樣嘅 pattern:固定 header 區(標題/首數/搜尋欄/chips)
+          全部係普通 <View>,唔屬於任何 ScrollView,撳空白位一直收唔到鍵盤。
+          Android 有實體返回掣做逃生門所以睇唔出,iOS 冇 → 打完字就困住。
+          包一層 TouchableWithoutFeedback:responder 係 deepest-first,TextInput /
+          chips / AvatarButton 照舊食自己嗰下 tap,呢層淨係食冇人認領嘅空白位。 */}
+      <TouchableWithoutFeedback accessible={false} onPress={Keyboard.dismiss}>
+      <View>
       {/* PHONE-PASSWORD-AUTH-PLAN §5.4:右上角加會員掣,同首頁/我的頁一致;
           搜尋欄/chips 佈局唔郁,淨係標題呢行變成 row。 */}
       <View style={styles.headerRow}>
@@ -295,7 +303,7 @@ export default function LibraryScreen({ hymns = [], onPlayHymn, onOpenAuth }) {
           <TouchableOpacity
             key={l}
             style={[styles.chip, lang === l && styles.chipActive]}
-            onPress={() => { setLang(l); setOrg(null); setKidsSubLang('全部'); }}
+            onPress={() => { Keyboard.dismiss(); setLang(l); setOrg(null); setKidsSubLang('全部'); }}
             activeOpacity={0.7}
           >
             <Text style={[styles.chipText, lang === l && styles.chipTextActive]}>{l}</Text>
@@ -309,7 +317,7 @@ export default function LibraryScreen({ hymns = [], onPlayHymn, onOpenAuth }) {
         <View style={styles.chipRow}>
           <TouchableOpacity
             style={[styles.chip, kidsSubLang === '全部' && styles.chipActive]}
-            onPress={() => setKidsSubLang('全部')}
+            onPress={() => { Keyboard.dismiss(); setKidsSubLang('全部'); }}
             activeOpacity={0.7}
           >
             <Text style={[styles.chipText, kidsSubLang === '全部' && styles.chipTextActive]}>全部</Text>
@@ -318,7 +326,7 @@ export default function LibraryScreen({ hymns = [], onPlayHymn, onOpenAuth }) {
             <TouchableOpacity
               key={l}
               style={[styles.chip, kidsSubLang === l && styles.chipActive]}
-              onPress={() => setKidsSubLang(l)}
+              onPress={() => { Keyboard.dismiss(); setKidsSubLang(l); }}
               activeOpacity={0.7}
             >
               <Text style={[styles.chipText, kidsSubLang === l && styles.chipTextActive]}>{l} {n}</Text>
@@ -332,6 +340,8 @@ export default function LibraryScreen({ hymns = [], onPlayHymn, onOpenAuth }) {
         <FlatList
           horizontal
           showsHorizontalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="on-drag"
           data={[['全部團體', shown.length], ...orgs]}
           keyExtractor={(item) => String(item[0])}
           renderItem={({ item }) => {
@@ -341,7 +351,7 @@ export default function LibraryScreen({ hymns = [], onPlayHymn, onOpenAuth }) {
             return (
               <TouchableOpacity
                 style={[styles.artistChip, active && styles.artistChipActive]}
-                onPress={() => setOrg(isAll ? null : name)}
+                onPress={() => { Keyboard.dismiss(); setOrg(isAll ? null : name); }}
                 activeOpacity={0.7}
               >
                 <Text style={[styles.artistChipText, active && styles.artistChipTextActive]} numberOfLines={1}>
@@ -352,12 +362,15 @@ export default function LibraryScreen({ hymns = [], onPlayHymn, onOpenAuth }) {
           }}
         />
       </View>
+      </View>
+      </TouchableWithoutFeedback>
 
       <FlatList
         data={shown}
         keyExtractor={(item) => String(item.id)}
         contentContainerStyle={{ paddingBottom: 24 }}
         keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="on-drag"
         onScrollBeginDrag={() => Keyboard.dismiss()}
         renderItem={({ item }) => (
           // 2026-07-30 Eric 三場景規格(QUEUE-BEHAVIOR-3-SCENARIOS-PLAN)推翻
@@ -366,8 +379,8 @@ export default function LibraryScreen({ hymns = [], onPlayHymn, onOpenAuth }) {
           // 插播——由 playSingle 自己嘅插播分支處理,唔再需要 browseTap flag。
           <TouchableOpacity
             style={styles.row}
-            onPress={() => onPlayHymn && onPlayHymn(item)}
-            onLongPress={isAdmin ? () => openAdminEdit(item) : undefined}
+            onPress={() => { Keyboard.dismiss(); onPlayHymn && onPlayHymn(item); }}
+            onLongPress={isAdmin ? () => { Keyboard.dismiss(); openAdminEdit(item); } : undefined}
             activeOpacity={0.7}
           >
             <Cover youtubeId={item.youtube_id} />
@@ -384,7 +397,7 @@ export default function LibraryScreen({ hymns = [], onPlayHymn, onOpenAuth }) {
             {/* ≡♪ 加入到清單 + 心心 —— 同 HymnListScreen / 播放清單 sheet 行尾一致;
                 成行撳落去照舊播歌,所以唔再需要裝飾性 play-arrow */}
             <TouchableOpacity
-              onPress={(e) => { e?.stopPropagation?.(); openAddToPlaylist(item); }}
+              onPress={(e) => { e?.stopPropagation?.(); Keyboard.dismiss(); openAddToPlaylist(item); }}
               hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
               style={styles.rowAction}
               activeOpacity={0.6}
@@ -416,7 +429,7 @@ export default function LibraryScreen({ hymns = [], onPlayHymn, onOpenAuth }) {
             {hasChipFilter && (
               <TouchableOpacity
                 style={styles.clearFilterBtn}
-                onPress={() => { setLang('全部'); setOrg(null); setKidsSubLang('全部'); }}
+                onPress={() => { Keyboard.dismiss(); setLang('全部'); setOrg(null); setKidsSubLang('全部'); }}
                 activeOpacity={0.7}
               >
                 <Text style={styles.clearFilterText}>清除篩選</Text>
