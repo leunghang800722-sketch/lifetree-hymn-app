@@ -183,6 +183,21 @@ app.get('/api/version', (req, res) => {
   res.json({ dataVersion });
 });
 
+// HLS-EXEC-D123-GATE-20260901 P3 —— 單機 gate:manifest 入面 `hlsEnabled` 係
+// 「全量開關」;`hlsDeviceIds`(非空 array 先生效)可以將佢收窄做「淨開俾
+// 指定幾部機」,Stage D 淨開俾 Eric 一部機用呢個。純函數,方便 harness 逐
+// assert 測試(唔起 server)。
+//   - `hlsDeviceIds` 唔存在 / 唔係 array / 空 array → 全量模式,原值照出,
+//     行為零改動(而家 live JSON 冇呢個欄位,呢個 branch 係現行實況)。
+//   - `hlsDeviceIds` 係非空 array → 淨係 `hlsEnabled===true` 兼 `d` 喺
+//     名單先算開;`hlsEnabled:false` 就算 `d` 喺名單都照樣 false(全域開關
+//     優先於名單)。
+function computeEffectiveHlsEnabled(manifest, deviceId) {
+  const ids = manifest && Array.isArray(manifest.hlsDeviceIds) ? manifest.hlsDeviceIds : null;
+  if (!ids || ids.length === 0) return manifest?.hlsEnabled === true;
+  return manifest?.hlsEnabled === true && ids.includes(deviceId);
+}
+
 // APK 更新提示 manifest(APP-UPDATE-CHECK-PLAN §1.1)。讀 backend/public/app-version.json
 // 原樣回傳,no-store 避免 CDN/瀏覽器 cache 住舊版本號。檔案唔存在/壞 JSON 一律
 // 404,唔准 crash——呢個 endpoint 純粹俾 App 靜默檢查,前端任何失敗都當冇更新。
@@ -201,7 +216,10 @@ app.get('/api/app-version', (req, res) => {
       console.error('app-version.json 壞 JSON:', parseErr.message);
       return res.status(404).json({ error: 'invalid manifest' });
     }
-    res.json(manifest);
+    // HLS-EXEC-D123-GATE-20260901 P3 —— 淨係覆寫 `hlsEnabled`,其餘欄位一律
+    // 原封(Android update check 靠佢)。
+    const effective = { ...manifest, hlsEnabled: computeEffectiveHlsEnabled(manifest, req.query.d) };
+    res.json(effective);
   });
 });
 

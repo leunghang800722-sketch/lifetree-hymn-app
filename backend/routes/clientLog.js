@@ -47,6 +47,11 @@ export default function clientLogRoutes(app) {
         // NATIVE-STALL-PROGRESS-PREDICATE-PLAN-20260831 v4 §4-3:JS logDiag()
         // 而家每條都帶 platform,等以後唔使再靠 ua= 反查對號分兩部機。
         platform: String(b.platform || '').slice(0, 10),
+        // HLS-EXEC-D123-GATE-20260901 P3 —— app 內隨機生成嘅 deviceId(唔係
+        // 硬件識別碼),順手堵「兩部機寫同一份 log 分唔開」舊病(見 memory
+        // project-multi-sim-clientlog-contamination)。上限 40:實際生成
+        // 32 hex,留少少 headroom。
+        deviceId: String(b.deviceId || '').slice(0, 40),
       };
       logLine(safe);
       appendClientLog(safe); // 持久化底(backend/logs/client-log/),唔會俾 /tmp 清走影響

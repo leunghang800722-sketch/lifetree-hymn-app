@@ -29,6 +29,9 @@ import { AdminEditHymnProvider } from './src/components/AdminEditHymnSheet';
 import { setAuthToken, pullData, pushSync, flush as flushOutbox, getOwner, setOwner, clearOutbox } from './src/sync/userSync';
 import { API_BASE, DIAG_ENABLED } from './src/config.js';
 import { consumeRemotePauseExpected } from './src/playback-intent.js';
+// HLS-EXEC-D123-GATE-20260901 P3 — 單機 gate 用嘅 deviceId(純 app 內隨機,
+// 唔係硬件識別碼)。見 src/deviceId.js 頂部註解。
+import { getOrCreateDeviceId } from './src/deviceId.js';
 // IOS-ANDROID-PARITY-PLAN §5 Phase 2 — iOS 本地音頻預載。呢個 module 頂層
 // 冇任何 native 依賴(expo-file-system 淨係喺 module 入面 lazy require、
 // 淨係 iOS call site 先觸發),所以呢度 static import 對 Android 完全 safe。
@@ -140,6 +143,10 @@ function getAlbumCoverUrlHi(youtubeId) {
 // ⚠️ HLS-EXEC-AB-20260901 紅線:階段 A/B 只喺 backend/public/app-version.json
 // 手動改成 true 嚟做模擬器實測,呢個檔案出街嗰刻必須係 false。
 let HLS_ENABLED = false;
+// HLS-EXEC-D123-GATE-20260901 P3 — 由下面一個 cross-platform boot effect
+// 填,logDiag() 用嚟俾每條 client-log 帶。填之前一律 null(未生成/未讀到),
+// backend 白名單當空字串處理,唔會 crash。
+let DEVICE_ID = null;
 
 // HLS-EXEC-D-FIXES-20260901 §1.2:第二個參數俾 PlaybackError handler 嘅 D2
 // 降級分支用——`forceProgressive: true` 令呢次 toTrack() 一定跳過 HLS 分支
@@ -272,7 +279,9 @@ function logDiag(event, extra, opts) {
       // NATIVE-STALL-PROGRESS-PREDICATE-PLAN-20260831 v4 §4-3(STARTUP-ROOTFIX-
       // EXEC-BC-20260831 §2.4):加 platform 落每一條 client-log,兩部機
       // telemetry 撈埋一齊要靠 backend ua= 反查對號嘅盲點由呢度收工。
-      body: JSON.stringify({ event, clientTs: new Date().toISOString(), platform: Platform.OS, ...extra }),
+      // HLS-EXEC-D123-GATE-20260901 P3 — deviceId 順手堵「兩部機寫同一份
+      // log 分唔開」舊病(見 memory project-multi-sim-clientlog-contamination)。
+      body: JSON.stringify({ event, clientTs: new Date().toISOString(), platform: Platform.OS, deviceId: DEVICE_ID, ...extra }),
     }).catch(() => {});
   } catch (_) {}
 }
@@ -1311,14 +1320,24 @@ function PlayerProvider({ children }) {
         }
         // BUG2(c)P0 — 單首歌失敗唔好再用會擋住成個畫面嘅白色系統 Alert,
         // 改用輕量、非阻擋、自動消失嘅提示。
-        showNotice('呢首歌暫時載入唔到，跳去下一首');
         // NATIVE-STALL-FG-SPEEDUP §4.2 —— 呢個 skip 已經喺上面加咗
         // errorSkipCountRef,標記做 JS 發起,PlaybackActiveTrackChanged 見到
         // 唔可以再計多一次(避免 double count)。
         if (NATIVE_WD_V2) {
           transitionT0Ref.current = { ts: Date.now(), origin: 'jsRecover', trackChangedSeen: false, bufferingSeen: false, hymnId: null };
         }
-        try { await TrackPlayer.skipToNext(); } catch (e) { /* queue tail, repeat off — nothing to skip to */ }
+        // HLS-EXEC-D123-GATE-20260901 P1 —— 之前個 banner 喺 skip *之前*無條件
+        // 出,skipToNext() 嘅 catch 又係空嘅:queue 尾冇歌可跳(repeat 關咗)
+        // 嗰陣 skipToNext() 會 throw,但 UI 已經講咗「跳去下一首」——大話,
+        // 兼零 log。而家改做 skip 成功先出呢句;失敗就出誠實提示,並補一個
+        // 之前完全冇記錄嘅 beacon。
+        try {
+          await TrackPlayer.skipToNext();
+          showNotice('呢首歌暫時載入唔到，跳去下一首');
+        } catch (e) {
+          showNotice('呢首歌暫時載入唔到');
+          logDiag('skipNextFailed', { hymnId: curId, reason: e?.message }, { always: true });
+        }
         return;
       }
 
@@ -1885,7 +1904,11 @@ function PlayerProvider({ children }) {
         return;
       }
       console.warn('[player] mid-stream stall persists after nudge — treating as unrecoverable, skipping');
-      logDiag('handleMidStreamStall_giveup', { appState: appStateRef.current, position: lastPollPositionRef.current }, { always: true });
+      // HLS-EXEC-D123-GATE-20260901 P2 —— 呢個 giveup 之前冇 hymnId,Stage D
+      // 出事歸唔到邊首歌。用同一個 scope 入面 midStallNudge(上面)攞 hymnId
+      // 嘅同一個來源(queueRef[currentQueueIndexRef])補返。
+      const curSongGiveup = queueRef.current[currentQueueIndexRef.current];
+      logDiag('handleMidStreamStall_giveup', { appState: appStateRef.current, hymnId: curSongGiveup?.id ?? null, position: lastPollPositionRef.current }, { always: true });
       await handleStuckTrackEnd();
     } catch (e) {
       console.warn('[player] mid-stream stall recovery failed:', e?.message || e);
@@ -3947,18 +3970,32 @@ function AppContent() {
     fetch(`${API_BASE}/api/health`).catch(() => {});
   }, []);
 
+  // HLS-EXEC-D123-GATE-20260901 P3 —— deviceId 開機讀/生成,cross-platform
+  // (Android 都要,logDiag() 每條 client-log 都帶住佢)。獨立於下面 iOS-only
+  // 嘅 app-version fetch,純粹負責填 module-level `DEVICE_ID`。
+  useEffect(() => {
+    let cancelled = false;
+    getOrCreateDeviceId().then((id) => { if (!cancelled) DEVICE_ID = id; }).catch(() => {});
+    return () => { cancelled = true; };
+  }, []);
+
   // HLS-ROOTFIX-PLAN-20260901 §5.1:開機打一次 `/api/app-version`,讀
   // `hlsEnabled` 落 module-level 變量(toTrack() 用)。淨係 iOS 需要(§2.2
   // Android 一個字唔改)。呢個 fetch 同 ApkUpdateBanner 入面嗰個係獨立兩次
   // call(嗰個負責 versionCode 比較彈 banner,呢個負責讀 flag),故意唔共用
   // ——避免將兩個唔相關嘅關注點綁埋一齊、日後其中一個要改動累到另一個。
   // 打唔到 / timeout / 冇呢個欄位一律維持預設 false,唔會影響現有行為。
+  // HLS-EXEC-D123-GATE-20260901 P3 —— 單機 gate:帶 `?d=<deviceId>`,等
+  // backend 可以淨開俾指定機。ApkUpdateBanner 嗰條(App.js:~4270)冇 d 都要
+  // 照答,故意唔改。
   useEffect(() => {
     if (Platform.OS !== 'ios') return;
     let cancelled = false;
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), 8000);
-    fetch(`${API_BASE}/api/app-version`, { signal: controller.signal })
+    getOrCreateDeviceId()
+      .catch(() => '')
+      .then((id) => fetch(`${API_BASE}/api/app-version?d=${encodeURIComponent(id || '')}`, { signal: controller.signal }))
       .then((r) => (r.ok ? r.json() : null))
       .then((data) => {
         if (!cancelled && data) HLS_ENABLED = data.hlsEnabled === true;
