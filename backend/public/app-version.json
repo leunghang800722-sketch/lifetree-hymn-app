@@ -1,5 +1,6 @@
 {
   "versionCode": 55,
   "versionName": "1.5.1",
-  "url": "https://api.odemusics.com/downloads/app.apk"
+  "url": "https://api.odemusics.com/downloads/app.apk",
+  "hlsEnabled": false
 }

@@ -15,6 +15,7 @@ import authRoutes from './routes/auth.js';
 import otpAuthRoutes from './routes/otpAuth.js';
 import meRoutes from './routes/me.js';
 import streamRoutes from './routes/stream.js';
+import hlsRoutes from './routes/hls.js';
 import adminRoutes from './routes/admin.js';
 import shareRoutes from './routes/share.js';
 import friendsRoutes from './routes/friends.js';
@@ -57,6 +58,10 @@ app.use('/api/search', searchRoutes);
 app.use('/api/category', categoryRoutes);
 app.use('/api/audio', audioRoutes);
 app.use('/api/stream', streamRoutes(getDb));
+// HLS-ROOTFIX-PLAN-20260901 §1.4:新 route,獨立掛載,零改動 /api/stream/:id
+// 本身(streamRoutes 完全冇動)。階段 A/B 唔出街,`hlsEnabled` 喺
+// backend/public/app-version.json 出嘅時候一律 false(見 A4)。
+app.use('/api/hls', hlsRoutes(getDb));
 // 用戶數據行獨立 users.db(MEMBERSHIP-PLAN §2.1)——唔搭 hymns.db 順風車,
 // 唔撞夜晚 grow/curate job 嘅 lock 協議;每次寫完即刻 atomic save 落碟。
 authRoutes(app, getUserDb);

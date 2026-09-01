@@ -132,9 +132,27 @@ function getAlbumCoverUrlHi(youtubeId) {
 // 有落載完成嘅 file:// URI 就用嗰個(跳過網絡),冇就照舊行 stream URL。
 // getLocalAudioUri() 喺 Android/未 ready 時永遠回 null,呢個 if 淨係喺
 // iOS 先會行到,Android 行為零改動。
+// HLS-ROOTFIX-PLAN-20260901 §5.1:回退槓桿喺 backend 手上,唔寫死喺 JS。
+// `hlsEnabled` 由下面 boot effect 喺 App 啟動時打 `/api/app-version`(App 本身
+// 已經有嗰個 fetch 俾 APK 更新 banner 用,呢度加多一次獨立、輕量嘅
+// no-store 讀,唔改 ApkUpdateBanner 本身嗰個 call)。開機打唔到 / 舊
+// manifest 冇呢個欄位 → 保持 false,行為同今日一模一樣。
+// ⚠️ HLS-EXEC-AB-20260901 紅線:階段 A/B 只喺 backend/public/app-version.json
+// 手動改成 true 嚟做模擬器實測,呢個檔案出街嗰刻必須係 false。
+let HLS_ENABLED = false;
+
 function toTrack(song) {
   let url = `${API_BASE}/api/stream/${song.id}`;
+  // HLS-ROOTFIX-PLAN-20260901 §2.1:純 iOS(§2.2 拍板 Android 一個字唔准
+  // 改)。AVPlayer 由 `.m3u8` 副檔名 + Content-Type 自己認出 HLS,呢度淨係
+  // 換條 URL,零 native 改動。
+  if (Platform.OS === 'ios' && HLS_ENABLED) {
+    url = `${API_BASE}/api/hls/${song.id}.m3u8`;
+  }
   if (Platform.OS === 'ios') {
+    // IOS-ANDROID-PARITY-PLAN §5 Phase 2 本身嘅本地預載命中判斷——完全冇改
+    // 呢兩行,擺喺 HLS 判斷之後,保證本地檔命中永遠贏 HLS(§3.2-2 紅線:
+    // audioPrefetch.js 呢條路徑唔應該行 HLS)。
     const localUri = getLocalAudioUri(song.id);
     if (localUri) url = localUri;
   }
@@ -3565,6 +3583,27 @@ function AppContent() {
   // 第一下撳歌慳 ~0.3-0.5s。fire-and-forget。
   useEffect(() => {
     fetch(`${API_BASE}/api/health`).catch(() => {});
+  }, []);
+
+  // HLS-ROOTFIX-PLAN-20260901 §5.1:開機打一次 `/api/app-version`,讀
+  // `hlsEnabled` 落 module-level 變量(toTrack() 用)。淨係 iOS 需要(§2.2
+  // Android 一個字唔改)。呢個 fetch 同 ApkUpdateBanner 入面嗰個係獨立兩次
+  // call(嗰個負責 versionCode 比較彈 banner,呢個負責讀 flag),故意唔共用
+  // ——避免將兩個唔相關嘅關注點綁埋一齊、日後其中一個要改動累到另一個。
+  // 打唔到 / timeout / 冇呢個欄位一律維持預設 false,唔會影響現有行為。
+  useEffect(() => {
+    if (Platform.OS !== 'ios') return;
+    let cancelled = false;
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 8000);
+    fetch(`${API_BASE}/api/app-version`, { signal: controller.signal })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (!cancelled && data) HLS_ENABLED = data.hlsEnabled === true;
+      })
+      .catch(() => {})
+      .finally(() => clearTimeout(timer));
+    return () => { cancelled = true; controller.abort(); clearTimeout(timer); };
   }, []);
 
   // §3b①:歌單一 load 好就預熱「今日為你預備」6 首(同 HomeScreen 個算法
