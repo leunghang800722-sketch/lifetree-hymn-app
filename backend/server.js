@@ -25,7 +25,7 @@ import clientLogRoutes from './routes/clientLog.js';
 import { resolveAudioUrl, refreshAudioUrl, preVerifyUrl, cache, failCache, anyStreaming, isStreaming, getBufferCacheStats } from './lib/resolveAudio.js';
 import { YTDLP } from './lib/ytdlpBin.js';
 import { getUserDb } from './lib/userDb.js';
-import { getDb, getDataVersion, DB_PATH } from './lib/serverDb.js';
+import { getDb, getDataVersion, DB_PATH, maybeReload } from './lib/serverDb.js';
 import { getWarmCandidates } from './lib/warmLog.js';
 import { enablePersistence as enableOpsMetrics, recordKeepWarmTick } from './lib/opsMetrics.js';
 
@@ -266,6 +266,11 @@ app.get('/api/health', (req, res) => {
 // dataVersion cache-bust:超平嘅 endpoint,唔讀 DB,俾 App 開機時同 MMKV 存嗰個
 // version 對一對,唔同先做全量 fetch(見 useCachedHymns.js)。
 app.get('/api/version', (req, res) => {
+  // PERF-STAGE2-2C-20260902 C-4 —— 出 dataVersion 之前先 statSync 檢查真檔
+  // 有冇被 out-of-process writer 改咗(夜晚 job/admin script),見
+  // lib/serverDb.js maybeReload() 大註解。呢個 endpoint 本身就係「cache-bust
+  // 判斷」用嘅,理應係全站最先追到新版嘅一條。
+  maybeReload();
   const dataVersion = getDataVersion();
   console.log(`🔖 /api/version → ${dataVersion}`);
   // PERF-STAGE2-EXEC-20260902 §2A A-5 —— 純記錄用嘅 header,唔期望 CF 因為
@@ -348,6 +353,10 @@ let hymnsLyricsResponseCache = null; // { dataVersion, json }
 // Get all hymns from the database
 app.get('/api/hymns', async (req, res) => {
   try {
+    // PERF-STAGE2-2C-20260902 C-4 —— 追 out-of-process 寫入,見
+    // lib/serverDb.js maybeReload() 大註解;一次 statSync,常態(檔案冇變)
+    // 幾乎零成本。
+    maybeReload();
     // PERF-STAGE2-2C-20260902 C-1 —— `lite=1` 先行入呢條分支,SELECT 唔帶
     // `lyrics` 欄(連 key 都唔出)。Opus 5 實測 lyrics 佔 full payload raw
     // 49.00%(PERF-STAGE2-2A-OPUS-20260902.md §6),lite+gzip 372KB
@@ -421,6 +430,9 @@ app.get('/api/hymns', async (req, res) => {
 // 有人加返 `/api/hymns/:id` 撞到)。同一個 dataVersion-keyed cache 手法。
 app.get('/api/hymns/lyrics', async (req, res) => {
   try {
+    // PERF-STAGE2-2C-20260902 C-4 —— 同 `/api/hymns` 一樣,追 out-of-process
+    // 寫入(見 lib/serverDb.js maybeReload())。
+    maybeReload();
     const currentDataVersion = getDataVersion();
     if (hymnsLyricsResponseCache && hymnsLyricsResponseCache.dataVersion === currentDataVersion) {
       res.set('Content-Type', 'application/json');
