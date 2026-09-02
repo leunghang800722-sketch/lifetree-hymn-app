@@ -19,6 +19,32 @@ async function fetchWithTimeout(url, ms = 8000) {
   }
 }
 
+// E-1(PERF-STAGE2-2E-20260902,承 PERF-STAGE2-2B-OPUS-20260902.md §2.6
+// 保留②)—— Opus 5 讀 expo/fetch 原生碼(ExpoFetchModule.swift/.kt)實錘:
+// `response.text()` 淨係監聽 `.bodyCompleted`,唔監聽 `.errorReceived`。
+// `controller.abort()` 會令底層 URLSession/OkHttp task 真係取消(慳返
+// socket/流量),但**唔會令 `text()` 嗰個 promise settle**——冇人再派
+// `.bodyCompleted`,個 once-listener 永遠唔 fire,`await r.text()` 永遠
+// 掛住。結果係下面嘅 30s body timeout 淨係識取消底層下載,JS 側 catch/
+// retry 完全踩唔到,同「冇加呢個 timeout」喺呢個 runtime 效果一樣。
+// 修法:唔淨係 abort,仲要用 Promise.race 加一個會喺 `controller.signal`
+// 嘅 'abort' 事件 fire 嗰刻主動 reject(AbortError)嘅 promise,等外層
+// `catch`/重試邏輯真正行得到。呢個 promise 唔會 leak——`r.text()` 一路
+// resolve 先嘅話,race 贏出嗰個 promise 執行完,輸嗰個(呢個
+// abortReject)冇人再理,冇 listener 泄漏(addEventListener 用
+// {once:true},resolve 咗都唔會再有 abort 事件觸發佢)。
+function makeAbortRejectPromise(controller) {
+  return new Promise((_, reject) => {
+    const onAbort = () => {
+      const err = new Error('Aborted');
+      err.name = 'AbortError';
+      reject(err);
+    };
+    if (controller.signal.aborted) { onAbort(); return; }
+    controller.signal.addEventListener('abort', onAbort, { once: true });
+  });
+}
+
 // F-1(PERF-STAGE2-2B-20260902,Opus 5 覆核 baseline 之後嘅 course-
 // correction)——原本一嘢 8s 冚成個 request(headers+body),1B baseline
 // 5/5 run 第一次嘗試全部撞 8s(body 3.66MB 傳輸成日都要 3-7 秒以上),
@@ -45,7 +71,9 @@ async function fetchHymnsTwoStage(url, attempt) {
     t = setTimeout(() => controller.abort(), 30000);
     let text;
     try {
-      text = await r.text();
+      // E-1 — race 住 abort 事件,等 30s body timeout 真係可以 catch 到
+      // (見上面 makeAbortRejectPromise 註解)。
+      text = await Promise.race([r.text(), makeAbortRejectPromise(controller)]);
     } finally {
       clearTimeout(t);
     }
@@ -116,7 +144,9 @@ async function fetchLyricsMap() {
     t = setTimeout(() => controller.abort(), 30000);
     let text;
     try {
-      text = await r.text();
+      // E-1 — 同 fetchHymnsTwoStage 一樣嘅 abort race,唔係就 30s 之後淨係
+      // 底層下載被取消、JS 側 catch/lyricsFail 分支永遠踩唔到。
+      text = await Promise.race([r.text(), makeAbortRejectPromise(controller)]);
     } finally {
       clearTimeout(t);
     }
