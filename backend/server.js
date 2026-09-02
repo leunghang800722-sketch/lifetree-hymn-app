@@ -3,6 +3,7 @@
 
 import express from 'express';
 import cors from 'cors';
+import compression from 'compression';
 import initSqlJs from 'sql.js';
 import fs from 'fs';
 import path from 'path';
@@ -35,6 +36,23 @@ const PORT = process.env.PORT || 3001;
 
 app.use(cors());
 app.use(express.json());
+
+// PERF-STAGE2-EXEC-20260902 §2A A-2 — gzip JSON API 回應。1A A1 量到
+// /api/hymns 5.57MB→(prod+gzip)1.47MB,但呢個 gzip 淨係 Cloudflare edge 自己
+// 見 `Accept-Encoding: gzip` 就順手做(origin 本身冇 compression middleware)
+// ——換句話講 origin↔CF 之間仲係傳緊 5.57MB 未壓縮。加喺 origin 做,CF 到
+// client 嗰段冇變(CF 見 response 已經係 gzip 就直接轉發)但 tunnel 呢段瘦身。
+// **一定要排除**串流/媒體類 route:呢啲已經係二進位/已壓縮格式,compression
+// 中間件會嘗試 buffer 成個 response 先計 gzip,對 range request(206)嚟講
+// 會打斷 Content-Range 語意、對已經係壓縮格式嘅媒體亦冇著數兼多耗 CPU。
+const COMPRESSION_EXCLUDE_PATHS = [/^\/api\/stream/, /^\/api\/hls/, /^\/api\/audio/, /^\/app\.apk/, /^\/downloads/];
+app.use(compression({
+  threshold: 1024, // 1KB — 細 response(如 /api/health)唔值得為咗省幾十 byte 加 gzip CPU
+  filter: (req, res) => {
+    if (COMPRESSION_EXCLUDE_PATHS.some((re) => re.test(req.path))) return false;
+    return compression.filter(req, res); // 其餘照用 compression 套件預設判斷(尊重 Accept-Encoding/Content-Type)
+  },
+}));
 
 // ODE-REBRAND-PLAN §3.5 第2步 followup(F2):domain 遷移(god-music.com →
 // odemusics.com,雙域並行,舊域唔剪)。⚠️ 舊域嘅 /p/*(分享連結)**唔准
