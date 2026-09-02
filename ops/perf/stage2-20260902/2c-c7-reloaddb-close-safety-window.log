@@ -1,0 +1,18 @@
+=== reloadDb() 之前 ===
+reload 前: 查詢成功,count=6405
+
+=== reloadDb() 啱啱好 fire 咗(t=0) ===
+t=0s(reload 完即刻): 查詢成功,count=6405
+
+=== t=3s ===
+t=3s: 查詢成功,count=6405
+
+=== t=8s(仲喺 10 秒窗口入面)===
+t=8s: 查詢成功,count=6405
+
+=== t=11s(應該過咗 10 秒延遲,舊 db 應該已經 close 咗)===
+t=11s: 查詢失敗 —— out of memory
+
+=== 新 getDb() 攞返嚟嘅 db(reload 之後嗰份)===
+newDb: 查詢成功,count=6405
+oldDb === newDb ? false (expect false)

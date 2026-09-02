@@ -351,6 +351,35 @@ let hymnsLiteResponseCache = null; // { dataVersion, json, gz?, br? }
 // `/api/hymns/lyrics` 專用 cache slot,見底下嗰條獨立 route。
 let hymnsLyricsResponseCache = null; // { dataVersion, json, gz?, br? }
 
+// PERF-STAGE2-2C7-OPUS-20260902 §(2) —— 冷開機並發 miss dedupe。
+// Opus 5(`PERF-STAGE2-2C6-OPUS-20260902.md` §3.4)實測:`getDb()` 本身
+// 已經有 in-flight dedupe(C-6 d),但「攞到 db 之後嘅 SELECT+stringify+
+// 壓縮」冇——DB 未 lazy-load(restart 後第一批 request)嗰陣,3 個並發
+// miss 會各自行一次 SELECT+stringify(仲有 scheduleHymnsCompression),
+// 冷開機情景量到 wall ≈ 377ms。三條 hymns route 各自一個 in-flight slot
+// (`{ dataVersion, promise }`):第一個 miss 攞唔到 in-flight 就自己起
+// 一份、存落呢個 slot;跟住嚟嘅並發 miss 見到同一個 dataVersion 嘅
+// in-flight 存在,直接 `await` 果條 promise,唔會再觸發第二次 SELECT。
+// 完成(成功定失敗)之後清返呢個 slot——用嚟做判斷嘅唔係 promise identity
+// 係「而家個 slot 係咪仲係我掛落去嗰個 entry」,咁樣如果掉線嗰陣已經有
+// 第二輪(新 dataVersion)嘅 in-flight 頂咗上去,唔會誤刪佢。
+let hymnsFullMissInFlight = null; // { dataVersion, promise }
+let hymnsLiteMissInFlight = null; // { dataVersion, promise }
+let hymnsLyricsMissInFlight = null; // { dataVersion, promise }
+
+function dedupeHymnsMiss(getInFlight, setInFlight, dataVersion, computeFn) {
+  const existing = getInFlight();
+  if (existing && existing.dataVersion === dataVersion) {
+    return existing.promise;
+  }
+  const entry = { dataVersion, promise: null };
+  entry.promise = computeFn().finally(() => {
+    if (getInFlight() === entry) setInFlight(null);
+  });
+  setInFlight(entry);
+  return entry.promise;
+}
+
 // PERF-STAGE2-2C-20260902 C-5 —— 預壓縮 cache。C-1 個 cache slot 淨係存
 // raw JSON string,每個帶 `Accept-Encoding: gzip` 嘅 request 都要
 // compression middleware 重新壓一次(Opus 5 §2.3 已知 trade-off:cache
@@ -463,6 +492,62 @@ function scheduleHymnsCompression(cacheEntry, getCurrentSlot, label) {
     });
 }
 
+// PERF-STAGE2-2C7-OPUS-20260902 §(2) —— `/api/hymns` miss 嗰刻真正計嘢
+// 嘅部分,抽出嚟做獨立 function 俾 `dedupeHymnsMiss` call(冷開機並發
+// miss 淨係第一個真係行到呢度,其餘join 返同一個 promise)。邏輯逐字
+// 搬自改之前嘅 route handler,冇改任何行為。
+async function computeHymnsEntry(lite) {
+  const db = await getDb();
+  // lyrics included so the player can show real 歌詞 (§3.4) and grey out the
+  // 歌詞 pill when a song has none. Only ~10 of the curated songs have lyrics,
+  // so the payload cost is negligible.
+  // tags / view_count / created_at:俾自動播放 chip 加權抽樣用(AUTOPLAY-MIX-PLAN §5.6)。
+  // 全部係現有欄位(view_count 而家係 0,等 metadata job 填;tags 等標註 pass)。
+  // album / title_en:詩歌庫頁本地搜尋要齊維度(SEARCH-MERGE-PLAN §5)。
+  // org / performer / kids:TAXONOMY-5D-PLAN.md §2.2/§4.4 五維分類新欄。
+  // instrumental:INSTRUMENTAL-CATEGORY-PLAN §3.2 Phase 2a —— 純音樂 flag,
+  // 前端詩歌庫 tab + 首頁 chip 靠佢分流(Phase 1 已經回標咗 65 首)。
+  // PERF-STAGE2-2C-20260902 C-1 —— lite 分支淨係喺 SELECT 欄位表剷走
+  // `lyrics`,其餘 17 個欄位/次序完全一樣,`?lite=1` 缺席(`lite===false`)
+  // 嗰句 column list 同改動前逐字一樣。
+  const columns = lite
+    ? 'id, title, display_title, artist, youtube_id, lang, duration, tags, view_count, created_at, album, title_en, org, performer, kids, instrumental'
+    : 'id, title, display_title, artist, youtube_id, lang, duration, lyrics, tags, view_count, created_at, album, title_en, org, performer, kids, instrumental';
+  const stmt = db.prepare(`SELECT ${columns} FROM hymns ORDER BY id`);
+  const hymns = [];
+  while (stmt.step()) {
+    hymns.push(stmt.getAsObject());
+  }
+  // TAXONOMY-5D-PLAN.md §3.4 K-E 兼容墊:kids=1 嘅歌對外 lang 永遠show
+  // 「兒童」(舊 client filter `lang==='兒童'` 唔會斷),真語言另開 real_lang
+  // 出——而家(C4 換血前)kids=1 嘅 row 喺 DB 入面 lang 本身就係「兒童」,
+  // 所以呢個墊而家係 no-op,唔會改變現有 API 行為(見 §8 C1 落地後驗證)。
+  // INSTRUMENTAL-CATEGORY-PLAN §3.2 —— instrumental **刻意冇**對應嘅
+  // lang 改寫(對比上面 kids 嗰句)。舊 client 個 LANGS 冇「純音樂」呢個
+  // tab,如果將 lang 強制改做「純音樂」,呢 65 首喺舊 App 度邊個 tab 都
+  // 揀唔到 = 人間蒸發;保持真 lang 就最多係「暫時仲喺原語言 tab 度」,
+  // 而 §8 Q5 Eric 已經接受呢個過渡期行為。real_lang 上面嗰行已經一律
+  // 出街,所以呢度乜都唔使做——呢段註解就係要防止第日有人「補返對稱」。
+  // 呢個墊喺 lite 分支都要行(C-1 要求「同一模一樣嘅…kids→lang 墊/real_lang」)。
+  for (const h of hymns) {
+    h.real_lang = h.lang;
+    if (h.kids) h.lang = '兒童';
+  }
+  // dataVersion 隨 envelope 帶埋出去,向後兼容(舊 client 淨係讀 .data 唔受影響)。
+  const dataVersion = getDataVersion();
+  console.log(`📚 /api/hymns ${lite ? 'lite' : 'full'} fetch → ${hymns.length} hymns, dataVersion=${dataVersion}`);
+  const body = JSON.stringify({ data: hymns, dataVersion });
+  // PERF-STAGE2-2C-20260902-C6-OPUS §5.5 —— miss 唔再同步 gzipSync。即刻
+  // 用 raw body 起 cache slot(冇 gz/br),送出去嗰次由 compression
+  // middleware 用返 async 協商;gz/br 用 `scheduleHymnsCompression`
+  // 喺背景補(唔阻呢個 request)。
+  const cacheEntry = { dataVersion, json: body };
+  if (lite) hymnsLiteResponseCache = cacheEntry;
+  else hymnsResponseCache = cacheEntry;
+  scheduleHymnsCompression(cacheEntry, () => (lite ? hymnsLiteResponseCache : hymnsResponseCache), `/api/hymns ${lite ? 'lite' : 'full'}`);
+  return cacheEntry;
+}
+
 // Get all hymns from the database
 app.get('/api/hymns', async (req, res) => {
   try {
@@ -484,60 +569,45 @@ app.get('/api/hymns', async (req, res) => {
       // full 冇 suffix、lite 有 `-lite`。
       return sendHymnsCache(req, res, cacheSlot, lite ? 'lite' : undefined);
     }
-    const db = await getDb();
-    // lyrics included so the player can show real 歌詞 (§3.4) and grey out the
-    // 歌詞 pill when a song has none. Only ~10 of the curated songs have lyrics,
-    // so the payload cost is negligible.
-    // tags / view_count / created_at:俾自動播放 chip 加權抽樣用(AUTOPLAY-MIX-PLAN §5.6)。
-    // 全部係現有欄位(view_count 而家係 0,等 metadata job 填;tags 等標註 pass)。
-    // album / title_en:詩歌庫頁本地搜尋要齊維度(SEARCH-MERGE-PLAN §5)。
-    // org / performer / kids:TAXONOMY-5D-PLAN.md §2.2/§4.4 五維分類新欄。
-    // instrumental:INSTRUMENTAL-CATEGORY-PLAN §3.2 Phase 2a —— 純音樂 flag,
-    // 前端詩歌庫 tab + 首頁 chip 靠佢分流(Phase 1 已經回標咗 65 首)。
-    // PERF-STAGE2-2C-20260902 C-1 —— lite 分支淨係喺 SELECT 欄位表剷走
-    // `lyrics`,其餘 17 個欄位/次序完全一樣,`?lite=1` 缺席(`lite===false`)
-    // 嗰句 column list 同改動前逐字一樣。
-    const columns = lite
-      ? 'id, title, display_title, artist, youtube_id, lang, duration, tags, view_count, created_at, album, title_en, org, performer, kids, instrumental'
-      : 'id, title, display_title, artist, youtube_id, lang, duration, lyrics, tags, view_count, created_at, album, title_en, org, performer, kids, instrumental';
-    const stmt = db.prepare(`SELECT ${columns} FROM hymns ORDER BY id`);
-    const hymns = [];
-    while (stmt.step()) {
-      hymns.push(stmt.getAsObject());
-    }
-    // TAXONOMY-5D-PLAN.md §3.4 K-E 兼容墊:kids=1 嘅歌對外 lang 永遠show
-    // 「兒童」(舊 client filter `lang==='兒童'` 唔會斷),真語言另開 real_lang
-    // 出——而家(C4 換血前)kids=1 嘅 row 喺 DB 入面 lang 本身就係「兒童」,
-    // 所以呢個墊而家係 no-op,唔會改變現有 API 行為(見 §8 C1 落地後驗證)。
-    // INSTRUMENTAL-CATEGORY-PLAN §3.2 —— instrumental **刻意冇**對應嘅
-    // lang 改寫(對比上面 kids 嗰句)。舊 client 個 LANGS 冇「純音樂」呢個
-    // tab,如果將 lang 強制改做「純音樂」,呢 65 首喺舊 App 度邊個 tab 都
-    // 揀唔到 = 人間蒸發;保持真 lang 就最多係「暫時仲喺原語言 tab 度」,
-    // 而 §8 Q5 Eric 已經接受呢個過渡期行為。real_lang 上面嗰行已經一律
-    // 出街,所以呢度乜都唔使做——呢段註解就係要防止第日有人「補返對稱」。
-    // 呢個墊喺 lite 分支都要行(C-1 要求「同一模一樣嘅…kids→lang 墊/real_lang」)。
-    for (const h of hymns) {
-      h.real_lang = h.lang;
-      if (h.kids) h.lang = '兒童';
-    }
-    // dataVersion 隨 envelope 帶埋出去,向後兼容(舊 client 淨係讀 .data 唔受影響)。
-    const dataVersion = getDataVersion();
-    console.log(`📚 /api/hymns ${lite ? 'lite' : 'full'} fetch → ${hymns.length} hymns, dataVersion=${dataVersion}`);
-    const body = JSON.stringify({ data: hymns, dataVersion });
-    // PERF-STAGE2-2C-20260902-C6-OPUS §5.5 —— miss 唔再同步 gzipSync。即刻
-    // 用 raw body 起 cache slot(冇 gz/br),送出去嗰次由 compression
-    // middleware 用返 async 協商;gz/br 用 `scheduleHymnsCompression`
-    // 喺背景補(唔阻呢個 request)。
-    const cacheEntry = { dataVersion, json: body };
-    if (lite) hymnsLiteResponseCache = cacheEntry;
-    else hymnsResponseCache = cacheEntry;
-    scheduleHymnsCompression(cacheEntry, () => (lite ? hymnsLiteResponseCache : hymnsResponseCache), `/api/hymns ${lite ? 'lite' : 'full'}`);
+    // PERF-STAGE2-2C7-OPUS-20260902 §(2) —— 並發 miss dedupe:同一
+    // dataVersion 嘅並發 request 共用一次 `computeHymnsEntry`,唔會各自
+    // SELECT+stringify+schedule 壓縮。
+    const cacheEntry = await dedupeHymnsMiss(
+      () => (lite ? hymnsLiteMissInFlight : hymnsFullMissInFlight),
+      (v) => { if (lite) hymnsLiteMissInFlight = v; else hymnsFullMissInFlight = v; },
+      currentDataVersion,
+      () => computeHymnsEntry(lite),
+    );
     sendHymnsCache(req, res, cacheEntry, lite ? 'lite' : undefined);
   } catch (err) {
     console.error('Failed to fetch hymns:', err.message);
     res.status(500).json({ error: 'Failed to fetch hymns' });
   }
 });
+
+// PERF-STAGE2-2C7-OPUS-20260902 §(2) —— `/api/hymns/lyrics` miss 嗰刻真正
+// 計嘢嘅部分,同上面 `computeHymnsEntry` 一樣抽出嚟俾 `dedupeHymnsMiss`
+// call,邏輯逐字搬自改之前嘅 route handler。
+async function computeHymnsLyricsEntry() {
+  const db = await getDb();
+  const stmt = db.prepare("SELECT id, lyrics FROM hymns WHERE lyrics IS NOT NULL AND lyrics != '' ORDER BY id");
+  const data = {};
+  let count = 0;
+  while (stmt.step()) {
+    const row = stmt.getAsObject();
+    data[row.id] = row.lyrics;
+    count++;
+  }
+  const dataVersion = getDataVersion();
+  console.log(`📚 /api/hymns/lyrics fetch → ${count} hymns, dataVersion=${dataVersion}`);
+  const body = JSON.stringify({ data, dataVersion });
+  // PERF-STAGE2-2C-20260902-C6-OPUS §5.5 —— 同 `/api/hymns` 一樣,miss
+  // 唔再同步 gzipSync,background schedule gz/br。
+  const cacheEntry = { dataVersion, json: body };
+  hymnsLyricsResponseCache = cacheEntry;
+  scheduleHymnsCompression(cacheEntry, () => hymnsLyricsResponseCache, '/api/hymns/lyrics');
+  return cacheEntry;
+}
 
 // PERF-STAGE2-2C-20260902 C-1(A-6 落地)—— `/api/hymns/lyrics`:淨係 84.1%
 // (5,387/6,405)有非空 lyrics 嘅歌先入呢個 map,前端起播/揭開一首歌先要
@@ -553,29 +623,18 @@ app.get('/api/hymns/lyrics', async (req, res) => {
     if (hymnsLyricsResponseCache && hymnsLyricsResponseCache.dataVersion === currentDataVersion) {
       return sendHymnsCache(req, res, hymnsLyricsResponseCache, 'lyrics');
     }
-    const db = await getDb();
-    const stmt = db.prepare("SELECT id, lyrics FROM hymns WHERE lyrics IS NOT NULL AND lyrics != '' ORDER BY id");
-    const data = {};
-    let count = 0;
-    while (stmt.step()) {
-      const row = stmt.getAsObject();
-      data[row.id] = row.lyrics;
-      count++;
-    }
-    const dataVersion = getDataVersion();
-    console.log(`📚 /api/hymns/lyrics fetch → ${count} hymns, dataVersion=${dataVersion}`);
-    const body = JSON.stringify({ data, dataVersion });
-    // PERF-STAGE2-2C-20260902-C6-OPUS §5.5 —— 同 `/api/hymns` 一樣,miss
-    // 唔再同步 gzipSync,background schedule gz/br。
-    hymnsLyricsResponseCache = { dataVersion, json: body };
-    scheduleHymnsCompression(hymnsLyricsResponseCache, () => hymnsLyricsResponseCache, '/api/hymns/lyrics');
-    sendHymnsCache(req, res, hymnsLyricsResponseCache, 'lyrics');
+    const cacheEntry = await dedupeHymnsMiss(
+      () => hymnsLyricsMissInFlight,
+      (v) => { hymnsLyricsMissInFlight = v; },
+      currentDataVersion,
+      () => computeHymnsLyricsEntry(),
+    );
+    sendHymnsCache(req, res, cacheEntry, 'lyrics');
   } catch (err) {
     console.error('Failed to fetch hymn lyrics:', err.message);
     res.status(500).json({ error: 'Failed to fetch hymn lyrics' });
   }
 });
-
 
 
 // Global unhandled rejection / exception handler to prevent backend crash

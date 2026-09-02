@@ -72,9 +72,58 @@ export function getDataVersion() {
 // admin 寫入 hymns.db 完(lib/adminHymns.js)一定要 call 呢個 —— dbPromise
 // 清咗,下一個 request 嘅 getDb() 會由碟開新鮮副本;dataVersion 同時重算,
 // App 端先知要 refetch(§3.3 大註解:呢個係成件事嘅膊頭位)。
+//
+// PERF-STAGE2-2C6-OPUS-20260902.md §5.2 —— 呢度以前**從來冇 `db.close()`**。
+// sql.js 嘅 `new SQL.Database(buffer)` 將個 buffer 掛落 emscripten MEMFS,
+// `close()` 入面先會 unlink 返(釋放 wasm heap 嗰邊嘅 arrayBuffer);淨係
+// `dbPromise = null` 冇人再 hold 住個 JS reference,但 wasm heap 嗰邊
+// **永遠唔會縮**(wasm 記憶體只可以長)。Opus 5 實測(`--expose-gc` 逐輪
+// 強制 full GC):冇 close() 每次 reload 淨袋 +58MB、5 輪 143→392MB;有
+// close() 五輪企定唔郁。C-4 之前 `reloadDb()` 淨係 admin in-process 寫入
+// 先 call(罕有);C-4 `maybeReload()` 令佢變成「夜晚 job 每次改完
+// hymns.db 就 fire 一次」——由「幾個禮拜一次」變「一日 1-4 次」,即係
+// +58MB ~ +230MB/日、永不歸還。
+//
+// 修法:唔可以即刻 close 舊 database——攞住舊 `dbPromise` 嗰一刻,可能
+// 有 request 啱啱好 `await getDb()` 攞咗返嚟嘅**係嗰一份**、仲喺度做緊
+// 同步 SQL(prepare/step/free),close 咗會令佢哋 `Error: Database
+// closed`。要延遲 close,等所有仲揸住舊 reference 嘅 handler 實一係做完。
+//
+// **延遲揀 10 秒嘅根據**(唔係亂諗嘅數):grep 晒全 backend 所有 `getDb()`
+// caller(`routes/stream.js` ×2、`routes/me.js`、`routes/hls.js`、
+// `server.js` ×4——`/api/hymns` 兩條、keep-warm tick、daily warm
+// cron),逐個核實**攞到 `db` 之後全部係『同步』用完就放手**(`prepare`→
+// `step`/`bind`→`getAsObject`→`free`,一路冇 `await`),之後即使函數本身
+// 繼續行落去(例如再 `await resolveAudioUrl(...)`),都**唔會再掂返
+// `db` 呢個 reference**。即係冇一個 caller 會「攞到 db → await 第二樣嘢
+// → 先至再用返 db」。所有實測嘅同步 SQL 操作(SELECT 6,405 行都好)喺
+// <100ms 完成(見 C-6 §3.2 harness),10 秒係呢個數量級嘅 100 倍安全邊際。
+// ⚠️ 如果第日有新 caller 打破呢個 pattern(攞到 db 之後跨 await 仲用),
+// 呢個 10 秒假設就要重新檢討,要嘛加大延遲要嘛改用 refcount。
+const DB_CLOSE_DELAY_MS = 10_000;
+
 export function reloadDb() {
+  const old = dbPromise;
   dbPromise = null;
   dataVersion = computeDataVersion();
+  if (old) {
+    old
+      .then((db) => {
+        const t = setTimeout(() => {
+          try {
+            db.close();
+          } catch (e) {
+            // 已經 close 咗,或者呢個版本冇 close() 方法——唔好因為清理
+            // 動作本身而炸咗成個 backend。
+          }
+        }, DB_CLOSE_DELAY_MS);
+        if (typeof t.unref === 'function') t.unref(); // 唔好因為呢個背景清理 timer 拖住 process 唔收工
+      })
+      .catch(() => {
+        // 舊 `dbPromise` 本身已經係 rejected(例如上次 readFileSync 失敗
+        // 嗰個)——冇 db 可以 close,唔使處理。
+      });
+  }
 }
 
 // PERF-STAGE2-2C-20260902 C-4 —— out-of-process writer(夜晚 growLibrary/

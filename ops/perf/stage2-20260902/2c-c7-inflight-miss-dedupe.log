@@ -1,0 +1,29 @@
+
+=== (C-6,冇 in-flight dedupe)3 個並發 miss,full route ===
+📚 /api/hymns full fetch → 6405 hymns, dataVersion=1788343145973.675-61054976
+📚 /api/hymns full fetch → 6405 hymns, dataVersion=1788343145973.675-61054976
+📚 /api/hymns full fetch → 6405 hymns, dataVersion=1788343145973.675-61054976
+SELECT 執行次數(full) = 3 (改前 bug:expect 3)
+
+
+=== 3 個並發 miss(同一 dataVersion),full route ===
+📚 /api/hymns full fetch → 6405 hymns, dataVersion=1788343145949.7576-61054976
+status codes: 200 200 200
+SELECT 執行次數(full) = 1 (expect 1)
+
+=== 3 個並發 miss(同一 dataVersion),?lite=1 route(獨立 slot,自己 SELECT 1 次)===
+📚 /api/hymns lite fetch → 6405 hymns, dataVersion=1788343145949.7576-61054976
+SELECT 執行次數(lite) = 1 (expect 1)
+
+=== 3 個並發 miss(同一 dataVersion),/api/hymns/lyrics route ===
+📚 /api/hymns/lyrics fetch → 5387 hymns, dataVersion=1788343145949.7576-61054976
+SELECT 執行次數(lyrics) = 1 (expect 1)
+
+=== 三條 route 一齊 miss(唔同 route,各自要行一次)===
+📚 /api/hymns full fetch → 6405 hymns, dataVersion=1788343167032-61054976
+📚 /api/hymns lite fetch → 6405 hymns, dataVersion=1788343167032-61054976
+📚 /api/hymns/lyrics fetch → 5387 hymns, dataVersion=1788343167032-61054976
+呢輪之後嘅 delta: { full: 1, lite: 1, lyrics: 1 } (expect full=1, lite=1, lyrics=1 —— 唔同 route 各自要計一次,但同 route 嘅重複 request 唔加)
+
+=== 正確性:三次回應內容一致(byte-for-byte)===
+三次 /api/hymns 回應 byte-for-byte 一致 = true
