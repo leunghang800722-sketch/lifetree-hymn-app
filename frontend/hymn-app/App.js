@@ -57,6 +57,7 @@ import { getPlayLog, getRecentIds, recordPlay } from './src/playLog';
 import { getAutoplayEnabled, setAutoplayEnabled, getAutoplayFlavor, setAutoplayFlavor } from './src/autoplayPrefs';
 import { useInsets } from './src/hooks/useInsets';
 import { getDisplayTitle } from './src/utils/displayTitle';
+import { mark, useRenderCount, recordNavBeacon } from './src/perfMarks'; // PERF-BASELINE-1B-20260902
 // 播放清單 / 加入到清單 sheet 用 @gorhom/bottom-sheet 嘅 **inline `<BottomSheet>`**(v229)。
 //
 // ⚠️ v228 曾經誤判呢個係「reanimated 4 + gorhom 5 唔夾」。真正原因係 **z-order**,唔關
@@ -2956,6 +2957,7 @@ const olStyles = StyleSheet.create({
 //  MINI PLAYER — YT Music 扁條風格
 // ================================================================
 function MiniPlayer({ onPress }) {
+  useRenderCount('Mini'); // PERF-BASELINE-1B-20260902
   const player = usePlayer();
   const { currentHymn, isPlaying, togglePlayPause } = player;
   const { isFavorite, toggleFavorite } = useFavorites();
@@ -3021,6 +3023,7 @@ const TAB_CONFIG = [
   { key: 'Mine',    label: '我的',   icon: 'me' },
 ];
 function TabBar({ activeTab, onTabChange, bottomInset, onMiniPlayerPress }) {
+  useRenderCount('TabBar'); // PERF-BASELINE-1B-20260902
   const safePad = Math.max(bottomInset || 0, 4);
   return (
     <View style={[tbStyles.wrapper, { paddingBottom: safePad + 8 }]}>
@@ -3172,6 +3175,7 @@ function ProgressSection() {
 const REPEAT_MODE_LABELS = ['唔循環', '循環播放全部', '單曲循環'];
 
 function FullScreenPlayerOverlay() {
+  useRenderCount('FullPlayer'); // PERF-BASELINE-1B-20260902
   // 用統一嘅 useInsets:佢會幫 Android 落個底線,唔會計出 0 令 collapsed sheet
   // 貼死喺螢幕底俾導航列蓋住(見 useInsets.js)。
   const insets = useInsets();
@@ -3885,6 +3889,8 @@ function parseSharedToken(url) {
 }
 
 function AppContent() {
+  useRenderCount('AppContent'); // PERF-BASELINE-1B-20260902
+  useEffect(() => { mark('cont'); }, []); // PERF-BASELINE-1B-20260902 — AppContent mount
   const {
     hymns, setHymns, playQueue, playSingle, showPlayer, queueReady,
     isPlaying: debugPlaying, currentHymn, togglePlayPause: debugToggle,
@@ -4212,6 +4218,26 @@ function AppContent() {
   }
   function handleOpenFullScreen() { showPlayer(); }
 
+  // PERF-BASELINE-1B-20260902 — tab 導航 tap-to-mount/tap-to-paint 量度
+  // (三個 tab keep-mount,「mount」呢度近似做「State 更新 commit 咗」;
+  // 「paint」用雙 rAF 之後嗰刻)。純量度,唔改任何導航行為。
+  const navTapRef = useRef(null);
+  const handleTabChange = useCallback((tab) => {
+    navTapRef.current = Date.now();
+    setActiveTab(tab);
+  }, []);
+  useEffect(() => {
+    const tStart = navTapRef.current;
+    if (tStart == null) return; // 首次掛載,唔係用戶撳出嚟嘅
+    navTapRef.current = null;
+    const tapToMountMs = Date.now() - tStart;
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        recordNavBeacon(activeTab, tapToMountMs, Date.now() - tStart);
+      });
+    });
+  }, [activeTab]);
+
   // B9 修 —— MiniPlayer 之前淨係喺 <TabBar> 入面 render(主 tab 專用)。
   // 「睇晒 N 首」分類詳情頁(下面 HymnList Modal)同「我的」入面嘅播放清單
   // 詳情頁(PlaylistDetailSheet,喺 MineScreen.js 度)兩個都係 **native
@@ -4287,7 +4313,7 @@ function AppContent() {
           更新行 TestFlight 自己嘅更新機制,唔 gate 嘅話會攞 iOS build number
           同 Android versionCode 亂比,仲叫 iPhone 用戶去落 APK。 */}
       {!__DEV__ && Platform.OS === 'android' ? <ApkUpdateBanner /> : null}
-      <TabBar activeTab={activeTab} onTabChange={setActiveTab}
+      <TabBar activeTab={activeTab} onTabChange={handleTabChange}
         bottomInset={bottomInset} onMiniPlayerPress={handleOpenFullScreen} />
 
       {/* HymnList Modal */}
@@ -4492,6 +4518,7 @@ const apkUpdateBannerStyles = StyleSheet.create({
 
 // ===== App Entry =====
 export default function App() {
+  mark('app'); // PERF-BASELINE-1B-20260902 — App() 首次 render
   // ODE-REBRAND-PLAN B2 followup:Sora(拉丁字標)+ Noto Serif TC(金句/歌詞)
   // 已改做 build 期靜態嵌入(app.json expo-font plugin `fonts` array +
   // android/app/src/main/assets/fonts/),唔再靠 runtime `useFonts()`——

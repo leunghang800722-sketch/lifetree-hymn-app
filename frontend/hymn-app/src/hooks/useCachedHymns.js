@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { getStorage } from '../storage';
 import { API_BASE } from '../config.js';
 import { createExternalStore } from './externalStore.js';
+import { mark, note } from '../perfMarks'; // PERF-BASELINE-1B-20260902
 
 // BATCH5 O7:改用 AbortController——舊嘅 Promise.race 逾時之後底層 fetch
 // 連線唔會斷,慢網下會同 retry(fetchAllHymnsWithRetry)疊住背景繼續拉多
@@ -106,12 +107,18 @@ function kickRefreshOnce() {
   let hadCache = false;
   if (s) {
     try {
+      mark('mmkvReadStart');
       const cached = s.getString('allHymns');
+      mark('mmkvReadEnd');
       if (cached) {
+        mark('parseStart');
         const parsed = JSON.parse(cached);
+        mark('parseEnd');
         if (Array.isArray(parsed) && parsed.length > 0) {
+          note('hymnsCount', parsed.length);
           hymnsStore.setState({ hymns: parsed });
           hymnsStore.setState({ loading: false });
+          mark('cacheReady');
           hadCache = true;
         }
       }
@@ -124,14 +131,20 @@ function kickRefreshOnce() {
   // 閃一嘢錯誤畫面。要等第一次網絡攞到結果(成功或者真係失敗)先收。
 
   async function refresh() {
+    mark('verStart');
     const serverVersion = await fetchVersion();
+    mark('verEnd');
 
     // 冇 cache 嘅時候一定要做一次全量 fetch,唔可以因為 version 啱就 skip
     // ——嗰個 skip 係「慳流量」用嘅,前提係已經有嘢喺畫面度顯示緊。
     const canSkip = hadCache && serverVersion != null && cachedVersion && serverVersion === cachedVersion;
+    note('verSkip', canSkip ? 1 : 0);
     if (!canSkip) {
+      mark('hymnsStart');
       const { hymns: fresh, dataVersion } = await fetchAllHymnsWithRetry();
+      mark('hymnsEnd');
       if (fresh && fresh.length > 0) {
+        note('hymnsCount', fresh.length);
         if (s) {
           s.set('allHymns', JSON.stringify(fresh));
           s.set('allHymnsVersion', dataVersion ?? serverVersion ?? '');

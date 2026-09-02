@@ -23,6 +23,7 @@ import FriendSharesSheet from './FriendSharesSheet';
 import { getDisplayTitle } from '../utils/displayTitle';
 import { adminListDelistedHymns, friendsList, friendsAccept, friendsDelete, friendsErrorMessage } from '../api';
 import { useCachedHymns } from '../hooks/useCachedHymns';
+import { mark, useRenderCount } from '../perfMarks'; // PERF-BASELINE-1B-20260902
 
 function Cover({ youtubeId, size = 52 }) {
   const [failed, setFailed] = useState(false);
@@ -40,6 +41,8 @@ function Cover({ youtubeId, size = 52 }) {
 }
 
 export default function MineScreen({ onPlayHymn, onOpenAuth, onOpenAdminAdd, miniPlayer, hasMiniPlayer }) {
+  useRenderCount('Mine'); // PERF-BASELINE-1B-20260902
+  useEffect(() => { mark('mineMount'); }, []); // PERF-BASELINE-1B-20260902
   const { favorites = [], toggleFavorite } = useFavorites() || {};
   const { playlists = [], deletePlaylist } = usePlaylists() || {};
   const { user, isAdmin, getToken } = useAuth() || {};

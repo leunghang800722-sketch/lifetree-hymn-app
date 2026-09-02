@@ -1,3 +1,4 @@
+import './src/perfMarks'; // PERF-BASELINE-1B-20260902 — 必須係第一行,T0 盡量貼近 bundle entry
 import { registerRootComponent } from 'expo';
 import TrackPlayer from 'react-native-track-player';
 import App from './App';

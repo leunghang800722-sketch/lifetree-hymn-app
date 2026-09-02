@@ -34,6 +34,7 @@ import { isTooLongForAutoplay } from '../../utils/autoplay';
 import { getLocalUri } from '../../audioPrefetch';
 import { useFavorites } from '../../context/FavoritesContext';
 import { getDisplayTitle } from '../../utils/displayTitle';
+import { mark, useRenderCount } from '../../perfMarks'; // PERF-BASELINE-1B-20260902
 
 const LANGS = ['粵語', '國語', '英文'];
 
@@ -124,6 +125,7 @@ function SongCard({ hymn, onPress }) {
 }
 
 export default function HomeScreen({ hymns = [], loading = false, onPlayHymn, onOpenList }) {
+  useRenderCount('Home'); // PERF-BASELINE-1B-20260902
   // 有歌先計嘢。冇歌(未 load / 冇網)整頁一個狀態,唔好五個區塊各自閃 loading(§2.7)
   const hasData = Array.isArray(hymns) && hymns.length > 0;
 
@@ -229,6 +231,12 @@ export default function HomeScreen({ hymns = [], loading = false, onPlayHymn, on
     // surface='shuffle' —— W4 量度用(唔靠「首數啱唔啱」去猜入口,見 App.js)。
     play(shuffled[0], shuffled, true, 'shuffle'); // 洗好副牌 = 明確嘅清單,唔好再加隨機尾巴
   }, [hymns, hasData, play]);
+
+  // PERF-BASELINE-1B-20260902 — mount effect + 兩個 rAF 之後先記 'home' mark,
+  // 近似「呢個 screen 真係畫咗一幀出嚟」(唔淨係 effect 排程嗰刻)。
+  React.useEffect(() => {
+    requestAnimationFrame(() => { requestAnimationFrame(() => { mark('home'); }); });
+  }, []);
 
   if (!hasData) {
     // 仲喺度攞緊(未 timeout / 未 retry 完)—— 顯示 loading,唔好一冇歌就
