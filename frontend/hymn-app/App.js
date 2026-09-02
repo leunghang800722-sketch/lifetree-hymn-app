@@ -16,7 +16,7 @@ import {
   View, Text, ScrollView, TouchableOpacity, StyleSheet,
   ActivityIndicator, StatusBar, Image, Platform, Alert, AppState,
   Modal, Dimensions, FlatList, Animated, Linking, Share, BackHandler,
-  PermissionsAndroid,
+  PermissionsAndroid, InteractionManager,
 } from 'react-native';
 import { FavoritesProvider, useFavorites } from './src/context/FavoritesContext';
 import { PlaylistsProvider, usePlaylists } from './src/context/PlaylistsContext';
@@ -3915,6 +3915,29 @@ function AppContent() {
   // 先真係 mount,mount 咗之後同舊行為一樣 keep-mount(靠 display:none 切
   // 換,搜尋字串/scroll 位唔會因為呢個改動而跨 tab 唔見咗)。
   const [libraryEverVisited, setLibraryEverVisited] = useState(false);
+  // E-2(PERF-STAGE2-2E-20260902,回應 PERF-STAGE2-2B-OPUS-20260902.md §4.3)
+  // —— F-4 淨係「首次撳先 mount」令首次撳詩歌庫 tapToPaint 由 72ms 跌到
+  // 539ms(撳落去嗰 237ms 完全冇畫面反應),仲會推遲 LibraryScreen.js:139
+  // 嗰個歌詞索引 InteractionManager 預熱(要等 mount 先存在)。呢個 idle
+  // pre-mount 保留 F-4 嘅開機收益(home 首幀唔會同 Library mount 爭同一條
+  // JS thread——`runAfterInteractions` 保證等緊首屏 render/動畫嗰輪
+  // interaction 做完先郁,額外 500ms buffer 避開緊接住嘅其他背景 kick),
+  // 但喺首屏畫完之後就自動 mount,唔使等用戶撳。用戶喺 idle 未到就撳嘅
+  // case 靠下面 render 期間 setState 兜底,兩者唔衝突,唔會 double-set
+  // (React 對相同值嘅 useState setter 會 bail out,唔會多 render 一次)。
+  useEffect(() => {
+    const task = InteractionManager.runAfterInteractions(() => {
+      const timer = setTimeout(() => {
+        mark('libIdleMount');
+        setLibraryEverVisited(true);
+      }, 500);
+      task.timer = timer;
+    });
+    return () => {
+      if (task.timer) clearTimeout(task.timer);
+      if (task.cancel) task.cancel();
+    };
+  }, []);
   const [authVisible, setAuthVisible] = useState(false);
   const [hymnListVisible, setHymnListVisible] = useState(false);
 
