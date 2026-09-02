@@ -231,9 +231,24 @@ app.get('/api/internal/activity', (req, res) => {
   res.json({ streaming: anyStreaming() });
 });
 
+// PERF-STAGE2-EXEC-20260902 §2A A-1 — /api/hymns response cache, keyed on
+// getDataVersion()(hymns.db 嘅 mtime+size,見 lib/serverDb.js)。呢條 route
+// 每次都要 SELECT 6,405 行 + getAsObject() + JSON.stringify(~5.5MB),1A A2
+// 量到呢三步合共 ~110-190ms;dataVersion 冇變即係 hymns.db 冇被 admin 寫過,
+// 應該可以放心出返上次計好嘅同一份 string,唔使重做呢輪工。reloadDb()(admin
+// 寫入後一定會 call)會清 dbPromise 但**唔會**主動清呢個 cache——所以判斷
+// 用 dataVersion 讀出嚟嘅值本身(reloadDb 令佢重新計過),而唔係靠一個獨立
+// 「已被清」旗標,先至可以自然 miss。
+let hymnsResponseCache = null; // { dataVersion, json }
+
 // Get all hymns from the database
 app.get('/api/hymns', async (req, res) => {
   try {
+    const currentDataVersion = getDataVersion();
+    if (hymnsResponseCache && hymnsResponseCache.dataVersion === currentDataVersion) {
+      res.set('Content-Type', 'application/json');
+      return res.send(hymnsResponseCache.json);
+    }
     const db = await getDb();
     // lyrics included so the player can show real 歌詞 (§3.4) and grey out the
     // 歌詞 pill when a song has none. Only ~10 of the curated songs have lyrics,
@@ -266,7 +281,10 @@ app.get('/api/hymns', async (req, res) => {
     // dataVersion 隨 envelope 帶埋出去,向後兼容(舊 client 淨係讀 .data 唔受影響)。
     const dataVersion = getDataVersion();
     console.log(`📚 /api/hymns full fetch → ${hymns.length} hymns, dataVersion=${dataVersion}`);
-    res.json({ data: hymns, dataVersion });
+    const body = JSON.stringify({ data: hymns, dataVersion });
+    hymnsResponseCache = { dataVersion, json: body };
+    res.set('Content-Type', 'application/json');
+    res.send(body);
   } catch (err) {
     console.error('Failed to fetch hymns:', err.message);
     res.status(500).json({ error: 'Failed to fetch hymns' });
