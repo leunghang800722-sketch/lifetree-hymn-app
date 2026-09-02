@@ -1,0 +1,6 @@
+
+=== real /api/hymns full, Accept-Encoding: gzip ===
+[access] 2026-09-02T08:37:29.191Z GET /api/hymns 200 233ms 1474227b
+
+=== cache-hit repeat, same headers ===
+[access] 2026-09-02T08:37:29.363Z GET /api/hymns 200 117ms 1474227b

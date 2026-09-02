@@ -37,6 +37,76 @@ const PORT = process.env.PORT || 3001;
 app.use(cors());
 app.use(express.json());
 
+// PERF-STAGE2-EXEC-20260902 §2A A-3(修 PERF-STAGE2-2C-20260902 C-3)——
+// 輕量 access log。1B S6/1A A4 都撞過「呢條 route 幾時俾人打過」完全冇數
+// 得查(search.js/category.js/home.js 三個檔完全冇 console.*),要靠 grep
+// 4.9 日窗口嘅 log 先間接推論。加一條通用 middleware,唔改任何 route 自己
+// 嘅邏輯/log。
+//
+// **一定要喺 `app.use(compression(...))` 之前註冊**(呢個係 C-3 同 A-3
+// 原版唯一嘅位置分別,原因見下面 §1):
+//
+// §1 bytes 唔可以靠 `content-length` header(A-3 原版做法)—— Opus 5
+// 驗收(PERF-STAGE2-2A-OPUS-20260902.md §3.3)實測到:compression 對壓縮
+// 過嘅 response 一律剷走 Content-Length(chunked encoding 冇呢個 header
+// 嘅概念),即係最想量 bytes 嗰條 `/api/hymns` 出街之後永遠見 `-b`。修法
+// 唔係讀 header,而係自己喺 `res.write`/`res.end` 層面砌住實際寫出嘅
+// bytes——但呢個要求呢個 middleware 一定要**喺 compression 之前**
+// 註冊:compression 喺自己個 middleware function 入面就即刻同步
+// monkey-patch `res.write`/`res.end`,如果我哋喺佢之後(舊 A-3 個位置)
+// 先再包一層,我哋攞到嘅係 compression **決定點壓縮之前**嗰個原始
+// (未壓縮)chunk;而家擺喺佢之前,compression 會將我哋個 wrapper 當
+// 「原始 res.write」嚟保存同 call(佢自己嘅 wrapper 壓完先轉頭 call
+// 返我哋),我哋先真正攞到最後寫落 socket 嗰啲(已壓縮)bytes——即係
+// wire bytes,同 CF edge/client 收到嘅大細一致。
+//
+// §2 `ms` 唔可以淨聽 `finish`——Opus 5 §3.6 實測:client 連 socket 都
+// 未讀就 destroy,server 一樣會 fire `finish`(意思係「寫晒落 kernel
+// socket buffer」,唔係「client 收晒」),log 出嚟同一條成功嘅 200 request
+// 一模一樣,分唔到「其實中途 abort 咗」。而家 `finish` 同 `close` 兩個都
+// 聽,邊個先到用邊個(`done` 旗標防止兩個都 fire 就 log 兩次);`close`
+// 喺 `finish` 之前到就標 `aborted=1`。
+//
+// 排除 `/api/stream`、`/api/hls`(已經有自己成套遙測,呢度加多一行只會
+// 洗版)同 `/api/client-log`(佢自己就係一條 log route,再幫佢 log 一次
+// 冇意思)。
+app.use((req, res, next) => {
+  const p = req.path; // 一定要即刻讀、存落 local var——Express router 派發去
+  // sub-router 嗰陣會就地改咗 req.url(裁走 mount prefix),完咗又冇 next()
+  // 落嚟就唔會復原,遲啲先讀 req.path 會攞到裁剩嗰截(例如
+  // `/api/home/daily-verse` 變咗 `/daily-verse`),見 harness 實測抓到。
+  if (!p.startsWith('/api/')) return next();
+  if (p.startsWith('/api/stream') || p.startsWith('/api/hls') || p.startsWith('/api/client-log')) return next();
+
+  // §1 —— 喺 compression 有機會 wrap 之前,自己先攞住 res.write/res.end
+  // 嘅參照。compression 之後會將呢兩個(已經係我哋嘅 wrapper)當「原始
+  // 方法」嚟保存,佢自己嘅 wrapper 壓完 gzip 先轉頭 call 返呢度,所以
+  // `bytes` 計嘅係真正寫落 socket 嗰啲——壓縮咗就係壓縮後嘅大細。
+  let bytes = 0;
+  const origWrite = res.write.bind(res);
+  const origEnd = res.end.bind(res);
+  res.write = function (chunk, ...rest) {
+    if (chunk) bytes += Buffer.byteLength(chunk, typeof rest[0] === 'string' ? rest[0] : undefined);
+    return origWrite(chunk, ...rest);
+  };
+  res.end = function (chunk, ...rest) {
+    if (chunk) bytes += Buffer.byteLength(chunk, typeof rest[0] === 'string' ? rest[0] : undefined);
+    return origEnd(chunk, ...rest);
+  };
+
+  const start = Date.now();
+  let done = false;
+  const logAccess = (aborted) => {
+    if (done) return; // §2 —— finish/close 邊個先到算數,唔准 log 兩次
+    done = true;
+    const ms = Date.now() - start;
+    console.log(`[access] ${new Date().toISOString()} ${req.method} ${p} ${res.statusCode} ${ms}ms ${bytes}b${aborted ? ' aborted=1' : ''}`);
+  };
+  res.on('finish', () => logAccess(false));
+  res.on('close', () => logAccess(true));
+  next();
+});
+
 // PERF-STAGE2-EXEC-20260902 §2A A-2 — gzip JSON API 回應。1A A1 量到
 // /api/hymns 5.57MB→(prod+gzip)1.47MB,但呢個 gzip 淨係 Cloudflare edge 自己
 // 見 `Accept-Encoding: gzip` 就順手做(origin 本身冇 compression middleware)
@@ -68,32 +138,6 @@ app.use((req, res, next) => {
   if (host === 'api.god-music.com' && req.path.startsWith('/downloads/')) {
     return res.redirect(301, `https://api.odemusics.com${req.originalUrl}`);
   }
-  next();
-});
-
-// PERF-STAGE2-EXEC-20260902 §2A A-3 — 輕量 access log。1B S6/1A A4 都撞過
-// 「呢條 route 幾時俾人打過」完全冇數得查(search.js/category.js/home.js 三個
-// 檔完全冇 console.*),要靠 grep 4.9 日窗口嘅 log 先間接推論。加一條通用
-// middleware,唔改任何 route 自己嘅邏輯/log。**一定要喺所有 `/api/*` route
-// mount 之前**——Express 一撞到先匹配嘅 router 就會直接處理完 response,
-// 唔會再行落嚟後面先註冊嘅 middleware,擺喺 home/search/category/audio 等
-// mount 之後會令呢啲 route 完全冇 log 到(第一版擺錯位,harness 測到冇出過
-// 任何 [access] 行先發現)。排除 `/api/stream`、`/api/hls`(已經有自己成套
-// 遙測,呢度加多一行只會洗版)同 `/api/client-log`(佢自己就係一條 log
-// route,再幫佢 log 一次冇意思)。
-app.use((req, res, next) => {
-  const p = req.path; // 一定要即刻讀、存落 local var——Express router 派發去
-  // sub-router 嗰陣會就地改咗 req.url(裁走 mount prefix),完咗又冇 next()
-  // 落嚟就唔會復原,`finish` event 先讀 req.path 會攞到裁剩嗰截(例如
-  // `/api/home/daily-verse` 變咗 `/daily-verse`),見 harness 實測抓到。
-  if (!p.startsWith('/api/')) return next();
-  if (p.startsWith('/api/stream') || p.startsWith('/api/hls') || p.startsWith('/api/client-log')) return next();
-  const start = Date.now();
-  res.on('finish', () => {
-    const ms = Date.now() - start;
-    const bytes = res.getHeader('content-length') ?? '-';
-    console.log(`[access] ${new Date().toISOString()} ${req.method} ${p} ${res.statusCode} ${ms}ms ${bytes}b`);
-  });
   next();
 });
 
