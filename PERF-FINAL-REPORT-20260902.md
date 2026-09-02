@@ -1,7 +1,7 @@
 # Odely 效能改善工程 — 改前→改後總結 2026-09-02
 
 Fable 5.1 總負責；Sonnet 5 執行（1A/1B/2A/2B/2C/2D/2E/Stage 3）；Opus 5 獨立驗收（baseline/2A/2B/2C/2D/Stage 3）。
-全部改動已 commit 喺 `feature/player-rebuild`（HEAD b7eb419），**未部署**（等 Eric 真機 HLS QA 完先 restart backend + OTA）。
+全部改動已 commit 喺 `feature/player-rebuild`；**2026-09-02 11:01Z 已部署**（Eric 拍板「隨時」）：backend restart sha d89b3ad（health OK，PID 16266），smoke 10/10 過，OTA android group `18e4d7aa-0c80-4488-96d5-ee06ae604d98` / ios group `16f388e7-f525-4589-9eff-6256cff60607`（sha d89b3ad）。碟上 179 個 .webm（10GB）+ 21 個舊 DB/lock 備份已刪（Eric 拍板），`backend/backups/` 7 日輪替保留。
 文件索引見 §7。
 
 ## 1. 一句話
