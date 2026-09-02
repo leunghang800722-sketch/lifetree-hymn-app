@@ -22,8 +22,15 @@ async function fetchWithTimeout(url, ms = 8000) {
 async function fetchAllHymns() {
   try {
     const r = await fetchWithTimeout(`${API_BASE}/api/hymns`);
+    mark('hymnsTtfb'); // D-1(PERF-STAGE2-2B-20260902) — headers 到嗰刻
     if (!r.ok) return { hymns: [], dataVersion: null };
-    const body = await r.json();
+    // D-1:r.json() 改做 r.text()+JSON.parse 兩步,行為完全不變(結果一樣),
+    // 淨係為咗喺兩步之間可以插一個 mark 拆開「攞 body 」同「parse」兩段耗時。
+    const t = await r.text();
+    mark('hymnsBody');
+    note('hymnsBytes', t.length);
+    const body = JSON.parse(t);
+    mark('hymnsParse');
     const d = body?.data || body;
     return { hymns: Array.isArray(d) ? d : [], dataVersion: body?.dataVersion ?? null };
   } catch (e) {

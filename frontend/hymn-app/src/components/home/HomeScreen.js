@@ -34,7 +34,7 @@ import { isTooLongForAutoplay } from '../../utils/autoplay';
 import { getLocalUri } from '../../audioPrefetch';
 import { useFavorites } from '../../context/FavoritesContext';
 import { getDisplayTitle } from '../../utils/displayTitle';
-import { mark, useRenderCount } from '../../perfMarks'; // PERF-BASELINE-1B-20260902
+import { mark, span, useRenderCount } from '../../perfMarks'; // PERF-BASELINE-1B-20260902
 
 const LANGS = ['粵語', '國語', '英文'];
 
@@ -131,7 +131,12 @@ export default function HomeScreen({ hymns = [], loading = false, onPlayHymn, on
 
   // 每一頁 = 一個分類。每頁 5 首每日輪換(日期種子,當日內唔變),salt 用 chip id,
   // 唔同分類唔會抽埋同一批。夠 3 首先開個 chip,唔好俾空清單呃人。
-  const chips = useMemo(() => buildChips(hymns), [hymns]);
+  const chips = useMemo(() => {
+    const __t0 = Date.now(); // D-1(PERF-STAGE2-2B-20260902)
+    const __r = buildChips(hymns);
+    span('secChips', Date.now() - __t0);
+    return __r;
+  }, [hymns]);
 
   // chip = 撳一下切分類(照舊)。記低嗰個可能已經冇咗,fallback 返第一個。
   const [chipId, setChipId] = useState(() => getHomeChip());
@@ -141,12 +146,14 @@ export default function HomeScreen({ hymns = [], loading = false, onPlayHymn, on
   // 唔夠 20 首就少啲頁(例如靈修 14 首 = 3 頁),最尾一頁唔滿都照出,
   // 但每頁高度鎖死 5 行,唔會因為尾頁少歌而彈高彈低。
   const pages = useMemo(() => {
-    if (!activeChip) return [];
+    const __t0 = Date.now(); // D-1(PERF-STAGE2-2B-20260902)
+    if (!activeChip) { span('secPages', Date.now() - __t0); return []; }
     const picked = dailyPick(activeChip.songs, activeChip.id, SONGS_PER_PAGE * MAX_PAGES);
     const out = [];
     for (let i = 0; i < picked.length; i += SONGS_PER_PAGE) {
       out.push(picked.slice(i, i + SONGS_PER_PAGE));
     }
+    span('secPages', Date.now() - __t0);
     return out;
   }, [activeChip]);
 
@@ -172,14 +179,22 @@ export default function HomeScreen({ hymns = [], loading = false, onPlayHymn, on
   // 先過 hasAlbum() 先揀,唔淨係「即刻揀歌」有呢條規矩(同 homeChips.js
   // 嘅 hasAlbum 共用一份定義,唔好抄第二份)。
   const todayPicks = useMemo(() => {
+    const __t0 = Date.now(); // D-1(PERF-STAGE2-2B-20260902) — 含 hasAlbum filter
     const qualityPool = hymns.filter(hasAlbum);
     const featuredPool = qualityPool.filter((h) => h.featured === 1);
     const pool = featuredPool.length >= 6 ? featuredPool : qualityPool;
-    return dailyPickBalanced(pool, 'today', 6, LANGS);
+    const __r = dailyPickBalanced(pool, 'today', 6, LANGS);
+    span('secToday', Date.now() - __t0);
+    return __r;
   }, [hymns]);
 
   // 「最近加入」—— 冇 created_at,用 id 由大到細近似(id 大 = 遲加入)
-  const recent = useMemo(() => [...hymns].sort((a, b) => b.id - a.id).slice(0, 12), [hymns]);
+  const recent = useMemo(() => {
+    const __t0 = Date.now(); // D-1(PERF-STAGE2-2B-20260902)
+    const __r = [...hymns].sort((a, b) => b.id - a.id).slice(0, 12);
+    span('secRecent', Date.now() - __t0);
+    return __r;
+  }, [hymns]);
 
   // v231 —— 兩種播放語義(Eric 要求,對齊 Spotify/YT Music):
   //   explicit = true  → 用戶揀咗**成個清單**(「播全部」/「隨心聽」),跟清單次序播晒。

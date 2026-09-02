@@ -23,7 +23,7 @@ import FriendSharesSheet from './FriendSharesSheet';
 import { getDisplayTitle } from '../utils/displayTitle';
 import { adminListDelistedHymns, friendsList, friendsAccept, friendsDelete, friendsErrorMessage } from '../api';
 import { useCachedHymns } from '../hooks/useCachedHymns';
-import { mark, useRenderCount } from '../perfMarks'; // PERF-BASELINE-1B-20260902
+import { mark, span, useRenderCount } from '../perfMarks'; // PERF-BASELINE-1B-20260902
 
 function Cover({ youtubeId, size = 52 }) {
   const [failed, setFailed] = useState(false);
@@ -43,6 +43,7 @@ function Cover({ youtubeId, size = 52 }) {
 export default function MineScreen({ onPlayHymn, onOpenAuth, onOpenAdminAdd, miniPlayer, hasMiniPlayer }) {
   useRenderCount('Mine'); // PERF-BASELINE-1B-20260902
   useEffect(() => { mark('mineMount'); }, []); // PERF-BASELINE-1B-20260902
+  const __renderT0 = Date.now(); // D-1(PERF-STAGE2-2B-20260902) — render function 頭
   const { favorites = [], toggleFavorite } = useFavorites() || {};
   const { playlists = [], deletePlaylist } = usePlaylists() || {};
   const { user, isAdmin, getToken } = useAuth() || {};
@@ -195,6 +196,8 @@ export default function MineScreen({ onPlayHymn, onOpenAuth, onOpenAdminAdd, min
 
   // edge-to-edge:唔加 top inset 個大字標題會同狀態列時間疊埋(見 useInsets.js)
   const insets = useInsets();
+
+  span('mineRenderMs', Date.now() - __renderT0); // D-1(PERF-STAGE2-2B-20260902) — render function 尾
 
   return (
     <View style={[styles.container, { paddingTop: insets.top + 8 }]}>

@@ -17,7 +17,7 @@ import { useAdminEditHymn } from '../components/AdminEditHymnSheet';
 import { useAuth } from '../context/AuthContext';
 import AvatarButton from '../components/AvatarButton';
 import { getDisplayTitle } from '../utils/displayTitle';
-import { mark, useRenderCount } from '../perfMarks'; // PERF-BASELINE-1B-20260902
+import { mark, span, useRenderCount } from '../perfMarks'; // PERF-BASELINE-1B-20260902
 
 // INSTRUMENTAL-CATEGORY-PLAN §3.3 #1(Phase 2b)—— 「純音樂」擺最尾,前面
 // 四個語言 tab 嘅次序唔郁(用戶肌肉記憶)。佢唔係一個 lang 值,係讀
@@ -79,6 +79,7 @@ function Cover({ youtubeId, size = 52 }) {
 export default function LibraryScreen({ hymns = [], onPlayHymn, onOpenAuth }) {
   useRenderCount('Library'); // PERF-BASELINE-1B-20260902
   useEffect(() => { mark('libraryMount'); }, []); // PERF-BASELINE-1B-20260902
+  const __renderT0 = Date.now(); // D-1(PERF-STAGE2-2B-20260902) — render function 頭
   const [lang, setLang] = useState('全部');
   const [org, setOrg] = useState(null);
   // 兒童 tab 內語言 sub-chips(TAXONOMY-5D-PLAN §4.2)—— 淨喺 lang==='兒童' 時生效。
@@ -260,6 +261,8 @@ export default function LibraryScreen({ hymns = [], onPlayHymn, onOpenAuth }) {
 
   // edge-to-edge:唔加 top inset 個大字標題會同狀態列時間疊埋(見 useInsets.js)
   const insets = useInsets();
+
+  span('libraryRenderMs', Date.now() - __renderT0); // D-1(PERF-STAGE2-2B-20260902) — render function 尾
 
   return (
     <View style={[styles.container, { paddingTop: insets.top + 8 }]}>

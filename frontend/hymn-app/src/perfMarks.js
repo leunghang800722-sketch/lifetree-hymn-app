@@ -163,8 +163,11 @@ export function schedulePerfMarksBeacon() {
   safe(() => {
     setTimeout(() => {
       safe(() => {
+        // D-1(PERF-STAGE2-2B-20260902):dropped `rnst:` summary from this
+        // string to make room — 冇任何比較表格用過呢個欄,拎走純為咗
+        // 300 字上限畀新加嘅 hymns fetch 三段(ttfb/body/parse)留位,
+        // 唔影響任何改前/改後對比嘅欄位。
         const detail = [
-          `rnst:${buildRnstSummary()}`,
           `b0=0`,
           `app=${getMark('app')}`,
           `cont=${getMark('cont')}`,
@@ -176,12 +179,45 @@ export function schedulePerfMarksBeacon() {
           `verMs=${durMark('verStart', 'verEnd')}`,
           `verSkip=${getNote('verSkip')}`,
           `hymnsMs=${durMark('hymnsStart', 'hymnsEnd')}`,
+          // D-1 新增:/api/hymns 單一 fetch 拆三段——headers 到(ttfb)、
+          // r.text() 完(body)、JSON.parse 完(pars);byt=body 嘅 string.length。
+          `ttfb=${durMark('hymnsStart', 'hymnsTtfb')}`,
+          `body=${durMark('hymnsTtfb', 'hymnsBody')}`,
+          `pars=${durMark('hymnsBody', 'hymnsParse')}`,
+          `byt=${getNote('hymnsBytes')}`,
           `fetch=${fetchSummary()}`,
           `rss=na`,
         ].join(' ');
         sendBeacon('perfMarks', detail);
       });
     }, 15000);
+  });
+}
+
+// ---------------------------------------------------------------------------
+// D-1(PERF-STAGE2-2B-20260902)—— 首頁各 section 嘅 compute 耗時(span())
+// + 兩個 hidden tab(Library/Mine)首次 render 嘅耗時,獨立一個 beacon,
+// 5 秒後送(首頁 section 嘅 useMemo 同 Library/Mine 嘅 render 都喺開機頭
+// 幾百 ms 內就會發生,5 秒窗口綽綽有餘,唔使等 15 秒個 perfMarks beacon)。
+// ---------------------------------------------------------------------------
+let perfHomeSent = false;
+export function schedulePerfHomeBeacon() {
+  if (perfHomeSent) return;
+  perfHomeSent = true;
+  safe(() => {
+    setTimeout(() => {
+      safe(() => {
+        const detail = [
+          `chips=${getMark('secChips')}`,
+          `pages=${getMark('secPages')}`,
+          `today=${getMark('secToday')}`,
+          `recent=${getMark('secRecent')}`,
+          `lib=${getMark('libraryRenderMs')}`,
+          `mine=${getMark('mineRenderMs')}`,
+        ].join(' ');
+        sendBeacon('perfHome', detail);
+      });
+    }, 5000);
   });
 }
 
@@ -214,4 +250,5 @@ if (PERF_MARKS_ENABLED) {
   installFetchCounter();
   schedulePerfMarksBeacon();
   scheduleRenderBeacons();
+  schedulePerfHomeBeacon(); // D-1(PERF-STAGE2-2B-20260902)
 }
