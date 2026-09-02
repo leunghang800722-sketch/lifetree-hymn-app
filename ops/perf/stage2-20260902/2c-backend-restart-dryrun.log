@@ -1,0 +1,36 @@
+❌ abort:HEAD (ab78c988c1b1680f4796e3ef4ffde3007fb01776) 唔等於已批准嘅 backend.sha (84f2e0315c949edf808d2ea6b89d36674fa195a3)。
+
+你想 restart 嘅 tree 包含以下未經批准嘅 commit(git log 84f2e0315c949edf808d2ea6b89d36674fa195a3..HEAD):
+ab78c98 feat(backend): C-4 dataVersion 自動追 out-of-process 寫入(maybeReload）
+c55cfa9 fix(backend): C-3 access log bytes/abort — 移到 compression 之前 + finish/close
+a9e64bf docs(perf): Stage2 2B 執行報告 — D-1/F-1/F-2/F-3/F-4 證據表
+8d7a2d4 feat(backend): C-1 落地 A-6 — /api/hymns?lite=1 + /api/hymns/lyrics
+78e7acb fix(backend): C-2 還原 /api/audio/cache/{stats,warm-stats}(A-4 carve-out)
+20a9ba0 chore(cleanup): Stage 3 尾巴 — .dockerignore 剷走 9 個已刪 root script 條目（Opus 驗收保留①）
+8a837eb docs: Stage 3 執行報告 PERF-STAGE3-20260902.md
+2c47252 docs: Stage 3 S3-6 — 標註已刪 script 喺舊規劃文件嘅提及
+bbaeec8 chore(cleanup): Stage 3 S3-5 — deviceId.js 剷走零引用嘅 __resetForTest
+b13088f chore(cleanup): Stage 3 S3-4 — home.js 剷走已死嘅 queryAll/queryOne + getDb import
+3227fc3 chore(cleanup): Stage 3 S3-3 — 移除 6 個一次性目錄爬蟲 + 1 個 oneoff script
+5baf3e1 chore(cleanup): Stage 3 S3-2 — 移除 backend root 14 個舊 script + db.js
+8a2e729 perf(instrument): section span 改用 performance.now()(Opus 5 course-correction)
+297bf52 perf(app): F-2 降級做診斷 — PlayerProvider 加 useRenderCount 純計數器
+4321f46 perf(fetch): F-1 course-correction — hymns fetch 拆兩段timeout(8s headers/30s body)+逐attempt記marks
+d8b7f04 chore(cleanup): Stage 3 S3-1 — 移除 7 個 git tracked 舊備份檔（history 保留）
+d547279 perf(app): F-4 — Library tab lazy-mount(首次撳先真 mount),Mine 維持恆常 mount
+b9e0f64 perf(home): F-3 — SongCard 改 React.memo(props 拆 list/onSelect 換走 inline onPress)
+77fa5ee perf(backend): explicit Cache-Control on /api/hymns + /api/version (Stage2 A-5)
+ebe29ba perf(backend): deprecate unused search/category/audio routes + 9 home routes to 410 (Stage2 A-4)
+fcfb62e perf(instrument): D-1 fix — 首頁section span/hidden tab render cost 淨計「真資料」嗰次
+5943880 perf(backend): add /api/* access-log middleware, excl. stream/hls/client-log (Stage2 A-3)
+8f56b02 perf(backend): gzip JSON API responses via compression middleware (Stage2 A-2)
+d51c3bc perf(instrument): D-1 — hymns fetch三段拆時(ttfb/body/parse)+首頁section span+hidden tab render cost
+06d0cb8 perf(backend): cache /api/hymns response keyed on dataVersion (Stage2 A-1)
+0ad1a3f perf(instr): perfMarks 開機/導航/re-render 量度儀器（PERF-BASELINE-1B-20260902）
+7a0a96c home: 即刻揀歌/隨心聽/今日為你預備 加 hasAlbum() quality filter
+f509c3b fix(player): HLS 起播期用 setPlayWhenReady(true) kick 代替 seek-nudge/giveup — 修 AVPlayer rate 卡 0
+aefcd58 fix(player): HLS 起播期唔准降級 progressive — R1 CAP豁免/R2 門檻8tick/R3 30s ceiling/R4 pos<1 suppress hlsFallback
+
+如果呢啲 commit 已經攞到 Eric go,請先跑:
+  ops/deploy/approve.sh backend ab78c988c1b1680f4796e3ef4ffde3007fb01776 --confirm
+exit=1
