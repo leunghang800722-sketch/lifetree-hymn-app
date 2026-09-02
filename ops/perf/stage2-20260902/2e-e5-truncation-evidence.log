@@ -1,0 +1,18 @@
+7e9407a65472621112d573a8ea6f7b39 len= 300
+'b0=0 app=195 cont=260 mmkvRead=0 parse=- n=6405 cacheReady=- home=333 verMs=960 verSkip=0 hymnsMs=8251 att=1 ok1=1 a1t=866 a1b=7361 a1p=24 a2t=- a2b=- a2p=- byt=3657732 lyrMs=- lyrBytes=- merged=1 fetch=10(api/version:1,api/health:1,api/app-version:1,api/hymns:1,api/client-log:2,api/stream:3,api/hom'
+
+7e9407a65472621112d573a8ea6f7b39 len= 280
+'b0=0 app=109 cont=182 mmkvRead=17 parse=17 n=6405 cacheReady=176 home=388 verMs=895 verSkip=1 hymnsMs=- att=- ok1=- a1t=- a1b=- a1p=- a2t=- a2b=- a2p=- byt=- lyrMs=- lyrBytes=- merged=- fetch=8(api/version:1,api/health:1,api/stream:2,api/home:1,api/app-version:1,api/client-log:2)'
+
+7e9407a65472621112d573a8ea6f7b39 len= 281
+'b0=0 app=130 cont=205 mmkvRead=18 parse=17 n=6405 cacheReady=199 home=407 verMs=1185 verSkip=1 hymnsMs=- att=- ok1=- a1t=- a1b=- a1p=- a2t=- a2b=- a2p=- byt=- lyrMs=- lyrBytes=- merged=- fetch=7(api/version:1,api/health:1,api/stream:1,api/home:1,api/app-version:1,api/client-log:2)'
+
+7e9407a65472621112d573a8ea6f7b39 len= 281
+'b0=0 app=117 cont=193 mmkvRead=18 parse=18 n=6405 cacheReady=187 home=398 verMs=1216 verSkip=1 hymnsMs=- att=- ok1=- a1t=- a1b=- a1p=- a2t=- a2b=- a2p=- byt=- lyrMs=- lyrBytes=- merged=- fetch=8(api/version:1,api/health:1,api/stream:1,api/home:1,api/app-version:1,api/client-log:3)'
+
+90412aa2aa10bc5672b317e733f15e5a len= 300
+'b0=0 app=139 cont=182 mmkvRead=0 parse=- n=6405 cacheReady=- home=235 verMs=916 verSkip=0 hymnsMs=5026 att=1 ok1=1 a1t=580 a1b=4423 a1p=23 a2t=- a2b=- a2p=- byt=3657732 liteMs=5026 lyrMs=- lyrBytes=- merged=1 fetch=13(api/version:1,api/health:1,api/app-version:1,api/hymns:1,api/client-log:2,api/stre'
+
+90412aa2aa10bc5672b317e733f15e5a len= 289
+'b0=0 app=122 cont=212 mmkvRead=16 parse=18 n=6405 cacheReady=206 home=415 verMs=804 verSkip=1 hymnsMs=- att=- ok1=- a1t=- a1b=- a1p=- a2t=- a2b=- a2p=- byt=- liteMs=- lyrMs=- lyrBytes=- merged=- fetch=8(api/version:1,api/health:1,api/stream:1,api/home:1,api/app-version:1,api/client-log:3)'
+

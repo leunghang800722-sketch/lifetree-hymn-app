@@ -1,0 +1,12 @@
+{
+  "withoutFix": {
+    "cachedVersionAtStart": "v1",
+    "cachedVersionAfterFail": "v1",
+    "canSkipNextBoot": true
+  },
+  "withFix": {
+    "cachedVersionAtStart": "v1",
+    "canSkipNextBoot": false
+  }
+}
+RESULT: PASS(bug 重現 + 修法生效,兩者都證明咗)

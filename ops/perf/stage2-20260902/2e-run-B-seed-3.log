@@ -1,0 +1,5 @@
+=== label=B mode=seed run=3 app=/private/tmp/claude-501/-Users-macbookpro--openclaw-workspace-hymn-app/dbef9ccd-547a-4212-8309-0735348d98c1/scratchpad/BEFORE-2E.app ===
+verify: expect=3725280 actual=3725280 match=YES
+com.hymnapp.praise: 90200
+seed launched at host_ts=1788343112379, waiting 40s for E-5 delay+merge+MMKV write
+=== done B seed 3 ===
