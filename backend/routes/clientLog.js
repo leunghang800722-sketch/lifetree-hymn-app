@@ -43,7 +43,7 @@ export default function clientLogRoutes(app) {
         // 新欄位之後,實測(見交付報告)worst case ~178 字,舊 120 上限會靜靜
         // truncate 埋新欄位——即係今次成個驗收要睇嘅數會憑空冇咗。300 留返
         // 充裕 headroom。
-        detail: String(b.detail || '').slice(0, 300),
+        detail: String(b.detail || '').slice(0, 400), // PERF-STAGE2-2E §3：perfMarks cold-fetch beacon 頂格 300 會截尾欄，放寬到 400
         // NATIVE-STALL-PROGRESS-PREDICATE-PLAN-20260831 v4 §4-3:JS logDiag()
         // 而家每條都帶 platform,等以後唔使再靠 ua= 反查對號分兩部機。
         platform: String(b.platform || '').slice(0, 10),
