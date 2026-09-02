@@ -61,7 +61,7 @@
 
 **低優先尾巴**
 - [alignBackfill.js:111](backend/scripts/alignBackfill.js:111)、[:139](backend/scripts/alignBackfill.js:139)
-- [generate_hymns.js:37](backend/generate_hymns.js:37)(legacy 一次性工具)
+- [generate_hymns.js:37](backend/generate_hymns.js:37)(legacy 一次性工具，2026-09-02 Stage 3 已移除)
 - [producer-keeper.sh:133](ops/lyrics/producer-keeper.sh:133) — ⚠️ 順手發現佢仲用緊 `-f 18`,而 format 18 YouTube 8/18 起已經唔派(8/19 事故已實錘),呢句大概率係死代碼/注定失敗,P2 一齊執
 
 各 launchd plist(`com.hymnapp.backend` / `growlibrary` / `fetchlyrics` / `deadlinkcheck` / `backfillmeta` / `alignbackfill`)全部特登 set PATH 包 `/opt/homebrew/bin` 先搵到 brew yt-dlp —— 統一做絕對路徑之後,呢個 PATH 依賴對 yt-dlp 嚟講就唔再 load-bearing(ffmpeg/whisper 等其他工具照舊要)。
@@ -115,7 +115,7 @@ export const YTDLP = process.env.YTDLP_BIN
 - 改動 call site(全部係「`yt-dlp` → `"${YTDLP}"`」機械替換,唔郁任何 flag/邏輯):
   - **P1(要 restart)**:`resolveAudio.js:159`、`routes/admin.js:238`、`lib/hymnDb.js:327`、`lib/reconcileCore.js` ×3
   - **P1 同批但唔使 restart**(script 每次冷 spawn):`fetchLyrics.js:338/:357`(順手剷咗佢自己個 `YTDLP` const 改 import),`fetchLyrics.js:466` 指返新路徑
-  - **P2**:`alignBackfill.js` ×2、`generate_hymns.js:37`、`producer-keeper.sh:133`(呢條順手處理 `-f 18` 死格式:改 `bestaudio` 或者直接剷,執行時睇上下文定)
+  - **P2**:`alignBackfill.js` ×2、`generate_hymns.js:37`（2026-09-02 Stage 3 已移除）、`producer-keeper.sh:133`(呢條順手處理 `-f 18` 死格式:改 `bestaudio` 或者直接剷,執行時睇上下文定)
 - `backend/tools/.gitignore` 加 `yt-dlp*`(37MB binary 唔准入 git;而家係 untracked 裸奔,遲早俾 `git add -A` 誤中——雖然多 session 紀律本身已禁 `git add -A`,都係落閘穩陣)。repo 冇 binary 時嘅 bootstrap 一句寫入 `ops/launchd/README.md`:行一次 update script 就會落返嚟。
 
 #### (b) 更新機制:`ops/ytdlp/update-ytdlp.sh`
@@ -207,7 +207,7 @@ Layer B 個 mid-range @ 2MiB 要求條音軌 ≥2MiB(m4a ~128kbps 即 ≥ 約 2 
 | **P0-b** | `update-ytdlp.sh` + `com.hymnstream.ytdlpupdate` plist + 監督下行第一次(會即刻把 8/18 凍結版升到最新 nightly,修正「repo binary 舊過 brew」嘅倒掛) | 新 script + 新 plist,零 backend 代碼 | ❌ | ~2-3h(canary 失敗路徑要真測:揼個假 binary 落 temp 位驗 rollback) | 無 |
 | **P0-c** | 健康檢查 6h→3h(§3.4) | plist 一行 + bootout/bootstrap | ❌ | ~15min | Eric 拍板 |
 | **P1** | `ytdlpBin.js` + 6 個 backend call site 統一 + `preVerifyUrl` 2MiB 探針 + server.js 開機 log 一行印 binary 版本/路徑 + tools/.gitignore | `resolveAudio.js` / `admin.js` / `hymnDb.js` / `reconcileCore.js` / `fetchLyrics.js` / `server.js` | ✅ 行 deploy gate,**搭下一個現成 restart 窗口,唔好為佢單獨 restart**(brew 版啱啱升完,而家冇燃眉之急);Eric 真機 QA 進行中一律唔准部署(舊紀律) | ~2h 代碼 + 驗收 | P0-b 行過至少一次(確保 `backend/tools/yt-dlp` 存在且係最新) |
-| **P2** | 尾巴:`alignBackfill.js`/`generate_hymns.js` 換路徑、`producer-keeper.sh` 剷 `-f 18` 死格式、`ops/launchd/README.md` 補 bootstrap 一句 | 三個低風險檔 | ❌(scripts 逐次冷 spawn) | ~1h | P1 |
+| **P2** | 尾巴:`alignBackfill.js`/`generate_hymns.js`（2026-09-02 Stage 3 已移除）換路徑、`producer-keeper.sh` 剷 `-f 18` 死格式、`ops/launchd/README.md` 補 bootstrap 一句 | 三個低風險檔 | ❌(scripts 逐次冷 spawn) | ~1h | P1 |
 
 執行順序:**P0-a → P0-b →(拍板後)P0-c → P1(等 restart 窗)→ P2**。P0 三件全部唔掂 backend process、唔掂 hymns.db、唔掂 DNS/cert(派工照舊明文禁 Cloudflare)。
 
@@ -306,7 +306,7 @@ backend/tools/ytdlp-venv-b/     → 閒置/rollback:stable 2026.8.19
 
 ### 7.4 殘留風險 / 未做
 
-- **Legacy `.cjs` 一次性工具**(`expand_hymns*.cjs`、`e2_*.cjs`、`fix_dead_ytdlp.cjs`、
+- **Legacy `.cjs` 一次性工具**(`expand_hymns*.cjs`、`e2_*.cjs`、`fix_dead_ytdlp.cjs`（2026-09-02 Stage 3 已移除）、
   `tools/scrape_ytdlp.cjs`)仲用緊 bare `yt-dlp`(即 brew 版)。冇改:全部係
   一次性 scraper,唔喺任何排程/運行時路徑。真係要再用嗰陣先順手改。
 - **`preVerifyUrl` 由 1 byte @ 0 改做 1 byte @ 2MiB**:對 <2MiB 嘅短歌會收 416,

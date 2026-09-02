@@ -91,7 +91,7 @@
 | # | 項目 | 位置 | 內容 | 改動面 |
 |---|---|---|---|---|
 | P1-1 | **三處臨時 `always:true` beacon 未閂** 📱 | `App.js:840,847,893` | `stateChange`/`trackChanged` 嘅 `{always:true}` 已 commit(`2f4c26b`),繞過 `DIAG_ENABLED`,一 OTA 就每首歌 4-6 個 POST。註解自己寫明「收夠數據要改返落嚟」——而家實況:**由 commit 到今晚一條真機數據都未收過**(前端未 OTA),閂返零證據損失。⚠️ 其餘六個 `always:true`(PlaybackError/watchdog giveup/wallClockDrift 等)係設計上永久開,**唔好一齊閂** | 3 行 |
-| P1-2 | **6 個 backup 檔 git-tracked,共 4,439 行** ⚙️ | `frontend/hymn-app/App.js.{fullbak,trackplayer-backup,v134-expo-av,v135-youtube,v138-bak}`、`index.js.bak` | 零引用(Metro 根本 resolve 唔到呢啲 extension),但同現役 code 撞名(五份都有自己嘅 `handlePlayHymn`/`PlayerContext`),grep/AI 搜尋必中伏。git history 保得住,`git rm` 就得 | 刪 6 檔 |
+| P1-2 | **6 個 backup 檔 git-tracked,共 4,439 行** ⚙️（2026-09-02 Stage 3 已移除 App.js.{fullbak,v134-expo-av,v135-youtube,v138-bak}/index.js.bak，`trackplayer-backup` 該版本已不存在） | `frontend/hymn-app/App.js.{fullbak,trackplayer-backup,v134-expo-av,v135-youtube,v138-bak}`、`index.js.bak` | 零引用(Metro 根本 resolve 唔到呢啲 extension),但同現役 code 撞名(五份都有自己嘅 `handlePlayHymn`/`PlayerContext`),grep/AI 搜尋必中伏。git history 保得住,`git rm` 就得 | 刪 6 檔 |
 | P1-3 | **healthcheck 紅色警報指去唔存在嘅 rollback 程序** ⚙️ | `ops/lyrics/stream-healthcheck.sh:162` | 兩層檢查都 fail 嗰陣個警報教人 `mv` 返 `backend/tools/yt-dlp.prev`——`29fe63f` 之後 rollback 已改成 a/b slot symlink,`.prev` 唔存在。下次事故 on-call 跟住做會白燒時間 | 1 行 |
 | P1-4 | **dl-failures ledger 帶住壞 binary 年代嘅 strike** ⚙️ | `backend/data/lyrics-dl-failures.json`(機制:`fetchLyrics.js:150-152`) | 1,976 條入面 1,054 條 `fails=2`,當中 845 條係 8/18–8/19(format 18/舊 binary 全線 403 兩日)——病因已消失,但呢批歌**再失敗一次就永久 `dl:dead`**。同類誤判已經人手補鑊過兩次(`b2d9bf5` reset 181 首)。建議:寫一支 locked script 將 `lastAt < 2026-08-20` 嘅 strike 歸零 | 一支 script |
 | P1-5 | **`react-native.config.js` 指住已剷嘅 package** ⚙️(下次 prebuild 前) | `frontend/hymn-app/react-native.config.js:1-9` | 仲引用 `react-native-vector-icons`(D7 已剷,node_modules 冇呢個 dir),assets 陣列指住空氣。下次 prebuild/asset link 出事會好難 debug | 刪一個 block |
@@ -114,7 +114,7 @@
 ### P3(cosmetic/歸檔)
 
 - **格式 waterfall 殘留 `/18/`** ⚙️:`fetchLyrics.js:474` + `producer-keeper.sh:140`——YouTube 8/18 起唔派 format 18,同檔註解自己都咁講;兩份字串仲要係逐字 copy,會 drift。抽單一來源或加交叉註解。
-- **7 個 legacy `.cjs` 仲用 bare `yt-dlp`(PATH→brew 版)**:`expand_hymns*.cjs` 等一次性擴庫 script,唔喺 14 個 call site 範圍、平時唔行,但正係 `ytdlpBin.js` 警告嗰種「靜靜哋第二條 path」入口。歸檔或跟 `generate_hymns.js` 先例收編。
+- **7 個 legacy `.cjs` 仲用 bare `yt-dlp`(PATH→brew 版)**:`expand_hymns*.cjs` 等一次性擴庫 script,唔喺 14 個 call site 範圍、平時唔行,但正係 `ytdlpBin.js` 警告嗰種「靜靜哋第二條 path」入口。歸檔或跟 `generate_hymns.js` 先例收編。（2026-09-02 Stage 3 已移除 expand_hymns*.cjs/generate_hymns.js 等 14 個 backend root 舊 script）
 - **scripts/ 大掃除**:25 個零 reference 一次性檔(oneoff-delist 系列/catalog fetcher/已完成 migration)→ 建議 `scripts/archive/` + `backend/legacy/` **搬唔剷**(delist 稽核紀錄+schema 定義有歷史價值);⚠️ `reconcileUserRefs.js` 唔係 dead,係 pending(DELISTED report 寫明要定期跑,值得考慮排入夜間排程)。
 - **前端零碎**:`web-build.js`(孤兒,9 行)、`assets/splash-icon.png`(零引用+同 android-icon-foreground byte-identical,291KB)、`AdminEditHymnSheet.js:17` unused `Keyboard` import、`useScreenTopPad`/`todayKey`/`seededShuffle` 死 export、`PHONE_AUTH_ENABLED` 恆真+`AuthScreen.js:32`/`PhoneLoginScreen.js:6` 兩段註解講緊反話、`app.json` `LSApplicationQueriesSchemes:["youtube"]` 已死 🏗️。
 - **`failCache` 反推 timestamp 耦合**:`resolveAudio.js:229` 用 `failedUntil - FAIL_TTL_MS` 反推,同 `audio.js:92` 公式硬耦合,改存 `{failedAt}` 拆開(純 refactor)。
