@@ -1,0 +1,27 @@
+# A-2: confirm /api/stream + /api/hls unaffected by compression — 2026-09-02T07:50:42Z
+-- /api/stream/42 range 0-1023 (warm id, real routes/stream.js mounted) --
+HTTP/1.1 206 Partial Content
+X-Powered-By: Express
+Access-Control-Allow-Origin: *
+content-type: audio/mp4
+content-length: 1024
+accept-ranges: bytes
+content-range: bytes 0-1023/5646616
+Date: Wed, 02 Sep 2026 07:50:43 GMT
+Connection: keep-alive
+Keep-Alive: timeout=5
+
+code=206 size=1024
+-- /api/hls/42.m3u8 (warm id, real routes/hls.js mounted) --
+HTTP/1.1 200 OK
+X-Powered-By: Express
+Access-Control-Allow-Origin: *
+Content-Type: application/vnd.apple.mpegurl; charset=utf-8
+Cache-Control: no-store
+Content-Length: 2301
+ETag: W/"8fd-3SnroqiXZZB+enT0lx4Iw5SmyJ0"
+Date: Wed, 02 Sep 2026 07:50:43 GMT
+Connection: keep-alive
+Keep-Alive: timeout=5
+
+code=200 size=2301

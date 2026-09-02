@@ -1,0 +1,4 @@
+# A-3 before (no access log middleware) — 2026-09-02T07:47:02Z
+-- harness stdout after hitting /api/version and /api/stream-ish path --
+🗃️  resolve-cache:由碟載返 419 條未過期 URL
+[harness] listening on :3002 pid=10685 HYMNSCACHE=0 COMPRESSION=0 ACCESSLOG=0 CACHECONTROL=0 STREAMHLS=0

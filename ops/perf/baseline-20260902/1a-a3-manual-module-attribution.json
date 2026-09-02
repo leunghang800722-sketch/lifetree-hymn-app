@@ -1,0 +1,272 @@
+{
+  "totalJsBytes": 2654414,
+  "totalMappings": 356045,
+  "skippedLineNotFound": 0,
+  "attributedBytes": 2542693,
+  "top40Modules": [
+    {
+      "src": "/node_modules/react-native/Libraries/Renderer/implementations/ReactNativeRenderer-prod.js",
+      "bytes": 124222
+    },
+    {
+      "src": "/node_modules/react-native/Libraries/Renderer/implementations/ReactFabric-prod.js",
+      "bytes": 119643
+    },
+    {
+      "src": "/node_modules/expo/virtual/streams.js",
+      "bytes": 62513
+    },
+    {
+      "src": "/App.js",
+      "bytes": 62278
+    },
+    {
+      "src": "(no source)",
+      "bytes": 56970
+    },
+    {
+      "src": "/node_modules/@gorhom/bottom-sheet/src/components/bottomSheet/BottomSheet.tsx",
+      "bytes": 47611
+    },
+    {
+      "src": "/node_modules/@react-native/virtualized-lists/Lists/VirtualizedList.js",
+      "bytes": 26542
+    },
+    {
+      "src": "/node_modules/react-native-reanimated/src/animation/util.ts",
+      "bytes": 21638
+    },
+    {
+      "src": "/node_modules/react-native-reanimated/src/layoutReanimation/defaultAnimations/Zoom.ts",
+      "bytes": 20169
+    },
+    {
+      "src": "/node_modules/react-native-reanimated/src/Colors.ts",
+      "bytes": 19371
+    },
+    {
+      "src": "/node_modules/react-native-reanimated/src/index.ts",
+      "bytes": 18962
+    },
+    {
+      "src": "/node_modules/whatwg-url-minimum/dist/whatwg-url-minimum.mjs",
+      "bytes": 18288
+    },
+    {
+      "src": "/node_modules/react-native/src/private/featureflags/ReactNativeFeatureFlags.js",
+      "bytes": 17763
+    },
+    {
+      "src": "/src/screens/MineScreen.js",
+      "bytes": 17382
+    },
+    {
+      "src": "/node_modules/react-native-reanimated/src/animation/transformationMatrix/matrixUtils.tsx",
+      "bytes": 17249
+    },
+    {
+      "src": "/node_modules/react-native-reanimated/src/animation/spring/spring.ts",
+      "bytes": 16744
+    },
+    {
+      "src": "/node_modules/react-native-reanimated/src/layoutReanimation/defaultAnimations/Flip.ts",
+      "bytes": 16606
+    },
+    {
+      "src": "/src/screens/PhoneLoginScreen.js",
+      "bytes": 16313
+    },
+    {
+      "src": "/node_modules/react-native-reanimated/src/layoutReanimation/defaultAnimations/Bounce.ts",
+      "bytes": 15778
+    },
+    {
+      "src": "/node_modules/react-native-reanimated/src/hook/useAnimatedStyle.ts",
+      "bytes": 14373
+    },
+    {
+      "src": "/node_modules/react-native/Libraries/Components/ScrollView/ScrollView.js",
+      "bytes": 14013
+    },
+    {
+      "src": "/src/screens/AdminAddHymnScreen.js",
+      "bytes": 13938
+    },
+    {
+      "src": "/node_modules/react-native-worklets/src/memory/serializable.native.ts",
+      "bytes": 13763
+    },
+    {
+      "src": "/node_modules/react-native-reanimated/src/animation/styleAnimation.ts",
+      "bytes": 13590
+    },
+    {
+      "src": "/node_modules/react-native-reanimated/src/Easing.ts",
+      "bytes": 13430
+    },
+    {
+      "src": "/node_modules/react-native-reanimated/src/layoutReanimation/defaultAnimations/Rotate.ts",
+      "bytes": 13111
+    },
+    {
+      "src": "/node_modules/react-native-reanimated/src/animation/spring/springUtils.ts",
+      "bytes": 13109
+    },
+    {
+      "src": "/node_modules/react-native-reanimated/src/interpolateColor.ts",
+      "bytes": 12655
+    },
+    {
+      "src": "/node_modules/react-native-draggable-flatlist/src/components/DraggableFlatList.tsx",
+      "bytes": 12404
+    },
+    {
+      "src": "/node_modules/@gorhom/bottom-sheet/src/hooks/useGestureEventsHandlersDefault.tsx",
+      "bytes": 12125
+    },
+    {
+      "src": "/node_modules/react-native-reanimated/src/layoutReanimation/defaultAnimations/Fade.ts",
+      "bytes": 12070
+    },
+    {
+      "src": "/node_modules/react-native-worklets/src/runtimes.native.ts",
+      "bytes": 11723
+    },
+    {
+      "src": "/node_modules/react-native-gesture-handler/src/components/Pressable/Pressable.tsx",
+      "bytes": 11073
+    },
+    {
+      "src": "/node_modules/react-native-reanimated/src/common/style/processors/transform.ts",
+      "bytes": 10919
+    },
+    {
+      "src": "/node_modules/react-native-reanimated/src/mutables.ts",
+      "bytes": 10351
+    },
+    {
+      "src": "/node_modules/react-native-reanimated/src/Bezier.ts",
+      "bytes": 10323
+    },
+    {
+      "src": "/src/components/home/HomeScreen.js",
+      "bytes": 10212
+    },
+    {
+      "src": "/src/screens/LibraryScreen.js",
+      "bytes": 10185
+    },
+    {
+      "src": "/node_modules/react-native-svg/src/lib/extract/transform.js",
+      "bytes": 10139
+    },
+    {
+      "src": "/node_modules/react-native/Libraries/Network/XMLHttpRequest.js",
+      "bytes": 10128
+    }
+  ],
+  "top25Packages": [
+    {
+      "pkg": "react-native-reanimated",
+      "bytes": 704946
+    },
+    {
+      "pkg": "react-native",
+      "bytes": 685818
+    },
+    {
+      "pkg": "@gorhom/bottom-sheet",
+      "bytes": 159630
+    },
+    {
+      "pkg": "react-native-gesture-handler",
+      "bytes": 105752
+    },
+    {
+      "pkg": "react-native-svg",
+      "bytes": 104264
+    },
+    {
+      "pkg": "expo",
+      "bytes": 95660
+    },
+    {
+      "pkg": "react-native-worklets",
+      "bytes": 77138
+    },
+    {
+      "pkg": "react-native-draggable-flatlist",
+      "bytes": 63120
+    },
+    {
+      "pkg": "@react-native/virtualized-lists",
+      "bytes": 49431
+    },
+    {
+      "pkg": "react-native-track-player",
+      "bytes": 20687
+    },
+    {
+      "pkg": "expo-file-system",
+      "bytes": 20482
+    },
+    {
+      "pkg": "whatwg-url-minimum",
+      "bytes": 18288
+    },
+    {
+      "pkg": "semver",
+      "bytes": 17782
+    },
+    {
+      "pkg": "expo-modules-core",
+      "bytes": 12662
+    },
+    {
+      "pkg": "expo-updates",
+      "bytes": 10185
+    },
+    {
+      "pkg": "whatwg-fetch",
+      "bytes": 10027
+    },
+    {
+      "pkg": "react-native-mmkv",
+      "bytes": 8102
+    },
+    {
+      "pkg": "react",
+      "bytes": 7799
+    },
+    {
+      "pkg": "@react-native/normalize-colors",
+      "bytes": 7491
+    },
+    {
+      "pkg": "@react-native/js-polyfills",
+      "bytes": 7096
+    },
+    {
+      "pkg": "expo-asset",
+      "bytes": 6889
+    },
+    {
+      "pkg": "regenerator-runtime",
+      "bytes": 6632
+    },
+    {
+      "pkg": "event-target-shim",
+      "bytes": 6204
+    },
+    {
+      "pkg": "@react-native-async-storage/async-storage",
+      "bytes": 5684
+    },
+    {
+      "pkg": "@gorhom/portal",
+      "bytes": 5046
+    }
+  ],
+  "appJsBytes": 62278,
+  "srcSelfBytes": 172215
+}

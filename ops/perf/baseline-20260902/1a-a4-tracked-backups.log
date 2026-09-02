@@ -1,0 +1,16 @@
+2026-09-02T07:27:19Z
+backend/hymns.db.backup-week1
+backend/hymns.db.bak
+frontend/hymn-app/App.js.fullbak
+frontend/hymn-app/App.js.v134-expo-av
+frontend/hymn-app/App.js.v135-youtube
+frontend/hymn-app/App.js.v138-bak
+frontend/hymn-app/index.js.bak
+--- sizes/lines ---
+backend/hymns.db.backup-week1 size=126976 lines=103
+backend/hymns.db.bak size=40960 lines=51
+frontend/hymn-app/App.js.fullbak size=28087 lines=622
+frontend/hymn-app/App.js.v134-expo-av size=28602 lines=638
+frontend/hymn-app/App.js.v135-youtube size=45713 lines=1024
+frontend/hymn-app/App.js.v138-bak size=46907 lines=1078
+frontend/hymn-app/index.js.bak size=100 lines=4

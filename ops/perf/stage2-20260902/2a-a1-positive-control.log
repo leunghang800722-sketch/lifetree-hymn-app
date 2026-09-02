@@ -1,0 +1,4 @@
+# A-1 positive control (DB copy, real hymns.db untouched) — 2026-09-02T07:48:53Z
+[before reload] dataVersion=1788335333291.3855-61054976 r1.hit=false r2.hit=true computeCount=1
+[after touch]  dataVersion=1788335333294-61054976 changed=true r3.hit=false r4.hit=true computeCount=2
+PASS: cache hit/miss follows dataVersion exactly (miss→hit→miss-on-change→hit)

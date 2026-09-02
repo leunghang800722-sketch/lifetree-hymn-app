@@ -1,0 +1,21 @@
+=== hardcoded hex colors in App.js (not via COLORS.) ===
+      10
+=== same, in src/ ===
+      40
+=== designSystem.js itself (expected to have many, baseline) ===
+      18
+=== src/ excluding designSystem.js ===
+      22
+--- App.js hardcode lines ---
+1868:one:native 冇自動重播(上游 #1995 講嘅正正係呢個場景
+3489:             // (疊落 #0B0913 實際渲染 ≈ #9
+--- src/ (excl designSystem.js) hardcode lines ---
+src/icons/odeIcons.js:20:   note: '未收藏 = s + #C3BADF；已收藏 = f +
+src/icons/odeIcons.js:68:   note: '主掣 76dp 圓 #EFE4D2 底，圖形 #1C1
+src/icons/odeIcons.js:90:    note: '選中 = f + #EFE4D2；未選 = s + 
+src/icons/odeIcons.js:141: ease-in-out 交替縮放，色 #EFE4D2（原本綠色）',
+
+--- manual classification ---
+App.js: 8 grep hits total, 6 are inside // comments (design notes / GitHub issue numbers #1995 #1598 #0B0913 mentioned as commentary), 2 are real code: shadowColor: '#000' (lines 4385, 4512)
+src/ (excl designSystem.js): 16 grep hits total, 14 are inside // comments (odeIcons.js design notes, HymnListScreen.js history note, audioPrefetch.js issue numbers), 2 are real code: shadowColor: '#000' (AddToPlaylistSheet.js:307, MineScreen.js:577)
+CONCLUSION-OF-FACT (not a judgement): only 4 real hardcoded-color occurrences in App.js+src/ total, all '#000' for shadowColor. No other raw hex color literals found in live style code outside src/theme/designSystem.js.

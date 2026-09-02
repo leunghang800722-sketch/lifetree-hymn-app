@@ -1,0 +1,14 @@
+=== S3 tab navigation (idb ui tap) ===
+2026-09-02T07:25:41Z
+backend_log_lines_before=21254
+tap Library at (201,807) host_ts=1788333941.817521000
+tap Mine at (334,807) host_ts=1788333944.286497000
+tap Home at (67,807) host_ts=1788333946.454770000
+tap Library at (201,807) host_ts=1788333948.610073000
+tap Home at (67,807) host_ts=1788333950.768508000
+[client-log] 2026-09-02T07:25:42.525Z event="perfNav" clientTs="1788333942332" appState="" hymnId=null position=null duration=null trackState="" repeatMode=null errorSkipCount=null detail="tab=Library tapToMount=39ms tapToPaint=61ms" platform="ios" deviceId="b0b3ad1a1df3fb27ad53970ded69ecf2"
+[client-log] 2026-09-02T07:25:44.738Z event="perfNav" clientTs="1788333944549" appState="" hymnId=null position=null duration=null trackState="" repeatMode=null errorSkipCount=null detail="tab=Mine tapToMount=81ms tapToPaint=114ms" platform="ios" deviceId="b0b3ad1a1df3fb27ad53970ded69ecf2"
+[client-log] 2026-09-02T07:25:46.892Z event="perfNav" clientTs="1788333946699" appState="" hymnId=null position=null duration=null trackState="" repeatMode=null errorSkipCount=null detail="tab=Home tapToMount=82ms tapToPaint=98ms" platform="ios" deviceId="b0b3ad1a1df3fb27ad53970ded69ecf2"
+[client-log] 2026-09-02T07:25:49.040Z event="perfNav" clientTs="1788333948849" appState="" hymnId=null position=null duration=null trackState="" repeatMode=null errorSkipCount=null detail="tab=Library tapToMount=81ms tapToPaint=98ms" platform="ios" deviceId="b0b3ad1a1df3fb27ad53970ded69ecf2"
+[client-log] 2026-09-02T07:25:51.206Z event="perfNav" clientTs="1788333951015" appState="" hymnId=null position=null duration=null trackState="" repeatMode=null errorSkipCount=null detail="tab=Home tapToMount=77ms tapToPaint=98ms" platform="ios" deviceId="b0b3ad1a1df3fb27ad53970ded69ecf2"
+2026-09-02T07:25:54Z

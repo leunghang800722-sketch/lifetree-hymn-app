@@ -1,0 +1,97 @@
+2026-09-02T07:27:55Z
+=== bulk_insert_hymns.js ===
+     125 backend/bulk_insert_hymns.js
+-- package.json/ops/plist refs --
+ops/perf/baseline-20260902/1a-a4-depcheck-backend.json
+-- doc mentions (HANDOFF/*.md at root, docs/) --
+-- other repo file referencing (excl itself, node_modules) --
+ops/perf/baseline-20260902/1a-a4-depcheck-backend.json
+=== check_hymns.cjs ===
+     176 backend/check_hymns.cjs
+-- package.json/ops/plist refs --
+ops/perf/baseline-20260902/1a-a4-depcheck-backend.json
+-- doc mentions (HANDOFF/*.md at root, docs/) --
+-- other repo file referencing (excl itself, node_modules) --
+ops/perf/baseline-20260902/1a-a4-depcheck-backend.json
+=== e2_cn_batch.cjs ===
+      41 backend/e2_cn_batch.cjs
+-- package.json/ops/plist refs --
+ops/perf/baseline-20260902/1a-a4-depcheck-backend.json
+-- doc mentions (HANDOFF/*.md at root, docs/) --
+-- other repo file referencing (excl itself, node_modules) --
+ops/perf/baseline-20260902/1a-a4-depcheck-backend.json
+=== e2_final.cjs ===
+      53 backend/e2_final.cjs
+-- package.json/ops/plist refs --
+ops/perf/baseline-20260902/1a-a4-depcheck-backend.json
+-- doc mentions (HANDOFF/*.md at root, docs/) --
+-- other repo file referencing (excl itself, node_modules) --
+ops/perf/baseline-20260902/1a-a4-depcheck-backend.json
+=== expand_batch.cjs ===
+     132 backend/expand_batch.cjs
+-- package.json/ops/plist refs --
+ops/perf/baseline-20260902/1a-a4-depcheck-backend.json
+-- doc mentions (HANDOFF/*.md at root, docs/) --
+-- other repo file referencing (excl itself, node_modules) --
+ops/perf/baseline-20260902/1a-a4-depcheck-backend.json
+=== expand_hymns.cjs ===
+     115 backend/expand_hymns.cjs
+-- package.json/ops/plist refs --
+ops/perf/baseline-20260902/1a-a4-depcheck-backend.json
+-- doc mentions (HANDOFF/*.md at root, docs/) --
+-- other repo file referencing (excl itself, node_modules) --
+ops/perf/baseline-20260902/1a-a4-depcheck-backend.json
+=== expand_hymns_v2.cjs ===
+     199 backend/expand_hymns_v2.cjs
+-- package.json/ops/plist refs --
+ops/perf/baseline-20260902/1a-a4-depcheck-backend.json
+-- doc mentions (HANDOFF/*.md at root, docs/) --
+-- other repo file referencing (excl itself, node_modules) --
+ops/perf/baseline-20260902/1a-a4-depcheck-backend.json
+=== fetch_songs.js ===
+     225 backend/fetch_songs.js
+-- package.json/ops/plist refs --
+ops/perf/baseline-20260902/1a-a4-depcheck-backend.json
+-- doc mentions (HANDOFF/*.md at root, docs/) --
+-- other repo file referencing (excl itself, node_modules) --
+ops/perf/baseline-20260902/1a-a4-depcheck-backend.json
+=== fix_dead_ytdlp.cjs ===
+      94 backend/fix_dead_ytdlp.cjs
+-- package.json/ops/plist refs --
+ops/perf/baseline-20260902/1a-a4-depcheck-backend.json
+-- doc mentions (HANDOFF/*.md at root, docs/) --
+YTDLP-UNIFY-PLAN-20260822.md
+-- other repo file referencing (excl itself, node_modules) --
+ops/perf/baseline-20260902/1a-a4-depcheck-backend.json
+=== fix_missing.js ===
+      49 backend/fix_missing.js
+-- package.json/ops/plist refs --
+-- doc mentions (HANDOFF/*.md at root, docs/) --
+-- other repo file referencing (excl itself, node_modules) --
+=== generate_hymns.js ===
+      80 backend/generate_hymns.js
+-- package.json/ops/plist refs --
+-- doc mentions (HANDOFF/*.md at root, docs/) --
+THIRD-PASS-REVIEW-20260822.md
+YTDLP-UNIFY-PLAN-20260822.md
+-- other repo file referencing (excl itself, node_modules) --
+=== seed.js ===
+     110 backend/seed.js
+-- package.json/ops/plist refs --
+-- doc mentions (HANDOFF/*.md at root, docs/) --
+-- other repo file referencing (excl itself, node_modules) --
+=== update_db.js ===
+      50 backend/update_db.js
+-- package.json/ops/plist refs --
+ops/perf/baseline-20260902/1a-a4-depcheck-backend.json
+-- doc mentions (HANDOFF/*.md at root, docs/) --
+-- other repo file referencing (excl itself, node_modules) --
+ops/perf/baseline-20260902/1a-a4-depcheck-backend.json
+=== update_hymn_link.js ===
+     112 backend/update_hymn_link.js
+-- package.json/ops/plist refs --
+ops/perf/baseline-20260902/1a-a4-depcheck-backend.json
+-- doc mentions (HANDOFF/*.md at root, docs/) --
+-- other repo file referencing (excl itself, node_modules) --
+backend/check_hymns.cjs
+ops/perf/baseline-20260902/1a-a4-depcheck-backend.json

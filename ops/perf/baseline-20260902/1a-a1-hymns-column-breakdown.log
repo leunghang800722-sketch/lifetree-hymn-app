@@ -1,0 +1,37 @@
+2026-09-02T07:26:58Z
+total rows 6405
+dataVersion 1788274394187.32-61054976
+recomputed total JSON bytes (this fetch) 5567646
+--- column byte breakdown (approx, sum of "key":value, per row) ---
+lyrics           1327724 23.85%
+title            347057 6.23%
+display_title    311080 5.59%
+created_at       217770 3.91%
+youtube_id       166530 2.99%
+performer        120473 2.16%
+artist           108323 1.95%
+duration         108179 1.94%
+album            105373 1.89%
+instrumental     102480 1.84%
+real_lang        102480 1.84%
+view_count       89670 1.61%
+org              89083 1.60%
+title_en         84093 1.51%
+lang             70455 1.27%
+tags             70455 1.27%
+id               57115 1.03%
+kids             51240 0.92%
+rows with non-empty lyrics: 5387 / 6405
+avg lyrics length (chars): 214.5
+total lyrics bytes (approx, chars): 1155488
+--- top 10 longest lyrics ---
+1512 1812 All Hail King Jesus | Spontaneous Worship - Soul City Worship
+1424 1748 CityAlight - '不是我，是基督住我心'
+7182 1469 【讓家偉大 / Make Our Home Great】(靈糧大家庭版) Music Video - 大衛帳幕的榮耀
+7181 1437 【祢無限 / Infinity】官方歌詞MV - 約書亞樂團 ft. 趙治德
+2580 1391 What a Beautiful Name & Worthy【KEC Worship】Worship Cover
+4808 1391 Dem Bones Gonna Walk Around by Listener Kids
+6564 1358 【誰能配得 / Who else＋何等榮美的名 / What A Beautiful Name】Live Video - 約書亞樂團、何彥臻 Franny Ho、高承恩 Kevin Gao
+1362 1333 The King of Christmas__天韻合唱團
+2550 1332 Good Good Father & Run to the Father【KEC Worship】Worship Cover
+1516 1322 Nothing Else / Jesus at the Center - Soul City Worship

@@ -1,0 +1,20 @@
+# A-4 before (search/category/audio/home still full DB routes) — 2026-09-02T07:47:21Z
+-- RSS before 5 hits --
+  PID    RSS
+10685 713920
+run=1 /api/category/mandarin code=200 total=0.307992 size=35145812
+run=2 /api/category/mandarin code=200 total=0.282527 size=35145812
+run=3 /api/category/mandarin code=200 total=0.285491 size=35145812
+run=4 /api/category/mandarin code=200 total=0.279305 size=35145812
+run=5 /api/category/mandarin code=200 total=0.277703 size=35145812
+-- RSS after 5 hits --
+  PID    RSS
+10685 871536
+-- /api/search/all?q=恩典 sample --
+code=200 total=0.030861 size=465985
+-- /api/audio/:id sample (expect 400 invalid id, no resolve) --
+code=400 total=0.000914
+-- /api/home/genre-recommendation sample (should stay alive after A-4, non daily-verse) --
+code=200 total=0.007514 size=66462
+-- /api/home/daily-verse sample (must stay 200 after A-4) --
+code=200 total=0.000651 size=185

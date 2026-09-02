@@ -1,0 +1,17 @@
+=== S5 playback run ===
+2026-09-02T07:26:33Z
+backend_log_lines_before=21261
+com.hymnapp.praise: 93204
+pid=93204
+rss_at_launch+6s_kb=512656
+tapping shuffle-play button at (201,437) approx — will screenshot first to confirm coordinate
+backend_log_lines_before_tap=21267
+tap_shuffle_ts=1788334017.235284000
+screenshot taken
+2026-09-02T07:30:31Z
+rss_playback_plus3min_kb=339872
+--- client-log entries since tap (nextTrackMs / perfRenders) ---
+[client-log] 2026-09-02T07:26:39.572Z event="nextTrackMs" clientTs="2026-09-02T07:26:39.215Z" appState="background" hymnId=1821 position=null duration=null trackState="" repeatMode=null errorSkipCount=null detail="ms=77 origin=auto source=local" platform="ios" deviceId="e1b6dc8a6948c3018036565007ad87d4"
+[client-log] 2026-09-02T07:26:51.340Z event="perfRenders" clientTs="1788334011149" appState="" hymnId=null position=null duration=null trackState="" repeatMode=null errorSkipCount=null detail="t=15 Home=4 Library=4 Mine=4 Mini=4 TabBar=4 FullPlayer=0 AppContent=4" platform="ios" deviceId="b0b3ad1a1df3fb27ad53970ded69ecf2"
+[client-log] 2026-09-02T07:26:57.916Z event="nextTrackMs" clientTs="2026-09-02T07:26:57.727Z" appState="active" hymnId=5742 position=null duration=null trackState="" repeatMode=null errorSkipCount=null detail="ms=205 origin=start source=local surface=shuffle first=1" platform="ios" deviceId="b0b3ad1a1df3fb27ad53970ded69ecf2"
+[client-log] 2026-09-02T07:27:36.340Z event="perfRenders" clientTs="1788334056149" appState="" hymnId=null position=null duration=null trackState="" repeatMode=null errorSkipCount=null detail="t=60 Home=8 Library=8 Mine=8 Mini=8 TabBar=8 FullPlayer=4 AppContent=8" platform="ios" deviceId="b0b3ad1a1df3fb27ad53970ded69ecf2"

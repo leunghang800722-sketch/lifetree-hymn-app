@@ -1,0 +1,6 @@
+# A-5 before (no explicit Cache-Control) — 2026-09-02T07:47:11Z
+-- /api/hymns headers --
+HTTP/1.1 200 OK
+ETag: W/"54f4a0-FBwNriKnuMzO0pyf9jexRd+9n/Y"
+-- /api/version headers --
+HTTP/1.1 200 OK

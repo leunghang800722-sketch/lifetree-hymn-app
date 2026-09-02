@@ -1,0 +1,147 @@
+{
+  "totalExports": 129,
+  "zeroRefCount": 12,
+  "zeroRef": [
+    {
+      "file": "src/perfMarks.js",
+      "name": "PERF_MARKS_ENABLED"
+    },
+    {
+      "file": "src/perfMarks.js",
+      "name": "span"
+    },
+    {
+      "file": "src/perfMarks.js",
+      "name": "elapsedSinceT0"
+    },
+    {
+      "file": "src/perfMarks.js",
+      "name": "installFetchCounter"
+    },
+    {
+      "file": "src/perfMarks.js",
+      "name": "schedulePerfMarksBeacon"
+    },
+    {
+      "file": "src/perfMarks.js",
+      "name": "scheduleRenderBeacons"
+    },
+    {
+      "file": "src/utils/homeChips.js",
+      "name": "CHIP_DEFS"
+    },
+    {
+      "file": "src/utils/autoplay.js",
+      "name": "MAX_AUTOPLAY_TRACK_SECONDS"
+    },
+    {
+      "file": "src/deviceId.js",
+      "name": "DEVICE_ID_KEY"
+    },
+    {
+      "file": "src/deviceId.js",
+      "name": "generateDeviceId"
+    },
+    {
+      "file": "src/deviceId.js",
+      "name": "__resetForTest"
+    },
+    {
+      "file": "App.js",
+      "name": "usePlayer"
+    }
+  ],
+  "sampleWithRef": [
+    {
+      "file": "src/playback-intent.js",
+      "name": "markRemotePauseExpected",
+      "refCount": 2,
+      "refFiles": [
+        "./App.js",
+        "./src/track-player-service.js"
+      ]
+    },
+    {
+      "file": "src/playback-intent.js",
+      "name": "consumeRemotePauseExpected",
+      "refCount": 1,
+      "refFiles": [
+        "./App.js"
+      ]
+    },
+    {
+      "file": "src/perfMarks.js",
+      "name": "mark",
+      "refCount": 5,
+      "refFiles": [
+        "./App.js",
+        "./src/screens/MineScreen.js",
+        "./src/screens/LibraryScreen.js",
+        "./src/components/home/HomeScreen.js",
+        "./src/hooks/useCachedHymns.js"
+      ]
+    },
+    {
+      "file": "src/perfMarks.js",
+      "name": "note",
+      "refCount": 4,
+      "refFiles": [
+        "./plugins/withSwiftAudioExStallWatchdog.js",
+        "./App.js",
+        "./src/hooks/useCachedHymns.js",
+        "./src/icons/odeIcons.js"
+      ]
+    },
+    {
+      "file": "src/perfMarks.js",
+      "name": "useRenderCount",
+      "refCount": 4,
+      "refFiles": [
+        "./App.js",
+        "./src/screens/MineScreen.js",
+        "./src/screens/LibraryScreen.js",
+        "./src/components/home/HomeScreen.js"
+      ]
+    },
+    {
+      "file": "src/perfMarks.js",
+      "name": "recordNavBeacon",
+      "refCount": 1,
+      "refFiles": [
+        "./App.js"
+      ]
+    },
+    {
+      "file": "src/playLog.js",
+      "name": "getPlayLog",
+      "refCount": 1,
+      "refFiles": [
+        "./App.js"
+      ]
+    },
+    {
+      "file": "src/playLog.js",
+      "name": "getRecentIds",
+      "refCount": 1,
+      "refFiles": [
+        "./App.js"
+      ]
+    },
+    {
+      "file": "src/playLog.js",
+      "name": "recordPlay",
+      "refCount": 1,
+      "refFiles": [
+        "./App.js"
+      ]
+    },
+    {
+      "file": "src/context/AuthContext.js",
+      "name": "AuthProvider",
+      "refCount": 1,
+      "refFiles": [
+        "./App.js"
+      ]
+    }
+  ]
+}

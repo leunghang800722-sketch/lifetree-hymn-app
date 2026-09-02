@@ -1,0 +1,6 @@
+=== S4 memory (host ps -o rss=) ===
+2026-09-02T07:26:12Z
+pid=92336
+note: launch+3s / launch+20s samples already captured per-run in s1-run*.log / s2-run*.log (idle, no cache / warm)
+rss_before_library_tap_kb=424432
+rss_library_tab_plus5s_kb=459984

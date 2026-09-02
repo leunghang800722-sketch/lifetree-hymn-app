@@ -1,0 +1,2453 @@
+{
+  "health|local": {
+    "url": "http://localhost:3001/api/health",
+    "runs": [
+      {
+        "run": 1,
+        "code": "200",
+        "ttfb": 0.001067,
+        "total": 0.001129,
+        "size": 15
+      },
+      {
+        "run": 2,
+        "code": "200",
+        "ttfb": 0.000697,
+        "total": 0.000739,
+        "size": 15
+      },
+      {
+        "run": 3,
+        "code": "200",
+        "ttfb": 0.000655,
+        "total": 0.000698,
+        "size": 15
+      },
+      {
+        "run": 4,
+        "code": "200",
+        "ttfb": 0.000716,
+        "total": 0.000757,
+        "size": 15
+      },
+      {
+        "run": 5,
+        "code": "200",
+        "ttfb": 0.000648,
+        "total": 0.000693,
+        "size": 15
+      }
+    ],
+    "content_encoding": null,
+    "cache_control": null,
+    "cf_cache_status": null
+  },
+  "health|prod": {
+    "url": "https://api.odemusics.com/api/health",
+    "runs": [
+      {
+        "run": 1,
+        "code": "200",
+        "ttfb": 0.956652,
+        "total": 0.957088,
+        "size": 15
+      },
+      {
+        "run": 2,
+        "code": "200",
+        "ttfb": 0.772848,
+        "total": 0.773106,
+        "size": 15
+      },
+      {
+        "run": 3,
+        "code": "200",
+        "ttfb": 0.765297,
+        "total": 0.765612,
+        "size": 15
+      },
+      {
+        "run": 4,
+        "code": "200",
+        "ttfb": 0.830495,
+        "total": 0.831223,
+        "size": 15
+      },
+      {
+        "run": 5,
+        "code": "200",
+        "ttfb": 0.775612,
+        "total": 0.776155,
+        "size": 15
+      }
+    ],
+    "content_encoding": null,
+    "cache_control": null,
+    "cf_cache_status": "DYNAMIC"
+  },
+  "health|prod_gzip": {
+    "url": "https://api.odemusics.com/api/health",
+    "runs": [
+      {
+        "run": 1,
+        "code": "200",
+        "ttfb": 0.761046,
+        "total": 0.761249,
+        "size": 15
+      },
+      {
+        "run": 2,
+        "code": "200",
+        "ttfb": 0.772064,
+        "total": 0.772351,
+        "size": 15
+      },
+      {
+        "run": 3,
+        "code": "200",
+        "ttfb": 0.754197,
+        "total": 0.754299,
+        "size": 15
+      },
+      {
+        "run": 4,
+        "code": "200",
+        "ttfb": 0.779484,
+        "total": 0.779867,
+        "size": 15
+      },
+      {
+        "run": 5,
+        "code": "200",
+        "ttfb": 0.773296,
+        "total": 0.773434,
+        "size": 15
+      }
+    ],
+    "content_encoding": null,
+    "cache_control": null,
+    "cf_cache_status": "DYNAMIC"
+  },
+  "version|local": {
+    "url": "http://localhost:3001/api/version",
+    "runs": [
+      {
+        "run": 1,
+        "code": "200",
+        "ttfb": 0.00148,
+        "total": 0.001543,
+        "size": 43
+      },
+      {
+        "run": 2,
+        "code": "200",
+        "ttfb": 0.0008,
+        "total": 0.000851,
+        "size": 43
+      },
+      {
+        "run": 3,
+        "code": "200",
+        "ttfb": 0.000792,
+        "total": 0.000836,
+        "size": 43
+      },
+      {
+        "run": 4,
+        "code": "200",
+        "ttfb": 0.000746,
+        "total": 0.000791,
+        "size": 43
+      },
+      {
+        "run": 5,
+        "code": "200",
+        "ttfb": 0.000738,
+        "total": 0.000777,
+        "size": 43
+      }
+    ],
+    "content_encoding": null,
+    "cache_control": null,
+    "cf_cache_status": null
+  },
+  "version|prod": {
+    "url": "https://api.odemusics.com/api/version",
+    "runs": [
+      {
+        "run": 1,
+        "code": "200",
+        "ttfb": 0.750435,
+        "total": 0.750739,
+        "size": 43
+      },
+      {
+        "run": 2,
+        "code": "200",
+        "ttfb": 0.800915,
+        "total": 0.801042,
+        "size": 43
+      },
+      {
+        "run": 3,
+        "code": "200",
+        "ttfb": 0.780569,
+        "total": 0.780731,
+        "size": 43
+      },
+      {
+        "run": 4,
+        "code": "200",
+        "ttfb": 0.763398,
+        "total": 0.763786,
+        "size": 43
+      },
+      {
+        "run": 5,
+        "code": "200",
+        "ttfb": 0.771718,
+        "total": 0.772031,
+        "size": 43
+      }
+    ],
+    "content_encoding": null,
+    "cache_control": null,
+    "cf_cache_status": "DYNAMIC"
+  },
+  "version|prod_gzip": {
+    "url": "https://api.odemusics.com/api/version",
+    "runs": [
+      {
+        "run": 1,
+        "code": "200",
+        "ttfb": 0.775642,
+        "total": 0.776138,
+        "size": 43
+      },
+      {
+        "run": 2,
+        "code": "200",
+        "ttfb": 0.765813,
+        "total": 0.766021,
+        "size": 43
+      },
+      {
+        "run": 3,
+        "code": "200",
+        "ttfb": 0.75444,
+        "total": 0.754916,
+        "size": 43
+      },
+      {
+        "run": 4,
+        "code": "200",
+        "ttfb": 0.769753,
+        "total": 0.770239,
+        "size": 43
+      },
+      {
+        "run": 5,
+        "code": "200",
+        "ttfb": 0.794827,
+        "total": 0.795278,
+        "size": 43
+      }
+    ],
+    "content_encoding": null,
+    "cache_control": null,
+    "cf_cache_status": "DYNAMIC"
+  },
+  "hymns|local": {
+    "url": "http://localhost:3001/api/hymns",
+    "runs": [
+      {
+        "run": 1,
+        "code": "200",
+        "ttfb": 0.138441,
+        "total": 0.140486,
+        "size": 5567646
+      },
+      {
+        "run": 2,
+        "code": "200",
+        "ttfb": 0.087319,
+        "total": 0.088907,
+        "size": 5567646
+      },
+      {
+        "run": 3,
+        "code": "200",
+        "ttfb": 0.085887,
+        "total": 0.090364,
+        "size": 5567646
+      },
+      {
+        "run": 4,
+        "code": "200",
+        "ttfb": 0.086727,
+        "total": 0.088583,
+        "size": 5567646
+      },
+      {
+        "run": 5,
+        "code": "200",
+        "ttfb": 0.083467,
+        "total": 0.085008,
+        "size": 5567646
+      }
+    ],
+    "content_encoding": null,
+    "cache_control": null,
+    "cf_cache_status": null
+  },
+  "hymns|prod": {
+    "url": "https://api.odemusics.com/api/hymns",
+    "runs": [
+      {
+        "run": 1,
+        "code": "200",
+        "ttfb": 0.897766,
+        "total": 2.837089,
+        "size": 5567646
+      },
+      {
+        "run": 2,
+        "code": "200",
+        "ttfb": 0.917922,
+        "total": 3.039299,
+        "size": 5567646
+      },
+      {
+        "run": 3,
+        "code": "200",
+        "ttfb": 0.912597,
+        "total": 2.876072,
+        "size": 5567646
+      },
+      {
+        "run": 4,
+        "code": "200",
+        "ttfb": 0.906253,
+        "total": 2.744083,
+        "size": 5567646
+      },
+      {
+        "run": 5,
+        "code": "200",
+        "ttfb": 0.892839,
+        "total": 2.526323,
+        "size": 5567646
+      }
+    ],
+    "content_encoding": null,
+    "cache_control": null,
+    "cf_cache_status": "DYNAMIC"
+  },
+  "hymns|prod_gzip": {
+    "url": "https://api.odemusics.com/api/hymns",
+    "runs": [
+      {
+        "run": 1,
+        "code": "200",
+        "ttfb": 0.890326,
+        "total": 2.259765,
+        "size": 1471654
+      },
+      {
+        "run": 2,
+        "code": "200",
+        "ttfb": 0.884353,
+        "total": 2.159377,
+        "size": 1480893
+      },
+      {
+        "run": 3,
+        "code": "200",
+        "ttfb": 0.892366,
+        "total": 2.429139,
+        "size": 1480309
+      },
+      {
+        "run": 4,
+        "code": "200",
+        "ttfb": 0.87883,
+        "total": 2.736257,
+        "size": 1486626
+      },
+      {
+        "run": 5,
+        "code": "200",
+        "ttfb": 0.961807,
+        "total": 2.333399,
+        "size": 1493989
+      }
+    ],
+    "content_encoding": "gzip",
+    "cache_control": null,
+    "cf_cache_status": "DYNAMIC"
+  },
+  "home-daily-quote|local": {
+    "url": "http://localhost:3001/api/home/daily-quote",
+    "runs": [
+      {
+        "run": 1,
+        "code": "200",
+        "ttfb": 0.014197,
+        "total": 0.014292,
+        "size": 40
+      },
+      {
+        "run": 2,
+        "code": "200",
+        "ttfb": 0.014032,
+        "total": 0.014092,
+        "size": 40
+      },
+      {
+        "run": 3,
+        "code": "200",
+        "ttfb": 0.013033,
+        "total": 0.013092,
+        "size": 40
+      },
+      {
+        "run": 4,
+        "code": "200",
+        "ttfb": 0.012429,
+        "total": 0.012483,
+        "size": 40
+      },
+      {
+        "run": 5,
+        "code": "200",
+        "ttfb": 0.016602,
+        "total": 0.016668,
+        "size": 40
+      }
+    ],
+    "content_encoding": null,
+    "cache_control": null,
+    "cf_cache_status": null
+  },
+  "home-daily-quote|prod": {
+    "url": "https://api.odemusics.com/api/home/daily-quote",
+    "runs": [
+      {
+        "run": 1,
+        "code": "200",
+        "ttfb": 0.80706,
+        "total": 0.807561,
+        "size": 40
+      },
+      {
+        "run": 2,
+        "code": "200",
+        "ttfb": 0.776551,
+        "total": 0.777117,
+        "size": 40
+      },
+      {
+        "run": 3,
+        "code": "200",
+        "ttfb": 0.78487,
+        "total": 0.785014,
+        "size": 40
+      },
+      {
+        "run": 4,
+        "code": "200",
+        "ttfb": 0.803985,
+        "total": 0.804494,
+        "size": 40
+      },
+      {
+        "run": 5,
+        "code": "200",
+        "ttfb": 0.779509,
+        "total": 0.779615,
+        "size": 40
+      }
+    ],
+    "content_encoding": null,
+    "cache_control": null,
+    "cf_cache_status": "DYNAMIC"
+  },
+  "home-daily-quote|prod_gzip": {
+    "url": "https://api.odemusics.com/api/home/daily-quote",
+    "runs": [
+      {
+        "run": 1,
+        "code": "200",
+        "ttfb": 0.936334,
+        "total": 0.9371,
+        "size": 40
+      },
+      {
+        "run": 2,
+        "code": "200",
+        "ttfb": 0.790164,
+        "total": 0.790648,
+        "size": 40
+      },
+      {
+        "run": 3,
+        "code": "200",
+        "ttfb": 0.847681,
+        "total": 0.848152,
+        "size": 40
+      },
+      {
+        "run": 4,
+        "code": "200",
+        "ttfb": 0.78356,
+        "total": 0.783943,
+        "size": 40
+      },
+      {
+        "run": 5,
+        "code": "200",
+        "ttfb": 0.801254,
+        "total": 0.801492,
+        "size": 40
+      }
+    ],
+    "content_encoding": null,
+    "cache_control": null,
+    "cf_cache_status": "DYNAMIC"
+  },
+  "home-daily-verse|local": {
+    "url": "http://localhost:3001/api/home/daily-verse",
+    "runs": [
+      {
+        "run": 1,
+        "code": "200",
+        "ttfb": 0.002976,
+        "total": 0.003058,
+        "size": 185
+      },
+      {
+        "run": 2,
+        "code": "200",
+        "ttfb": 0.001166,
+        "total": 0.001221,
+        "size": 185
+      },
+      {
+        "run": 3,
+        "code": "200",
+        "ttfb": 0.001051,
+        "total": 0.001105,
+        "size": 185
+      },
+      {
+        "run": 4,
+        "code": "200",
+        "ttfb": 0.001009,
+        "total": 0.001062,
+        "size": 185
+      },
+      {
+        "run": 5,
+        "code": "200",
+        "ttfb": 0.001043,
+        "total": 0.001094,
+        "size": 185
+      }
+    ],
+    "content_encoding": null,
+    "cache_control": null,
+    "cf_cache_status": null
+  },
+  "home-daily-verse|prod": {
+    "url": "https://api.odemusics.com/api/home/daily-verse",
+    "runs": [
+      {
+        "run": 1,
+        "code": "200",
+        "ttfb": 0.802143,
+        "total": 0.802473,
+        "size": 185
+      },
+      {
+        "run": 2,
+        "code": "200",
+        "ttfb": 0.749872,
+        "total": 0.750469,
+        "size": 185
+      },
+      {
+        "run": 3,
+        "code": "200",
+        "ttfb": 0.76896,
+        "total": 0.769177,
+        "size": 185
+      },
+      {
+        "run": 4,
+        "code": "200",
+        "ttfb": 0.752771,
+        "total": 0.753309,
+        "size": 185
+      },
+      {
+        "run": 5,
+        "code": "200",
+        "ttfb": 0.76603,
+        "total": 0.766565,
+        "size": 185
+      }
+    ],
+    "content_encoding": null,
+    "cache_control": null,
+    "cf_cache_status": "DYNAMIC"
+  },
+  "home-daily-verse|prod_gzip": {
+    "url": "https://api.odemusics.com/api/home/daily-verse",
+    "runs": [
+      {
+        "run": 1,
+        "code": "200",
+        "ttfb": 0.79558,
+        "total": 0.795921,
+        "size": 193
+      },
+      {
+        "run": 2,
+        "code": "200",
+        "ttfb": 0.769535,
+        "total": 0.770212,
+        "size": 193
+      },
+      {
+        "run": 3,
+        "code": "200",
+        "ttfb": 0.775967,
+        "total": 0.776509,
+        "size": 193
+      },
+      {
+        "run": 4,
+        "code": "200",
+        "ttfb": 0.756969,
+        "total": 0.75733,
+        "size": 193
+      },
+      {
+        "run": 5,
+        "code": "200",
+        "ttfb": 0.782318,
+        "total": 0.782789,
+        "size": 193
+      }
+    ],
+    "content_encoding": "gzip",
+    "cache_control": null,
+    "cf_cache_status": "DYNAMIC"
+  },
+  "home-featured-artist|local": {
+    "url": "http://localhost:3001/api/home/featured-artist",
+    "runs": [
+      {
+        "run": 1,
+        "code": "200",
+        "ttfb": 0.035502,
+        "total": 0.035678,
+        "size": 3040
+      },
+      {
+        "run": 2,
+        "code": "200",
+        "ttfb": 0.021281,
+        "total": 0.02135,
+        "size": 24471
+      },
+      {
+        "run": 3,
+        "code": "200",
+        "ttfb": 0.01397,
+        "total": 0.014042,
+        "size": 81538
+      },
+      {
+        "run": 4,
+        "code": "200",
+        "ttfb": 0.008337,
+        "total": 0.008424,
+        "size": 89586
+      },
+      {
+        "run": 5,
+        "code": "200",
+        "ttfb": 0.007957,
+        "total": 0.008046,
+        "size": 107147
+      }
+    ],
+    "content_encoding": null,
+    "cache_control": null,
+    "cf_cache_status": null
+  },
+  "home-featured-artist|prod": {
+    "url": "https://api.odemusics.com/api/home/featured-artist",
+    "runs": [
+      {
+        "run": 1,
+        "code": "200",
+        "ttfb": 0.808455,
+        "total": 1.358787,
+        "size": 119876
+      },
+      {
+        "run": 2,
+        "code": "200",
+        "ttfb": 0.797957,
+        "total": 1.527701,
+        "size": 160188
+      },
+      {
+        "run": 3,
+        "code": "200",
+        "ttfb": 0.803816,
+        "total": 1.047444,
+        "size": 30346
+      },
+      {
+        "run": 4,
+        "code": "200",
+        "ttfb": 0.803139,
+        "total": 1.35869,
+        "size": 119358
+      },
+      {
+        "run": 5,
+        "code": "200",
+        "ttfb": 0.798114,
+        "total": 0.798795,
+        "size": 3691
+      }
+    ],
+    "content_encoding": null,
+    "cache_control": null,
+    "cf_cache_status": "DYNAMIC"
+  },
+  "home-featured-artist|prod_gzip": {
+    "url": "https://api.odemusics.com/api/home/featured-artist",
+    "runs": [
+      {
+        "run": 1,
+        "code": "200",
+        "ttfb": 0.833239,
+        "total": 0.834114,
+        "size": 1349
+      },
+      {
+        "run": 2,
+        "code": "200",
+        "ttfb": 0.803585,
+        "total": 0.983796,
+        "size": 14367
+      },
+      {
+        "run": 3,
+        "code": "200",
+        "ttfb": 0.794456,
+        "total": 0.795601,
+        "size": 1214
+      },
+      {
+        "run": 4,
+        "code": "200",
+        "ttfb": 0.783807,
+        "total": 0.80032,
+        "size": 8963
+      },
+      {
+        "run": 5,
+        "code": "200",
+        "ttfb": 0.819345,
+        "total": 0.822637,
+        "size": 5939
+      }
+    ],
+    "content_encoding": "gzip",
+    "cache_control": null,
+    "cf_cache_status": "DYNAMIC"
+  },
+  "home-new-releases|local": {
+    "url": "http://localhost:3001/api/home/new-releases",
+    "runs": [
+      {
+        "run": 1,
+        "code": "200",
+        "ttfb": 0.045482,
+        "total": 0.045559,
+        "size": 36077
+      },
+      {
+        "run": 2,
+        "code": "200",
+        "ttfb": 0.030193,
+        "total": 0.030262,
+        "size": 36077
+      },
+      {
+        "run": 3,
+        "code": "200",
+        "ttfb": 0.029719,
+        "total": 0.029829,
+        "size": 36077
+      },
+      {
+        "run": 4,
+        "code": "200",
+        "ttfb": 0.031405,
+        "total": 0.031485,
+        "size": 36077
+      },
+      {
+        "run": 5,
+        "code": "200",
+        "ttfb": 0.048231,
+        "total": 0.048434,
+        "size": 36077
+      }
+    ],
+    "content_encoding": null,
+    "cache_control": null,
+    "cf_cache_status": null
+  },
+  "home-new-releases|prod": {
+    "url": "https://api.odemusics.com/api/home/new-releases",
+    "runs": [
+      {
+        "run": 1,
+        "code": "200",
+        "ttfb": 0.883953,
+        "total": 1.147768,
+        "size": 36077
+      },
+      {
+        "run": 2,
+        "code": "200",
+        "ttfb": 0.827675,
+        "total": 1.144555,
+        "size": 36077
+      },
+      {
+        "run": 3,
+        "code": "200",
+        "ttfb": 0.874424,
+        "total": 1.123856,
+        "size": 36077
+      },
+      {
+        "run": 4,
+        "code": "200",
+        "ttfb": 0.913378,
+        "total": 1.170341,
+        "size": 36077
+      },
+      {
+        "run": 5,
+        "code": "200",
+        "ttfb": 0.808494,
+        "total": 1.06905,
+        "size": 36077
+      }
+    ],
+    "content_encoding": null,
+    "cache_control": null,
+    "cf_cache_status": "DYNAMIC"
+  },
+  "home-new-releases|prod_gzip": {
+    "url": "https://api.odemusics.com/api/home/new-releases",
+    "runs": [
+      {
+        "run": 1,
+        "code": "200",
+        "ttfb": 0.826249,
+        "total": 0.844943,
+        "size": 7231
+      },
+      {
+        "run": 2,
+        "code": "200",
+        "ttfb": 0.850207,
+        "total": 0.864426,
+        "size": 7144
+      },
+      {
+        "run": 3,
+        "code": "200",
+        "ttfb": 0.834556,
+        "total": 0.845915,
+        "size": 7283
+      },
+      {
+        "run": 4,
+        "code": "200",
+        "ttfb": 0.833944,
+        "total": 0.838373,
+        "size": 7235
+      },
+      {
+        "run": 5,
+        "code": "200",
+        "ttfb": 0.820737,
+        "total": 0.835354,
+        "size": 7227
+      }
+    ],
+    "content_encoding": "gzip",
+    "cache_control": null,
+    "cf_cache_status": "DYNAMIC"
+  },
+  "home-genre-recommendation|local": {
+    "url": "http://localhost:3001/api/home/genre-recommendation",
+    "runs": [
+      {
+        "run": 1,
+        "code": "200",
+        "ttfb": 0.018228,
+        "total": 0.0183,
+        "size": 82495
+      },
+      {
+        "run": 2,
+        "code": "200",
+        "ttfb": 0.016839,
+        "total": 0.016917,
+        "size": 54836
+      },
+      {
+        "run": 3,
+        "code": "200",
+        "ttfb": 0.016713,
+        "total": 0.016772,
+        "size": 89404
+      },
+      {
+        "run": 4,
+        "code": "200",
+        "ttfb": 0.009152,
+        "total": 0.009235,
+        "size": 117276
+      },
+      {
+        "run": 5,
+        "code": "200",
+        "ttfb": 0.007822,
+        "total": 0.007923,
+        "size": 86410
+      }
+    ],
+    "content_encoding": null,
+    "cache_control": null,
+    "cf_cache_status": null
+  },
+  "home-genre-recommendation|prod": {
+    "url": "https://api.odemusics.com/api/home/genre-recommendation",
+    "runs": [
+      {
+        "run": 1,
+        "code": "200",
+        "ttfb": 0.781595,
+        "total": 1.216486,
+        "size": 69042
+      },
+      {
+        "run": 2,
+        "code": "200",
+        "ttfb": 0.787665,
+        "total": 1.216164,
+        "size": 69267
+      },
+      {
+        "run": 3,
+        "code": "200",
+        "ttfb": 0.778257,
+        "total": 1.159916,
+        "size": 59553
+      },
+      {
+        "run": 4,
+        "code": "200",
+        "ttfb": 0.777672,
+        "total": 1.313721,
+        "size": 74557
+      },
+      {
+        "run": 5,
+        "code": "200",
+        "ttfb": 0.787102,
+        "total": 1.257764,
+        "size": 87004
+      }
+    ],
+    "content_encoding": null,
+    "cache_control": null,
+    "cf_cache_status": "DYNAMIC"
+  },
+  "home-genre-recommendation|prod_gzip": {
+    "url": "https://api.odemusics.com/api/home/genre-recommendation",
+    "runs": [
+      {
+        "run": 1,
+        "code": "200",
+        "ttfb": 0.806787,
+        "total": 0.989115,
+        "size": 14888
+      },
+      {
+        "run": 2,
+        "code": "200",
+        "ttfb": 0.786377,
+        "total": 0.987932,
+        "size": 23796
+      },
+      {
+        "run": 3,
+        "code": "200",
+        "ttfb": 0.761955,
+        "total": 0.941006,
+        "size": 15191
+      },
+      {
+        "run": 4,
+        "code": "200",
+        "ttfb": 0.777134,
+        "total": 0.962983,
+        "size": 17208
+      },
+      {
+        "run": 5,
+        "code": "200",
+        "ttfb": 0.85584,
+        "total": 0.909631,
+        "size": 13332
+      }
+    ],
+    "content_encoding": "gzip",
+    "cache_control": null,
+    "cf_cache_status": "DYNAMIC"
+  },
+  "home-based-on-taste|local": {
+    "url": "http://localhost:3001/api/home/based-on-taste",
+    "runs": [
+      {
+        "run": 1,
+        "code": "200",
+        "ttfb": 0.018379,
+        "total": 0.018451,
+        "size": 86252
+      },
+      {
+        "run": 2,
+        "code": "200",
+        "ttfb": 0.018454,
+        "total": 0.018533,
+        "size": 68873
+      },
+      {
+        "run": 3,
+        "code": "200",
+        "ttfb": 0.016137,
+        "total": 0.016232,
+        "size": 133556
+      },
+      {
+        "run": 4,
+        "code": "200",
+        "ttfb": 0.010872,
+        "total": 0.010994,
+        "size": 77347
+      },
+      {
+        "run": 5,
+        "code": "200",
+        "ttfb": 0.012643,
+        "total": 0.01275,
+        "size": 80977
+      }
+    ],
+    "content_encoding": null,
+    "cache_control": null,
+    "cf_cache_status": null
+  },
+  "home-based-on-taste|prod": {
+    "url": "https://api.odemusics.com/api/home/based-on-taste",
+    "runs": [
+      {
+        "run": 1,
+        "code": "200",
+        "ttfb": 0.793053,
+        "total": 1.395698,
+        "size": 148937
+      },
+      {
+        "run": 2,
+        "code": "200",
+        "ttfb": 0.828555,
+        "total": 1.42588,
+        "size": 69929
+      },
+      {
+        "run": 3,
+        "code": "200",
+        "ttfb": 0.75923,
+        "total": 1.188127,
+        "size": 68160
+      },
+      {
+        "run": 4,
+        "code": "200",
+        "ttfb": 0.794698,
+        "total": 1.189839,
+        "size": 63839
+      },
+      {
+        "run": 5,
+        "code": "200",
+        "ttfb": 0.778748,
+        "total": 1.188676,
+        "size": 68203
+      }
+    ],
+    "content_encoding": null,
+    "cache_control": null,
+    "cf_cache_status": "DYNAMIC"
+  },
+  "home-based-on-taste|prod_gzip": {
+    "url": "https://api.odemusics.com/api/home/based-on-taste",
+    "runs": [
+      {
+        "run": 1,
+        "code": "200",
+        "ttfb": 0.812582,
+        "total": 0.992508,
+        "size": 17451
+      },
+      {
+        "run": 2,
+        "code": "200",
+        "ttfb": 0.791506,
+        "total": 0.977213,
+        "size": 20211
+      },
+      {
+        "run": 3,
+        "code": "200",
+        "ttfb": 0.806109,
+        "total": 0.991526,
+        "size": 16299
+      },
+      {
+        "run": 4,
+        "code": "200",
+        "ttfb": 0.820772,
+        "total": 0.868873,
+        "size": 15211
+      },
+      {
+        "run": 5,
+        "code": "200",
+        "ttfb": 0.790415,
+        "total": 0.980634,
+        "size": 17569
+      }
+    ],
+    "content_encoding": "gzip",
+    "cache_control": null,
+    "cf_cache_status": "DYNAMIC"
+  },
+  "home-resonating|local": {
+    "url": "http://localhost:3001/api/home/resonating",
+    "runs": [
+      {
+        "run": 1,
+        "code": "200",
+        "ttfb": 0.021853,
+        "total": 0.021967,
+        "size": 10007
+      },
+      {
+        "run": 2,
+        "code": "200",
+        "ttfb": 0.021166,
+        "total": 0.021314,
+        "size": 10007
+      },
+      {
+        "run": 3,
+        "code": "200",
+        "ttfb": 0.010069,
+        "total": 0.010148,
+        "size": 10007
+      },
+      {
+        "run": 4,
+        "code": "200",
+        "ttfb": 0.007077,
+        "total": 0.00716,
+        "size": 10007
+      },
+      {
+        "run": 5,
+        "code": "200",
+        "ttfb": 0.007354,
+        "total": 0.007433,
+        "size": 10007
+      }
+    ],
+    "content_encoding": null,
+    "cache_control": null,
+    "cf_cache_status": null
+  },
+  "home-resonating|prod": {
+    "url": "https://api.odemusics.com/api/home/resonating",
+    "runs": [
+      {
+        "run": 1,
+        "code": "200",
+        "ttfb": 0.793855,
+        "total": 0.819309,
+        "size": 10007
+      },
+      {
+        "run": 2,
+        "code": "200",
+        "ttfb": 0.779682,
+        "total": 0.81704,
+        "size": 10007
+      },
+      {
+        "run": 3,
+        "code": "200",
+        "ttfb": 0.77352,
+        "total": 0.800582,
+        "size": 10007
+      },
+      {
+        "run": 4,
+        "code": "200",
+        "ttfb": 0.819484,
+        "total": 0.842141,
+        "size": 10007
+      },
+      {
+        "run": 5,
+        "code": "200",
+        "ttfb": 0.781436,
+        "total": 0.821526,
+        "size": 10007
+      }
+    ],
+    "content_encoding": null,
+    "cache_control": null,
+    "cf_cache_status": "DYNAMIC"
+  },
+  "home-resonating|prod_gzip": {
+    "url": "https://api.odemusics.com/api/home/resonating",
+    "runs": [
+      {
+        "run": 1,
+        "code": "200",
+        "ttfb": 0.820827,
+        "total": 0.8214,
+        "size": 2717
+      },
+      {
+        "run": 2,
+        "code": "200",
+        "ttfb": 0.781792,
+        "total": 0.782207,
+        "size": 2778
+      },
+      {
+        "run": 3,
+        "code": "200",
+        "ttfb": 0.77267,
+        "total": 0.772884,
+        "size": 2717
+      },
+      {
+        "run": 4,
+        "code": "200",
+        "ttfb": 0.763333,
+        "total": 0.76377,
+        "size": 2717
+      },
+      {
+        "run": 5,
+        "code": "200",
+        "ttfb": 0.7622,
+        "total": 0.77699,
+        "size": 2771
+      }
+    ],
+    "content_encoding": "gzip",
+    "cache_control": null,
+    "cf_cache_status": "DYNAMIC"
+  },
+  "home-top-verses|local": {
+    "url": "http://localhost:3001/api/home/top-verses",
+    "runs": [
+      {
+        "run": 1,
+        "code": "200",
+        "ttfb": 0.013435,
+        "total": 0.013487,
+        "size": 10007
+      },
+      {
+        "run": 2,
+        "code": "200",
+        "ttfb": 0.010596,
+        "total": 0.010648,
+        "size": 10007
+      },
+      {
+        "run": 3,
+        "code": "200",
+        "ttfb": 0.011271,
+        "total": 0.011336,
+        "size": 10007
+      },
+      {
+        "run": 4,
+        "code": "200",
+        "ttfb": 0.010522,
+        "total": 0.010564,
+        "size": 10007
+      },
+      {
+        "run": 5,
+        "code": "200",
+        "ttfb": 0.011605,
+        "total": 0.01165,
+        "size": 10007
+      }
+    ],
+    "content_encoding": null,
+    "cache_control": null,
+    "cf_cache_status": null
+  },
+  "home-top-verses|prod": {
+    "url": "https://api.odemusics.com/api/home/top-verses",
+    "runs": [
+      {
+        "run": 1,
+        "code": "200",
+        "ttfb": 0.762435,
+        "total": 0.763965,
+        "size": 10007
+      },
+      {
+        "run": 2,
+        "code": "200",
+        "ttfb": 0.780756,
+        "total": 0.805594,
+        "size": 10007
+      },
+      {
+        "run": 3,
+        "code": "200",
+        "ttfb": 0.75892,
+        "total": 0.792965,
+        "size": 10007
+      },
+      {
+        "run": 4,
+        "code": "200",
+        "ttfb": 0.80911,
+        "total": 0.820255,
+        "size": 10007
+      },
+      {
+        "run": 5,
+        "code": "200",
+        "ttfb": 0.773491,
+        "total": 0.799459,
+        "size": 10007
+      }
+    ],
+    "content_encoding": null,
+    "cache_control": null,
+    "cf_cache_status": "DYNAMIC"
+  },
+  "home-top-verses|prod_gzip": {
+    "url": "https://api.odemusics.com/api/home/top-verses",
+    "runs": [
+      {
+        "run": 1,
+        "code": "200",
+        "ttfb": 0.786744,
+        "total": 0.78687,
+        "size": 2717
+      },
+      {
+        "run": 2,
+        "code": "200",
+        "ttfb": 0.813043,
+        "total": 0.813484,
+        "size": 2717
+      },
+      {
+        "run": 3,
+        "code": "200",
+        "ttfb": 0.772252,
+        "total": 0.77239,
+        "size": 2717
+      },
+      {
+        "run": 4,
+        "code": "200",
+        "ttfb": 0.81484,
+        "total": 0.815547,
+        "size": 2717
+      },
+      {
+        "run": 5,
+        "code": "200",
+        "ttfb": 0.784479,
+        "total": 0.784624,
+        "size": 2717
+      }
+    ],
+    "content_encoding": "gzip",
+    "cache_control": null,
+    "cf_cache_status": "DYNAMIC"
+  },
+  "home-folk-sharing|local": {
+    "url": "http://localhost:3001/api/home/folk-sharing",
+    "runs": [
+      {
+        "run": 1,
+        "code": "200",
+        "ttfb": 0.012451,
+        "total": 0.012525,
+        "size": 2
+      },
+      {
+        "run": 2,
+        "code": "200",
+        "ttfb": 0.012136,
+        "total": 0.012209,
+        "size": 2
+      },
+      {
+        "run": 3,
+        "code": "200",
+        "ttfb": 0.014086,
+        "total": 0.014147,
+        "size": 2
+      },
+      {
+        "run": 4,
+        "code": "200",
+        "ttfb": 0.012488,
+        "total": 0.012556,
+        "size": 2
+      },
+      {
+        "run": 5,
+        "code": "200",
+        "ttfb": 0.012449,
+        "total": 0.012514,
+        "size": 2
+      }
+    ],
+    "content_encoding": null,
+    "cache_control": null,
+    "cf_cache_status": null
+  },
+  "home-folk-sharing|prod": {
+    "url": "https://api.odemusics.com/api/home/folk-sharing",
+    "runs": [
+      {
+        "run": 1,
+        "code": "200",
+        "ttfb": 0.781613,
+        "total": 0.781821,
+        "size": 2
+      },
+      {
+        "run": 2,
+        "code": "200",
+        "ttfb": 0.79341,
+        "total": 0.793551,
+        "size": 2
+      },
+      {
+        "run": 3,
+        "code": "200",
+        "ttfb": 0.775621,
+        "total": 0.775865,
+        "size": 2
+      },
+      {
+        "run": 4,
+        "code": "200",
+        "ttfb": 0.874872,
+        "total": 0.875111,
+        "size": 2
+      },
+      {
+        "run": 5,
+        "code": "200",
+        "ttfb": 0.809344,
+        "total": 0.809506,
+        "size": 2
+      }
+    ],
+    "content_encoding": null,
+    "cache_control": null,
+    "cf_cache_status": "DYNAMIC"
+  },
+  "home-folk-sharing|prod_gzip": {
+    "url": "https://api.odemusics.com/api/home/folk-sharing",
+    "runs": [
+      {
+        "run": 1,
+        "code": "200",
+        "ttfb": 0.827555,
+        "total": 0.827937,
+        "size": 2
+      },
+      {
+        "run": 2,
+        "code": "200",
+        "ttfb": 0.95114,
+        "total": 0.951416,
+        "size": 2
+      },
+      {
+        "run": 3,
+        "code": "200",
+        "ttfb": 0.857054,
+        "total": 0.857223,
+        "size": 2
+      },
+      {
+        "run": 4,
+        "code": "200",
+        "ttfb": 0.785963,
+        "total": 0.786219,
+        "size": 2
+      },
+      {
+        "run": 5,
+        "code": "200",
+        "ttfb": 0.816709,
+        "total": 0.816869,
+        "size": 2
+      }
+    ],
+    "content_encoding": null,
+    "cache_control": null,
+    "cf_cache_status": "DYNAMIC"
+  },
+  "home-combined-charts|local": {
+    "url": "http://localhost:3001/api/home/combined-charts",
+    "runs": [
+      {
+        "run": 1,
+        "code": "200",
+        "ttfb": 0.054857,
+        "total": 0.055003,
+        "size": 10007
+      },
+      {
+        "run": 2,
+        "code": "200",
+        "ttfb": 0.044565,
+        "total": 0.044829,
+        "size": 10007
+      },
+      {
+        "run": 3,
+        "code": "200",
+        "ttfb": 0.007886,
+        "total": 0.007996,
+        "size": 10007
+      },
+      {
+        "run": 4,
+        "code": "200",
+        "ttfb": 0.09533,
+        "total": 0.095535,
+        "size": 10007
+      },
+      {
+        "run": 5,
+        "code": "200",
+        "ttfb": 0.024411,
+        "total": 0.024606,
+        "size": 10007
+      }
+    ],
+    "content_encoding": null,
+    "cache_control": null,
+    "cf_cache_status": null
+  },
+  "home-combined-charts|prod": {
+    "url": "https://api.odemusics.com/api/home/combined-charts",
+    "runs": [
+      {
+        "run": 1,
+        "code": "200",
+        "ttfb": 0.860427,
+        "total": 0.8794,
+        "size": 10007
+      },
+      {
+        "run": 2,
+        "code": "200",
+        "ttfb": 0.896135,
+        "total": 0.925058,
+        "size": 10007
+      },
+      {
+        "run": 3,
+        "code": "200",
+        "ttfb": 0.860338,
+        "total": 0.885641,
+        "size": 10007
+      },
+      {
+        "run": 4,
+        "code": "200",
+        "ttfb": 0.993881,
+        "total": 1.020107,
+        "size": 10007
+      },
+      {
+        "run": 5,
+        "code": "200",
+        "ttfb": 0.875412,
+        "total": 0.911406,
+        "size": 10007
+      }
+    ],
+    "content_encoding": null,
+    "cache_control": null,
+    "cf_cache_status": "DYNAMIC"
+  },
+  "home-combined-charts|prod_gzip": {
+    "url": "https://api.odemusics.com/api/home/combined-charts",
+    "runs": [
+      {
+        "run": 1,
+        "code": "200",
+        "ttfb": 0.898327,
+        "total": 0.898647,
+        "size": 2717
+      },
+      {
+        "run": 2,
+        "code": "200",
+        "ttfb": 0.863908,
+        "total": 0.864247,
+        "size": 2717
+      },
+      {
+        "run": 3,
+        "code": "200",
+        "ttfb": 0.808927,
+        "total": 0.809099,
+        "size": 2717
+      },
+      {
+        "run": 4,
+        "code": "200",
+        "ttfb": 0.914659,
+        "total": 0.914847,
+        "size": 2717
+      },
+      {
+        "run": 5,
+        "code": "200",
+        "ttfb": 0.857616,
+        "total": 0.861173,
+        "size": 2717
+      }
+    ],
+    "content_encoding": "gzip",
+    "cache_control": null,
+    "cf_cache_status": "DYNAMIC"
+  },
+  "search-zh|local": {
+    "url": "http://localhost:3001/api/search/all?q=%E6%81%A9%E5%85%B8",
+    "runs": [
+      {
+        "run": 1,
+        "code": "200",
+        "ttfb": 0.24859,
+        "total": 0.253413,
+        "size": 465985
+      },
+      {
+        "run": 2,
+        "code": "200",
+        "ttfb": 0.14848,
+        "total": 0.149274,
+        "size": 465985
+      },
+      {
+        "run": 3,
+        "code": "200",
+        "ttfb": 0.1293,
+        "total": 0.135573,
+        "size": 465985
+      },
+      {
+        "run": 4,
+        "code": "200",
+        "ttfb": 0.195717,
+        "total": 0.196148,
+        "size": 465985
+      },
+      {
+        "run": 5,
+        "code": "200",
+        "ttfb": 0.160606,
+        "total": 0.163839,
+        "size": 465985
+      }
+    ],
+    "content_encoding": null,
+    "cache_control": null,
+    "cf_cache_status": null
+  },
+  "search-zh|prod": {
+    "url": "https://api.odemusics.com/api/search/all?q=%E6%81%A9%E5%85%B8",
+    "runs": [
+      {
+        "run": 1,
+        "code": "200",
+        "ttfb": 0.885524,
+        "total": 1.82671,
+        "size": 465985
+      },
+      {
+        "run": 2,
+        "code": "200",
+        "ttfb": 0.920791,
+        "total": 1.845939,
+        "size": 465985
+      },
+      {
+        "run": 3,
+        "code": "200",
+        "ttfb": 1.076703,
+        "total": 1.993005,
+        "size": 465985
+      },
+      {
+        "run": 4,
+        "code": "200",
+        "ttfb": 0.945223,
+        "total": 1.998419,
+        "size": 465985
+      },
+      {
+        "run": 5,
+        "code": "200",
+        "ttfb": 0.851164,
+        "total": 1.852176,
+        "size": 465985
+      }
+    ],
+    "content_encoding": null,
+    "cache_control": null,
+    "cf_cache_status": "DYNAMIC"
+  },
+  "search-zh|prod_gzip": {
+    "url": "https://api.odemusics.com/api/search/all?q=%E6%81%A9%E5%85%B8",
+    "runs": [
+      {
+        "run": 1,
+        "code": "200",
+        "ttfb": 1.020688,
+        "total": 1.487736,
+        "size": 84361
+      },
+      {
+        "run": 2,
+        "code": "200",
+        "ttfb": 0.89892,
+        "total": 1.35761,
+        "size": 83524
+      },
+      {
+        "run": 3,
+        "code": "200",
+        "ttfb": 0.960421,
+        "total": 1.421848,
+        "size": 83457
+      },
+      {
+        "run": 4,
+        "code": "200",
+        "ttfb": 1.239953,
+        "total": 1.727858,
+        "size": 82881
+      },
+      {
+        "run": 5,
+        "code": "200",
+        "ttfb": 1.084682,
+        "total": 1.583795,
+        "size": 83469
+      }
+    ],
+    "content_encoding": "gzip",
+    "cache_control": null,
+    "cf_cache_status": "DYNAMIC"
+  },
+  "search-en|local": {
+    "url": "http://localhost:3001/api/search/all?q=grace",
+    "runs": [
+      {
+        "run": 1,
+        "code": "200",
+        "ttfb": 0.169885,
+        "total": 0.184386,
+        "size": 498995
+      },
+      {
+        "run": 2,
+        "code": "200",
+        "ttfb": 0.317081,
+        "total": 0.317514,
+        "size": 498995
+      },
+      {
+        "run": 3,
+        "code": "200",
+        "ttfb": 0.140658,
+        "total": 0.14277,
+        "size": 498995
+      },
+      {
+        "run": 4,
+        "code": "200",
+        "ttfb": 0.112538,
+        "total": 0.114498,
+        "size": 498995
+      },
+      {
+        "run": 5,
+        "code": "200",
+        "ttfb": 0.149481,
+        "total": 0.149854,
+        "size": 498995
+      }
+    ],
+    "content_encoding": null,
+    "cache_control": null,
+    "cf_cache_status": null
+  },
+  "search-en|prod": {
+    "url": "https://api.odemusics.com/api/search/all?q=grace",
+    "runs": [
+      {
+        "run": 1,
+        "code": "200",
+        "ttfb": 0.969547,
+        "total": 1.920598,
+        "size": 498995
+      },
+      {
+        "run": 2,
+        "code": "200",
+        "ttfb": 0.951179,
+        "total": 1.941075,
+        "size": 498995
+      },
+      {
+        "run": 3,
+        "code": "200",
+        "ttfb": 0.995256,
+        "total": 2.070749,
+        "size": 498995
+      },
+      {
+        "run": 4,
+        "code": "200",
+        "ttfb": 0.912957,
+        "total": 1.939887,
+        "size": 498995
+      },
+      {
+        "run": 5,
+        "code": "200",
+        "ttfb": 0.965278,
+        "total": 1.943312,
+        "size": 498995
+      }
+    ],
+    "content_encoding": null,
+    "cache_control": null,
+    "cf_cache_status": "DYNAMIC"
+  },
+  "search-en|prod_gzip": {
+    "url": "https://api.odemusics.com/api/search/all?q=grace",
+    "runs": [
+      {
+        "run": 1,
+        "code": "200",
+        "ttfb": 1.110718,
+        "total": 1.641904,
+        "size": 89069
+      },
+      {
+        "run": 2,
+        "code": "200",
+        "ttfb": 1.068569,
+        "total": 1.539458,
+        "size": 89424
+      },
+      {
+        "run": 3,
+        "code": "200",
+        "ttfb": 0.917456,
+        "total": 1.423951,
+        "size": 89080
+      },
+      {
+        "run": 4,
+        "code": "200",
+        "ttfb": 1.133827,
+        "total": 1.70173,
+        "size": 89208
+      },
+      {
+        "run": 5,
+        "code": "200",
+        "ttfb": 0.934543,
+        "total": 1.463927,
+        "size": 89075
+      }
+    ],
+    "content_encoding": "gzip",
+    "cache_control": null,
+    "cf_cache_status": "DYNAMIC"
+  },
+  "category-mandarin|local": {
+    "url": "http://localhost:3001/api/category/mandarin",
+    "runs": [
+      {
+        "run": 1,
+        "code": "200",
+        "ttfb": 2.617225,
+        "total": 2.814777,
+        "size": 35145812
+      },
+      {
+        "run": 2,
+        "code": "200",
+        "ttfb": 2.394041,
+        "total": 2.523852,
+        "size": 35145812
+      },
+      {
+        "run": 3,
+        "code": "200",
+        "ttfb": 2.360331,
+        "total": 2.463805,
+        "size": 35145812
+      },
+      {
+        "run": 4,
+        "code": "200",
+        "ttfb": 2.178502,
+        "total": 2.440293,
+        "size": 35145812
+      },
+      {
+        "run": 5,
+        "code": "200",
+        "ttfb": 2.952699,
+        "total": 3.178678,
+        "size": 35145812
+      }
+    ],
+    "content_encoding": null,
+    "cache_control": null,
+    "cf_cache_status": null
+  },
+  "category-mandarin|prod": {
+    "url": "https://api.odemusics.com/api/category/mandarin",
+    "runs": [
+      {
+        "run": 1,
+        "code": "200",
+        "ttfb": 3.796718,
+        "total": 31.443896,
+        "size": 35145812
+      },
+      {
+        "run": 2,
+        "code": "200",
+        "ttfb": 5.637129,
+        "total": 32.988806,
+        "size": 35145812
+      },
+      {
+        "run": 3,
+        "code": "200",
+        "ttfb": 6.813714,
+        "total": 21.673316,
+        "size": 35145812
+      },
+      {
+        "run": 4,
+        "code": "200",
+        "ttfb": 2.061138,
+        "total": 21.045138,
+        "size": 35145812
+      },
+      {
+        "run": 5,
+        "code": "200",
+        "ttfb": 1.235922,
+        "total": 21.217081,
+        "size": 35145812
+      }
+    ],
+    "content_encoding": null,
+    "cache_control": null,
+    "cf_cache_status": "DYNAMIC"
+  },
+  "category-mandarin|prod_gzip": {
+    "url": "https://api.odemusics.com/api/category/mandarin",
+    "runs": [
+      {
+        "run": 1,
+        "code": "200",
+        "ttfb": 1.1129,
+        "total": 19.163385,
+        "size": 5680020
+      },
+      {
+        "run": 2,
+        "code": "200",
+        "ttfb": 1.106549,
+        "total": 29.206271,
+        "size": 5691952
+      },
+      {
+        "run": 3,
+        "code": "200",
+        "ttfb": 1.101884,
+        "total": 38.322238,
+        "size": 5694789
+      },
+      {
+        "run": 4,
+        "code": "200",
+        "ttfb": 1.695797,
+        "total": 73.57986,
+        "size": 5726740
+      },
+      {
+        "run": 5,
+        "code": "200",
+        "ttfb": 1.193527,
+        "total": 61.484354,
+        "size": 5721854
+      }
+    ],
+    "content_encoding": "gzip",
+    "cache_control": null,
+    "cf_cache_status": "DYNAMIC"
+  },
+  "category-cantonese|local": {
+    "url": "http://localhost:3001/api/category/cantonese",
+    "runs": [
+      {
+        "run": 1,
+        "code": "200",
+        "ttfb": 0.217971,
+        "total": 0.222821,
+        "size": 15971383
+      },
+      {
+        "run": 2,
+        "code": "200",
+        "ttfb": 0.147164,
+        "total": 0.152744,
+        "size": 15971383
+      },
+      {
+        "run": 3,
+        "code": "200",
+        "ttfb": 0.138537,
+        "total": 0.145719,
+        "size": 15971383
+      },
+      {
+        "run": 4,
+        "code": "200",
+        "ttfb": 0.1367,
+        "total": 0.142511,
+        "size": 15971383
+      },
+      {
+        "run": 5,
+        "code": "200",
+        "ttfb": 0.13646,
+        "total": 0.144078,
+        "size": 15971383
+      }
+    ],
+    "content_encoding": null,
+    "cache_control": null,
+    "cf_cache_status": null
+  },
+  "category-cantonese|prod": {
+    "url": "https://api.odemusics.com/api/category/cantonese",
+    "runs": [
+      {
+        "run": 1,
+        "code": "200",
+        "ttfb": 0.974965,
+        "total": 22.262043,
+        "size": 15971383
+      },
+      {
+        "run": 2,
+        "code": "200",
+        "ttfb": 0.933005,
+        "total": 16.418213,
+        "size": 15971383
+      },
+      {
+        "run": 3,
+        "code": "200",
+        "ttfb": 0.970592,
+        "total": 29.223037,
+        "size": 15971383
+      },
+      {
+        "run": 4,
+        "code": "200",
+        "ttfb": 1.049347,
+        "total": 23.955815,
+        "size": 15971383
+      },
+      {
+        "run": 5,
+        "code": "200",
+        "ttfb": 1.061951,
+        "total": 29.461955,
+        "size": 15971383
+      }
+    ],
+    "content_encoding": null,
+    "cache_control": null,
+    "cf_cache_status": "DYNAMIC"
+  },
+  "category-cantonese|prod_gzip": {
+    "url": "https://api.odemusics.com/api/category/cantonese",
+    "runs": [
+      {
+        "run": 1,
+        "code": "200",
+        "ttfb": 1.04037,
+        "total": 31.423178,
+        "size": 3063453
+      },
+      {
+        "run": 2,
+        "code": "200",
+        "ttfb": 0.968078,
+        "total": 17.159663,
+        "size": 3048170
+      },
+      {
+        "run": 3,
+        "code": "200",
+        "ttfb": 0.96745,
+        "total": 11.827315,
+        "size": 3034448
+      },
+      {
+        "run": 4,
+        "code": "200",
+        "ttfb": 0.938076,
+        "total": 27.134727,
+        "size": 3058147
+      },
+      {
+        "run": 5,
+        "code": "200",
+        "ttfb": 0.951854,
+        "total": 19.28465,
+        "size": 3048898
+      }
+    ],
+    "content_encoding": "gzip",
+    "cache_control": null,
+    "cf_cache_status": "DYNAMIC"
+  },
+  "hls-warm42|local": {
+    "url": "http://localhost:3001/api/hls/42.m3u8",
+    "runs": [
+      {
+        "run": 1,
+        "code": "200",
+        "ttfb": 0.001702,
+        "total": 0.001753,
+        "size": 2301
+      },
+      {
+        "run": 2,
+        "code": "200",
+        "ttfb": 0.001111,
+        "total": 0.001154,
+        "size": 2301
+      },
+      {
+        "run": 3,
+        "code": "200",
+        "ttfb": 0.001199,
+        "total": 0.001246,
+        "size": 2301
+      },
+      {
+        "run": 4,
+        "code": "200",
+        "ttfb": 0.001017,
+        "total": 0.00106,
+        "size": 2301
+      },
+      {
+        "run": 5,
+        "code": "200",
+        "ttfb": 0.001126,
+        "total": 0.001163,
+        "size": 2301
+      }
+    ],
+    "content_encoding": null,
+    "cache_control": "no-store",
+    "cf_cache_status": null
+  },
+  "hls-warm42|prod": {
+    "url": "https://api.odemusics.com/api/hls/42.m3u8",
+    "runs": [
+      {
+        "run": 1,
+        "code": "200",
+        "ttfb": 0.98504,
+        "total": 0.985159,
+        "size": 2301
+      },
+      {
+        "run": 2,
+        "code": "200",
+        "ttfb": 0.767295,
+        "total": 0.767513,
+        "size": 2301
+      },
+      {
+        "run": 3,
+        "code": "200",
+        "ttfb": 0.762839,
+        "total": 0.762962,
+        "size": 2301
+      },
+      {
+        "run": 4,
+        "code": "200",
+        "ttfb": 0.792395,
+        "total": 0.792532,
+        "size": 2301
+      },
+      {
+        "run": 5,
+        "code": "200",
+        "ttfb": 0.751777,
+        "total": 0.752153,
+        "size": 2301
+      }
+    ],
+    "content_encoding": null,
+    "cache_control": "no-store",
+    "cf_cache_status": "DYNAMIC"
+  },
+  "hls-warm42|prod_gzip": {
+    "url": "https://api.odemusics.com/api/hls/42.m3u8",
+    "runs": [
+      {
+        "run": 1,
+        "code": "200",
+        "ttfb": 0.779859,
+        "total": 0.779989,
+        "size": 447
+      },
+      {
+        "run": 2,
+        "code": "200",
+        "ttfb": 0.751047,
+        "total": 0.751165,
+        "size": 447
+      },
+      {
+        "run": 3,
+        "code": "200",
+        "ttfb": 0.743594,
+        "total": 0.743812,
+        "size": 447
+      },
+      {
+        "run": 4,
+        "code": "200",
+        "ttfb": 0.841897,
+        "total": 0.842011,
+        "size": 447
+      },
+      {
+        "run": 5,
+        "code": "200",
+        "ttfb": 0.743338,
+        "total": 0.74344,
+        "size": 447
+      }
+    ],
+    "content_encoding": "gzip",
+    "cache_control": "no-store",
+    "cf_cache_status": "DYNAMIC"
+  },
+  "stream-range-warm42|local": {
+    "url": "http://localhost:3001/api/stream/42",
+    "runs": [
+      {
+        "run": 1,
+        "code": "206",
+        "ttfb": 0.602355,
+        "total": 0.602429,
+        "size": 1024
+      },
+      {
+        "run": 2,
+        "code": "206",
+        "ttfb": 0.192251,
+        "total": 0.192325,
+        "size": 1024
+      },
+      {
+        "run": 3,
+        "code": "206",
+        "ttfb": 0.183746,
+        "total": 0.183811,
+        "size": 1024
+      },
+      {
+        "run": 4,
+        "code": "206",
+        "ttfb": 0.25746,
+        "total": 0.257531,
+        "size": 1024
+      },
+      {
+        "run": 5,
+        "code": "206",
+        "ttfb": 0.184249,
+        "total": 0.184326,
+        "size": 1024
+      }
+    ],
+    "content_encoding": null,
+    "cache_control": null,
+    "cf_cache_status": null
+  },
+  "stream-range-warm42|prod": {
+    "url": "https://api.odemusics.com/api/stream/42",
+    "runs": [
+      {
+        "run": 1,
+        "code": "206",
+        "ttfb": 0.930112,
+        "total": 0.930211,
+        "size": 1024
+      },
+      {
+        "run": 2,
+        "code": "206",
+        "ttfb": 1.094659,
+        "total": 1.094772,
+        "size": 1024
+      },
+      {
+        "run": 3,
+        "code": "206",
+        "ttfb": 0.940412,
+        "total": 0.941483,
+        "size": 1024
+      },
+      {
+        "run": 4,
+        "code": "206",
+        "ttfb": 1.035362,
+        "total": 1.035483,
+        "size": 1024
+      },
+      {
+        "run": 5,
+        "code": "206",
+        "ttfb": 0.941467,
+        "total": 0.941574,
+        "size": 1024
+      }
+    ],
+    "content_encoding": null,
+    "cache_control": null,
+    "cf_cache_status": "DYNAMIC"
+  },
+  "stream-range-warm42|prod_gzip": {
+    "url": "https://api.odemusics.com/api/stream/42",
+    "runs": [
+      {
+        "run": 1,
+        "code": "206",
+        "ttfb": 0.970085,
+        "total": 0.970197,
+        "size": 1024
+      },
+      {
+        "run": 2,
+        "code": "206",
+        "ttfb": 0.935402,
+        "total": 0.935496,
+        "size": 1024
+      },
+      {
+        "run": 3,
+        "code": "206",
+        "ttfb": 0.934494,
+        "total": 0.934601,
+        "size": 1024
+      },
+      {
+        "run": 4,
+        "code": "206",
+        "ttfb": 0.952269,
+        "total": 0.952401,
+        "size": 1024
+      },
+      {
+        "run": 5,
+        "code": "206",
+        "ttfb": 0.953447,
+        "total": 0.953593,
+        "size": 1024
+      }
+    ],
+    "content_encoding": null,
+    "cache_control": null,
+    "cf_cache_status": "DYNAMIC"
+  }
+}
