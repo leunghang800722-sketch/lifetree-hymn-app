@@ -1,6 +1,6 @@
 // 詩歌App v211 TrackPlayer — 背景播放 + Ode 主題(ODE-REBRAND-PLAN)
 import { COLORS as DesignColors, TYPOGRAPHY, effects } from './src/theme/designSystem';
-import { useCachedHymns } from './src/hooks/useCachedHymns';
+import { useCachedHymns, getLyricsById } from './src/hooks/useCachedHymns';
 import { createExternalStore } from './src/hooks/externalStore';
 import LogoRing from './src/components/LogoRing';
 import React, { useState, useEffect, createContext, useContext, useRef, useCallback } from 'react';
@@ -3294,7 +3294,12 @@ function FullScreenPlayerOverlay() {
   const cur = liveHymn || snapshotHymn;
   // BUG1 P0 — 統一喺呢度轉一次,下面 hasLyrics 判斷同歌詞 Modal 顯示都食呢個
   // 已經拆好行嘅版本,唔再各自 trim() 原始「|」字串。
-  const lyricsText = formatLyrics(cur.lyrics);
+  // PERF-STAGE2-2D-20260902(C-1 前端)—— lite 已經畫咗、用戶已經撳咗播、
+  // `/api/hymns/lyrics` 背景 fetch 仲未 merge 入 player.hymns 之前呢個窗口,
+  // cur.lyrics 會係 undefined/''。getLyricsById 讀 useCachedHymns 個
+  // module-level lyrics map 補呢個窗口(merge 完成之後 cur.lyrics 本身就有
+  // 值,呢個 fallback 唔會再用到)。
+  const lyricsText = formatLyrics(cur.lyrics || getLyricsById(cur.id));
 
   // BATCH5 §7.3-E:冷 start 分階段 loading 文案——純 client UI,唔掂 provider
   // 層(O1 啱啱先拆走每秒 re-render,PlayerCtx 唔准加每秒變嘅嘢),淨係喺
@@ -3340,7 +3345,8 @@ function FullScreenPlayerOverlay() {
     }, 1500);
   }, [player.repeatMode, player.setRepeatMode, repeatHintOpacity]);
 
-  const lyricsStanzas = formatLyricsStanzas(cur.lyrics);
+  // PERF-STAGE2-2D-20260902(C-1 前端)—— 同上面 lyricsText 一樣嘅 fallback。
+  const lyricsStanzas = formatLyricsStanzas(cur.lyrics || getLyricsById(cur.id));
   // BUG3(c) P0(Eric 實測)—— 自動播放關咗 + 播緊 queue 最後一首,⏭ 之前係
   // 冇 disabled 狀態嘅死掣(撳落去 TrackPlayer.skipToNext() 靜靜哋失敗,冇反應)。
   // repeatMode===1(repeat-all)會 wrap 返轉頭,所以呢種情況仲係「有嘢跳」。

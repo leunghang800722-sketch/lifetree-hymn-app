@@ -5,7 +5,7 @@ import { createExternalStore } from './externalStore.js';
 import { mark, note } from '../perfMarks'; // PERF-BASELINE-1B-20260902
 
 // BATCH5 O7:改用 AbortController——舊嘅 Promise.race 逾時之後底層 fetch
-// 連線唔會斷,慢網下會同 retry(fetchAllHymnsWithRetry)疊住背景繼續拉多
+// 連線唔會斷,慢網下會同 retry(fetchPrimaryHymnsWithRetry)疊住背景繼續拉多
 // 幾份全量。而家逾時會真 abort 底層 fetch,throw 嘅係 AbortError(唔再
 // 係自製 Error)——呢度全部 caller(fetchAllHymns/fetchVersion)已核實
 // 只 catch 完回 null/空,冇人讀 error message,語義安全。
@@ -65,18 +65,86 @@ async function fetchAllHymns(attempt = 1) {
   return fetchHymnsTwoStage(`${API_BASE}/api/hymns`, attempt);
 }
 
-// 開機第一次揸全量歌單:冷網絡(DNS/TLS 握手)偶爾要幾秒,單試一次逾時就當
-// 「攞唔到」太進取——會令冇 cache 嘅開機(新裝 / 清咗 data)一撞板就閃「網絡
-// 斷咗」,但其實得返嗰一嘢request慢咗,唔係真係冇網。失敗先重試多一次先真係
-// 當攞唔到。
-async function fetchAllHymnsWithRetry() {
-  const first = await fetchAllHymns(1);
+// PERF-STAGE2-2D-20260902(C-1 前端消費者)—— 開機第一次冷開改用
+// `/api/hymns?lite=1`(backend C-1,commit 8d7a2d4:同一 SELECT/kids→lang
+// 墊/real_lang,淨係剷走 lyrics 欄)先攞歌單,即刻可以畫首頁/詩歌庫,唔使
+// 等 lyrics(佔 raw payload 49%,PERF-STAGE2-2A-OPUS-20260902.md §6)一齊
+// 落嚟先開始 render。用同一套 fetchHymnsTwoStage(8s headers/30s body)+
+// 重試一次嘅邏輯(舊版 `fetchAllHymnsWithRetry` 嘅同款寫法),淨係 URL 唔同。
+async function fetchPrimaryHymns(attempt = 1) {
+  return fetchHymnsTwoStage(`${API_BASE}/api/hymns?lite=1`, attempt);
+}
+
+// 404 fallback(執行單明文要求)—— live backend 喺 C-1 冇 restart 之前,
+// `?lite=1` 會俾舊 server.js 忽略(query 冇對應邏輯),照樣回**full**
+// payload(唔係 404)。用「第一個 hymn object 有冇 `lyrics` 呢個 key」嚟
+// 分辨:新 backend 嘅 lite 分支連 key 都唔出(SELECT 冇帶呢欄),舊 backend
+// 一定有(就算個別歌 lyrics 係 NULL,`stmt.getAsObject()` 都會出
+// `lyrics:null` 呢個 key)。判做 full 就代表呢份 response 已經齊晒 lyrics,
+// 唔使再打 `/api/hymns/lyrics` 補。
+function finalizePrimaryResult(result) {
+  const isFull = result.hymns.length > 0
+    && Object.prototype.hasOwnProperty.call(result.hymns[0], 'lyrics');
+  note('liteIsFull', isFull ? 1 : 0);
+  return { hymns: result.hymns, dataVersion: result.dataVersion, isFull };
+}
+
+async function fetchPrimaryHymnsWithRetry() {
+  const first = await fetchPrimaryHymns(1);
   note('hymnsAtt1Ok', first.hymns.length > 0 ? 1 : 0); // F-1 量度指標:第一次嘗試成功率
-  if (first.hymns.length > 0) { note('hymnsAttempts', 1); return first; }
+  if (first.hymns.length > 0) { note('hymnsAttempts', 1); return finalizePrimaryResult(first); }
   mark('hymns2Start'); // D-1 — 第二次嘗試開始嗰刻,俾 a2t(attempt2 ttfb)計相對時間
-  const second = await fetchAllHymns(2);
+  const second = await fetchPrimaryHymns(2);
   note('hymnsAttempts', 2);
-  return second;
+  return finalizePrimaryResult(second);
+}
+
+// C-1 前端 —— `/api/hymns/lyrics`(backend commit 8d7a2d4)背景 fetch,
+// `{ data: { [id]: lyrics }, dataVersion }`,只包含 5,387/6,405(84.1%)非空
+// lyrics。同一套兩段 timeout,但**唔重試**——攞唔到就維持 lite 版顯示,
+// 下次開 App 因為冇存 `allHymnsVersion` 會自動再嘗試一次(見 refresh() 底
+// 嗰句註解)。`map:null` 代表 fail(HTTP 錯誤/斷網/JSON 壞);`map:{}` 係
+// 合法嘅「成功但冇非空 lyrics」(理論上唔會發生,但唔應該當 fail)。
+async function fetchLyricsMap() {
+  const controller = new AbortController();
+  let t = setTimeout(() => controller.abort(), 8000);
+  try {
+    const r = await fetch(`${API_BASE}/api/hymns/lyrics`, { signal: controller.signal });
+    clearTimeout(t);
+    // 404 = 舊 backend(C-1 未 restart)冇呢條 route;非 200 一律當 fail。
+    if (!r.ok) return { map: null, dataVersion: null, bytes: 0 };
+    t = setTimeout(() => controller.abort(), 30000);
+    let text;
+    try {
+      text = await r.text();
+    } finally {
+      clearTimeout(t);
+    }
+    const body = JSON.parse(text);
+    const map = (body && body.data && typeof body.data === 'object') ? body.data : {};
+    return { map, dataVersion: body?.dataVersion ?? null, bytes: text.length };
+  } catch (e) {
+    clearTimeout(t);
+    return { map: null, dataVersion: null, bytes: 0 };
+  }
+}
+
+// 新 array + 新 object(唔係原地改)——令 HomeScreen/LibraryScreen 嗰啲用
+// `hymns` identity 做 dep 嘅 useMemo/memo 喺 lyrics merge 完之後正確重跑。
+function mergeLyrics(hymns, lyricsMap) {
+  return hymns.map((h) => ({ ...h, lyrics: lyricsMap[h.id] ?? '' }));
+}
+
+// C-1 前端 —— 播放器讀歌詞嗰個 race window 用嘅 fallback:lite 已經畫咗、
+// 用戶已經撳咗播、`/api/hymns/lyrics` 背景 fetch 仲未 merge 入 hymns array
+// 之前,`cur.lyrics`(App.js FullScreenPlayerOverlay)會係 undefined/''。
+// 淨係喺 lyrics fetch 成功嗰陣先populate,失敗/`isFull`(冇背景 fetch)嗰啲
+// case 唔會有嘢入嚟——嗰啲 case 冇呢個窗口(isFull 嗰刻 hymns 本身已經有
+// 齊 lyrics;失敗嗰陣本來就冇 lyrics 好補)。
+let lyricsMapStore = {};
+export function getLyricsById(id) {
+  if (id == null) return '';
+  return lyricsMapStore[id] ?? '';
 }
 
 // dataVersion cache-bust(SUPERVISION-LOG 2026-07-27 18:00)—— 24 小時內兩單
@@ -179,15 +247,55 @@ function kickRefreshOnce() {
     note('verSkip', canSkip ? 1 : 0);
     if (!canSkip) {
       mark('hymnsStart');
-      const { hymns: fresh, dataVersion } = await fetchAllHymnsWithRetry();
+      const primary = await fetchPrimaryHymnsWithRetry();
       mark('hymnsEnd');
-      if (fresh && fresh.length > 0) {
-        note('hymnsCount', fresh.length);
-        if (s) {
-          s.set('allHymns', JSON.stringify(fresh));
-          s.set('allHymnsVersion', dataVersion ?? serverVersion ?? '');
+      if (primary.hymns && primary.hymns.length > 0) {
+        note('hymnsCount', primary.hymns.length);
+        // C-1 前端(A-6)—— 即刻用 lite(或者舊 backend fallback 嘅 full)版
+        // 畫面,唔等 lyrics 到先畫。
+        hymnsStore.setState({ hymns: primary.hymns });
+        if (!hadCache) hymnsStore.setState({ loading: false });
+
+        if (primary.isFull) {
+          // 舊 backend(C-1 未 restart)—— `?lite=1` 俾佢忽略咗,response 本
+          // 身已經帶齊 lyrics,冇嘢好合併,直接當合併完成寫 MMKV。
+          note('merged', 1);
+          if (s) {
+            s.set('allHymns', JSON.stringify(primary.hymns));
+            s.set('allHymnsVersion', primary.dataVersion ?? serverVersion ?? '');
+          }
+        } else {
+          mark('lyrStart');
+          const lyr = await fetchLyricsMap();
+          mark('lyrEnd');
+          note('lyrBytes', lyr.bytes || 0);
+          if (lyr.map) {
+            // 兩個 fetch 嘅 dataVersion 唔同 = 中途 DB 改咗(歌詞班/admin 寫
+            // 入撞正呢個窗口)——以 lite 嗰個為準照合併,唔重新攞。
+            if (primary.dataVersion != null && lyr.dataVersion != null && primary.dataVersion !== lyr.dataVersion) {
+              note('lyrVerMismatch', 1);
+            }
+            Object.assign(lyricsMapStore, lyr.map);
+            const merged = mergeLyrics(primary.hymns, lyr.map);
+            note('merged', 1);
+            hymnsStore.setState({ hymns: merged });
+            if (s) {
+              s.set('allHymns', JSON.stringify(merged));
+              s.set('allHymnsVersion', primary.dataVersion ?? serverVersion ?? '');
+            }
+          } else {
+            // lyrics fetch 失敗(斷網 / 404 = 舊 backend 冇呢條 route)——照存
+            // lite 版落 MMKV,但**唔寫** allHymnsVersion,逼落次開 App(version
+            // 對唔上 cachedVersion)會再全套嘗試多一次。
+            note('merged', 0);
+            note('lyricsFail', 1);
+            if (s) {
+              s.set('allHymns', JSON.stringify(primary.hymns));
+            }
+          }
         }
-        hymnsStore.setState({ hymns: fresh });
+      } else if (!hadCache) {
+        hymnsStore.setState({ loading: false });
       }
     }
     if (!hadCache) hymnsStore.setState({ loading: false });
