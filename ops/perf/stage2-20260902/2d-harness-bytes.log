@@ -1,0 +1,21 @@
+PERF-STAGE2-2D-20260902 harness bytes evidence — 3002 harness endpoint checks
+date: Wed Sep  2 17:22:42 HKT 2026
+
+-- identity (no gzip) --
+full   code=200 bytes=5567648
+lite   code=200 bytes=2839533
+lyrics code=200 bytes=2702660
+
+-- gzip --
+full   code=200 bytes(decoded)=1474227
+lite   code=200 bytes(decoded)=371984
+lyrics code=200 bytes(decoded)=992859
+
+-- gzip content-length on wire (actual compressed bytes) --
+Content-Encoding: gzip  <- /api/hymns
+Content-Encoding: gzip  <- /api/hymns?lite=1
+Content-Encoding: gzip  <- /api/hymns/lyrics
+
+-- correctness checks --
+lite n= 6405 hasLyricsKey= False
+lyrics map keys= 5387
