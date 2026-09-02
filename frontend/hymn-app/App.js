@@ -3901,6 +3901,13 @@ function AppContent() {
   const topInset = useInsets().top;
   const [activeCategory, setActiveCategory] = useState('全部');
   const [activeTab, setActiveTab] = useState('Home');
+  // F-4(PERF-STAGE2-2B-20260902)—— D-1 診斷(perfHome beacon)量到:Library
+  // 首次帶真資料(6405 首)render 要 ~174-186ms,遠高於執行單「<50ms 就唔做」
+  // 門檻;Mine 同一批量度 <1ms(佢個主畫面唔直接畫全量 hymns 清單),遠低於
+  // 門檻,冇做嘅必要,維持恆常 mount。所以淨係 Library lazy-mount:首次撳
+  // 先真係 mount,mount 咗之後同舊行為一樣 keep-mount(靠 display:none 切
+  // 換,搜尋字串/scroll 位唔會因為呢個改動而跨 tab 唔見咗)。
+  const [libraryEverVisited, setLibraryEverVisited] = useState(false);
   const [authVisible, setAuthVisible] = useState(false);
   const [hymnListVisible, setHymnListVisible] = useState(false);
 
@@ -4264,6 +4271,14 @@ function AppContent() {
   );
   const hasMiniPlayer = !!currentHymn?.id;
 
+  // F-4(PERF-STAGE2-2B-20260902)—— 「render 期間有條件咁 setState」係 React
+  // 官方認可嘅 pattern(唔使 useEffect 嗰一輪 flash):一撳入 Library 呢個
+  // flag 就永久 true,之後 LibraryScreen keep-mount,行為同冇做呢個改動之前
+  // 一樣。
+  if (activeTab === 'Library' && !libraryEverVisited) {
+    setLibraryEverVisited(true);
+  }
+
   return (
     <View style={pageStyles.container}>
       <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
@@ -4279,7 +4294,10 @@ function AppContent() {
             onOpenList={showHymnList} />
         </View>
         <View style={[pageStyles.screenWrap, { display: activeTab === 'Library' ? 'flex' : 'none' }]}>
-          <LibraryScreen hymns={allSongs || []} onPlayHymn={handlePlayHymn} onOpenAuth={openAuth} />
+          {/* F-4(PERF-STAGE2-2B-20260902) — lazy-mount,見上面 libraryEverVisited 註解 */}
+          {libraryEverVisited && (
+            <LibraryScreen hymns={allSongs || []} onPlayHymn={handlePlayHymn} onOpenAuth={openAuth} />
+          )}
         </View>
         <View style={[pageStyles.screenWrap, { display: activeTab === 'Mine' ? 'flex' : 'none' }]}>
           <MineScreen onPlayHymn={handlePlayHymn} onOpenAuth={openAuth} onOpenAdminAdd={openAdminAdd}
