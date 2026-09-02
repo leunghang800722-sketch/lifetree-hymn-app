@@ -291,17 +291,33 @@ app.get('/api/internal/activity', (req, res) => {
 // 「已被清」旗標,先至可以自然 miss。
 let hymnsResponseCache = null; // { dataVersion, json }
 
+// PERF-STAGE2-2C-20260902 C-1(A-6 落地)—— `?lite=1` 用嘅獨立 cache slot,
+// 唔可以同上面 `hymnsResponseCache` 共用,否則兩種 envelope 會互相打架
+// (full request 見到 lite 存落嘅 cache,或者反過來)。**預設(冇 `?lite=1`)
+// 嗰條分支完全冇改——SQL 字串、object 形狀、cache 變量都同改動前一樣**,
+// 呢個係「舊 client 一個 byte 都唔可以變」嘅硬要求(PERF-STAGE2-2C-20260902
+// C-1)。
+let hymnsLiteResponseCache = null; // { dataVersion, json }
+// `/api/hymns/lyrics` 專用 cache slot,見底下嗰條獨立 route。
+let hymnsLyricsResponseCache = null; // { dataVersion, json }
+
 // Get all hymns from the database
 app.get('/api/hymns', async (req, res) => {
   try {
+    // PERF-STAGE2-2C-20260902 C-1 —— `lite=1` 先行入呢條分支,SELECT 唔帶
+    // `lyrics` 欄(連 key 都唔出)。Opus 5 實測 lyrics 佔 full payload raw
+    // 49.00%(PERF-STAGE2-2A-OPUS-20260902.md §6),lite+gzip 372KB
+    // (−74.8% vs full 1.47MB)。
+    const lite = req.query.lite === '1';
     const currentDataVersion = getDataVersion();
-    if (hymnsResponseCache && hymnsResponseCache.dataVersion === currentDataVersion) {
+    const cacheSlot = lite ? hymnsLiteResponseCache : hymnsResponseCache;
+    if (cacheSlot && cacheSlot.dataVersion === currentDataVersion) {
       res.set('Content-Type', 'application/json');
       // PERF-STAGE2-EXEC-20260902 §2A A-5 —— 純記錄,唔期望 CF 因為呢句就
       // HIT(1A A1 全部 57 組合 cf-cache-status 都係 DYNAMIC)。ETag 保留
       // (Express 對 res.send(string) 一律自動計 weak ETag,呢度冇碰佢)。
       res.set('Cache-Control', 'private, max-age=0, must-revalidate');
-      return res.send(hymnsResponseCache.json);
+      return res.send(cacheSlot.json);
     }
     const db = await getDb();
     // lyrics included so the player can show real 歌詞 (§3.4) and grey out the
@@ -313,7 +329,13 @@ app.get('/api/hymns', async (req, res) => {
     // org / performer / kids:TAXONOMY-5D-PLAN.md §2.2/§4.4 五維分類新欄。
     // instrumental:INSTRUMENTAL-CATEGORY-PLAN §3.2 Phase 2a —— 純音樂 flag,
     // 前端詩歌庫 tab + 首頁 chip 靠佢分流(Phase 1 已經回標咗 65 首)。
-    const stmt = db.prepare('SELECT id, title, display_title, artist, youtube_id, lang, duration, lyrics, tags, view_count, created_at, album, title_en, org, performer, kids, instrumental FROM hymns ORDER BY id');
+    // PERF-STAGE2-2C-20260902 C-1 —— lite 分支淨係喺 SELECT 欄位表剷走
+    // `lyrics`,其餘 17 個欄位/次序完全一樣,`?lite=1` 缺席(`lite===false`)
+    // 嗰句 column list 同改動前逐字一樣。
+    const columns = lite
+      ? 'id, title, display_title, artist, youtube_id, lang, duration, tags, view_count, created_at, album, title_en, org, performer, kids, instrumental'
+      : 'id, title, display_title, artist, youtube_id, lang, duration, lyrics, tags, view_count, created_at, album, title_en, org, performer, kids, instrumental';
+    const stmt = db.prepare(`SELECT ${columns} FROM hymns ORDER BY id`);
     const hymns = [];
     while (stmt.step()) {
       hymns.push(stmt.getAsObject());
@@ -328,21 +350,58 @@ app.get('/api/hymns', async (req, res) => {
     // 揀唔到 = 人間蒸發;保持真 lang 就最多係「暫時仲喺原語言 tab 度」,
     // 而 §8 Q5 Eric 已經接受呢個過渡期行為。real_lang 上面嗰行已經一律
     // 出街,所以呢度乜都唔使做——呢段註解就係要防止第日有人「補返對稱」。
+    // 呢個墊喺 lite 分支都要行(C-1 要求「同一模一樣嘅…kids→lang 墊/real_lang」)。
     for (const h of hymns) {
       h.real_lang = h.lang;
       if (h.kids) h.lang = '兒童';
     }
     // dataVersion 隨 envelope 帶埋出去,向後兼容(舊 client 淨係讀 .data 唔受影響)。
     const dataVersion = getDataVersion();
-    console.log(`📚 /api/hymns full fetch → ${hymns.length} hymns, dataVersion=${dataVersion}`);
+    console.log(`📚 /api/hymns ${lite ? 'lite' : 'full'} fetch → ${hymns.length} hymns, dataVersion=${dataVersion}`);
     const body = JSON.stringify({ data: hymns, dataVersion });
-    hymnsResponseCache = { dataVersion, json: body };
+    if (lite) hymnsLiteResponseCache = { dataVersion, json: body };
+    else hymnsResponseCache = { dataVersion, json: body };
     res.set('Content-Type', 'application/json');
     res.set('Cache-Control', 'private, max-age=0, must-revalidate');
     res.send(body);
   } catch (err) {
     console.error('Failed to fetch hymns:', err.message);
     res.status(500).json({ error: 'Failed to fetch hymns' });
+  }
+});
+
+// PERF-STAGE2-2C-20260902 C-1(A-6 落地)—— `/api/hymns/lyrics`:淨係 84.1%
+// (5,387/6,405)有非空 lyrics 嘅歌先入呢個 map,前端起播/揭開一首歌先要
+// 呢啲字,唔使跟開機首屏一齊拉。要喺 `/api/hymns` 之後註冊(冇實際影響,
+// 因為 backend 冇 `/api/hymns/:id`,但跟執行單提示留呢個次序,防止第日
+// 有人加返 `/api/hymns/:id` 撞到)。同一個 dataVersion-keyed cache 手法。
+app.get('/api/hymns/lyrics', async (req, res) => {
+  try {
+    const currentDataVersion = getDataVersion();
+    if (hymnsLyricsResponseCache && hymnsLyricsResponseCache.dataVersion === currentDataVersion) {
+      res.set('Content-Type', 'application/json');
+      res.set('Cache-Control', 'private, max-age=0, must-revalidate');
+      return res.send(hymnsLyricsResponseCache.json);
+    }
+    const db = await getDb();
+    const stmt = db.prepare("SELECT id, lyrics FROM hymns WHERE lyrics IS NOT NULL AND lyrics != '' ORDER BY id");
+    const data = {};
+    let count = 0;
+    while (stmt.step()) {
+      const row = stmt.getAsObject();
+      data[row.id] = row.lyrics;
+      count++;
+    }
+    const dataVersion = getDataVersion();
+    console.log(`📚 /api/hymns/lyrics fetch → ${count} hymns, dataVersion=${dataVersion}`);
+    const body = JSON.stringify({ data, dataVersion });
+    hymnsLyricsResponseCache = { dataVersion, json: body };
+    res.set('Content-Type', 'application/json');
+    res.set('Cache-Control', 'private, max-age=0, must-revalidate');
+    res.send(body);
+  } catch (err) {
+    console.error('Failed to fetch hymn lyrics:', err.message);
+    res.status(500).json({ error: 'Failed to fetch hymn lyrics' });
   }
 });
 
