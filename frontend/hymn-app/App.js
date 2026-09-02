@@ -1733,20 +1733,29 @@ function PlayerProvider({ children }) {
   const backwardSeekGraceTicksRef = useRef(0);
   const BACKWARD_SEEK_GRACE_TICKS = 6;
   const BACKWARD_SEEK_JUMP_THRESHOLD_SEC = 2; // 分辨「真係向後seek」同「poll抖動」
-  // HLS-EXEC-STARTUP-GRACE-20260902 —— §0 立案證據(2026-09-02 00:51-00:56Z
-  // Eric 真機 hymnId=1298):HLS 起播期(iOS + 現正 active track URL 係
-  // `.m3u8` + pos<1.0)之下,seg1-seg8 明明八段連續流入(80 秒音頻已落),但
-  // JS watchdog 用緊 progressive 嗰套「3-tick nudge、CAP 4、giveup 再
-  // 3-tick」門檻,響 t≈12s 就 giveup 兼降級去 progressive——跌落嗰隻本身
-  // 沉緊嘅船(progressive 路徑同一晚 itemNil storm)。病唔喺 HLS,病喺「起播
-  // 期 JS watchdog 太早 giveup + giveup 之後降級」。下面 hlsStartup 四條
-  // 規則(R1-R4,見 poll loop `bufferedAdvancing`/`midStallThreshold` 同
-  // `handleStuckTrackEnd` 嘅 hlsFallback 分支)全部只喺 hlsStartup 為 true
-  // 先生效;hlsStartup 為 false 嘅所有路徑(progressive iOS、HLS 中途
-  // pos>=1、Android)一個 tick 嘅行為都唔變。
-  const hlsStartupFrozenTicksRef = useRef(0);
-  const HLS_STARTUP_STALL_TICKS = 8;
-  const HLS_STARTUP_MAX_TICKS = 30;
+  // HLS-EXEC-STARTUP-GRACE-20260902(aefcd58,已 OTA rollback)—— 當時由
+  // Eric 真機 hymnId=1298 立案:HLS 起播期(iOS + active track URL 係 `.m3u8`
+  // + pos<1.0)seg1-seg8 八段連續流入,JS watchdog 卻用 progressive 門檻響
+  // t≈12s giveup 兼降級去 progressive(本身沉緊嗰隻船)。嗰版做咗 R1(cap
+  // 豁免)/R2(8-tick)/R3(30s ceiling)/R4(起播期唔准降級),出街即俾真機
+  // hid=28 推翻 R1-R3:JS 靜晒都冇用,position 照釘 0 到 native 16s 斬。
+  // R1-R3 已刪,只剩 R4(見 handleStuckTrackEnd)。而家嘅起播期邏輯係下面
+  // KICK 單嘅 K1/K2;非起播期(progressive iOS、HLS 中途 pos>=1、Android)
+  // 嘅 watchdog 決策同 84f2e03 逐 tick 一樣,唯一多咗嘅係起播期凍 tick 嗰下
+  // 一次 getActiveTrack() 嘅 native round-trip。
+  // HLS-EXEC-STARTUP-KICK-20260902 K1 —— 取代上面 GRACE 單嘅 R1(bufferedAdvancing
+  // cap 豁免)/R2(8-tick 門檻)/R3(30s ceiling):真機 hid=28 證實純粹拉長 JS
+  // 門檻救唔到,因為病根本唔喺 JS 判斷太快 giveup ——係 AVPlayer 自己
+  // `avPlayer.rate` 跌咗去 0 之後,`didChangeTimeControlStatus(.paused)`
+  // 嗰段 `currentTime>0` guard 喺 currentTime==0 時唔成立,冧咗個「攞返
+  // rate=1」嘅動作,冇人再幫手,一直卡到 native watchdog 16 秒死線。
+  // 修法:起播期(hlsStartup)每隔 2 個凍 tick 就 `swNudgePlay()`
+  // (`setPlayWhenReady(true)`,唔經 `play()`,唔驚動 native breaker),
+  // 頂替呢個冧咗嘅動作,唔使 seek。R1/R2/R3 嘅常數同邏輯已刪。
+  const hlsStartupKickTicksRef = useRef(0);
+  const hlsStartupKickCountRef = useRef(0);
+  const HLS_STARTUP_KICK_INTERVAL_TICKS = 2;
+  const HLS_STARTUP_KICK_MAX_PER_TRACK = 8;
   // STREAM-LOCKSCREEN-FREEZE-OPUS5-2026-08-13 D1 —— Opus5 核實過RN喺background
   // 唔會節流JS timer(CADisplayLink轉NSTimer照跑),真正停係iOS成個process
   // suspend咗。呢個poll loop理論上應該全速1秒一tick,如果兩個tick之間嘅
@@ -2014,10 +2023,10 @@ function PlayerProvider({ children }) {
     // 出事——但呢度做埋令個語義乾淨返,同其餘幾個 ticks ref 一致)。
     bufferedAdvancingCreditRef.current = 0;
     backwardSeekGraceTicksRef.current = 0;
-    // HLS-EXEC-STARTUP-GRACE-20260902 R3 —— 新 track 上場,舊 track 遺留低嘅
-    // 「hlsStartup 之下 position 凍住連續幾多個 tick」都要歸零,唔好累到新歌
-    // 一開波就頂住舊歌數落嚟嘅 ceiling 進度。
-    hlsStartupFrozenTicksRef.current = 0;
+    // HLS-EXEC-STARTUP-KICK-20260902 K1 —— 新 track 上場,舊 track 遺留低嘅
+    // kick tick 計數/kick 次數都要歸零,新歌有自己一份 kick 額。
+    hlsStartupKickTicksRef.current = 0;
+    hlsStartupKickCountRef.current = 0;
     // NATIVE-STALL-FG-SPEEDUP §4.1 —— 新 track 上場,舊 track 嘅緩衝提示唔應該
     // 留喺度(例如用戶手動跳去下一首,新歌先啱啱開始 loading,唔算「卡」)。
     if (NATIVE_WD_V2 && slowLoadNoticeRef.current) {
@@ -2183,39 +2192,59 @@ function PlayerProvider({ children }) {
               bufferedAdvancingCreditRef.current = 0;
             }
             const bufferedGrowingThisTick = bufferedNow - lastPollBufferedRef.current > 0.05;
-            // HLS-EXEC-STARTUP-GRACE-20260902 R1 —— hlsStartup 之下唔受
-            // `BUFFERED_ADVANCING_CAP_TICKS` 限制:只要 buffered 仲喺度長
-            // 大就唔算 stalled,唔理已經凍咗幾多個 tick(§0 hymnId=1298:
-            // seg1-seg8 八段連續流入,舊 CAP=4 一樣會喺 t≈8 就當 stall)。
+            // HLS-EXEC-STARTUP-KICK-20260902 —— R1(hlsStartup 豁免 CAP)已刪:
+            // K2 令 hlsStartup 之下成個 stalled/giveup 判斷都唔行(見下面),
+            // 呢條 bufferedAdvancing 喺 hlsStartup 期間結構上讀唔到,豁免與否
+            // 已經冇分別,跌返去出街現狀嘅純 CAP 判斷。
             const bufferedAdvancing = Platform.OS === 'ios'
               && bufferedGrowingThisTick
-              && (hlsStartup || bufferedAdvancingCreditRef.current <= BUFFERED_ADVANCING_CAP_TICKS);
+              && bufferedAdvancingCreditRef.current <= BUFFERED_ADVANCING_CAP_TICKS;
             const stalled = !inBackwardSeekGrace && posFrozenThisTick && !bufferedAdvancing;
             // 淨係 Playing 先算——Buffering 有可能係正常等緊data未到(RNTP
             // 呢種情況會轉 state=Buffering,唔會停留喺 Playing),唔想同
             // 「聲稱播放緊但native卡死」撞埋一齊誤判。
             const claimsActive = trackStateRef.current === TPState.Playing;
-            // HLS-EXEC-STARTUP-GRACE-20260902 R3 —— 硬上限:hlsStartup 之下
-            // position 凍住嘅連續 tick(唔理 buffered),夠 HLS_STARTUP_MAX_TICKS
-            // 就直接 giveup(下面觸發),唔准同一個窿無限等落去。position 一郁
-            // (posFrozenThisTick=false,連帶令 hlsStartup 都變 false)或者換
-            // 咗歌(track-change effect 歸零)就重新起計。
-            // Opus5 驗收(2d/X3):唔加 `claimsActive` gate——state 每幾個 tick
-            // 飄一次 Buffering 會令 counter 永遠歸零,ceiling 廢武功,而
-            // bufferingStuck watchdog 同樣數唔到,兩個一齊冚。派工單明文只有
-            // 兩個歸零條件(position 郁 / 換歌),照單。
-            // Opus5 覆核(X8/X9):但完全唔睇 state 就會將「用戶撳咗暫停」/
-            // 「隊列 load 咗未撳播」(state=Paused/Ready,同樣 .m3u8+pos<1+唔郁)
-            // 都當起播卡死,30 秒後自己跳歌。所以要 player 真係「做緊嘢」
-            // (Playing/Buffering/Loading)先計;Paused/Ready/None 唔計亦歸零。
-            // state 喺 Playing↔Buffering 之間飄唔會再令 counter 歸零(X3)。
+            // HLS-EXEC-STARTUP-KICK-20260902 K1 —— 起播期 kick tick 計數。
+            // 用返 GRACE R3 留低嘅 `engagedNow`(player 真係「做緊嘢」
+            // Playing/Buffering/Loading 先計,Paused/Ready/None 唔計亦歸零
+            // ——避免「用戶暫停緊」/「隊列 load 咗未撳播」被誤判做起播卡
+            // 死;X3 教訓:唔加 claimsActive-only gate,唔好俾 state 喺
+            // Playing↔Buffering 之間飄就令 counter 歸零)。position 一郁
+            // 或者換咗歌(track-change effect 歸零)就重新起計。
             const engagedNow = claimsActive
               || trackStateRef.current === TPState.Buffering
               || trackStateRef.current === TPState.Loading;
             if (engagedNow && hlsStartup && posFrozenThisTick) {
-              hlsStartupFrozenTicksRef.current += 1;
+              hlsStartupKickTicksRef.current += 1;
             } else {
-              hlsStartupFrozenTicksRef.current = 0;
+              hlsStartupKickTicksRef.current = 0;
+            }
+            // K1 —— 由第 2 個凍 tick 起,每隔 2 tick 就 swNudgePlay() 一次,
+            // 每 track 上限 HLS_STARTUP_KICK_MAX_PER_TRACK 次。唔經
+            // TrackPlayer.play(),唔會撞落 native watchdog 嘅 onUserPlay()
+            // breaker-reset 路。
+            // Opus5 驗收(3e/X8c):`trackStateRef` 由事件寫,用戶撳暫停之後遲
+            // 一 tick 先變 Paused,呢個窗口 kick 照 fire 就會撤銷用戶暫停,兼令
+            // native watchdog 嘅 userWantsPlayback 停喺 false(熄火)。
+            // `expectPlayingRef` 喺 cmd_pause 係同步 set false 先 await pause,
+            // 用佢做 gate 就 100% 擋到 app 內撳暫停嗰個競態。
+            if (
+              hlsStartup &&
+              expectPlayingRef.current === true &&
+              hlsStartupKickTicksRef.current >= HLS_STARTUP_KICK_INTERVAL_TICKS &&
+              hlsStartupKickTicksRef.current % HLS_STARTUP_KICK_INTERVAL_TICKS === 0 &&
+              hlsStartupKickCountRef.current < HLS_STARTUP_KICK_MAX_PER_TRACK
+            ) {
+              hlsStartupKickCountRef.current += 1;
+              const curSongKick = queueRef.current[currentQueueIndexRef.current];
+              logDiag('hlsStartupKick', {
+                appState: appStateRef.current,
+                hymnId: curSongKick?.id ?? null,
+                position: pos,
+                trackState: trackStateRef.current,
+                detail: `n=${hlsStartupKickCountRef.current} frozenTicks=${hlsStartupKickTicksRef.current} bufferedNow=${bufferedNow}`,
+              }, { always: true });
+              swNudgePlay().catch(() => {});
             }
             // EXEC-B123-20260901 B3 —— 之前 midStallNudgedRef 一世淨係喺
             // track 換咗(currentQueueIndex effect)先 reset,同一首歌原位
@@ -2248,24 +2277,17 @@ function PlayerProvider({ children }) {
             }
             lastPollPositionRef.current = pos;
             lastPollBufferedRef.current = bufferedNow;
-            if (hlsStartupFrozenTicksRef.current >= HLS_STARTUP_MAX_TICKS) {
-              // HLS-EXEC-STARTUP-GRACE-20260902 R3 —— 硬上限觸發:唔理
-              // buffered/stalled 點計,起播期都唔准同一個位等多過
-              // HLS_STARTUP_MAX_TICKS 秒。
-              hlsStartupFrozenTicksRef.current = 0;
+            if (hlsStartup) {
+              // HLS-EXEC-STARTUP-KICK-20260902 K2 —— JS 嘅 stalled/giveup
+              // watchdog 起播期唔准行(R1/R2/R3 已刪):native 16s detect+
+              // reload+escalate 死線(背景 ~28s)係最後防線,JS 淨係靠上面
+              // K1 嘅 swNudgePlay() 幫手。歸零兩個 tick counter,等離開起播期
+              // (pos>=1,連帶 hlsStartup 變 false)之後由零開始計。
+              // ⚠️ Opus5 驗收:bufferingStuck 45s 嗰條路只喺 state=Buffering/
+              // Loading 先計數;HLS 起播期 state 釘住 Playing,所以嗰條路喺
+              // 呢度實際上唔會到,起播期 JS 真正剩低嘅只有 K1 八次 kick。
               stuckEndTicksRef.current = 0;
               midStallTicksRef.current = 0;
-              const curSongCeiling = queueRef.current[currentQueueIndexRef.current];
-              logDiag('hlsStartupCeiling', {
-                appState: appStateRef.current,
-                hymnId: curSongCeiling?.id ?? null,
-                position: pos,
-                // Opus5 驗收(2e):backend clientLog.js 白名單冇 `bufferedNow`
-                // 呢個 key(midStallNudge 嗰個一直被靜靜掉走),要塞入 detail
-                // 先落到 jsonl,否則出街後驗唔到 R1 條命脈。
-                detail: `bufferedNow=${bufferedNow} frozenTicks=${HLS_STARTUP_MAX_TICKS}`,
-              }, { always: true });
-              handleStuckTrackEnd();
             } else if (stalled && claimsActive) {
               if (nearEnd) {
                 midStallTicksRef.current = 0;
@@ -2283,13 +2305,10 @@ function PlayerProvider({ children }) {
                 // EXEC-B123-FIX-20260901 —— 拉長 post-nudge 門檻嗰個嘗試已
                 // revert(理由見上面 BUFFERED_ADVANCING_CAP_TICKS 附近個
                 // comment)。兩個 round 一律 3 tick,同出街現狀一致。
-                // HLS-EXEC-STARTUP-GRACE-20260902 R2 —— hlsStartup 之下(§0
-                // hymnId=1298 起播期)門檻改做 HLS_STARTUP_STALL_TICKS(8):
-                // position 凍住兼 buffered 唔長大連續 8 秒先 nudge,nudge 之
-                // 後(`midStallNudgedRef.current` 已經 true)再凍多 8 秒
-                // 先 giveup——同一個 `midStallThreshold` 兩個 round 共用,
-                // 唔使額外分支。
-                const midStallThreshold = hlsStartup ? HLS_STARTUP_STALL_TICKS : 3;
+                // HLS-EXEC-STARTUP-KICK-20260902 —— hlsStartup 之下呢個
+                // 分支結構上唔會行到(上面 `if (hlsStartup)` 已經攔咗),
+                // 呢度淨返 progressive/HLS 中途(pos>=1)嘅原有 3-tick 行為。
+                const midStallThreshold = 3;
                 if (midStallTicksRef.current >= midStallThreshold) {
                   // HLS-EXEC-PREWINDOW-20260901 §3 W-c —— 攞真正觸發嗰下嘅
                   // tick 數落嚟俾 handleMidStreamStall() 做 log(下面 reset
