@@ -1,0 +1,51 @@
+❌ abort:HEAD (7eab3c14504710284393a7fc4a8108fe816ee5cf) 唔等於已批准嘅 backend.sha (84f2e0315c949edf808d2ea6b89d36674fa195a3)。
+
+你想 restart 嘅 tree 包含以下未經批准嘅 commit(git log 84f2e0315c949edf808d2ea6b89d36674fa195a3..HEAD):
+7eab3c1 fix(backend): C-7 — reloadDb() 延遲 close 舊 DB + 三條 hymns route 加冷開機 in-flight miss dedupe
+1b66931 fix(player): E-5 — 回應 Opus 5 2D 驗收:刪 stale allHymnsVersion/lyrics 讓路上行/剷重複欄
+925c98f perf(instr): E-2 補 — perfHome beacon 加 libIdle 欄,量 Library idle pre-mount 幾時 fire
+a829ed8 perf(app): E-2 — Library idle pre-mount,攞返 tapToPaint 兼歌詞索引開機預熱
+0875920 docs(player): E-3+E-4 — 更正已推翻嘅 F-1 註解;PERF_MARKS_ENABLED 加拍板註解
+b0e3411 fix(player): E-1 — body-timeout race 令 abort 真正 catch 得到(expo/fetch text() 唔 reject)
+d23fba1 docs(perf): Stage2 2C 報告補 §C-6 + 兩處更正(回應 Opus 5 獨立驗收)
+feb0060 fix(backend): C-6 — Opus 5 2C 五個保留一次過修(ETag/brotli/async/dedupe/lock)
+cef351e docs(perf): Stage2 2D 執行報告 — 前端 A-6 client A/B 證據表
+7106682 docs(perf): 效能改善工程文件 — 規劃/baseline 1A 1B/執行單/Opus 驗收 + raw 證據（png 截圖不入 repo）
+7ef3f35 docs(perf): Stage2 2C 報告補 §C-5(預壓縮 cache)證據表
+0519814 perf(backend): C-5 三條 hymns route 加預壓縮 cache(gz buffer)
+d375f9a feat(frontend): C-1 A-6 client — 開機先 lite 畫,歌詞背景補拉
+bda9f9e perf(instrument): perfMarks beacon 加 liteMs/lyrMs/lyrBytes/merged 欄
+1bc45d8 docs(perf): Stage2 2C 執行報告 — C-1..C-4 backend 跟進證據表
+ab78c98 feat(backend): C-4 dataVersion 自動追 out-of-process 寫入(maybeReload）
+c55cfa9 fix(backend): C-3 access log bytes/abort — 移到 compression 之前 + finish/close
+a9e64bf docs(perf): Stage2 2B 執行報告 — D-1/F-1/F-2/F-3/F-4 證據表
+8d7a2d4 feat(backend): C-1 落地 A-6 — /api/hymns?lite=1 + /api/hymns/lyrics
+78e7acb fix(backend): C-2 還原 /api/audio/cache/{stats,warm-stats}(A-4 carve-out)
+20a9ba0 chore(cleanup): Stage 3 尾巴 — .dockerignore 剷走 9 個已刪 root script 條目（Opus 驗收保留①）
+8a837eb docs: Stage 3 執行報告 PERF-STAGE3-20260902.md
+2c47252 docs: Stage 3 S3-6 — 標註已刪 script 喺舊規劃文件嘅提及
+bbaeec8 chore(cleanup): Stage 3 S3-5 — deviceId.js 剷走零引用嘅 __resetForTest
+b13088f chore(cleanup): Stage 3 S3-4 — home.js 剷走已死嘅 queryAll/queryOne + getDb import
+3227fc3 chore(cleanup): Stage 3 S3-3 — 移除 6 個一次性目錄爬蟲 + 1 個 oneoff script
+5baf3e1 chore(cleanup): Stage 3 S3-2 — 移除 backend root 14 個舊 script + db.js
+8a2e729 perf(instrument): section span 改用 performance.now()(Opus 5 course-correction)
+297bf52 perf(app): F-2 降級做診斷 — PlayerProvider 加 useRenderCount 純計數器
+4321f46 perf(fetch): F-1 course-correction — hymns fetch 拆兩段timeout(8s headers/30s body)+逐attempt記marks
+d8b7f04 chore(cleanup): Stage 3 S3-1 — 移除 7 個 git tracked 舊備份檔（history 保留）
+d547279 perf(app): F-4 — Library tab lazy-mount(首次撳先真 mount),Mine 維持恆常 mount
+b9e0f64 perf(home): F-3 — SongCard 改 React.memo(props 拆 list/onSelect 換走 inline onPress)
+77fa5ee perf(backend): explicit Cache-Control on /api/hymns + /api/version (Stage2 A-5)
+ebe29ba perf(backend): deprecate unused search/category/audio routes + 9 home routes to 410 (Stage2 A-4)
+fcfb62e perf(instrument): D-1 fix — 首頁section span/hidden tab render cost 淨計「真資料」嗰次
+5943880 perf(backend): add /api/* access-log middleware, excl. stream/hls/client-log (Stage2 A-3)
+8f56b02 perf(backend): gzip JSON API responses via compression middleware (Stage2 A-2)
+d51c3bc perf(instrument): D-1 — hymns fetch三段拆時(ttfb/body/parse)+首頁section span+hidden tab render cost
+06d0cb8 perf(backend): cache /api/hymns response keyed on dataVersion (Stage2 A-1)
+0ad1a3f perf(instr): perfMarks 開機/導航/re-render 量度儀器（PERF-BASELINE-1B-20260902）
+7a0a96c home: 即刻揀歌/隨心聽/今日為你預備 加 hasAlbum() quality filter
+f509c3b fix(player): HLS 起播期用 setPlayWhenReady(true) kick 代替 seek-nudge/giveup — 修 AVPlayer rate 卡 0
+aefcd58 fix(player): HLS 起播期唔准降級 progressive — R1 CAP豁免/R2 門檻8tick/R3 30s ceiling/R4 pos<1 suppress hlsFallback
+
+如果呢啲 commit 已經攞到 Eric go,請先跑:
+  ops/deploy/approve.sh backend 7eab3c14504710284393a7fc4a8108fe816ee5cf --confirm
+exit=1
