@@ -4,15 +4,6 @@ venv
 *.webm
 hymns.db.backup-*
 hymn-check-report.txt
-check_hymns.js
-check_hymns.cjs
-bulk_insert_hymns.js
-fetch_songs.js
-fix_missing.js
-generate_hymns.js
-seed.js
-update_db.js
-update_hymn_link.js
 cookies.txt
 public/app.apk
 public/*.txt
