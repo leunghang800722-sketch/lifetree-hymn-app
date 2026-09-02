@@ -71,6 +71,32 @@ app.use((req, res, next) => {
   next();
 });
 
+// PERF-STAGE2-EXEC-20260902 §2A A-3 — 輕量 access log。1B S6/1A A4 都撞過
+// 「呢條 route 幾時俾人打過」完全冇數得查(search.js/category.js/home.js 三個
+// 檔完全冇 console.*),要靠 grep 4.9 日窗口嘅 log 先間接推論。加一條通用
+// middleware,唔改任何 route 自己嘅邏輯/log。**一定要喺所有 `/api/*` route
+// mount 之前**——Express 一撞到先匹配嘅 router 就會直接處理完 response,
+// 唔會再行落嚟後面先註冊嘅 middleware,擺喺 home/search/category/audio 等
+// mount 之後會令呢啲 route 完全冇 log 到(第一版擺錯位,harness 測到冇出過
+// 任何 [access] 行先發現)。排除 `/api/stream`、`/api/hls`(已經有自己成套
+// 遙測,呢度加多一行只會洗版)同 `/api/client-log`(佢自己就係一條 log
+// route,再幫佢 log 一次冇意思)。
+app.use((req, res, next) => {
+  const p = req.path; // 一定要即刻讀、存落 local var——Express router 派發去
+  // sub-router 嗰陣會就地改咗 req.url(裁走 mount prefix),完咗又冇 next()
+  // 落嚟就唔會復原,`finish` event 先讀 req.path 會攞到裁剩嗰截(例如
+  // `/api/home/daily-verse` 變咗 `/daily-verse`),見 harness 實測抓到。
+  if (!p.startsWith('/api/')) return next();
+  if (p.startsWith('/api/stream') || p.startsWith('/api/hls') || p.startsWith('/api/client-log')) return next();
+  const start = Date.now();
+  res.on('finish', () => {
+    const ms = Date.now() - start;
+    const bytes = res.getHeader('content-length') ?? '-';
+    console.log(`[access] ${new Date().toISOString()} ${req.method} ${p} ${res.statusCode} ${ms}ms ${bytes}b`);
+  });
+  next();
+});
+
 app.use('/api/home', homeRoutes);
 app.use('/api/search', searchRoutes);
 app.use('/api/category', categoryRoutes);
