@@ -1733,6 +1733,20 @@ function PlayerProvider({ children }) {
   const backwardSeekGraceTicksRef = useRef(0);
   const BACKWARD_SEEK_GRACE_TICKS = 6;
   const BACKWARD_SEEK_JUMP_THRESHOLD_SEC = 2; // 分辨「真係向後seek」同「poll抖動」
+  // HLS-EXEC-STARTUP-GRACE-20260902 —— §0 立案證據(2026-09-02 00:51-00:56Z
+  // Eric 真機 hymnId=1298):HLS 起播期(iOS + 現正 active track URL 係
+  // `.m3u8` + pos<1.0)之下,seg1-seg8 明明八段連續流入(80 秒音頻已落),但
+  // JS watchdog 用緊 progressive 嗰套「3-tick nudge、CAP 4、giveup 再
+  // 3-tick」門檻,響 t≈12s 就 giveup 兼降級去 progressive——跌落嗰隻本身
+  // 沉緊嘅船(progressive 路徑同一晚 itemNil storm)。病唔喺 HLS,病喺「起播
+  // 期 JS watchdog 太早 giveup + giveup 之後降級」。下面 hlsStartup 四條
+  // 規則(R1-R4,見 poll loop `bufferedAdvancing`/`midStallThreshold` 同
+  // `handleStuckTrackEnd` 嘅 hlsFallback 分支)全部只喺 hlsStartup 為 true
+  // 先生效;hlsStartup 為 false 嘅所有路徑(progressive iOS、HLS 中途
+  // pos>=1、Android)一個 tick 嘅行為都唔變。
+  const hlsStartupFrozenTicksRef = useRef(0);
+  const HLS_STARTUP_STALL_TICKS = 8;
+  const HLS_STARTUP_MAX_TICKS = 30;
   // STREAM-LOCKSCREEN-FREEZE-OPUS5-2026-08-13 D1 —— Opus5 核實過RN喺background
   // 唔會節流JS timer(CADisplayLink轉NSTimer照跑),真正停係iOS成個process
   // suspend咗。呢個poll loop理論上應該全速1秒一tick,如果兩個tick之間嘅
@@ -1789,7 +1803,24 @@ function PlayerProvider({ children }) {
           const activeTrack0 = await TrackPlayer.getActiveTrack();
           const activeUrl0 = activeTrack0?.url;
           const isHlsUrl0 = activeUrl0 && /\.m3u8(\?|$)/.test(String(activeUrl0));
-          if (isHlsUrl0 && hlsDowngradedTrackRef.current !== curId0) {
+          // HLS-EXEC-STARTUP-GRACE-20260902 R4 —— §0 hymnId=1298 條鏈證實
+          // 咗:起播期(position<1)嘅 giveup 唔准降級去 progressive,因為
+          // progressive 本身正正係沉緊嗰隻船(同一晚 itemNil storm)。淨係
+          // position>=1(HLS 中途真係播過先卡死)先准熱換;起播期就出
+          // `hlsFallbackSuppressed` beacon,跌落下面原有 repeat/skip 流程
+          // (唔 return)。
+          // Opus5 驗收(2c):position 讀唔到(getProgress 拋錯/undefined)唔准
+          // 當 0——否則 HLS 中途(真 pos=120)嘅 giveup 會誤走 suppressed 路,
+          // 而嗰條路係呢張單明文唔准變嘅。讀唔到就行返舊 hotswap 分支。
+          const posForFallback0 = diagProgress?.position;
+          const startupSuppress0 = Number.isFinite(posForFallback0) && posForFallback0 < 1;
+          if (isHlsUrl0 && hlsDowngradedTrackRef.current !== curId0 && startupSuppress0) {
+            logDiag('hlsFallbackSuppressed', {
+              appState: appStateRef.current,
+              hymnId: curId0,
+              position: posForFallback0,
+            }, { always: true });
+          } else if (isHlsUrl0 && hlsDowngradedTrackRef.current !== curId0) {
             hlsDowngradedTrackRef.current = curId0;
             // EXEC-B123-FIX-20260901 —— 原版(PlaybackError 嗰段,App.js:1256)
             // 同一個熱換模式明文寫低 `retriedTrackRef.current = curId`「呢次熱換
@@ -1983,6 +2014,10 @@ function PlayerProvider({ children }) {
     // 出事——但呢度做埋令個語義乾淨返,同其餘幾個 ticks ref 一致)。
     bufferedAdvancingCreditRef.current = 0;
     backwardSeekGraceTicksRef.current = 0;
+    // HLS-EXEC-STARTUP-GRACE-20260902 R3 —— 新 track 上場,舊 track 遺留低嘅
+    // 「hlsStartup 之下 position 凍住連續幾多個 tick」都要歸零,唔好累到新歌
+    // 一開波就頂住舊歌數落嚟嘅 ceiling 進度。
+    hlsStartupFrozenTicksRef.current = 0;
     // NATIVE-STALL-FG-SPEEDUP §4.1 —— 新 track 上場,舊 track 嘅緩衝提示唔應該
     // 留喺度(例如用戶手動跳去下一首,新歌先啱啱開始 loading,唔算「卡」)。
     if (NATIVE_WD_V2 && slowLoadNoticeRef.current) {
@@ -2115,6 +2150,20 @@ function PlayerProvider({ children }) {
             const bufferedNow = progress.buffered || 0;
             const prevPos = lastPollPositionRef.current;
             const posFrozenThisTick = Math.abs(pos - prevPos) < 0.05;
+            // HLS-EXEC-STARTUP-GRACE-20260902 —— hlsStartup 判斷:iOS + 現正
+            // active track 嘅 URL 係 `.m3u8` + pos<1.0。淨係喺
+            // `posFrozenThisTick && pos < 1` 先 await `TrackPlayer.getActiveTrack()`
+            // 一次(§1「攞 active URL 嘅做法」):position 冇凍住或者已經播過
+            // 1 秒嗰啲 tick,下面四條規則本身都唔生效,hlsStartup 留返 false
+            // 一樣啱,唔使問 native。
+            let hlsStartup = false;
+            if (Platform.OS === 'ios' && posFrozenThisTick && pos < 1) {
+              try {
+                const activeTrackNow = await TrackPlayer.getActiveTrack();
+                const activeUrlNow = activeTrackNow?.url;
+                hlsStartup = !!(activeUrlNow && /\.m3u8(\?|$)/.test(String(activeUrlNow)));
+              } catch (_) { hlsStartup = false; }
+            }
             // HLS-EXEC-PREWINDOW-20260901 §4 W-d —— 向後 seek grace:呢個
             // tick 之前(prevPos)同而家(pos)一比,發現大幅倒退,就當「啱啱
             // 發生咗一次向後 seek」,開個短暫 grace window(見上面 ref 個
@@ -2134,14 +2183,40 @@ function PlayerProvider({ children }) {
               bufferedAdvancingCreditRef.current = 0;
             }
             const bufferedGrowingThisTick = bufferedNow - lastPollBufferedRef.current > 0.05;
+            // HLS-EXEC-STARTUP-GRACE-20260902 R1 —— hlsStartup 之下唔受
+            // `BUFFERED_ADVANCING_CAP_TICKS` 限制:只要 buffered 仲喺度長
+            // 大就唔算 stalled,唔理已經凍咗幾多個 tick(§0 hymnId=1298:
+            // seg1-seg8 八段連續流入,舊 CAP=4 一樣會喺 t≈8 就當 stall)。
             const bufferedAdvancing = Platform.OS === 'ios'
               && bufferedGrowingThisTick
-              && bufferedAdvancingCreditRef.current <= BUFFERED_ADVANCING_CAP_TICKS;
+              && (hlsStartup || bufferedAdvancingCreditRef.current <= BUFFERED_ADVANCING_CAP_TICKS);
             const stalled = !inBackwardSeekGrace && posFrozenThisTick && !bufferedAdvancing;
             // 淨係 Playing 先算——Buffering 有可能係正常等緊data未到(RNTP
             // 呢種情況會轉 state=Buffering,唔會停留喺 Playing),唔想同
             // 「聲稱播放緊但native卡死」撞埋一齊誤判。
             const claimsActive = trackStateRef.current === TPState.Playing;
+            // HLS-EXEC-STARTUP-GRACE-20260902 R3 —— 硬上限:hlsStartup 之下
+            // position 凍住嘅連續 tick(唔理 buffered),夠 HLS_STARTUP_MAX_TICKS
+            // 就直接 giveup(下面觸發),唔准同一個窿無限等落去。position 一郁
+            // (posFrozenThisTick=false,連帶令 hlsStartup 都變 false)或者換
+            // 咗歌(track-change effect 歸零)就重新起計。
+            // Opus5 驗收(2d/X3):唔加 `claimsActive` gate——state 每幾個 tick
+            // 飄一次 Buffering 會令 counter 永遠歸零,ceiling 廢武功,而
+            // bufferingStuck watchdog 同樣數唔到,兩個一齊冚。派工單明文只有
+            // 兩個歸零條件(position 郁 / 換歌),照單。
+            // Opus5 覆核(X8/X9):但完全唔睇 state 就會將「用戶撳咗暫停」/
+            // 「隊列 load 咗未撳播」(state=Paused/Ready,同樣 .m3u8+pos<1+唔郁)
+            // 都當起播卡死,30 秒後自己跳歌。所以要 player 真係「做緊嘢」
+            // (Playing/Buffering/Loading)先計;Paused/Ready/None 唔計亦歸零。
+            // state 喺 Playing↔Buffering 之間飄唔會再令 counter 歸零(X3)。
+            const engagedNow = claimsActive
+              || trackStateRef.current === TPState.Buffering
+              || trackStateRef.current === TPState.Loading;
+            if (engagedNow && hlsStartup && posFrozenThisTick) {
+              hlsStartupFrozenTicksRef.current += 1;
+            } else {
+              hlsStartupFrozenTicksRef.current = 0;
+            }
             // EXEC-B123-20260901 B3 —— 之前 midStallNudgedRef 一世淨係喺
             // track 換咗(currentQueueIndex effect)先 reset,同一首歌原位
             // 熱換(TrackPlayer.load()/repeat-one)完全唔改 index,凍多一次
@@ -2173,7 +2248,25 @@ function PlayerProvider({ children }) {
             }
             lastPollPositionRef.current = pos;
             lastPollBufferedRef.current = bufferedNow;
-            if (stalled && claimsActive) {
+            if (hlsStartupFrozenTicksRef.current >= HLS_STARTUP_MAX_TICKS) {
+              // HLS-EXEC-STARTUP-GRACE-20260902 R3 —— 硬上限觸發:唔理
+              // buffered/stalled 點計,起播期都唔准同一個位等多過
+              // HLS_STARTUP_MAX_TICKS 秒。
+              hlsStartupFrozenTicksRef.current = 0;
+              stuckEndTicksRef.current = 0;
+              midStallTicksRef.current = 0;
+              const curSongCeiling = queueRef.current[currentQueueIndexRef.current];
+              logDiag('hlsStartupCeiling', {
+                appState: appStateRef.current,
+                hymnId: curSongCeiling?.id ?? null,
+                position: pos,
+                // Opus5 驗收(2e):backend clientLog.js 白名單冇 `bufferedNow`
+                // 呢個 key(midStallNudge 嗰個一直被靜靜掉走),要塞入 detail
+                // 先落到 jsonl,否則出街後驗唔到 R1 條命脈。
+                detail: `bufferedNow=${bufferedNow} frozenTicks=${HLS_STARTUP_MAX_TICKS}`,
+              }, { always: true });
+              handleStuckTrackEnd();
+            } else if (stalled && claimsActive) {
               if (nearEnd) {
                 midStallTicksRef.current = 0;
                 stuckEndTicksRef.current += 1;
@@ -2190,7 +2283,13 @@ function PlayerProvider({ children }) {
                 // EXEC-B123-FIX-20260901 —— 拉長 post-nudge 門檻嗰個嘗試已
                 // revert(理由見上面 BUFFERED_ADVANCING_CAP_TICKS 附近個
                 // comment)。兩個 round 一律 3 tick,同出街現狀一致。
-                const midStallThreshold = 3;
+                // HLS-EXEC-STARTUP-GRACE-20260902 R2 —— hlsStartup 之下(§0
+                // hymnId=1298 起播期)門檻改做 HLS_STARTUP_STALL_TICKS(8):
+                // position 凍住兼 buffered 唔長大連續 8 秒先 nudge,nudge 之
+                // 後(`midStallNudgedRef.current` 已經 true)再凍多 8 秒
+                // 先 giveup——同一個 `midStallThreshold` 兩個 round 共用,
+                // 唔使額外分支。
+                const midStallThreshold = hlsStartup ? HLS_STARTUP_STALL_TICKS : 3;
                 if (midStallTicksRef.current >= midStallThreshold) {
                   // HLS-EXEC-PREWINDOW-20260901 §3 W-c —— 攞真正觸發嗰下嘅
                   // tick 數落嚟俾 handleMidStreamStall() 做 log(下面 reset
