@@ -12,6 +12,20 @@ const BIBLE_VERSES_PATH = path.join(__dirname, '..', 'data', 'bible-verses.json'
 
 const router = Router();
 
+// PERF-STAGE2-EXEC-20260902 §2A A-4 —— 9/10 條子 route(除 `/daily-verse`
+// 外)前端 `src/services/homeApi.js`(homeApi object)全 repo grep 都搵唔到
+// 第二個呼叫者(PERF-BASELINE-1A A4)。`/daily-verse` 係 `homeApi.js` 淨係
+// export 嗰個 method,繼續行真 DB 查詢;其餘 9 條即刻 410 Gone,**唔再執行**
+// 呢啲 route 本身嘅 query(`queryAll`/`queryOne` 呢兩個 helper 仍然保留畀
+// `/daily-verse` 以外?——不,`/daily-verse` 本身唔用呢兩個 helper,佢直接讀
+// bible-verses.json;`queryAll`/`queryOne` 淨係俾下面 9 條已停用嘅 route
+// 用,依家冇被呼叫到,留喺度唔刪(Stage 3 先執整份檔)。唔刪檔、掛載位置/
+// router 結構原封不動。
+function gone(req, res) {
+  console.log(`[deprecated-route] ${new Date().toISOString()} ${req.method} ${req.originalUrl}`);
+  res.status(410).json({ error: 'Gone', message: '呢條 route 已停用 —— 前端冇再用緊(PERF-STAGE2-EXEC-20260902 §2A A-4)' });
+}
+
 // Helper: execute query and return array of objects
 async function queryAll(sql, params = []) {
   const db = await getDb();
@@ -31,15 +45,8 @@ async function queryOne(sql, params = []) {
   return rows[0] || null;
 }
 
-// 1. 每日精選一句 — 隨機返回一首 featured 詩歌
-router.get('/daily-quote', async (req, res) => {
-  try {
-    const row = await queryOne('SELECT * FROM hymns WHERE featured = 1 ORDER BY RANDOM() LIMIT 1');
-    res.json(row || { message: 'No featured hymn available' });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
+// 1. 每日精選一句 — 隨機返回一首 featured 詩歌 —— 已停用(A-4)
+router.get('/daily-quote', gone);
 
 // 2. 每日金句 — 隨機返回一句聖經金句
 router.get('/daily-verse', async (req, res) => {
@@ -55,106 +62,28 @@ router.get('/daily-verse', async (req, res) => {
   }
 });
 
-// 3. 作者推薦 — 隨機挑一個 artist，返回佢嘅作品
-router.get('/featured-artist', async (req, res) => {
-  try {
-    const artists = await queryAll(
-      `SELECT artist, COUNT(*) as count FROM hymns
-       WHERE artist IS NOT NULL AND artist != ''
-       GROUP BY artist ORDER BY RANDOM() LIMIT 1`
-    );
-    if (!artists.length) {
-      return res.status(500).json({ error: 'No artist found' });
-    }
-    const artistName = artists[0].artist;
-    const hymns = await queryAll(
-      'SELECT * FROM hymns WHERE artist = ? LIMIT 10',
-      [artistName]
-    );
-    res.json({ artist: artistName, hymns });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
+// 3. 作者推薦 — 已停用(A-4)
+router.get('/featured-artist', gone);
 
-// 4. 新作品 — 按 release_date DESC（fallback created_at）
-router.get('/new-releases', async (req, res) => {
-  try {
-    const rows = await queryAll(
-      `SELECT * FROM hymns
-       ORDER BY COALESCE(release_date, created_at) DESC
-       LIMIT 10`
-    );
-    res.json(rows);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
+// 4. 新作品 — 已停用(A-4)
+router.get('/new-releases', gone);
 
-// 5. 種類推薦 — 隨機返回 10 首
-router.get('/genre-recommendation', async (req, res) => {
-  try {
-    const rows = await queryAll('SELECT * FROM hymns ORDER BY RANDOM() LIMIT 10');
-    res.json(rows);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
+// 5. 種類推薦 — 已停用(A-4)
+router.get('/genre-recommendation', gone);
 
-// 6. 根據喜好 — 隨機返回 10 首
-router.get('/based-on-taste', async (req, res) => {
-  try {
-    const rows = await queryAll('SELECT * FROM hymns ORDER BY RANDOM() LIMIT 10');
-    res.json(rows);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
+// 6. 根據喜好 — 已停用(A-4)
+router.get('/based-on-taste', gone);
 
-// 7. 共鳴詩 — 按 like_count DESC
-router.get('/resonating', async (req, res) => {
-  try {
-    const rows = await queryAll('SELECT * FROM hymns ORDER BY like_count DESC LIMIT 10');
-    res.json(rows);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
+// 7. 共鳴詩 — 已停用(A-4)
+router.get('/resonating', gone);
 
-// 8. 詩句榜 — 按 view_count DESC
-router.get('/top-verses', async (req, res) => {
-  try {
-    const rows = await queryAll('SELECT * FROM hymns ORDER BY view_count DESC LIMIT 10');
-    res.json(rows);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
+// 8. 詩句榜 — 已停用(A-4)
+router.get('/top-verses', gone);
 
-// 9. 民謠分享 — category 包含 folk 或 民謠
-router.get('/folk-sharing', async (req, res) => {
-  try {
-    const rows = await queryAll(
-      `SELECT * FROM hymns
-       WHERE category LIKE '%folk%' OR category LIKE '%民謠%'
-       ORDER BY RANDOM() LIMIT 10`
-    );
-    res.json(rows);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
+// 9. 民謠分享 — 已停用(A-4)
+router.get('/folk-sharing', gone);
 
-// 10. 結合榜 — 綜合 view_count + like_count
-router.get('/combined-charts', async (req, res) => {
-  try {
-    const rows = await queryAll(
-      'SELECT * FROM hymns ORDER BY (COALESCE(view_count,0) + COALESCE(like_count,0)) DESC LIMIT 10'
-    );
-    res.json(rows);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
+// 10. 結合榜 — 已停用(A-4)
+router.get('/combined-charts', gone);
 
 export default router;

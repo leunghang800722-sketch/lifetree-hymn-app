@@ -1,117 +1,26 @@
 // routes/search.js
 // 搜尋 API — 4 維度（歌名/歌手/歌詞/專輯）
+//
+// PERF-STAGE2-EXEC-20260902 §2A A-4 —— 前端零引用(PERF-BASELINE-1A A4:
+// App.js + frontend/hymn-app/src 全 repo grep `api/search` = 0 hit,正控用
+// `resolveAudio`/`api/hymns` 已證 grep 有效)。每個 GET 之前會無條件
+// `initSqlJs()` + `fs.readFileSync()` 61MB DB 檔 + `new SQL.Database()`
+// (完全冇快取,唔經 `lib/serverDb.js` singleton),1A A2 已經記錄呢個成本。
+// 依家改做即刻 410 Gone,**唔再執行**呢段 inline DB loader/query 半步——
+// 唔刪檔(留返 Stage 3 先做),掛載位置/router 結構原封不動。
 import { Router } from 'express';
-import initSqlJs from 'sql.js';
-import fs from 'fs';
-import path from 'path';
-import { fileURLToPath } from 'url';
-
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const DB_PATH = path.join(__dirname, '..', 'hymns.db');
 
 const router = Router();
 
-// Helper: 執行 SQL query 並回傳結果陣列
-async function queryDb(sql, params = []) {
-  const SQL = await initSqlJs();
-  const db = new SQL.Database(fs.readFileSync(DB_PATH));
-  const stmt = db.prepare(sql);
-  stmt.bind(params);
-  const results = [];
-  while (stmt.step()) {
-    results.push(stmt.getAsObject());
-  }
-  stmt.free();
-  db.close();
-  return results;
+function gone(req, res) {
+  console.log(`[deprecated-route] ${new Date().toISOString()} ${req.method} ${req.originalUrl}`);
+  res.status(410).json({ error: 'Gone', message: '呢條 route 已停用 —— 前端冇再用緊(PERF-STAGE2-EXEC-20260902 §2A A-4)' });
 }
 
-// 1. 全維度搜尋 — 搜尋 title, display_title, artist, lyrics, album
-// ⚠️ display_title 要撞得到——Phase 2 admin 改歌名改嘅正正係呢個欄位(唔係
-// 原始 title),漏咗呢個欄位就會出現「改咗個名之後用新名反而搵唔到」
-// (Opus 5 驗收 MEMBERSHIP-PHASE2-ADMIN-PLAN 揪出)。
-router.get('/all', async (req, res) => {
-  const { q } = req.query;
-  if (!q) return res.status(400).json({ error: 'Missing query parameter: q' });
-  try {
-    const results = await queryDb(
-      `SELECT * FROM hymns
-       WHERE title LIKE ? OR display_title LIKE ? OR artist LIKE ? OR lyrics LIKE ? OR album LIKE ?
-       ORDER BY
-         CASE
-           WHEN title LIKE ? THEN 1
-           WHEN display_title LIKE ? THEN 1
-           WHEN artist LIKE ? THEN 2
-           WHEN lyrics LIKE ? THEN 3
-           ELSE 4
-         END
-       LIMIT 50`,
-      [`%${q}%`, `%${q}%`, `%${q}%`, `%${q}%`, `%${q}%`, `%${q}%`, `%${q}%`, `%${q}%`, `%${q}%`]
-    );
-    res.json(results);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-// 2. 歌名搜尋(包 display_title——理由同 /all)
-router.get('/title', async (req, res) => {
-  const { q } = req.query;
-  if (!q) return res.status(400).json({ error: 'Missing query parameter: q' });
-  try {
-    const results = await queryDb(
-      'SELECT * FROM hymns WHERE title LIKE ? OR display_title LIKE ? LIMIT 50',
-      [`%${q}%`, `%${q}%`]
-    );
-    res.json(results);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-// 3. 歌手搜尋
-router.get('/artist', async (req, res) => {
-  const { q } = req.query;
-  if (!q) return res.status(400).json({ error: 'Missing query parameter: q' });
-  try {
-    const results = await queryDb(
-      'SELECT * FROM hymns WHERE artist LIKE ? LIMIT 50',
-      [`%${q}%`]
-    );
-    res.json(results);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-// 4. 歌詞搜尋
-router.get('/lyrics', async (req, res) => {
-  const { q } = req.query;
-  if (!q) return res.status(400).json({ error: 'Missing query parameter: q' });
-  try {
-    const results = await queryDb(
-      'SELECT * FROM hymns WHERE lyrics LIKE ? LIMIT 50',
-      [`%${q}%`]
-    );
-    res.json(results);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-// 5. 專輯搜尋
-router.get('/album', async (req, res) => {
-  const { q } = req.query;
-  if (!q) return res.status(400).json({ error: 'Missing query parameter: q' });
-  try {
-    const results = await queryDb(
-      'SELECT * FROM hymns WHERE album LIKE ? LIMIT 50',
-      [`%${q}%`]
-    );
-    res.json(results);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
+router.get('/all', gone);
+router.get('/title', gone);
+router.get('/artist', gone);
+router.get('/lyrics', gone);
+router.get('/album', gone);
 
 export default router;
