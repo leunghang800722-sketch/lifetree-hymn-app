@@ -32,11 +32,35 @@ let dbPromise = null;
 let dataVersion = computeDataVersion();
 
 // Lazy-load DB on first request(同舊版 server.js/home.js 個 getDb() 一樣嘅行為)。
+//
+// PERF-STAGE2-2C-20260902-C6-OPUS §4.3 保留一(已修)—— in-flight dedupe。
+// 呢個變量叫 `dbPromise`,但改之前存嘅其實**唔係 promise 係 Database
+// object**,而且要兩個 `await` 之後先賦值(`await initSqlJs()` 再
+// `fs.readFileSync(61MB)`)。Opus 5 實測:同一個 event-loop turn 落到嘅
+// 並發 request(boot 嗰刻、或者兩條 socket 嘅 data 啱啱好落喺同一個
+// poll batch)會全部見到 `dbPromise` 仲係 `null`,各自再 `readFileSync`
+// 61MB + 起一份 `new SQL.Database`——C-4 之前呢個窗口幾乎唔會撞到(得
+// admin in-process 寫入先觸發 reload),C-4 之後夜晚 job 每次 `saveDb()`
+// 落地都會令三條 hymns route 一齊 miss 一齊 `getDb()`,fire 嘅機會大咗。
+//
+// 修法:**assignment 一定要喺任何 `await` 之前同步做**——`dbPromise =
+// (async () => {...})()` 呢句本身唔會等,IIFE call 完即刻攞到個
+// pending promise 賦落 `dbPromise`,第二個並發 request 入嚟嗰陣
+// `dbPromise` 已經係呢個 promise(唔再係 `null`),`return dbPromise`
+// 攞到同一份、等緊佢resolve,唔會再觸發第二次 `readFileSync`。
 export async function getDb() {
   if (!dbPromise) {
-    const SQL = await initSqlJs();
-    const buffer = fs.readFileSync(DB_PATH);
-    dbPromise = new SQL.Database(buffer);
+    dbPromise = (async () => {
+      const SQL = await initSqlJs();
+      const buffer = fs.readFileSync(DB_PATH);
+      return new SQL.Database(buffer);
+    })().catch((err) => {
+      // 唔好因為呢次失敗就永久卡住一個 rejected promise——清返 `null`
+      // 俾落次 `getDb()` 有機會由頭嚟過(同改之前「失敗咗落次自然會
+      // retry」嘅行為睇齊,唔淨係得個 in-flight dedupe 冇埋呢個)。
+      dbPromise = null;
+      throw err;
+    });
   }
   return dbPromise;
 }
@@ -81,6 +105,24 @@ export function reloadDb() {
 // 呢個函數淨係做呢一個判斷,方便獨立驗證/覆核。
 const LOCK_PATH = `${DB_PATH}.lock`;
 
+// PERF-STAGE2-2C-20260902-C6-OPUS §4.4 保留二(已修,唔改行為淨係加
+// 告警)—— 殘留 lock 檔會令 `maybeReload()` 永久唔郁,而且零聲。
+// `lockIsStealable()`(`lib/hymnDb.js`,20 分鐘/2 粒鐘搶鎖)嗰套邏輯**只
+// 喺 `acquireDbLock()` 入面行**,即係要「另一個 writer 開工」先會搶走
+// 殘鎖;如果 writer crash/俾人 kill 之後留低個 lock 檔,而之後又冇second
+// job 再開工,`maybeReload()` 會由嗰刻起永遠見到 lock 存在,悄悄退化返
+// 「淨係 restart 先追到新資料」嘅狀態,冇任何 log 講過呢件事。Opus 5 5
+// 指出 `backend/hymns.db.lock.bak*`(2026-08-17)就係歷史上真係搬過殘鎖
+// 嘅證據。
+//
+// 而家嘅修法**唔改 C-4 原有行為**(lock 存在就係唔 reload,唔理鎖幾
+// 舊)——淨係加一句告警:lock 齡 > 30 分鐘就 `console.warn`,每 10 分鐘
+// 最多印一次(唔想夜晚 job 跑緊嗰陣、lock 本身合理存在嗰半個鐘,每個
+// request 都嘈一次)。
+const STALE_LOCK_WARN_THRESHOLD_MS = 30 * 60 * 1000; // 30 分鐘
+const STALE_LOCK_WARN_THROTTLE_MS = 10 * 60 * 1000; // 10 分鐘最多一次
+let lastStaleLockWarnAt = 0;
+
 export function maybeReload() {
   let fresh;
   try {
@@ -89,12 +131,22 @@ export function maybeReload() {
     return; // stat 都攞唔到,維持現狀,唔好爆
   }
   if (fresh === dataVersion) return; // 常態:檔案冇變
-  let lockExists;
+  let lockStat = null;
   try {
-    lockExists = fs.existsSync(LOCK_PATH);
+    lockStat = fs.statSync(LOCK_PATH);
   } catch (e) {
-    return; // 判斷唔到 lock 狀態,保守唔 reload
+    lockStat = null; // 唔存在(或者讀唔到)→ 當冇鎖
   }
-  if (lockExists) return; // writer 中途,唔好讀半桶水
+  if (lockStat) {
+    const ageMs = Date.now() - lockStat.mtimeMs;
+    if (ageMs > STALE_LOCK_WARN_THRESHOLD_MS) {
+      const now = Date.now();
+      if (now - lastStaleLockWarnAt > STALE_LOCK_WARN_THROTTLE_MS) {
+        lastStaleLockWarnAt = now;
+        console.warn(`[db] stale lock ${LOCK_PATH} age=${Math.round(ageMs / 1000)}s(>${STALE_LOCK_WARN_THRESHOLD_MS / 1000}s)—— maybeReload() 持續俾佢擋住,唔會 reload,可能要人手核實/刪走殘鎖(PERF-STAGE2-2C-OPUS-20260902.md §4.4:hymns.db.lock.bak* 係歷史證據)`);
+      }
+    }
+    return; // C-4 原有行為不變:lock 存在就唔 reload,唔理年齡
+  }
   reloadDb();
 }

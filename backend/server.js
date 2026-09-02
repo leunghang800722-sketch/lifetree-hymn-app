@@ -339,7 +339,7 @@ app.get('/api/internal/activity', (req, res) => {
 // 寫入後一定會 call)會清 dbPromise 但**唔會**主動清呢個 cache——所以判斷
 // 用 dataVersion 讀出嚟嘅值本身(reloadDb 令佢重新計過),而唔係靠一個獨立
 // 「已被清」旗標,先至可以自然 miss。
-let hymnsResponseCache = null; // { dataVersion, json, gz }
+let hymnsResponseCache = null; // { dataVersion, json, gz?, br? }
 
 // PERF-STAGE2-2C-20260902 C-1(A-6 落地)—— `?lite=1` 用嘅獨立 cache slot,
 // 唔可以同上面 `hymnsResponseCache` 共用,否則兩種 envelope 會互相打架
@@ -347,39 +347,120 @@ let hymnsResponseCache = null; // { dataVersion, json, gz }
 // 嗰條分支完全冇改——SQL 字串、object 形狀、cache 變量都同改動前一樣**,
 // 呢個係「舊 client 一個 byte 都唔可以變」嘅硬要求(PERF-STAGE2-2C-20260902
 // C-1)。
-let hymnsLiteResponseCache = null; // { dataVersion, json, gz }
+let hymnsLiteResponseCache = null; // { dataVersion, json, gz?, br? }
 // `/api/hymns/lyrics` 專用 cache slot,見底下嗰條獨立 route。
-let hymnsLyricsResponseCache = null; // { dataVersion, json, gz }
+let hymnsLyricsResponseCache = null; // { dataVersion, json, gz?, br? }
 
 // PERF-STAGE2-2C-20260902 C-5 —— 預壓縮 cache。C-1 個 cache slot 淨係存
 // raw JSON string,每個帶 `Accept-Encoding: gzip` 嘅 request 都要
 // compression middleware 重新壓一次(Opus 5 §2.3 已知 trade-off:cache
 // hit identity 12ms,帶 gzip 就變返 108ms,慳嘅嗰 77% 俾 gzip CPU 攞返)。
-// 而家喺 cache miss 嗰刻順手 `zlib.gzipSync` 一次,連 gz buffer 一齊存落
-// cache slot;帶 gzip 嘅 request 直接送 gz buffer 兼自己 set
-// `Content-Encoding: gzip`——compression middleware 見到 response 已經有
-// 呢個 header 就會跳過(佢原碼 `onHeaders` 入面 `encoding !== 'identity'`
-// 就即刻 `nocompress('already encoded')`),唔會 double-gzip。
+// 帶 gzip/br 嘅 request 直接送已經 cache 咗嘅 buffer 兼自己 set
+// `Content-Encoding`——compression middleware 見到 response 已經有呢個
+// header 就會跳過(佢原碼 `onHeaders` 入面 `encoding !== 'identity'` 就
+// 即刻 `nocompress('already encoded')`),唔會 double-encode。
 //
-// ETag 用 dataVersion 做 weak validator,raw/gz 兩種 representation
-// **共用**同一個 ETag,理由兩條:
-//   1. RFC 7232 §2.1——weak validator 本身就係為咗畀「語意上相同、byte 上
-//      可以唔同」嘅 representation(例如 content-negotiation 揀咗唔同
-//      encoding)共用一個 validator 設計,`W/` 前綴已經表明呢個 tag 唔
-//      保證 byte-for-byte 一致,淨係保證「同一個資源狀態」。
-//   2. 實際理由——dataVersion 本身已經係一個同 hymns.db 內容一一對應嘅
-//      freshness token(A-1 個 cache key 用緊就係佢),攞嚟做 ETag 唔使
-//      額外喺 5.5MB/1.4MB 嘅 buffer 上再行一次 hash。
-function sendHymnsCache(req, res, cache) {
+// PERF-STAGE2-2C-20260902-C6-OPUS §5.3 保留一(已修)—— ETag 而家
+// **route-scoped**:`sendHymnsCache` 多收一個 `tagSuffix` 參數,
+// `/api/hymns` full 唔傳(維持 `W/"<dataVersion>"`,同 C-5 出街時一樣嘅
+// 值),`?lite=1` 傳 `'lite'`(`W/"<dataVersion>-lite"`),
+// `/api/hymns/lyrics` 傳 `'lyrics'`(`W/"<dataVersion>-lyrics"`)。Opus 5
+// 實測到「三條唔同資源共用一個 tag」呢個係 C-5 新引入嘅問題(改前三條
+// 靠 express auto-hash content 計 ETag,必然唔同;C-5 令佢哋一模一樣)——
+// 今日冇活嘅觸發路徑(前端零 conditional GET、CF 唔 cache 呢啲 route),
+// 但一改就手尾長,而家零成本補返。raw/gz/br 三個 representation **依然
+// 共用同一個 route 嘅 tag**——呢個係 C-5 出街前已經存在嘅性質(express
+// 原本個 auto-ETag 都係用未壓縮 body 計,壓縮前後一樣),Opus 5 §5.3(a)
+// 已經核實過呢點唔算問題(RFC 7232 weak validator + `Vary` 已經 set,
+// 冇合規 cache 會攞錯)。
+function sendHymnsCache(req, res, cache, tagSuffix) {
   res.set('Cache-Control', 'private, max-age=0, must-revalidate');
-  res.set('ETag', `W/"${cache.dataVersion}"`);
+  res.set('ETag', tagSuffix ? `W/"${cache.dataVersion}-${tagSuffix}"` : `W/"${cache.dataVersion}"`);
   res.set('Vary', 'Accept-Encoding');
   res.set('Content-Type', 'application/json');
-  if (req.acceptsEncodings('gzip') === 'gzip') {
+  // PERF-STAGE2-2C-20260902-C6-OPUS §5.4 保留二(已修)—— brotli。C-5
+  // 一見到 client 收 gzip 就即刻 set Content-Encoding:gzip,連帶令
+  // compression middleware 嘅 br 協商都行唔到(`nocompress('already
+  // encoded')` 擋咗)。Opus 5 實測同一份 body gzip=1,474,223B、
+  // brotli(compression 套件 default quality)=1,198,686B,br client 平白
+  // 多食 23% wire。
+  //
+  // ⚠️ 呢度**冇**用 `req.acceptsEncodings(['br','gzip'])` 單一 call 嚟揀——
+  // harness 實測過(`2c-c6-etag-brotli-async.log`)`negotiator` 套件嘅
+  // tie-break 次序係 `q desc → specificity desc → 客戶端 header 入面個
+  // encoding 出現嘅位置 asc → 我哋 provided array 嘅 index asc`,即係話
+  // 客戶端自己喺 header 度嘅次序(第三個 tiebreak)會贏我哋傳嘅 array 次序
+  // (最後先輪到)。實測 `Accept-Encoding: gzip, deflate, br`(冇 q value,
+  // 客戶端淨係咁啱 gzip 寫喺前面)會揀 gzip,唔係我哋想要嘅「br 優先」。
+  // 改為分開兩次獨立 acceptability check(`req.acceptsEncodings('br')`
+  // 淨係答「client 收唔收 br」,唔理佢喺 header 邊個位/同邊個比較),先
+  // 自己喺 code 度話事邊個優先——呢個先真正做到「br 優先」,唔受客戶端
+  // header 寫法影響。
+  //
+  // `cache.br`/`cache.gz` 有冇準備好(見底下 `scheduleHymnsCompression`
+  // ——miss 嗰刻唔會同步阻塞去起呢兩份 buffer)決定咗:起緊嗰段窗口揀
+  // 「有邊份就用邊份」,乜都未有就跌落最底 raw send,交返俾 compression
+  // middleware 用返 C-5 之前嗰套 async 協商,唔會扔錯 encoding 俾個
+  // client。
+  const acceptsBr = req.acceptsEncodings('br') === 'br';
+  const acceptsGzip = req.acceptsEncodings('gzip') === 'gzip';
+  if (acceptsBr && cache.br) {
+    res.set('Content-Encoding', 'br');
+    return res.send(cache.br);
+  }
+  if (acceptsGzip && cache.gz) {
     res.set('Content-Encoding', 'gzip');
     return res.send(cache.gz);
   }
   return res.send(cache.json);
+}
+
+// PERF-STAGE2-2C-20260902-C6-OPUS §5.5 保留三(已修)—— miss 路徑唔准
+// 同步阻塞。C-5 原本喺 miss 嗰刻用 `zlib.gzipSync`,Opus 5 實測一次
+// `/api/hymns` full miss 嘅同步時間分佈:readFileSync 20.5ms + new
+// SQL.Database 4.7ms + SELECT/stringify 99.5ms + **gzipSync 109.2ms** =
+// 233.9ms event loop 全程凍住;三個 slot 一齊 miss(dataVersion 一變就
+// 係咁,C-4 令呢個情況由「淨係 restart」變成「夜晚 job 完之後」都會撞)
+// 累計 427.9ms,其中 221ms 係 C-5 新加嘅同步時間。
+//
+// 而家 miss 分支唔再自己壓縮:即刻用 raw body 起 cache slot(`gz`/`br`
+// 未有)send 落去,由 compression middleware 用返 C-5 之前嗰套 **async**
+// (行 libuv threadpool、唔阻 event loop)協商呢一個 response 嘅
+// encoding;然之後先用 `zlib.gzip`/`zlib.brotliCompress`(async 版,唔係
+// *Sync)去補 `gz`/`br` 落 cache slot,俾之後真正嘅 cache hit 用。
+//
+// 寫入之前一定要覆核 dataVersion 冇再變(`getCurrentSlot()` 攞返嗰一刻
+// 個真實 slot,同呢次 compute 開始嗰陣嘅 dataVersion 比)——如果起緊
+// 呢兩份 buffer 嗰段時間 dataVersion 又變咗(第二輪 miss 已經寫咗新
+// entry 落 slot),就掉咗手上呢份唔寫,避免將舊版 gz/br 錯誤咁貼落新
+// entry 度(執行單原話:「起完先寫入 slot,帶 dataVersion 核對,避免
+// stale 寫入」)。
+function scheduleHymnsCompression(cacheEntry, getCurrentSlot, label) {
+  const { dataVersion, json } = cacheEntry;
+  const buf = Buffer.from(json, 'utf8');
+  const gzPromise = new Promise((resolve, reject) => {
+    zlib.gzip(buf, (err, out) => (err ? reject(err) : resolve(out)));
+  });
+  const brPromise = new Promise((resolve, reject) => {
+    // quality 5——compression 套件行 br 用嘅 default 係 4(Opus 5 §5.4 引
+    // 用嘅 1,198,686B 就係 q4);5/6 換多少少 CPU 攞多少少壓縮率,喺呢個
+    // async(唔阻 event loop)嘅路徑度抵做。
+    zlib.brotliCompress(buf, { params: { [zlib.constants.BROTLI_PARAM_QUALITY]: 5 } }, (err, out) => (err ? reject(err) : resolve(out)));
+  });
+  Promise.all([gzPromise, brPromise])
+    .then(([gz, br]) => {
+      const current = getCurrentSlot();
+      if (!current || current.dataVersion !== dataVersion) {
+        console.log(`🗜️ ${label} async compress 完成但 dataVersion 已經郁咗(${dataVersion} → ${current ? current.dataVersion : 'null'}),掉咗唔寫`);
+        return;
+      }
+      current.gz = gz;
+      current.br = br;
+      console.log(`🗜️ ${label} async compress → gz=${gz.length}B br=${br.length}B`);
+    })
+    .catch((err) => {
+      console.error(`🚨 ${label} async compress 失敗:${err.message}(cache 會繼續冇 gz/br,sendHymnsCache 自然 fallback 落 raw)`);
+    });
 }
 
 // Get all hymns from the database
@@ -399,9 +480,9 @@ app.get('/api/hymns', async (req, res) => {
     if (cacheSlot && cacheSlot.dataVersion === currentDataVersion) {
       // PERF-STAGE2-EXEC-20260902 §2A A-5 / PERF-STAGE2-2C-20260902 C-5 ——
       // Cache-Control 純記錄,唔期望 CF 因為呢句就 HIT(1A A1 全部 57 組合
-      // cf-cache-status 都係 DYNAMIC)。ETag 而家用 dataVersion 做(見
-      // `sendHymnsCache` 大註解),raw/gz 兩種 representation 共用。
-      return sendHymnsCache(req, res, cacheSlot);
+      // cf-cache-status 都係 DYNAMIC)。ETag 而家 route-scoped(C-6),
+      // full 冇 suffix、lite 有 `-lite`。
+      return sendHymnsCache(req, res, cacheSlot, lite ? 'lite' : undefined);
     }
     const db = await getDb();
     // lyrics included so the player can show real 歌詞 (§3.4) and grey out the
@@ -443,15 +524,15 @@ app.get('/api/hymns', async (req, res) => {
     const dataVersion = getDataVersion();
     console.log(`📚 /api/hymns ${lite ? 'lite' : 'full'} fetch → ${hymns.length} hymns, dataVersion=${dataVersion}`);
     const body = JSON.stringify({ data: hymns, dataVersion });
-    // PERF-STAGE2-2C-20260902 C-5 —— miss 嗰刻順手 gzip 一次,連 gz buffer
-    // 一齊存落 cache slot(見上面 `sendHymnsCache` 大註解)。
-    const gzStart = Date.now();
-    const gz = zlib.gzipSync(Buffer.from(body, 'utf8'));
-    console.log(`🗜️ /api/hymns ${lite ? 'lite' : 'full'} gzip precompute → ${Date.now() - gzStart}ms, ${gz.length} bytes`);
-    const cacheEntry = { dataVersion, json: body, gz };
+    // PERF-STAGE2-2C-20260902-C6-OPUS §5.5 —— miss 唔再同步 gzipSync。即刻
+    // 用 raw body 起 cache slot(冇 gz/br),送出去嗰次由 compression
+    // middleware 用返 async 協商;gz/br 用 `scheduleHymnsCompression`
+    // 喺背景補(唔阻呢個 request)。
+    const cacheEntry = { dataVersion, json: body };
     if (lite) hymnsLiteResponseCache = cacheEntry;
     else hymnsResponseCache = cacheEntry;
-    sendHymnsCache(req, res, cacheEntry);
+    scheduleHymnsCompression(cacheEntry, () => (lite ? hymnsLiteResponseCache : hymnsResponseCache), `/api/hymns ${lite ? 'lite' : 'full'}`);
+    sendHymnsCache(req, res, cacheEntry, lite ? 'lite' : undefined);
   } catch (err) {
     console.error('Failed to fetch hymns:', err.message);
     res.status(500).json({ error: 'Failed to fetch hymns' });
@@ -470,7 +551,7 @@ app.get('/api/hymns/lyrics', async (req, res) => {
     maybeReload();
     const currentDataVersion = getDataVersion();
     if (hymnsLyricsResponseCache && hymnsLyricsResponseCache.dataVersion === currentDataVersion) {
-      return sendHymnsCache(req, res, hymnsLyricsResponseCache);
+      return sendHymnsCache(req, res, hymnsLyricsResponseCache, 'lyrics');
     }
     const db = await getDb();
     const stmt = db.prepare("SELECT id, lyrics FROM hymns WHERE lyrics IS NOT NULL AND lyrics != '' ORDER BY id");
@@ -484,13 +565,11 @@ app.get('/api/hymns/lyrics', async (req, res) => {
     const dataVersion = getDataVersion();
     console.log(`📚 /api/hymns/lyrics fetch → ${count} hymns, dataVersion=${dataVersion}`);
     const body = JSON.stringify({ data, dataVersion });
-    // PERF-STAGE2-2C-20260902 C-5 —— 同 `/api/hymns` 一樣,miss 嗰刻順手
-    // gzip 一次(見 `sendHymnsCache` 大註解)。
-    const gzStart = Date.now();
-    const gz = zlib.gzipSync(Buffer.from(body, 'utf8'));
-    console.log(`🗜️ /api/hymns/lyrics gzip precompute → ${Date.now() - gzStart}ms, ${gz.length} bytes`);
-    hymnsLyricsResponseCache = { dataVersion, json: body, gz };
-    sendHymnsCache(req, res, hymnsLyricsResponseCache);
+    // PERF-STAGE2-2C-20260902-C6-OPUS §5.5 —— 同 `/api/hymns` 一樣,miss
+    // 唔再同步 gzipSync,background schedule gz/br。
+    hymnsLyricsResponseCache = { dataVersion, json: body };
+    scheduleHymnsCompression(hymnsLyricsResponseCache, () => hymnsLyricsResponseCache, '/api/hymns/lyrics');
+    sendHymnsCache(req, res, hymnsLyricsResponseCache, 'lyrics');
   } catch (err) {
     console.error('Failed to fetch hymn lyrics:', err.message);
     res.status(500).json({ error: 'Failed to fetch hymn lyrics' });

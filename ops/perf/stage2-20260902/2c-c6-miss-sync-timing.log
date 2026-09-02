@@ -1,0 +1,19 @@
+=== (1) 改前 C-5 同步鏈(單條 full miss)===
+readFileSync(61MB)         6.7 ms
+new SQL.Database(buffer)   3.2 ms
+SELECT + stringify(full)   82.1 ms
+zlib.gzipSync(full)        104.7 ms   <- C-5 新加,同步(Opus 5 §5.5 量到 109.2ms)
+--------------------------------------------
+一次 miss 嘅同步總時間(改前) 196.7 ms  (Opus 5 quote: 233.9ms)
+
+=== (2) 改後 C-6 同步鏈(miss 唔再同步壓縮)===
+readFileSync(61MB)         7.6 ms
+new SQL.Database(buffer)   1.8 ms
+SELECT + stringify(full)   63.6 ms
+--------------------------------------------
+一次 miss 嘅同步總時間(改後,gzip/br 已經移咗去 async) 73.0 ms
+慳咗 123.7ms 嘅同步阻塞(即係搬咗去 async 嗰段)
+
+=== (3) async 壓縮期間 event loop 有冇被阻(setImmediate 探針)===
+gzip+brotli(async, Promise.all)實際完成時間 = 106 ms
+同一段時間內 setImmediate probe 最大 lag = 1 ms (samples= 8073 ) <- 應該遠細過 106 ms,證明冇阻住 event loop
