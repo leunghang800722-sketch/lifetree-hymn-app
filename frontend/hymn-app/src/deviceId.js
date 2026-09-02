@@ -44,9 +44,3 @@ export function getOrCreateDeviceId() {
   }
   return _deviceIdPromise;
 }
-
-// 淨係俾 harness 用:reset 記憶,等單一 test file 入面可以測「兩次啟動」呢種
-// 跨 process 情境(用兩個獨立 mock AsyncStorage 分別 call getOrCreateDeviceId)。
-export function __resetForTest() {
-  _deviceIdPromise = null;
-}
