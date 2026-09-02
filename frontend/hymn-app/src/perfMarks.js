@@ -188,11 +188,13 @@ export function schedulePerfMarksBeacon() {
         // 逐個 attempt 記(a1_*/a2_*),att=實際做咗幾多次嘗試,ok1=第一次
         // 嘗試自己攞唔攞到 6405 首(F-1 嘅主要量度指標,改前 1B 基準 0/5)。
         // C-1 前端(PERF-STAGE2-2D-20260902,A-6 落地)—— a1t/a1b/a1p/att/ok1
-        // 而家量嘅係 `?lite=1` 嗰個 fetch(hymnsMs 同 liteMs 係同一個 span,
-        // 淨係為咗喺報告度分開嚟講先加多個欄名)。新欄:liteMs(=hymnsMs 嘅
-        // 別名,方便同 lyrMs 對照)、lyrMs(背景 `/api/hymns/lyrics` fetch
-        // 耗時)、lyrBytes(嗰個 response 嘅 text.length)、merged(0/1,合併
-        // 咗先算真正「呢次開機攞齊晒歌詞」)。呢四個欄放喺 `fetch=` 之前——
+        // 而家量嘅係 `?lite=1` 嗰個 fetch(即 `hymnsMs`,同 2D 原本加嘅
+        // `liteMs` 係同一個 span——E-5(PERF-STAGE2-2E-20260902,Opus 5
+        // 提醒逼近 300 字上限)已剷走 `liteMs` 呢個重複別名)。新欄:
+        // lyrMs(背景 `/api/hymns/lyrics` fetch 耗時,E-5 之後呢個 fetch
+        // 會延遲到 idle+8s 先開始)、lyrBytes(嗰個 response 嘅
+        // text.length)、merged(0/1,合併咗先算真正「呢次開機攞齊晒歌
+        // 詞」)。呢三個欄放喺 `fetch=` 之前——
         // detail 成句俾 sendBeacon 硬 slice(0,300),`fetch=` 汇总最有彈性
         // (被切都唔緊要),排喺最後。
         const detail = [
@@ -216,7 +218,6 @@ export function schedulePerfMarksBeacon() {
           `a2b=${durMark('hTtfb2', 'hBody2')}`,
           `a2p=${durMark('hBody2', 'hPars2')}`,
           `byt=${getNote('hymnsBytes')}`,
-          `liteMs=${durMark('hymnsStart', 'hymnsEnd')}`,
           `lyrMs=${durMark('lyrStart', 'lyrEnd')}`,
           `lyrBytes=${getNote('lyrBytes')}`,
           `merged=${getNote('merged')}`,

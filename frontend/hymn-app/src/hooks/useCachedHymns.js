@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { InteractionManager } from 'react-native';
 import { getStorage } from '../storage';
 import { API_BASE } from '../config.js';
 import { createExternalStore } from './externalStore.js';
@@ -169,6 +170,21 @@ async function fetchLyricsMap() {
   }
 }
 
+// E-5(PERF-STAGE2-2E-20260902,Fable 5.1 拍板)—— 上行搶佔緩解:lite 一到手
+// 就即刻背景開 `/api/hymns/lyrics`(2.7MB raw)會同用戶撳第一首歌嘅音頻
+// 預載爭緊同一條上行(慢網/tunnel 尤其明顯,見 memory 0.65MB/s 上行樽頸)。
+// 而家等 `InteractionManager` 判斷「首屏果輪 interaction 做完」之後,再多
+// 等 8s(俾第一首歌音頻預載一個頭),先至真正開始打 lyrics endpoint。純
+// 背景 fetch,唔影響 lite 已經即畫嘅首屏,`lyrStart` mark 挪咗去延遲之後
+// 先落(相對 T0 嘅時間戳,語義不變)。
+function waitBeforeLyricsFetch() {
+  return new Promise((resolve) => {
+    InteractionManager.runAfterInteractions(() => {
+      setTimeout(resolve, 8000);
+    });
+  });
+}
+
 // 新 array + 新 object(唔係原地改)——令 HomeScreen/LibraryScreen 嗰啲用
 // `hymns` identity 做 dep 嘅 useMemo/memo 喺 lyrics merge 完之後正確重跑。
 function mergeLyrics(hymns, lyricsMap) {
@@ -305,6 +321,7 @@ function kickRefreshOnce() {
             s.set('allHymnsVersion', primary.dataVersion ?? serverVersion ?? '');
           }
         } else {
+          await waitBeforeLyricsFetch(); // E-5 — 俾第一首歌音頻預載一個頭
           mark('lyrStart');
           const lyr = await fetchLyricsMap();
           mark('lyrEnd');
@@ -327,10 +344,20 @@ function kickRefreshOnce() {
             // lyrics fetch 失敗(斷網 / 404 = 舊 backend 冇呢條 route)——照存
             // lite 版落 MMKV,但**唔寫** allHymnsVersion,逼落次開 App(version
             // 對唔上 cachedVersion)會再全套嘗試多一次。
+            //
+            // E-5 P0(PERF-STAGE2-2E-20260902,Opus 5 2D 驗收發現)—— 呢個
+            // 意圖有個窿:「唔寫」淨係代表**呢次**冇 set 新值,但 MMKV 入面
+            // 好可能仲存住**舊嘅** `allHymnsVersion`(上次成功 merge 留低嘅)。
+            // 落次開 App:`cachedVersion` 讀到嗰個舊值,`serverVersion`
+            // 攞新鮮嘅——如果呢段時間 DB 冇改過(冇新 dataVersion),兩者
+            // 相等 ⇒ `canSkip=true` ⇒ 永久 skip 網絡、永久卡喺 lite-only
+            // (冇歌詞),直到 DB 版本先至變。要真正逼到落次一定會重試,一定
+            // 要主動刪走呢個 key,唔可以淨係「唔寫新值」。
             note('merged', 0);
             note('lyricsFail', 1);
             if (s) {
               s.set('allHymns', JSON.stringify(primary.hymns));
+              s.delete('allHymnsVersion');
             }
           }
         }
