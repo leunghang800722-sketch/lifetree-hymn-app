@@ -1,0 +1,48 @@
+
+=== double-gzip guard: raw network bytes on the wire for gzip request ===
+📚 /api/hymns full fetch → 6405 hymns, dataVersion=1788313502009.5908-61054976
+🗜️ /api/hymns full gzip precompute → 147ms, 1474227 bytes
+[access] 2026-09-02T08:54:38.091Z GET /api/hymns 200 429ms 1474227b
+/api/hymns miss: status= 200 content-encoding= gzip content-length(header)= 1474227 decoded-bytes= 5567648 ms= 561
+📚 /api/hymns lite fetch → 6405 hymns, dataVersion=1788313502009.5908-61054976
+🗜️ /api/hymns lite gzip precompute → 30ms, 371984 bytes
+[access] 2026-09-02T08:54:38.239Z GET /api/hymns 200 113ms 371984b
+/api/hymns?lite=1 miss: status= 200 content-encoding= gzip content-length(header)= 371984 decoded-bytes= 2839533 ms= 126
+📚 /api/hymns/lyrics fetch → 5387 hymns, dataVersion=1788313502009.5908-61054976
+🗜️ /api/hymns/lyrics gzip precompute → 86ms, 992859 bytes
+[access] 2026-09-02T08:54:38.354Z GET /api/hymns/lyrics 200 106ms 992859b
+/api/hymns/lyrics miss: status= 200 content-encoding= gzip content-length(header)= 992859 decoded-bytes= 2702660 ms= 117
+
+=== gzip hit x3 (compare to pre-C5: full ~117, lite ~30, lyrics ~86) ===
+[access] 2026-09-02T08:54:38.369Z GET /api/hymns 200 1ms 1474227b
+[access] 2026-09-02T08:54:38.383Z GET /api/hymns 200 1ms 1474227b
+[access] 2026-09-02T08:54:38.401Z GET /api/hymns 200 0ms 1474227b
+/api/hymns gzip-hit ms x3 = [ 18, 18, 21 ] content-encoding= gzip(expected)
+[access] 2026-09-02T08:54:38.425Z GET /api/hymns 200 1ms 371984b
+[access] 2026-09-02T08:54:38.432Z GET /api/hymns 200 0ms 371984b
+[access] 2026-09-02T08:54:38.438Z GET /api/hymns 200 0ms 371984b
+/api/hymns?lite=1 gzip-hit ms x3 = [ 10, 7, 6 ] content-encoding= gzip(expected)
+[access] 2026-09-02T08:54:38.445Z GET /api/hymns/lyrics 200 1ms 992859b
+[access] 2026-09-02T08:54:38.454Z GET /api/hymns/lyrics 200 0ms 992859b
+[access] 2026-09-02T08:54:38.464Z GET /api/hymns/lyrics 200 1ms 992859b
+/api/hymns/lyrics gzip-hit ms x3 = [ 9, 10, 9 ] content-encoding= gzip(expected)
+
+=== positive control: raw vs gzip decode byte-for-byte identical ===
+[access] 2026-09-02T08:54:38.487Z GET /api/hymns 200 14ms 5567648b
+[access] 2026-09-02T08:54:38.500Z GET /api/hymns 200 1ms 1474227b
+/api/hymns raw.len= 5567648 gzip-decoded.len= 5567648 byte-for-byte identical= true etag= W/"1788313502009.5908-61054976" vary= Accept-Encoding
+[access] 2026-09-02T08:54:38.560Z GET /api/hymns 200 7ms 2839533b
+[access] 2026-09-02T08:54:38.563Z GET /api/hymns 200 0ms 371984b
+/api/hymns?lite=1 raw.len= 2839533 gzip-decoded.len= 2839533 byte-for-byte identical= true etag= W/"1788313502009.5908-61054976" vary= Accept-Encoding
+[access] 2026-09-02T08:54:38.583Z GET /api/hymns/lyrics 200 6ms 2702660b
+[access] 2026-09-02T08:54:38.588Z GET /api/hymns/lyrics 200 1ms 992859b
+/api/hymns/lyrics raw.len= 2702660 gzip-decoded.len= 2702660 byte-for-byte identical= true etag= W/"1788313502009.5908-61054976" vary= Accept-Encoding
+
+=== conditional GET (If-None-Match) still gives 304 ===
+(用 raw http module 打,唔用 fetch() -- fetch() 見到手動set嘅 If-None-Match 會
+ 自動加返 Cache-Control: no-cache,呢個係 fetch API 自己嘅行為,唔關server事,
+ 但會令 fresh() 模組故意判 stale(RFC 2616 14.9.4:client 送 no-cache 一定要俾佢);
+ curl/RN 嘅 fetch polyfill/真實瀏覽器導航都唔會咁做,所以呢度改用 http.get 先啱。)
+[access] 2026-09-02T08:54:38.607Z GET /api/hymns 200 2ms 1474227b
+[access] 2026-09-02T08:54:38.607Z GET /api/hymns 304 0ms 0b
+etag= W/"1788313502009.5908-61054976" conditional status= 304 content-length= undefined

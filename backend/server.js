@@ -6,6 +6,7 @@ import cors from 'cors';
 import compression from 'compression';
 import initSqlJs from 'sql.js';
 import fs from 'fs';
+import zlib from 'zlib';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import homeRoutes from './routes/home.js';
@@ -338,7 +339,7 @@ app.get('/api/internal/activity', (req, res) => {
 // 寫入後一定會 call)會清 dbPromise 但**唔會**主動清呢個 cache——所以判斷
 // 用 dataVersion 讀出嚟嘅值本身(reloadDb 令佢重新計過),而唔係靠一個獨立
 // 「已被清」旗標,先至可以自然 miss。
-let hymnsResponseCache = null; // { dataVersion, json }
+let hymnsResponseCache = null; // { dataVersion, json, gz }
 
 // PERF-STAGE2-2C-20260902 C-1(A-6 落地)—— `?lite=1` 用嘅獨立 cache slot,
 // 唔可以同上面 `hymnsResponseCache` 共用,否則兩種 envelope 會互相打架
@@ -346,9 +347,40 @@ let hymnsResponseCache = null; // { dataVersion, json }
 // 嗰條分支完全冇改——SQL 字串、object 形狀、cache 變量都同改動前一樣**,
 // 呢個係「舊 client 一個 byte 都唔可以變」嘅硬要求(PERF-STAGE2-2C-20260902
 // C-1)。
-let hymnsLiteResponseCache = null; // { dataVersion, json }
+let hymnsLiteResponseCache = null; // { dataVersion, json, gz }
 // `/api/hymns/lyrics` 專用 cache slot,見底下嗰條獨立 route。
-let hymnsLyricsResponseCache = null; // { dataVersion, json }
+let hymnsLyricsResponseCache = null; // { dataVersion, json, gz }
+
+// PERF-STAGE2-2C-20260902 C-5 —— 預壓縮 cache。C-1 個 cache slot 淨係存
+// raw JSON string,每個帶 `Accept-Encoding: gzip` 嘅 request 都要
+// compression middleware 重新壓一次(Opus 5 §2.3 已知 trade-off:cache
+// hit identity 12ms,帶 gzip 就變返 108ms,慳嘅嗰 77% 俾 gzip CPU 攞返)。
+// 而家喺 cache miss 嗰刻順手 `zlib.gzipSync` 一次,連 gz buffer 一齊存落
+// cache slot;帶 gzip 嘅 request 直接送 gz buffer 兼自己 set
+// `Content-Encoding: gzip`——compression middleware 見到 response 已經有
+// 呢個 header 就會跳過(佢原碼 `onHeaders` 入面 `encoding !== 'identity'`
+// 就即刻 `nocompress('already encoded')`),唔會 double-gzip。
+//
+// ETag 用 dataVersion 做 weak validator,raw/gz 兩種 representation
+// **共用**同一個 ETag,理由兩條:
+//   1. RFC 7232 §2.1——weak validator 本身就係為咗畀「語意上相同、byte 上
+//      可以唔同」嘅 representation(例如 content-negotiation 揀咗唔同
+//      encoding)共用一個 validator 設計,`W/` 前綴已經表明呢個 tag 唔
+//      保證 byte-for-byte 一致,淨係保證「同一個資源狀態」。
+//   2. 實際理由——dataVersion 本身已經係一個同 hymns.db 內容一一對應嘅
+//      freshness token(A-1 個 cache key 用緊就係佢),攞嚟做 ETag 唔使
+//      額外喺 5.5MB/1.4MB 嘅 buffer 上再行一次 hash。
+function sendHymnsCache(req, res, cache) {
+  res.set('Cache-Control', 'private, max-age=0, must-revalidate');
+  res.set('ETag', `W/"${cache.dataVersion}"`);
+  res.set('Vary', 'Accept-Encoding');
+  res.set('Content-Type', 'application/json');
+  if (req.acceptsEncodings('gzip') === 'gzip') {
+    res.set('Content-Encoding', 'gzip');
+    return res.send(cache.gz);
+  }
+  return res.send(cache.json);
+}
 
 // Get all hymns from the database
 app.get('/api/hymns', async (req, res) => {
@@ -365,12 +397,11 @@ app.get('/api/hymns', async (req, res) => {
     const currentDataVersion = getDataVersion();
     const cacheSlot = lite ? hymnsLiteResponseCache : hymnsResponseCache;
     if (cacheSlot && cacheSlot.dataVersion === currentDataVersion) {
-      res.set('Content-Type', 'application/json');
-      // PERF-STAGE2-EXEC-20260902 §2A A-5 —— 純記錄,唔期望 CF 因為呢句就
-      // HIT(1A A1 全部 57 組合 cf-cache-status 都係 DYNAMIC)。ETag 保留
-      // (Express 對 res.send(string) 一律自動計 weak ETag,呢度冇碰佢)。
-      res.set('Cache-Control', 'private, max-age=0, must-revalidate');
-      return res.send(cacheSlot.json);
+      // PERF-STAGE2-EXEC-20260902 §2A A-5 / PERF-STAGE2-2C-20260902 C-5 ——
+      // Cache-Control 純記錄,唔期望 CF 因為呢句就 HIT(1A A1 全部 57 組合
+      // cf-cache-status 都係 DYNAMIC)。ETag 而家用 dataVersion 做(見
+      // `sendHymnsCache` 大註解),raw/gz 兩種 representation 共用。
+      return sendHymnsCache(req, res, cacheSlot);
     }
     const db = await getDb();
     // lyrics included so the player can show real 歌詞 (§3.4) and grey out the
@@ -412,11 +443,15 @@ app.get('/api/hymns', async (req, res) => {
     const dataVersion = getDataVersion();
     console.log(`📚 /api/hymns ${lite ? 'lite' : 'full'} fetch → ${hymns.length} hymns, dataVersion=${dataVersion}`);
     const body = JSON.stringify({ data: hymns, dataVersion });
-    if (lite) hymnsLiteResponseCache = { dataVersion, json: body };
-    else hymnsResponseCache = { dataVersion, json: body };
-    res.set('Content-Type', 'application/json');
-    res.set('Cache-Control', 'private, max-age=0, must-revalidate');
-    res.send(body);
+    // PERF-STAGE2-2C-20260902 C-5 —— miss 嗰刻順手 gzip 一次,連 gz buffer
+    // 一齊存落 cache slot(見上面 `sendHymnsCache` 大註解)。
+    const gzStart = Date.now();
+    const gz = zlib.gzipSync(Buffer.from(body, 'utf8'));
+    console.log(`🗜️ /api/hymns ${lite ? 'lite' : 'full'} gzip precompute → ${Date.now() - gzStart}ms, ${gz.length} bytes`);
+    const cacheEntry = { dataVersion, json: body, gz };
+    if (lite) hymnsLiteResponseCache = cacheEntry;
+    else hymnsResponseCache = cacheEntry;
+    sendHymnsCache(req, res, cacheEntry);
   } catch (err) {
     console.error('Failed to fetch hymns:', err.message);
     res.status(500).json({ error: 'Failed to fetch hymns' });
@@ -435,9 +470,7 @@ app.get('/api/hymns/lyrics', async (req, res) => {
     maybeReload();
     const currentDataVersion = getDataVersion();
     if (hymnsLyricsResponseCache && hymnsLyricsResponseCache.dataVersion === currentDataVersion) {
-      res.set('Content-Type', 'application/json');
-      res.set('Cache-Control', 'private, max-age=0, must-revalidate');
-      return res.send(hymnsLyricsResponseCache.json);
+      return sendHymnsCache(req, res, hymnsLyricsResponseCache);
     }
     const db = await getDb();
     const stmt = db.prepare("SELECT id, lyrics FROM hymns WHERE lyrics IS NOT NULL AND lyrics != '' ORDER BY id");
@@ -451,10 +484,13 @@ app.get('/api/hymns/lyrics', async (req, res) => {
     const dataVersion = getDataVersion();
     console.log(`📚 /api/hymns/lyrics fetch → ${count} hymns, dataVersion=${dataVersion}`);
     const body = JSON.stringify({ data, dataVersion });
-    hymnsLyricsResponseCache = { dataVersion, json: body };
-    res.set('Content-Type', 'application/json');
-    res.set('Cache-Control', 'private, max-age=0, must-revalidate');
-    res.send(body);
+    // PERF-STAGE2-2C-20260902 C-5 —— 同 `/api/hymns` 一樣,miss 嗰刻順手
+    // gzip 一次(見 `sendHymnsCache` 大註解)。
+    const gzStart = Date.now();
+    const gz = zlib.gzipSync(Buffer.from(body, 'utf8'));
+    console.log(`🗜️ /api/hymns/lyrics gzip precompute → ${Date.now() - gzStart}ms, ${gz.length} bytes`);
+    hymnsLyricsResponseCache = { dataVersion, json: body, gz };
+    sendHymnsCache(req, res, hymnsLyricsResponseCache);
   } catch (err) {
     console.error('Failed to fetch hymn lyrics:', err.message);
     res.status(500).json({ error: 'Failed to fetch hymn lyrics' });
