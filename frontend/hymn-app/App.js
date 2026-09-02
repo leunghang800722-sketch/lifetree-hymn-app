@@ -419,6 +419,7 @@ const progressStore = createExternalStore({ currentTime: 0, duration: 0 });
 function usePlayerProgress() { return progressStore.useStore(); }
 
 function PlayerProvider({ children }) {
+  useRenderCount('PlayerProvider'); // F-2 診斷(PERF-STAGE2-2B-20260902,Opus 5 明文批准)——純計數器,唔掂其他任何嘢
   // FRONTEND-CODE-REVIEW-20260819 §4 #4 — noticeStyles.wrap 個 top 淨係靠
   // StatusBar.currentHeight(iOS 永遠 undefined),恆用 44 會喺 Dynamic
   // Island 機(iPhone 14 Pro+)撞落去。改用 safe-area insets.top。
