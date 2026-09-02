@@ -224,6 +224,12 @@ app.get('/api/health', (req, res) => {
 app.get('/api/version', (req, res) => {
   const dataVersion = getDataVersion();
   console.log(`🔖 /api/version → ${dataVersion}`);
+  // PERF-STAGE2-EXEC-20260902 §2A A-5 —— 純記錄用嘅 header,唔期望 CF 因為
+  // 呢句就開始 cache(1A A1:57 個 endpoint×target 組合 cf-cache-status 全部
+  // DYNAMIC,呢個係 Cloudflare page-rule/route 設定嘅事,唔係一個 response
+  // header 講就算)。呢個 endpoint 本身就係俾 App 做 cache-bust 判斷用,
+  // `no-cache` 淨係表明態度:即使將來邊一層加咗 cache,都要每次 revalidate。
+  res.set('Cache-Control', 'no-cache');
   res.json({ dataVersion });
 });
 
@@ -291,6 +297,10 @@ app.get('/api/hymns', async (req, res) => {
     const currentDataVersion = getDataVersion();
     if (hymnsResponseCache && hymnsResponseCache.dataVersion === currentDataVersion) {
       res.set('Content-Type', 'application/json');
+      // PERF-STAGE2-EXEC-20260902 §2A A-5 —— 純記錄,唔期望 CF 因為呢句就
+      // HIT(1A A1 全部 57 組合 cf-cache-status 都係 DYNAMIC)。ETag 保留
+      // (Express 對 res.send(string) 一律自動計 weak ETag,呢度冇碰佢)。
+      res.set('Cache-Control', 'private, max-age=0, must-revalidate');
       return res.send(hymnsResponseCache.json);
     }
     const db = await getDb();
@@ -328,6 +338,7 @@ app.get('/api/hymns', async (req, res) => {
     const body = JSON.stringify({ data: hymns, dataVersion });
     hymnsResponseCache = { dataVersion, json: body };
     res.set('Content-Type', 'application/json');
+    res.set('Cache-Control', 'private, max-age=0, must-revalidate');
     res.send(body);
   } catch (err) {
     console.error('Failed to fetch hymns:', err.message);
