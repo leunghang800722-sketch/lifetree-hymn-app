@@ -213,6 +213,7 @@ export function schedulePerfHomeBeacon() {
           `today=${getMark('secToday')}`,
           `recent=${getMark('secRecent')}`,
           `lib=${getMark('libraryRenderMs')}`,
+          `lib0=${getMark('libraryRenderMs0')}`,
           `mine=${getMark('mineRenderMs')}`,
         ].join(' ');
         sendBeacon('perfHome', detail);

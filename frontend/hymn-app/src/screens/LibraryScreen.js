@@ -262,7 +262,15 @@ export default function LibraryScreen({ hymns = [], onPlayHymn, onOpenAuth }) {
   // edge-to-edge:唔加 top inset 個大字標題會同狀態列時間疊埋(見 useInsets.js)
   const insets = useInsets();
 
-  span('libraryRenderMs', Date.now() - __renderT0); // D-1(PERF-STAGE2-2B-20260902) — render function 尾
+  // D-1(PERF-STAGE2-2B-20260902) — render function 尾。span() write-once,
+  // 開機頭一次 render 通常 hymns 仲未到(=[]),嗰次即使記到都係「零資料」
+  // 嘅耗時,對 F-4(要唔要 lazy-mount)冇意思——真正想知嘅係「揸住 6405
+  // 首真資料嗰次 render 要幾耐」,所以分開兩個 span 名,'0' 嗰個純粹留底。
+  if (Array.isArray(hymns) && hymns.length > 0) {
+    span('libraryRenderMs', Date.now() - __renderT0);
+  } else {
+    span('libraryRenderMs0', Date.now() - __renderT0);
+  }
 
   return (
     <View style={[styles.container, { paddingTop: insets.top + 8 }]}>

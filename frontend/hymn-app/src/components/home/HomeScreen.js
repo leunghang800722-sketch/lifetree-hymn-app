@@ -134,7 +134,10 @@ export default function HomeScreen({ hymns = [], loading = false, onPlayHymn, on
   const chips = useMemo(() => {
     const __t0 = Date.now(); // D-1(PERF-STAGE2-2B-20260902)
     const __r = buildChips(hymns);
-    span('secChips', Date.now() - __t0);
+    // span() write-once:開機第一次呢個 memo 好可能 hymns 仲係 [](未攞到
+    // 全量),嗰次計嘅係「零資料」耗時,對診斷冇意思——淨係喺真係有歌
+    // 嗰次先記錄,等呢個 span 真係反映「揸住 6405 首計 chips 要幾耐」。
+    if (hymns.length > 0) span('secChips', Date.now() - __t0);
     return __r;
   }, [hymns]);
 
@@ -147,7 +150,7 @@ export default function HomeScreen({ hymns = [], loading = false, onPlayHymn, on
   // 但每頁高度鎖死 5 行,唔會因為尾頁少歌而彈高彈低。
   const pages = useMemo(() => {
     const __t0 = Date.now(); // D-1(PERF-STAGE2-2B-20260902)
-    if (!activeChip) { span('secPages', Date.now() - __t0); return []; }
+    if (!activeChip) return []; // 冇 chip(通常係開機 hymns 未到)—— 冇意思嘅 0ms,唔記
     const picked = dailyPick(activeChip.songs, activeChip.id, SONGS_PER_PAGE * MAX_PAGES);
     const out = [];
     for (let i = 0; i < picked.length; i += SONGS_PER_PAGE) {
@@ -184,7 +187,7 @@ export default function HomeScreen({ hymns = [], loading = false, onPlayHymn, on
     const featuredPool = qualityPool.filter((h) => h.featured === 1);
     const pool = featuredPool.length >= 6 ? featuredPool : qualityPool;
     const __r = dailyPickBalanced(pool, 'today', 6, LANGS);
-    span('secToday', Date.now() - __t0);
+    if (hymns.length > 0) span('secToday', Date.now() - __t0);
     return __r;
   }, [hymns]);
 
@@ -192,7 +195,7 @@ export default function HomeScreen({ hymns = [], loading = false, onPlayHymn, on
   const recent = useMemo(() => {
     const __t0 = Date.now(); // D-1(PERF-STAGE2-2B-20260902)
     const __r = [...hymns].sort((a, b) => b.id - a.id).slice(0, 12);
-    span('secRecent', Date.now() - __t0);
+    if (hymns.length > 0) span('secRecent', Date.now() - __t0);
     return __r;
   }, [hymns]);
 
