@@ -110,9 +110,21 @@ function Heart({ hymn, style }) {
 
 // 「今日為你預備」/「最近加入」共用嘅歌卡(樣式統一)
 // 心心擺喺封面左上,同右下角個 play 角標分開,唔會撞。
-function SongCard({ hymn, onPress }) {
+//
+// F-3(PERF-STAGE2-2B-20260902)—— D-1 診斷(perfHome beacon)量到 chips/
+// pages/today/recent 四個 useMemo 加埋淨係 ~27ms(3+3+15+6),warm mount
+// 嘅 ~870ms 唔係嗰度嚟——即係話呢個 section 早已經係「純展示」,唔係
+// compute-bound,useMemo 幫唔到手。改用 React.memo 包呢張卡(18 張 =
+// 6 today + 12 recent),目的唔係壓低首次 mount 嘅 home mark(佢哋一樣要
+// 起碼 render 一次),而係避免 HomeScreen 內部其他 state 變(切 chip/
+// 拖 pager)引致嘅**不相關** re-render 逐張重新起呢 18 張卡——原本
+// onPress 用 inline arrow(`() => play(h, list)`)每次 render 都係新
+// reference,會令 memo 冚唔住;而家拆做 onSelect(穩定嘅 `play`)+ list
+// 做 props,SongCard 本身冚咗 memo 先有意思。行為完全冇變:
+// `onSelect(hymn, list)` = 舊版 `play(h, todayPicks/recent)`。
+const SongCard = React.memo(function SongCard({ hymn, list, onSelect }) {
   return (
-    <TouchableOpacity style={styles.songCard} activeOpacity={0.8} onPress={onPress}>
+    <TouchableOpacity style={styles.songCard} activeOpacity={0.8} onPress={() => onSelect(hymn, list)}>
       <View>
         <Thumb youtubeId={hymn.youtube_id} size={120} radius={10} />
         <PlayBadge />
@@ -122,7 +134,7 @@ function SongCard({ hymn, onPress }) {
       <Text style={styles.cardArtist} numberOfLines={1}>{hymn.artist || '未知'}</Text>
     </TouchableOpacity>
   );
-}
+});
 
 export default function HomeScreen({ hymns = [], loading = false, onPlayHymn, onOpenList }) {
   useRenderCount('Home'); // PERF-BASELINE-1B-20260902
@@ -392,7 +404,7 @@ export default function HomeScreen({ hymns = [], loading = false, onPlayHymn, on
           <Text style={styles.h2}>今日為你預備</Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingRight: 8 }}>
             {todayPicks.map((h) => (
-              <SongCard key={h.id} hymn={h} onPress={() => play(h, todayPicks)} />
+              <SongCard key={h.id} hymn={h} list={todayPicks} onSelect={play} />
             ))}
           </ScrollView>
         </View>
@@ -404,7 +416,7 @@ export default function HomeScreen({ hymns = [], loading = false, onPlayHymn, on
           <Text style={styles.h2}>最近加入</Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingRight: 8 }}>
             {recent.map((h) => (
-              <SongCard key={h.id} hymn={h} onPress={() => play(h, recent)} />
+              <SongCard key={h.id} hymn={h} list={recent} onSelect={play} />
             ))}
           </ScrollView>
         </View>
