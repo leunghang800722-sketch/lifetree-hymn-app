@@ -28,7 +28,7 @@ import { getHomeChip, saveHomeChip } from '../../homePrefs';
 import { dailyPick, dailyPickBalanced, randomShuffle } from '../../utils/dailyShuffle';
 // PHASE2.5-PRELOAD-PLAN §4 W2 —— chip 定義 + 「現用邊個 chip」嘅 fallback 邏輯而家
 // 同 App.js 嘅開機預載器共用一份,唔可以喺呢度另外抄一套(drift 咗預載就會落錯歌)。
-import { CHIP_PAGE_SIZE, buildChips } from '../../utils/homeChips';
+import { CHIP_PAGE_SIZE, buildChips, hasAlbum } from '../../utils/homeChips';
 import { isTooLongForAutoplay } from '../../utils/autoplay';
 // W3 —— 「隨心聽」第一首偏向已經落載咗喺機入面嘅歌(iOS;Android 恆 null 自動 no-op)。
 import { getLocalUri } from '../../audioPrefetch';
@@ -166,9 +166,13 @@ export default function HomeScreen({ hymns = [], loading = false, onPlayHymn, on
 
   // 「今日為你預備」:有人手精選(featured=1)就由精選池抽,冇就由全庫抽 —— 兩級 fallback。
   // 明買明賣係日更抽選,唔冒充個性化推薦(§2.4)。
+  // HOME-DISCOVERY-QUALITY-FILTER(Eric 2026-09-02 拍板)—— 兩級 pool 都要
+  // 先過 hasAlbum() 先揀,唔淨係「即刻揀歌」有呢條規矩(同 homeChips.js
+  // 嘅 hasAlbum 共用一份定義,唔好抄第二份)。
   const todayPicks = useMemo(() => {
-    const featuredPool = hymns.filter((h) => h.featured === 1);
-    const pool = featuredPool.length >= 6 ? featuredPool : hymns;
+    const qualityPool = hymns.filter(hasAlbum);
+    const featuredPool = qualityPool.filter((h) => h.featured === 1);
+    const pool = featuredPool.length >= 6 ? featuredPool : qualityPool;
     return dailyPickBalanced(pool, 'today', 6, LANGS);
   }, [hymns]);
 
@@ -208,9 +212,14 @@ export default function HomeScreen({ hymns = [], loading = false, onPlayHymn, on
     if (!hasData) return;
     // 長檔閘(Eric 2026-08-25 拍板)—— 隨心聽唔抽 >10 分鐘長檔,同自動接續
     // 池同一把尺(utils/autoplay.js isTooLongForAutoplay 註解有成單事故背景)。
-    // 防呆:全庫都係長檔(理論情況)就唔 filter,個掣唔可以變死掣。
-    const pool = hymns.filter((h) => !isTooLongForAutoplay(h));
-    const shuffled = randomShuffle(pool.length > 0 ? pool : hymns);
+    // HOME-DISCOVERY-QUALITY-FILTER(Eric 2026-09-02 拍板)—— 加埋 hasAlbum()
+    // 揸走冇正式專輯歸屬嘅歌。防呆分兩層:先試「長檔 + album 都過」,唔夠
+    // 就退一步淨過 album 嗰層,全庫都冚唔到先真係唔 filter——個掣唔可以
+    // 因為 filter 太嚴變死掣。
+    const strictPool = hymns.filter((h) => !isTooLongForAutoplay(h) && hasAlbum(h));
+    const albumOnlyPool = hymns.filter(hasAlbum);
+    const pool = strictPool.length > 0 ? strictPool : (albumOnlyPool.length > 0 ? albumOnlyPool : hymns);
+    const shuffled = randomShuffle(pool);
     const hit = shuffled.findIndex((h) => h?.id != null && getLocalUri(h.id) != null);
     if (hit > 0) {
       const first = shuffled[0];

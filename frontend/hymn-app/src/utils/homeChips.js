@@ -22,12 +22,29 @@
 // (2026-08-23 Eric 拍板「唔撞」)—— 語言 chip 剔走器樂,**兒童 chip 唔剔**
 // (兒童=受眾維度、純音樂=形式維度,正交)。舊 cache 冇個欄 → `undefined
 // !== 1` 為真 → 行為同改動前一樣。
+//
+// HOME-DISCOVERY-QUALITY-FILTER(Eric 2026-09-02 拍板)—— 「即刻揀歌」揸過
+// 冇正式專輯歸屬嘅歌(CantonHymn 呢類翻唱/教學片source,封面淨係模糊嘅live
+// 截圖,唔係正式發行)。DB 已經有 `album` 呢個欄(`/api/hymns` 早已經出緊,
+// 唔使改 backend),非空即當「有正式專輯歸屬」——`hasAlbum()` 套晒落
+// 五個 chip,**包括純音樂 chip 本身**(Eric 明確拍板:純音樂 chip 保留,
+// 但入面都要係「有正式album嘅純音樂歌」先收,唔係齋 instrumental===1 就得)。
+// 冇 album 呢個欄嘅舊 cache row(undefined)一律當「冇 album」剔走——呢個
+// 係刻意嘅(寧可暫時少啲歌,都好過又滲返模糊封面嗰種歌)。
+// export 埋俾 HomeScreen.js 嘅「隨心聽」/「今日為你預備」共用(Eric 2026-09-02
+// 拍板連呢兩個入口都要套同一條 quality filter)——單一定義,唔好逐處抄一份
+// 開係咪空字串嘅邏輯,抄多份第日改一邊會 drift(呢個 file 頂部大註解已經講過
+// 呢個教訓,見 W2)。
+export function hasAlbum(h) {
+  return !!(h && h.album && String(h.album).trim() !== '');
+}
+
 export const CHIP_DEFS = [
-  { id: 'cantonese',    title: '粵語敬拜', match: (h) => h.lang === '粵語' && h.instrumental !== 1 },
-  { id: 'mandarin',     title: '國語敬拜', match: (h) => h.lang === '國語' && h.instrumental !== 1 },
-  { id: 'english',      title: 'English',  match: (h) => h.lang === '英文' && h.instrumental !== 1 },
-  { id: 'kids',         title: '兒童詩歌', match: (h) => h.lang === '兒童' },
-  { id: 'instrumental', title: '純音樂',   match: (h) => h.instrumental === 1 },
+  { id: 'cantonese',    title: '粵語敬拜', match: (h) => h.lang === '粵語' && h.instrumental !== 1 && hasAlbum(h) },
+  { id: 'mandarin',     title: '國語敬拜', match: (h) => h.lang === '國語' && h.instrumental !== 1 && hasAlbum(h) },
+  { id: 'english',      title: 'English',  match: (h) => h.lang === '英文' && h.instrumental !== 1 && hasAlbum(h) },
+  { id: 'kids',         title: '兒童詩歌', match: (h) => h.lang === '兒童' && hasAlbum(h) },
+  { id: 'instrumental', title: '純音樂',   match: (h) => h.instrumental === 1 && hasAlbum(h) },
 ];
 
 // 每頁 4 首(唔係 5)—— 5 首嗰陣最尾一首會俾 mini player 擋住,見唔晒。
