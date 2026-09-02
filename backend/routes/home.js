@@ -5,7 +5,6 @@ import { Router } from 'express';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { getDb } from '../lib/serverDb.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const BIBLE_VERSES_PATH = path.join(__dirname, '..', 'data', 'bible-verses.json');
@@ -16,33 +15,14 @@ const router = Router();
 // 外)前端 `src/services/homeApi.js`(homeApi object)全 repo grep 都搵唔到
 // 第二個呼叫者(PERF-BASELINE-1A A4)。`/daily-verse` 係 `homeApi.js` 淨係
 // export 嗰個 method,繼續行真 DB 查詢;其餘 9 條即刻 410 Gone,**唔再執行**
-// 呢啲 route 本身嘅 query(`queryAll`/`queryOne` 呢兩個 helper 仍然保留畀
-// `/daily-verse` 以外?——不,`/daily-verse` 本身唔用呢兩個 helper,佢直接讀
-// bible-verses.json;`queryAll`/`queryOne` 淨係俾下面 9 條已停用嘅 route
-// 用,依家冇被呼叫到,留喺度唔刪(Stage 3 先執整份檔)。唔刪檔、掛載位置/
-// router 結構原封不動。
+// 呢啲 route 本身嘅 query。保留 stub 等 access log(2A A-3)跑一日真流量,
+// 見 PERF-STAGE2-EXEC-20260902.md §4;Stage 3(2026-09-02)已剷走冇人再用嘅
+// `queryAll`/`queryOne` DB helper 同 `getDb` import(`/daily-verse` 本身直接
+// 讀 bible-verses.json,唔經呢兩個 helper)。唔刪檔、掛載位置/router 結構
+// 原封不動。
 function gone(req, res) {
   console.log(`[deprecated-route] ${new Date().toISOString()} ${req.method} ${req.originalUrl}`);
   res.status(410).json({ error: 'Gone', message: '呢條 route 已停用 —— 前端冇再用緊(PERF-STAGE2-EXEC-20260902 §2A A-4)' });
-}
-
-// Helper: execute query and return array of objects
-async function queryAll(sql, params = []) {
-  const db = await getDb();
-  const stmt = db.prepare(sql);
-  if (params.length) stmt.bind(params);
-  const rows = [];
-  while (stmt.step()) {
-    rows.push(stmt.getAsObject());
-  }
-  stmt.free();
-  return rows;
-}
-
-// Helper: execute query and return first row
-async function queryOne(sql, params = []) {
-  const rows = await queryAll(sql, params);
-  return rows[0] || null;
 }
 
 // 1. 每日精選一句 — 隨機返回一首 featured 詩歌 —— 已停用(A-4)
