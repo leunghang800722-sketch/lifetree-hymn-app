@@ -152,7 +152,7 @@ async function sendBeacon(event, detail) {
       clientTs: Date.now(),
       platform: Platform.OS,
       deviceId,
-      detail: String(detail).slice(0, 300),
+      detail: String(detail).slice(0, 400), // PERF-FINAL-OPUS §A4.3：backend b0f7931 已放寬到 400，client 要同步先唔截尾
     };
     await fetch(`${API_BASE}/api/client-log`, {
       method: 'POST',

@@ -179,8 +179,13 @@ async function fetchLyricsMap() {
 // 先落(相對 T0 嘅時間戳,語義不變)。
 function waitBeforeLyricsFetch() {
   return new Promise((resolve) => {
+    let done = false;
+    const finish = () => { if (!done) { done = true; resolve(); } };
+    // PERF-FINAL-OPUS §A4.2：runAfterInteractions 理論上可以永遠唔 fire（長期有
+    // interaction），加 15s hard cap 堵靜默失效——lyrics fetch 最遲 15s 一定開。
+    const cap = setTimeout(finish, 15000);
     InteractionManager.runAfterInteractions(() => {
-      setTimeout(resolve, 8000);
+      setTimeout(() => { clearTimeout(cap); finish(); }, 8000);
     });
   });
 }
