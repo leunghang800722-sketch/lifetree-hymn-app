@@ -19,23 +19,50 @@ async function fetchWithTimeout(url, ms = 8000) {
   }
 }
 
-async function fetchAllHymns() {
+// F-1(PERF-STAGE2-2B-20260902,Opus 5 覆核 baseline 之後嘅 course-
+// correction)——原本一嘢 8s 冚成個 request(headers+body),1B baseline
+// 5/5 run 第一次嘗試全部撞 8s(body 3.66MB 傳輸成日都要 3-7 秒以上),
+// 「重試一次」嗰個安全網幾乎次次都要行,實際逾時拉到 16s。淨係改做
+// 30s(執行單原文)會令**真斷網**要等 30+30=60s 先報錯,方向錯。而家
+// 拆做兩段、同一條 request(同一個 AbortController/signal——abort 就係
+// cancel 緊呢條 request,唔係開多一條):
+//   1) headers 未到(fetch() 都未 resolve)—— 8s 內照 abort,斷網偵測
+//      能力唔變差。
+//   2) headers 一到就換一個新嘅 30s timeout 專登俾 body(慢網/tunnel
+//      body 傳輸慢先會頂到呢個)。
+// 淨係 /api/hymns 用,/api/version 保持原本單一 fetchWithTimeout(8s,
+// 見上面)。D-1 嘅 ttfb/body/parse mark 依家逐個 attempt 分開記
+// (hTtfb1/hBody1/hPars1、hTtfb2/hBody2/hPars2),先睇到兩次嘗試各自
+// 嘅分佈,唔會俾第一次嘅數蓋咗第二次(mark() write-once)。
+async function fetchHymnsTwoStage(url, attempt) {
+  const controller = new AbortController();
+  let t = setTimeout(() => controller.abort(), 8000);
   try {
-    const r = await fetchWithTimeout(`${API_BASE}/api/hymns`);
-    mark('hymnsTtfb'); // D-1(PERF-STAGE2-2B-20260902) — headers 到嗰刻
+    const r = await fetch(url, { signal: controller.signal });
+    clearTimeout(t);
+    mark(`hTtfb${attempt}`);
     if (!r.ok) return { hymns: [], dataVersion: null };
-    // D-1:r.json() 改做 r.text()+JSON.parse 兩步,行為完全不變(結果一樣),
-    // 淨係為咗喺兩步之間可以插一個 mark 拆開「攞 body 」同「parse」兩段耗時。
-    const t = await r.text();
-    mark('hymnsBody');
-    note('hymnsBytes', t.length);
-    const body = JSON.parse(t);
-    mark('hymnsParse');
+    t = setTimeout(() => controller.abort(), 30000);
+    let text;
+    try {
+      text = await r.text();
+    } finally {
+      clearTimeout(t);
+    }
+    mark(`hBody${attempt}`);
+    note('hymnsBytes', text.length);
+    const body = JSON.parse(text);
+    mark(`hPars${attempt}`);
     const d = body?.data || body;
     return { hymns: Array.isArray(d) ? d : [], dataVersion: body?.dataVersion ?? null };
   } catch (e) {
+    clearTimeout(t);
     return { hymns: [], dataVersion: null };
   }
+}
+
+async function fetchAllHymns(attempt = 1) {
+  return fetchHymnsTwoStage(`${API_BASE}/api/hymns`, attempt);
 }
 
 // 開機第一次揸全量歌單:冷網絡(DNS/TLS 握手)偶爾要幾秒,單試一次逾時就當
@@ -43,9 +70,13 @@ async function fetchAllHymns() {
 // 斷咗」,但其實得返嗰一嘢request慢咗,唔係真係冇網。失敗先重試多一次先真係
 // 當攞唔到。
 async function fetchAllHymnsWithRetry() {
-  const first = await fetchAllHymns();
-  if (first.hymns.length > 0) return first;
-  return fetchAllHymns();
+  const first = await fetchAllHymns(1);
+  note('hymnsAtt1Ok', first.hymns.length > 0 ? 1 : 0); // F-1 量度指標:第一次嘗試成功率
+  if (first.hymns.length > 0) { note('hymnsAttempts', 1); return first; }
+  mark('hymns2Start'); // D-1 — 第二次嘗試開始嗰刻,俾 a2t(attempt2 ttfb)計相對時間
+  const second = await fetchAllHymns(2);
+  note('hymnsAttempts', 2);
+  return second;
 }
 
 // dataVersion cache-bust(SUPERVISION-LOG 2026-07-27 18:00)—— 24 小時內兩單

@@ -43,6 +43,19 @@ export function note(name, value) {
   safe(() => { if (!notes.has(name)) notes.set(name, value); });
 }
 
+// F-1/D-1 course-correction(Opus 5 2026-09-02)—— section 計時要用
+// performance.now()(sub-ms、monotonic,唔受掛鐘調整影響),唔用 Date.now()
+// (整數 ms,量幾 ms 級嘅 section compute 會有量化誤差)。有安全 fallback,
+// 唔會因為呢個環境冇 performance.now() 就整個 render 炸咗。
+export function now() {
+  try {
+    if (global.performance && typeof global.performance.now === 'function') {
+      return global.performance.now();
+    }
+  } catch (_) {}
+  return Date.now();
+}
+
 export function elapsedSinceT0() {
   return Date.now() - T0;
 }
@@ -104,7 +117,7 @@ export function useRenderCount(name) {
   return ref.current;
 }
 
-const RENDER_NAMES = ['Home', 'Library', 'Mine', 'Mini', 'TabBar', 'FullPlayer', 'AppContent'];
+const RENDER_NAMES = ['Home', 'Library', 'Mine', 'Mini', 'TabBar', 'FullPlayer', 'AppContent', 'PlayerProvider'];
 
 function renderSummary() {
   return RENDER_NAMES.map((n) => `${n}=${renderCounts.get(n) ?? 0}`).join(' ');
@@ -164,9 +177,10 @@ export function schedulePerfMarksBeacon() {
     setTimeout(() => {
       safe(() => {
         // D-1(PERF-STAGE2-2B-20260902):dropped `rnst:` summary from this
-        // string to make room — 冇任何比較表格用過呢個欄,拎走純為咗
-        // 300 字上限畀新加嘅 hymns fetch 三段(ttfb/body/parse)留位,
-        // 唔影響任何改前/改後對比嘅欄位。
+        // string to make room — 冇任何比較表格用過呢個欄。
+        // F-1 course-correction(Opus 5 2026-09-02)—— ttfb/body/parse 依家
+        // 逐個 attempt 記(a1_*/a2_*),att=實際做咗幾多次嘗試,ok1=第一次
+        // 嘗試自己攞唔攞到 6405 首(F-1 嘅主要量度指標,改前 1B 基準 0/5)。
         const detail = [
           `b0=0`,
           `app=${getMark('app')}`,
@@ -179,18 +193,20 @@ export function schedulePerfMarksBeacon() {
           `verMs=${durMark('verStart', 'verEnd')}`,
           `verSkip=${getNote('verSkip')}`,
           `hymnsMs=${durMark('hymnsStart', 'hymnsEnd')}`,
-          // D-1 新增:/api/hymns 單一 fetch 拆三段——headers 到(ttfb)、
-          // r.text() 完(body)、JSON.parse 完(pars);byt=body 嘅 string.length。
-          `ttfb=${durMark('hymnsStart', 'hymnsTtfb')}`,
-          `body=${durMark('hymnsTtfb', 'hymnsBody')}`,
-          `pars=${durMark('hymnsBody', 'hymnsParse')}`,
+          `att=${getNote('hymnsAttempts')}`,
+          `ok1=${getNote('hymnsAtt1Ok')}`,
+          `a1t=${durMark('hymnsStart', 'hTtfb1')}`,
+          `a1b=${durMark('hTtfb1', 'hBody1')}`,
+          `a1p=${durMark('hBody1', 'hPars1')}`,
+          `a2t=${durMark('hymns2Start', 'hTtfb2')}`,
+          `a2b=${durMark('hTtfb2', 'hBody2')}`,
+          `a2p=${durMark('hBody2', 'hPars2')}`,
           `byt=${getNote('hymnsBytes')}`,
           `fetch=${fetchSummary()}`,
-          `rss=na`,
         ].join(' ');
         sendBeacon('perfMarks', detail);
       });
-    }, 15000);
+    }, 25000); // F-1 course-correction —— 15s→25s,俾單次成功嘅 attempt(8s+body)更多機會喺窗口內完成
   });
 }
 
