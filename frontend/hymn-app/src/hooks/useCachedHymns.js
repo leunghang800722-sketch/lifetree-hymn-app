@@ -45,17 +45,27 @@ function makeAbortRejectPromise(controller) {
   });
 }
 
-// F-1(PERF-STAGE2-2B-20260902,Opus 5 覆核 baseline 之後嘅 course-
-// correction)——原本一嘢 8s 冚成個 request(headers+body),1B baseline
-// 5/5 run 第一次嘗試全部撞 8s(body 3.66MB 傳輸成日都要 3-7 秒以上),
-// 「重試一次」嗰個安全網幾乎次次都要行,實際逾時拉到 16s。淨係改做
-// 30s(執行單原文)會令**真斷網**要等 30+30=60s 先報錯,方向錯。而家
-// 拆做兩段、同一條 request(同一個 AbortController/signal——abort 就係
-// cancel 緊呢條 request,唔係開多一條):
+// F-1(PERF-STAGE2-2B-20260902)—— E-3(PERF-STAGE2-2E-20260902)已更正
+// 註解:呢度**原本**寫住「1B baseline 5/5 run 第一次嘗試全部撞 8s」/
+// 「實際逾時拉到 16s」,呢兩句已經俾 Opus 5(PERF-STAGE2-2B-OPUS-
+// 20260902.md §1)撤回——Expo SDK 56 嘅 `global.fetch` 係 expo/fetch
+// (winter runtime),`fetch()` 喺 **headers** 到就 resolve
+// (`.responseReceived`,唔係等成個 body),`fetch=api/hymns:1` 呢個欄
+// 已經證明 1B baseline 冇撞過 retry。真相係:改之前嗰個單一 8s
+// timeout **淨係保護緊 headers(ttfb)**,body 由頭到尾冇 cap 過
+// (body 3.66MB 傳輸秒級,10-11s 係單次 fetch 嘅真實耗時,唔係
+// 8s燒完+retry)。而家拆做兩段、同一條 request(同一個
+// AbortController/signal——abort 就係 cancel 緊呢條 request,唔係開
+// 多一條):
 //   1) headers 未到(fetch() 都未 resolve)—— 8s 內照 abort,斷網偵測
 //      能力唔變差。
 //   2) headers 一到就換一個新嘅 30s timeout 專登俾 body(慢網/tunnel
-//      body 傳輸慢先會頂到呢個)。
+//      body 傳輸慢先會頂到呢個)。E-1 之前呢個 30s 淨係識令底層
+//      URLSession/OkHttp task 取消,但因為 expo/fetch 嘅 `text()` 只等
+//      `.bodyCompleted`、唔等 `.errorReceived`(PERF-STAGE2-2B-OPUS-
+//      20260902.md §2.6),JS 側 `await r.text()` 會永遠掛住、catch/
+//      retry 踩唔到。E-1 加咗 `makeAbortRejectPromise` 同 `r.text()`
+//      race,而家 30s 到咗先真係會 reject、catch 先行得到。
 // 淨係 /api/hymns 用,/api/version 保持原本單一 fetchWithTimeout(8s,
 // 見上面)。D-1 嘅 ttfb/body/parse mark 依家逐個 attempt 分開記
 // (hTtfb1/hBody1/hPars1、hTtfb2/hBody2/hPars2),先睇到兩次嘗試各自

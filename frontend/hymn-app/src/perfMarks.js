@@ -18,6 +18,12 @@
 import { useRef } from 'react';
 import { Platform } from 'react-native';
 
+// E-4(PERF-STAGE2-2E-20260902)—— Fable 5.1 拍板:效能工程期間(Stage 2)
+// 保持開,因為 F-1/A-6 呢類「真機蜂窩網 ttfb/body 分佈、有冇撞到 retry」
+// 嘅嘢淨係真機量得到,模擬器數字唔代表數(PERF-STAGE2-2B-OPUS-
+// 20260902.md §10 P0)。呢個係恆常上行流量(每次開 app 4 條 beacon +
+// 最多 10 條 perfNav)+ backend client-log 量,效能工程收爐之後應該關
+// 返做 false。
 export const PERF_MARKS_ENABLED = true;
 
 const T0 = Date.now();
