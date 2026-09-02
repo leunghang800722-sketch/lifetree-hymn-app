@@ -248,6 +248,7 @@ export function schedulePerfHomeBeacon() {
           `recent=${getMark('secRecent')}`,
           `lib=${getMark('libraryRenderMs')}`,
           `lib0=${getMark('libraryRenderMs0')}`,
+          `libIdle=${getMark('libIdleMount')}`, // E-2(PERF-STAGE2-2E-20260902)—— Library idle pre-mount 幾時 fire(見 App.js)
           `mine=${getMark('mineRenderMs')}`,
         ].join(' ');
         sendBeacon('perfHome', detail);
