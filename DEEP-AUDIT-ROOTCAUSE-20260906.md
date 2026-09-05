@@ -43,10 +43,10 @@ Eric 原話：「唔要頭痛醫頭腳痛醫腳」。所以本文嘅組織原則
 | **C9** | resolve 失敗路徑 76 秒 vs client 死線 10-20 秒 | 串行三策略從未按實測收割，`tv` 策略 0/1087 仍然每次白蝕 37.5 秒 | both（用戶可見） | **P1** | ✅ **最硬**（ops-metrics 累計） | W2 |
 | **C10** | 死碼／做咗未接線 | 刪嘢刪剩 + 設計咗嘅成功態從來冇駁上去 | both | P2 | ➖ | W7 |
 | **C11** | 依賴／建置／部署治理不一致 | 版本鎖定政策、簽名、部署 guard 三樣都係「個別做過，冇統一」 | both | P2 | ➖ | W8 |
-| **C12** | Android 專項 | **待 1B** | Android | ? | ❌ 零數據 | W9 |
+| **C12** | Android 專項 | 三件事各自獨立：①詩歌庫畫面 mount 一次 +170MB／+2,576 View（native heap 唔還）②外來權限對話框凍住全部 JS timer（beacon 遲到冇痕跡）③FGS/通知/manifest 全部合規、Android OTA 一直有落地（推翻「Android 零遙測＝OTA 冇到」嘅假設） | Android | **P2**（②降到 P3-user / P2-儀器） | ✅ 首次有 Android 真數（1B + Opus 重量） | W9（②嘅儀器部分併入 W1） |
 | **C13** | 孤立正確性缺陷（**刻意唔當根源**） | 冇共同根源，純粹係七條各自獨立嘅細 bug | both | P2/P3 | ➖ | W7 |
 
-**13 個 cluster，8 波（+1 波待 1B）。**
+**13 個 cluster，9 波**（W9 喺 2026-09-06 收到 1B 之後定咗範圍，見 §6）。
 
 ---
 
@@ -329,9 +329,9 @@ Eric 原話：「唔要頭痛醫頭腳痛醫腳」。所以本文嘅組織原則
 
 ---
 
-### C12 — Android 專項 【待 1B】
+### C12 — Android 專項 【P2，1B 已出，見 §6】
 
-見 §6。
+**根源一句**：呢個「cluster」出咗 1B 之後，**同 C13 一樣唔係一個真根源** —— 三條 finding 冇共同上游（一條係 Library 畫面嘅記憶體足印、一條係 Android 平台生命週期對 JS timer 嘅影響、一條係「本來以為有問題結果冇問題」嘅核實）。老實標明佢係「平台專項清單」，一波（W9）過完算。明細、嚴重度、證據強度、修法方向見 §6。
 
 ---
 
@@ -378,7 +378,7 @@ Eric 原話：「唔要頭痛醫頭腳痛醫腳」。所以本文嘅組織原則
 ### 通用量度紅線（每一波都適用）
 
 1. **iOS**：照 1C 方法——Release build、`-derivedDataPath` 全新、`Expo.plist` `EXUpdatesCheckOnLaunch=NEVER`、經 **prod tunnel**（唔准 loopback）、`simctl uninstall` 再 install（memory：同 bundle id install 唔會真換二進制，要 `get_app_container` 核 bytes）、A/B **交錯** 5 run。
-2. **Android**：照 1B 方法（待 1B 出咗定案）。AVD `hymntest` + release APK + 最新 OTA JS。
+2. **Android**：照 **`DEEP-AUDIT-1B-OPUS-20260906.md` §8 + §10** 嘅方法（唔係 1B 原文）。AVD `hymntest` + release APK；**`pm clear` 嘅 run 每次都會重新落一次 OTA bundle，`lyrMs`/`a1b` 要標明含並行下載**；**每次都要確認 `~/.hymn-deploy/ota-groups.log` 最後一條 android sha = 量緊嗰個 commit**（唔好再重蹈「OTA commit 查唔到」—— `eas update*` 系列俾 gate 擋，唔代表冇答案，本地 publish log 先係權威）；記憶體要出 `dumpsys meminfo` 嘅 `App Summary` 分項 **+ `Objects.Views`**，唔可以淨係抄 TOTAL PSS；**播放線同詩歌庫線要分開量**（兩者混埋會將 Library 成本當成播放洩漏）。
 3. 一次只開一部機；`/tmp/claude-ios-cleanup.hold`；收工清（CLAUDE.md）。
 4. **wall-clock 秒數浮動 55-106%**（memory）→ 唔准用非交錯嘅前後對比落判斷；bytes / server ms / render 次數先係穩定指標。
 5. 唔准喺 Eric 真機 QA 進行緊嗰陣部署（W8 之後就有 code guard，之前靠人手）。
@@ -390,7 +390,7 @@ Eric 原話：「唔要頭痛醫頭腳痛醫腳」。所以本文嘅組織原則
 
 | | |
 |---|---|
-| **範圍** | 新 `src/clientLog.js` 統一送信（platform/deviceId/appVersion/updateId/sessionId）；三套實作（App.js logDiag / track-player-service / audioPrefetch）改用佢；`navBeaconsSent` cap 10→40 + capped beacon；backend `clientLog.js` 白名單擴欄；`clientLogStore.js` mkdir/chmod 搬 module load + async writer；`/api/client-log` per-IP 節流；`opsMetrics` 加 `deprecatedRouteHits` + `resolve.failMs` 直方圖 + 三個 cache size gauge；`userSync` 未知 op beacon；outbox 長度 beacon；`ops/perf/classify-devices.mjs` 剔除規則 code 化 |
+| **範圍** | 新 `src/clientLog.js` 統一送信（platform/deviceId/appVersion/updateId/sessionId）；三套實作（App.js logDiag / track-player-service / audioPrefetch）改用佢；`navBeaconsSent` cap 10→40 + capped beacon；**每條 beacon 加 `sinceLaunchMs = Date.now() - T0`（`perfMarks.js:29` `T0` 現成）**（1B/C12-2：外來對話框可以令 `t=15`/`t=60`/`perfMarks@25s` 遲 132 秒到達而 beacon 本身零痕跡，呢啲 label 而家係名義值唔係實測值。**唔使加 `dialogBlockedMs`** —— `sinceLaunchMs − 名義 delay` 就係）；backend `clientLog.js` 白名單擴欄；`clientLogStore.js` mkdir/chmod 搬 module load + async writer；`/api/client-log` per-IP 節流；`opsMetrics` 加 `deprecatedRouteHits` + `resolve.failMs` 直方圖 + 三個 cache size gauge；`userSync` 未知 op beacon；outbox 長度 beacon；`ops/perf/classify-devices.mjs` 剔除規則 code 化 |
 | **唔包** | native SWStallWatchdog beacon（要 build → W8）；任何 threshold 改動 |
 | **before** | 1E §1（帶 platform 嘅 row 37% = 970/2649；iOS 認證真機 1 部、Android 0 部）；1E §5 `[access]` 表；1C 限制#6（15 tap 得 10 條）；`ops-metrics.json` 現值 |
 | **after 量法** | iOS sim（1C 方法）跑 S1×3 + S3（15 tap 要收足 15 條 perfNav）；Android AVD 同樣；本機 harness 量 1000 次 clientLog append 耗時（唔准 prod 洗版）；跑 24 小時後數 `platform` 覆蓋率 |
@@ -502,9 +502,20 @@ Eric 原話：「唔要頭痛醫頭腳痛醫腳」。所以本文嘅組織原則
 
 ---
 
-### W9 — Android 專項【待 1B】
+### W9 — Android 專項（C12）【1B 已出，可排期】
 
-見 §6。
+| | |
+|---|---|
+| **範圍** | ① **C12-1 詩歌庫記憶體足印**：讀 `LibraryScreen` 嘅 FlatList props（`windowSize` / `initialNumToRender` / `maxToRenderPerBatch` / `removeClippedSubviews` / `getItemLayout`），收窄 render window；封面圖 `Image` 加明確 `resizeMode` + 尺寸上限。② **C12-7 三條 1B 冇測嘅**：`ADMIN-002`（`AdminEditHymnSheet.js:166` Android 冇 KAV，照 `AddToPlaylistSheet.js:69-76` 嘅手動 Keyboard listener 做）、`INF-008`（headless service handler）、`INF-007`（六個 Remote handler 加 catch）。③ **C12-6 media notification churn**：只加量度，唔改行為。④ 補做 1B 三行冇 archive 嘅 Android 專項量度（logcat ANR/FATAL 全程存檔、返回鍵、鍵盤 dismiss 撳「歌曲行」） |
+| **唔包** | `native heap 唔還`嗰 140MB 嘅修法（要先確認係咪 Fresco bitmap pool，未確認唔准郁）；C12-2 嘅機制追查（另開單）；C12-4 debug keystore（C11/W8）；C12-5 test `<queries>`（C11/W8）；任何掂 PlayerProvider 起播/stall/watchdog 嘅嘢 |
+| **before** | `DEEP-AUDIT-1B-OPUS-20260906.md` §8 全表。記憶體專用：播歌留首頁 PSS 320,655 / 459,293 / 468,825（+6/66/181s）、Views 755/858/858；撳詩歌庫 10 秒 → PSS 639,774、native heap 409,720、**Views 3,434**；離開詩歌庫 → Views 858、native heap 401,048 |
+| **after 量法** | AVD `hymntest`，同一部、同一 commit、同一 tunnel。**四段式，逐段量，唔准合併**：(a) `pm clear`+`pm grant` 冷開 ×5；(b) `force-stop` 熱 data ×5；(c) 播歌 3 分鐘**唔撳詩歌庫**，`dumpsys meminfo` 取 `App Summary` 分項 + `Objects.Views`，+6/+66/+181s；(d) 撳詩歌庫，+10/+30/+60/+120s 同一組數；(e) 撳返首頁 +25s。**成功線：撳詩歌庫嘅 `Views` 增量由 +2,576 減到 <800，PSS 增量 <60MB，`lib` render 時間唔准劣化過 219.23ms（S2 max）**。C12-2 嘅 after 靠 W1 嘅 `sinceLaunchMs`（見下） |
+| **正控** | 每段都要有「唔播放留首頁 30 秒」呢個負控（S1 raw 已知答案：Views 758→763→763、PSS 283-313k→344-346k）；logcat 段一定要有一個「grep 得到嘅良性字串」計數證明 filter 有效**而且要存檔** |
+| **負控** | 改完之後詩歌庫要照樣滾得到最尾一首（6.5k 首）、搜尋照樣出到結果 —— 收窄 render window 最易整爛呢兩樣 |
+| **部署** | 純 OTA（如果只改 JS）。`ADMIN-002` / `INF-007` / `INF-008` 全部係 JS |
+| **工時** | 1 日（前端 0.5 + AVD 量度/驗收 0.5） |
+| **依賴** | **W1**（`sinceLaunchMs` 出咗先量到 C12-2 嘅 after；`navBeaconsSent` cap 出咗先收得足 15 條 perfNav）。同 W6 有重疊（都掂 Library render），**排喺 W6 之後或者同 W6 一齊做**，唔好兩波各改一次同一個 FlatList |
+| **紅線** | 每一項 Android 專項結論**必須有 raw 入 `ops/perf/` 存檔**（1B 呢一節最大嘅失分就係冇存檔）；弱網一律要有獨立吞吐正控，冇正控唔准落「限流有效／無效」嘅判詞 |
 
 ---
 
@@ -519,7 +530,10 @@ W1 (儀器) ──┬─► W2 (resolve+節流, backend restart)
             │
             ├─► W7 (死碼+孤立, 需 deprecatedRouteHits 7日)
             │
-            └─► W8 (native build)  ─► W9 (Android 專項, 待 1B)
+            ├─► W8 (native build)
+            │
+            └─► W6 ─► W9 (Android 專項 C12；同 W6 都掂 Library FlatList,
+                          唔好兩波各改一次 —— 一齊做或者緊接住做)
 ```
 總工時估算：**約 13 個工作日**（Sonnet 執行）+ 7 日 W2 觀察窗 + build 等候。
 
@@ -535,8 +549,8 @@ W1 (儀器) ──┬─► W2 (resolve+節流, backend restart)
 | **N-4** | **SRV-3**（`/api/me` 前綴令 share/invites 行多次 requireAuth） | Fail-safe（多做一次驗證，唔係少做）。真實成本 = 2× DB SELECT+UPDATE，喺現時用戶量下係雜訊。**只改註解對正實際**（已放 W7），唔改掛載結構 |
 | **N-5** | **CACHE-003**（全量 refresh 失敗時靜默用舊 cache，冇「舊資料」提示） | 1A 自己標「資訊/設計決定」。加提示條有機會令正常用戶頻繁見到唔關佢事嘅警告。**除非 D-1 拍板咗要做全局錯誤提示條，否則唔郁** |
 | **N-6** | **INF-002**（`MIN_BYTES=200KB` 拒收真短歌） | 修法要「用 duration 交叉核」= 改 prefetch 判斷邏輯 = 掂到 iOS 本地 cache 路徑（memory 紅線：唔擴大本地音訊副本）。真短歌喺呢個庫罕見。**只喺 W1 加一個能分辨「真短歌」定「錯誤頁」嘅 beacon 欄位**，收咗數先講 |
-| **N-7** | **`wallClockDrift` event 本身** | 1E §4.2 已證：呢個 event 結構上分唔開「真時鐘飄移」同「app 背景咗一晚」（max 13.3 小時）。**現狀係一個永遠解讀唔到嘅 event**。W1 加 `appState`/`bgDurationMs` 欄位；如果加咗之後仍然分唔開，下一波直接剷 |
-| **N-8** | **S6 弱網量度（1C 最大缺口）** | 呢部 Mac 冇 passwordless sudo、冇 Network Link Conditioner、repo 內冇 throttle 工具（1C §5 三條原因逐條實證）。**唔好為咗補呢個缺口去裝系統級工具或者攞 sudo**。替代：靠 Eric 真機蜂窩網 beacon（D-12）+ backend `[stream]` cold/warm 分佈（1E 已有：cold ttfb p50 4059ms vs warm 182ms） |
+| **N-7** | **`wallClockDrift` event 本身** | 1E §4.2 已證：呢個 event 結構上分唔開「真時鐘飄移」同「app 背景咗一晚」（max 13.3 小時）。**現狀係一個永遠解讀唔到嘅 event**。W1 加 `appState`/`bgDurationMs` 欄位；如果加咗之後仍然分唔開，下一波直接剷 <br>**🔴 2026-09-06 1B 後放寬（`DEEP-AUDIT-1B-OPUS` §2.4）**：「永遠解讀唔到」講得太死。①該日 6 條 android drift **全部 `trackState="none"`** —— `trackState` 已經係一個現成嘅第一層判別欄，唔使等 W1。②喺「前台被外來 Activity 阻塞」呢類個案，`driftMs` 係一個**準確**嘅阻塞時長計（實測 `driftMs=131162` vs 對話框在頂 132 秒；1B 另一次 `driftMs=103998`）。**改為：加 `appState`/`bgMs` 之外保留 `trackState` 做分流，唔准剷。** |
+| **N-8** | **S6 弱網量度（1C 最大缺口）** | 呢部 Mac 冇 passwordless sudo、冇 Network Link Conditioner、repo 內冇 throttle 工具（1C §5 三條原因逐條實證）。**唔好為咗補呢個缺口去裝系統級工具或者攞 sudo**。替代：靠 Eric 真機蜂窩網 beacon（D-12）+ backend `[stream]` cold/warm 分佈（1E 已有：cold ttfb p50 4059ms vs warm 182ms） <br>**⚠️ 2026-09-06 1B 後補充**：呢條「唔做」嘅理由（Mac 冇 sudo / 冇 NLC）**對 iOS 仍然成立**，但 **Android emulator 唔同** —— `adb emu network speed 3g` + `delay edge` 做到而且**部分生效**（S1→S6-S1 四個網絡欄方向一致上升：`a1t` 1.0-1.6×、`a1b` 1.2-1.8×、`lyrMs` 1.8-2.6×，體積愈大升幅愈大＝頻寬限流指紋）。問題唔係「做唔到」係「**做咗冇儀器正控**」：1B 由頭到尾冇獨立量過 shaping 開住嗰陣嘅實際吞吐，所以佢個「限流無效」判詞唔可以引。**Android 側改為：可以做，但一定要有獨立吞吐正控（shaping 期間計時下載一個已知大細嘅檔），冇正控唔准落「限流有效／無效」嘅判詞。** |
 | **N-9** | **RSS 做記憶體洩漏證據** | 1E §5 明證：呢 96 小時 backend restart 太頻密，RSS 每次歸零，鋸齒形，**用佢判洩漏唔可靠**。改用 `.size` gauge（W3）。呢條唔係「唔做」係「唔准用呢個方法」 |
 | **N-10** | **靠 UA / 時間相近反推平台** | memory `project-multi-sim-clientlog-contamination` 明文記錄呢招會出錯。W1 之前，`nativeStall`/`prefetchFail`/`RemoteDuck` 三種 event 嘅任何「幾多次」數字**一律唔可以做 before**。呢條係硬禁令唔係取捨 |
 
@@ -575,22 +589,38 @@ W1 (儀器) ──┬─► W2 (resolve+節流, backend restart)
 
 ---
 
-## 6. 待 1B 補入（C12 Android 專項）
+## 6. C12 Android 專項（1B 已出，2026-09-06 增量 re-cluster）
 
-1B（AVD `hymntest` + release APK）仲未出。以下係**目前只有靜態／間接證據**、要 1B 落地量度先可以定嚴重度同修法嘅項，出咗 1B 之後要 re-cluster 一次：
+來源：`DEEP-AUDIT-1B-ANDROID-20260906.md`（Sonnet 5 執行）+ `DEEP-AUDIT-1B-OPUS-20260906.md`（Opus 5 驗收，含喺 AVD `hymntest` 帶負控嘅兩次重現）。
+**證據前提（每次引用都要一齊寫）**：commit `75f8f95`（S1 patched embedded bundle 同 S2-S6 生產 OTA **係同一個 commit** —— 由 `~/.hymn-deploy/ota-groups.log` `2026-09-05T16:53:28Z | platform=android | sha=75f8f950…` 對返 AVD 收到嘅 `createdAt=2026-09-05T16:53:27Z`）；AVD `hymntest` 1080×2400；經 production tunnel；**所有 `source=stream` 起播數都係 progressive，唔係 HLS**（`backend/public/app-version.json` `hlsDeviceIds` 單機閘，AVD 唔喺名單）。
 
-| 項 | 現有證據 | 1B 要答嘅問題 |
-|---|---|---|
-| **ADMIN-002**（P1，1A 唯一 Android P1） | `AdminEditHymnSheet.js:166` `behavior={Platform.OS === 'ios' ? 'padding' : undefined}`——Android 分支完全冇 KAV。姊妹檔 `AddToPlaylistSheet.js:69-76` 已自行註明「Modal + Android KAV 唔穩」改用手動 Keyboard listener | 實機 focus 底部欄位，儲存/落架掣係咪真係被鍵盤遮 |
-| **INF-008**（headless service 冇 handler） | `track-player-service.js` 全檔 vs App.js：`PlaybackError`/`PlaybackState`/`ActiveTrackChanged`/`PlayWhenReadyChanged` 只喺 App.js 註冊，`PlaybackQueueEnded` 冇人註冊。Android app 被殺後 headless 場景無任何 handler | app swipe 走之後通知列繼續播，播完一首會唔會停／點表現 |
-| **INF-007**（六個 Remote handler 無 catch） | `track-player-service.js:20,28-38`——只有 RemoteDuck 有 catch。unhandled rejection 零診斷 | Android FGS 場景下有冇實際 reject |
-| **Manifest 權限**（我核實） | `AndroidManifest.xml` 有 `POST_NOTIFICATIONS`，但**冇明文寫 `FOREGROUND_SERVICE` / `FOREGROUND_SERVICE_MEDIA_PLAYBACK` / `WAKE_LOCK`**（推測靠 RNTP library manifest merge）。`enableOnBackInvokedCallback="false"` | 用 `apkanalyzer`/`aapt dump badging` 睇**合併後**嘅 manifest 到底有冇；targetSdk 係幾多（`android/build.gradle` 同 `gradle.properties` grep 唔到，要 1B 從 build 產物確認）；Android 14+ FGS 型別要求有冇滿足 |
-| **runtimeVersion 唔對稱**（我核實） | app.json：iOS `"5"` / Android `"4"` | 兩個 runtimeVersion 意味住 OTA 要分別 publish；1B 要確認 AVD 上嘅 APK 收唔收到最新 OTA |
-| **debug keystore**（V-3） | `build.gradle:110/115` release 用 `signingConfigs.debug`；`eas.json` 冇 android profile | 現有 APK 嘅簽名指紋；換 keystore 對現有用戶嘅實際影響（D-4） |
-| **Android 零 telemetry**（1E §7） | `nextTrackMs`/`PlaybackError`/`hlsFallback`/stall 救援全部 **0 行** | 1B 要係第一份有 Android 播放數字嘅報告 |
-| **返回鍵 / 鍵盤 / ANR** | memory `project-keyboard-dismiss-fix-20260822` 記錄 09-01 補鑊過一次（`persistTaps="handled"` 本身係病因，Android 返回掣係掩護色） | 1B 要有返回鍵行為表 + ANR 觀察 |
+### 6.1 C12 明細
 
-**留白處理**：C12 唔納入 W1-W8 任何一波。1B 出咗之後，Opus 5 要做一次**增量 re-cluster**（唔係重寫本文）：只加 C12 明細 + 決定 W9 範圍 + 檢查 1B 發現有冇推翻現有任何 cluster 嘅根源判斷（就好似 V-1 推翻咗 INF-004 咁）。
+| ID | Finding | 嚴重度 | 證據強度 | 修法方向 | 要 Eric 拍板？ |
+|---|---|---|---|---|---|
+| **C12-1** | **詩歌庫畫面 mount 一次 = +170.9MB PSS / +142.5MB native heap / +2,576 View**，10 秒內到頂，之後 110 秒零增長；離開 tab 之後 View 還原 858 但 **native heap 唔還**（401MB）。峰值 TOTAL PSS ≈ 646-649MB | **P2** | **強**：兩次獨立 session 都精確落喺 `Views=3,434`；有「播歌唔撳詩歌庫」正控（+46%，Views 858→858 平坦）同「唔播放留首頁」負控（S1 raw 15 個 meminfo，Views 758→763→763） | 唔係洩漏，係 FlatList 對 6.5k 首歌嘅 render window 太闊 + 每 row 封面圖。①先量 `windowSize`/`initialNumToRender`/`removeClippedSubviews` 實際值；②`native heap 唔還`嘅候選係 RN/Fresco bitmap pool，要用 Fresco counter 或 `dumpsys meminfo` 分項確認先郁 | ❌（純技術，唔改行為） |
+| **C12-2** | **外來權限對話框（`GrantPermissionsActivity`）在頂期間，全部 JS `setTimeout` 停行** —— 132 秒內 `perfHome`/`perfRenders t=15`/`perfMarks`/`perfRenders t=60` 一條都冇出，撳走之後 382ms 內全部湧到，同時 `wallClockDrift driftMs=131162`（≈ 對話框在頂時間） | **P3（真用戶）/ P2（儀器）** | **現象=強**（重現 1/1，加 1B 自己 17:37:45Z `driftMs=103998` 呢條獨立觀測）；**機制=弱**（最直觀嗰個 `JavaTimerManager.onHostPause()→clearFrameCallback()` 被負控推翻：單純撳 HOME 背景 95 秒，`setTimeout(60000)` **準時 fire**、零 drift） | 用戶側：唔修（首次安裝一次；而且 mark **值**冇被污染，只係**送**遲咗）。儀器側：**每條 beacon 加 `sinceLaunchMs = Date.now() - T0`**（併入 W1，見 §3 W1）。機制唔准寫落任何文件當已知，要查就開獨立單 | ❌ |
+| **C12-3** | **一批「本來以為有問題」嘅嘢核實咗冇問題** —— ①合併 manifest 有齊 `FOREGROUND_SERVICE` / `FOREGROUND_SERVICE_MEDIA_PLAYBACK` / `WAKE_LOCK`，`MusicService foregroundServiceType="0x2"`，同 dumpsys `types=00000002` 對得上 → **Android 14+ FGS 型別要求已滿足**；②`runtimeVersion` android=4 唔對稱**唔影響落地** —— AVD 實測收到並套用咗 09-05 16:53 嗰個 android OTA，`CheckCompleteUnavailable` 確認已最新；③MediaSession `active=true controllers=8`、Now Playing 通知 `category=transport actions=5` + 歌名 + `android.mediaSession` token、FGS 3 分 15 秒持續存活 | **關單** | 強（`apkanalyzer manifest print` + `dumpsys` 原文，`1b-s5.log` L205/246/305） | 唔使做嘢。**1E §7「Android 零 telemetry」嘅解讀要更正：唔係 OTA 冇落地，係真用戶側 Android 裝機量細／beacon 冇 platform 欄（C1）** | ❌ |
+| **C12-4** | **debug keystore** `CN=Android Debug`，裝置上 v2-only（`FA:C6:17:45:…`） | P2 | 強 | **已經係 C11 / V-3 / D-4 覆蓋緊，唔喺 W9 重覆開單** | ✅（D-4，換 keystore 對現有用戶嘅影響） |
+| **C12-5** | release 合併 manifest 嘅 `<queries>` 帶住 `androidx.test.orchestrator` / `androidx.test.services` / `com.google.android.apps.common.testing.services`（androidTest manifest 併入咗 release） | **P3** | 強（`apkanalyzer manifest print`） | 建置衛生，歸 **C11 / W8**（要 native build 先驗到），唔喺 W9 | ❌ |
+| **C12-6** | media notification churn：3 分鐘 2 首歌 `numEnqueuedByApp=33 numPostedByApp=2 numUpdatedByApp=14 numRemovedByApp=17` | **P3** | **弱**（單次觀察、冇對照、冇正控） | **唔准做修法**。W9 加一次帶對照嘅量度（同一 3 分鐘、`repeatMode` 唔同、有／冇鎖屏）先講。同 memory `project-3dd0a28-verification-findings`「RNTP ANR workaround 剷媒體通知」同一區，唔好夾硬砌因果 | ❌ |
+| **C12-7** | **仲未答**：§6 舊版列出過但 1B 完全冇測 —— `ADMIN-002`（Android `AdminEditHymnSheet` 冇 KAV）、`INF-008`（headless service 冇 handler，app swipe 走之後播完一首會點）、`INF-007`（六個 Remote handler 無 catch） | 沿用 1A 原判（ADMIN-002 = P1） | ➖ | **入 W9 範圍**（見 §3 W9），三項都係「開個 app 撳幾下就答到」，唔使 build | ❌ |
+
+### 6.2 1B 令其他 cluster 要改嘅結論
+
+| 目標 | 改動 |
+|---|---|
+| **C1 / W1** | ➕ **加 `sinceLaunchMs`**（見 §3 W1 範圍欄）。理由：C12-2 證實 `t=15`/`t=60`/`perfMarks@25s` 只係**名義** delay，實際到達可以遲 132 秒而且喺 beacon 本身冇任何痕跡。**唔使加 `dialogBlockedMs`** —— `sinceLaunchMs − 名義 delay` 就係。➕ `navBeaconsSent` cap 10→40 由「1 個平台撞到」變「兩個平台各撞一次」（1C + 1B S3 都係 15 tap 得 10 條），優先序不變 |
+| **C4 / C6 / W6** | ⚠️ C12-1 落喺呢區。09-02 做嘅「Library idle pre-mount」（`libIdle` 840-871ms）**只 mount 個殼**：撳 tab 之前 `Views` 一直係 755-858，真代價全部集中喺撳 tab 嗰 10 秒。W6 郁 render/memo 嗰陣要連 FlatList window 一齊睇 |
+| **N-7** | 🔴 **放寬**（見 §4 N-7）：唔好剷 |
+| **N-8** | ⚠️ **補一句**（見 §4 N-8）：Android emulator shaping 部分生效但未校準 |
+| **C9 / stall 線** | ➖ 冇改。1B 呢個 30 分鐘窗口零 stall／零救援訊號，但樣本得 4 首歌，**唔可以**當 Android stall 率 baseline |
+| **1E §7** | 見 C12-3②：「Android 零 telemetry」唔可以解讀成「Android OTA 冇落地」 |
+
+### 6.3 唔可以引用 1B 邊啲數字
+
+見 `DEEP-AUDIT-1B-OPUS-20260906.md` §9（15 條）。最要緊嗰四條：①§4.2「播放期間 +103%」歸因錯（係詩歌庫）；②限制 #1「S1 同 S2-S6 唔同 commit」前提錯（同一個 commit）；③§4.3 logcat / 返回鍵 / 鍵盤三行冇任何 raw 入 archive（返回鍵嗰句仲引用咗一批唔存在嘅截圖）；④§5 弱網全節冇儀器正控。
+Phase 3 嘅 Android 改前基準一律用 `DEEP-AUDIT-1B-OPUS-20260906.md` §8。
 
 ---
 
