@@ -30,9 +30,14 @@
 # 出事。所以 label 用 com.hymnstream.healthcheck。
 # 點解唔用 Claude scheduled task:呢個純粹係幾個 curl,開成個 session 好嘥資源。
 #
-# 排程:launchd `com.hymnstream.healthcheck`,每 10800s(3 小時,Eric 2026-08-22
-# 由 6 小時改;plist 改完要 bootout + bootstrap 一次)。
+# 排程:launchd `com.hymnstream.healthcheck`,每 1800s(30 分鐘,STREAM-SELFHEAL-
+# PLAN-20260905 S1 由 3 小時進一步加密——連續 2 次 fail 最遲 1 小時內就會觸發
+# ops/stream/stream-selfheal.sh 自動修復;plist 改完要 bootout + bootstrap 一次)。
 # 手動試:  ops/lyrics/stream-healthcheck.sh --verbose
+#
+# 2026-09-05:每次判斷完之後,尾段會呼叫 ops/stream/stream-selfheal.sh(傳入
+# healthy_a/healthy_b/mid/midfail/ok/fail/detail),由佢決定要唔要自動修
+# (連續 fail<2 唔會郁手,詳見 STREAM-SELFHEAL-PLAN-20260905.md)。
 
 set -u
 REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
@@ -150,9 +155,10 @@ cfgnote=""; (( midcfg > 0 )) && cfgnote=" mid=cfg-err:$midcfg"
 echo "$(ts) ok=$ok fail=$fail mid=$mid midfail=$midfail$cfgnote ver=$ytver consecutiveFail=$new_fail$detail" >> "$HISTORY"
 say "  → A ok=$ok fail=$fail | B mid=$mid midfail=$midfail cfgerr=$midcfg | ver=$ytver | consecutiveFail=$new_fail"
 
-# 寫警報嘅時機:①啱啱由健康變唔健康(第 1 次)②之後每 4 次連續失敗提一次
-#(3 個鐘一 tick,即係大約半日一次,唔會洗版)③由唔健康返返 healthy 都報一次
-if (( healthy == 0 )) && { (( new_fail == 1 )) || (( new_fail % 4 == 0 )); }; then
+# 寫警報嘅時機:①啱啱由健康變唔健康(第 1 次)②之後每 12 次連續失敗提一次
+#(2026-09-05:改成 30 分鐘一 tick 之後,每 4 次即係 2 個鐘一提,太密——會洗版;
+# 改做每 12 次 = 6 個鐘一提,同加密偵測前嘅節奏相若)③由唔健康返返 healthy 都報一次
+if (( healthy == 0 )) && { (( new_fail == 1 )) || (( new_fail % 12 == 0 )); }; then
   {
     echo ""
     if (( healthy_a == 0 && healthy_b == 0 )); then
@@ -179,6 +185,25 @@ elif (( midcfg > 0 )) && (( healthy == 1 )); then
     echo "" >> "$LOG"
     echo "- ⚠️ **串流探測配置提醒 $(ts)** — 健康檢查過到,但 Layer B 有 $midcfg 首返 cfg-err(416 太短 / 搵唔到 binary),即係 mid-range 盲點冇完全補到。執:\`ops/lyrics/stream-healthcheck.sh\` 換探測 id。實際:$detail" >> "$LOG"
     say "  ⚠ 已寫 cfg-err 提醒"
+  fi
+fi
+
+# ── 自動修復梯(STREAM-SELFHEAL-PLAN-20260905 S2)──────────────────
+# 淨係喺「而家唔健康」或者「呢個 tick 啱啱由唔健康返返 healthy」先叫
+# stream-selfheal.sh —— 對應返上面 if/elif 兩個分支(唔健康 + 剛恢復),
+# 平時穩定健康嗰陣唔使多開一個 process。連續 fail<2 嗰種情況都會叫到,
+# 但 stream-selfheal.sh 自己會讀返 $STATE 嘅 consecutiveFail,細過 2 就淨係
+# 更新自己嗰份 state,唔會郁手(唔想單次 blip 就觸發自動換 yt-dlp / 重開 backend)。
+SELFHEAL="$REPO/ops/stream/stream-selfheal.sh"
+if [[ -x "$SELFHEAL" ]] && { (( healthy == 0 )) || (( prev_fail > 0 )); }; then
+  if [[ $VERBOSE -eq 1 ]]; then
+    "$SELFHEAL" --healthy-a "$healthy_a" --healthy-b "$healthy_b" \
+      --mid "$mid" --midfail "$midfail" --ok "$ok" --fail "$fail" \
+      --detail "$detail" --verbose
+  else
+    "$SELFHEAL" --healthy-a "$healthy_a" --healthy-b "$healthy_b" \
+      --mid "$mid" --midfail "$midfail" --ok "$ok" --fail "$fail" \
+      --detail "$detail" >/dev/null 2>&1
   fi
 fi
 exit 0
