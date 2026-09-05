@@ -19,11 +19,18 @@
 # exit code:
 #   0 = 健康(consecutiveFail==0 而且冇 active alert)
 #   1 = 唔健康 / alert.active(但偵測本身仲生存)
-#   2 = stale —— lastCheck 超過 $STALE_MIN 分鐘(預設 90)= 偵測本身都死咗,
-#       呢個要通知,唔可以同「健康」撈埋一齊睇
+#   2 = stale —— lastCheck 超過 $STALE_MIN 分鐘 = 偵測本身都死咗,呢個要通知,
+#       唔可以同「健康」撈埋一齊睇
 #
 # needsHuman = alert.active(即係③形態 / 安全閥觸頂 / gate 唔過 / 重開完都未
-# 確認好返)或者 stale。
+# 確認好返)或者 stale 或者 consecutiveFail>=2(2026-09-05 Opus 驗收 §6 補嘅
+# 第五種:防守性補漏——就算 selfheal 判斷有錯而錯誤清咗 alert(例如 §2a
+# 個 false-green),或者 selfheal 完全冇行過/中途 crash,單靠 health state
+# 本身嘅 consecutiveFail 都仲可以叫醒人)。
+#
+# STALE_MIN:預設**唔再死寫 90**,改為讀 `launchctl print` 嘅 healthcheck job
+# 「run interval」(唯讀查詢,唔會俾 guard-bash.sh 擋)× 3。讀唔到就 fallback
+# 90 分鐘 × 3 = 270 分鐘。顯式 export STALE_MIN 永遠優先(方便測試/手動 override)。
 #
 # 手動試: ops/stream/stream-status.sh
 set -u
@@ -33,7 +40,21 @@ HEALTH_STATE="${HEALTH_STATE:-$REPO/backend/data/stream-health-state.json}"
 SELFHEAL_STATE="${SELFHEAL_STATE:-$REPO/backend/data/stream-selfheal-state.json}"
 YTDLP_LINK="${YTDLP_LINK:-$REPO/backend/tools/yt-dlp}"
 BACKEND_PID_PATTERN="${BACKEND_PID_PATTERN:-node.*server\.js}"
-STALE_MIN="${STALE_MIN:-90}"
+LAUNCHCTL_BIN="${LAUNCHCTL_BIN:-launchctl}"
+LAUNCHD_LABEL="${LAUNCHD_LABEL:-com.hymnstream.healthcheck}"
+STALE_MIN_FALLBACK=270   # 90 分鐘(舊死寫門檻)× 3,讀唔到 launchd interval 先用
+
+if [[ -n "${STALE_MIN:-}" ]]; then
+  : # 顯式 override,照用
+else
+  interval_sec="$("$LAUNCHCTL_BIN" print "gui/$(id -u)/$LAUNCHD_LABEL" 2>/dev/null \
+    | grep -oE 'run interval = [0-9]+' | grep -oE '[0-9]+' | head -1)"
+  if [[ -n "$interval_sec" && "$interval_sec" =~ ^[0-9]+$ && "$interval_sec" -gt 0 ]]; then
+    STALE_MIN=$(( interval_sec * 3 / 60 ))
+  else
+    STALE_MIN=$STALE_MIN_FALLBACK
+  fi
+fi
 
 ytver="$("$YTDLP_LINK" --version 2>/dev/null | tr -d '\n')"
 [[ -z "$ytver" ]] && ytver="?"
@@ -82,7 +103,7 @@ swapsToday = selfheal.get("swapsToday", 0)
 restartsToday = selfheal.get("restartsToday", 0)
 
 healthy = (consecutiveFail == 0) and (not alert_active) and (not stale)
-needsHuman = alert_active or stale
+needsHuman = alert_active or stale or (consecutiveFail >= 2)
 
 if stale:
     summary = f"偵測本身可能死咗:lastCheck 已經 {ageMin if ageMin is not None else '?'} 分鐘冇更新(門檻 {stale_min})"
