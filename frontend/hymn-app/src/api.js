@@ -96,6 +96,27 @@ export async function adminListDelistedHymns(token) {
   return json.items;
 }
 
+// Admin「在線」頁(ADMIN-PRESENCE-EXEC-20260905 §3)—— 讀在線快照。
+export async function adminPresence(token) {
+  const res = await fetch(`${API_BASE}/api/admin/presence`, { headers: adminAuthHeaders(token) });
+  return adminJson(res, '讀取失敗'); // { now, online:{total,members,guests}, members:[...] }
+}
+
+// 心跳(ADMIN-PRESENCE-EXEC-20260905 §1)—— 冇 auth 都得(訪客),有 token
+// 就帶 Authorization。fire-and-forget:呢個 function 特登唔 throw,caller
+// (usePresenceHeartbeat)全部行為都要係「失敗就靜靜算」。
+export async function postHeartbeat(token, deviceId, state) {
+  try {
+    const headers = { 'Content-Type': 'application/json' };
+    if (token) headers.Authorization = `Bearer ${token}`;
+    await fetch(`${API_BASE}/api/presence/heartbeat`, {
+      method: 'POST', headers, body: JSON.stringify({ deviceId, state }),
+    });
+  } catch (_) {
+    // 靜默 —— 心跳唔可以拖累/整壞任何嘢
+  }
+}
+
 // ── 好友 / 邀請碼 APIs(MEMBERSHIP-PHASE4-FRIENDS-INVITES-PLAN)─────────────
 // 同 admin* 一樣:呢個檔案唔存/唔讀 token,caller 由 useAuth().getToken()
 // 傳落嚟。
