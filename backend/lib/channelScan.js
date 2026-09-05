@@ -22,6 +22,9 @@
 // resolveAudioUrl)+ 純函數判斷,寫入邏輯完全留俾 caller 做,咁樣先可以
 // 俾兩個 schema 完全唔同嘅 caller 共用。
 
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import {
   listChannelVideos, isCompilation, isNonWorship, isInSongDurationBand,
   passesTitlePositiveSignal, isDiscoverCoolingDown, recordDiscoverFailure,
@@ -30,6 +33,79 @@ import {
 import { resolveAudioUrl } from './resolveAudio.js';
 
 const jitter = (base) => Math.round(base * (0.7 + Math.random() * 0.9));
+
+// ── catalogAllowlist(2026-09-05 ORG-611-CATALOG-REPORT):官網目錄白名單 ──
+// 淨係俾 `group.catalogAllowlist` 有設值嘅 group 用(而家得 Church 611 一個,
+// 冧唔中其他 org 嘅行為零改變)。檔案格式跟 backfillAlbumFromSopSiteCatalog.js
+// 嘅 fetch script 輸出一致(見 fetch-church611-catalog.mjs)。
+//
+// 點解淨係 OR 條件,唔係取代 contentGate:實測 Church 611 現存 65 首入面,
+// 淨係 16 首(24.6%)撞得中官網「611創作詩歌」(原創歌)目錄,其餘 49 首
+// (75.4%)係 RAWship/Live Worship 現場敬拜**改編別人嘅歌**(WayMaker/Holy
+// Forever/Raise A Hallelujah 呢類),官網目錄本身冧唔到(佢淨列原創歌),
+// 但呢批一路都係 Eric 拍板要收嘅內容(97%正面/0%blocklist 已審過)。
+// 如果將 catalogAllowlist 做成「淨係目錄有先收」,會即刻踢走 75% 現有內容——
+// 呢個唔係目錄對照嘅原意,所以做法係:catalog match ⇒ 額外開一條路(略過
+// isCompilation/isNonWorship + contentGate 標題訊號),原本嘅 duration+title
+// 路徑完全唔郁,兩條路 OR 埋一齊。
+const DATA_DIR = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'data', 'album-backfill');
+const catalogCache = new Map();
+
+function loadCatalogAllowlist(filename) {
+  if (catalogCache.has(filename)) return catalogCache.get(filename);
+  let entry = { ytIds: new Set(), titleKeys: new Set() };
+  try {
+    const raw = JSON.parse(fs.readFileSync(path.join(DATA_DIR, filename), 'utf8'));
+    const hasCJK = (s) => /[一-鿿㐀-䶿]/.test(s || '');
+    const normalizeZh = (s) => String(s || '').trim().replace(/[禰袮]/g, '祢')
+      .replace(/[\s　（）()【】\[\]｜|、,，。.:：!！?？'"“”‘’~～\-—_·・\/]/g, '').toLowerCase();
+    const normalizeEn = (s) => String(s || '').replace(/[^a-z0-9]/gi, '').toLowerCase();
+    const normKey = (s) => (hasCJK(s) ? normalizeZh(s) : normalizeEn(s));
+    for (const c of raw) {
+      if (c.youtube_id) entry.ytIds.add(c.youtube_id);
+      const k = normKey(c.title_matchkey || c.title);
+      if (k) entry.titleKeys.add(k);
+    }
+  } catch (e) {
+    // 檔案讀唔到就當「冇白名單」(entry 保持空 set),catalogAllowlist 呢條
+    // OR 路徑淨係唔生效,唔會影響原本 duration+title 路徑,亦唔會令個 group
+    // 冧唔到片 —— 讀唔到就當冇加成呢個機制之前一樣。
+  }
+  catalogCache.set(filename, entry);
+  return entry;
+}
+
+// 標題切候選(唔用 substring——見 backfillAlbumFromSopSiteCatalog.js 同一套
+// 教訓):括號/分隔符切開,逐個 normalize 後同白名單完全相等先算撞中。
+const CANDIDATE_SUFFIX_RE = /(官方)?(完整版|歌詞版?|中英版|無插電版|acoustic)?\s*(mv|m\/v|official\s*(lyric|music)?\s*video|lyric\s*video|music\s*video|live|現場版|試聽|預告|花絮|rawship(\s*vol\.?\s*\d+)?|live\s*worship|敬拜)\s*$/i;
+function catalogCandidates(rawTitle) {
+  const raw = String(rawTitle || '').trim();
+  if (!raw) return [];
+  const out = [raw];
+  for (const m of raw.matchAll(/[【\[]([^】\]]+)[】\]]/g)) out.push(m[1]);
+  for (const sep of ['｜', '|']) { const i = raw.indexOf(sep); if (i > 0) out.push(raw.slice(0, i)); }
+  const extra = [];
+  for (const c of out) {
+    const s = String(c).replace(CANDIDATE_SUFFIX_RE, '').replace(/[\s|｜/／-]+$/, '').trim();
+    if (s) extra.push(s);
+  }
+  return [...new Set(extra)];
+}
+
+function isCatalogMatch(v, catalogAllowlist) {
+  const { ytIds, titleKeys } = loadCatalogAllowlist(catalogAllowlist);
+  if (v.id && ytIds.has(v.id)) return true;
+  const hasCJK = (s) => /[一-鿿㐀-䶿]/.test(s || '');
+  const normalizeZh = (s) => String(s || '').trim().replace(/[禰袮]/g, '祢')
+    .replace(/[\s　（）()【】\[\]｜|、,，。.:：!！?？'"“”‘’~～\-—_·・\/]/g, '').toLowerCase();
+  const normalizeEn = (s) => String(s || '').replace(/[^a-z0-9]/gi, '').toLowerCase();
+  const normKey = (s) => (hasCJK(s) ? normalizeZh(s) : normalizeEn(s));
+  for (const cand of catalogCandidates(v.title)) {
+    const k = normKey(cand);
+    if (k && titleKeys.has(k)) return true;
+  }
+  return false;
+}
 
 // ① 搜尋:淺層(budget*5,最少 30)攞唔到未收錄嘅新片就加深到 200 先放棄。
 // existingIds 由 caller 決定「乜嘢叫已存在」——growLibrary 用成個 hymns_all
@@ -103,18 +179,28 @@ export async function validateChannelCandidates(group, fresh, budget, opts = {})
       continue;
     }
 
-    // 2b. 分類 / 品質篩選 —— 平嘅一關,喺呢度做完先至值得使錢做死鏈驗證。
-    if (isCompilation(v.title) || isNonWorship(v.title, group.name)) {
-      log(`    ⏭ [分類] 「${v.title}」睇個標題係合輯/世俗歌,唔驗證直接跳過`);
-      outcomes.set(v.id, 'skip-quality');
-      continue;
-    }
+    // 2b/2c 之前:catalogAllowlist OR 路徑(淨係 group.catalogAllowlist 有
+    // 設值先會行到呢度,其他 group 完全唔受影響)。官網目錄親自列咗嘅歌,
+    // 當「confirmed 官方原創曲」,略過 2b/2c 呢兩關唔靠標題訊號(理由見
+    // 檔頭 catalogAllowlist 註解——目錄本身就係一個比標題正面訊號更強嘅
+    // 訊號來源),但 2a 片長帶依然要過(基本 sanity,唔豁免)。
+    const catalogMatched = !!group.catalogAllowlist && isCatalogMatch(v, group.catalogAllowlist);
+    if (!catalogMatched) {
+      // 2b. 分類 / 品質篩選 —— 平嘅一關,喺呢度做完先至值得使錢做死鏈驗證。
+      if (isCompilation(v.title) || isNonWorship(v.title, group.name)) {
+        log(`    ⏭ [分類] 「${v.title}」睇個標題係合輯/世俗歌,唔驗證直接跳過`);
+        outcomes.set(v.id, 'skip-quality');
+        continue;
+      }
 
-    // 2c. Layer 2 標題正面訊號(選擇性,淨係 contentGate='duration+title' 開)。
-    if (group.contentGate === 'duration+title' && !passesTitlePositiveSignal(v.title)) {
-      log(`    ⏭ [標題] 「${v.title}」冇撞到歌訊號(♫/lyric/worship/cover等),跳過`);
-      outcomes.set(v.id, 'skip-title-signal');
-      continue;
+      // 2c. Layer 2 標題正面訊號(選擇性,淨係 contentGate='duration+title' 開)。
+      if (group.contentGate === 'duration+title' && !passesTitlePositiveSignal(v.title)) {
+        log(`    ⏭ [標題] 「${v.title}」冇撞到歌訊號(♫/lyric/worship/cover等),跳過`);
+        outcomes.set(v.id, 'skip-title-signal');
+        continue;
+      }
+    } else {
+      log(`    ✓ [目錄] 「${v.title}」撞中官網目錄白名單,略過分類/標題訊號關`);
     }
 
     tried++;

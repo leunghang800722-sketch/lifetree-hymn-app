@@ -165,7 +165,21 @@ export const GROUPS = [
   // lang判粵語:頻道用zh-HK caption/繁體字幕,「611 Testimony」證道系列
   // 標明講者用「Cantonese/Mandarin」「Cantonese/English」雙語,判斷粵語
   // 為主(⚠️Eric如覺得判錯請改,呢個純粹推斷,未聽真人audio驗證)。
-  { name: 'Church 611',      aliases: ['Church 611', 'Church611tv', '611 Bread of Life Christian Church'], lang: '粵語', priority: 1, inPool: false, channel: '@Church611tv', est: 45, durationCapSec: 1900, contentGate: 'duration+title', note: '2026-09-05 Eric拍板新增,淨收RAWship現場敬拜歌系列(詳見上面comment),主頻道整體REJECT級(帶內26.7%)但RAWship子集97%正面/0%blocklist,durationCapSec1900+contentGate duration+title兩層鎖定' },
+  //
+  // 2026-09-05 ORG-611-CATALOG-REPORT-20260905.md:加咗`catalogAllowlist`——
+  // 官網「611創作詩歌」分類頁(church611.org)30 首原創歌逐條抓落嚟嘅目錄
+  // (`backend/data/album-backfill/church611-org-catalog.json`,抓法見
+  // `backend/scripts/fetchChurch611Catalog.mjs`),俾 lib/channelScan.js
+  // `validateChannelCandidates()` 做多一條 OR 路徑:youtube_id 或 normalize
+  // 後嘅歌名撞中目錄,就當「confirmed 官方原創曲」略過 isCompilation/
+  // isNonWorship/contentGate 標題訊號嗰兩關(片長帶依然要過)。
+  // ⚠️ 呢條**唔係取代** contentGate:實測現存 65 首 Church 611 入面淨係
+  // 16 首(24.6%)撞得中呢個目錄,其餘 49 首(75.4%)係 RAWship/Live Worship
+  // 現場敬拜**改編別人歌**(WayMaker/Holy Forever/Raise A Hallelujah 呢類,
+  // 官網「原創歌」目錄本身收唔到呢啲),但呢批一直係 Eric 拍板要收嘅內容
+  // (97%正面/0%blocklist已審過)——所以 contentGate: 'duration+title' 原本
+  // 個路徑完全保留,兩條路 OR,唔係淨開一條就閂咗另一條。
+  { name: 'Church 611',      aliases: ['Church 611', 'Church611tv', '611 Bread of Life Christian Church'], lang: '粵語', priority: 1, inPool: false, channel: '@Church611tv', est: 45, durationCapSec: 1900, contentGate: 'duration+title', catalogAllowlist: 'church611-org-catalog.json', note: '2026-09-05 Eric拍板新增,淨收RAWship現場敬拜歌系列(詳見上面comment),主頻道整體REJECT級(帶內26.7%)但RAWship子集97%正面/0%blocklist,durationCapSec1900+contentGate duration+title兩層鎖定;2026-09-05追加catalogAllowlist官網目錄OR路徑(詳見上面comment),16/65現存歌撞中目錄,其餘49首靠原有duration+title路徑保留' },
   // 2026-09-05 Eric 拍板新增:新歌敬拜 NewSong Worship(@新歌敬拜NewsongWorship,
   // UCdWojs2vazAcIaYUzquRJnA)。auditChannel實測(depth 58,已接近成個頻道
   // 全部片):帶內77.6%/blocklist6.9%/正面94.8%——OK級,唔使開contentGate,
