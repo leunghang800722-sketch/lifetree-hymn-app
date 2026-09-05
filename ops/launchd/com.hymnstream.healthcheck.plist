@@ -1,10 +1,22 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <!--
-  串流健康探測(Eric 2026-08-19 拍板)。每 3 個鐘(Eric 2026-08-22 由 6 個鐘改)行兩層探測:
+  串流健康探測(Eric 2026-08-19 拍板)。每 30 分鐘(STREAM-SELFHEAL-PLAN-20260905 S1,
+  由 2026-08-22 嘅 3 個鐘進一步加密——連續 fail 最遲 1 小時內觸發自動修復,見
+  ops/stream/stream-selfheal.sh)行兩層探測:
   Layer A 經 backend 攞頭 64KB、Layer B 直打 googlevideo 攞 64KB @ 2MiB
   (8-22 全庫事故嘅病灶 range,舊版淨驗頭段所以全程假陽性)。
-  任何一層唔健康就寫警報落 docs/SUPERVISION-LOG.md。
+  任何一層唔健康就寫警報落 docs/SUPERVISION-LOG.md,連續 unhealthy 仲會觸發
+  ops/stream/stream-selfheal.sh 自動修復梯。
+
+  ⚠️ 2026-09-05:呢個 plist 改咗 StartInterval 之後,~/Library/LaunchAgents 嗰份**要
+  人手 bootout+bootstrap 先生效**(launchctl kickstart 唔會重讀 plist)。呢個
+  操作俾 session guard/auto-mode classifier 擋咗(佢會攔任何 launchctl
+  bootout/bootstrap,唔止 com.hymnapp.backend),要 Dispatch 或者人手行:
+    launchctl bootout gui/$(id -u)/com.hymnstream.healthcheck
+    launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.hymnstream.healthcheck.plist
+  行完用 `launchctl print gui/$(id -u)/com.hymnstream.healthcheck | grep -i interval`
+  核對係 1800(呢句查詢冇改狀態,唔會俾 guard 擋)。
 
   ⚠️ 個 label 特登**唔用 com.hymnapp.\* prefix** —— 各班 checkpoint 會核對
   `launchctl list | grep hymnapp | wc -l` 要夠 **7 個**,用 hymnapp prefix 就會變 8,
@@ -21,7 +33,7 @@
     <string>/bin/bash</string>
     <string>/Users/macbookpro/.openclaw/workspace/hymn-app/ops/lyrics/stream-healthcheck.sh</string>
   </array>
-  <key>StartInterval</key><integer>10800</integer>
+  <key>StartInterval</key><integer>1800</integer>
   <key>RunAtLoad</key><false/>
   <key>StandardOutPath</key><string>/tmp/hymn_streamhealth.log</string>
   <key>StandardErrorPath</key><string>/tmp/hymn_streamhealth.log</string>
