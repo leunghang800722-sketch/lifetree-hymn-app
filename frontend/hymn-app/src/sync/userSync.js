@@ -9,6 +9,7 @@
 
 import { getStorage } from '../storage';
 import { API_BASE } from '../config';
+import { sendClientLog } from '../clientLog.js';
 
 // BATCH5 O10:MMKV instance 收歸 storage.js 一份共用(零行為改變,本身就係
 // 同一份 default instance)。
@@ -95,6 +96,10 @@ async function runOp(op) {
       const r = await fetch(`${API_BASE}/api/me/playlists/${op.id}`, { method: 'DELETE', headers: authHeaders });
       return r.ok;
     }
+    // DEEP-AUDIT-W1-EXEC-20260906 F6(INF-010)—— 未知 op 之前係完全靜默
+    // drop,冇任何訊號留低。加一條 beacon 令呢個路徑至少可觀測;唔改行為
+    // (照舊當完成掉咗佢,唔卡隊)。
+    sendClientLog('syncUnknownOp', { detail: String(op && op.op) });
     return true; // 未知 op:唔好卡死條隊,直接當完成掉咗佢
   } catch (_) {
     return false; // 網絡錯 → 停,keep queue
@@ -103,6 +108,9 @@ async function runOp(op) {
 
 let _flushing = false;
 let _pendingFlush = false;
+// DEEP-AUDIT-W1-EXEC-20260906 F6 —— outbox 長度冇任何 beacon(1A INF-010 附帶
+// 建議),每個 session 最多送一次,避免每次 flush 都洗版。
+let _outboxLongReported = false;
 
 // 回傳 outbox 係咪真係推晒(drain 咗)——caller(App.js onActive)靠呢個先知
 // 安唔安全用 server pull 覆蓋本地(P0:flush 失敗都照樣覆蓋 = 蝕用戶數據)。
@@ -114,6 +122,10 @@ export async function flush() {
   let drained = false;
   try {
     let queue = collapse(readOutbox());
+    if (!_outboxLongReported && queue.length >= 50) {
+      _outboxLongReported = true;
+      sendClientLog('outboxLong', { detail: String(queue.length) });
+    }
     while (queue.length > 0) {
       const [op, ...rest] = queue;
       const ok = await runOp(op);

@@ -16,7 +16,9 @@
 // 主線程。
 
 import { useRef } from 'react';
-import { Platform } from 'react-native';
+// DEEP-AUDIT-W1-EXEC-20260906 F3 —— platform 而家由 src/clientLog.js 強制
+// 注入(sendBeacon 改用 sendClientLog()),呢個 module 唔再自己讀
+// Platform.OS,剷走冇用嘅 import。
 
 // E-4(PERF-STAGE2-2E-20260902)—— Fable 5.1 拍板:效能工程期間(Stage 2)
 // 保持開,因為 F-1/A-6 呢類「真機蜂窩網 ttfb/body 分佈、有冇撞到 retry」
@@ -130,34 +132,18 @@ function renderSummary() {
 }
 
 // ---------------------------------------------------------------------------
-// beacon 送出 —— 跟 App.js logDiag() 一樣嘅 body 格式,打
-// `${API_BASE}/api/client-log`。deviceId 用現有 src/deviceId.js。
+// beacon 送出 —— DEEP-AUDIT-W1-EXEC-20260906 F3:送信層改用 src/clientLog.js
+// 嘅 sendClientLog()(強制注入 platform/deviceId/appVersion/updateId/
+// sessionId),呢度只保留自己嘅排程/detail 組裝(每種 beacon 幾耐後送一次、
+// detail 字串點砌)。deviceId cache/platform 直接由 clientLog.js 處理,唔使
+// 呢個 module 再自己維護一份。
 // ---------------------------------------------------------------------------
-let deviceIdCache = null;
-async function resolveDeviceId() {
-  if (deviceIdCache) return deviceIdCache;
+function sendBeacon(event, detail) {
   try {
-    const mod = require('./deviceId.js');
-    deviceIdCache = await mod.getOrCreateDeviceId();
-  } catch (_) { deviceIdCache = 'na'; }
-  return deviceIdCache;
-}
-
-async function sendBeacon(event, detail) {
-  try {
-    const { API_BASE } = require('./config.js');
-    const deviceId = await resolveDeviceId();
-    const body = {
-      event,
-      clientTs: Date.now(),
-      platform: Platform.OS,
-      deviceId,
+    // eslint-disable-next-line global-require
+    const { sendClientLog } = require('./clientLog.js');
+    sendClientLog(event, {
       detail: String(detail).slice(0, 400), // PERF-FINAL-OPUS §A4.3：backend b0f7931 已放寬到 400，client 要同步先唔截尾
-    };
-    await fetch(`${API_BASE}/api/client-log`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body),
     });
   } catch (_) {}
 }
@@ -274,10 +260,21 @@ export function scheduleRenderBeacons() {
   });
 }
 
+// DEEP-AUDIT-W1-EXEC-20260906 F3 —— 1C 限制#6 實測:15 次 tap 靜靜丟 5 次
+// (舊 cap=10)。cap 提到 40;撞 cap 嗰刻送一次 navBeaconCapped(帶 cap 值),
+// 之後先靜音——唔准好似之前咁完全冇任何訊號。
+const NAV_BEACON_CAP = 40;
 let navBeaconsSent = 0;
+let navBeaconCapReported = false;
 export function recordNavBeacon(tab, tapToMountMs, tapToPaintMs) {
   safe(() => {
-    if (navBeaconsSent >= 10) return;
+    if (navBeaconsSent >= NAV_BEACON_CAP) {
+      if (!navBeaconCapReported) {
+        navBeaconCapReported = true;
+        sendBeacon('navBeaconCapped', `cap=${NAV_BEACON_CAP}`);
+      }
+      return;
+    }
     navBeaconsSent += 1;
     sendBeacon('perfNav', `tab=${tab} tapToMount=${tapToMountMs}ms tapToPaint=${tapToPaintMs}ms`);
   });

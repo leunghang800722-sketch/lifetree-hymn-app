@@ -28,6 +28,7 @@ import SharedPlaylistSheet from './src/screens/SharedPlaylistSheet';
 import { AdminEditHymnProvider } from './src/components/AdminEditHymnSheet';
 import { setAuthToken, pullData, pushSync, flush as flushOutbox, getOwner, setOwner, clearOutbox } from './src/sync/userSync';
 import { API_BASE, DIAG_ENABLED } from './src/config.js';
+import { sendClientLog } from './src/clientLog.js';
 import { consumeRemotePauseExpected } from './src/playback-intent.js';
 // HLS-EXEC-D123-GATE-20260901 P3 — 單機 gate 用嘅 deviceId(純 app 內隨機,
 // 唔係硬件識別碼)。見 src/deviceId.js 頂部註解。
@@ -272,20 +273,13 @@ function classifyFirstTapSurface(songId) {
 // fire 一次,仲要喺 nudge 救唔返先會再 fire giveup),派工單 §3 明文批准
 // always:true。之前呢個 nudge 淨係 console.warn 冇 beacon,令「HLS seek 完
 // 假報 Playing」呢個診斷假設結構上冇資料可以證實。
+// DEEP-AUDIT-W1-EXEC-20260906 F2 —— 送信層改用 src/clientLog.js 嘅
+// sendClientLog()(強制注入 platform/deviceId/appVersion/updateId/
+// sessionId,見該檔註解)。DIAG_ENABLED/always 呢個閘邏輯原封不動留喺
+// 呢度,唔搬去 clientLog.js。
 function logDiag(event, extra, opts) {
   if (!DIAG_ENABLED && !(opts && opts.always)) return;
-  try {
-    fetch(`${API_BASE}/api/client-log`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      // NATIVE-STALL-PROGRESS-PREDICATE-PLAN-20260831 v4 §4-3(STARTUP-ROOTFIX-
-      // EXEC-BC-20260831 §2.4):加 platform 落每一條 client-log,兩部機
-      // telemetry 撈埋一齊要靠 backend ua= 反查對號嘅盲點由呢度收工。
-      // HLS-EXEC-D123-GATE-20260901 P3 — deviceId 順手堵「兩部機寫同一份
-      // log 分唔開」舊病(見 memory project-multi-sim-clientlog-contamination)。
-      body: JSON.stringify({ event, clientTs: new Date().toISOString(), platform: Platform.OS, deviceId: DEVICE_ID, ...extra }),
-    }).catch(() => {});
-  } catch (_) {}
+  sendClientLog(event, extra);
 }
 
 // STARTUP-ROOTFIX-EXEC-BC-20260831 §2.3 —— JS 側嘅「唔驚動 breaker」nudge。
@@ -546,6 +540,12 @@ function PlayerProvider({ children }) {
   // 前台先顯示嘅提示文字(背景彈 Alert 等於冇彈,用戶淨係見到「靜靜哋停咗」)。
   const appStateRef = useRef(AppState.currentState);
   const pendingPlaybackNoticeRef = useRef(null);
+  // DEEP-AUDIT-W1-EXEC-20260906 F5(N-7)—— 記低「最近一次由背景返前台」嘅
+  // timestamp,俾 wallClockDrift beacon 計 bgMs(距離上次 background→active
+  // 相隔幾多 ms),等事後分得開「真時鐘飄移」定「app 背景咗一排先跳」
+  // (1E §4.2:呢個 event 結構上分唔開呢兩種,max 觀察過 13.3 小時)。冷開機
+  // 未發生過呢個 transition 就維持 null,beacon 果邊出 '-'。
+  const lastForegroundResumeAtRef = useRef(null);
   // BUG2 P0 — 記低「呢首歌已經 retry 過一次未」,先至知道下次撞 PlaybackError
   // 係要再 retry 定係死心跳下一首。存 song id(唔係 index),因為 retry() 唔會
   // 改變 index,兩次錯誤事件個 index 一樣,靠 id 分辨「係咪同一首」。
@@ -1531,7 +1531,14 @@ function PlayerProvider({ children }) {
     const sub = AppState.addEventListener('change', (s) => {
       // BG-PLAYBACK-STOPS-PLAN Fix B — 記低所有 state(唔淨係 'active'),俾
       // PlaybackError 熔斷器判斷前台/背景。原本 'active' 分支嘅行為完全不變。
+      const prevState = appStateRef.current;
       appStateRef.current = s;
+      // F5(N-7)——淨係喺「由非 active 轉去 active」嗰刻先更新,先至係
+      // 真正嘅「background→active」transition timestamp,唔係逢 active
+      // 都刷新(否則會變咗「距離最後一次心跳」冇意思)。
+      if (s === 'active' && prevState !== 'active') {
+        lastForegroundResumeAtRef.current = Date.now();
+      }
       if (s !== 'active') return;
       resyncFromNative(false);
       // OTA-MEDIA-NOTIFICATION:每次返前台都重新 apply 一次播放器選項。
@@ -2099,10 +2106,16 @@ function PlayerProvider({ children }) {
         if (drift > 5000) {
           driftLogRef.current.push({ ts: nowTs, driftMs: drift });
           if (driftLogRef.current.length > 20) driftLogRef.current.shift();
+          // F5(N-7)—— bgMs=距離上次 background→active 相隔幾多 ms(冷開機
+          // 未發生過呢個 transition 就 '-')。backend 白名單冇獨立 bgMs 欄,
+          // 塞落 detail 字串(同 tab=/driftMs= 呢啲既有做法一致,唔改白名單)。
+          const bgMs = lastForegroundResumeAtRef.current != null
+            ? (nowTs - lastForegroundResumeAtRef.current)
+            : '-';
           logDiag('wallClockDrift', {
             appState: appStateRef.current,
             trackState: trackStateRef.current,
-            detail: `driftMs=${drift}`,
+            detail: `driftMs=${drift} bgMs=${bgMs}`,
           }, { always: true });
         }
         try {

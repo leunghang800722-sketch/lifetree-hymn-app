@@ -1,19 +1,16 @@
 // TrackPlayer Background Service (v3 compatible)
 import TrackPlayer, { Event } from 'react-native-track-player';
-import { API_BASE } from './config.js';
 import { markRemotePauseExpected } from './playback-intent.js';
+import { sendClientLog } from './clientLog.js';
 
 // STREAM-MIDTRACK-SILENCE-ROOTCAUSE 續篇(2026-08-13)—— 呢個service行喺獨立
 // registerPlaybackService context,冇App.js嘅logDiag()可以攞,自成一個極簡版
 // (同App.js嗰個一樣寫法:fire-and-forget、唔await、唔重試)。
+// DEEP-AUDIT-W1-EXEC-20260906 F2 —— 送信層改用 src/clientLog.js,呢個 event
+// 而家同其他三套一樣帶齊 platform/deviceId/appVersion/updateId/sessionId
+// (之前呢度係四套實作入面唯一完全冇帶任何呢啲欄位嗰套,見根源文件 §C1)。
 function logDiag(event, extra) {
-  try {
-    fetch(`${API_BASE}/api/client-log`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ event, clientTs: new Date().toISOString(), ...extra }),
-    }).catch(() => {});
-  } catch (_) {}
+  sendClientLog(event, extra);
 }
 
 export default async function () {

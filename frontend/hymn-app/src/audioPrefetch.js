@@ -25,6 +25,7 @@
 
 import { Platform } from 'react-native';
 import { API_BASE } from './config.js';
+import { sendClientLog } from './clientLog.js';
 
 const CACHE_SUBDIR = 'audio-cache';
 const MIN_BYTES = 200 * 1024; // 200KB — 太細多數係 backend 錯誤頁/半頁
@@ -175,22 +176,12 @@ function idFromFinalName(name) {
   return name.endsWith(FINAL_SUFFIX) ? name.slice(0, -FINAL_SUFFIX.length) : name;
 }
 
-// 同 App.js 嘅 logDiag() 一樣寫法(fire-and-forget,唔 await、唔 retry,
-// 診斷本身唔可以拖累/整壞落載)。故意喺呢度自己另寫一份細版,唔跨檔案
-// export 私有 helper,保持呢個 module 完全自足、Android 冇任何耦合。
+// DEEP-AUDIT-W1-EXEC-20260906 F2 —— 送信層改用 src/clientLog.js(強制注入
+// platform/deviceId/appVersion/updateId/sessionId,之前呢度係四套實作入面
+// 完全冇帶呢啲欄位嗰套之一,見根源文件 §C1)。淨係換送信層,呼叫方式/
+// 呼叫時機一個字都冇改。
 function diagFail(songId, detail) {
-  try {
-    fetch(`${API_BASE}/api/client-log`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        event: 'prefetchFail',
-        clientTs: new Date().toISOString(),
-        hymnId: songId,
-        detail,
-      }),
-    }).catch(() => {});
-  } catch (_) {}
+  sendClientLog('prefetchFail', { hymnId: songId, detail });
 }
 
 // boot scan:建 in-memory index + 清走上次冇落載完嘅 .part 垃圾。
@@ -369,7 +360,13 @@ async function downloadOne(songId) {
     }
     const buf = await abortRace(controller, response.arrayBuffer());
     if (!buf || buf.byteLength < MIN_BYTES) {
-      diagFail(songId, `tooSmall=${buf ? buf.byteLength : 0}`);
+      // DEEP-AUDIT-W1-EXEC-20260906 F4(N-6)—— 加 bytes/min/dur/ct,令事後
+      // 分得開「真短歌」定「backend 錯誤頁」(兩者都會令 buf 細過 MIN_BYTES,
+      // 之前淨得 tooSmall=<bytes> 一個數,唔知呢首歌 duration 本身係咪就係
+      // 短過閾值)。**唔改呢個拒收判斷本身**——淨係加欄位落 diag detail。
+      const bytes = buf ? buf.byteLength : 0;
+      const dur = durationSecById.get(String(songId));
+      diagFail(songId, `tooSmall=${bytes} bytes=${bytes} min=${MIN_BYTES} dur=${dur != null ? dur : '-'} ct=${contentType || '-'}`);
       return;
     }
     if (partFile.exists) { try { partFile.delete(); } catch (_) {} }
