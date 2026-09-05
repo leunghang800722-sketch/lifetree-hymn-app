@@ -29,9 +29,14 @@ export default function AdminPresenceSheet({ visible, onClose, getToken }) {
   const [err, setErr] = useState(false);
   const loadSeq = useRef(0);
 
-  const load = useCallback((isRefresh) => {
+  // mode: 'initial'(首次載入)| 'refresh'(下拉)| 'silent'(30 秒背景自動
+  // 刷新)。P3(Opus 5 驗收 3f 保留已修):淨係 initial/refresh 先郁
+  // loading/refreshing state,silent 唔會令成個名單閃返做 spinner——數字
+  // tile 同列表喺背景刷新期間留住舊值,直到新資料到先一次過換。
+  const load = useCallback((mode) => {
     const seq = ++loadSeq.current;
-    if (isRefresh) setRefreshing(true); else setLoading(true);
+    if (mode === 'refresh') setRefreshing(true);
+    else if (mode !== 'silent') setLoading(true);
     setErr(false);
     const token = getToken ? getToken() : null;
     adminPresence(token)
@@ -39,14 +44,15 @@ export default function AdminPresenceSheet({ visible, onClose, getToken }) {
       .catch(() => { if (loadSeq.current === seq) setErr(true); })
       .finally(() => {
         if (loadSeq.current !== seq) return;
-        if (isRefresh) setRefreshing(false); else setLoading(false);
+        if (mode === 'refresh') setRefreshing(false);
+        else if (mode !== 'silent') setLoading(false);
       });
   }, [getToken]);
 
   useEffect(() => {
     if (!visible) return;
-    load(false);
-    const timer = setInterval(() => load(false), AUTO_REFRESH_MS);
+    load('initial');
+    const timer = setInterval(() => load('silent'), AUTO_REFRESH_MS);
     return () => clearInterval(timer);
   }, [visible, load]);
 
@@ -90,7 +96,7 @@ export default function AdminPresenceSheet({ visible, onClose, getToken }) {
               keyExtractor={(item) => String(item.id)}
               contentContainerStyle={{ paddingBottom: 8 }}
               refreshControl={
-                <RefreshControl refreshing={refreshing} onRefresh={() => load(true)} tintColor={COLORS.glow} />
+                <RefreshControl refreshing={refreshing} onRefresh={() => load('refresh')} tintColor={COLORS.glow} />
               }
               renderItem={({ item }) => (
                 <View style={styles.row}>
