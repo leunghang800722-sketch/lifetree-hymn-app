@@ -31,17 +31,29 @@ export function sweep(t = nowMs()) {
   }
 }
 
+// P5(Opus 5 驗收後加):滿咗要剷嘅時候「訪客先剷、會員後剷」——濫用面
+// (flood 灌唔同 deviceId 嘅假訪客)受害嘅係真訪客,唔應該累到已登入嘅
+// 會員被踢走。冇訪客先至輪到會員(理論上配合 P5 per-IP 節流,呢種情況
+// 應該好罕見先會發生)。
 function evictOldestIfFull() {
   if (store.size < MAX_ENTRIES) return;
-  let oldestKey = null;
-  let oldestTs = Infinity;
+  let oldestGuestKey = null;
+  let oldestGuestTs = Infinity;
+  let oldestMemberKey = null;
+  let oldestMemberTs = Infinity;
   for (const [key, entry] of store) {
-    if (entry.lastSeen < oldestTs) {
-      oldestTs = entry.lastSeen;
-      oldestKey = key;
+    if (entry.kind === 'guest') {
+      if (entry.lastSeen < oldestGuestTs) {
+        oldestGuestTs = entry.lastSeen;
+        oldestGuestKey = key;
+      }
+    } else if (entry.lastSeen < oldestMemberTs) {
+      oldestMemberTs = entry.lastSeen;
+      oldestMemberKey = key;
     }
   }
-  if (oldestKey != null) store.delete(oldestKey);
+  const keyToEvict = oldestGuestKey != null ? oldestGuestKey : oldestMemberKey;
+  if (keyToEvict != null) store.delete(keyToEvict);
 }
 
 // state 白名單:'fg'(前台)| 'bg-playing'(背景播緊歌),其餘一律當 'fg'。
@@ -64,6 +76,17 @@ export function recordHeartbeat({ userId = null, deviceId = null, state } = {}, 
   // deviceId 之前留低嘅 guest entry。
   if (isMember && deviceId) {
     store.delete(`g:${deviceId}`);
+  }
+
+  // P4(Opus 5 驗收 2b FAIL 已修,反向 dedup):登出之後,同一 deviceId
+  // 嘅訪客心跳一入嚟,即刻剷走呢個 deviceId 之前留低嘅 member entry——
+  // 令登出即時變返訪客,唔使等舊 member entry 179 秒後自然 stale 先消失
+  // (嗰段時間會同一部機被計成 2:一個 member + 一個 guest)。member entry
+  // 本身有存 deviceId(見下面 store.set),所以掃全表就搵到。
+  if (!isMember && deviceId) {
+    for (const [k, e] of store) {
+      if (e.kind === 'member' && e.deviceId === deviceId) store.delete(k);
+    }
   }
 
   const existing = store.get(key);
@@ -98,7 +121,11 @@ export function getPresenceSnapshot(resolveMemberName, t = nowMs()) {
       name: (resolveMemberName && resolveMemberName(entry.userId)) || `會員 #${entry.userId}`,
       state: entry.state,
       onlineSince: new Date(entry.firstSeen).toISOString(),
-      durationSec: Math.max(0, Math.round((t - entry.firstSeen) / 1000)),
+      // P6(Opus 5 驗收 2d 保留已修):firstSeen → lastSeen,唔係 → now。
+      // 用戶已經冇心跳(關咗 App / 冇網)但仲未俾 sweep 剷走嗰最多 180 秒
+      // 空隙,「連續在線幾耐」唔應該仲跟實時鐘照跳——lastSeen 先係佢真正
+      // 最後一次確定在線嘅時刻。
+      durationSec: Math.max(0, Math.round((entry.lastSeen - entry.firstSeen) / 1000)),
     });
   }
   members.sort((a, b) => b.durationSec - a.durationSec);
