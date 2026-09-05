@@ -54,6 +54,9 @@ async function withFakeNowAsync(deltaMs, fn) {
 
 async function startApp(mountFn) {
   const app = express();
+  // W2 Opus 驗收 #2:C2 之後 clientIp() 唔再直讀 XFF,harness 要同真身一樣設 trust proxy,
+  // 否則 distinctIp 五個「唔同 IP」會塌成 127.0.0.1 全 429(誤判)。
+  app.set('trust proxy', 1);
   app.use(express.json());
   await mountFn(app);
   const server = http.createServer(app);

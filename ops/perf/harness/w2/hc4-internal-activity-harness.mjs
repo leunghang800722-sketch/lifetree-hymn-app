@@ -14,7 +14,7 @@ const express = (await import(path.join(BACKEND_DIR, 'node_modules/express/index
 
 // ── 核對 server.js 真身仍然有呢個 guard(防 harness 同真身漂移)──────
 const serverSrc = fs.readFileSync(path.join(BACKEND_DIR, 'server.js'), 'utf8');
-if (!serverSrc.includes('LOOPBACK_ADDRS') || !serverSrc.includes("req.socket.remoteAddress")) {
+if (!serverSrc.includes('LOOPBACK_ADDRS') || !serverSrc.includes("req.socket.remoteAddress") || !serverSrc.includes("req.headers['cf-ray']")) {
   console.error('FATAL: server.js 冇搵到 localhost-only guard —— harness 同真身唔同步');
   process.exit(2);
 }
@@ -23,7 +23,9 @@ const LOOPBACK_ADDRS = new Set(['127.0.0.1', '::1', '::ffff:127.0.0.1']);
 const app = express();
 app.set('trust proxy', 1);
 app.get('/api/internal/activity', (req, res) => {
-  if (!LOOPBACK_ADDRS.has(req.socket.remoteAddress)) {
+  // W2 Opus 驗收 #1 修法(同 server.js 逐字):tunnel 帶 cf-* header 即當外部。
+  const viaTunnel = !!(req.headers['cf-connecting-ip'] || req.headers['cf-ray']);
+  if (viaTunnel || !LOOPBACK_ADDRS.has(req.socket.remoteAddress)) {
     return res.status(404).end();
   }
   res.json({ streaming: false });
@@ -54,7 +56,8 @@ results.push({ case: 'plain_loopback', status: await hit() });
 //     呢條 harness 冇能力做「真.非 loopback socket」正控(見下面注解),
 //     淨係證明「XFF 呃唔到 guard」呢一半。
 results.push({ case: 'spoofed_xff_still_loopback_socket', status: await hit({ 'X-Forwarded-For': '203.0.113.99' }) });
-results.push({ case: 'spoofed_cf_connecting_ip_still_loopback_socket', status: await hit({ 'cf-connecting-ip': '203.0.113.99' }) });
+results.push({ case: 'cf_connecting_ip_via_tunnel_loopback_socket_expect404', status: await hit({ 'cf-connecting-ip': '203.0.113.99' }) });
+results.push({ case: 'cf_ray_via_tunnel_loopback_socket_expect404', status: await hit({ 'cf-ray': 'abc123-HKG' }) });
 
 // ── 正控:由呢部機真.LAN IP 連返嚟(唔係 127.0.0.1)—— socket 層面真係
 // 唔係 loopback,期望 404。搵一個 non-internal IPv4 介面(通常 en0);搵唔到

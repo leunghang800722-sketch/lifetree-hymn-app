@@ -379,7 +379,11 @@ app.get('/api/app-version', (req, res) => {
 // 連線層面嘅事實,喺 trust proxy 生效之後都唔會受 X-Forwarded-For 影響)。
 const LOOPBACK_ADDRS = new Set(['127.0.0.1', '::1', '::ffff:127.0.0.1']);
 app.get('/api/internal/activity', (req, res) => {
-  if (!LOOPBACK_ADDRS.has(req.socket.remoteAddress)) {
+  // W2 Opus 驗收 #1:cloudflared 由 127.0.0.1 連 origin,單靠 socket 判 loopback 對 tunnel
+  // 完全無效。tunnel 過嚟嘅 request 一定帶 cf-connecting-ip / cf-ray(CF 邊緣加,本機
+  // loopback 唔會有),見到即當外部。
+  const viaTunnel = !!(req.headers['cf-connecting-ip'] || req.headers['cf-ray']);
+  if (viaTunnel || !LOOPBACK_ADDRS.has(req.socket.remoteAddress)) {
     return res.status(404).end();
   }
   res.json({ streaming: anyStreaming() });

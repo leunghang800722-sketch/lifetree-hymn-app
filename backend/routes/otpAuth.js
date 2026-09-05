@@ -269,6 +269,8 @@ export default function otpAuthRoutes(app, getUserDb) {
       if (!r.ok) return res.status(502).json({ error: 'send_failed', message: '發送失敗,請稍後再試' });
 
       rate.commit();
+      // W2 Opus 驗收 #4:成功攞到新碼 = 自救路,清走 verify 錯誤計數(request 本身另有節流)。
+      verifyClearPhone(phone);
       res.json({ ok: true, channel: r.data?.channel || PRIMARY_CHANNEL });
     } catch (e) {
       console.error('otp/request error:', e?.message);
@@ -295,7 +297,9 @@ export default function otpAuthRoutes(app, getUserDb) {
 
       const chk = await twilioCheck(phone, code);
       if (!(chk.ok && chk.data?.status === 'approved')) {
-        verifyRecordFail(phone);
+        // W2 Opus 驗收 #4:只有 Twilio 明確話「碼唔啱」(2xx 但 status!=approved)先計入
+        // 5 次鎖;Twilio 網絡錯/5xx/4xx 唔計,否則長輩用戶撞 Twilio 故障都會被鎖 10 分鐘。
+        if (chk.ok) verifyRecordFail(phone);
         return res.status(401).json({ error: 'bad_code', message: '驗證碼唔啱或者過期' });
       }
       verifyClearPhone(phone); // 成功即清零(§C1「只計錯,成功即 reset」)
@@ -338,7 +342,9 @@ export default function otpAuthRoutes(app, getUserDb) {
 
       const chk = await twilioCheck(phone, code);
       if (!(chk.ok && chk.data?.status === 'approved')) {
-        verifyRecordFail(phone);
+        // W2 Opus 驗收 #4:只有 Twilio 明確話「碼唔啱」(2xx 但 status!=approved)先計入
+        // 5 次鎖;Twilio 網絡錯/5xx/4xx 唔計,否則長輩用戶撞 Twilio 故障都會被鎖 10 分鐘。
+        if (chk.ok) verifyRecordFail(phone);
         return res.status(401).json({ error: 'bad_code', message: '驗證碼唔啱或者過期' });
       }
       verifyClearPhone(phone); // 成功即清零
