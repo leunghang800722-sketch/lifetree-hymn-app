@@ -77,11 +77,22 @@ export function unmarkStreaming(id) {
 export function isStreaming(id) { return (streaming.get(id) || 0) > 0; }
 export function anyStreaming() { return streaming.size > 0; }
 
+// ⚠️ 2026-09-06 DEEP-AUDIT W2 §C9:`youtube:player_client=tv` 策略實測 14 日
+// 1087 次 tries / 0 次 ok(ops-metrics.json,見 DEEP-AUDIT-ROOTCAUSE-20260906.md
+// §C9 V-5),每次白蝕 37.5 秒——串行 fallback 之下呢 37.5 秒直接計入注定失敗
+// resolve 嘅總時長(~76 秒),而 client watchdog 死線只係 10-20 秒級,所以呢個
+// dead strategy 100% 只表現為「跳歌/冇聲」。**唔刪 code**——YouTube 隨時再變,
+// 留低一鍵回滾嘅手勢:預設唔加入,`RESOLVE_TV=1` 先加返入 STRATEGIES。
+// 回滾條件(寫死俾之後量度用):7 日內 resolve.fail 率升穿 6%(現 4.93%)。
+const RESOLVE_TV = process.env.RESOLVE_TV === '1';
+const TV_STRATEGY = { name: 'youtube:player_client=tv', fmt: 'bestaudio[ext=m4a]/bestaudio', extra: '--extractor-args "youtube:player_client=tv"' };
 const STRATEGIES = [
   { name: 'default', fmt: 'bestaudio[ext=m4a]/bestaudio', extra: '' },
-  { name: 'youtube:player_client=tv', fmt: 'bestaudio[ext=m4a]/bestaudio', extra: '--extractor-args "youtube:player_client=tv"' },
+  ...(RESOLVE_TV ? [TV_STRATEGY] : []),
   { name: 'default-any', fmt: 'bestaudio', extra: '' },
 ];
+// 啟動時記一行,令 restart 後可以喺 /tmp/hymn_backend.log 核實邊個策略名單真係生效。
+console.log(`[resolve] strategies=${STRATEGIES.map((s) => s.name).join(',')}`);
 
 // ── §1a URL cache 持久化落碟 ──────────────────────────────────────
 // backend 重啟即全冷嘅缺口:每次寫入 debounce flush 落 cache/resolve-cache.json,
