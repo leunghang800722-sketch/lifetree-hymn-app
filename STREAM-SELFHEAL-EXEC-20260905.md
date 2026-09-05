@@ -115,6 +115,19 @@ Symlink 由 `ytdlp-venv-a` 揈咗去 `ytdlp-venv-b`。State:`swapsToday=1`,
 自動修復一行,history 寫咗 `ytdlp-swap-ok ...verifyB=3/3`。apply-call-log
 一次。時間戳:2026-09-05T05:57:30Z。
 
+> ⚠️ **更正(2026-09-05 §F,Opus 驗收指出嘅事實錯誤)**:上面呢句
+> 「Layer A 因 failCache **15 分鐘**留返俾下個 tick」寫錯咗常數。Layer A
+> 探測打嘅係 `/api/stream/<id>` → `backend/routes/stream.js:299` →
+> `resolveAudioUrl(hymn.youtube_id, { playbackRetry: true })`,而
+> `backend/lib/resolveAudio.js:46` `FAIL_TTL_PLAYBACK_MS = 60 * 1000` ——
+> **真正視野係 60 秒**,唔係 15 分鐘。15 分鐘嗰個係 `:30`
+> `FAIL_TTL_MS`,淨係管批量/預取/keep-warm(冇人等),同健康探測完全無關。
+> `ops/stream/stream-selfheal.sh` 嘅同一句話同埋本檔 §0 讀嘅背景資料已經
+> 喺 F3/F6(見下面 §F)一齊改咗做「backend failCache(playbackRetry)約60秒」。
+> 呢個錯誤本身**唔會出錯**(用 15 分鐘係保守方向,唔會誤判),但係放棄咗
+> 一個本可以即場端到端確認嘅機會——見 §F3 嘅 false-green 修復,而家已經
+> 唔淨係靠等 60 秒,`healthy_a==0` 嗰陣會直接保持警報。
+
 ### C3 — 形態①換咗但 Layer B 仍 fail → rollback + 升級③
 
 ```
@@ -298,5 +311,188 @@ $ cat backend/data/stream-health-state.json    # 跑之後:lastCheck 更新到 1
 - 改:`.gitignore`(加 `stream-selfheal-state.json`/`stream-selfheal.log`)
 - 改:`docs/SUPERVISION-LOG.md`(S1 落地記錄 + 待辦:launchd 要人手重載)
 - 新:本檔 `STREAM-SELFHEAL-EXEC-20260905.md`
-- **冇改**:`backend/` 任何 code、production `stream-health-state.json` /
-  `stream-health.log`、Cloudflare、真 yt-dlp symlink、真 backend process
+- **冇改**:`backend/` 任何 code、Cloudflare、真 yt-dlp symlink、真 backend process
+- ⚠️ **更正(2026-09-05 §F,Opus 驗收指出)**:上面呢一行原本仲寫住
+  「production `stream-health-state.json` / `stream-health.log`」都冇改,呢個
+  講法同本檔 §4 自己嘅證據自相矛盾——§4 已經白紙黑字記低咗
+  `lastCheck` 由 `13:36:56` 更新到 `14:00:22`。真相係:**`stream-health-state.json`
+  / `stream-health.log` 兩個都因為 §4 嗰次(唯一一次)真係跑生產
+  `ops/lyrics/stream-healthcheck.sh`(冇 env override,`STATE`/`HISTORY`/`LOG`
+  硬寫死)而被更新咗 `lastCheck`/新增一行 history——呢個係跑生產健康檢查嘅
+  正常、有意設計嘅副作用(唔係意外寫壞嘢),`consecutiveFail` 全程維持 0,
+  對用戶零影響。冇改嘅淨係:`backend/` code、Cloudflare、真 yt-dlp symlink、
+  真 backend process、`docs/SUPERVISION-LOG.md`(因為健康,冇觸發警報段)。
+
+見 `STREAM-SELFHEAL-OPUS-20260905.md` §F1-F6 驗收 + 修復,證據喺本檔 §F。
+
+---
+
+## §F 2026-09-05 第二輪:Opus 驗收三條必修 + 兩條拍板落地
+
+依 `STREAM-SELFHEAL-OPUS-20260905.md` §9 P1-P9 同一頁判定執行。全程一樣紅線:
+`backend/` 任何 code 零改動、production `approved.json`/`stream-health-state.json`
+淨係俾生產 dry-run 健康跑更新過 `lastCheck`(見上面更正)、`docs/SUPERVISION-LOG.md`
+冇因為呢輪測試新增內容(全部測試都用 `SELFHEAL_LOG_MD` env override 指去
+scratchpad)。Harness 沿用同一套 mock HTTP server + 雙 slot 假 yt-dlp + 假
+apply/restart(`/private/tmp/.../scratchpad/harness/`),另加一個獨立 scratch
+git repo(`scratchpad/f4repo`)專測 F4,同一個 fake `launchctl`(`scratchpad/f5/`)
+專測 F5。
+
+### F1 — rollback guard(`ops/stream/stream-selfheal.sh`)
+
+修法:`before_target="$(readlink "$YTDLP_LINK")"` 讀到空(唔係 a/b symlink
+佈局)就直接 `action=ytdlp-not-symlink`,**唔 apply 亦唔 rollback**,寫警報
+alert_active=1 交人手。真正 rollback 前再核一次
+`[[ -n "$before_target" && -x "$YTDLP_DIR/$before_target" ]]`(`$YTDLP_DIR`
+係 `$YTDLP_LINK` 嘅 dirname,對應生產嘅 `backend/tools`),核唔過就唔郁
+symlink,訊息講明「rollback guard 唔過」要人手核實。
+
+- **F1-A(空 readlink)**:`tools/yt-dlp` 換咗做普通可執行檔(冇 symlink)。
+  結果:`action=ytdlp-not-symlink`,`apply-calls=0`,檔案本身**完全冇被郁過**
+  (跑前跑後 `file` 輸出一致),`alert.active=true`,訊息含「唔係 a/b symlink
+  佈局」「唔會 apply 亦唔會 rollback」「要人手查同重建 symlink」。
+- **F1-B(rollback 時 guard 唔過)**:符號連結本身有效(指住
+  `ytdlp-venv-a/bin/yt-dlp`),但將呢個目標檔案 `chmod -x`(模擬 venv 損壞/
+  俾人手殘剷咗可執行位)。候選 slot b 都係壞嘅(head-only,逼出 rollback
+  分支)。結果:apply 真係揈咗去 b、verify B 3 次 403、判定 rollback,但
+  guard `-x "$YTDLP_DIR/ytdlp-venv-a/bin/yt-dlp"` = false → **冇郁 symlink**
+  (`post-symlink` 維持 `ytdlp-venv-b/bin/yt-dlp`,唔係整死佢做空 target),
+  訊息寫明「⚠️ rollback guard 唔過...為安全冇郁 symlink...要人手核實同修正」。
+  (`update-ytdlp.sh:194` 用相對路徑 `ln -sfn "ytdlp-venv-$IDLE_NAME/bin/yt-dlp"`,
+  所以 rollback guard 一樣用相對路徑核對,同生產寫法一致。)
+
+兩個 case 都核實過:冇任何一條路徑會整出「target 係空字串嘅 dangling
+symlink」(Opus §4 P1 原本嗰個最壞後果)。
+
+### F2 — 節流(`ops/stream/stream-selfheal.sh`)
+
+修法:新增 `lastActionTick`/`lastActionForm` 落 selfheal state,`due` 判斷
+= 形態(用未加後綴嘅原始 `form_kind`,刻意唔理 rollback 之後改嘅顯示後綴,
+否則 rollback 令 form 文字跳嚟跳去會繞過節流)換咗 **或** `consecutiveFail==2`
+**或** 未記過(`lastActionTick<=0`)**或** 距離上次夠 `THROTTLE_TICKS`(預設
+12)。唔 due 嗰啲 tick:唔 call apply/restart,唔寫 SUPERVISION-LOG,但
+`hist()`(`stream-selfheal.log`)照寫、`alert.active/form/message` 照樣更新
+落 state(俾 `stream-status.sh` 睇到最新現況)。
+
+- **12-tick soak**:形態①持續(candidate 冇 canary-PASS,`ytdlp-no-candidate`
+  分支),`consecutiveFail` 由 2 行到 13(12 次 tick,同一個 `SELFHEAL_STATE`
+  檔跨 tick 累積,唔清)。結果:`apply-calls.log` **淨係 1 行**(cf=2 嗰次),
+  `stream-selfheal.log`(history)**12 行**(每 tick 一行,含 11 行
+  `ytdlp-throttled-wait`),`SUPERVISION-LOG` **淨係 1 行**(比任務要求嘅
+  「≤2」更緊)。跟住補一 tick `cf=14`(距離上次 12 個 tick):`due=1` 再次
+  觸發,`apply-calls` 變 2、`SUPERVISION-LOG` 變 2 行——確認節流窗口本身係
+  對嘅,唔係永久唔會再報。
+- **形態換咗即時 due**:上面 soak 跑完之後(`lastActionForm=①yt-dlp`,
+  `lastActionTick=14`),餵一個形態②(backend restart-ok)入去,`due=1`
+  即刻成立(`consecutiveFail=15`,距離上次先得 1 個 tick,但因為
+  `form_kind` 換咗),寫咗 SUPERVISION-LOG 同真係 call 咗 restart——證明
+  「新形態即時通知」冇俾節流窗口拖住。
+
+### F3 — needsHuman(`ops/stream/stream-status.sh` + `ops/stream/stream-selfheal.sh`)
+
+兩個獨立、defense-in-depth 嘅修法:
+
+1. **`stream-status.sh`**:`needsHuman = alert_active or stale or
+   (consecutiveFail >= 2)`。實測:`consecutiveFail=3` 但 `alert.active=false`
+   (selfheal 冇行過/判斷有錯嘅防守 case)→ `needsHuman:true`(修前會係
+   `false`)。反面案例核實冇破壞正常行為:`consecutiveFail=0` 健康 →
+   `needsHuman:false`;`consecutiveFail=1` 單次 blip、冇 alert →
+   `needsHuman:false`(單次 blip 容忍冇被打爛)。
+2. **`stream-selfheal.sh` ①swap-ok 分支拆做兩支**:`verify_layer_b` 過(≥2)
+   之後,**先睇 `healthy_a`**——`healthy_a==1`(Layer A 本身已經健康,即係
+   純粹「1MiB 病」形態)先至寫 🟢 `ytdlp-swap-ok`、`alert_active=0`;
+   `healthy_a==0`(即 Opus §2a 揭到嗰個 false-green:兩層之前都死)寫
+   **🟡 `ytdlp-swap-ok-pending-a`**,`alert_active` 保持 `1`,訊息明確講
+   「已換版,等 Layer A 下一 tick 重驗,暫時保持警報」。
+   - REG-2(healthy_a=1)結果:`action=ytdlp-swap-ok alert_active=0`,
+     SUPERVISION 寫 🟢。
+   - REG-3(healthy_a=0,同 Opus A1 一樣嘅輸入)結果:
+     `action=ytdlp-swap-ok-pending-a alert_active=1`,SUPERVISION 寫 🟡,
+     `pendingRecheck` 講明「backend failCache(playbackRetry)約 60 秒」
+     (F6 一齊改咗嗰個常數)。**false-green 已經冇咗**——`healthy_a` 仲係 0
+     嗰陣,`stream-status.sh` 會因為 `alert.active=true` 報 `needsHuman:true`,
+     就算 selfheal 判斷失手,F3(a) 嘅 `consecutiveFail>=2` 呢層都仲頂住。
+
+### F4 — 部署 gate `--same-code` 模式(`ops/deploy/backend-restart.sh`)
+
+修法:HEAD≠approved 嗰陣,`--same-code` 改為驗
+`git diff --quiet <approved> HEAD -- backend ':!backend/hymns.db'
+':!backend/data' ':!backend/public' ':!backend/logs'` —— 淨係比較
+backend/ **code**,豁免運行時目錄(同第 2 步嘅髒檔案豁免清單對齊)。過就
+准(印 `mode=same-code approved=<sha> head=<sha>`),唔過照舊 abort。呢個
+模式**只**放寬「sha 必須完全相等」一條,第 2 步嘅髒檔案檢查、健康檢查
+全部原封不動。`selfheal.sh` 嘅 `RESTART_CMD` 預設已經改用
+`ops/deploy/backend-restart.sh --same-code`。
+
+用一個獨立 scratch git repo(`scratchpad/f4repo`,同 production repo 完全
+隔離)+ `HYMN_DEPLOY_DIR` override(指去 `scratchpad/f4deploy/approved.json`,
+唔係 `~/.hymn-deploy`)測咗四個 case,全部 `--dry-run`(第 2 步一過就
+exit 0,唔會走到真 `launchctl`):
+
+| Case | HEAD vs approved | flag | 結果 |
+|---|---|---|---|
+| F4-1 | 相等 | (無) | ✅ 正常路徑過,`mode` 未牽涉(HEAD==approved 直接跳過第 1 步) |
+| F4-2 | HEAD 領先一個 docs+`backend/data` 自動備份 commit | (無 `--same-code`) | ❌ 照舊 abort(確認冇 `--same-code` 就唔會被呢個放寬影響) |
+| F4-3 | 同 F4-2 | `--same-code` | ✅ 過,印 `mode=same-code approved=<A> head=<B>` |
+| F4-4 | HEAD 再領先一個真 `backend/app.js` 改動 | `--same-code` | ❌ 照舊 abort,額外印一行「已試過 --same-code...有真實差異,唔可以放行」 |
+
+跑完之後核對:production `~/.hymn-deploy/approved.json` 內容(`sha` 仍係
+`d89b3adaac2e...`)全程冇被讀寫過(script 淨係讀 `HYMN_DEPLOY_DIR` 指嘅
+scratch 檔案),production repo `git status` 淨係本身既有嘅未 commit 檔案 +
+`ops/` 呢輪改動,冇多咗嘢。
+
+### F5 — stale 門檻讀 launchd(`ops/stream/stream-status.sh`)
+
+修法:預設(冇顯式 `STALE_MIN`)改為 `launchctl print
+gui/$(id -u)/com.hymnstream.healthcheck`(唯讀,`ops/deploy/guard-bash.sh`
+淨係擋 `com.hymnapp.backend` 加 kickstart/bootout 等字眼,`print` 呢類查
+狀態命令連 `com.hymnapp.backend` 都唔擋,`com.hymnstream.healthcheck` 更加
+唔會中)攞 `run interval = N seconds`,`STALE_MIN = N秒 × 3 / 60`;讀唔到/
+parse 唔到就 fallback `270`(90 分鐘 × 3,即係修改前嗰個死寫門檻嘅 3 倍)。
+`LAUNCHCTL_BIN`/`LAUNCHD_LABEL` 可 override(方便測試用假 launchctl),
+顯式 `STALE_MIN` 環境變數永遠優先(唔會走去讀 launchd)。
+
+- 用假 `launchctl`(`scratchpad/f5/fake-launchctl`,印 `run interval =
+  ${FAKE_INTERVAL_SEC} seconds`)測:`FAKE_INTERVAL_SEC=10800` →
+  `STALE_MIN` 換算 `540`;`ageMin=539` → `stale:false`,`ageMin=541` →
+  `stale:true`(門檻剛好卡喺 540/541 之間,同題目要求「10800 時 3× = 540
+  分鐘」一致)。
+- fallback:假 launchctl 換成一個唔存在嘅路徑 → `ageMin=300` 嗰個輸入喺
+  `540` 門檻下係 `stale:false`,但喺 fallback `270` 門檻下變 `stale:true`——
+  兩個門檻分得出嚟,證明真係讀緊 launchd 出嘅數,唔係死寫。
+- 顯式 `STALE_MIN=5000` override:就算 launchctl 讀唔到,都照用 `5000`,
+  唔會被 fallback 頂替。
+- **生產 live 核實**(唯讀):`launchctl print gui/501/com.hymnstream.healthcheck`
+  現時仲係 `run interval = 10800 seconds`(plist 未 bootout+bootstrap 重讀,
+  同 Opus §8 記錄一致,呢單未做——見下面待辦),跑真 `ops/stream/stream-status.sh`
+  攞到 `STALE_MIN` 換算後對應 `540` 分鐘、`ageMin=33`、`stale:false`、
+  `needsHuman:false`,同生產現況(健康)相符。
+
+### F6 — exec sheet 更正
+
+見本檔 §0/§3.2/§5 三處新加嘅「⚠️ 更正(2026-09-05 §F)」段落:
+1. `backend failCache 15 分鐘` → 已更正做「Layer A(`playbackRetry:true`)
+   實際視野係 `FAIL_TTL_PLAYBACK_MS` **60 秒**,15 分鐘嗰個 `FAIL_TTL_MS`
+   淨係管批量/預取」,`ops/stream/stream-selfheal.sh` 嘅同一句話一齊改。
+2. 「冇改 production `stream-health-state.json`/`stream-health.log`」呢個
+   同本檔 §4 自己證據矛盾嘅講法已經修正:`lastCheck` 因為 §4 嗰次真係跑
+   生產 healthcheck 而更新,呢個係設計內、對用戶零影響嘅副作用,唔算
+   「改咗嘢」但都唔應該講「冇改」。
+
+### 產出檔案(呢一輪)
+
+- 改:`ops/stream/stream-selfheal.sh`(F1 rollback guard、F2 節流、F3(b)
+  swap-ok-pending-a、F6 failCache 常數更正、`RESTART_CMD` 預設加 `--same-code`)
+- 改:`ops/stream/stream-status.sh`(F3(a) needsHuman、F5 stale 門檻讀 launchd)
+- 改:`ops/deploy/backend-restart.sh`(F4 `--same-code` 模式)
+- 改:本檔 `STREAM-SELFHEAL-EXEC-20260905.md`(F6 兩處更正 + 本 §F)
+- **冇改**:`backend/` 任何 code、production `approved.json`、真 yt-dlp
+  symlink、真 backend process、`docs/SUPERVISION-LOG.md`(呢輪測試全部
+  env override 去 scratchpad)。production `stream-health-state.json` 淨係
+  俾 §5 F5 生產核實嗰次真跑 `stream-status.sh` 讀過(唯讀,`ageMin` 計算唔
+  寫檔),冇寫過。
+- **仍然待辦(Opus §8,呢輪冇處理)**:launchd 未 bootout+bootstrap 重讀
+  plist,`com.hymnstream.healthcheck` 現實仲係 3 小時一 tick;F5 修完之後
+  `stream-status.sh` 嘅 stale 門檻會自動跟返 live interval(而家 3 小時 ×
+  3=9 小時,跟原本 90 分鐘死寫比反而更寬鬆,唔會誤報),但要享受 30 分鐘
+  一 tick 嘅加密同 F2 節流嘅 6 小時節奏,呢步人手命令都仲係要補。
