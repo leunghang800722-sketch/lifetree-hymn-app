@@ -98,6 +98,8 @@ backend/hymns.db.lock*
 # backend 執行時狀態/日誌 —— server 一路寫緊,commit 咗只會日日 dirty
 backend/data/stream-health-state.json
 backend/data/stream-health.log
+backend/data/stream-selfheal-state.json
+backend/data/stream-selfheal.log
 backend/data/warm-daily.json
 backend/data/ytdlp-update.log
 backend/data/**/*.log
