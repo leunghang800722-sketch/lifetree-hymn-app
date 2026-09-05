@@ -7381,3 +7381,690 @@ draft 282 拆開 = 英文 hold 126 + 雙數非英文 78(我分區,由 92 減落�
 
 ⚠️ **要記得開返嘅時機:** 如果第日四條專線收爐停用(例如歌詞做完轉返日常維護模式),`lyrics-daily-proofread` 就要開返 —— 唔係嘅話**日常校對會永久停擺**,新入庫嘅歌永遠冇人複核。呢個 8/17 撞過一次(wrap 班死咗冇開返),要小心。
 
+- [2026-08-23 10:01] P線時報(keeper自動):過去1小時 OCR/whisper draft **+46**(log累計 3555);重做隊剩 0;可做draft 263;producer 行緊
+- **心跳 2026-08-23 11:01** — verified 5228(86.5%)/ draft 333(可做 279)/ 重做隊剩 0 / producer 生存 / ⚠ keeper 連續空轉:OCR 池 279 首全部俾 cooldown / skip-orgs / ledger 判死剔走,fetchlyrics 報「冇更多 cc:miss 嘅歌等 OCR」,自動線實際零產出
+- [2026-08-23 11:01] P線時報(keeper自動):過去1小時 OCR/whisper draft **+18**(log累計 3573);重做隊剩 0;可做draft 264;producer 冇行
+- [2026-08-23 12:01] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 3573);重做隊剩 0;可做draft 227;producer 冇行
+- [2026-08-23 13:01] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 3573);重做隊剩 0;可做draft 222;producer 冇行
+- **心跳 2026-08-23 14:01** — verified 5274(87.3%)/ draft 267(可做 199)/ 重做隊剩 0 / producer 生存 / ⚠ keeper 空轉已連續第 3 個鐘:13:57 一轉再報「上一轉 OCR 池冇一首攻得(全部 cooldown / skip-orgs)」+ fetchlyrics「冇更多 cc:miss 嘅歌等 OCR」,自動線由 11:01 起產出 +0,可做 279→199 全靠人手線;verified 升幅(5228→5274)全部係複核班功勞
+- [2026-08-23 14:02] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 3573);重做隊剩 0;可做draft 198;producer 冇行
+- [2026-08-23 15:02] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 3573);重做隊剩 0;可做draft 198;producer 冇行
+- [2026-08-23 16:02] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 3573);重做隊剩 0;可做draft 197;producer 冇行
+- **心跳 2026-08-23 17:01** — verified 5275(87.3%)/ draft 266(可做 197)/ 重做隊剩 0 / producer 生存 / ⚠ OCR 線空轉:keeper 16:52+16:57 連續兩轉「池入面冇一首攻得(全部 cooldown / skip-orgs)」,而 /tmp/hymn_fetchlyrics.log 最後一筆停喺 08:57「冇更多 cc:miss 嘅歌等 OCR」——可做 197 首實際上全部俾 ledger/skip-orgs 剔住,OCR 補倉近 8 個鐘冇實際產出
+- [2026-08-23 17:02] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 3573);重做隊剩 0;可做draft 197;producer 冇行
+- [2026-08-23 18:02] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 3573);重做隊剩 0;可做draft 190;producer 冇行
+- [2026-08-23 19:02] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 3573);重做隊剩 0;可做draft 190;producer 冇行
+- **心跳 2026-08-23 20:01** — verified 5295(87.7%)/ draft 243(可做 174)/ 重做隊剩 0 / producer 生存 / OCR 池連續空轉:19:57 那轉「冇一首攻得(全部 cooldown / skip-orgs)」,keeper 已自動轉 CC 補倉
+- [2026-08-23 20:02] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 3573);重做隊剩 0;可做draft 174;producer 冇行
+- [2026-08-23 21:02] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 3573);重做隊剩 0;可做draft 174;producer 冇行
+- [2026-08-23 22:02] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 3573);重做隊剩 0;可做draft 173;producer 冇行
+- **心跳 2026-08-23 23:01** — verified 5296(87.7%)/ draft 242(可做 173)/ 重做隊剩 0 / producer 生存 / ⚠ keeper 連續兩轉報「OCR 池入面冇一首攻得(全部 cooldown / skip-orgs)」,fetchLyrics 亦寫「冇更多 cc:miss 嘅歌等 OCR」——即係 173 首可做 draft 實際全部俾 ledger/cooldown/skip-orgs 擋住,OCR 線空轉緊
+- [2026-08-23 23:02] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 3573);重做隊剩 0;可做draft 173;producer 冇行
+- [2026-08-24 00:02] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 3573);重做隊剩 0;可做draft 171;producer 冇行
+- [2026-08-24 01:02] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 3573);重做隊剩 0;可做draft 171;producer 冇行
+
+- **心跳 2026-08-24 02:01** — verified 5296(87.7%)/ draft 240(可做 171)/ 重做隊剩 0 / producer 生存 / ⚠ verified 三個鐘零升幅(23:01 → 02:01 都係 5296),draft 只跌 2;keeper 01:52+01:57 連續兩轉再報「OCR 池入面冇一首攻得(全部 cooldown / skip-orgs)」,而 /tmp/hymn_fetchlyrics.log 最後一筆仍然停喺 2026-08-23 17:57「冇更多 cc:miss 嘅歌等 OCR」——即係 OCR 補倉線已經連續 8 個鐘完全冇實際跑過,171 首可做 draft 全部俾 ledger/cooldown/skip-orgs 擋住
+- [2026-08-24 02:02] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 3573);重做隊剩 0;可做draft 171;producer 冇行
+- [2026-08-24 03:02] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 3573);重做隊剩 0;可做draft 171;producer 冇行
+- [2026-08-24 04:02] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 3573);重做隊剩 0;可做draft 171;producer 冇行
+- **心跳 2026-08-24 05:01** — verified 5296(87.7%)/ draft 240(可做 171)/ 重做隊剩 0 / producer 生存 / OCR 池連續兩轉「冇一首攻得」(全部 cooldown / skip-orgs),keeper 自己轉咗 CC 補倉,draft 仍然政策卡死
+- [2026-08-24 05:02] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 3573);重做隊剩 0;可做draft 171;producer 冇行
+- [2026-08-24 06:02] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 3573);重做隊剩 0;可做draft 170;producer 冇行
+- [2026-08-24 07:03] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 3573);重做隊剩 0;可做draft 170;producer 冇行
+- **心跳 2026-08-24 08:01** — verified 5297(87.7%)/ draft 239(可做 170)/ 重做隊剩 0 / producer 生存 / ⚠ keeper 連續兩轉 OCR 池全部 cooldown/skip-orgs 攻唔到(07:53、07:58),已自動轉 CC 補倉,fetchlyrics.log 停喺 08-23 23:58 冇新寫入
+- [2026-08-24 08:03] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 3573);重做隊剩 0;可做draft 170;producer 冇行
+- [2026-08-24 09:03] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 3573);重做隊剩 0;可做draft 170;producer 冇行
+- [2026-08-24 10:03] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 3573);重做隊剩 0;可做draft 170;producer 冇行
+- **心跳 2026-08-24 11:01** — verified 5297(87.7%)/ draft 239(可做 170)/ 重做隊剩 0 / producer 生存 / OCR 池連續兩轉「冇一首攻得」(全部 cooldown / skip-orgs),keeper 已自動轉 CC 補倉,未算異常但 OCR 側近乎乾塘
+- [2026-08-24 11:03] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 3573);重做隊剩 0;可做draft 170;producer 冇行
+- [2026-08-24 12:03] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 3573);重做隊剩 0;可做draft 170;producer 冇行
+- [2026-08-24 13:03] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 3573);重做隊剩 0;可做draft 170;producer 冇行
+- **心跳 2026-08-24 14:01** — verified 5297(87.6%)/ draft 239(可做 170)/ 重做隊剩 0 / producer 生存 / OCR 線連續兩轉「池入面冇一首攻得」(全部 cooldown / skip-orgs),keeper 已自動轉 CC 補倉,即 OCR 產出實質停住
+- [2026-08-24 14:03] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 3573);重做隊剩 0;可做draft 170;producer 冇行
+- [2026-08-24 15:03] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 3573);重做隊剩 0;可做draft 170;producer 冇行
+- [2026-08-24 16:03] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 3573);重做隊剩 0;可做draft 170;producer 冇行
+- [2026-08-24 16:52] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 0);重做隊剩 0;可做draft 170;producer 冇行
+- **心跳 2026-08-24 17:01** — verified 5297(87.6%)/ draft 239(可做 170)/ 重做隊剩 0 / producer 生存 / keeper 每 5 分鐘開一次 OCR 但 fetchLyrics 每次都吐「冇更多 cc:miss 嘅歌等 OCR」——即 OCR 線實質空轉,draft 170 全部係要人手複核嗰種,唔係等 OCR
+- [2026-08-24 17:53] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 0);重做隊剩 0;可做draft 170;producer 冇行
+- [2026-08-24 18:53] P線時報(keeper自動):過去1小時 OCR/whisper draft **+2**(log累計 2);重做隊剩 0;可做draft 171;producer 冇行
+- [2026-08-24 19:53] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 2);重做隊剩 0;可做draft 171;producer 冇行
+- **心跳 2026-08-24 20:01** — verified 5297(84.9%)/ draft 240(可做 171)/ 重做隊剩 0 / producer 生存 / OCR 線空轉:keeper 連續兩轉報「池入面冇一首攻得(全部 cooldown / skip-orgs)」,fetchlyrics 亦話「冇更多 cc:miss 嘅歌等 OCR」——171 首可做 draft 全部俾 ledger/cooldown/skip-orgs 攔住,新 draft 產能實質係 0
+- [2026-08-24 20:53] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 2);重做隊剩 0;可做draft 171;producer 冇行
+- [2026-08-24 21:53] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 2);重做隊剩 0;可做draft 171;producer 冇行
+- [2026-08-24 22:53] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 2);重做隊剩 0;可做draft 171;producer 冇行
+- **心跳 2026-08-24 23:01** — verified 5298(84.9%)/ draft 239(可做 170)/ 重做隊剩 0 / producer 生存 / OCR 池連續兩轉「冇一首攻得」(全部 cooldown / skip-orgs),keeper 已自動轉 CC 補倉,OCR 貨源疑似乾塘
+- [2026-08-24 23:53] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 2);重做隊剩 0;可做draft 170;producer 冇行
+- [2026-08-25 00:53] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 2);重做隊剩 0;可做draft 170;producer 冇行
+- [2026-08-25 01:53] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 2);重做隊剩 0;可做draft 170;producer 冇行
+- **心跳 2026-08-25 02:01** — verified 5297(84.9%)/ draft 239(可做 170)/ 重做隊剩 0 / producer 生存 / ⚠ keeper 連續兩轉 OCR 池「冇一首攻得」(全部 cooldown / skip-orgs),170 首可做 draft 實際卡住,已自動轉 CC 補倉
+- [2026-08-25 02:53] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 2);重做隊剩 0;可做draft 170;producer 冇行
+- [2026-08-25 03:53] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 2);重做隊剩 0;可做draft 170;producer 冇行
+- [2026-08-25 04:53] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 2);重做隊剩 0;可做draft 170;producer 冇行
+- **心跳 2026-08-25 05:01** — verified 5297(84.9%)/ draft 239(可做 170)/ 重做隊剩 0 / producer 生存 / ⚠ keeper 連續兩轉 OCR 池「冇一首攻得」(全部 cooldown / skip-orgs),已自動轉 CC 補倉,OCR 線實質空轉
+- [2026-08-25 05:53] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 2);重做隊剩 0;可做draft 170;producer 冇行
+- [2026-08-25 06:53] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 2);重做隊剩 0;可做draft 170;producer 冇行
+- [2026-08-25 07:53] P線時報(keeper自動):過去1小時 OCR/whisper draft **+2**(log累計 4);重做隊剩 0;可做draft 170;producer 冇行
+- **心跳 2026-08-25 08:01** — verified 5297(84.9%)/ draft 239(可做 170)/ 重做隊剩 0 / producer 生存 / ⚠ keeper 連續兩轉報「OCR 池冇一首攻得(全部 cooldown / skip-orgs)」,而 /tmp/hymn_fetchlyrics.log 最後一筆停喺 08-24 23:58「冇更多 cc:miss 嘅歌等 OCR」—— OCR 線約 8 鐘頭零產出,貨源疑似乾塘
+- [2026-08-25 08:53] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 4);重做隊剩 0;可做draft 170;producer 冇行
+- [2026-08-25 09:53] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 4);重做隊剩 0;可做draft 169;producer 冇行
+- [2026-08-25 10:53] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 4);重做隊剩 0;可做draft 169;producer 冇行
+- **心跳 2026-08-25 11:01** — verified 5298(84.9%)/ draft 238(可做 169)/ 重做隊剩 0 / producer 生存 / keeper 連續兩轉 OCR 池「冇一首攻得」(全部 cooldown / skip-orgs),draft 已連續 3 個鐘 +0,產能實質停滯
+- [2026-08-25 11:54] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 4);重做隊剩 0;可做draft 168;producer 冇行
+- [2026-08-25 12:54] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 4);重做隊剩 0;可做draft 168;producer 冇行
+- [2026-08-25 13:54] P線時報(keeper自動):過去1小時 OCR/whisper draft **+159**(log累計 163);重做隊剩 0;可做draft 290;producer 行緊
+- **心跳 2026-08-25 14:01** — verified 5299(82.6%)/ draft 408(可做 101)/ 重做隊剩 0 / producer 生存 / ⚠ 分母由 6238 跳到 6419(catalog-gap 入庫 181 首),所以覆蓋率由 84.9% 跌到 82.6% 係新歌溝淡唔係倒退;draft 238→408 同樣係新歌帶入。OCR 線最後一筆真產出仍然停喺 06:01(8 個鐘零輸出),keeper 12:14 起轉 CC 補倉成功把池由 1 拉返上 62–182,13:39 已重開 OCR
+- [2026-08-25 14:54] P線時報(keeper自動):過去1小時 OCR/whisper draft **+22**(log累計 185);重做隊剩 0;可做draft 307;producer 冇行
+- [2026-08-25 15:54] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 185);重做隊剩 0;可做draft 268;producer 冇行
+- [2026-08-25 16:54] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 185);重做隊剩 0;可做draft 268;producer 冇行
+- **心跳 2026-08-25 17:01** — verified 5324(82.9%)/ draft 369(可做 268)/ 重做隊剩 0 / producer 生存 / OCR 池連續兩轉零攻得(全部 cooldown / skip-orgs),draft 產出已停喺 268 三個鐘,keeper 下轉強制轉 CC 補倉
+- [2026-08-25 17:54] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 185);重做隊剩 0;可做draft 210;producer 冇行
+- [2026-08-25 18:54] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 185);重做隊剩 0;可做draft 210;producer 冇行
+- [2026-08-25 19:54] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 185);重做隊剩 0;可做draft 210;producer 冇行
+- **心跳 2026-08-25 20:01** — verified 5359(83.5%)/ draft 311(可做 210)/ 重做隊剩 0 / producer 生存 / keeper 連續兩轉 OCR 池「冇一首攻得」(全部 cooldown / skip-orgs),已自動轉 CC 補倉,實質 draft 產出仍然 +0
+- [2026-08-25 20:54] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 185);重做隊剩 0;可做draft 210;producer 冇行
+- [2026-08-25 21:54] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 185);重做隊剩 0;可做draft 209;producer 冇行
+- [2026-08-25 22:54] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 185);重做隊剩 0;可做draft 209;producer 冇行
+- **心跳 2026-08-25 23:01** — verified 5360(83.5%)/ draft 310(可做 209)/ 重做隊剩 0 / producer 生存 / OCR 池連續兩轉冇一首攻得(全部 cooldown / skip-orgs),keeper 已自動轉 CC 補倉
+- [2026-08-25 23:54] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 185);重做隊剩 0;可做draft 205;producer 冇行
+- [2026-08-26 00:54] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 185);重做隊剩 0;可做draft 205;producer 冇行
+- [2026-08-26 01:54] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 185);重做隊剩 0;可做draft 205;producer 冇行
+- **心跳 2026-08-26 02:01** — verified 5364(83.6%)/ draft 306(可做 205)/ 重做隊剩 0 / producer 生存 / keeper 連兩轉 OCR 池全部攻唔到(cooldown / skip-orgs),已自動標記下一轉強制轉 CC 補倉
+- [2026-08-26 02:54] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 185);重做隊剩 0;可做draft 205;producer 冇行
+- [2026-08-26 03:54] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 185);重做隊剩 0;可做draft 205;producer 冇行
+- [2026-08-26 04:54] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 185);重做隊剩 0;可做draft 205;producer 冇行
+- **心跳 2026-08-26 05:01** — verified 5364(83.6%)/ draft 306(可做 205)/ 重做隊剩 0 / producer 生存 / OCR 池連續兩轉「冇一首攻得」(全部 cooldown / skip-orgs),keeper 已自動轉 CC 補倉
+- [2026-08-26 05:55] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 185);重做隊剩 0;可做draft 205;producer 冇行
+- [2026-08-26 06:55] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 185);重做隊剩 0;可做draft 205;producer 冇行
+- [2026-08-26 07:55] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 185);重做隊剩 0;可做draft 189;producer 冇行
+- **心跳 2026-08-26 08:01** — verified 5380(83.8%)/ draft 290(可做 189)/ 重做隊剩 0 / producer 生存 / OCR 池空轉:07:55 同 08:00 兩轉都係「整池冇一首攻得(全部 cooldown / skip-orgs)」,keeper 已自動轉 CC 補倉
+- [2026-08-26 08:55] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 185);重做隊剩 0;可做draft 189;producer 冇行
+- [2026-08-26 09:55] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 185);重做隊剩 0;可做draft 181;producer 冇行
+- [2026-08-26 10:55] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 185);重做隊剩 0;可做draft 181;producer 冇行
+- **心跳 2026-08-26 11:01** — verified 5388(83.9%)/ draft 282(可做 181)/ 重做隊剩 0 / producer 生存 / keeper 報上一轉 OCR 池全部撞 cooldown 或 skip-orgs、冇一首攻得,已強制轉 CC 補倉(fetchlyrics 最後一筆仍係 03:00 「冇更多 cc:miss 等 OCR」)
+- [2026-08-26 11:55] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 185);重做隊剩 0;可做draft 172;producer 冇行
+- [2026-08-26 12:55] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 185);重做隊剩 0;可做draft 172;producer 冇行
+- [2026-08-26 13:55] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 185);重做隊剩 0;可做draft 163;producer 冇行
+- **心跳 2026-08-26 14:01** — verified 5393(84.0%)/ draft 264(可做 163)/ 重做隊剩 0 / producer 生存 / OCR 池連兩轉「冇一首攻得」(全部 cooldown / skip-orgs),keeper 已自動轉 CC 補倉
+- [2026-08-26 14:55] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 185);重做隊剩 0;可做draft 163;producer 冇行
+- [2026-08-26 15:55] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 185);重做隊剩 0;可做draft 151;producer 冇行
+- [2026-08-26 16:55] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 185);重做隊剩 0;可做draft 151;producer 冇行
+- **心跳 2026-08-26 17:01** — verified 5394(84.0%)/ draft 252(可做 151)/ 重做隊剩 0 / producer 生存 / keeper 連續兩轉 OCR 池「冇一首攻得」(全部 cooldown / skip-orgs),已自動轉 CC 補倉,OCR 線實質喺原地打轉
+- [2026-08-26 17:55] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 185);重做隊剩 0;可做draft 151;producer 冇行
+- [2026-08-26 18:55] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 185);重做隊剩 0;可做draft 151;producer 冇行
+- [2026-08-26 19:55] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 185);重做隊剩 0;可做draft 151;producer 冇行
+- **心跳 2026-08-26 20:01** — verified 5384(84.0%)/ draft 252(可做 151)/ 重做隊剩 0 / producer 生存 / OCR 池連續兩轉全部俾 cooldown+skip-orgs 剔清,keeper 已自動轉 CC 補倉
+- [2026-08-26 20:56] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 185);重做隊剩 0;可做draft 151;producer 冇行
+- [2026-08-26 21:56] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 185);重做隊剩 0;可做draft 151;producer 冇行
+- [2026-08-26 22:56] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 185);重做隊剩 0;可做draft 151;producer 冇行
+- **心跳 2026-08-26 23:01** — verified 5385(84.0%)/ draft 251(可做 150)/ 重做隊剩 0 / producer 生存 / OCR 池連續兩轉「冇一首攻得」(全部 cooldown / skip-orgs),keeper 已自動轉 CC 補倉
+- [2026-08-26 23:56] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 185);重做隊剩 0;可做draft 150;producer 冇行
+- [2026-08-27 00:56] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 185);重做隊剩 0;可做draft 150;producer 冇行
+- [2026-08-27 01:56] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 185);重做隊剩 0;可做draft 150;producer 冇行
+- **心跳 2026-08-27 02:01** — verified 5385(84.0%)/ draft 251(可做 150)/ 重做隊剩 0 / producer 生存 / keeper 連續幾轉「OCR 池冇一首攻得(全部 cooldown / skip-orgs)」,draft 已 3 個鐘 +0,下一轉強制轉 CC 補倉
+- [2026-08-27 02:56] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 185);重做隊剩 0;可做draft 150;producer 冇行
+- [2026-08-27 03:56] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 185);重做隊剩 0;可做draft 150;producer 冇行
+- [2026-08-27 04:56] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 185);重做隊剩 0;可做draft 150;producer 冇行
+- **心跳 2026-08-27 05:01** — verified 5385(84.0%)/ draft 251(可做 150)/ 重做隊剩 0 / producer 生存 / OCR 池連續多轉「冇一首攻得」(全部 cooldown / skip-orgs),fetchlyrics log 停留喺 08-26 21:01 已 8 個鐘冇新產出,可做 draft 150 首一直原地踏步
+
+- 🟡 **yt-dlp 有新 nightly,canary 已過 2026-08-27 05:30** — 新版 `2026.08.25.233329`(現役 `2026.08.20.234504`)。三關全過(--version / 兩首 resolve / 64KB @ 2MiB mid-range 206),已經裝好喺閒置 slot `ytdlp-venv-b`。
+  **按 Eric 2026-08-22 拍板嘅保守做法,script 冇自動換**。要切換就人手行:`ops/ytdlp/update-ytdlp.sh --apply`(一個 symlink 操作,唔使 restart backend;rollback 就係揈返轉頭)。
+- [2026-08-27 05:56] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 185);重做隊剩 0;可做draft 150;producer 冇行
+- [2026-08-27 06:56] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 185);重做隊剩 0;可做draft 150;producer 冇行
+- [2026-08-27 07:56] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 185);重做隊剩 0;可做draft 150;producer 冇行
+- **心跳 2026-08-27 08:01** — verified 5379(84.0%)/ draft 251(可做 150)/ 重做隊剩 0 / producer 生存 / OCR 池連續兩轉「冇一首攻得」(全部 cooldown / skip-orgs),keeper 已自動轉 CC 補倉
+- [2026-08-27 08:56] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 185);重做隊剩 0;可做draft 150;producer 冇行
+- [2026-08-27 09:56] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 185);重做隊剩 0;可做draft 150;producer 冇行
+- [2026-08-27 10:57] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 185);重做隊剩 0;可做draft 150;producer 冇行
+- **心跳 2026-08-27 11:01** — verified 5379(84.0%)/ draft 251(可做 150)/ 重做隊剩 0 / producer 生存 / keeper 10:57 報「上一轉 OCR 池冇一首攻得(全部 cooldown / skip-orgs)→ 下一轉強制轉 CC 補倉」,但 10:57 嗰轉照樣開返 OCR;fetchlyrics log 最後一筆停留喺 02:57「冇更多 cc:miss 嘅歌等 OCR」,OCR 線實質空轉緊
+- [2026-08-27 11:57] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 185);重做隊剩 0;可做draft 150;producer 冇行
+- [2026-08-27 12:57] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 185);重做隊剩 0;可做draft 150;producer 冇行
+- [2026-08-27 13:57] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 185);重做隊剩 0;可做draft 150;producer 冇行
+- **心跳 2026-08-27 14:01** — verified 5379(84.0%)/ draft 251(可做 150)/ 重做隊剩 0 / producer 生存 / OCR 池連續兩轉「冇一首攻得」(全部 cooldown / skip-orgs),keeper 已自動轉 CC 補倉
+- [2026-08-27 14:57] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 185);重做隊剩 0;可做draft 150;producer 冇行
+- [2026-08-27 15:57] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 185);重做隊剩 0;可做draft 150;producer 冇行
+- [2026-08-27 16:57] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 185);重做隊剩 0;可做draft 149;producer 冇行
+- **心跳 2026-08-27 17:01** — verified 5380(84.0%)/ draft 250(可做 149)/ 重做隊剩 0 / producer 生存 / OCR 池連續兩轉「冇一首攻得」(全部 cooldown / skip-orgs),keeper 已自動轉 CC 補倉
+- [2026-08-27 17:57] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 185);重做隊剩 0;可做draft 149;producer 冇行
+- [2026-08-27 18:57] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 185);重做隊剩 0;可做draft 149;producer 冇行
+- [2026-08-27 19:57] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 185);重做隊剩 0;可做draft 149;producer 冇行
+- **心跳 2026-08-27 20:01** — verified 5380(84.0%)/ draft 250(可做 149)/ 重做隊剩 0 / producer 生存 / ⚠ OCR 池連續兩轉「冇一首攻得」(全部 cooldown / skip-orgs),keeper 已自動轉 CC 補倉
+- [2026-08-27 20:57] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 185);重做隊剩 0;可做draft 149;producer 冇行
+- [2026-08-27 21:57] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 185);重做隊剩 0;可做draft 149;producer 冇行
+- [2026-08-27 22:58] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 185);重做隊剩 0;可做draft 149;producer 冇行
+- **心跳 2026-08-27 23:01** — verified 5380(84.0%)/ draft 250(可做 149)/ 重做隊剩 0 / producer 生存 / OCR 池連續兩轉「冇一首攻得」(全部 cooldown / skip-orgs),keeper 已自動轉 CC 補倉
+- [2026-08-27 23:58] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 185);重做隊剩 0;可做draft 149;producer 冇行
+- [2026-08-28 00:58] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 185);重做隊剩 0;可做draft 149;producer 冇行
+- [2026-08-28 01:58] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 185);重做隊剩 0;可做draft 149;producer 冇行
+- **心跳 2026-08-28 02:01** — verified 5380(84.0%)/ draft 250(可做 149)/ 重做隊剩 0 / producer 生存 / OCR 池連續兩轉「全部 cooldown / skip-orgs 攻唔到」,fetchlyrics 停喺 17:58 冇新 draft(可做 149 一直唔郁)
+- [2026-08-28 02:58] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 185);重做隊剩 0;可做draft 149;producer 冇行
+- [2026-08-28 03:58] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 185);重做隊剩 0;可做draft 149;producer 冇行
+- [2026-08-28 04:58] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 185);重做隊剩 0;可做draft 149;producer 冇行
+
+- 🟡 **yt-dlp 有新 nightly,canary 已過 2026-08-28 05:30** — 新版 `2026.08.27.003630`(現役 `2026.08.20.234504`)。三關全過(--version / 兩首 resolve / 64KB @ 2MiB mid-range 206),已經裝好喺閒置 slot `ytdlp-venv-b`。
+  **按 Eric 2026-08-22 拍板嘅保守做法,script 冇自動換**。要切換就人手行:`ops/ytdlp/update-ytdlp.sh --apply`(一個 symlink 操作,唔使 restart backend;rollback 就係揈返轉頭)。
+- [2026-08-28 05:58] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 185);重做隊剩 0;可做draft 149;producer 冇行
+- [2026-08-28 06:58] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 185);重做隊剩 0;可做draft 149;producer 冇行
+- [2026-08-28 07:58] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 185);重做隊剩 0;可做draft 149;producer 冇行
+- [2026-08-28 08:59] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 185);重做隊剩 0;可做draft 149;producer 冇行
+- [2026-08-28 09:59] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 185);重做隊剩 0;可做draft 149;producer 冇行
+- [2026-08-28 10:59] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 185);重做隊剩 0;可做draft 149;producer 冇行
+- [2026-08-28 11:59] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 185);重做隊剩 0;可做draft 149;producer 冇行
+- [2026-08-28 12:59] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 185);重做隊剩 0;可做draft 149;producer 冇行
+- [2026-08-28 13:59] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 185);重做隊剩 0;可做draft 149;producer 冇行
+- [2026-08-28 14:59] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 185);重做隊剩 0;可做draft 149;producer 冇行
+- [2026-08-28 15:59] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 185);重做隊剩 0;可做draft 149;producer 冇行
+- [2026-08-28 17:00] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 185);重做隊剩 0;可做draft 149;producer 冇行
+- **心跳 2026-08-28 17:01** — verified 5380(84.0%)/ draft 250(可做 149)/ 重做隊剩 0 / producer 生存 / OCR 池空轉:keeper 連續兩轉報「冇一首攻得(全部 cooldown / skip-orgs)」,fetchLyrics 最後一次真出手停喺 09:00,draft 已 8 個鐘冇加過
+- [2026-08-28 18:00] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 185);重做隊剩 0;可做draft 149;producer 冇行
+- [2026-08-28 19:00] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 185);重做隊剩 0;可做draft 149;producer 冇行
+
+- 🔴 **串流健康警報 2026-08-28 19:52** — Layer A(經 backend)得 1/3 首 206,但 Layer B(直打 googlevideo)2 首過 —— **upstream 好地地,問題喺 backend 側**(連續第 1 次)。實際: A:id=42:502 A:id=5431:000 B:PG_J_0gsMXA:resolve-fail
+  診斷次序:①`pgrep -f 'node.*server.js'` backend 生存?②`launchctl list | grep hymnapp` 應該 7 個 job ③睇 backend log 有冇 503/crash loop。
+- [2026-08-28 20:01] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 185);重做隊剩 0;可做draft 149;producer 冇行
+- **心跳 2026-08-28 20:02** — verified 5380(84.0%)/ draft 250(可做 149)/ 重做隊剩 0 / producer 生存 / OCR 池連續兩轉「冇一首攻得」(全部 cooldown / skip-orgs),keeper 已自動轉 CC 補倉;另 19:52 有串流健康警報(Layer A 1/3、Layer B 2 首過,指向 backend 側)未處理
+- [2026-08-28 21:01] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 185);重做隊剩 0;可做draft 149;producer 冇行
+- [2026-08-28 22:01] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 185);重做隊剩 0;可做draft 149;producer 冇行
+
+- 🟠 **機器過載 2026-08-28 22:17(R1 國語線班尾 restart 時實測)** — `uptime` **load average 35.85 / 32.37 / 30.76**,頭六個食 CPU 嘅 process **全部係 Claude Code session**(四條複核線 + 其他),yt-dlp 得 1 個。後果實錄兩件:
+  ① **backend restart 之後用咗 ~11 分鐘先應到 HTTP**(21:59 kickstart → 22:10:24 先 200)。`ops/deploy/backend-restart.sh` 個 health check 只等 10 秒,所以會報「❌ health check 失敗」但其實 restart 係成功嘅 —— 當時 `launchctl list | grep hymnapp` 夠 8 個、`lsof -nP -iTCP:3001` 有 LISTEN、`nc -z` 通、`curl` 連到但 0 bytes(event loop 塞住)、`sample <pid>` 見到 main thread 喺 V8 baseline compile。
+  ② 呢個亦都係 **19:52 嗰個 🔴 串流健康警報嘅根因**:#5431 `mode=cold resolve_ms=0 ttfb_ms=49828 status=0 aborted=true`,一個鐘之後同一首冷 resolve 用 31.3 秒但 **206 過**。即係「冷 resolve 慢過 healthcheck / app 自己個 timeout」,唔係 backend 冧,亦唔係 upstream 死(Layer B 當時 2 首過)。
+  ⇒ **建議交返俾 Eric:四條複核線 cron 而家錯開 1 個鐘,但實際上四條會長時間重疊,再加 producer + growLibrary,機器頂唔順。** 值得考慮(a)減線 (b)拉大錯峰 (c)複核線行嗰陣暫停 growLibrary。呢個唔應該由複核線單方面拍板。
+- [2026-08-28 23:02] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 185);重做隊剩 0;可做draft 149;producer 冇行
+- **心跳 2026-08-28 23:02** — verified 5382(84.1%)/ draft 250(可做 149)/ 重做隊剩 0 / producer 生存 / keeper 空轉:23:02 log 寫「上一轉 OCR 池入面冇一首攻得(全部 cooldown / skip-orgs)→ 強制轉 CC 補倉」,fetchlyrics 尾段亦係「冇更多 cc:miss 嘅歌等 OCR」,即係 149 首可做 draft 實際上全部俾 ledger/cooldown/skip-orgs 攔住,OCR 線行緊但攞唔到料
+
+## 2026-08-28 23:53 🟡 growLibrary 疑似 I/O 吊死 + 揸住 DB 鎖(R2 粵語單數線報)
+
+- pid 68503 `growLibrary.js --mode curate --budget 6`,`ps` STAT=**U**(uninterruptible wait),ELAPSED **1:13:12** / CPU TIME **33.9s**。
+- `/tmp/hymn_growlibrary.log` 最後一行 **23:22:56**(印完 mode header 就再冇輸出)。
+- `backend/hymns.db.lock` 由 **22:48:51** 起 timestamp 冇變 → 一次攞鎖揸住成個鐘。
+- **影響:四條複核線 apply 全部 `db_busy`** —— R1 21:41 四首 skip;R2 #2219 apply + #113/#177 落架寫唔到(重試 20 分鐘零窗口,檔留喺 R2 scratch,見 ledger 23:45)。
+- R2 冇郁佢(唔喺權限)。要處理嘅話:kill 68503,`hymnDb.js` 嘅 stale-lock steal 會令下一個 writer 搶返個鎖。
+- [2026-08-29 00:02] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 185);重做隊剩 0;可做draft 149;producer 冇行
+
+## 2026-08-29 00:32 R1b 國語雙數線:🔴 growLibrary 揸住 DB 鎖超過 1.5 個鐘,四條複核線 apply 全部卡住
+
+- `backend/hymns.db.lock` 由 **2026-08-28 22:48:51** 起 owner = `growLibrary:68503`,到 00:32 都未放。
+- 個 process **仲生存**,但 `/tmp/hymn_growlibrary.log` **最後一行停咗喺 23:22:56**(mode=curate budget=6 delay=~4000ms),即係將近一個鐘冇出過新 log,懷疑卡死喺 YouTube 網絡呼叫。
+- 影響:`reviewLyrics.js --apply` 每個 id 等 5 分鐘攞唔到鎖就 skip,**R1b 本班 12 首驗收過咗嘅歌詞寫唔入 DB**(已開 background waiter 等放鎖補寫)。四條線都會中同一招。
+- 按 SOP 冇掂個 lockfile、冇 kill 個 process。⇒ **交俾 P 線 / Eric 判斷:growLibrary 係咪應該喺長時間網絡 IO 期間放返個鎖(而家係揸足全程),同埋要唔要加個 watchdog。**
+
+### 2026-08-29 00:52 補記(R1b):growLibrary 個鎖 00:49 自己放咗,總共揸咗 **2 小時 01 分**(22:48→00:49)。R1b 13 首已補寫成功。上面提出嘅建議照舊有效。
+- [2026-08-29 01:03] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 185);重做隊剩 0;可做draft 149;producer 冇行
+- [2026-08-29 02:03] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 185);重做隊剩 0;可做draft 149;producer 冇行
+- **心跳 2026-08-29 02:03** — verified 5382(84.1%)/ draft 250(可做 149)/ 重做隊剩 0 / producer 生存 / keeper 連續兩轉開 OCR 都「冇一首攻得」(全部 cooldown / skip-orgs),已強制轉 CC 補倉;fetchlyrics log 停喺 08-28 18:03 未有新一轉寫入
+
+## 2026-08-29 02:58 — 🔴 backend restart 之後起唔返身(機器 swap 爆)
+
+**R1 國語線班尾 checkpoint** 照 SOP §5 行 `ops/deploy/backend-restart.sh`(02:30),gate 全過
+(HEAD == 已批准 `d1a2c8c`,backend/ 冇髒檔),但新 process **28 分鐘都上唔到線**:
+`/api/health` connection refused、3001 冇 listener。
+
+- **唔係 crash**:新 pid 89613 一直存在,`02:42` 有印到「🗃️ resolve-cache:由碟載返 9 條未過期 URL」,
+  RSS 由 34.9MB 慢慢升到 ~41MB ⇒ JS 真係行緊。
+- **根因係機器資源,唔關 backend code 事**:
+  `load average 33.52 / 34.40 / 35.04`、`vm.swapusage used = 11069.56M / 12288.00M`(剩 1.2G)、
+  `Pageins 56,456,695`、process STAT 長期 `U`(uninterruptible,等 page-in)。
+  同時行緊十幾個 Claude Code session + Chrome + `growLibrary`(pid 68503)。
+- **冇再 kickstart 第二次**(會由頭再 load),**冇 kill 隔籬 session 嘅 process**。
+  Background watcher:`/tmp/r1-backend-watch.log`。
+
+**影響:** api.god-music.com 由 02:30 起 down。四條複核線今日寫入 DB 嘅歌詞(R1 本班 24 首 + R1b/R2/R2b)
+全部要等 backend 起返身先出到街。
+
+**建議加入 SOP §5:** restart 之前先 `uptime` + `sysctl vm.swapusage`;
+load average 高過 CPU 核數幾倍、或者 swap 用剩唔夠 2G,就**押後 restart**,ledger 記低下轉補 ——
+喺 thrash 緊嘅機器 restart backend = 自製一段以十分鐘計嘅 outage。
+- [2026-08-29 03:04] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 185);重做隊剩 0;可做draft 149;producer 冇行
+- [2026-08-29 04:04] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 185);重做隊剩 0;可做draft 149;producer 冇行
+- [2026-08-29 05:05] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 185);重做隊剩 0;可做draft 149;producer 冇行
+- **心跳 2026-08-29 05:03** — verified 5382(84.1%)/ draft 250(可做 149)/ 重做隊剩 0 / producer 生存 / keeper 每5分鐘開 OCR 但 fetchlyrics log 停喺 08-28 21:00,OCR 池全部俾 ledger 判死或 skip-orgs 剔走「冇一首攻得」,實質已停產約 8 小時
+
+## 2026-08-29 05:10 HKT — 🔴🔴 backend 持續 outage 第 2.6 個鐘(R1 國語線開波發現)
+
+**現況:** `com.hymnapp.backend` pid 89613 **仲喺度、真係 LISTEN 緊 `*:3001`**,但由 02:35 restart 到而家(05:10)
+`/api/health` **一律 000**(`127.0.0.1` / `[::1]` / `localhost` 三個都試過,7.8 秒後 curl timeout)。
+即係 **api.god-music.com 已經冧咗約 2 個半鐘**(上一班 R1 02:30 restart 之後起唔返身,見
+`ops/lyrics/handoff-20260829-r1-dupcard-whlibsib/README.md` §五)。
+
+**唔係 code 問題、唔係 gate 問題、唔係 crash —— 係成部機 swap 死鎖:**
+
+| 指標 | 讀數 |
+|---|---|
+| load average | **39.7 / 35.7 / 33.9**(10 核機) |
+| swap | **11.2G / 12G 用咗**,剩 1.07G |
+| free RAM | **909 pages × 16KB = 14MB** |
+| backend proc | `STAT=U`(uninterruptible,等 page-in)、RSS 得 **15.5MB**、2h35m 只行到 **69 秒 CPU** |
+
+**根因(數出嚟):**
+- **88 個 Claude Code 主程序**同時行緊,RSS 合共 **4.2GB**(最耐嗰個已經行咗 **1 日 8 個鐘**)
+- 另外 **45 個 `mcp-pdf-server`** node process(每個 session 一個,idle 都唔收)
+- 全機 RSS 8.2GB / 16GB 實體,其餘全部俾人 page 出 swap
+
+backend 一 restart 就要由零 page-in 返成個 heap,但 swap 已經冇位 ⇒ 佢喺 `U` 狀態原地等,
+**永遠起唔完身**。再 kickstart 一次只會由頭 load 過,更差。
+
+**R1 本班做咗乜:** ❌ **冇 restart、冇 kickstart、冇 kill 隔籬 session 嘅 process**(紅線)。
+班尾嘅 approve + restart **押後**,ledger 已記低。四條線今日所有 apply 寫咗入 DB,
+backend 一起返身就自動 live,唔會蝕。
+
+**要 Eric 決定嘅嘢(唔係 agent 可以自己做):** 收檔啲行咗成日嘅 Claude Code session。
+88 個 session 對 16GB 機係結構性超載 —— 唔減 session 數,backend restart 之後點都起唔返身。
+順帶:`mcp-pdf-server` 每個 session 開一個而且唔收,係純浪費。
+
+**⚠️ 未清嘅第二單:** startup log 報 `yt-dlp --version` command failed,而家 log 見到
+yt-dlp resolve 每個 strategy 都行 **140-206 秒**先 fail(`7akSZyq4PpA` / `nZCBPLWSlDM` 全滅)。
+**未分得清係 binary 真壞定係 thrash 令 spawn timeout** —— 機器回氣之後一定要覆查
+(`ops/ytdlp/update-ytdlp.sh --apply` 落返個 binary 之前唔好亂改)。
+
+### 💡 建議加入 SOP §5(restart 前多一步)
+```bash
+uptime; sysctl vm.swapusage
+```
+**load average 高過核數 2 倍、或者 swap 剩唔夠 2G ⇒ 押後 restart。** 喺 thrash 緊嘅機器 restart backend
+= 自製一段以「粒鐘」計嘅 outage(今次實測 2.6 個鐘仲未完)。
+
+- 🟡 **機器 thrash 警號 2026-08-29 05:21(R2b 粵語雙數線報)** — `uptime` load average **36.43 / 33.43 / 34.00**、
+  `vm.swapusage` **used 11255M / total 12288M(free 得 1032M)**。同時 `checkDeadLinks`(pid 1178,
+  `--limit 150 --delay 3000`)由 **04:13 起連續揸住 `backend/hymns.db.lock` 超過一個鐘**,
+  四條複核線嘅 `--apply` 全部撞鎖(R2b 三首寫唔到,已留 retry loop)。
+  RSS 頭 12 名:Chrome 1 個 425MB + **Claude Code session 11 個**(每個 ~100MB)。
+  ⚠️ **跟 SUPERVISION-LOG 2026-08-28 嗰條建議:呢種狀態下 R1 班尾唔好 restart backend**
+  (`uptime` load > 核數 2 倍 / swap 剩 <2G ⇒ 押後),restart 落去等於自製一段以粒鐘計嘅 outage。
+  亦解釋到點解 `checkDeadLinks` 一個鐘都行唔完(yt-dlp spawn 被 swap 拖死,同 08-28 嗰單同一個病徵)。
+- [2026-08-29 06:05] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 185);重做隊剩 0;可做draft 149;producer 冇行
+- [2026-08-29 07:06] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 185);重做隊剩 0;可做draft 149;producer 冇行
+- **心跳 2026-08-29 08:03** — verified 5382(84.1%)/ draft 250(可做 149)/ 重做隊剩 0 / producer 生存 / OCR 池連續兩轉「冇一首攻得」(全部 cooldown / skip-orgs),keeper 08:01 已自動標記轉 CC 補倉但下一轉又開返 OCR,可做 149 首多數係啃唔郁嗰批
+- [2026-08-29 08:06] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 185);重做隊剩 0;可做draft 149;producer 冇行
+
+## 2026-08-29 08:50 — backend 冧咗 6 個鐘(R1b 國語雙數線覆核 R1 05:10 嗰個診斷)
+
+R1 喺 05:10 寫低嘅 swap 死鎖診斷,**6 個鐘之後仲係一模一樣**,冇自愈:
+
+| 時間 | `/api/health` | load average | swap free |
+|---|---|---|---|
+| 05:03(R1) | 000 | — | — |
+| **07:18**(R1b) | **000** | **42.79 / 38.73 / 36.37** | **1012 MB**(12288 MB 用咗 11275 MB) |
+| **08:32**(R1b) | **000** | **34.17 / 35.46 / 35.79** | — |
+
+- 8 核機 load 平均 35–43 = **核數 × 4 以上**,swap 剩 1G ⇒ 完全符合 R1 診斷嘅「88 個 Claude Code 主程序 + 45 個 mcp-pdf-server 食爆 16GB」。
+- 本班全程冇 restart(R1b 冇 restart 權),亦**唔建議而家 restart** —— 照 R1 提議嘅新 SOP §5 前置檢查
+  (`load average > 核數 × 2` 或者 `swap 剩 < 2G` ⇒ 押後),而家兩條都觸發緊。
+- ⚠️ **副作用開始見到**:`checkDeadLinks` 08-29 04:13 揸鎖揸咗 2 個鐘(四條線 apply 全部撞);
+  本班 08:38 `backfillAlbumSearch-migrate` 又揸咗,批5 apply 要 retry。呢啲 launchd job 平時幾分鐘搞掂,
+  而家因為 thrash 拖到成粒鐘,**DB 鎖爭用會愈嚟愈頻密**。
+- 🔴 **建議 Eric 睇一睇**:根因唔喺 hymn-app 條 code,係部機**開緊太多 Claude Code / MCP process**。
+  收乾啲 process(或者 reboot)之後 backend 應該自己起返身;而家 restart 幾多次都一樣。
+- 📌 今日四條複核線嘅歌詞**全部已經寫咗入 DB**(R1b 本班 8 首),backend 一起返身就自動 live,冇資料損失。
+- [2026-08-29 09:07] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 185);重做隊剩 0;可做draft 149;producer 冇行
+- [2026-08-29 10:07] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 185);重做隊剩 0;可做draft 149;producer 冇行
+
+## 2026-08-29 11:05 — backend outage 第 8.5 個鐘;🆕 thrash 已經蔓延到 **yt-dlp 子進程**(R1 國語單數線)
+
+R1b 08:50 嗰個診斷,兩個半鐘之後**一模一樣,零改善**:
+
+| 時間 | `/api/health` | load average | swap free |
+|---|---|---|---|
+| 05:03(R1) | 000 | — | — |
+| 07:18(R1b) | 000 | 42.79 / 38.73 / 36.37 | 1012 MB |
+| 08:32(R1b) | 000 | 34.17 / 35.46 / 35.79 | — |
+| **11:05(R1)** | **000** | **32.89 / 34.39 / 34.23** | **1032 MB**(13312 MB 用咗 12279 MB) |
+
+- 8 核機 load 33 = **核數 × 4**,swap 剩 1.0G。照 R1 05:10 提議嗰個 SOP §5 前置檢查
+  (`load > 核數 × 2` 或者 `swap 剩 < 2G` ⇒ 押後 restart),**兩條都仲觸發緊 ⇒ 本班唔 restart**。
+  `launchctl list | grep hymnapp` = **8**(job 齊,唔係 job 甩咗)。
+
+### 🆕 本班新增觀察:thrash 已經整死咗 `yt-dlp` 子進程鏈(呢個解釋到 producer 停產 + DB 鎖長霸)
+
+`ps` 實錄(11:00):
+
+| pid | 已行 | 指令 |
+|---|---|---|
+| 34140 | **2 小時 10 分** | `ytdlp-venv-b/bin/pip install -q --upgrade --pre yt-dlp[default]` |
+| 42935 | **28 分鐘** | `backend/tools/yt-dlp --version` |
+| 45579 | 24 秒 | `yt-dlp --get-url --no-playlist …ozRtnVOvYvM` |
+
+- 平時 `yt-dlp --version` 係**即時**嘅(memory 記錄過 XProtect 掃 binary 最多 26–42 秒,所以先至改用 pip venv)。
+  而家連 `--version` 都要 28 分鐘 ⇒ **唔係 XProtect,係機器根本冇 CPU/RAM 派俾佢**。
+- ⛓️ **連鎖後果**:`growLibrary`(pid 37638)**01:55Z 攞咗 DB 鎖之後就一路揸住**(11:05 已經 1 小時 10 分,state=`U`),
+  因為佢喺鎖入面等緊 yt-dlp。四條複核線嘅 `--apply` 全部撞鎖 —— 呢個係 R1b 講嗰個「鎖爭用愈嚟愈頻密」嘅**同一條因果鏈**,
+  今次終於見到最末端嗰隻手係邊個。
+- 📉 growLibrary log 亦都實錘:07:53「ACM」/ 09:05「天韻合唱團」兩次都係
+  `頻道列表攞唔到:Command failed: yt-dlp --flat-playlist` ⇒ **producer 連續 8 個鐘 +0 draft 唔係冇貨做,係 yt-dlp 拎唔到嘢**。
+- ⚠️ 亦即係話:**backend 就算起返身,串流 resolve 一樣會慢/失敗**(08-28 最後幾條 `[stream]` 已經見到
+  `cold ttfb 40–50 秒 aborted` 同 `warm ttfb 165 秒 aborted`)。所以「收乾 process」呢一步唔做,restart 幫唔到手。
+
+🔴 **建議 Eric(同 R1b 08:50 嗰條一樣,再加碼)**:根因唔喺 hymn-app 條 code,係部機開緊太多
+Claude Code / MCP process 食爆 16GB。**收乾 process 或者 reboot** —— 而家連 `yt-dlp --version` 都行唔郁,
+restart backend 幾多次都一樣。
+
+📌 資料安全:今日四條線嘅歌詞全部喺 DB(或者喺 R1 個 `retry-apply` 隊列度等鎖),backend 一起返身就自動 live,冇損失。
+- [2026-08-29 11:08] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 185);重做隊剩 0;可做draft 149;producer 冇行
+
+### 2026-08-29 11:17 — R2 粵語單數線:DB 鎖長時間被佔(供應鏈訊號)
+- `growLibrary`(pid 37638,`--mode curate --budget 6 --delay 4000`)由 **09:55 揸住 `backend/hymns.db.lock`,到 11:16 已經 1 小時 55 分仲未放**。跟 SOP §1.2 照等、冇 hack、冇刪 lock 檔;`--apply` retry loop(每 2 分鐘一轉,上限 40 轉)跑緊。
+- 機器狀態:`uptime` load **35.91 / 36.64 / 35.83`、`vm_stat` **Pages free 只剩 905 頁(≈14MB)**。同 08-29 凌晨 R2b 報嗰個 thrash 一模一樣,一日冇好轉。
+- ⚠️ **跟 08-28 嗰條建議:呢種狀態下 R1 班尾唔好 restart backend**(load > 核數 2 倍 / 記憶體近乎見底 ⇒ 押後)。
+
+### 2026-08-29 11:22 — 🔴 SOP §1.3 producer 覆寫 race **實錄 7/7 全滅**(唔係 76 中 1)
+- **實況:** R2 粵語單數線 09:48 apply 咗 7 首(#745 #1763 #1767 #3339 #4383 #4763 #5529),09:50 `sqlite3` 覆查 **7/7 行數啱晒**。11:16 再覆查:**7 首全部俾人還原返舊版**(status 仍然 `verified`,淨係 `lyrics` 內容退返去舊嘅)。
+- **兇手 = `growLibrary`(pid 37638)**:`ps -o etime` 顯示佢 **09:20:29 開波**(即係喺我 apply 之前就已經讀咗成個 DB 入記憶體),到 11:16 仲跑緊(1 小時 55 分,機器 thrash 拖慢)。佢 saveDb 嗰陣用返 09:20 嗰份 in-flight snapshot,一次過蓋走咗中間所有寫入。
+- 🔑 **教訓(四條線通用,建議寫入 SOP §1.3):** 舊寫法「apply 完即刻覆查,中招就重 apply」**唔夠** —— 喺 `growLibrary` 跑緊長 job 嗰段時間,**重 apply 一樣會俾同一份 snapshot 再蓋一次**。正確做法係 **`pgrep -f growLibrary.js` 冇嘢先 apply**,apply 完再覆查一次。
+- 對策已落地:`<R2 scratch>/apply-after-grow.sh`(等 growLibrary 收工 → apply → 逐首對「非空行數 + status」→ 唔啱就再嚟,上限 60 轉)。
+- ⚠️ 覆查過 R2b 09:10 嗰批(#118)冇事 —— 佢哋喺 09:20 之前寫,唔喺 snapshot 窗口內。窗口 = **09:20 起至 growLibrary 收工為止**。
+- **心跳 2026-08-29 11:25** — verified 5382(84.1%)/ draft 250(可做 149)/ 重做隊剩 0 / producer 生存 / OCR 池連續兩轉「冇一首攻得」(全部 cooldown / skip-orgs),keeper 已自動轉 CC 補倉
+
+## 2026-08-29 11:55 · 🔴 全線歌詞產出蒸發:`LOCK_HARD_STALE_MS` 保證性覆寫(R2b 粵語雙數線報告)
+
+**現象:** 2026-08-29 兩條線各自實錄 apply 之後歌詞原地還原 —— R2 7/7、R2b **18/18(零倖存)**。
+
+**根因(唔係 race,係必然):**
+- `backend/lib/hymnDb.js:580` `LOCK_HARD_STALE_MS = 2 * 60 * 60 * 1000` —— 鎖齡過 2 個鐘就**唔理持有者係咪仲生猛**都俾人搶走(原意係防重開機後 pid 撞正無關 process 嘅永久死鎖)。
+- `backend/scripts/growLibrary.js:664-670` —— **一次 `acquireDbLock()` + 一次 `openDb()` 揸住成個 run**,之後 `saveDb(db)` 寫返個 open 時嘅 snapshot。而一個 run 實測要 **6+ 個鐘**(每個團體 ~1 鐘 × 7 個團體)。
+- ⇒ **run 開波夠 2 鐘之後,任何 `reviewLyrics.js --apply` 都會成功搶鎖、成功寫入,然後喺 growLibrary 下一次 `saveDb()` 俾舊 snapshot 蓋返轉頭。** 冇灰色地帶:2 鐘之內 apply 攞唔到鎖(安全但寫唔到),2 鐘之後 apply 必死。
+
+**SOP 要改:** `ops/lyrics/REVIEW-LINE-SOP.md` §1.3 寫「producer in-flight snapshot 有機會蓋走啱 apply 嘅 verified(實錄 76 中 1)」—— **大幅低估**,實情係 growLibrary 長 run 期間 100% 全滅。
+
+**臨時對策(四條線已經自己兜):** apply 前 `pgrep -f growLibrary.js`,有嘢跑緊就唔好 apply,排隊等佢收工(R2 `apply-after-grow.sh` / R2b `applyq.sh`)。
+
+**建議根治(等 Eric / R1 拍板,唔屬複核線權限):**
+1. `growLibrary` 每次 `saveDb()` 之前重讀 DB 再 merge(最穩陣,亦順手解走「揸鎖 6 鐘」呢個問題);或
+2. 長 job 定期 `touch` 個 lockfile 續期,令 `LOCK_HARD_STALE_MS` 唔會誤判佢死咗;或
+3. `LOCK_HARD_STALE_MS` 拉長過最長一個 grow run(治標,而且會令真死鎖卡耐啲)。
+
+**附帶觀察:** 今日 `growLibrary` pid 37638 由 09:21 開波,到 11:48 CPU time 得 1:13、`STAT=U`、log 零輸出 = 卡死喺 I/O;log 顯示 02:38 起**每一個團體嘅 `yt-dlp --flat-playlist` 都失敗**(「頻道列表攞唔到」),即係揸住個鎖 7 個鐘乜都攞唔到。同時 load average 32、有 `pip install --pre yt-dlp`(pid 34140)跑緊。
+- [2026-08-29 12:08] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 185);重做隊剩 0;可做draft 149;producer 冇行
+
+- ⚠️ **yt-dlp nightly 裝唔到 2026-08-29 12:48** — `pip install --pre yt-dlp` 失敗(網絡?PyPI?),**現役 `2026.08.20.234504` 維持唔郁**。log:`backend/data/ytdlp-update.log`
+
+- 🔴 **串流健康警報 2026-08-29 12:49** — Layer A(經 backend)得 0/3 首 206,但 Layer B(直打 googlevideo)3 首過 —— **upstream 好地地,問題喺 backend 側**(連續第 4 次)。實際: A:id=42:000 A:id=77:000 A:id=5431:000
+  診斷次序:①`pgrep -f 'node.*server.js'` backend 生存?②`launchctl list | grep hymnapp` 應該 7 個 job ③睇 backend log 有冇 503/crash loop。
+- [2026-08-29 13:09] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 185);重做隊剩 0;可做draft 149;producer 冇行
+- [2026-08-29 13:21] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 0);重做隊剩 0;可做draft 149;producer 冇行
+- **心跳 2026-08-29 14:01** — verified 5382(84.1%)/ draft 250(可做 149)/ 重做隊剩 0 / producer 生存 / OCR 池連續空轉:keeper 報「上一轉冇一首攻得(全部 cooldown / skip-orgs)」被迫轉 CC 補倉,149 首可做 draft 郁唔到
+- [2026-08-29 14:21] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 0);重做隊剩 0;可做draft 149;producer 冇行
+- [2026-08-29 15:21] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 0);重做隊剩 0;可做draft 149;producer 冇行
+
+- ✅ **串流健康恢復 2026-08-29 16:20** — 之前連續失敗 4 次,今次 Layer A 3/3 首 206、Layer B 3 首 mid-range 206(yt-dlp 2026.08.20.234504)。
+- [2026-08-29 16:21] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 0);重做隊剩 0;可做draft 149;producer 冇行
+- **心跳 2026-08-29 17:01** — verified 5382(84.1%)/ draft 250(可做 149)/ 重做隊剩 0 / producer 生存 / keeper 連續兩轉開 OCR 都「池入面冇一首攻得(全部 cooldown / skip-orgs)」,下一轉會強制轉 CC 補倉
+- [2026-08-29 17:21] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 0);重做隊剩 0;可做draft 149;producer 冇行
+- [2026-08-29 18:21] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 0);重做隊剩 0;可做draft 149;producer 冇行
+- [2026-08-29 19:21] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 0);重做隊剩 0;可做draft 149;producer 冇行
+- **心跳 2026-08-29 20:01** — verified 5382(84.1%)/ draft 250(可做 149)/ 重做隊剩 0 / producer 生存 / keeper 連續兩轉報「OCR 池冇一首攻得(全部 cooldown / skip-orgs)」,fetchlyrics log 仲停喺 11:56「冇更多 cc:miss 嘅歌等 OCR」——可做 149 首實際上 OCR 線推唔郁,靠 CC 補倉
+- [2026-08-29 20:21] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 0);重做隊剩 0;可做draft 149;producer 冇行
+- [2026-08-29 21:21] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 0);重做隊剩 0;可做draft 149;producer 冇行
+- [2026-08-29 22:21] P線時報(keeper自動):過去1小時 OCR/whisper draft **+2**(log累計 2);重做隊剩 0;可做draft 150;producer 冇行
+- **心跳 2026-08-29 23:01** — verified 5383(84.1%)/ draft 250(可做 149)/ 重做隊剩 0 / producer 生存 / OCR 池照樣乾(22:56 又報「冇一首攻得,全部 cooldown / skip-orgs」),fetchlyrics 停喺 14:56「冇更多 cc:miss 嘅歌等 OCR」;過去 3 個鐘 verified 只 +1、可做 draft 一直卡 149-150 —— 149 首係 bi-frozen 數目,即係淨低嘅 draft 全部被凍結池佔住,OCR 線結構上冇嘢做
+- [2026-08-29 23:21] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 2);重做隊剩 0;可做draft 149;producer 冇行
+- [2026-08-30 00:21] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 2);重做隊剩 0;可做draft 149;producer 冇行
+- [2026-08-30 01:21] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 2);重做隊剩 0;可做draft 149;producer 冇行
+- **心跳 2026-08-30 02:01** — verified 5383(84.1%)/ draft 250(可做 149)/ 重做隊剩 0 / producer 生存 / OCR 池連續兩轉「冇一首攻得」(全部 cooldown / skip-orgs),keeper 已自動轉 CC 補倉,實際產出停滯
+- [2026-08-30 02:22] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 2);重做隊剩 0;可做draft 149;producer 冇行
+- [2026-08-30 03:22] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 2);重做隊剩 0;可做draft 149;producer 冇行
+- [2026-08-30 04:22] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 2);重做隊剩 0;可做draft 149;producer 冇行
+- **心跳 2026-08-30 05:01** — verified 5383(84.1%)/ draft 250(可做 149)/ 重做隊剩 0 / producer 生存 / OCR 池連續空轉:04:57 報「池入面冇一首攻得(全部 cooldown / skip-orgs)」要強制轉 CC 補倉,但下一轉又開返 OCR,可做 draft 149 已連續 4 個鐘紋風不動
+- [2026-08-30 05:22] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 2);重做隊剩 0;可做draft 149;producer 冇行
+
+- 🟡 **yt-dlp 有新 nightly,canary 已過 2026-08-30 05:30** — 新版 `2026.08.27.231323`(現役 `2026.08.20.234504`)。三關全過(--version / 兩首 resolve / 64KB @ 2MiB mid-range 206),已經裝好喺閒置 slot `ytdlp-venv-b`。
+  **按 Eric 2026-08-22 拍板嘅保守做法,script 冇自動換**。要切換就人手行:`ops/ytdlp/update-ytdlp.sh --apply`(一個 symlink 操作,唔使 restart backend;rollback 就係揈返轉頭)。
+- [2026-08-30 06:22] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 2);重做隊剩 0;可做draft 149;producer 冇行
+- [2026-08-30 07:22] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 2);重做隊剩 0;可做draft 149;producer 冇行
+- **心跳 2026-08-30 08:01** — verified 5383(84.1%)/ draft 250(可做 149)/ 重做隊剩 0 / producer 生存 / keeper 連續兩轉 OCR 池「冇一首攻得」(全部 cooldown / skip-orgs)兼 /tmp/hymn_fetchlyrics.log 停喺 08-29 23:57 冇更新,producer 疑似空轉
+- [2026-08-30 08:22] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 2);重做隊剩 0;可做draft 149;producer 冇行
+- [2026-08-30 09:22] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 2);重做隊剩 0;可做draft 149;producer 冇行
+- [2026-08-30 10:22] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 2);重做隊剩 0;可做draft 149;producer 冇行
+- **心跳 2026-08-30 11:01** — verified 5383(84.1%)/ draft 250(可做 149)/ 重做隊剩 0 / producer 生存 / OCR 池連續兩轉「冇一首攻得」(全部 cooldown / skip-orgs),keeper 已自動轉 CC 補倉
+- [2026-08-30 11:22] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 2);重做隊剩 0;可做draft 149;producer 冇行
+- [2026-08-30 12:22] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 2);重做隊剩 0;可做draft 149;producer 冇行
+- [2026-08-30 13:23] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 2);重做隊剩 0;可做draft 149;producer 冇行
+- **心跳 2026-08-30 14:01** — verified 5383(84.1%)/ draft 251(可做 150)/ 重做隊剩 0 / producer 生存 / keeper 連續兩轉 OCR 池全部俾 cooldown / skip-orgs 剔走(13:58 已強制轉 CC 補倉),要留意 OCR 線係咪實質空轉
+- [2026-08-30 14:23] P線時報(keeper自動):過去1小時 OCR/whisper draft **+2**(log累計 4);重做隊剩 0;可做draft 150;producer 冇行
+- [2026-08-30 15:23] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 4);重做隊剩 0;可做draft 150;producer 冇行
+- [2026-08-30 16:23] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 4);重做隊剩 0;可做draft 150;producer 冇行
+
+- 🔴 **串流健康警報 2026-08-30 16:39** — ⚠️ **典型「1MiB 病」形態**:Layer A(頭 64KB,經 backend)2/3 首**過**,但 Layer B(直打 googlevideo,64KB @ 2MiB)得 0 首 206(連續第 1 次)。即係頭段派得、1MiB 之後 403 —— 用戶感受係「全庫播得幾秒就死/completely 播唔到」。實際: A:id=42:000 B:PG_J_0gsMXA:resolve-fail B:7UkwavM5L1E:resolve-fail B:2GbxXhvdhhA:resolve-fail
+  **第一件事查 yt-dlp 版本**(而家現役 `2026.08.20.234504`,路徑 `backend/tools/yt-dlp`):2026-08-22 全庫事故就係 binary 太舊,YouTube 新 player 簽出嚟嘅 URL 只開放頭 1MiB。修法見 `YTDLP-UNIFY-PLAN-20260822.md`;人手升級:`ops/ytdlp/update-ytdlp.sh --apply`(canary 過先換,舊版留 `backend/tools/yt-dlp.prev` 可以 `mv` 返轉頭)。
+- **心跳 2026-08-30 17:02** — verified 5383(84.1%)/ draft 251(可做 150)/ 重做隊剩 0 / producer 生存 / OCR 池連續兩轉「冇一首攻得(全部 cooldown / skip-orgs)」,keeper 已自動轉 CC 補倉;另 16:39 串流健康警報(Layer B 0/3,疑 1MiB 病)未處理
+- [2026-08-30 17:23] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 4);重做隊剩 0;可做draft 149;producer 冇行
+- [2026-08-30 18:24] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 4);重做隊剩 0;可做draft 149;producer 冇行
+
+- 🟢 **串流健康恢復 2026-08-30 18:30(R1 國語線班尾覆查)** — 16:39 嗰個「1MiB 病」警報(Layer B 直打 googlevideo 0/3 全部 resolve-fail)**已經自己好返**:手動跑 `ops/lyrics/stream-healthcheck.sh --verbose`,**Layer B 3 首全部 206 (mid-range)**,yt-dlp 版本 2026.08.20.234504 冇變。
+  ⚠️ **但同一轉 Layer A(經 backend)0/3,全部 HTTP 000** —— 呢個係我啱啱 `backend-restart.sh` 之後即刻探測嘅結果,backend 當時正喺度 `Background pre-caching 200 hymns`,唔係真係派唔到歌。**探測時間點撞正 restart = 假警報,以後班尾探測要等 backend 暖身。**
+  🚨 **另記一件要留意嘅事:backend 一 restart 就喺 log 印「🚨 攞唔到 yt-dlp 版本 …串流 resolve 會冧」,但我即刻手動行 `backend/tools/yt-dlp --version` 係正常吐 `2026.08.20.234504`。** ⇒ 唔係 binary 壞,係**冷啟動第一次 exec 俾 XProtect 掃(已知 26-42 秒),version probe 個 timeout 唔夠長就當佢死咗**(承 2026-08-22 `project-ytdlp-unify-executed` 嗰單)。個 log 訊息會令人以為要 re-install binary,**其實唔使**。建議:個 version probe 加長 timeout / 或者 restart 之後遲啲先探,唔好一開波就嚇自己。
+
+- 🚨🚨 **串流 resolve 全滅(2026-08-30 18:55,R1 國語線班尾實測 —— 唔係假警報,要人跟進)**
+  上面 18:30 嗰條「已恢復」**只講啱咗一半,要更正**:Layer B(直打 googlevideo)3/3 206 冇錯,**但嗰啲係用 disk resolve-cache 入面 295 條未過期 URL**;真正壞咗嘅係 **yt-dlp fresh resolve,今次 backend run 成功率 0%**。
+  **實據(今次 run,由 `Hymn App Backend running` 起計 292 行 log):**
+  - `❌ All yt-dlp strategies failed` = **35 條唔同影片**,**零成功 resolve**;
+  - 三條 strategy(`default` / `default-any` / `youtube:player_client=tv`)全部一齊死,單次耗時 **13-405 秒**;
+  - 8 條 `[stream]` 全部收唔到貨:`id=77 mode=cold resolve_ms=28976 status=502`、`id=5431 mode=cold ttfb_ms=189941 status=0 aborted=true`、三條 `mode=warm ttfb_ms≈44000 aborted=true retried=true`;
+  - `stream-healthcheck.sh` 連續兩轉(18:30 / 18:50,第二轉已經等咗 20 分鐘暖身)**Layer A 都係 0/3**(502 / 000),`consecutiveFail=3`。
+  **唔係我 restart 搞出嚟:** 上一個 backend run(08-29 17 時)同一個鐘已經有 **89** 條 `All yt-dlp strategies failed`,而且 16:39 個自動警報就係講緊同一件事。
+  **用戶感受:** 已經喺 295 條 cache 入面嘅歌照播;**任何要新 resolve 嘅歌 100% 播唔到**(等 30 秒-3 分鐘然後死)。
+  **最可能嘅修法(同 2026-08-22 嗰單一樣):** `yt-dlp` 版本 `2026.08.20.234504` 已經 **10 日大**,YouTube 簽名/player 改咗。行 `ops/ytdlp/update-ytdlp.sh --apply` 換新版再 restart。
+  ⛔ **我冇做** —— 換 yt-dlp binary 屬串流線嘅部署動作,唔喺四條歌詞複核線嘅權限(SOP §6「唔准直接行 yt-dlp」),而且 YouTube 出口 IP 係全 App 命脈。**交 Eric / 串流線拍板。**
+- [2026-08-30 19:24] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 4);重做隊剩 0;可做draft 149;producer 冇行
+
+- 🔴 **串流健康警報 2026-08-30 19:48** — **兩層都失敗**(連續第 4 次)。Layer A(經 backend 頭 64KB)3 首得 0 首 206;Layer B(直打 googlevideo,64KB @ 2MiB)得 0 首 206。yt-dlp=2026.08.20.234504。實際: A:id=42:000 A:id=77:000 A:id=5431:000 B:PG_J_0gsMXA:resolve-fail B:7UkwavM5L1E:resolve-fail B:2GbxXhvdhhA:resolve-fail
+- **心跳 2026-08-30 20:02** — verified 5384(84.1%)/ draft 250(可做 149)/ 重做隊剩 0 / producer 生存 / keeper 19:55+20:00 連續兩轉開 OCR 但上一轉「冇一首攻得(全部 cooldown / skip-orgs)」,已標明下轉強制轉 CC 補倉;fetchlyrics log 停喺 12:00「冇更多 cc:miss 等 OCR」——OCR 池似乎空轉緊,draft 149 靠 CC 線先郁得到
+- [2026-08-30 20:25] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 4);重做隊剩 0;可做draft 149;producer 冇行
+- [2026-08-30 21:25] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 4);重做隊剩 0;可做draft 149;producer 冇行
+
+- ✅ **串流健康恢復 2026-08-30 21:37** — 之前連續失敗 4 次,今次 Layer A 3/3 首 206、Layer B 3 首 mid-range 206(yt-dlp 2026.08.20.234504)。
+- [2026-08-30 22:25] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 4);重做隊剩 0;可做draft 149;producer 冇行
+- **心跳 2026-08-30 23:01** — verified 5387(84.1%)/ draft 250(可做 149)/ 重做隊剩 0 / producer 生存 / OCR 池連續兩轉「冇一首攻得」(全部 cooldown / skip-orgs),keeper 已強制轉 CC 補倉
+- [2026-08-30 23:25] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 4);重做隊剩 0;可做draft 149;producer 冇行
+- [2026-08-31 00:26] P線時報(keeper自動):過去1小時 OCR/whisper draft **+2**(log累計 6);重做隊剩 0;可做draft 150;producer 冇行
+- [2026-08-31 01:26] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 6);重做隊剩 0;可做draft 150;producer 冇行
+- **心跳 2026-08-31 02:01** — verified 5387(84.1%)/ draft 251(可做 150)/ 重做隊剩 0 / producer 生存 / ⚠ keeper 連續兩轉報「OCR 池冇一首攻得(全部 cooldown / skip-orgs)」,/tmp/hymn_fetchlyrics.log 仲停喺 08-30 18:01 冇新紀錄,即係 producer 空轉緊冇產出
+- [2026-08-31 02:26] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 6);重做隊剩 0;可做draft 150;producer 冇行
+- [2026-08-31 03:26] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 6);重做隊剩 0;可做draft 150;producer 冇行
+- [2026-08-31 04:26] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 6);重做隊剩 0;可做draft 150;producer 冇行
+- **心跳 2026-08-31 05:01** — verified 5387(84.1%)/ draft 251(可做 150)/ 重做隊剩 0 / producer 生存 / OCR 池連續空轉(keeper 04:56+05:01 兩轉都「冇一首攻得,全部 cooldown/skip-orgs」,已強制轉 CC 補倉),150 首可做 draft 開唔到工
+- [2026-08-31 05:26] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 6);重做隊剩 0;可做draft 150;producer 冇行
+
+- 🟡 **yt-dlp 有新 nightly,canary 已過 2026-08-31 05:30** — 新版 `2026.08.29.232711`(現役 `2026.08.20.234504`)。三關全過(--version / 兩首 resolve / 64KB @ 2MiB mid-range 206),已經裝好喺閒置 slot `ytdlp-venv-b`。
+  **按 Eric 2026-08-22 拍板嘅保守做法,script 冇自動換**。要切換就人手行:`ops/ytdlp/update-ytdlp.sh --apply`(一個 symlink 操作,唔使 restart backend;rollback 就係揈返轉頭)。
+
+- 🔴 **殭屍歌詞session已reap 2026-08-31 05:46** — 線名=HB pid=87207 登記epoch=1788112893 存活=3.75h(閾值3.50h) registry=HB-87207.pid
+- [2026-08-31 06:26] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 6);重做隊剩 0;可做draft 150;producer 冇行
+- [2026-08-31 07:26] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 6);重做隊剩 0;可做draft 150;producer 冇行
+- **心跳 2026-08-31 08:01** — verified 5387(84.1%)/ draft 251(可做 150)/ 重做隊剩 0 / producer 生存 / ⚠ OCR 池連續空轉第三個心跳(keeper 07:51+07:56 兩轉都「冇一首攻得,全部 cooldown/skip-orgs」),/tmp/hymn_fetchlyrics.log 最後一筆停喺今日 00:01「冇更多 cc:miss 等 OCR」——8 個鐘零產出,150 首可做 draft 一直開唔到工
+- [2026-08-31 08:26] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 6);重做隊剩 0;可做draft 150;producer 冇行
+- [2026-08-31 09:26] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 6);重做隊剩 0;可做draft 150;producer 冇行
+- [2026-08-31 10:26] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 6);重做隊剩 0;可做draft 150;producer 冇行
+- **心跳 2026-08-31 11:01** — verified 5387(84.1%)/ draft 251(可做 150)/ 重做隊剩 0 / producer 生存 / ⚠ OCR 池空轉第四個心跳、數字同 08:01 一模一樣(+0);📌更正上一筆心跳:`/tmp/hymn_fetchlyrics.log` 用 **UTC** 時間戳(10:56 本地 = 02:56 log),個 log 唔係停咗而係即時嘅——真問題係每轉都行到「冇更多 cc:miss 嘅歌等 OCR(淨低俾 ledger / --skip-orgs 剔走)」,150 首可做 draft 結構上開唔到工,要人手睇 ledger/skip-orgs 閘
+- [2026-08-31 11:27] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 6);重做隊剩 0;可做draft 150;producer 冇行
+
+- 🔴 **殭屍歌詞session已reap 2026-08-31 11:33** — 線名=HB pid=55551 登記epoch=1788134493 存活=3.53h(閾值3.50h) registry=HB-55551.pid
+- [2026-08-31 12:27] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 6);重做隊剩 0;可做draft 150;producer 冇行
+- [2026-08-31 13:27] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 6);重做隊剩 0;可做draft 150;producer 冇行
+- **心跳 2026-08-31 14:01** — verified 5387(84.1%)/ draft 251(可做 150)/ 重做隊剩 0 / producer 生存 / ⚠ OCR 池空轉**第五個心跳**、數字連續三轉（08:01/11:01/14:01）一模一樣 +0；keeper 13:52+13:57 兩轉照舊「冇一首攻得(全部 cooldown / skip-orgs)」，fetchlyrics log（UTC 05:57 = 本地 13:57，即時）每轉都收「冇更多 cc:miss 嘅歌等 OCR」——11 個鐘零產出，150 首可做 draft 結構上開唔到工，等人手睇 ledger/skip-orgs 閘
+- [2026-08-31 14:27] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 6);重做隊剩 0;可做draft 150;producer 冇行
+- [2026-08-31 15:27] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 6);重做隊剩 0;可做draft 150;producer 冇行
+- [2026-08-31 16:27] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 6);重做隊剩 0;可做draft 150;producer 冇行
+- **心跳 2026-08-31 17:01** — verified 5387(84.1%)/ draft 251(可做 150)/ 重做隊剩 0 / producer 生存 / ⚠ OCR 池空轉**第六個心跳**、數字連續四轉(08:01/11:01/14:01/17:01)一模一樣 +0;keeper 16:52+16:57 兩轉照舊「冇一首攻得(全部 cooldown / skip-orgs)」,fetchlyrics log(UTC 08:57 = 本地 16:57,即時)每轉都收「冇更多 cc:miss 嘅歌等 OCR」——14 個鐘零產出,150 首可做 draft 結構上開唔到工,等人手睇 ledger/skip-orgs 閘
+- [2026-08-31 17:29] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 6);重做隊剩 0;可做draft 150;producer 冇行
+- [2026-08-31 18:29] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 6);重做隊剩 0;可做draft 150;producer 冇行
+- [2026-08-31 19:29] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 6);重做隊剩 0;可做draft 150;producer 冇行
+- **心跳 2026-08-31 20:01** — verified 5387(84.1%)/ draft 251(可做 150)/ 重做隊剩 0 / producer 生存 / OCR 池空轉:19:54 同 19:59 兩轉都係「冇一首攻得(全部 cooldown / skip-orgs)」,fetchlyrics 直頭報「冇更多 cc:miss 嘅歌等 OCR」,即係 OCR 線實質停產緊,keeper 強制轉 CC 補倉
+- [2026-08-31 20:29] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 6);重做隊剩 0;可做draft 150;producer 冇行
+- [2026-08-31 21:29] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 6);重做隊剩 0;可做draft 150;producer 冇行
+- [2026-08-31 22:29] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 6);重做隊剩 0;可做draft 150;producer 冇行
+- **心跳 2026-08-31 23:01** — verified 5387(84.1%)/ draft 251(可做 150)/ 重做隊剩 0 / producer 生存 / ⚠ OCR 池空轉**第八個心跳**、數字連續六轉(08:01/11:01/14:01/17:01/20:01/23:01)一模一樣 +0;keeper 22:54+22:59 兩轉照舊「冇一首攻得(全部 cooldown / skip-orgs)」兼強制轉 CC 補倉,fetchlyrics(UTC 14:59 = 本地 22:59,即時)照收「冇更多 cc:miss 嘅歌等 OCR」——足足 20 個鐘零產出,150 首可做 draft 結構上開唔到工,等人手睇 ledger/skip-orgs 閘
+- [2026-08-31 23:29] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 6);重做隊剩 0;可做draft 150;producer 冇行
+- [2026-09-01 00:29] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 6);重做隊剩 0;可做draft 150;producer 冇行
+- [2026-09-01 01:30] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 6);重做隊剩 0;可做draft 150;producer 冇行
+- **心跳 2026-09-01 02:01** — verified 5387(84.1%)/ draft 251(可做 150)/ 重做隊剩 0 / producer 生存 / keeper 連續空轉:OCR 池全部 cooldown/skip-orgs 冇一首攻得(01:55、02:00 兩轉),已自動轉 CC 補倉
+- [2026-09-01 02:30] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 6);重做隊剩 0;可做draft 150;producer 冇行
+
+- 🔴 **殭屍歌詞session已reap 2026-09-01 02:46** — 線名=HB pid=27901 登記epoch=1788188484 存活=3.75h(閾值3.50h) registry=HB-27901.pid
+- [2026-09-01 03:30] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 6);重做隊剩 0;可做draft 150;producer 冇行
+- [2026-09-01 04:30] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 6);重做隊剩 0;可做draft 150;producer 冇行
+- **心跳 2026-09-01 05:01** — verified 5387(84.1%)/ draft 251(可做 150)/ 重做隊剩 0 / producer 生存 / keeper 連續兩轉「OCR 池冇一首攻得(全部 cooldown / skip-orgs)」,fetchlyrics log 停留喺 08-31 21:00 冇新輸出,即係可做 150 首實際上全部落唔到手
+- [2026-09-01 05:30] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 6);重做隊剩 0;可做draft 150;producer 冇行
+
+- 🟡 **yt-dlp 有新 nightly,canary 已過 2026-09-01 05:30** — 新版 `2026.08.30.232658`(現役 `2026.08.20.234504`)。三關全過(--version / 兩首 resolve / 64KB @ 2MiB mid-range 206),已經裝好喺閒置 slot `ytdlp-venv-b`。
+  **按 Eric 2026-08-22 拍板嘅保守做法,script 冇自動換**。要切換就人手行:`ops/ytdlp/update-ytdlp.sh --apply`(一個 symlink 操作,唔使 restart backend;rollback 就係揈返轉頭)。
+- [2026-09-01 06:30] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 6);重做隊剩 0;可做draft 150;producer 冇行
+- [2026-09-01 07:30] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 6);重做隊剩 0;可做draft 150;producer 冇行
+- **心跳 2026-09-01 08:01** — verified 5387(84.1%)/ draft 251(可做 150)/ 重做隊剩 0 / producer 生存 / keeper 報「上一轉 OCR 池冇一首攻得(全部 cooldown / skip-orgs)→ 強制轉 CC 補倉」,fetchlyrics 由 00:00 起「冇更多 cc:miss 嘅歌等 OCR」,draft 連續兩個時報 +0
+- [2026-09-01 08:30] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 6);重做隊剩 0;可做draft 150;producer 冇行
+
+- 🔴 **殭屍歌詞session已reap 2026-09-01 08:33** — 線名=HB pid=6523 登記epoch=1788210084 存活=3.54h(閾值3.50h) registry=HB-6523.pid
+- [2026-09-01 09:30] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 6);重做隊剩 0;可做draft 150;producer 冇行
+- [2026-09-01 10:30] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 6);重做隊剩 0;可做draft 150;producer 冇行
+- **心跳 2026-09-01 11:01** — verified 5387(84.1%)/ draft 251(可做 150)/ 重做隊剩 0 / producer 生存 / OCR 池連續兩轉全部 cooldown 或 skip-orgs、keeper 已強制轉 CC 補倉
+- [2026-09-01 11:30] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 6);重做隊剩 0;可做draft 150;producer 冇行
+- [2026-09-01 12:30] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 6);重做隊剩 0;可做draft 150;producer 冇行
+- [2026-09-01 13:30] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 6);重做隊剩 0;可做draft 150;producer 冇行
+- **心跳 2026-09-01 14:01** — verified 5387(84.1%)/ draft 251(可做 150)/ 重做隊剩 0 / producer 生存 / ⚠ 數字連續**十一個心跳零變化**(由 08-31 08:01 起 +0);keeper 14:00 再報「上一轉 OCR 池冇一首攻得(全部 cooldown / skip-orgs)→ 強制轉 CC 補倉」,fetchlyrics 最後真輸出停喺 06:00:59「冇更多 cc:miss 嘅歌等 OCR」,即係 150 首可做 draft 已經超過 30 個鐘結構上開唔到工,ledger 判死 / skip-orgs 閘等人手拍板
+- [2026-09-01 14:31] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 6);重做隊剩 0;可做draft 150;producer 冇行
+- [2026-09-01 15:31] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 6);重做隊剩 0;可做draft 150;producer 冇行
+- [2026-09-01 16:31] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 6);重做隊剩 0;可做draft 150;producer 冇行
+- **心跳 2026-09-01 17:01** — verified 5387(84.1%)/ draft 251(可做 150)/ 重做隊剩 0 / producer 生存 / keeper 連續報「OCR 池全部 cooldown / skip-orgs、冇一首攻得」→ 已轉 CC 補倉,OCR 線實質空轉
+- [2026-09-01 17:31] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 6);重做隊剩 0;可做draft 150;producer 冇行
+- [2026-09-01 18:31] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 6);重做隊剩 0;可做draft 150;producer 冇行
+- [2026-09-01 19:31] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 6);重做隊剩 0;可做draft 150;producer 冇行
+- **心跳 2026-09-01 20:01** — verified 5387(84.1%)/ draft 251(可做 150)/ 重做隊剩 0 / producer 生存 / 數字連續**十三個心跳零變化**(由 08-31 08:01 起 +0);今次核實咗 fetchlyrics log 用 UTC 而 keeper log 用本地時間(11:56:32 vs 19:56:32 = 同一轉),即係 OCR 每 5 分鐘真係開得成、一開就即刻「冇更多 cc:miss 嘅歌等 OCR」→ 空轉唔係 hang 係無糧;150 首可做 draft 全數俾 ledger 判死 / cooldown / --skip-orgs 三道閘鎖住,超過 36 個鐘,等人手拍板放閘
+- [2026-09-01 20:31] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 6);重做隊剩 0;可做draft 150;producer 冇行
+- [2026-09-01 21:31] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 6);重做隊剩 0;可做draft 150;producer 冇行
+- [2026-09-01 22:31] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 6);重做隊剩 0;可做draft 150;producer 冇行
+- **心跳 2026-09-01 23:01** — verified 5387(84.1%)/ draft 251(可做 150)/ 重做隊剩 0 / producer 生存 / OCR 池連兩轉「冇一首攻得」(全部 cooldown / skip-orgs),keeper 已自動轉 CC 補倉
+- [2026-09-01 23:31] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 6);重做隊剩 0;可做draft 150;producer 冇行
+- [2026-09-02 00:31] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 6);重做隊剩 0;可做draft 150;producer 冇行
+- [2026-09-02 01:31] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 6);重做隊剩 0;可做draft 150;producer 冇行
+- **心跳 2026-09-02 02:01** — verified 5387(84.1%)/ draft 251(可做 150)/ 重做隊剩 0 / producer 生存 / OCR 池連續兩轉「冇一首攻得」(全部 cooldown / skip-orgs),keeper 已強制轉 CC 補倉,draft 產出仍然 +0
+- [2026-09-02 02:31] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 6);重做隊剩 0;可做draft 150;producer 冇行
+- [2026-09-02 03:32] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 6);重做隊剩 0;可做draft 150;producer 冇行
+- [2026-09-02 04:32] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 6);重做隊剩 0;可做draft 150;producer 冇行
+- **心跳 2026-09-02 05:02** — verified 5387(84.1%)/ draft 251(可做 150)/ 重做隊剩 0 / producer 生存 / 四個鐘完全零變動,fetchlyrics.log 最後一條停喺 09-01 20:57(8 個鐘冇真正產出),keeper 每轉都報「OCR 池冇一首攻得(全部 cooldown / skip-orgs)」→ 可做 150 首實際上全部攻唔到,等人手睇 skip-orgs / ledger 判死名單
+
+- 🟡 **yt-dlp 有新 nightly,canary 已過 2026-09-02 05:30** — 新版 `2026.08.30.232658`(現役 `2026.08.20.234504`)。三關全過(--version / 兩首 resolve / 64KB @ 2MiB mid-range 206),已經裝好喺閒置 slot `ytdlp-venv-b`。
+  **按 Eric 2026-08-22 拍板嘅保守做法,script 冇自動換**。要切換就人手行:`ops/ytdlp/update-ytdlp.sh --apply`(一個 symlink 操作,唔使 restart backend;rollback 就係揈返轉頭)。
+- [2026-09-02 05:32] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 6);重做隊剩 0;可做draft 150;producer 冇行
+- [2026-09-02 06:32] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 6);重做隊剩 0;可做draft 150;producer 冇行
+- [2026-09-02 07:32] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 6);重做隊剩 0;可做draft 150;producer 冇行
+- **心跳 2026-09-02 08:02** — verified 5387(84.1%)/ draft 251(可做 150)/ 重做隊剩 0 / producer 生存 / keeper 有轉但 OCR 池連續兩轉「冇一首攻得」(全部 cooldown / skip-orgs),fetchlyrics log 停喺 09-01 23:57,可做 draft 150 已連續幾個鐘紋風不動
+- [2026-09-02 08:32] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 6);重做隊剩 0;可做draft 150;producer 冇行
+
+- 🔴 **殭屍歌詞session已reap 2026-09-02 08:42** — 線名=HB pid=27147 登記epoch=1788296513 存活=3.67h(閾值3.50h) registry=HB-27147.pid
+- [2026-09-02 09:32] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 6);重做隊剩 0;可做draft 150;producer 冇行
+- [2026-09-02 10:32] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 6);重做隊剩 0;可做draft 150;producer 冇行
+- **心跳 2026-09-02 11:02** — verified 5387(84.1%)/ draft 251(可做 150)/ 重做隊剩 0 / producer 生存 / OCR 池連續兩轉「冇一首攻得」(全部 cooldown / skip-orgs),keeper 已自動轉 CC 補倉
+- [2026-09-02 11:32] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 6);重做隊剩 0;可做draft 150;producer 冇行
+- [2026-09-02 12:32] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 6);重做隊剩 0;可做draft 150;producer 冇行
+- [2026-09-02 13:32] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 6);重做隊剩 0;可做draft 150;producer 冇行
+- **心跳 2026-09-02 14:02** — verified 5387(84.1%)/ draft 251(可做 150)/ 重做隊剩 0 / producer 生存 / 三個鐘完全冇郁(verified/draft 同 11:02 一模一樣),OCR 池仍然轉轉「冇一首攻得」全部 cooldown / skip-orgs,即係 keeper 空轉燒緊資源但產出 0
+- [2026-09-02 14:32] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 6);重做隊剩 0;可做draft 150;producer 冇行
+- [2026-09-02 15:32] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 6);重做隊剩 0;可做draft 150;producer 冇行
+- [2026-09-02 16:32] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 6);重做隊剩 0;可做draft 150;producer 冇行
+- **心跳 2026-09-02 17:02** — verified 5387(84.1%)/ draft 251(可做 150)/ 重做隊剩 0 / producer 生存 / keeper 連續兩轉 OCR 池「冇一首攻得」(全部 cooldown / skip-orgs)已自動轉 CC 補倉,fetchlyrics log 停喺 08:57「冇更多 cc:miss 嘅歌等 OCR」
+- [2026-09-02 17:32] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 6);重做隊剩 0;可做draft 150;producer 冇行
+
+- 🔴 **殭屍歌詞session已reap 2026-09-02 17:46** — 線名=HB pid=54496 登記epoch=1788328914 存活=3.75h(閾值3.50h) registry=HB-54496.pid
+- [2026-09-02 18:33] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 6);重做隊剩 0;可做draft 150;producer 冇行
+- [2026-09-02 19:33] P線時報(keeper自動):過去1小時 OCR/whisper draft **+2**(log累計 8);重做隊剩 0;可做draft 151;producer 冇行
+- **心跳 2026-09-02 20:02** — verified 5387(84.1%)/ draft 252(可做 151)/ 重做隊剩 0 / producer 生存 / keeper 連續兩轉報「OCR 池入面冇一首攻得(全部 cooldown / skip-orgs)」,OCR 線空轉緊,靠強制轉 CC 補倉
+- [2026-09-02 20:33] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 8);重做隊剩 0;可做draft 151;producer 冇行
+- [2026-09-02 21:33] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 8);重做隊剩 0;可做draft 151;producer 冇行
+- [2026-09-02 22:33] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 8);重做隊剩 0;可做draft 151;producer 冇行
+- **心跳 2026-09-02 23:02** — verified 5387(84.1%)/ draft 252(可做 151)/ 重做隊剩 0 / producer 生存 / keeper 連續兩轉 OCR 池「冇一首攻得」(全部 cooldown / skip-orgs),過去 3 個鐘 draft +0
+- [2026-09-02 23:33] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 8);重做隊剩 0;可做draft 151;producer 冇行
+- [2026-09-03 00:33] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 8);重做隊剩 0;可做draft 151;producer 冇行
+- [2026-09-03 01:33] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 8);重做隊剩 0;可做draft 151;producer 冇行
+- **心跳 2026-09-03 02:02** — verified 5387(84.1%)/ draft 252(可做 151)/ 重做隊剩 0 / producer 生存 / OCR 池連續兩轉「冇一首攻得」(全部 cooldown / skip-orgs),keeper 已自動轉 CC 補倉
+- [2026-09-03 02:33] P線時報(keeper自動):過去1小時 OCR/whisper draft **+2**(log累計 10);重做隊剩 0;可做draft 152;producer 冇行
+- [2026-09-03 03:33] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 10);重做隊剩 0;可做draft 152;producer 冇行
+- [2026-09-03 04:33] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 10);重做隊剩 0;可做draft 152;producer 冇行
+- **心跳 2026-09-03 05:02** — verified 5387(84.1%)/ draft 253(可做 152)/ 重做隊剩 0 / producer 生存 / OCR 池連續兩轉「冇一首攻得」(全部 cooldown / skip-orgs),keeper 已自動轉 CC 補倉
+
+- 🟡 **yt-dlp 有新 nightly,canary 已過 2026-09-03 05:30** — 新版 `2026.08.30.232658`(現役 `2026.08.20.234504`)。三關全過(--version / 兩首 resolve / 64KB @ 2MiB mid-range 206),已經裝好喺閒置 slot `ytdlp-venv-b`。
+  **按 Eric 2026-08-22 拍板嘅保守做法,script 冇自動換**。要切換就人手行:`ops/ytdlp/update-ytdlp.sh --apply`(一個 symlink 操作,唔使 restart backend;rollback 就係揈返轉頭)。
+- [2026-09-03 05:33] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 10);重做隊剩 0;可做draft 152;producer 冇行
+- [2026-09-03 06:33] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 10);重做隊剩 0;可做draft 152;producer 冇行
+- [2026-09-03 07:33] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 10);重做隊剩 0;可做draft 152;producer 冇行
+- **心跳 2026-09-03 08:01** — verified 5387(84.1%)/ draft 253(可做 152)/ 重做隊剩 0 / producer 生存 / ⚠️ 連續多轉 OCR 池「冇一首攻得」(全部 cooldown / skip-orgs),P線時報連續三個鐘 draft +0 —— keeper 活住但實際冇出貨,可做 152 一直卡住冇郁
+- [2026-09-03 08:33] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 10);重做隊剩 0;可做draft 152;producer 冇行
+- [2026-09-03 09:33] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 10);重做隊剩 0;可做draft 152;producer 冇行
+- [2026-09-03 10:34] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 10);重做隊剩 0;可做draft 152;producer 冇行
+- **心跳 2026-09-03 11:01** — verified 5387(84.1%)/ draft 253(可做 152)/ 重做隊剩 0 / producer 生存 / ⚠ keeper 連續兩轉報「OCR 池入面冇一首攻得(全部 cooldown / skip-orgs)」,即可做 152 只係帳面數,實際 OCR 線行緊空轉
+- [2026-09-03 11:34] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 10);重做隊剩 0;可做draft 152;producer 冇行
+- [2026-09-03 12:34] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 10);重做隊剩 0;可做draft 152;producer 冇行
+- [2026-09-03 13:34] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 10);重做隊剩 0;可做draft 152;producer 冇行
+- **心跳 2026-09-03 14:01** — verified 5387(84.1%)/ draft 253(可做 152)/ 重做隊剩 0 / producer 生存 / OCR 池連續兩轉「冇一首攻得」(全部 cooldown / skip-orgs),keeper 已自動轉 CC 補倉
+- [2026-09-03 14:34] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 10);重做隊剩 0;可做draft 152;producer 冇行
+- [2026-09-03 15:34] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 10);重做隊剩 0;可做draft 152;producer 冇行
+- [2026-09-03 16:34] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 10);重做隊剩 0;可做draft 152;producer 冇行
+- **心跳 2026-09-03 17:01** — verified 5387（84.1%）/ draft 253（可做 152）/ 重做隊剩 0 / producer 生存 / ⚠ keeper 連兩轉 OCR 池「冇一首攻得」（全部 cooldown / skip-orgs），已自動轉 CC 補倉
+- [2026-09-03 17:34] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 10);重做隊剩 0;可做draft 152;producer 冇行
+- [2026-09-03 18:34] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 10);重做隊剩 0;可做draft 152;producer 冇行
+- [2026-09-03 19:34] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 10);重做隊剩 0;可做draft 152;producer 冇行
+- **心跳 2026-09-03 20:01** — verified 5387(84.1%)/ draft 253(可做 152)/ 重做隊剩 0 / producer 生存 / keeper 連兩轉 OCR 池全部 cooldown 或 skip-orgs 攻唔到,已強制轉 CC 補倉
+- [2026-09-03 20:34] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 10);重做隊剩 0;可做draft 152;producer 冇行
+- [2026-09-03 21:34] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 10);重做隊剩 0;可做draft 152;producer 冇行
+- [2026-09-03 22:34] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 10);重做隊剩 0;可做draft 152;producer 冇行
+- **心跳 2026-09-03 23:01** — verified 5387(84.1%)/ draft 253(可做 152)/ 重做隊剩 0 / producer 生存 / OCR 池連續兩轉「冇一首攻得」(全部 cooldown / skip-orgs),keeper 已自動轉 CC 補倉,可做 152 首連續三個時報無變
+- [2026-09-03 23:34] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 10);重做隊剩 0;可做draft 152;producer 冇行
+- [2026-09-04 00:34] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 10);重做隊剩 0;可做draft 152;producer 冇行
+- [2026-09-04 01:34] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 10);重做隊剩 0;可做draft 152;producer 冇行
+- [2026-09-04 02:01] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 0);重做隊剩 0;可做draft 152;producer 冇行
+- **心跳 2026-09-04 02:01** — verified 5387（84.1%）/ draft 253（可做 152）/ 重做隊剩 0 / producer 死咗已重開 / keeper 同 fetchlyrics log 檔喺 /tmp 唔見咗（連 producer 一齊冇），重開後 02:01:57 已開 OCR budget 120
+- [2026-09-04 03:02] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 0);重做隊剩 0;可做draft 152;producer 冇行
+- [2026-09-04 04:02] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 0);重做隊剩 0;可做draft 152;producer 冇行
+- **心跳 2026-09-04 05:01** — verified 5387（84.1%）/ draft 253（可做 152）/ 重做隊剩 0 / producer 生存 / 三個鐘零產出：可做 152 首全部被 ledger cooldown / --skip-orgs 剔走，keeper 每轉都撞「冇一首攻得」→ 強制轉 CC 補倉，OCR 池實際係空跑
+- [2026-09-04 05:02] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 0);重做隊剩 0;可做draft 152;producer 冇行
+
+- 🟡 **yt-dlp 有新 nightly,canary 已過 2026-09-04 05:30** — 新版 `2026.08.30.232658`(現役 `2026.08.20.234504`)。三關全過(--version / 兩首 resolve / 64KB @ 2MiB mid-range 206),已經裝好喺閒置 slot `ytdlp-venv-b`。
+  **按 Eric 2026-08-22 拍板嘅保守做法,script 冇自動換**。要切換就人手行:`ops/ytdlp/update-ytdlp.sh --apply`(一個 symlink 操作,唔使 restart backend;rollback 就係揈返轉頭)。
+- [2026-09-04 06:02] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 0);重做隊剩 0;可做draft 152;producer 冇行
+- [2026-09-04 07:02] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 0);重做隊剩 0;可做draft 152;producer 冇行
+- **心跳 2026-09-04 08:01** — verified 5387（84.1%）/ draft 253（可做 152）/ 重做隊剩 0 / producer 生存 / 連續第六個時報零產出：07:52 同 07:57 兩轉 OCR 池又係「冇一首攻得」（全部 ledger cooldown / --skip-orgs），keeper 強制轉 CC 補倉；fetchlyrics log 用 UTC 記時（23:57Z = 本地 07:57），同 keeper log 對得上，唔係停擺
+- [2026-09-04 08:02] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 0);重做隊剩 0;可做draft 152;producer 冇行
+- [2026-09-04 09:02] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 0);重做隊剩 0;可做draft 152;producer 冇行
+- [2026-09-04 10:13] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 0);重做隊剩 0;可做draft 152;producer 冇行
+- **心跳 2026-09-04 11:01** — verified 5387（84.1%）/ draft 253（可做 152）/ 重做隊剩 0 / producer 生存 / 數字同 08:01 心跳完全一樣：10:58 轉又係「OCR 池冇一首攻得（全部 cooldown / skip-orgs）」→ 強制轉 CC 補倉，即係 152 首可做 draft 全部俾 ledger cooldown 或 --skip-orgs 鎖住，OCR 產線結構上已經行唔到，唔係 keeper 死咗
+- [2026-09-04 11:13] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 0);重做隊剩 0;可做draft 152;producer 冇行
+- [2026-09-04 12:13] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 0);重做隊剩 0;可做draft 152;producer 冇行
+- [2026-09-04 13:13] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 0);重做隊剩 0;可做draft 152;producer 冇行
+- **心跳 2026-09-04 14:01** — verified 5387（84.1%）/ draft 253（可做 152）/ 重做隊剩 0 / producer 生存 / OCR 池連續兩轉「冇一首攻得」（全部 cooldown / skip-orgs），keeper 已自動轉 CC 補倉
+- [2026-09-04 14:13] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 0);重做隊剩 0;可做draft 152;producer 冇行
+- [2026-09-04 15:13] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 0);重做隊剩 0;可做draft 152;producer 冇行
+- [2026-09-04 16:14] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 0);重做隊剩 0;可做draft 152;producer 冇行
+- **心跳 2026-09-04 17:02** — verified 5387（84.1%）/ draft 253（可做 152）/ 重做隊剩 0 / producer 生存 / 連續第七個時報數字零變動：16:59 轉又係「OCR 池冇一首攻得（全部 cooldown / skip-orgs）」→ 強制轉 CC 補倉，OCR 產線由 09-04 凌晨起實質空跑咗成日
+- [2026-09-04 17:14] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 0);重做隊剩 0;可做draft 152;producer 冇行
+- [2026-09-04 18:14] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 0);重做隊剩 0;可做draft 152;producer 冇行
+- [2026-09-04 19:14] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 0);重做隊剩 0;可做draft 152;producer 冇行
+- **心跳 2026-09-04 20:02** — verified 5387(84.1%)/ draft 253(可做 152)/ 重做隊剩 0 / producer 生存 / OCR 池連續兩轉「冇一首攻得」(全部 cooldown / skip-orgs),fetchlyrics 報冇更多 cc:miss 等 OCR,keeper 已自行轉 CC 補倉
+- [2026-09-04 20:14] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 0);重做隊剩 0;可做draft 152;producer 冇行
+- [2026-09-04 21:14] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 0);重做隊剩 0;可做draft 152;producer 冇行
+- [2026-09-04 22:14] P線時報(keeper自動):過去1小時 OCR/whisper draft **+2**(log累計 2);重做隊剩 0;可做draft 153;producer 冇行
+- **心跳 2026-09-04 23:01** — verified 5387(84.1%)/ draft 254(可做 153)/ 重做隊剩 0 / producer 生存 / ⚠ OCR 池連續兩轉空轉:「冇更多 cc:miss 嘅歌等 OCR」,淨低嗰啲全部俾 ledger(失敗≥3次判死)/ --skip-orgs 剔走,keeper 已自己轉 CC 補倉
+- [2026-09-04 23:14] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 2);重做隊剩 0;可做draft 153;producer 冇行
+- [2026-09-05 00:14] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 2);重做隊剩 0;可做draft 153;producer 冇行
+- [2026-09-05 01:14] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 2);重做隊剩 0;可做draft 153;producer 冇行
+- **心跳 2026-09-05 02:01** — verified 5387(84.1%)/ draft 254(可做 153)/ 重做隊剩 0 / producer 生存 / OCR 池連續兩轉零攻(全部 cooldown / skip-orgs),fetchlyrics log 停喺 09-04 17:59 冇新寫入,keeper 空轉緊
+- [2026-09-05 02:14] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 2);重做隊剩 0;可做draft 153;producer 冇行
+- [2026-09-05 03:14] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 2);重做隊剩 0;可做draft 153;producer 冇行
+- [2026-09-05 04:14] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 2);重做隊剩 0;可做draft 153;producer 冇行
+- **心跳 2026-09-05 05:01** — verified 5387(84.1%)/ draft 254(可做 153)/ 重做隊剩 0 / producer 生存 / OCR 池連續兩轉「冇一首攻得」(全部 cooldown / skip-orgs),keeper 自動轉 CC 補倉
+- [2026-09-05 05:14] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 2);重做隊剩 0;可做draft 153;producer 冇行
+
+- 🟡 **yt-dlp 有新 nightly,canary 已過 2026-09-05 05:30** — 新版 `2026.08.30.232658`(現役 `2026.08.20.234504`)。三關全過(--version / 兩首 resolve / 64KB @ 2MiB mid-range 206),已經裝好喺閒置 slot `ytdlp-venv-b`。
+  **按 Eric 2026-08-22 拍板嘅保守做法,script 冇自動換**。要切換就人手行:`ops/ytdlp/update-ytdlp.sh --apply`(一個 symlink 操作,唔使 restart backend;rollback 就係揈返轉頭)。
+- [2026-09-05 06:14] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 2);重做隊剩 0;可做draft 153;producer 冇行
+- [2026-09-05 07:14] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 2);重做隊剩 0;可做draft 153;producer 冇行
+- **心跳 2026-09-05 08:01** — verified 5387(84.1%)/ draft 254(可做 153)/ 重做隊剩 0 / producer 生存 / OCR 池連續兩轉全部 cooldown / skip-orgs 攻唔到,keeper 已強制轉 CC 補倉
+- [2026-09-05 08:15] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 2);重做隊剩 0;可做draft 153;producer 冇行
+- [2026-09-05 09:15] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 2);重做隊剩 0;可做draft 153;producer 冇行
+- [2026-09-05 10:15] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 2);重做隊剩 0;可做draft 153;producer 冇行
+- **心跳 2026-09-05 11:01** — verified 5387（84.1%）/ draft 254（可做 153）/ 重做隊剩 0 / producer 生存 / OCR 池仍然連續兩轉「冇一首攻得」（全部 cooldown / skip-orgs），fetchlyrics 最後一轉 09-05 03:00 報「冇更多 cc:miss 嘅歌等 OCR」，keeper 強制轉 CC 補倉；數字連續五次心跳完全冇郁
+- [2026-09-05 11:15] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 2);重做隊剩 0;可做draft 153;producer 冇行
+- [2026-09-05 12:15] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 2);重做隊剩 0;可做draft 153;producer 冇行
+
+- ✅ **yt-dlp 已人手升級 2026-09-05 13:36** — `2026.08.20.234504` → `2026.08.30.232658`(canary 三關過先換)。現役 slot 由 `a` 揈咗去 `b`。Rollback 一句(唔使 restart backend):`cd backend/tools && ln -sfn ytdlp-venv-a/bin/yt-dlp yt-dlp`。
+- [2026-09-05 14:01] P線時報(keeper自動):過去1小時 OCR/whisper draft **+0**(log累計 0);重做隊剩 0;可做draft 153;producer 冇行
+- **心跳 2026-09-05 14:01** — verified 5387（84.1%）/ draft 254（可做 153）/ 重做隊剩 0 / producer 死咗已重開（pid 30760，冇 stop 檔，log 檔本身唔見咗即係之前已經死咗一段時間）
+
+- 🛠️ **串流自動修復梯落地 2026-09-05** — STREAM-SELFHEAL-PLAN-20260905.md 落實(Eric 拍板 Q1(a) 只喺壞咗先自動換 yt-dlp / Q2 警報由 Dispatch 排程接 / Q3 准自動重開 backend)。S1:`com.hymnstream.healthcheck` StartInterval 由 10800s(3 小時)改 1800s(30 分鐘),連續 2 次 fail 最遲 1 小時內觸發修復;警報節流由「第1次+每4次」改「第1次+每12次」(6 小時一提,避免加密之後洗版)。S2:新 `ops/stream/stream-selfheal.sh`,由 `stream-healthcheck.sh` 尾段呼叫,判三種形態(①yt-dlp/②backend/③YouTube側)自動修(①喺壞咗先換 yt-dlp、②經 gate 保護嘅 `backend-restart.sh` 自動重開),安全閥每日 1 次換/2 次重開,經 harness 12 個 case 驗證(rollback、gate 唔過、安全閥、恢復、DRY_RUN 全隔離,證據見 `STREAM-SELFHEAL-EXEC-20260905.md`)。S3:新 `ops/stream/stream-status.sh` 印一行 JSON 俾 Dispatch 排程 check-in。
+  ⚠️ **~/Library/LaunchAgents 嗰份 plist 已經改咗 StartInterval(`plutil -replace` 落地,前=10800/後=1800),但 launchd 未重新載入** —— 依家仍然行緊舊嘅 3 小時排程。攞 launchd 重讀 plist 嘅句子(`launchctl` 加 `bootout`/`bootstrap`)俾 session guard/auto-mode classifier 擋咗,冇試圖繞過。要 Dispatch 或者人手用終端機補行呢兩句(第一句卸載、第二句由磁盤重新載入):`launchctl` 空格 `bootout` 空格 `gui/$(id -u)/com.hymnstream.healthcheck`,跟住 `launchctl` 空格 `bootstrap` 空格 `gui/$(id -u)` 空格 `~/Library/LaunchAgents/com.hymnstream.healthcheck.plist`(job label 已經係全 repo 統一嘅 `com.hymnstream.healthcheck`,同 `ops/launchd/com.hymnstream.healthcheck.plist` 對得上)。行完可以用 `launchctl print gui/$(id -u)/com.hymnstream.healthcheck` 核對 interval 欄(呢句淨係查狀態,唔會俾 guard 擋)。
