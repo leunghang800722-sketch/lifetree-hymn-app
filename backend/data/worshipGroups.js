@@ -143,6 +143,34 @@ export const GROUPS = [
   // 5%、blocklist 命中 95%——REJECT 級,實測結果同原本(2026-07-24)嘅
   // 預判完全脗合。0 curated,拆走 channel 唔好再試。
   { name: '611靈糧堂',        aliases: ['611靈糧堂', '台北611靈糧堂'], lang: '國語', priority: 2, inPool: false, channel: null, est: 10, note: '2026-07-24 搵到channel但內容幾乎全係講道/禱告會,已有「611 Worship」先係啱嘅敬拜歌source;2026-07-27 audit確認:帶內5%/blocklist95%,REJECT級,已拆走channel(0 curated)' },
+  // 2026-09-05 Eric 拍板新增:Church 611(611靈糧堂教會主頻道,@Church611tv,
+  // UC9J6hGYkSx-iwrkB7buW5jQ)。⚠️同上面「611靈糧堂」(channel:null,已
+  // REJECT嗰條,實測係「台北611靈糧堂」)**唔同源**——頻道About page原文
+  // 自我介紹「611 Bread of Life Christian Church」,同上面「台北611靈糧堂」
+  // 數字都對唔上(呢度26.7%/23.3%/5% vs 舊嗰條5%/95%);亦唔係「611 Worship」
+  // (@611worship,已喺上面追蹤,name/channel都唔同)。三者係三個獨立entry,
+  // 千祈唔好搞埋一齊。
+  // 2026-09-05 auditChannel實測(depth 60):帶內26.7%/blocklist23.3%/正面
+  // 5%——REJECT級,因為主頻道日常大量上載主日講道/ANEW Sermon/611見證/
+  // EP紀錄片系列(「611, My Beloved」)。⚠️但頻道入面有獨立嘅「RAWship」
+  // 現場敬拜歌系列(片長14-35分鐘,連做多首歌一條片,同「611 Worship」
+  // 格式一樣),Eric拍板*淨收呢個系列*——用durationCapSec:1900+
+  // contentGate:'duration+title'兩層一齊開:全庫深度300條掃描模擬過,
+  // 呢兩層淨過39/300條,37條=RAWship/Live Worship系列(0%撞blocklist,
+  // 97%標題正面訊號),睇落例外於「中文團體唔開contentGate」政策(#見
+  // Asia for JESUS/611 Worship兩條entry嘅comment),但呢個頻道嘅敬拜歌
+  // 系列標題慣例帶「Live Worship/RAWship」英文字眼,誤殺率查證過低,
+  // 唔係盲目跟全局政策,係逐頻道實測過先開。代價:結構上會漏收冇英文
+  // 標題嘅純中文敬拜歌(如果有嘅話),換嚟嘅係主頻道大量講道/見證零漏網。
+  // lang判粵語:頻道用zh-HK caption/繁體字幕,「611 Testimony」證道系列
+  // 標明講者用「Cantonese/Mandarin」「Cantonese/English」雙語,判斷粵語
+  // 為主(⚠️Eric如覺得判錯請改,呢個純粹推斷,未聽真人audio驗證)。
+  { name: 'Church 611',      aliases: ['Church 611', 'Church611tv', '611 Bread of Life Christian Church'], lang: '粵語', priority: 1, inPool: false, channel: '@Church611tv', est: 45, durationCapSec: 1900, contentGate: 'duration+title', note: '2026-09-05 Eric拍板新增,淨收RAWship現場敬拜歌系列(詳見上面comment),主頻道整體REJECT級(帶內26.7%)但RAWship子集97%正面/0%blocklist,durationCapSec1900+contentGate duration+title兩層鎖定' },
+  // 2026-09-05 Eric 拍板新增:新歌敬拜 NewSong Worship(@新歌敬拜NewsongWorship,
+  // UCdWojs2vazAcIaYUzquRJnA)。auditChannel實測(depth 58,已接近成個頻道
+  // 全部片):帶內77.6%/blocklist6.9%/正面94.8%——OK級,唔使開contentGate,
+  // Layer1片長帶+現有blocklist(合輯/精选/伴奏/卡拉OK)已經夠準。
+  { name: '新歌敬拜 NewSong Worship', aliases: ['新歌敬拜', 'NewSong Worship', 'Newsong Worship'], lang: '國語', priority: 2, inPool: false, channel: '@新歌敬拜NewsongWorship', est: 45, note: '2026-09-05 Eric拍板新增,audit OK級(帶內77.6%/blocklist6.9%/正面94.8%),priority同611 Worship一樣' },
 
   // ── 英文(pool 已經嚴重超額,唔使爬)────────────────────────────
   { name: 'Hillsong Worship', aliases: ['Hillsong Worship'],       lang: '英文', priority: 3, inPool: true },
