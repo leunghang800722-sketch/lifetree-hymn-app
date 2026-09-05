@@ -22,7 +22,7 @@ import { postHeartbeat } from '../api';
 import { getOrCreateDeviceId } from '../deviceId';
 
 const HEARTBEAT_INTERVAL_MS = 60 * 1000;
-const ACTIVE_SEND_DEDUP_MS = 100; // 防同一個「變 active」短時間內連環觸發送兩次(P1)
+const ACTIVE_SEND_DEDUP_MS = 5000; // 防「變 active」連環觸發(P1);Opus2 N2:100ms 太短,一分鐘切 40 次前後台會自己燒晒 IP 配額,5 秒內只送一次
 
 export default function usePresenceHeartbeat({ token, isPlaying }) {
   const tokenRef = useRef(token);

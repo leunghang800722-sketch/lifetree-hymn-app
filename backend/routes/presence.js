@@ -25,17 +25,22 @@ import { recordHeartbeat, getPresenceSnapshot } from '../lib/presence.js';
 const DEVICE_ID_RE = /^[0-9a-f]{8,40}$/;
 
 // per-IP 節流(P5,Opus 5 驗收 1a 保留已修,手法照 lib/loginRateLimit.js):
-// 60 秒 30 次,超過就 429、唔再入 presence Map(唔算入 recordHeartbeat)。
+// 60 秒 300 次(Opus2 N1:同一 IP 後面可以係成間教會 WiFi / CGNAT,60 秒心跳一部機 1 次,300 = 撐 300 部機),超過就 429、唔再入 presence Map(唔算入 recordHeartbeat)。
 // heartbeat 冇 auth,呢個係唯一擋濫用嘅第一層(第二層係 presence.js 嘅
 // MAX_ENTRIES + 訪客優先剷)。
 const HEARTBEAT_RATE_WINDOW_MS = 60 * 1000;
-const HEARTBEAT_RATE_MAX = 30;
+const HEARTBEAT_RATE_MAX = 300;
+const HEARTBEAT_RATE_MAP_MAX = 5000; // Opus2 N4:Map 有上限,超過就剷最舊 window
 const heartbeatRateByIp = new Map(); // ip -> { count, windowStart }
 
 function isHeartbeatRateLimited(ip) {
   const now = Date.now();
   const rec = heartbeatRateByIp.get(ip);
   if (!rec || now - rec.windowStart > HEARTBEAT_RATE_WINDOW_MS) {
+    if (!rec && heartbeatRateByIp.size >= HEARTBEAT_RATE_MAP_MAX) {
+      for (const [k, v] of heartbeatRateByIp) { if (now - v.windowStart > HEARTBEAT_RATE_WINDOW_MS) heartbeatRateByIp.delete(k); }
+      if (heartbeatRateByIp.size >= HEARTBEAT_RATE_MAP_MAX) heartbeatRateByIp.delete(heartbeatRateByIp.keys().next().value);
+    }
     heartbeatRateByIp.set(ip, { count: 1, windowStart: now });
     return false;
   }

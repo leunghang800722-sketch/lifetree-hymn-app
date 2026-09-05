@@ -41,7 +41,7 @@ export default function AdminPresenceSheet({ visible, onClose, getToken }) {
     const token = getToken ? getToken() : null;
     adminPresence(token)
       .then((r) => { if (loadSeq.current === seq) setData(r); })
-      .catch(() => { if (loadSeq.current === seq) setErr(true); })
+      .catch(() => { if (loadSeq.current === seq && mode !== 'silent') setErr(true); }) // Opus2 N3:silent 刷新失敗保留舊名單,唔炒走
       .finally(() => {
         if (loadSeq.current !== seq) return;
         if (mode === 'refresh') setRefreshing(false);
