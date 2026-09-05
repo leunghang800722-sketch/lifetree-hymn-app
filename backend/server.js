@@ -36,7 +36,38 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
 const PORT = process.env.PORT || 3001;
 
-app.use(cors());
+// DEEP-AUDIT-W2-EXEC-20260906 Commit C2(LOGIN-P2/W1 Opus #4):之前完全冇設
+// `trust proxy`,`req.ip` 只反映直連 socket(cloudflared 本機轉發,永遠係
+// 127.0.0.1),而 lib/loginRateLimit.js `clientIp()` 直接信 client 自己送嘅
+// `x-forwarded-for` 原字串——任何人自報一個 XFF 就可以完全繞過 per-IP 節流
+// (實測見 DEEP-AUDIT-W1-OPUS-20260906.md NC-3b:同一 socket 換 XFF,
+// 150/150 全通,零 429)。呢度加返 `trust proxy`:cloudflared 對 Express
+// 嚟講係**一跳**(Cloudflare edge → cloudflared 本機 daemon → 呢個
+// process,cloudflared 對外都算一個 reverse proxy hop),`1` 令 Express
+// 自己解 `req.ip` 嗰陣信 X-Forwarded-For 最尾一個由「已信任嗰一跳」寫入嘅
+// 位——`clientIp()`(lib/loginRateLimit.js)本身跟住呢個 commit 一齊改,
+// 唔再直接讀 header 原字串,改攞呢個經 Express 解析後嘅 `req.ip`。
+app.set('trust proxy', 1);
+
+// DEEP-AUDIT-W2-EXEC-20260906 Commit C3(SRV-2):`cors()` 之前冇 origin
+// allowlist,任何 origin 都會俾 reflect 返 `Access-Control-Allow-Origin`
+// ——RN app 本身唔係瀏覽器 fetch,根本唔送 Origin header,唔需要呢個寬鬆
+// 設定,而家嘅寬鬆純粹擴大咗「第三方網頁用偷嚟嘅 token 隔空讀 API」嘅面。
+// 收窄做 allowlist:只放自己三個域,RN app 冇 Origin 照放行(`origin`
+// undefined → allow,唔係瀏覽器 CORS 場景)。`/p/:token`(routes/share.js
+// SSR 網頁)係瀏覽器**直接導航**去嗰個 URL,唔係跨 origin fetch/XHR,CORS
+// header 對直接導航完全冇影響——收窄呢個 allowlist 唔會撻。
+const CORS_ALLOWED_ORIGINS = new Set([
+  'https://api.odemusics.com',
+  'https://odemusics.com',
+  'https://www.odemusics.com',
+]);
+app.use(cors({
+  origin(origin, callback) {
+    if (!origin || CORS_ALLOWED_ORIGINS.has(origin)) return callback(null, true);
+    return callback(null, false); // 唔啱嘅 origin:唔拋 error,淨係唔加 CORS header
+  },
+}));
 app.use(express.json());
 
 // PERF-STAGE2-EXEC-20260902 §2A A-3(修 PERF-STAGE2-2C-20260902 C-3)——
@@ -331,7 +362,21 @@ app.get('/api/app-version', (req, res) => {
 // 真人聽緊歌」,實現「有真人用就縮」呢個開關(2026-07-21 Eric 拍板,暫時未開)。
 // 直接讀返 keep-warm tick 用緊嗰個 refcount(見上面 §206 anyStreaming),
 // 唔係額外維護一份新狀態 —— 一個 process 入面單一事實來源。唔係俾 App 用嘅。
+//
+// DEEP-AUDIT-W2-EXEC-20260906 Commit C4(SRV-5/D-8):之前冇 auth/IP
+// allowlist,任何人都 curl 得到(低敏感度 info leak,但意圖明明係「唔係俾
+// App 用」)。核實過(D-8):唯一 caller 係 backend/scripts/growLibrary.js:118
+// 嘅 `BACKEND_BASE`(預設 `http://localhost:3001`),`~/Library/LaunchAgents/
+// com.hymnapp.growlibrary.plist` 嘅 `EnvironmentVariables` 淨係設咗 PATH,
+// 冇設 BACKEND_BASE 改去 tunnel——確認一定係本機 loopback 打。加返
+// localhost-only:睇 `req.socket.remoteAddress`(唔係 `clientIp()`/`req.ip`
+// ——嗰啲經 header 可以畀人喺 body/header 層面呃,`remoteAddress` 係 TCP
+// 連線層面嘅事實,喺 trust proxy 生效之後都唔會受 X-Forwarded-For 影響)。
+const LOOPBACK_ADDRS = new Set(['127.0.0.1', '::1', '::ffff:127.0.0.1']);
 app.get('/api/internal/activity', (req, res) => {
+  if (!LOOPBACK_ADDRS.has(req.socket.remoteAddress)) {
+    return res.status(404).end();
+  }
   res.json({ streaming: anyStreaming() });
 });
 

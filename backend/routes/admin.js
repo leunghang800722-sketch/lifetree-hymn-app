@@ -15,6 +15,7 @@ import { YTDLP } from '../lib/ytdlpBin.js';
 import { resolveAudioUrl } from '../lib/resolveAudio.js';
 import { updateHymn, insertHymn, delistHymn, EDITABLE_FIELDS } from '../lib/adminHymns.js';
 import { getDataVersion } from '../lib/serverDb.js';
+import { makeLimiter } from '../lib/rateLimit.js';
 
 const execFile = promisify(execFileCb);
 
@@ -111,18 +112,23 @@ function audit(req, action, hymnId, before, after) {
 
 // preview 專用限速(§3.4:每下都 spawn yt-dlp,per-user 10/min,比 requireAdmin
 // 嗰個 60/min 通盤限速更緊)。
+// DEEP-AUDIT-W2-EXEC-20260906 Commit C5(ADM-1):`previewRateByUser` 之前
+// 冇 eviction(key 係 user_id,受限於真實用戶數,而家細,但寫法同
+// invites.js/share.js 有 sweep-on-threshold 嘅範本唔一致)。呢個 Map 嘅
+// 決策邏輯本身就係「count 全部 request、window 由第一擊起計」,同
+// lib/rateLimit.js makeLimiter() 語意完全一致,直接改用佢——
+// PREVIEW_RATE_WINDOW_MS/PREVIEW_RATE_MAX 一個數字都冇變,額外攞埋
+// makeLimiter 預設嘅 maxEntries 硬頂(bounded,C7 缺口根治)。
 const PREVIEW_RATE_WINDOW_MS = 60 * 1000;
 const PREVIEW_RATE_MAX = 10;
-const previewRateByUser = new Map();
+const previewLimiter = makeLimiter({
+  name: 'admin-preview',
+  keyOf: (req) => req, // check() 下面直接傳 userId
+  max: PREVIEW_RATE_MAX,
+  windowMs: PREVIEW_RATE_WINDOW_MS,
+});
 function previewRateLimited(userId) {
-  const now = Date.now();
-  const rec = previewRateByUser.get(userId);
-  if (!rec || now - rec.windowStart > PREVIEW_RATE_WINDOW_MS) {
-    previewRateByUser.set(userId, { count: 1, windowStart: now });
-    return false;
-  }
-  rec.count++;
-  return rec.count > PREVIEW_RATE_MAX;
+  return previewLimiter.check(userId);
 }
 
 // 唔好將原始 URL 掟落 shell:先由已知格式抽 11 字元 video id,之後一律用

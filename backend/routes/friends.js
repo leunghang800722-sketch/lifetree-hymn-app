@@ -13,6 +13,7 @@
 
 import { getUserDb, saveUserDb } from '../lib/userDb.js';
 import requireAuth from '../lib/requireAuth.js';
+import { sweepOnThreshold } from '../lib/rateLimit.js';
 
 // E.164 粗略檢查(同 otpAuth.js normalizePhone 一樣嘅正則,兩個 file 各自一份
 // 細 helper——呢個級數嘅重複唔值得為佢開新共用 lib)。
@@ -45,11 +46,18 @@ function getFriendship(db, aId, bId) {
 
 // ── per-user 每日限速(§5-3/4)—— in-memory,重啟清零可接受(同 otpAuth.js
 // perPhone/perIp 一致做法)。lookup 20/日、request(真・新請求)10/日。
+// DEEP-AUDIT-W2-EXEC-20260906 Commit C5(FRIENDS-1):`byUser` 之前冇
+// eviction。呢個 Map 係日曆日重置(day-cap),同 lib/rateLimit.js
+// makeLimiter() 嘅「sliding window count」語意唔同,唔逼佢改形狀——`check`
+// 嘅輸入輸出、control flow 逐 bit 冇改,淨係加返 sweepOnThreshold() 幫手
+// 剷「唔係今日」嘅殘留 entry(呢啲 entry 本身對決策冇影響——`rec.day !== d`
+// 見到就當新一日,同攞唔到 entry 結果一樣,見 otpAuth.js 同類註解)。
 function makeDailyLimiter(max) {
   const byUser = new Map(); // userId -> { day, count }
   return {
     check(userId) {
       const d = new Date().toDateString();
+      sweepOnThreshold(byUser, { isExpired: (rec) => rec.day !== d });
       const rec = byUser.get(userId);
       if (!rec || rec.day !== d) {
         return { ok: true, commit: () => byUser.set(userId, { day: d, count: 1 }) };
@@ -67,6 +75,10 @@ const REQUEST_DAILY_MAX = Number(process.env.FRIENDS_REQUEST_DAILY_MAX || 10);
 const OUTGOING_PENDING_CAP = Number(process.env.FRIENDS_OUTGOING_PENDING_CAP || 20); // DB 數,persistent(唔係 in-memory)
 const lookupLimiter = makeDailyLimiter(LOOKUP_DAILY_MAX);
 const requestLimiter = makeDailyLimiter(REQUEST_DAILY_MAX);
+// 純 export 俾 harness 用(DEEP-AUDIT-W2-EXEC-20260906 Commit C5 對照
+// makeDailyLimiter 舊 vs 新布林序列),route handler 自己完全唔用呢啲
+// export,行為零改動。
+export { lookupLimiter, requestLimiter };
 
 function countOutgoingPending(db, userId) {
   const stmt = db.prepare("SELECT COUNT(*) AS n FROM friendships WHERE status = 'pending' AND requested_by = ?");

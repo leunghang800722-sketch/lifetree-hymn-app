@@ -16,7 +16,7 @@ import { saveUserDb } from '../lib/userDb.js';
 import { ipLoginLimiter, phoneLoginLimiter, clientIp } from '../lib/loginRateLimit.js';
 import { REGISTRATION_MODE } from '../lib/registrationMode.js';
 import { redeemInviteAndFriend } from '../lib/inviteRedeem.js';
-import { sweepOnThreshold } from '../lib/rateLimit.js';
+import { makeLimiter, sweepOnThreshold } from '../lib/rateLimit.js';
 
 const TOKEN_EXPIRY = '30d';
 const TICKET_EXPIRY = '10m';
@@ -180,6 +180,60 @@ function normalizeInviteCode(raw) {
   return raw.replace(/[\s-]/g, '').toUpperCase();
 }
 
+// ── OTP-1 修復(DEEP-AUDIT-W2-EXEC-20260906 Commit C1)────────────────────
+// `/otp/verify` + `/otp/verify-ticket` 之前完全冇本地 attempt 節流,4-8 位
+// 數字驗證碼淨靠 Twilio Verify 自己(未知配置)嘅節流——可以爆帳戶嘅路。
+// 兩條 route 共用同一份 state(攻擊者交替打兩條 route 唔應該避得開限速,
+// 佢哋針對嘅係同一個 phone/同一個攻擊者)。
+//
+//   per-phone:10 分鐘 5 次錯(淨計 Twilio 話「唔啱」嗰啲,成功一次即清零)。
+//   per-IP  :60 次/10 分鐘保底(用 lib/rateLimit.js makeLimiter(),計全部
+//             attempt,防同一 IP 掃唔同 phone)。
+const VERIFY_PHONE_WINDOW_MS = 10 * 60 * 1000;
+const VERIFY_PHONE_MAX_FAILS = 5;
+const verifyFailsByPhone = new Map(); // phone -> { count, windowStart }
+function verifyIsExpiredRec(rec, now) { return now - rec.windowStart > VERIFY_PHONE_WINDOW_MS; }
+
+function verifyCheckPhoneLock(phone) {
+  sweepOnThreshold(verifyFailsByPhone, { isExpired: verifyIsExpiredRec });
+  const rec = verifyFailsByPhone.get(phone);
+  if (!rec) return { locked: false };
+  if (Date.now() - rec.windowStart > VERIFY_PHONE_WINDOW_MS) {
+    verifyFailsByPhone.delete(phone);
+    return { locked: false };
+  }
+  if (rec.count >= VERIFY_PHONE_MAX_FAILS) {
+    const retryAfterSec = Math.max(1, Math.ceil((rec.windowStart + VERIFY_PHONE_WINDOW_MS - Date.now()) / 1000));
+    return { locked: true, retryAfterSec };
+  }
+  return { locked: false };
+}
+
+function verifyRecordFail(phone) {
+  const now = Date.now();
+  const rec = verifyFailsByPhone.get(phone);
+  if (!rec || now - rec.windowStart > VERIFY_PHONE_WINDOW_MS) {
+    verifyFailsByPhone.set(phone, { count: 1, windowStart: now });
+  } else {
+    rec.count++;
+  }
+}
+
+function verifyClearPhone(phone) {
+  verifyFailsByPhone.delete(phone);
+}
+
+const verifyIpLimiter = makeLimiter({
+  name: 'otp-verify-ip',
+  keyOf: (req) => req, // check() 下面直接傳 ip string
+  max: 60,
+  windowMs: VERIFY_PHONE_WINDOW_MS, // 10 分鐘,同 phone 窗口對齊,方便一齊講「10 分鐘」
+});
+
+// 純 export 俾 harness 用(DEEP-AUDIT-W2-EXEC-20260906 H-C1)——route handler
+// 自己完全唔用呢啲 export,行為零改動。
+export { verifyCheckPhoneLock, verifyRecordFail, verifyClearPhone, verifyIpLimiter };
+
 function findUserByPhone(db, phone) {
   const stmt = db.prepare('SELECT id, username, email, phone, role, gender, birth_year, password_hash FROM users WHERE phone = ?');
   stmt.bind([phone]);
@@ -229,12 +283,22 @@ export default function otpAuthRoutes(app, getUserDb) {
       const phone = normalizePhone(req.body?.phone);
       const code = String(req.body?.code || '').trim();
       if (!phone || !/^\d{4,8}$/.test(code)) return res.status(400).json({ error: 'bad_input' });
+
+      // OTP-1(Commit C1):喺打 Twilio 之前先擋——per-IP 保底 + per-phone 鎖。
+      if (verifyIpLimiter.check(clientIp(req))) return res.status(429).json({ error: 'rate_limited' });
+      const phoneLock = verifyCheckPhoneLock(phone);
+      if (phoneLock.locked) {
+        return res.status(429).json({ error: 'too_many_attempts', retryAfterSec: phoneLock.retryAfterSec, message: '太多次錯誤,請稍後再試' });
+      }
+
       if (!otpConfigured()) return res.status(503).json({ error: 'not_configured' });
 
       const chk = await twilioCheck(phone, code);
       if (!(chk.ok && chk.data?.status === 'approved')) {
+        verifyRecordFail(phone);
         return res.status(401).json({ error: 'bad_code', message: '驗證碼唔啱或者過期' });
       }
+      verifyClearPhone(phone); // 成功即清零(§C1「只計錯,成功即 reset」)
 
       const db = await getUserDb();
       const user = findUserByPhone(db, phone);
@@ -261,12 +325,23 @@ export default function otpAuthRoutes(app, getUserDb) {
       const phone = normalizePhone(req.body?.phone);
       const code = String(req.body?.code || '').trim();
       if (!phone || !/^\d{4,8}$/.test(code)) return res.status(400).json({ error: 'bad_input' });
+
+      // OTP-1(Commit C1):同 /otp/verify 共用同一份 per-phone/per-IP state
+      // (避免攻擊者交替打兩條 route 避開限速)。
+      if (verifyIpLimiter.check(clientIp(req))) return res.status(429).json({ error: 'rate_limited' });
+      const phoneLock = verifyCheckPhoneLock(phone);
+      if (phoneLock.locked) {
+        return res.status(429).json({ error: 'too_many_attempts', retryAfterSec: phoneLock.retryAfterSec, message: '太多次錯誤,請稍後再試' });
+      }
+
       if (!otpConfigured()) return res.status(503).json({ error: 'not_configured' });
 
       const chk = await twilioCheck(phone, code);
       if (!(chk.ok && chk.data?.status === 'approved')) {
+        verifyRecordFail(phone);
         return res.status(401).json({ error: 'bad_code', message: '驗證碼唔啱或者過期' });
       }
+      verifyClearPhone(phone); // 成功即清零
 
       const db = await getUserDb();
       const user = findUserByPhone(db, phone);

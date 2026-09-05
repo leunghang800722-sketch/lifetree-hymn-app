@@ -59,6 +59,15 @@ export const ipLoginLimiter = makeLimiter(15 * 60 * 1000, 10);
 // reset 通道(PHONE-PASSWORD-AUTH-PLAN §2.3)唔受呢個限。
 export const phoneLoginLimiter = makeLimiter(15 * 60 * 1000, 5);
 
+// DEEP-AUDIT-W2-EXEC-20260906 Commit C2(LOGIN-P2/W1 Opus #4 NC-3b):**唔再
+// 直接信 `x-forwarded-for` 原字串**——嗰個 header client 自己一個 fetch call
+// 就砌得到,冇 `trust proxy` 之前呢句令任何人自報 IP 就完全繞過 per-IP 節流
+// (實測 150/150 request 換晒 XFF 都 100% 唔撞 429)。優先攞 Cloudflare 邊緣
+// 寫嘅 `cf-connecting-ip`(client 傳唔到假嘅——真經 CF 路先有,cloudflared
+// 唔會轉發 client 自己塞嘅同名 header,CF 邊緣一定覆寫);冇呢個 header
+// (本機直連 / cloudflared 冇轉發)先跌落 `req.ip`——依家 server.js 已經
+// `app.set('trust proxy', 1)`,Express 自己解析 X-Forwarded-For 嗰一跳,
+// 唔係讀原始字串。
 export function clientIp(req) {
-  return (req.headers['cf-connecting-ip'] || req.headers['x-forwarded-for'] || req.ip || '').split(',')[0].trim();
+  return (req.headers['cf-connecting-ip'] || req.ip || '').split(',')[0].trim();
 }

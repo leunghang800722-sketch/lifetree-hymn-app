@@ -8,6 +8,7 @@
 import { getUserDb, saveUserDb } from '../lib/userDb.js';
 import { getDb } from '../lib/serverDb.js';
 import requireAuth from '../lib/requireAuth.js';
+import { makeLimiter } from '../lib/rateLimit.js';
 
 // ── hymn_id 存在性驗證(DELISTED-FAVORITES-ROOTCAUSE-20260822.md §G2)────────
 //
@@ -45,19 +46,23 @@ async function existingHymnIds(ids) {
 }
 
 // ── 限速(§1.5)—— 純防前端 sync loop 走火,正常使用遠遠掂唔到 ──────────
+// DEEP-AUDIT-W2-EXEC-20260906 Commit C5(ME-1):`rateByUser` 之前冇
+// eviction,寫法同 invites.js/share.js 有 sweep-on-threshold 嘅範本唔一致。
+// 決策邏輯本身就係「count 全部 request、window 由第一擊起計」,同
+// lib/rateLimit.js makeLimiter() 語意完全一致,直接改用佢——
+// RATE_WINDOW_MS/RATE_MAX 一個數字都冇變,額外攞埋 makeLimiter 預設嘅
+// maxEntries 硬頂(bounded,C7 缺口根治)。
 const RATE_WINDOW_MS = 60 * 1000;
 const RATE_MAX = 60;
-const rateByUser = new Map(); // user_id -> { count, windowStart }
+const meRateLimiter = makeLimiter({
+  name: 'me-sync',
+  keyOf: (req) => req, // check() 下面直接傳 userId
+  max: RATE_MAX,
+  windowMs: RATE_WINDOW_MS,
+});
 
 function isRateLimited(userId) {
-  const now = Date.now();
-  const rec = rateByUser.get(userId);
-  if (!rec || now - rec.windowStart > RATE_WINDOW_MS) {
-    rateByUser.set(userId, { count: 1, windowStart: now });
-    return false;
-  }
-  rec.count++;
-  return rec.count > RATE_MAX;
+  return meRateLimiter.check(userId);
 }
 
 const PLAYLIST_ID_RE = /^pl_[A-Za-z0-9_-]{1,40}$/;
