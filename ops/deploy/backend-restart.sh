@@ -13,6 +13,10 @@
 #      嘅②(backend restart)永久 gate-blocked(2026-09-05 Opus 驗收 §3b)。
 #      `--same-code` 只放寬「sha 必須完全相等」呢一條,第 2 步嘅髒檔案檢查
 #      同健康檢查全部原樣保留;backend/ code 有真實差異照舊 abort。
+#      (2026-09-05 Opus 第二輪驗收 §4b/R2:`backend/data/` 淨係豁免咗成個
+#      目錄,但入面有真係可執行 code(`worshipGroups.js`/`knownPerformers.js`),
+#      已收緊做加多一條獨立 diff 逼 `backend/data/*.js|*.mjs|*.cjs` 都要同
+#      已批准 sha 一致,見下面實作。)
 #   2. git status --porcelain -- backend/ 必須乾淨,但豁免運行時檔案
 #      (hymns.db、users.db*、backend/data/、*.log、*.bak*、backend/public/ 等)。
 #   3. 全過 -> launchctl bootout + bootstrap gui/$(id -u)/com.hymnapp.backend
@@ -71,8 +75,20 @@ if [[ "$HEAD_SHA" != "$APPROVED_SHA" ]]; then
     # backend/data/、backend/public/、backend/logs/)。--quiet 淨係睇 exit
     # code,冇差異先 0。用兩個 sha 直接 diff,唔理 working tree 現況(第 2 步
     # 會另外驗 working tree 乾淨)。
+    #
+    # 2026-09-05 Opus 第二輪驗收 §4b/R2:`backend/data/` 淨係整條目錄豁免咗,
+    # 但入面有真係可執行 code(`worshipGroups.js`/`knownPerformers.js`,俾
+    # growLibrary.js 等 6 個 script import)。收緊做:第一條 diff 保留原本嘅
+    # 目錄級豁免(json/其他運行時產出唔算 code),但加第二條獨立 diff 專門
+    # 逼 `backend/data/` 入面嘅 .js/.mjs/.cjs 都要同已批准 sha 一致 —— 兩條
+    # diff 都要 quiet(冇差異)先算過。用兩條獨立 `git diff --quiet` 而唔係
+    # 喺第一條 pathspec 度用 exclude-then-reinclude,因為實測 git 嘅 exclude
+    # pathspec 會贏(重新加返 'backend/data/*.js' 冇用,exclude 咗嘅目錄之下
+    # 嘅檔案就係唔會再俾 diff 睇到)。
     if git diff --quiet "$APPROVED_SHA" "$HEAD_SHA" -- backend \
-         ':!backend/hymns.db' ':!backend/data' ':!backend/public' ':!backend/logs' 2>/dev/null; then
+         ':!backend/hymns.db' ':!backend/data' ':!backend/public' ':!backend/logs' 2>/dev/null \
+       && git diff --quiet "$APPROVED_SHA" "$HEAD_SHA" -- \
+         'backend/data/*.js' 'backend/data/*.mjs' 'backend/data/*.cjs' 2>/dev/null; then
       SAME_CODE_OK=1
     fi
   fi

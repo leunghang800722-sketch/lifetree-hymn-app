@@ -17,8 +17,12 @@
 #
 # ── 動作 ──────────────────────────────────────────────────────────
 #   ① swapsToday<1:行 $SELFHEAL_APPLY_CMD(預設 ops/ytdlp/update-ytdlp.sh --apply)。
-#      用 readlink 前後對比判斷有冇真係換咗(而唔係 parse 佢啲 stdout 文字,
-#      因為嗰個 script 好多分支唔輸出 APPLIED 字眼)。換咗就即刻重跑 Layer B
+#      swapsToday(2026-09-05 Opus 第二輪 R1(a) 修過)計嘅係「真係行咗一次
+#      $APPLY_CMD 嘅嘗試次數」——一 call 就 +1,唔理有冇候選版本、canary 過
+#      唔過(舊寫法淨係「真係換咗 symlink」先計,令 ytdlp-no-candidate 呢條
+#      路徑完全唔消耗安全閥額度)。用 readlink 前後對比判斷有冇真係換咗
+#      (而唔係 parse 佢啲 stdout 文字,因為嗰個 script 好多分支唔輸出
+#      APPLIED 字眼)嚟決定之後行邊條分支。換咗就即刻重跑 Layer B
 #      直打(唔經 backend)—— ①嘅成敗淨係睇呢個。Layer B 唔過就 rollback
 #      條 symlink,升級做③處理。Layer B 過但 Layer A(healthy_a)仍然係 0 嗰陣
 #      (2026-09-05 Opus 驗收 §2a 揭到嘅 false-green):**唔會**寫🟢/清 alert,
@@ -46,12 +50,17 @@
 #     抵消咗 healthcheck 自己嗰個「每 12 次先報一次」嘅節流)──────────────
 # 除咗上面嘅「每日安全閥」之外,再加一層「幾耐先郁一次手/寫一次人話警報」:
 #   · 「連續 fail 剛到 2」(呢個故障頭一次符合郁手門檻)—— 一定郁手/寫警報。
-#   · 之後同一種形態(用未加後綴嘅原始 form,即 ①yt-dlp/②backend/③YouTube側,
-#     故意唔理 rollback 之後加嘅「(①已試過)」呢類後綴,否則 rollback 令
-#     form 文字跳嚟跳去,節流會被繞過)持續,每 12 個 tick(= 30 分鐘 × 12 =
-#     6 小時)先再郁手/寫一次。
-#   · 形態一變(即係 form 同 state 記低嗰個 lastActionForm 唔同)—— 當新消息,
-#     即刻郁手/寫警報,唔等 12 tick。
+#   · 之後(冇論形態)每 12 個 tick(= 30 分鐘 × 12 = 6 小時)先再郁手/寫一次。
+# 2026-09-05 Opus 第二輪驗收 R1:節流 key 本來係「形態」(form_kind 換咗就即刻
+# bypass 節流),但真實故障期間 midfail 會自然喺 2 呢條界上下跳(探測得 3 首歌,
+# midfail 2 vs 1 就係 ①yt-dlp vs ③YouTube側 之差),形態 flap 會令節流完全形同
+# 虛設(20 tick flap 量得 10 次 apply/20 行 SUPERVISION,而且 swapsToday 全程 0,
+# 每日安全閥都攔唔到)。**修法:節流 key 改做單一嘅「上次郁手嗰刻」
+# (lastActionTick),唔再分形態** —— due 淨係睇「連續 fail 剛到 2」或者
+# 「距離上次郁手夠 12 tick」兩條,形態轉變**唔再** bypass 節流,改為淨係寫
+# 一行 history log(`form-changed`)俾人睇到轉咗形態,但唔會即刻再 call
+# apply/restart。lastActionForm 依然記低(俾訊息/log 顯示用),但唔再參與
+# due 判斷。
 # state 用 lastActionTick(上次真正郁手/寫警報嗰刻嘅 consecutiveFail 值)同
 # lastActionForm 記低。冇到期(due=0)嗰啲 tick:唔會 call apply/restart,唔會
 # 寫 SUPERVISION-LOG,但 `stream-selfheal.log`(history,machine log)照樣
@@ -265,16 +274,17 @@ fi
 form_kind="$form"   # 節流用嘅原始形態,唔理下面 rollback/pending 加嘅後綴
 say "形態判定:$form(healthy_a=$healthy_a healthy_b=$healthy_b mid=$mid midfail=$midfail consecutiveFail=$consecutiveFail)"
 
-# ══ 3b. F2 節流判斷 ═════════════════════════════════════════════
+# ══ 3b. F2 節流判斷(2026-09-05 Opus 第二輪 R1(b):節流 key 由「形態」改做
+#     單一嘅 lastActionTick,唔再分形態;形態轉變唔再 bypass 節流,只 log)══
 # due=1:呢個 tick 准郁手(call apply/restart)兼寫 SUPERVISION-LOG。
-#   · 形態同上次記錄嘅唔同 → 新消息,即刻 due。
-#   · 呢個故障頭一次夠 consecutiveFail==2 門檻 → due。
-#   · 未記過任何 lastActionTick(=0)→ due(第一次見到呢個形態)。
+#   · 呢個故障頭一次夠 consecutiveFail==2 門檻 → due(呢條保留)。
+#   · 未記過任何 lastActionTick(=0)→ due(呢單故障第一次郁手)。
 #   · 距離上次郁手夠 THROTTLE_TICKS(預設 12 = 6 小時)→ due。
+# 形態轉變(form_kind != 上次記錄嘅 lastActionForm)**唔再令 due=1**,只喺
+# history log 度留一行話俾人知轉咗形態,避免 flap(①↔③ 喺 midfail=2 界上下
+# 跳)完全繞過節流。
 due=0
-if [[ "$form_kind" != "$ST_LASTACTIONFORM" ]]; then
-  due=1
-elif (( consecutiveFail == 2 )); then
+if (( consecutiveFail == 2 )); then
   due=1
 elif (( ST_LASTACTIONTICK <= 0 )); then
   due=1
@@ -282,6 +292,9 @@ elif (( consecutiveFail - ST_LASTACTIONTICK >= THROTTLE_TICKS )); then
   due=1
 fi
 say "節流判斷:due=$due(consecutiveFail=$consecutiveFail lastActionTick=$ST_LASTACTIONTICK lastActionForm=$ST_LASTACTIONFORM)"
+if [[ "$form_kind" != "$ST_LASTACTIONFORM" && -n "$ST_LASTACTIONFORM" ]]; then
+  hist "form-changed $ST_LASTACTIONFORM -> $form_kind(due=$due,唔再 bypass 節流)"
+fi
 
 alert_active=0; alert_form="$form"; alert_msg=""
 swaps=$ST_SWAPS; restarts=$ST_RESTARTS
@@ -292,7 +305,7 @@ case "$form" in
   if (( ST_SWAPS >= SWAP_LIMIT )); then
     action="alert-safetyvalve-ytdlp"
     alert_active=1
-    alert_msg="形態①(yt-dlp,midfail=$midfail/${#YT_IDS[@]}):今日已經換過 $ST_SWAPS 次(安全閥 $SWAP_LIMIT),唔再自動換,交返俾人手查 \`ops/ytdlp/update-ytdlp.sh\`。實際:$detail"
+    alert_msg="形態①(yt-dlp,midfail=$midfail/${#YT_IDS[@]}):今日已經嘗試 apply 過 $ST_SWAPS 次(安全閥 $SWAP_LIMIT),唔再自動換,交返俾人手查 \`ops/ytdlp/update-ytdlp.sh\`。實際:$detail"
     hist "alert safetyvalve-ytdlp swapsToday=$ST_SWAPS/$SWAP_LIMIT due=$due"
     (( due == 1 )) && supervision "- 🔴 **自動修復梯:形態①但安全閥觸頂 $(ts)** — $alert_msg"
   else
@@ -320,11 +333,16 @@ case "$form" in
       alert_msg="形態①(yt-dlp)持續(consecutiveFail=$consecutiveFail),節流中(上次郁手/警報喺 consecutiveFail=$ST_LASTACTIONTICK,每 $THROTTLE_TICKS 個 tick 先再試一次),冇再 call apply。實際:$detail"
       hist "ytdlp-throttled-wait consecutiveFail=$consecutiveFail lastActionTick=$ST_LASTACTIONTICK"
     else
+      # 2026-09-05 Opus 第二輪 R1(a):swapsToday 由「真係換咗 symlink 先計」
+      # 改做「凡係真係行咗一次 $APPLY_CMD(即 update-ytdlp.sh --apply,會打
+      # PyPI + 可能兩次 canary resolve/mid-range)就計一次嘗試」,唔理有冇
+      # 候選、canary 過唔過。原本嘅寫法喺「①冇候選版本」(ytdlp-no-candidate)
+      # 嗰條路徑完全唔計數,形態 flap 撞正呢條路徑就會令每日安全閥形同虛設。
+      swaps=$((ST_SWAPS+1))
       apply_out="$(eval "$APPLY_CMD" 2>&1)"; apply_rc=$?
       after_target="$(readlink "$YTDLP_LINK" 2>/dev/null || true)"
-      say "  apply rc=$apply_rc before=$before_target after=$after_target"
+      say "  apply rc=$apply_rc before=$before_target after=$after_target swapsToday(嘗試)=$swaps/$SWAP_LIMIT"
       if [[ -n "$after_target" && "$after_target" != "$before_target" ]]; then
-        swaps=$((ST_SWAPS+1))
         verify_layer_b
         say "  重驗 Layer B:mid=$VB_MID midfail=$VB_MIDFAIL"
         if (( VB_MID >= 2 )); then
@@ -367,7 +385,7 @@ case "$form" in
         action="ytdlp-no-candidate"
         form="③YouTube側(①冇候選版本)"; alert_form="$form"; alert_active=1
         short_out="$(echo "$apply_out" | tail -c 300)"
-        alert_msg="形態①(yt-dlp)但閒置 slot 冇 canary-PASS 嘅新版本可換(readlink 冇變:$before_target;apply 輸出尾段:$short_out)。升級做③。實際:$detail"
+        alert_msg="形態①(yt-dlp)但閒置 slot 冇 canary-PASS 嘅新版本可換(readlink 冇變:$before_target;apply 輸出尾段:$short_out)。升級做③。今日 swapsToday(嘗試)=$swaps/$SWAP_LIMIT。實際:$detail"
         hist "ytdlp-no-candidate before=$before_target after=$after_target apply_rc=$apply_rc"
         supervision "- 🔴 **自動修復梯:形態①冇候選版本 $(ts)** — $alert_msg"
       fi

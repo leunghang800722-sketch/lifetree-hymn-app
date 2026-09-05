@@ -496,3 +496,135 @@ parse 唔到就 fallback `270`(90 分鐘 × 3,即係修改前嗰個死寫門檻�
   `stream-status.sh` 嘅 stale 門檻會自動跟返 live interval(而家 3 小時 ×
   3=9 小時,跟原本 90 分鐘死寫比反而更寬鬆,唔會誤報),但要享受 30 分鐘
   一 tick 嘅加密同 F2 節流嘅 6 小時節奏,呢步人手命令都仲係要補。
+
+---
+
+## §R 2026-09-05 第三輪:Opus 第二輪驗收 §9 四條 residual(R1-R4)
+
+依 `STREAM-SELFHEAL-OPUS2-20260905.md` §9。R1 係最重要嗰條(節流實質失效嘅缺口),
+R2 有 Opus 已經實測嘅具體修法,R3/R4 判斷後留低原因(見底)。全程紅線同前兩輪
+一樣:harness 喺 scratchpad(`.../scratchpad/r1/`、`.../scratchpad/f4repo/`),
+`backend/` 任何 code 零改動、production `approved.json`/`stream-health-state.json`
+淨係俾最後嗰次生產 dry-run 健康跑更新過 `lastCheck`、`docs/SUPERVISION-LOG.md`
+呢輪測試冇新增內容(全部用 `SELFHEAL_LOG_MD` env override 去 scratchpad)。
+
+### R1 — 節流可以俾形態 flap 完全繞過 ✅ 已修(`ops/stream/stream-selfheal.sh`)
+
+兩條子修法:
+
+**R1(a) swapsToday 由「真係換咗 symlink」改做「apply 嘗試次數」**:
+`swaps=$((ST_SWAPS+1))` 由原本喺 `after_target != before_target`(真係換咗)
+嗰個 if 入面,搬到 `apply_out="$(eval "$APPLY_CMD" ...)"` 呼叫完即刻,唔理有冇
+候選版本、canary 過唔過 —— 凡係真係行咗一次 `$APPLY_CMD`(即會打 PyPI +
+可能兩次 canary resolve/mid-range 嗰個)就計一次嘗試。每日安全閥(`SWAP_LIMIT`)
+不變,仍然係 1。
+
+**R1(b) 節流 key 由「形態」改做單一嘅 `lastActionTick`**:`due` 判斷刪走
+`form_kind != $ST_LASTACTIONFORM → due=1` 呢一條,淨係留低「連續 fail 剛到 2」
+同「距離上次郁手夠 `THROTTLE_TICKS`(12)」兩條。形態轉變唔再令 `due=1`,改為
+加一句 `hist "form-changed ..."` 淨係寫落 `stream-selfheal.log`(machine log)
+俾人知轉咗形態,但唔會即刻再 call apply/restart 或者寫 SUPERVISION-LOG。
+
+**驗收(harness,`scratchpad/r1/driver.sh`,獨立 mock HTTP server + 雙 slot 假
+yt-dlp + 假 apply/restart,`SELFHEAL_*`/`HEALTH_STATE` 全部 env override 去
+scratchpad,冇掂任何 production 檔案)**:
+
+| Case | 輸入 | 結果 |
+|---|---|---|
+| **flap ①↔③,20 tick(cf=2..21,midfail 3/1 交替)** | 任務要求嘅 flap case | apply-calls=**1**、SUPERVISION=**2**、swapsToday=**1**(任務要求「≤1/≤2/=1」全部命中) |
+| 12-tick soak(形態①持續,冇候選) | 同 Opus2 §2a soak 一樣輸入 | 12 tick 之內:apply=1,SUPERVISION=1,history=12 行,同 Opus2 舊驗收一致 |
+| soak 補一 tick(cf=14,距上次 12 tick) | — | 🆕**行為變咗(非 bug,R1(a) 嘅必然後果)**:因為第一次(cf=2)已經係一次「嘗試」令 `swapsToday=1=SWAP_LIMIT`,節流窗口重開嗰陣唔會再 call apply,改行 `alert-safetyvalve-ytdlp`(SUPERVISION 仍然變 2 行,通知性冇被吃咗,但唔會再洗 PyPI/canary 額度)。呢個係任務刻意要嘅「唔理 canary 成功與否都計落安全閥」嘅直接結果 |
+| 形態換咗即時 due(cf=3,form②緊接 cf=2 form①之後) | — | 🆕**已確認唔再 bypass**:`action=backend-restart-throttled-wait`,`restart.sh` **冇被 call**(舊行為會即刻 call);`stream-selfheal.log` 有一行 `form-changed ①yt-dlp -> ②backend(due=0,...)` |
+| rollback(①換咗但 Layer B 仍 fail) | 同 Opus2 F1-B/C3 | `action=ytdlp-swap-rollback`,symlink 揈返轉頭 |
+| 安全閥觸頂(swapsToday 預種=1) | 同 Opus2 C5 | `action=alert-safetyvalve-ytdlp`,apply-calls.log 冇被建立 |
+| restart ok(形態②) | 同 Opus2 C6 | `action=backend-restart-ok`,restartsToday=1 |
+| gate-blocked(形態②) | 同 Opus2 C7 | `action=backend-restart-gate-blocked`,restartsToday 維持 0 |
+| recovery(cf=0,之前 alert active) | 同 Opus2 C11 | 「健康已恢復」訊息,swapsToday/restartsToday 保留(1/1,唔跨故障重置) |
+| dry-run(形態①) | 同 Opus2 C12 | `action=dry-run-ytdlp-swap`,state 檔/apply-calls.log 全部冇被建立 |
+
+全部 9 個 case 一次過跑(`bash scratchpad/r1/driver.sh`)結尾 `=== ALL TESTS PASSED ===`。
+
+### R2 — `--same-code` 豁免 `backend/data/*.js` 過闊 ✅ 已修(`ops/deploy/backend-restart.sh`)
+
+採納 Opus §4b 已實測嘅寫法:第一條 `git diff --quiet` 保留原本嘅目錄級豁免
+(`backend/hymns.db`/`backend/data`/`backend/public`/`backend/logs`),加第二條
+獨立 `git diff --quiet "$APPROVED_SHA" "$HEAD_SHA" -- 'backend/data/*.js'
+'backend/data/*.mjs' 'backend/data/*.cjs'` —— 兩條都要 quiet(冇差異)先算
+`SAME_CODE_OK=1`。用兩條獨立 diff 而唔係喺第一條 pathspec 度用
+exclude-then-reinclude,因為實測(呢輪同 Opus §4b 都證實過)git 嘅 exclude
+pathspec 會贏,喺已經 `:!backend/data` 之後想用 `'backend/data/*.js'`
+重新加返嚟冇用。
+
+**驗收(`scratchpad/f4repo`,獨立 scratch git repo + `HYMN_DEPLOY_DIR` override,
+全部 `--dry-run`,不掂 production `~/.hymn-deploy`)**:
+
+| Case | 情境 | flag | rc | 結果 |
+|---|---|---|---|---|
+| F4-1(regression) | HEAD==approved | — | 0 | ✅ 正常路徑 |
+| F4-2(regression) | HEAD 領先(docs+DB 自動備份) | 無 | 1 | ✅ 照舊 abort |
+| F4-3(regression) | 同上 | `--same-code` | 0 | ✅ 過 |
+| F4-4(regression) | HEAD 再領先真 `backend/app.js` 改動 | `--same-code` | 1 | ✅ abort |
+| F4-5(regression,用 F4-4 覆蓋) | `backend/package-lock.json` 改咗 | `--same-code` | 1 | ✅ 算 code,abort |
+| F4-8(regression) | `backend/public/app-version.json` 改咗 | `--same-code` | 0 | ✅ 放行(靜態,唔係 server.js 載入嘅 code) |
+| F4-9(regression) | working tree 有未 commit `backend/routes/` 改動 | `--same-code` | 1 | ✅ 第 2 步照擋 |
+| F4-10(regression) | approved sha 唔存在於 repo | `--same-code` | 1 | ✅ fail-safe abort |
+| **R2-新** | `backend/data/worshipGroups.js` 改咗(真 code,冇碰 routes/lib) | `--same-code` | **1** | ✅ **收緊前會放行,而家 abort**——Opus §4b 揭到嗰條窿已經封 |
+
+`R2-新` 用真實 commit 鏈驗證:`approved=d974309`(baseline)→`commitB`(docs+
+hymns.db 自動備份,`--same-code` 應該過)→`commitC` 加 `backend/data/worshipGroups.js`
+(真 code)。修之前呢個 commitC 會俾第一條 diff 嘅 `:!backend/data` 豁免,
+`--same-code` 照樣放行;修完之後第二條 diff 捕到,正確 abort。9 個 case
+(8 個 regression + 1 個新 case)全部同預期一致,production `~/.hymn-deploy/approved.json`
+全程冇被讀寫(script 淨係讀 `HYMN_DEPLOY_DIR` 指嘅 scratch 檔案)。
+
+### R3 — `stream-health-state.json` 冇/爛 → 假恢復 ⏸️ 冇修(留低原因)
+
+Opus 原句:「selfheal 分開『讀到 0』同『讀唔到』;`stream-status.sh` 嘅 stale
+已經頂住,唔會靜默」。判斷:**唔係「屬一行」嘅改動**,冇跟做,原因:
+
+1. 要分開「讀到 0」同「讀唔到」,`stream-selfheal.sh` 讀 `HEALTH_STATE` 嗰段
+   (`consecutiveFail=$(python3 -c "... except Exception: print(0) ...")`)要
+   由「一個 try/except 印 0」改做「印一個唔會撞正真實 consecutiveFail 值嘅
+   sentinel,再喺 bash 度分支處理」,跟住仲要諗清楚:分支之後(§1 恢復判斷/
+   §2 blip 容忍)遇到「讀唔到」應該做乜——唔可以照樣行恢復分支(會假恢復),
+   但又唔可以乜都唔做(會令 `swapsToday`/`restartsToday` 嘅跨日 housekeeping
+   停擺)。呢個係一個要重新諗設計嘅分支,唔係換一行 comparison 咁簡單。
+2. **呢個窿本身已經有下游安全網,唔會靜靜死**:`stream-health-state.json`
+   讀唔到/爛咗嗰陣,`lastCheck` 欄一樣讀唔到 → `stream-status.sh` 嘅
+   `ageMin=None` → `stale=True` → `needsHuman=True`,exit 2。即係話就算
+   `stream-selfheal.sh` 呢層自己判斷錯(寫咗「健康已恢復」清咗 alert),
+   `stream-status.sh` 嗰層(Dispatch 排程 check-in 用嗰個)仲係會攔截到
+   「偵測本身可能死咗」呢個更加啱嘅訊息,唔會令人以為完全冇事。
+   Opus 自己都判斷「🟡 非阻斷」。
+
+**結論:留返做 residual,冇改 code。** 建議下一輪先做(要連埋「讀唔到嗰陣
+housekeeping 點做」一齊諗清楚,唔好淨係搬個 if/else)。
+
+### R4 — rollback guard 對絕對路徑 symlink target false-negative 🟢 唔算 bug,冇改
+
+Opus 原句:「非 bug,方向 fail-safe。生產用相對路徑,唔命中」。呢個係 F1 rollback
+guard(`[[ -n "$before_target" && -x "$YTDLP_DIR/$before_target" ]]`)喺
+`before_target` 係絕對路徑嗰陣會判 false(因為 `$YTDLP_DIR/<絕對路徑>` 呢個
+拼出嚟嘅路徑實際上唔存在),結果係「唔 rollback」而唔係「整死條 symlink」——
+方向本身冇問題(寧願唔郁手都唔好整爛嘢),而且生產 `update-ytdlp.sh:194` 用
+`ln -sfn "ytdlp-venv-$IDLE_NAME/bin/yt-dlp" "$LINK"` 呢種相對路徑寫法,呢條
+邊界喺生產結構上唔會撞到。**冇改任何 code**,同 Opus 判斷一致,記低做 residual
+就算。
+
+### 產出檔案(呢一輪)
+
+- 改:`ops/stream/stream-selfheal.sh`(R1(a) swapsToday 計嘗試次數、R1(b)
+  節流 key 改做單一 lastActionTick + 形態轉變改為只 log)
+- 改:`ops/deploy/backend-restart.sh`(R2 `--same-code` 加第二條 diff 逼
+  `backend/data/*.js|*.mjs|*.cjs` 都要同已批准 sha 一致)
+- 改:本檔 `STREAM-SELFHEAL-EXEC-20260905.md`(本 §R)
+- **冇改**:`ops/stream/stream-status.sh`(R3 判斷唔跟做)、`backend/` 任何
+  code、production `approved.json`、真 yt-dlp symlink、真 backend process、
+  `docs/SUPERVISION-LOG.md`(呢輪測試全部 env override 去 scratchpad)
+- **最後生產核實(唯讀健康路徑)**:`SELFHEAL_DRY_RUN=1
+  ops/lyrics/stream-healthcheck.sh --verbose` 跑一次,`A ok=3 fail=0 | B mid=3
+  midfail=0 | consecutiveFail=0`,exit 0;`backend/data/stream-health-state.json`
+  淨係 `lastCheck` 由 `14:37:50` 更新到 `15:07:22`(設計內副作用,同 §5/§F6
+  一致),`consecutiveFail` 全程 0;`docs/SUPERVISION-LOG.md` 冇因為呢次跑新增
+  內容;`backend/data/stream-selfheal-state.json` 依然唔存在(健康路徑冇叫
+  selfheal)。
