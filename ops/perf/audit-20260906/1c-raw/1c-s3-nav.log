@@ -1,0 +1,39 @@
+=== cycle 1 ===
+tap Library x=201 y=807 ts=1788628085.363126000
+tap Mine x=334 y=807 ts=1788628087.731973000
+tap Home x=67 y=807 ts=1788628089.891848000
+tap Library-2nd x=201 y=807 ts=1788628092.057722000
+tap Home-2nd x=67 y=807 ts=1788628094.225408000
+=== cycle 2 ===
+tap Library x=201 y=807 ts=1788628096.391342000
+tap Mine x=334 y=807 ts=1788628098.545236000
+tap Home x=67 y=807 ts=1788628100.694997000
+tap Library-2nd x=201 y=807 ts=1788628102.853674000
+tap Home-2nd x=67 y=807 ts=1788628105.010037000
+=== cycle 3 ===
+tap Library x=201 y=807 ts=1788628107.171797000
+tap Mine x=334 y=807 ts=1788628109.335426000
+tap Home x=67 y=807 ts=1788628111.498320000
+tap Library-2nd x=201 y=807 ts=1788628113.646725000
+tap Home-2nd x=67 y=807 ts=1788628115.806950000
+--- client-log tail (perfNav lines) ---
+{"ts":"2026-09-05T07:36:02.864Z","event":"perfNav","clientTs":"1788593759977","appState":"","hymnId":null,"position":null,"duration":null,"trackState":"","repeatMode":null,"errorSkipCount":null,"detail":"tab=Mine tapToMount=74ms tapToPaint=111ms","platform":"android","deviceId":"d03463c30ea4935bc0d49ec57ba53b4c"}
+{"ts":"2026-09-05T08:06:00.967Z","event":"perfNav","clientTs":"1788595561279","appState":"","hymnId":null,"position":null,"duration":null,"trackState":"","repeatMode":null,"errorSkipCount":null,"detail":"tab=Library tapToMount=157ms tapToPaint=225ms","platform":"android","deviceId":"d03463c30ea4935bc0d49ec57ba53b4c"}
+{"ts":"2026-09-05T11:04:44.670Z","event":"perfNav","clientTs":"1788606284097","appState":"","hymnId":null,"position":null,"duration":null,"trackState":"","repeatMode":null,"errorSkipCount":null,"detail":"tab=Library tapToMount=94ms tapToPaint=117ms","platform":"ios","deviceId":"e1b6dc8a6948c3018036565007ad87d4"}
+{"ts":"2026-09-05T11:09:03.466Z","event":"perfNav","clientTs":"1788606543679","appState":"","hymnId":null,"position":null,"duration":null,"trackState":"","repeatMode":null,"errorSkipCount":null,"detail":"tab=Library tapToMount=78ms tapToPaint=135ms","platform":"android","deviceId":"d03463c30ea4935bc0d49ec57ba53b4c"}
+{"ts":"2026-09-05T11:16:27.675Z","event":"perfNav","clientTs":"1788606987970","appState":"","hymnId":null,"position":null,"duration":null,"trackState":"","repeatMode":null,"errorSkipCount":null,"detail":"tab=Library tapToMount=63ms tapToPaint=89ms","platform":"android","deviceId":"d03463c30ea4935bc0d49ec57ba53b4c"}
+{"ts":"2026-09-05T11:17:37.323Z","event":"perfNav","clientTs":"1788607057430","appState":"","hymnId":null,"position":null,"duration":null,"trackState":"","repeatMode":null,"errorSkipCount":null,"detail":"tab=Library tapToMount=90ms tapToPaint=118ms","platform":"ios","deviceId":"e1b6dc8a6948c3018036565007ad87d4"}
+{"ts":"2026-09-05T16:18:07.429Z","event":"perfNav","clientTs":"1788625087740","appState":"","hymnId":null,"position":null,"duration":null,"trackState":"","repeatMode":null,"errorSkipCount":null,"detail":"tab=Mine tapToMount=66ms tapToPaint=105ms","platform":"android","deviceId":"d03463c30ea4935bc0d49ec57ba53b4c"}
+{"ts":"2026-09-05T16:33:38.403Z","event":"perfNav","clientTs":"1788626018203","appState":"","hymnId":null,"position":null,"duration":null,"trackState":"","repeatMode":null,"errorSkipCount":null,"detail":"tab=Mine tapToMount=34ms tapToPaint=62ms","platform":"ios","deviceId":"f39fba943d527e400e4a98927cde5cd5"}
+{"ts":"2026-09-05T16:35:10.853Z","event":"perfNav","clientTs":"1788626110663","appState":"","hymnId":null,"position":null,"duration":null,"trackState":"","repeatMode":null,"errorSkipCount":null,"detail":"tab=Mine tapToMount=30ms tapToPaint=46ms","platform":"ios","deviceId":"f39fba943d527e400e4a98927cde5cd5"}
+{"ts":"2026-09-05T16:36:32.699Z","event":"perfNav","clientTs":"1788626192480","appState":"","hymnId":null,"position":null,"duration":null,"trackState":"","repeatMode":null,"errorSkipCount":null,"detail":"tab=Mine tapToMount=30ms tapToPaint=45ms","platform":"ios","deviceId":"f39fba943d527e400e4a98927cde5cd5"}
+{"ts":"2026-09-05T17:08:05.978Z","event":"perfNav","clientTs":"1788628085783","appState":"","hymnId":null,"position":null,"duration":null,"trackState":"","repeatMode":null,"errorSkipCount":null,"detail":"tab=Library tapToMount=37ms tapToPaint=59ms","platform":"ios","deviceId":"d6b0638e2e5355d8ac66496662921b86"}
+{"ts":"2026-09-05T17:08:08.172Z","event":"perfNav","clientTs":"1788628087983","appState":"","hymnId":null,"position":null,"duration":null,"trackState":"","repeatMode":null,"errorSkipCount":null,"detail":"tab=Mine tapToMount=86ms tapToPaint=115ms","platform":"ios","deviceId":"d6b0638e2e5355d8ac66496662921b86"}
+{"ts":"2026-09-05T17:08:10.331Z","event":"perfNav","clientTs":"1788628090133","appState":"","hymnId":null,"position":null,"duration":null,"trackState":"","repeatMode":null,"errorSkipCount":null,"detail":"tab=Home tapToMount=79ms tapToPaint=99ms","platform":"ios","deviceId":"d6b0638e2e5355d8ac66496662921b86"}
+{"ts":"2026-09-05T17:08:12.505Z","event":"perfNav","clientTs":"1788628092317","appState":"","hymnId":null,"position":null,"duration":null,"trackState":"","repeatMode":null,"errorSkipCount":null,"detail":"tab=Library tapToMount=87ms tapToPaint=116ms","platform":"ios","deviceId":"d6b0638e2e5355d8ac66496662921b86"}
+{"ts":"2026-09-05T17:08:14.654Z","event":"perfNav","clientTs":"1788628094465","appState":"","hymnId":null,"position":null,"duration":null,"trackState":"","repeatMode":null,"errorSkipCount":null,"detail":"tab=Home tapToMount=83ms tapToPaint=98ms","platform":"ios","deviceId":"d6b0638e2e5355d8ac66496662921b86"}
+{"ts":"2026-09-05T17:08:16.841Z","event":"perfNav","clientTs":"1788628096650","appState":"","hymnId":null,"position":null,"duration":null,"trackState":"","repeatMode":null,"errorSkipCount":null,"detail":"tab=Library tapToMount=85ms tapToPaint=115ms","platform":"ios","deviceId":"d6b0638e2e5355d8ac66496662921b86"}
+{"ts":"2026-09-05T17:08:18.954Z","event":"perfNav","clientTs":"1788628098765","appState":"","hymnId":null,"position":null,"duration":null,"trackState":"","repeatMode":null,"errorSkipCount":null,"detail":"tab=Mine tapToMount=80ms tapToPaint=98ms","platform":"ios","deviceId":"d6b0638e2e5355d8ac66496662921b86"}
+{"ts":"2026-09-05T17:08:21.110Z","event":"perfNav","clientTs":"1788628100916","appState":"","hymnId":null,"position":null,"duration":null,"trackState":"","repeatMode":null,"errorSkipCount":null,"detail":"tab=Home tapToMount=80ms tapToPaint=98ms","platform":"ios","deviceId":"d6b0638e2e5355d8ac66496662921b86"}
+{"ts":"2026-09-05T17:08:23.290Z","event":"perfNav","clientTs":"1788628103100","appState":"","hymnId":null,"position":null,"duration":null,"trackState":"","repeatMode":null,"errorSkipCount":null,"detail":"tab=Library tapToMount=93ms tapToPaint=116ms","platform":"ios","deviceId":"d6b0638e2e5355d8ac66496662921b86"}
+{"ts":"2026-09-05T17:08:25.481Z","event":"perfNav","clientTs":"1788628105250","appState":"","hymnId":null,"position":null,"duration":null,"trackState":"","repeatMode":null,"errorSkipCount":null,"detail":"tab=Home tapToMount=77ms tapToPaint=100ms","platform":"ios","deviceId":"d6b0638e2e5355d8ac66496662921b86"}

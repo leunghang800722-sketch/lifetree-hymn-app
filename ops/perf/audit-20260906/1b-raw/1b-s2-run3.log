@@ -1,0 +1,9 @@
+=== S2 run 3 ===
+host_launch_ts=1788630332.736904000
+Starting: Intent { cmp=com.hymnapp.praise/.MainActivity }
+Status: ok
+LaunchState: COLD
+Activity: com.hymnapp.praise/.MainActivity
+TotalTime: 444
+WaitTime: 446
+Complete

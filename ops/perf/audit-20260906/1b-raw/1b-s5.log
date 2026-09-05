@@ -1,0 +1,341 @@
+s5_host_launch_ts=1788630599.306220000
+Starting: Intent { cmp=com.hymnapp.praise/.MainActivity }
+Status: ok
+LaunchState: COLD
+Activity: com.hymnapp.praise/.MainActivity
+TotalTime: 466
+WaitTime: 467
+Complete
+--- meminfo pre-play (launch+6s) ---
+Applications Memory Usage (in Kilobytes):
+Uptime: 1691133 Realtime: 1691133
+
+** MEMINFO in pid 9002 [com.hymnapp.praise] **
+                   Pss  Private  Private  SwapPss      Rss     Heap     Heap     Heap
+                 Total    Dirty    Clean    Dirty    Total     Size    Alloc     Free
+                ------   ------   ------   ------   ------   ------   ------   ------
+  Native Heap   139817   139768        8       48   140984   204160   139639    58245
+  Dalvik Heap    38356    38232       72      202    39156    41719    20860    20859
+ Dalvik Other     7557     7212        0        9     8140                           
+        Stack     2180     2180        0        0     2188                           
+       Ashmem       19        0        0        0      576                           
+    Other dev       21        0       16        0      280                           
+     .so mmap     4997      280     1116       19    39276                           
+    .jar mmap     2924        0      444        0    33876                           
+    .apk mmap    23708     1036    16224        0    35956                           
+    .ttf mmap      570        0      284        0     1148                           
+    .dex mmap      179        4      128        0      928                           
+    .oat mmap      693        0        0        0    13324                           
+    .art mmap     1681      712      228      233    19100                           
+   Other mmap    32486       40    30840        0    35948                           
+      Unknown    62978    62628      344        0    63340                           
+        TOTAL   318677   252092    49704      511   434220   245879   160499    79104
+ 
+ App Summary
+                       Pss(KB)                        Rss(KB)
+                        ------                         ------
+           Java Heap:    39172                          58256
+         Native Heap:   139768                         140984
+                Code:    19536                         125224
+               Stack:     2180                           2188
+            Graphics:        0                              0
+       Private Other:   101140
+              System:    16881
+             Unknown:                                  107568
+ 
+           TOTAL PSS:   318677            TOTAL RSS:   434220       TOTAL SWAP PSS:      511
+ 
+ Objects
+               Views:      755         ViewRootImpl:        1
+         AppContexts:        6           Activities:        1
+              Assets:       20        AssetManagers:        0
+       Local Binders:       25        Proxy Binders:       63
+       Parcel memory:       11         Parcel count:       44
+    Death Recipients:        3             WebViews:        0
+ 
+ SQL
+         MEMORY_USED:      433
+  PAGECACHE_OVERFLOW:      151          MALLOC_SIZE:       46
+ 
+ DATABASES
+      pgsz     dbsz   Lookaside(b) cache hits cache misses cache size  Dbname
+PER CONNECTION STATS
+         4       20             27     3    20     2  /data/user/0/com.hymnapp.praise/databases/RKStorage
+         4       72            112    16    49    12  /data/user/0/com.hymnapp.praise/databases/updates.db
+         4        8                    0     0     0    (attached) temp
+         4       72            123    28    19     7  /data/user/0/com.hymnapp.praise/databases/updates.db (2)
+         4       32             51    12    21     5  /data/user/0/com.hymnapp.praise/databases/exoplayer_internal.db
+POOL STATS
+     cache hits  cache misses    cache size  Dbname
+              3            21            24  /data/user/0/com.hymnapp.praise/databases/RKStorage
+             46            90           136  /data/user/0/com.hymnapp.praise/databases/updates.db
+             12            22            34  /data/user/0/com.hymnapp.praise/databases/exoplayer_internal.db
+tap_shuffle_ts=1788630605.924549000
+tap_next1_ts=1788630625.966042000
+tap_next2_ts=1788630646.014044000
+tap_library_ts=1788630661.059908000
+--- meminfo after library tab (~launch+66s) ---
+Applications Memory Usage (in Kilobytes):
+Uptime: 1746373 Realtime: 1746373
+
+** MEMINFO in pid 9002 [com.hymnapp.praise] **
+                   Pss  Private  Private  SwapPss      Rss     Heap     Heap     Heap
+                 Total    Dirty    Clean    Dirty    Total     Size    Alloc     Free
+                ------   ------   ------   ------   ------   ------   ------   ------
+  Native Heap   258810   258748       20       48   259980   347156   265822    72602
+  Dalvik Heap    47896    42928     4868       57    48740    63685    39109    24576
+ Dalvik Other     7092     6348       44        7     8032                           
+        Stack     3148     3148        0        0     3156                           
+       Ashmem      968      508        0        0     2020                           
+    Other dev       45        0       36        0      316                           
+     .so mmap     9273      316     4644       15    44812                           
+    .jar mmap     3167        0      468        0    34808                           
+    .apk mmap    23802     1044    16284        0    35980                           
+    .ttf mmap      570        0      284        0     1148                           
+    .dex mmap      179        4      128        0      928                           
+    .oat mmap      757        0       16        0    13520                           
+    .art mmap     3577      776     1864      170    21232                           
+   Other mmap    37918        8    36120        0    41564                           
+      Unknown    77030    76536      488        0    77392                           
+        TOTAL   474529   390364    65264      297   593628   410841   304931    97178
+ 
+ App Summary
+                       Pss(KB)                        Rss(KB)
+                        ------                         ------
+           Java Heap:    45568                          69972
+         Native Heap:   258748                         259980
+                Code:    23212                         132620
+               Stack:     3148                           3156
+            Graphics:        0                              0
+       Private Other:   124952
+              System:    18901
+             Unknown:                                  127900
+ 
+           TOTAL PSS:   474529            TOTAL RSS:   593628       TOTAL SWAP PSS:      297
+ 
+ Objects
+               Views:      858         ViewRootImpl:        1
+         AppContexts:        6           Activities:        1
+              Assets:       20        AssetManagers:        0
+       Local Binders:       33        Proxy Binders:       61
+       Parcel memory:       18         Parcel count:       60
+    Death Recipients:        3             WebViews:        0
+ 
+ SQL
+         MEMORY_USED:      399
+  PAGECACHE_OVERFLOW:      117          MALLOC_SIZE:       46
+ 
+ DATABASES
+      pgsz     dbsz   Lookaside(b) cache hits cache misses cache size  Dbname
+PER CONNECTION STATS
+         4       20             27     3    23     2  /data/user/0/com.hymnapp.praise/databases/RKStorage
+         4       72            112    16    54    12  /data/user/0/com.hymnapp.praise/databases/updates.db
+         4        8                    0     0     0    (attached) temp
+         4       72            123    28    22     7  /data/user/0/com.hymnapp.praise/databases/updates.db (2)
+         4       32             51    12    24     5  /data/user/0/com.hymnapp.praise/databases/exoplayer_internal.db
+POOL STATS
+     cache hits  cache misses    cache size  Dbname
+              3            24            27  /data/user/0/com.hymnapp.praise/databases/RKStorage
+             46            98           144  /data/user/0/com.hymnapp.praise/databases/updates.db
+             12            25            37  /data/user/0/com.hymnapp.praise/databases/exoplayer_internal.db
+--- meminfo at ~launch+181s (3min) ---
+Applications Memory Usage (in Kilobytes):
+Uptime: 1882005 Realtime: 1882005
+
+** MEMINFO in pid 9002 [com.hymnapp.praise] **
+                   Pss  Private  Private  SwapPss      Rss     Heap     Heap     Heap
+                 Total    Dirty    Clean    Dirty    Total     Size    Alloc     Free
+                ------   ------   ------   ------   ------   ------   ------   ------
+  Native Heap   395562   395500       20       48   396732   473664   401303    61803
+  Dalvik Heap    61556    56588     4868       57    62400    73386    48810    24576
+ Dalvik Other     7844     6552       44        7     9332                           
+        Stack     2120     2120        0        0     2128                           
+       Ashmem     3704     2392        0        0     5608                           
+    Other dev       21        0       12        0      292                           
+     .so mmap     9238      316     4644       15    44812                           
+    .jar mmap     3329        0      560        0    35344                           
+    .apk mmap    23952     1044    16448        0    36040                           
+    .ttf mmap      630        0      284        0     1268                           
+    .dex mmap      179        4      128        0      928                           
+    .oat mmap      757        0       16        0    13520                           
+    .art mmap     3574      776     1860      170    21232                           
+   Other mmap    39420        8    37592        0    43096                           
+      Unknown    94206    93952      248        0    94564                           
+        TOTAL   646389   559252    66724      297   767296   547050   450113    86379
+ 
+ App Summary
+                       Pss(KB)                        Rss(KB)
+                        ------                         ------
+           Java Heap:    59224                          83632
+         Native Heap:   395500                         396732
+                Code:    23476                         134440
+               Stack:     2120                           2128
+            Graphics:        0                              0
+       Private Other:   145656
+              System:    20413
+             Unknown:                                  150364
+ 
+           TOTAL PSS:   646389            TOTAL RSS:   767296       TOTAL SWAP PSS:      297
+ 
+ Objects
+               Views:     3434         ViewRootImpl:        1
+         AppContexts:        6           Activities:        1
+              Assets:       20        AssetManagers:        0
+       Local Binders:       33        Proxy Binders:       63
+       Parcel memory:       17         Parcel count:       58
+    Death Recipients:        3             WebViews:        0
+ 
+ SQL
+         MEMORY_USED:      399
+  PAGECACHE_OVERFLOW:      117          MALLOC_SIZE:       46
+ 
+ DATABASES
+      pgsz     dbsz   Lookaside(b) cache hits cache misses cache size  Dbname
+PER CONNECTION STATS
+         4       20             27     3    26     2  /data/user/0/com.hymnapp.praise/databases/RKStorage
+         4       72            112    16    59    12  /data/user/0/com.hymnapp.praise/databases/updates.db
+         4        8                    0     0     0    (attached) temp
+         4       72            123    28    25     7  /data/user/0/com.hymnapp.praise/databases/updates.db (2)
+         4       32             51    12    27     5  /data/user/0/com.hymnapp.praise/databases/exoplayer_internal.db
+POOL STATS
+     cache hits  cache misses    cache size  Dbname
+              3            27            30  /data/user/0/com.hymnapp.praise/databases/RKStorage
+             46           106           152  /data/user/0/com.hymnapp.praise/databases/updates.db
+             12            28            40  /data/user/0/com.hymnapp.praise/databases/exoplayer_internal.db
+=== media_session ===
+MEDIA SESSION SERVICE (dumpsys media_session)
+
+6 sessions listeners.
+Global priority session is com.android.server.telecom/HeadsetMediaButton (userId=0)
+  HeadsetMediaButton com.android.server.telecom/HeadsetMediaButton (userId=0)
+    ownerPid=547, ownerUid=1000, userId=0
+    package=com.android.server.telecom
+    launchIntent=null
+    mediaButtonReceiver=null
+    active=false
+    flags=65537
+    rating type=0
+    controllers: 0
+    state=null
+    audioAttrs=AudioAttributes: usage=USAGE_VOICE_COMMUNICATION content=CONTENT_TYPE_SPEECH flags=0x800 tags= bundle=null
+    volumeType=LOCAL, controlType=ABSOLUTE, max=0, current=0, volumeControlId=null
+    metadata: null
+    queueTitle=null, size=0
+User Records:
+Record for full_user=0
+  Volume key long-press listener: null
+  Volume key long-press listener package: 
+  Media key listener: null
+  Media key listener package: 
+  OnMediaKeyEventDispatchedListener: added 0 listener(s)
+  OnMediaKeyEventSessionChangedListener: added 2 listener(s)
+    from com.google.android.bluetooth
+    from com.google.android.bluetooth
+  Last MediaButtonReceiver: null
+  Media button session is com.hymnapp.praise/KotlinAudioPlayer (userId=0)
+  Sessions Stack - have 6 sessions:
+    KotlinAudioPlayer com.hymnapp.praise/KotlinAudioPlayer (userId=0)
+      ownerPid=9002, ownerUid=10230, userId=0
+      package=com.hymnapp.praise
+      launchIntent=null
+      mediaButtonReceiver=null
+      active=true
+      flags=3
+      rating type=0
+      controllers: 8
+=== notification ===
+    NotificationRecord(0x0cd28498: pkg=com.hymnapp.praise user=UserHandle{0} id=1 tag=null importance=2 key=0|com.hymnapp.praise|1|null|10230: Notification(channel=kotlin_audio_player shortcut=null contentView=null vibrate=null sound=null defaults=0x0 flags=0x206a color=0x00000000 category=transport actions=5 vis=PUBLIC))
+      uid=10230 userId=0
+      opPkg=com.hymnapp.praise
+      icon=Icon(typ=RESOURCE pkg=com.hymnapp.praise id=0x7f080078)
+      flags=0x206a
+      originalFlags=0x204a
+      pri=-1
+      key=0|com.hymnapp.praise|1|null|10230
+      seen=false
+      groupKey=0|com.hymnapp.praise|1|null|10230
+      notification=
+            fullscreenIntent=null
+            contentIntent=PendingIntent{f98f4f1: PendingIntentRecord{ada117a com.hymnapp.praise startActivity (allowlist: f4a8202:+30s0ms/0/NOTIFICATION_SERVICE/NotificationManagerService)}}
+            deleteIntent=PendingIntent{227e8d6: PendingIntentRecord{2567539 com.hymnapp.praise broadcastIntent (allowlist: f4a8202:+30s0ms/0/NOTIFICATION_SERVICE/NotificationManagerService)}}
+            number=0
+            groupAlertBehavior=0
+            when=1788630612856
+            tickerText=null
+            vis=1
+--
+                [0] "Previous" -> PendingIntent{f738757: PendingIntentRecord{a603900 com.hymnapp.praise broadcastIntent (allowlist: f4a8202:+30s0ms/0/NOTIFICATION_SERVICE/NotificationManagerService)}}
+                [1] "Pause" -> PendingIntent{bb75244: PendingIntentRecord{4eeea32 com.hymnapp.praise broadcastIntent (allowlist: f4a8202:+30s0ms/0/NOTIFICATION_SERVICE/NotificationManagerService)}}
+                [2] "Next" -> PendingIntent{cb6ef2d: PendingIntentRecord{9c12383 com.hymnapp.praise broadcastIntent (allowlist: f4a8202:+30s0ms/0/NOTIFICATION_SERVICE/NotificationManagerService)}}
+                [3] "stop" -> PendingIntent{91bc62: PendingIntentRecord{fb589a5 com.hymnapp.praise broadcastIntent (allowlist: f4a8202:+30s0ms/0/NOTIFICATION_SERVICE/NotificationManagerService)}}
+                [4] "Stop" -> PendingIntent{b3f41f3: PendingIntentRecord{be874df com.hymnapp.praise broadcastIntent (allowlist: f4a8202:+30s0ms/0/NOTIFICATION_SERVICE/NotificationManagerService)}}
+              }
+            extras={
+                android.title=String (居住在我心 / Inside of Me)
+                android.reduced.images=Boolean (true)
+                android.subText=null
+--
+                android.appInfo=ApplicationInfo (ApplicationInfo{4f94eb0 com.hymnapp.praise})
+                android.showWhen=Boolean (true)
+                android.largeIcon=Icon (Icon(typ=BITMAP size=126x70))
+                android.infoText=null
+                android.mediaSession=Token (android.media.session.MediaSession$Token@4527f3)
+                android.progressIndeterminate=Boolean (false)
+--
+      AppSettings: com.hymnapp.praise (10230) importance=DEFAULT userSet=false
+        NotificationChannel{mId='rntp_temporary_channel', mName=temporary_channel, mDescription=, mImportance=2, mBypassDnd=false, mLockscreenVisibility=-1000, mSound=content://settings/system/notification_sound, mLights=false, mLightColor=0, mVibration=null, mUserLockedFields=0, mUserVisibleTaskShown=true, mVibrationEnabled=false, mShowBadge=true, mDeleted=false, mDeletedTimeMs=-1, mGroup='null', mAudioAttributes=AudioAttributes: usage=USAGE_NOTIFICATION content=CONTENT_TYPE_SONIFICATION flags=0x800 tags= bundle=null, mBlockableSystem=false, mAllowBubbles=-1, mImportanceLockedDefaultApp=false, mOriginalImp=2, mParent=null, mConversationId=null, mDemoted=false, mImportantConvo=false}
+        NotificationChannel{mId='kotlin_audio_player', mName=Now Playing, mDescription=, mImportance=2, mBypassDnd=false, mLockscreenVisibility=-1000, mSound=content://settings/system/notification_sound, mLights=false, mLightColor=0, mVibration=null, mUserLockedFields=0, mUserVisibleTaskShown=true, mVibrationEnabled=false, mShowBadge=true, mDeleted=false, mDeletedTimeMs=-1, mGroup='null', mAudioAttributes=AudioAttributes: usage=USAGE_NOTIFICATION content=CONTENT_TYPE_SONIFICATION flags=0x800 tags= bundle=null, mBlockableSystem=false, mAllowBubbles=-1, mImportanceLockedDefaultApp=false, mOriginalImp=2, mParent=null, mConversationId=null, mDemoted=false, mImportantConvo=false}
+      AppSettings: com.google.android.modulemetadata (10134)
+      AppSettings: android.auto_generated_rro_vendor__ (10075)
+      AppSettings: com.google.android.packageinstaller (10091) importance=DEFAULT userSet=false fixedImportance=true
+--
+      userId=0 value={com.google.android.apps.diagnosticstool, com.google.android.as/com.google.android.apps.miphone.aiai.common.notification.service.AiAiNotificationAssistantService, com.google.android.apps.safetyhub, com.google.android.as, com.google.intelligence.sense, com.google.android.apps.wellbeing, com.google.android.dialer, com.google.android.gms, com.hymnapp.praise, com.google.android.apps.nexuslauncher, com.google.android.settings.intelligence, com.google.android.GoogleCamera}
+    All condition providers (2) enabled for current profiles:
+      ComponentInfo{com.google.android.gms/com.google.android.location.settings.DrivingConditionProvider}
+      ComponentInfo{com.google.android.apps.wellbeing/com.google.android.apps.wellbeing.dnd.impl.DndConditionProviderService}
+    Live condition providers (3):
+      ComponentInfo{android/com.android.server.notification.CountdownConditionProvider} (user 0): android.service.notification.ConditionProviderService$Provider@6a3386 SYSTEM
+--
+      key='com.hymnapp.praise',
+      numEnqueuedByApp=33,
+      numPostedByApp=2,
+      numUpdatedByApp=14,
+      numRemovedByApp=17,
+      numPeopleCacheHit=16,
+=== services (FGS) ===
+ACTIVITY MANAGER SERVICES (dumpsys activity services)
+  User 0 active services:
+  * ServiceRecord{c72cd4b u0 com.hymnapp.praise/com.doublesymmetry.trackplayer.service.MusicService}
+    intent={cmp=com.hymnapp.praise/com.doublesymmetry.trackplayer.service.MusicService}
+    packageName=com.hymnapp.praise
+    processName=com.hymnapp.praise
+    baseDir=/data/app/~~3ymFaoWDDFwbz9RisMKMGw==/com.hymnapp.praise-CtDbfhLLARmbC1R8ofnfmQ==/base.apk
+    dataDir=/data/user/0/com.hymnapp.praise
+    app=ProcessRecord{544f550 9002:com.hymnapp.praise/u0a230}
+    mAllowWhileInUsePermissionInFgsReason=PROC_STATE_TOP
+    allowUiJobScheduling=false
+    recentCallingPackage=com.hymnapp.praise
+    recentCallingUid=10230
+    allowStartForeground=PROC_STATE_TOP
+    startForegroundCount=2
+    infoAllowStartForeground=[callingPackage: com.hymnapp.praise; callingUid: 10230; uidState: TOP ; uidBFSL: [BFSL]; intent: Intent { cmp=com.hymnapp.praise/com.doublesymmetry.trackplayer.service.MusicService }; code:PROC_STATE_TOP; tempAllowListReason:<MediaSessionRecord:android.support.v4.media.session.command.GET_EXTRA_BINDER,reasonCode:MEDIA_SESSION_CALLBACK,duration:10000,callingUid:1000>; targetSdkVersion:36; callerTargetSdkVersion:36; startForegroundCount:1; bindFromPackage:null: isBindService:false]
+    isForeground=true foregroundId=1 types=00000002 foregroundNoti=Notification(channel=kotlin_audio_player shortcut=null contentView=null vibrate=null sound=null defaults=0x0 flags=0x206a color=0x00000000 category=transport actions=5 vis=PUBLIC)
+    createTime=-3m15s750ms startingBgTimeout=--
+    lastActivity=-3m15s749ms restartTime=-3m15s750ms createdFromFg=true
+    startRequested=true delayedStop=false stopIfKilled=false callStart=true lastStartId=1
+ startCommandResult=1
+    Bindings:
+    * IntentBindRecord{ebc8de3 CREATE}:
+      intent={cmp=com.hymnapp.praise/com.doublesymmetry.trackplayer.service.MusicService}
+      binder=android.os.BinderProxy@a15c3e0
+      requested=true received=true hasBound=true doRebind=false
+      * Client AppBindRecord{c32d699 ProcessRecord{544f550 9002:com.hymnapp.praise/u0a230}}
+        Per-process Connections:
+          ConnectionRecord{de76841 u0 CR com.hymnapp.praise/com.doublesymmetry.trackplayer.service.MusicService:@a707328 flags=0x1}
+    All Connections:
+      ConnectionRecord{de76841 u0 CR com.hymnapp.praise/com.doublesymmetry.trackplayer.service.MusicService:@a707328 flags=0x1}
+
+  Connection bindings to services:
+  * ConnectionRecord{de76841 u0 CR com.hymnapp.praise/com.doublesymmetry.trackplayer.service.MusicService:@a707328 flags=0x1}
+    binding=AppBindRecord{c32d699 com.hymnapp.praise/com.doublesymmetry.trackplayer.service.MusicService:com.hymnapp.praise}
+    conn=android.os.BinderProxy@a707328 flags=0x1

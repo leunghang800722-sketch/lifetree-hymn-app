@@ -1,0 +1,211 @@
+=== S1 run 1 ===
+Success
+host_launch_ts=1788629943.695651000
+Starting: Intent { cmp=com.hymnapp.praise/.MainActivity }
+Status: ok
+LaunchState: COLD
+Activity: com.hymnapp.praise/.MainActivity
+TotalTime: 458
+WaitTime: 461
+Complete
+--- meminfo +3s ---
+Applications Memory Usage (in Kilobytes):
+Uptime: 1032497 Realtime: 1032497
+
+** MEMINFO in pid 6938 [com.hymnapp.praise] **
+                   Pss  Private  Private  SwapPss      Rss     Heap     Heap     Heap
+                 Total    Dirty    Clean    Dirty    Total     Size    Alloc     Free
+                ------   ------   ------   ------   ------   ------   ------   ------
+  Native Heap   185181   185132        8       49   186352   192652   135557    51206
+  Dalvik Heap    15382    15256       76      202    16180    23564    11782    11782
+ Dalvik Other     5825     5532        0        9     6356                           
+        Stack     2336     2336        0        0     2344                           
+       Ashmem       19        0        0        0      576                           
+    Other dev       21        0       16        0      280                           
+     .so mmap     4912      276     1216       19    38860                           
+    .jar mmap     3315        0      900        0    33684                           
+    .apk mmap    25277     1008    17628        0    37624                           
+    .ttf mmap      540        0      284        0     1148                           
+    .dex mmap      179        4      128        0      928                           
+    .oat mmap      661        0        0        0    13272                           
+    .art mmap     1687      688      244      233    19100                           
+   Other mmap     8035       48     6836        0    10500                           
+      Unknown    53436    53060      368        0    53804                           
+        TOTAL   307318   263340    27704      512   421008   216216   147339    62988
+ 
+ App Summary
+                       Pss(KB)                        Rss(KB)
+                        ------                         ------
+           Java Heap:    16188                          35280
+         Native Heap:   185132                         186352
+                Code:    21444                         126108
+               Stack:     2336                           2344
+            Graphics:        0                              0
+       Private Other:    65944
+              System:    16274
+             Unknown:                                   70924
+ 
+           TOTAL PSS:   307318            TOTAL RSS:   421008       TOTAL SWAP PSS:      512
+ 
+ Objects
+               Views:      758         ViewRootImpl:        1
+         AppContexts:        6           Activities:        1
+              Assets:       21        AssetManagers:        0
+       Local Binders:       27        Proxy Binders:       60
+       Parcel memory:       11         Parcel count:       46
+    Death Recipients:        2             WebViews:        0
+ 
+ SQL
+         MEMORY_USED:      459
+  PAGECACHE_OVERFLOW:      214          MALLOC_SIZE:       46
+ 
+ DATABASES
+      pgsz     dbsz   Lookaside(b) cache hits cache misses cache size  Dbname
+PER CONNECTION STATS
+         4       32             69    11    47     8  /data/user/0/com.hymnapp.praise/databases/exoplayer_internal.db
+         4       72             18    38   174     1  /data/user/0/com.hymnapp.praise/databases/updates.db
+         4        8                    0     0     0    (attached) temp
+         4       72             26    39    32     1  /data/user/0/com.hymnapp.praise/databases/updates.db (3)
+         4       20             41     4    34     5  /data/user/0/com.hymnapp.praise/databases/RKStorage
+POOL STATS
+     cache hits  cache misses    cache size  Dbname
+             11            48            59  /data/user/0/com.hymnapp.praise/databases/exoplayer_internal.db
+             79           239           318  /data/user/0/com.hymnapp.praise/databases/updates.db
+              4            35            39  /data/user/0/com.hymnapp.praise/databases/RKStorage
+ 
+ Asset Allocations
+    : 3618K
+--- meminfo +20s ---
+Applications Memory Usage (in Kilobytes):
+Uptime: 1049742 Realtime: 1049742
+
+** MEMINFO in pid 6938 [com.hymnapp.praise] **
+                   Pss  Private  Private  SwapPss      Rss     Heap     Heap     Heap
+                 Total    Dirty    Clean    Dirty    Total     Size    Alloc     Free
+                ------   ------   ------   ------   ------   ------   ------   ------
+  Native Heap   196833   196784        8       49   198004   205692   143527    55726
+  Dalvik Heap    29493    24516     4884       57    30340    43130    21581    21549
+ Dalvik Other     7516     7044       40        8     8188                           
+        Stack     2904     2904        0        0     2912                           
+       Ashmem       19        0        0        0      576                           
+    Other dev       21        0       16        0      280                           
+     .so mmap     5084      280     1216       19    39348                           
+    .jar mmap     3322        0      900        0    33812                           
+    .apk mmap    25397     1036    17720        0    37744                           
+    .ttf mmap      540        0      284        0     1148                           
+    .dex mmap      179        4      128        0      928                           
+    .oat mmap      661        0        0        0    13272                           
+    .art mmap     3514      712     1892      172    21156                           
+   Other mmap    13643     5596     6896        0    16108                           
+      Unknown    60366    59912      448        0    60732                           
+        TOTAL   349797   298788    34432      305   464548   248822   165108    77275
+ 
+ App Summary
+                       Pss(KB)                        Rss(KB)
+                        ------                         ------
+           Java Heap:    27120                          51496
+         Native Heap:   196784                         198004
+                Code:    21568                         127116
+               Stack:     2904                           2912
+            Graphics:        0                              0
+       Private Other:    84844
+              System:    16577
+             Unknown:                                   85020
+ 
+           TOTAL PSS:   349797            TOTAL RSS:   464548       TOTAL SWAP PSS:      305
+ 
+ Objects
+               Views:      763         ViewRootImpl:        1
+         AppContexts:        6           Activities:        1
+              Assets:       21        AssetManagers:        0
+       Local Binders:       27        Proxy Binders:       60
+       Parcel memory:       12         Parcel count:       48
+    Death Recipients:        2             WebViews:        0
+ 
+ SQL
+         MEMORY_USED:      425
+  PAGECACHE_OVERFLOW:      180          MALLOC_SIZE:       46
+ 
+ DATABASES
+      pgsz     dbsz   Lookaside(b) cache hits cache misses cache size  Dbname
+PER CONNECTION STATS
+         4       32             69    11    50     8  /data/user/0/com.hymnapp.praise/databases/exoplayer_internal.db
+         4       72             18    38   179     1  /data/user/0/com.hymnapp.praise/databases/updates.db
+         4        8                    0     0     0    (attached) temp
+         4       72             26    39    35     1  /data/user/0/com.hymnapp.praise/databases/updates.db (3)
+         4       20             41     4    37     5  /data/user/0/com.hymnapp.praise/databases/RKStorage
+POOL STATS
+     cache hits  cache misses    cache size  Dbname
+             11            51            62  /data/user/0/com.hymnapp.praise/databases/exoplayer_internal.db
+             79           247           326  /data/user/0/com.hymnapp.praise/databases/updates.db
+              4            38            42  /data/user/0/com.hymnapp.praise/databases/RKStorage
+ 
+ Asset Allocations
+    : 3618K
+--- meminfo +30s ---
+Applications Memory Usage (in Kilobytes):
+Uptime: 1059813 Realtime: 1059813
+
+** MEMINFO in pid 6938 [com.hymnapp.praise] **
+                   Pss  Private  Private  SwapPss      Rss     Heap     Heap     Heap
+                 Total    Dirty    Clean    Dirty    Total     Size    Alloc     Free
+                ------   ------   ------   ------   ------   ------   ------   ------
+  Native Heap   196837   196788        8       49   198008   205692   143516    55737
+  Dalvik Heap    25049    20072     4884       57    25896    43133    21567    21566
+ Dalvik Other     7384     6904       40        8     8064                           
+        Stack     2888     2888        0        0     2896                           
+       Ashmem       19        0        0        0      576                           
+    Other dev       21        0       16        0      280                           
+     .so mmap     5084      280     1216       19    39348                           
+    .jar mmap     3322        0      900        0    33812                           
+    .apk mmap    25397     1036    17720        0    37744                           
+    .ttf mmap      540        0      284        0     1148                           
+    .dex mmap      179        4      128        0      928                           
+    .oat mmap      661        0        0        0    13272                           
+    .art mmap     3514      712     1892      172    21156                           
+   Other mmap    13643     5596     6896        0    16108                           
+      Unknown    60530    60068      456        0    60896                           
+        TOTAL   345373   294348    34440      305   460132   248825   165083    77303
+ 
+ App Summary
+                       Pss(KB)                        Rss(KB)
+                        ------                         ------
+           Java Heap:    22676                          47052
+         Native Heap:   196788                         198008
+                Code:    21568                         127132
+               Stack:     2888                           2896
+            Graphics:        0                              0
+       Private Other:    84868
+              System:    16585
+             Unknown:                                   85044
+ 
+           TOTAL PSS:   345373            TOTAL RSS:   460132       TOTAL SWAP PSS:      305
+ 
+ Objects
+               Views:      763         ViewRootImpl:        1
+         AppContexts:        6           Activities:        1
+              Assets:       21        AssetManagers:        0
+       Local Binders:       27        Proxy Binders:       60
+       Parcel memory:       12         Parcel count:       48
+    Death Recipients:        2             WebViews:        0
+ 
+ SQL
+         MEMORY_USED:      425
+  PAGECACHE_OVERFLOW:      180          MALLOC_SIZE:       46
+ 
+ DATABASES
+      pgsz     dbsz   Lookaside(b) cache hits cache misses cache size  Dbname
+PER CONNECTION STATS
+         4       32             69    11    53     8  /data/user/0/com.hymnapp.praise/databases/exoplayer_internal.db
+         4       72             18    38   184     1  /data/user/0/com.hymnapp.praise/databases/updates.db
+         4        8                    0     0     0    (attached) temp
+         4       72             26    39    38     1  /data/user/0/com.hymnapp.praise/databases/updates.db (3)
+         4       20             41     4    40     5  /data/user/0/com.hymnapp.praise/databases/RKStorage
+POOL STATS
+     cache hits  cache misses    cache size  Dbname
+             11            54            65  /data/user/0/com.hymnapp.praise/databases/exoplayer_internal.db
+             79           255           334  /data/user/0/com.hymnapp.praise/databases/updates.db
+              4            41            45  /data/user/0/com.hymnapp.praise/databases/RKStorage
+ 
+ Asset Allocations
+    : 3618K

@@ -1,0 +1,7 @@
+=== build provenance start ===
+2026-09-05T16:56:17Z
+75f8f950618373495f74e8e8d7050c2da4581935
+xcodebuild -workspace frontend/hymn-app/ios/Odely.xcworkspace -scheme Odely -configuration Release -sdk iphonesimulator -destination platform=iOS Simulator,id=E0416618-B662-41D2-A253-5260FA0CF556 -derivedDataPath /private/tmp/claude-501/-Users-macbookpro--openclaw-workspace-hymn-app/dbef9ccd-547a-4212-8309-0735348d98c1/scratchpad/1c-derivedData build
+EXIT:0
+2026-09-05T16:59:55Z
+-rw-r--r--@ 1 macbookpro  wheel  3740962 Sep  6 00:59 /private/tmp/claude-501/-Users-macbookpro--openclaw-workspace-hymn-app/dbef9ccd-547a-4212-8309-0735348d98c1/scratchpad/1c-derivedData/Build/Products/Release-iphonesimulator/Odely.app/main.jsbundle

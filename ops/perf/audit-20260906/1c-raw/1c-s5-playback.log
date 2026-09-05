@@ -1,0 +1,14 @@
+host_launch_ts=1788628203.218786000
+com.hymnapp.praise: 33661
+pid=33661
+rss_launch+6s=512000
+--- tap shuffle ---
+shuffle_tap_ts=1788628209.634918000
+next1_tap_ts=1788628235.816099000
+next2_tap_ts=1788628256.028622000
+pid=33661 (re-derived)
+--- open library tab ---
+rss_after_library=428976
+lib_tap_ts=1788628300.336535000
+rss_after_3min=222224
+capture_ts=1788628393.220109000
