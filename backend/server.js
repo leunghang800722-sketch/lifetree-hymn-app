@@ -1,6 +1,11 @@
 // 詩歌App Backend — YouTube Audio Extraction Server
 // Provides audio URLs for react-native-track-player
 
+// DEEP-AUDIT-W2-EXEC-20260906 Commit D(D-10 D1):**必須係第一個 import**——
+// 見 lib/dotenv.js 頂部註解解釋點解次序咁重要(ESM depth-first 評估,呢個
+// side-effect 要喺 authSecret.js/otpAuth.js 讀 process.env.JWT_SECRET/
+// TWILIO_* 之前行完)。
+import './lib/dotenv.js';
 import express from 'express';
 import cors from 'cors';
 import compression from 'compression';

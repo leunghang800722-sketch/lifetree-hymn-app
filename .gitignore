@@ -45,6 +45,11 @@ backend/logs/
 .env
 .env.local
 .env.*.local
+# DEEP-AUDIT-W2-EXEC-20260906 D-10 D2:明文加返 backend/.env(已經俾上面
+# 通用 `.env` pattern 冚住,`git check-ignore -v backend/.env` 命中嗰行係
+# `.gitignore:45:.env`——呢句純粹俾之後睇呢個檔嘅人一眼睇到「backend 呢個
+# 密鑰檔特登有喺度」,唔靠人記得通用 pattern 有覆蓋)。
+backend/.env
 
 # 會員系統獨立 DB(MEMBERSHIP-PLAN §2.1)—— 含密碼 hash/電話/email,唔可以入 repo
 backend/users.db
