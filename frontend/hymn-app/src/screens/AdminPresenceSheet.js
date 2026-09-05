@@ -3,8 +3,8 @@
 // 標籤/連續在線時長。30 秒自動刷新 + 落拉刷新(pattern 照 FriendSharesSheet)。
 //
 // 唔顯示正在聽邊首歌(Eric 拍板③),歷史留第二版(④淨係即時)。
-import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Modal, View, Text, FlatList, StyleSheet, ActivityIndicator, RefreshControl } from 'react-native';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Modal, View, Text, FlatList, StyleSheet, ActivityIndicator, RefreshControl, Animated, PanResponder } from 'react-native';
 import OdeIcon from '../icons/OdeIcon';
 import { COLORS, TYPOGRAPHY } from '../theme/designSystem';
 import { useInsets } from '../hooks/useInsets';
@@ -56,6 +56,24 @@ export default function AdminPresenceSheet({ visible, onClose, getToken }) {
     return () => clearInterval(timer);
   }, [visible, load]);
 
+  // 下滑收起(見 return 內註解)。hooks 要喺 early return 之前。
+  const dragY = useRef(new Animated.Value(0)).current;
+  const dragHandlers = useMemo(() => PanResponder.create({
+    onMoveShouldSetPanResponder: (_e, g) => g.dy > 6 && Math.abs(g.dy) > Math.abs(g.dx),
+    onPanResponderMove: (_e, g) => { if (g.dy > 0) dragY.setValue(g.dy); },
+    onPanResponderRelease: (_e, g) => {
+      if (g.dy > 60 || g.vy > 0.5) {
+        Animated.timing(dragY, { toValue: 600, duration: 160, useNativeDriver: true }).start(() => {
+          dragY.setValue(0);
+          onClose && onClose();
+        });
+      } else {
+        Animated.spring(dragY, { toValue: 0, useNativeDriver: true }).start();
+      }
+    },
+    onPanResponderTerminate: () => { Animated.spring(dragY, { toValue: 0, useNativeDriver: true }).start(); },
+  }), [dragY, onClose]);
+
   if (!visible) return null;
 
   const online = data?.online || { total: 0, members: 0, guests: 0 };
@@ -65,9 +83,13 @@ export default function AdminPresenceSheet({ visible, onClose, getToken }) {
     <Modal visible animationType="slide" onRequestClose={onClose} statusBarTranslucent transparent>
       <View style={styles.scrim}>
         <View style={{ flex: 1 }} onTouchEnd={onClose} />
-        <View style={[styles.card, { paddingBottom: insets.bottom + 16, maxHeight: '80%' }]}>
-          <View style={styles.handle} />
-          <Text style={styles.title}>在線</Text>
+        <Animated.View style={[styles.card, { paddingBottom: insets.bottom + 16, maxHeight: '80%', transform: [{ translateY: dragY }] }]}>
+          {/* 2026-09-06 Eric 真機:「滑下不能收起」——手柄原本純裝飾。頂部
+              (手柄+標題+三個數)掛 PanResponder:跟手落,放手超過 60px 或者
+              夠快就關;唔夠就彈返上去。FlatList 唔喺呢個區入面,滾動照舊。 */}
+          <View {...dragHandlers.panHandlers}>
+            <View style={styles.handle} />
+            <Text style={styles.title}>在線</Text>
 
           <View style={styles.statsRow}>
             <View style={styles.statTile}>
@@ -82,6 +104,7 @@ export default function AdminPresenceSheet({ visible, onClose, getToken }) {
               <Text style={styles.statNum}>{online.guests}</Text>
               <Text style={styles.statLabel}>訪客</Text>
             </View>
+          </View>
           </View>
 
           {loading ? (
@@ -122,7 +145,7 @@ export default function AdminPresenceSheet({ visible, onClose, getToken }) {
               }
             />
           )}
-        </View>
+        </Animated.View>
       </View>
     </Modal>
   );
