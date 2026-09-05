@@ -7,13 +7,41 @@
 //                                     心跳係 fire-and-forget,唔應該因為
 //                                     壞 body 拖累 app(同 clientLog.js 一致
 //                                     嘅診斷 beacon 態度)。
-//   GET  /api/admin/presence      —— requireAuth + requireAdmin,回在線快照。
+//   GET  /api/admin/presence      —— 靠 server.js `app.use('/api/admin',
+//                                     requireAuth, requireAdmin, ...)` 掛載
+//                                     層做 auth(P7,唔喺呢度再包一次,見
+//                                     下面 presenceRoutes() 入面嗰段註解),
+//                                     回在線快照。
 import jwt from 'jsonwebtoken';
 import { JWT_SECRET } from '../lib/authSecret.js';
 import { getUserDb } from '../lib/userDb.js';
-import requireAuth from '../lib/requireAuth.js';
-import requireAdmin from '../lib/requireAdmin.js';
+import { clientIp } from '../lib/loginRateLimit.js';
 import { recordHeartbeat, getPresenceSnapshot } from '../lib/presence.js';
+
+// deviceId 白名單(P5,Opus 5 驗收 1b 保留已修):真 deviceId 係
+// `getOrCreateDeviceId()`(src/deviceId.js)產生嘅 32 hex,呢度容許
+// 8-40 hex 留少少彈性但拒晒任何非 hex 字元。唔啱 pattern 就當冇帶
+// deviceId(訪客冇 deviceId 就記唔到,會員唔受影響——佢用 userId 做 key)。
+const DEVICE_ID_RE = /^[0-9a-f]{8,40}$/;
+
+// per-IP 節流(P5,Opus 5 驗收 1a 保留已修,手法照 lib/loginRateLimit.js):
+// 60 秒 30 次,超過就 429、唔再入 presence Map(唔算入 recordHeartbeat)。
+// heartbeat 冇 auth,呢個係唯一擋濫用嘅第一層(第二層係 presence.js 嘅
+// MAX_ENTRIES + 訪客優先剷)。
+const HEARTBEAT_RATE_WINDOW_MS = 60 * 1000;
+const HEARTBEAT_RATE_MAX = 30;
+const heartbeatRateByIp = new Map(); // ip -> { count, windowStart }
+
+function isHeartbeatRateLimited(ip) {
+  const now = Date.now();
+  const rec = heartbeatRateByIp.get(ip);
+  if (!rec || now - rec.windowStart > HEARTBEAT_RATE_WINDOW_MS) {
+    heartbeatRateByIp.set(ip, { count: 1, windowStart: now });
+    return false;
+  }
+  rec.count++;
+  return rec.count > HEARTBEAT_RATE_MAX;
+}
 
 // 電話遮中間四位(§3「name:users 表有名就用名,冇就電話遮中間四位」)。
 // 例:+85261234567(12 字)→ mid=6,start=4,end=8 → +852**** 4567 遮法為
@@ -56,9 +84,15 @@ async function tryAuthenticate(req) {
 
 export default function presenceRoutes(app) {
   app.post('/api/presence/heartbeat', async (req, res) => {
+    // P5:per-IP 節流行喺最前面,超過就即刻 429、唔行 tryAuthenticate/
+    // recordHeartbeat(唔入 presence Map)。
+    if (isHeartbeatRateLimited(clientIp(req))) {
+      return res.status(429).json({ error: 'rate_limited' });
+    }
     try {
       const b = req.body || {};
-      const deviceId = String(b.deviceId || '').slice(0, 40) || null;
+      const rawDeviceId = String(b.deviceId || '').slice(0, 40);
+      const deviceId = DEVICE_ID_RE.test(rawDeviceId) ? rawDeviceId : null;
       const state = String(b.state || '').slice(0, 20);
       const user = await tryAuthenticate(req);
       recordHeartbeat({ userId: user ? user.id : null, deviceId, state });
@@ -68,7 +102,20 @@ export default function presenceRoutes(app) {
     res.status(204).end();
   });
 
-  app.get('/api/admin/presence', requireAuth, requireAdmin, async (req, res) => {
+  // P7(Opus 5 驗收 1e 保留已修):唔喺呢度再包一次 requireAuth/requireAdmin。
+  // server.js `adminRoutes(app)`(routes/admin.js:394 `app.use('/api/admin',
+  // requireAuth, requireAdmin, router)`)一定排喺 `presenceRoutes(app)` 之前
+  // 掛載,`/api/admin/presence` 呢條 path 會先經嗰層 middleware(admin.js
+  // 個 router 冇呢條 route,fall through 落嚟先撞到呢度)。再包一次會令
+  // requireAuth(兩次 DB SELECT + UPDATE)同 requireAdmin(佢個 60/min
+  // per-user 節流)每個 request 跑兩次,節流上限實際變咗 30/min——實測
+  // (harness 連打 40 次)第 31 次就 429。淨係補一個 req.user sanity guard
+  // (唔係再跑一次 middleware),防將來掛載次序被人調亂令呢條 route 冇
+  // auth 保護。
+  app.get('/api/admin/presence', async (req, res) => {
+    if (!req.user || req.user.role !== 'admin') {
+      return res.status(401).json({ error: 'unauthorized' });
+    }
     try {
       const db = await getUserDb();
       const nameCache = new Map();
