@@ -179,7 +179,26 @@ export const GROUPS = [
   // 官網「原創歌」目錄本身收唔到呢啲),但呢批一直係 Eric 拍板要收嘅內容
   // (97%正面/0%blocklist已審過)——所以 contentGate: 'duration+title' 原本
   // 個路徑完全保留,兩條路 OR,唔係淨開一條就閂咗另一條。
-  { name: 'Church 611',      aliases: ['Church 611', 'Church611tv', '611 Bread of Life Christian Church'], lang: '粵語', priority: 1, inPool: false, channel: '@Church611tv', est: 45, durationCapSec: 1900, contentGate: 'duration+title', catalogAllowlist: 'church611-org-catalog.json', note: '2026-09-05 Eric拍板新增,淨收RAWship現場敬拜歌系列(詳見上面comment),主頻道整體REJECT級(帶內26.7%)但RAWship子集97%正面/0%blocklist,durationCapSec1900+contentGate duration+title兩層鎖定;2026-09-05追加catalogAllowlist官網目錄OR路徑(詳見上面comment),16/65現存歌撞中目錄,其餘49首靠原有duration+title路徑保留' },
+  { name: 'Church 611',      aliases: ['Church 611', 'Church611tv', '611 Bread of Life Christian Church'], lang: '粵語', priority: 1, inPool: false, channel: '@Church611tv', est: 45, durationCapSec: 1900, contentGate: 'duration+title', catalogAllowlist: 'church611-org-catalog.json', note: '2026-09-05 Eric拍板新增,淨收RAWship現場敬拜歌系列(詳見上面comment),主頻道整體REJECT級(帶內26.7%)但RAWship子集97%正面/0%blocklist,durationCapSec1900+contentGate duration+title兩層鎖定;2026-09-05追加catalogAllowlist官網目錄OR路徑(詳見上面comment),16/65現存歌撞中目錄,其餘49首靠原有duration+title路徑保留;2026-09-05 T3逐首whisper判語言(65首,ORG-611-RAW-LANG-REPORT-20260905.md):⚠️whisper呢代model分唔到粵語(yue)同國語(zh),自動偵測一律報「zh」——entry lang呢個「粵語」淨係頻道層面推斷(zh-HK caption/自我介紹雙語Cantonese為主),唔係逐首實錘。65首入面6首(9.2%)偵測到英文內容(候選清單見報告,待人手confirm先寫DB),其餘59首中文內容存在但粵/國分唔到,全部要人手聽真人發音先實錘。呢個note本身就係任務要求嘅「逐首whisper判語言」記錄。' },
+  // 2026-09-05 ORG-611-RAW-LANG-REPORT:Eric拍板將 §8 Q1 提到嘅第三個
+  // 611 頻道 @611RAW 正式開 entry 長期追蹤,org 跟 Church 611(同一機構、
+  // 同一官網目錄嚟源),已有 2 首(heAPkSZxrJ4/6mVg4vAe9Gw,官方「歌詞版MV」
+  // 單曲)之前掛落 org='Church 611' 但冇喺呢個清單開 entry。
+  // ⚠️ auditChannel實測(depth 60,channel_id UCQIeW751tSyX7H_OdsHfuWQ,已用
+  // yt-dlp metadata 核對 uploader_id=@611RAW 冇撞錯 handle):帶內21.7%/
+  // blocklist18.3%/正面0%——REJECT級。同「官方單曲MV頻道」嘅原始印象唔同:
+  // 深挖之後發現呢個頻道實際上係代禱者/守望禱告會/「看見列國」列國先知性
+  // 內容為主(隨機10條樣本:代禱勇士見證/我是被救的/俯伏的敬拜/守望神國
+  // 禱告會/看見列國列國巡禮),已知嘅2首歌詞版MV單曲係少數例外,唔係
+  // 頻道主力。因為係REJECT級,跟Asia for JESUS/台北復興堂嘅政策一致加
+  // tier1Exclude:true——唔畀夜晚Tier1自動掃(會滲禱告會/見證片入嚟),
+  // 淨係俾人手/未來語義層針對性backfill(見ORG-611-RAW-LANG-REPORT-
+  // 20260905.md §1 一次性scan結果)。durationCapSec唔使開(已知2首
+  // 131s/437s跌喺全局預設75-600s帶入面),contentGate:'duration+title'+
+  // catalogAllowlist(重用church611-org-catalog.json)兩條仍然開,原因
+  // 同Church 611一樣——「歌詞版MV/Lyrics MV」呢類標題正面訊號 + 官網
+  // 目錄OR路徑,係呢個頻道極少數真.歌片嘅安全網。
+  { name: '611 RAW',         aliases: ['611 RAW', '611RAW'],       lang: '粵語', priority: 1, inPool: false, channel: '@611RAW', est: 5, org: 'Church 611', contentGate: 'duration+title', catalogAllowlist: 'church611-org-catalog.json', tier1Exclude: true, note: '2026-09-05 Eric拍板開entry,org跟Church 611(同一機構);auditChannel實測REJECT級(帶內21.7%/blocklist18.3%/正面0%)——頻道實際係代禱者/守望禱告會/看見列國先知性內容為主,已知嘅2首歌詞版MV單曲係例外唔係主力,已加tier1Exclude防止Tier1自動滲入禱告會片,淨留俾人手針對性backfill(詳見ORG-611-RAW-LANG-REPORT-20260905.md §1)' },
   // 2026-09-05 Eric 拍板新增:新歌敬拜 NewSong Worship(@新歌敬拜NewsongWorship,
   // UCdWojs2vazAcIaYUzquRJnA)。auditChannel實測(depth 58,已接近成個頻道
   // 全部片):帶內77.6%/blocklist6.9%/正面94.8%——OK級,唔使開contentGate,
