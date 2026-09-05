@@ -17,6 +17,7 @@ import { JWT_SECRET } from '../lib/authSecret.js';
 import { getUserDb } from '../lib/userDb.js';
 import { clientIp } from '../lib/loginRateLimit.js';
 import { recordHeartbeat, getPresenceSnapshot } from '../lib/presence.js';
+import { makeLimiter } from '../lib/rateLimit.js';
 
 // deviceId 白名單(P5,Opus 5 驗收 1b 保留已修):真 deviceId 係
 // `getOrCreateDeviceId()`(src/deviceId.js)產生嘅 32 hex,呢度容許
@@ -28,24 +29,22 @@ const DEVICE_ID_RE = /^[0-9a-f]{8,40}$/;
 // 60 秒 300 次(Opus2 N1:同一 IP 後面可以係成間教會 WiFi / CGNAT,60 秒心跳一部機 1 次,300 = 撐 300 部機),超過就 429、唔再入 presence Map(唔算入 recordHeartbeat)。
 // heartbeat 冇 auth,呢個係唯一擋濫用嘅第一層(第二層係 presence.js 嘅
 // MAX_ENTRIES + 訪客優先剷)。
+// DEEP-AUDIT-W2-EXEC-20260906 Commit B:純機械抽取去 lib/rateLimit.js
+// makeLimiter()——HEARTBEAT_RATE_WINDOW_MS(60秒)/HEARTBEAT_RATE_MAX(300)/
+// HEARTBEAT_RATE_MAP_MAX(5000)一個數字都冇變,makeLimiter 嘅 maxEntries
+// 參數直接食返呢個 5000,eviction 語意(掃完仲爆就踢最舊)同舊版一致。
 const HEARTBEAT_RATE_WINDOW_MS = 60 * 1000;
 const HEARTBEAT_RATE_MAX = 300;
 const HEARTBEAT_RATE_MAP_MAX = 5000; // Opus2 N4:Map 有上限,超過就剷最舊 window
-const heartbeatRateByIp = new Map(); // ip -> { count, windowStart }
-
+const heartbeatLimiter = makeLimiter({
+  name: 'presence-heartbeat',
+  keyOf: (req) => req, // check() 下面直接傳 ip string
+  max: HEARTBEAT_RATE_MAX,
+  windowMs: HEARTBEAT_RATE_WINDOW_MS,
+  maxEntries: HEARTBEAT_RATE_MAP_MAX,
+});
 function isHeartbeatRateLimited(ip) {
-  const now = Date.now();
-  const rec = heartbeatRateByIp.get(ip);
-  if (!rec || now - rec.windowStart > HEARTBEAT_RATE_WINDOW_MS) {
-    if (!rec && heartbeatRateByIp.size >= HEARTBEAT_RATE_MAP_MAX) {
-      for (const [k, v] of heartbeatRateByIp) { if (now - v.windowStart > HEARTBEAT_RATE_WINDOW_MS) heartbeatRateByIp.delete(k); }
-      if (heartbeatRateByIp.size >= HEARTBEAT_RATE_MAP_MAX) heartbeatRateByIp.delete(heartbeatRateByIp.keys().next().value);
-    }
-    heartbeatRateByIp.set(ip, { count: 1, windowStart: now });
-    return false;
-  }
-  rec.count++;
-  return rec.count > HEARTBEAT_RATE_MAX;
+  return heartbeatLimiter.check(ip);
 }
 
 // 電話遮中間四位(§3「name:users 表有名就用名,冇就電話遮中間四位」)。

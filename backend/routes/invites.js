@@ -13,6 +13,7 @@ import requireAdmin from '../lib/requireAdmin.js';
 import { clientIp } from '../lib/loginRateLimit.js';
 import { appendAudit, whoOf } from '../lib/auditLog.js';
 import { redeemInviteAndFriend } from '../lib/inviteRedeem.js';
+import { makeLimiter } from '../lib/rateLimit.js';
 
 // 8 字元,alphabet 去晒易撈亂字符(冇 0/O/1/I/L),31 字元 ≈ 39.6-bit(§2.1)。
 // crypto.randomBytes % 31 有極輕微 modulo bias,對呢個用途(防陌生人量產
@@ -62,25 +63,22 @@ function areFriends(db, aId, bId) {
 
 // ── 公開 invite-check 限速(§5-1)—— 抄 routes/share.js 嘅 per-IP sweep pattern
 // + routes/otpAuth.js 嘅 globalCount 熔斷 pattern。
+// DEEP-AUDIT-W2-EXEC-20260906 Commit B:純機械抽取去 lib/rateLimit.js
+// makeLimiter()——SWEEP_THRESHOLD(500)/CHECK_RATE_WINDOW_MS(15分鐘)/
+// CHECK_RATE_MAX(10,env override唔變)一個數字都冇改,`isCheckRateLimited(ip)`
+// 呢個 call 位形狀都冇變,harness 對照見 ops/perf/harness/w2/b3-harness.mjs。
 const CHECK_RATE_WINDOW_MS = 15 * 60 * 1000;
 const CHECK_RATE_MAX = Number(process.env.INVITES_CHECK_RATE_MAX || 10); // env override 方便驗收
-const hitsByIp = new Map();
 const SWEEP_THRESHOLD = 500;
-function sweepExpired(now) {
-  for (const [ip, rec] of hitsByIp) {
-    if (now - rec.windowStart > CHECK_RATE_WINDOW_MS) hitsByIp.delete(ip);
-  }
-}
+const inviteCheckLimiter = makeLimiter({
+  name: 'invite-check',
+  keyOf: (req) => req, // check() 下面直接傳 ip string,keyOf 做 identity
+  max: CHECK_RATE_MAX,
+  windowMs: CHECK_RATE_WINDOW_MS,
+  sweepAt: SWEEP_THRESHOLD,
+});
 function isCheckRateLimited(ip) {
-  const now = Date.now();
-  if (hitsByIp.size > SWEEP_THRESHOLD) sweepExpired(now);
-  const rec = hitsByIp.get(ip);
-  if (!rec || now - rec.windowStart > CHECK_RATE_WINDOW_MS) {
-    hitsByIp.set(ip, { count: 1, windowStart: now });
-    return false;
-  }
-  rec.count++;
-  return rec.count > CHECK_RATE_MAX;
+  return inviteCheckLimiter.check(ip);
 }
 
 // 500 太低——如果將來由 open mode 切返 invite mode,全部人嗰日撞埋一齊查

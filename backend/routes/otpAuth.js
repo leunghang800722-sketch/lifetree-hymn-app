@@ -16,6 +16,7 @@ import { saveUserDb } from '../lib/userDb.js';
 import { ipLoginLimiter, phoneLoginLimiter, clientIp } from '../lib/loginRateLimit.js';
 import { REGISTRATION_MODE } from '../lib/registrationMode.js';
 import { redeemInviteAndFriend } from '../lib/inviteRedeem.js';
+import { sweepOnThreshold } from '../lib/rateLimit.js';
 
 const TOKEN_EXPIRY = '30d';
 const TICKET_EXPIRY = '10m';
@@ -36,6 +37,17 @@ const ALLOWED_PREFIXES = (process.env.OTP_ALLOWED_PREFIXES || '+852').split(',')
 
 // ── 防濫用(SMS pumping 係真金白銀)──────────────────────────────
 // in-memory 夠用(單機 backend)。重啟即清,對限速嚟講可接受。
+//
+// DEEP-AUDIT-W2-EXEC-20260906 Commit B(OTP-1/LOGIN-P2 提到嘅「otpAuth.js
+// perIp Map 連 lazy expiry 都冇」缺口):`perPhone`/`perIp` 呢兩個 Map 係
+// day-cap + cooldown 語意(日曆日重置),同 lib/rateLimit.js makeLimiter()
+// 嘅「sliding window count」語意本質上唔同,唔可以逼佢用 check(req)(逼咗
+// 會改行為)。呢度淨係借 rateLimit.js 嘅 sweepOnThreshold() 幫呢兩個 Map
+// 加返「大到某個閾值先掃一次上一個日曆日嘅殘留 entry + 格數硬頂」——
+// PHONE_COOLDOWN_MS/PHONE_DAILY/IP_DAILY/OTP_DAILY_CAP 呢啲數字、`checkRate`
+// 嘅 control flow 逐 bit 冇改;剷走「唔係今日」嘅 entry 唔會影響決策,
+// 因為 `checkRate` 本身見到 `p.day !== d` 就會將 dayCount 歸零,同攞唔到
+// entry(用返 default `{ lastAt: 0, dayCount: 0, day: d }`)嘅結果一樣。
 const perPhone = new Map(); // phone -> { lastAt, dayCount, day }
 const perIp = new Map();    // ip -> { dayCount, day }
 let globalDay = new Date().toDateString();
@@ -46,10 +58,17 @@ const IP_DAILY = 10;
 
 function today() { return new Date().toDateString(); }
 function rollGlobal() { const d = today(); if (d !== globalDay) { globalDay = d; globalCount = 0; } }
+function isStaleDayRec(rec, now) { return rec.day !== new Date(now).toDateString(); }
 
-function checkRate(phone, ip) {
+// 純 export 俾 harness 用(DEEP-AUDIT-W2-EXEC-20260906 Commit B3 對照
+// checkRate() 舊 vs 新布林序列),route handler 自己完全唔用呢個 export
+// (照舊叫返 module 內嘅 checkRate),行為零改動。
+export function checkRate(phone, ip) {
   rollGlobal();
   if (globalCount >= OTP_DAILY_CAP) return { ok: false, code: 'global_cap' };
+
+  sweepOnThreshold(perPhone, { isExpired: isStaleDayRec });
+  sweepOnThreshold(perIp, { isExpired: isStaleDayRec });
 
   const d = today();
   const p = perPhone.get(phone) || { lastAt: 0, dayCount: 0, day: d };

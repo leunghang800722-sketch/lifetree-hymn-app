@@ -23,6 +23,7 @@ import { Router } from 'express';
 import { recordClientLogRateLimited } from '../lib/opsMetrics.js';
 import { appendClientLog } from '../lib/clientLogStore.js';
 import { clientIp } from '../lib/loginRateLimit.js';
+import { makeLimiter } from '../lib/rateLimit.js';
 
 function logLine(fields) {
   console.log(`[client-log] ${new Date().toISOString()} ${Object.entries(fields).map(([k, v]) => `${k}=${JSON.stringify(v)}`).join(' ')}`);
@@ -32,35 +33,31 @@ function logLine(fields) {
 // (窗 60s,Map 上限 5000 同 presence.js 一致)。CLIENT_LOG_RATE_MAX env
 // override,方便驗收唔使等一分鐘。理據(執行單 §1.2 B3):一部機正常峰值
 // perfMarks+perfNav+diag 一分鐘唔過 30 條,同一 NAT 後幾部機都夠。
+// DEEP-AUDIT-W2-EXEC-20260906 Commit B:純機械抽取去 lib/rateLimit.js
+// makeLimiter()——RATE_WINDOW_MS(60秒)/RATE_MAX(300,env override唔變)/
+// RATE_MAP_CAP(5000)一個數字都冇變,harness 對照見
+// ops/perf/harness/w2/b3-harness.mjs。
 const RATE_WINDOW_MS = 60 * 1000;
 // W1 Opus 驗收 #3:同一公網 IP 後面可以有幾部機同時跑 perf(nav cap 已升 40),
 // 120 太貼近量度 burst;改 300 同 presence.js HEARTBEAT_RATE_MAX 對齊。
 const RATE_MAX = Number(process.env.CLIENT_LOG_RATE_MAX || 300);
 const RATE_MAP_CAP = 5000; // 同 presence.js MAX_ENTRIES 一致嘅安全閥
-const hitsByIp = new Map();
-
-function sweepExpiredHits(now) {
-  for (const [ip, rec] of hitsByIp) {
-    if (now - rec.windowStart > RATE_WINDOW_MS) hitsByIp.delete(ip);
-  }
-}
-
+const clientLogLimiter = makeLimiter({
+  name: 'client-log',
+  keyOf: (req) => req, // check() 下面直接傳 ip string
+  max: RATE_MAX,
+  windowMs: RATE_WINDOW_MS,
+  sweepAt: RATE_MAP_CAP, // 舊版呢個數字淨係做 sweep 閾值(冇 hard cap);makeLimiter 額外加嘅 maxEntries 硬頂用返同一個數字,見下面
+  maxEntries: RATE_MAP_CAP,
+});
 function isRateLimited(ip) {
-  const now = Date.now();
-  if (hitsByIp.size > RATE_MAP_CAP) sweepExpiredHits(now);
-  const rec = hitsByIp.get(ip);
-  if (!rec || now - rec.windowStart > RATE_WINDOW_MS) {
-    hitsByIp.set(ip, { count: 1, windowStart: now });
-    return false;
-  }
-  rec.count++;
-  return rec.count > RATE_MAX;
+  return clientLogLimiter.check(ip);
 }
 
 // B4(c)—— opsMetrics gauge 取用:節流 Map 現時 size(唔係逐 request 計數,
 // 純粹俾 sampler 定期 snapshot)。
 export function getClientLogRateMapSize() {
-  return hitsByIp.size;
+  return clientLogLimiter.size();
 }
 
 export default function clientLogRoutes(app) {

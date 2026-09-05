@@ -17,6 +17,7 @@ import crypto from 'crypto';
 import { getUserDb, saveUserDb } from '../lib/userDb.js';
 import requireAuth from '../lib/requireAuth.js';
 import { clientIp } from '../lib/loginRateLimit.js';
+import { makeLimiter } from '../lib/rateLimit.js';
 
 // ODE-REBRAND-PLAN §3.5:新 domain。舊 god-music.com 唔剪(舊 APK/流通中連結
 // 靠佢),server.js 已加 host-based 301 將舊域 /p/ /downloads 帶去呢度。
@@ -29,36 +30,21 @@ const APK_SHA256_FINGERPRINT = 'FA:C6:17:45:DC:09:03:78:6F:B9:ED:E6:2A:96:2B:39:
 // ── per-IP 限速(§5.2)—— 抄 lib/loginRateLimit.js 嘅 in-memory pattern,
 // 但呢度計**全部 request**(唔淨計失敗),同 routes/me.js isRateLimited() 個
 // counter 寫法一致。15 分鐘 60 次。
+// DEEP-AUDIT-W2-EXEC-20260906 Commit B:純機械抽取去 lib/rateLimit.js
+// makeLimiter()——RATE_WINDOW_MS/RATE_MAX/SWEEP_THRESHOLD 數字全部冇變,
+// harness 對照見 ops/perf/harness/w2/b3-harness.mjs。
 const RATE_WINDOW_MS = 15 * 60 * 1000;
 const RATE_MAX = 60;
-const hitsByIp = new Map();
-
-// Opus 5 驗收揪出:呢個 Map 冇 eviction——單一 IP check 嗰陣自己個窗口過期
-// 會覆寫(下面 isRateLimited 本身),但**只出現過一次就冇再嚟**嘅 IP(公開
-// endpoint,scraper 換 IP 好常見)永遠冇人再幫佢 check,個 entry 會留一世,
-// 長遠慢慢漏 memory。
-//
-// 修法:唔跟 loginRateLimit.js 加長駐 setInterval(嗰邊冧本身都冇用 timer,
-// 保持一致),淨係喺 Map 大到有意義先做一次全表過期掃(廉價、罕見觸發,
-// 唔會拖慢正常 request)。SWEEP_THRESHOLD 500 純粹「呢個規模先值得行一次
-// O(n) 掃描」嘅工程判斷,唔係業務數字。
 const SWEEP_THRESHOLD = 500;
-function sweepExpired(now) {
-  for (const [ip, rec] of hitsByIp) {
-    if (now - rec.windowStart > RATE_WINDOW_MS) hitsByIp.delete(ip);
-  }
-}
-
+const shareLimiter = makeLimiter({
+  name: 'share',
+  keyOf: (req) => req, // check() 下面直接傳 ip string
+  max: RATE_MAX,
+  windowMs: RATE_WINDOW_MS,
+  sweepAt: SWEEP_THRESHOLD,
+});
 function isRateLimited(ip) {
-  const now = Date.now();
-  if (hitsByIp.size > SWEEP_THRESHOLD) sweepExpired(now);
-  const rec = hitsByIp.get(ip);
-  if (!rec || now - rec.windowStart > RATE_WINDOW_MS) {
-    hitsByIp.set(ip, { count: 1, windowStart: now });
-    return false;
-  }
-  rec.count++;
-  return rec.count > RATE_MAX;
+  return shareLimiter.check(ip);
 }
 
 function escapeHtml(str) {
