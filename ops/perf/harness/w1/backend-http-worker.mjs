@@ -12,7 +12,7 @@
 // 環境變數:
 //   HARNESS_HTTP_MODE = 'ratelimit' | 'sizecap'
 //   CLIENT_LOG_DIR_OVERRIDE(必要)
-//   CLIENT_LOG_RATE_MAX(ratelimit 模式用,唔設就用 production 預設 120)
+//   CLIENT_LOG_RATE_MAX(ratelimit 模式用,唔設就用 production 預設 300)
 //   CLIENT_LOG_MAX_FILE_BYTES(sizecap 模式用)
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -51,11 +51,14 @@ async function main() {
 
   let result;
   if (MODE === 'ratelimit') {
-    // 正控:同一個 IP 打 121 條(用 X-Forwarded-For 固定同一個假 IP),
-    // 第 121 條要 429。
+    // 正控:同一個 IP 打 RATE_MAX+1 條(用 X-Forwarded-For 固定同一個假 IP),
+    // 第 RATE_MAX+1 條要 429。
     const sameIp = '203.0.113.10';
     const statuses = [];
-    for (let i = 0; i < 121; i++) {
+    // W1 Opus 驗收後預設由 120 改 300:打 RATE_MAX+1 條,第 RATE_MAX+1 條要 429。
+    const RATE_MAX = Number(process.env.CLIENT_LOG_RATE_MAX || 300);
+    const N = RATE_MAX + 1;
+    for (let i = 0; i < N; i++) {
       statuses.push(await post(port, sampleBody, { 'X-Forwarded-For': sameIp }));
     }
     const okCount = statuses.filter((s) => s === 204).length;
@@ -74,7 +77,7 @@ async function main() {
 
     result = {
       mode: 'ratelimit',
-      positiveControl: { totalRequests: 121, status204Count: okCount, status429Count: limitedCount, firstLimitedAtRequestIndex1Based: firstLimitedAt === -1 ? null : firstLimitedAt + 1 },
+      positiveControl: { rateMax: RATE_MAX, totalRequests: N, status204Count: okCount, status429Count: limitedCount, firstLimitedAtRequestIndex1Based: firstLimitedAt === -1 ? null : firstLimitedAt + 1 },
       negativeControl: { totalIps: 20, requestsPerIp: 10, totalRequests: negControlStatuses.length, all204: negControlAll204, distinctStatuses: Array.from(new Set(negControlStatuses)) },
     };
   } else if (MODE === 'sizecap') {

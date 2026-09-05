@@ -53,7 +53,9 @@ async function main() {
   {
     // 由 git 攞返「改之前」嘅版本(HEAD 喺呢輪執行單開工之前就係無節流/同步
     // fs 版,因為呢個 session 仲未 commit 過)。
-    const oldSrc = spawnSync('git', ['show', 'HEAD:backend/lib/clientLogStore.js'], { cwd: REPO_ROOT, encoding: 'utf8' });
+    // W1 Opus 驗收 #1:W1 commit 落地後 HEAD 已經係新版,對照組要釘死 pre-W1 sha(可用 env 覆寫)。
+    const OLD_REF = process.env.HARNESS_OLD_REF || '17ed1bc';
+    const oldSrc = spawnSync('git', ['show', `${OLD_REF}:backend/lib/clientLogStore.js`], { cwd: REPO_ROOT, encoding: 'utf8' });
     if (oldSrc.status !== 0) throw new Error(`git show 攞唔到舊版 clientLogStore.js: ${oldSrc.stderr}`);
     const oldDir = path.join(SCRATCH_BASE, 'old', 'lib');
     fs.mkdirSync(oldDir, { recursive: true });
@@ -84,7 +86,7 @@ async function main() {
     const run = runNode(path.join(__dirname, 'backend-http-worker.mjs'), {
       HARNESS_HTTP_MODE: 'ratelimit',
       CLIENT_LOG_DIR_OVERRIDE: dirOverride,
-      // 唔設 CLIENT_LOG_RATE_MAX —— 用 production 預設 120,同 code 一致。
+      // 唔設 CLIENT_LOG_RATE_MAX —— 用 production 預設(300),worker 自己讀同一個預設。
     });
     results['H-B3'] = run;
   }

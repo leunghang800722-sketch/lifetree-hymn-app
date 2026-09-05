@@ -20,6 +20,7 @@
 // routes/invites.js:63-83 嘅 sweep-on-threshold pattern 加返節流。B1 白名單
 // 加 appVersion/updateId/sessionId 三個新欄(src/clientLog.js F1 強制注入)。
 import { Router } from 'express';
+import { recordClientLogRateLimited } from '../lib/opsMetrics.js';
 import { appendClientLog } from '../lib/clientLogStore.js';
 import { clientIp } from '../lib/loginRateLimit.js';
 
@@ -32,7 +33,9 @@ function logLine(fields) {
 // override,方便驗收唔使等一分鐘。理據(執行單 §1.2 B3):一部機正常峰值
 // perfMarks+perfNav+diag 一分鐘唔過 30 條,同一 NAT 後幾部機都夠。
 const RATE_WINDOW_MS = 60 * 1000;
-const RATE_MAX = Number(process.env.CLIENT_LOG_RATE_MAX || 120);
+// W1 Opus 驗收 #3:同一公網 IP 後面可以有幾部機同時跑 perf(nav cap 已升 40),
+// 120 太貼近量度 burst;改 300 同 presence.js HEARTBEAT_RATE_MAX 對齊。
+const RATE_MAX = Number(process.env.CLIENT_LOG_RATE_MAX || 300);
 const RATE_MAP_CAP = 5000; // 同 presence.js MAX_ENTRIES 一致嘅安全閥
 const hitsByIp = new Map();
 
@@ -67,6 +70,8 @@ export default function clientLogRoutes(app) {
     try {
       const ip = clientIp(req);
       if (isRateLimited(ip)) {
+        // W1 Opus 驗收 #2:429 掉咗嘅 beacon 要有計數,否則係新嘅靜默丟數路徑。
+        recordClientLogRateLimited();
         res.status(429).end();
         return;
       }

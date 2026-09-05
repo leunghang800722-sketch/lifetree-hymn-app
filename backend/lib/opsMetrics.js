@@ -81,6 +81,7 @@ function blankBucket() {
     // 持久計數,淨係靠 `[deprecated-route]` console.log(冇寫入任何存活過
     // 重啟嘅地方,`/tmp` 會俾 macOS 開機清)。route path -> 幾多次命中。
     deprecatedRouteHits: {},
+    clientLogRateLimited: 0, // W1 Opus #2:/api/client-log 429 累計
   };
 }
 
@@ -259,6 +260,14 @@ export function recordDeprecatedRouteHit(route) {
     for (const b of buckets()) {
       b.deprecatedRouteHits[route] = (b.deprecatedRouteHits[route] || 0) + 1;
     }
+    scheduleFlush();
+  } catch (_) {}
+}
+
+// W1 Opus 驗收 #2:/api/client-log 節流丟走嘅 beacon 累計(同 deprecatedRouteHits 同款形狀)。
+export function recordClientLogRateLimited() {
+  try {
+    for (const b of buckets()) b.clientLogRateLimited = (b.clientLogRateLimited || 0) + 1;
     scheduleFlush();
   } catch (_) {}
 }

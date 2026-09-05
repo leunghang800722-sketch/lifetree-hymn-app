@@ -19,7 +19,7 @@
 //                __DEV__ 就 'dev';有 updates config 但仲未收到過 update
 //                就 'embedded')——令之後每一波 OTA 都自動有 before/after
 //                切分維度(1E §3.2 冇 before 嗰個結構性問題由呢度解)。
-//   sessionId  — module load(= 一次冷開)生成一次嘅 32-hex 隨機 id,令同一次
+//   sessionId  — module load(= 一次冷開)生成一次嘅 16-hex 隨機 id,令同一次
 //                開機嘅 event 可以歸組,唔使再靠時間戳夾(見 memory
 //                project-multi-sim-clientlog-contamination 嘅教訓)。
 //
@@ -30,7 +30,7 @@ import { Platform } from 'react-native';
 import { API_BASE } from './config.js';
 import { getOrCreateDeviceId } from './deviceId.js';
 
-// 兩段 Math.random 拼,32 hex,同 deviceId.js generateDeviceId() 手法一致但
+// 兩段 Math.random 拼,16 hex(64-bit,夠用),同 deviceId.js generateDeviceId() 手法一致但
 // 完全獨立(唔可以撈亂——deviceId 係跨 app 生命週期持久,sessionId 淨係呢次
 // 冷開)。
 function genSessionId() {
