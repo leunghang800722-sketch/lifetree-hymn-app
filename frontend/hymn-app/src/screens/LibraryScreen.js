@@ -38,6 +38,14 @@ const norm = (s) => (s || '').toLowerCase().replace(/[^\p{L}\p{N}]/gu, '');
 // 完全唔郁。
 const foldHomophone = (s) => s.replace(/[祢袮]/g, '你');
 
+// 歌名/歌手/專輯嗰路嘅「異體字 fold」(2026-09-05,Eric 實測搜「我心所依靠」搵唔到
+// 611 嘅《我心所倚靠》)。同上面 foldHomophone 唔同:呢度淨係合併**寫法異體**
+// (倚/依、妳/你、裡/裏、著/着、唯/惟、甚/什、麼/么、於/于、祢/你),兩邊(index
+// 同 query)一齊 fold,短字串 false positive 極低——呢啲字對本身就係同一個詞嘅
+// 兩種寫法,唔係讀音相同嘅唔同字。原始歌名顯示完全唔郁。
+const VARIANT_MAP = { '倚': '依', '妳': '你', '祢': '你', '袮': '你', '裏': '裡', '着': '著', '惟': '唯', '什': '甚', '么': '麼', '于': '於' };
+const foldVariant = (s) => s.replace(/[倚妳祢袮裏着惟什么于]/g, (c) => VARIANT_MAP[c] || c);
+
 // 同播放清單 / 歌單頁一致:喺清單度直接加最愛,唔使入返播放頁(款式照搬 HymnListScreen)
 function Heart({ hymn }) {
   const { isFavorite, toggleFavorite } = useFavorites() || {};
@@ -108,7 +116,7 @@ export default function LibraryScreen({ hymns = [], onPlayHymn, onOpenAuth }) {
       // 正正係呢個欄位(唔係原始 title),漏咗就會出現「改咗個名之後用新名反而
       // 搵唔到」(Opus 5 驗收揪出)。每欄 || '' 兜底:離線舊 cache 可能未有
       // album/title_en/performer(SEARCH-MERGE-PLAN §5、TAXONOMY-5D-PLAN §4.2 同一鐵律)。
-      m.set(h.id, norm(h.title) + norm(h.display_title) + norm(h.title_en) + norm(h.artist) + norm(h.album) + norm(h.performer));
+      m.set(h.id, foldVariant(norm(h.title) + norm(h.display_title) + norm(h.title_en) + norm(h.artist) + norm(h.album) + norm(h.performer)));
     }
     return m;
   }, [hymns]);
@@ -211,7 +219,8 @@ export default function LibraryScreen({ hymns = [], onPlayHymn, onOpenAuth }) {
     // 搵唔返首歌(例如「主耶穌我愛祢」標題命中 2 首,《深深愛慕祢》淨係歌詞
     // 命中,舊邏輯就消失咗)。改做兩輪都搜、結果 merge:標題/歌手/專輯命中
     // 排前面,歌詞命中排後面;兩輪都中嘅歌只計標題組,唔重複出。
-    const titleHits = base.filter((h) => (blobIndex.get(h.id) || '').includes(nq));
+    const nqTitle = foldVariant(nq); // 同 blobIndex 一樣 fold 異體字(倚/依 等)
+    const titleHits = base.filter((h) => (blobIndex.get(h.id) || '').includes(nqTitle));
     const titleHitIds = new Set(titleHits.map((h) => h.id));
     const lyricsMap = getLyricsIndex(hymns);
     // 歌詞呢一路先 fold 同音字(祢/你/袮),歌名/歌手/專輯嗰路(titleHits,
