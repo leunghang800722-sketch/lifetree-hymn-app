@@ -23,6 +23,7 @@ import shareRoutes from './routes/share.js';
 import friendsRoutes from './routes/friends.js';
 import invitesRoutes from './routes/invites.js';
 import clientLogRoutes from './routes/clientLog.js';
+import presenceRoutes from './routes/presence.js';
 import { resolveAudioUrl, refreshAudioUrl, preVerifyUrl, cache, failCache, anyStreaming, isStreaming, getBufferCacheStats } from './lib/resolveAudio.js';
 import { YTDLP } from './lib/ytdlpBin.js';
 import { getUserDb } from './lib/userDb.js';
@@ -77,7 +78,9 @@ app.use((req, res, next) => {
   // 落嚟就唔會復原,遲啲先讀 req.path 會攞到裁剩嗰截(例如
   // `/api/home/daily-verse` 變咗 `/daily-verse`),見 harness 實測抓到。
   if (!p.startsWith('/api/')) return next();
-  if (p.startsWith('/api/stream') || p.startsWith('/api/hls') || p.startsWith('/api/client-log')) return next();
+  // ADMIN-PRESENCE-EXEC-20260905 §2 A-3 —— 心跳每 60 秒一個(每部裝置),
+  // 同 client-log 一樣加呢度會即刻洗版,唔幫手。
+  if (p.startsWith('/api/stream') || p.startsWith('/api/hls') || p.startsWith('/api/client-log') || p === '/api/presence/heartbeat') return next();
 
   // §1 —— 喺 compression 有機會 wrap 之前,自己先攞住 res.write/res.end
   // 嘅參照。compression 之後會將呢兩個(已經係我哋嘅 wrapper)當「原始
@@ -174,6 +177,7 @@ shareRoutes(app); // 分享播放清單(MEMBERSHIP-PHASE3-SHARE-PLAN §1-3)—�
 friendsRoutes(app); // 好友(MEMBERSHIP-PHASE4-FRIENDS-INVITES-PLAN §1)—— 自己逐條掛 requireAuth
 invitesRoutes(app); // 邀請碼 + 註冊閘配套(MEMBERSHIP-PHASE4-FRIENDS-INVITES-PLAN §2)
 clientLogRoutes(app); // 播放 watchdog 診斷 beacon(STREAM-MIDTRACK-SILENCE-ROOTCAUSE 續篇,2026-08-13)
+presenceRoutes(app); // Admin「在線」頁(ADMIN-PRESENCE-EXEC-20260905)—— 心跳 + admin 快照
 
 // APK 下載檔名(APP-UPDATE-CHECK-PLAN §5 第二輪修正):以前寫死
 // "hymn-app-v1.3.0-week2.apk"(rebrand 前、W2 個陣嘅殘留),同而家實際版本
