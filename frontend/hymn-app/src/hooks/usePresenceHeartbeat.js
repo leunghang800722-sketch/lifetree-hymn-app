@@ -1,9 +1,12 @@
-// hooks/usePresenceHeartbeat.js — Admin「在線」頁(ADMIN-PRESENCE-EXEC-20260905 §3)
+// hooks/usePresenceHeartbeat.js — Admin「在線」頁(ADMIN-PRESENCE-EXEC-20260905 §3,
+// 2026-09-05 Opus 5 驗收 P1/P2/P4 修復)
 //
 // App 每 60 秒 POST /api/presence/heartbeat;淨係「App 前台」或「背景播緊
-// 歌」先送,背景冇播就 clearInterval(§1)。App 變 active 嗰刻即刻送一個。
-// 有 token 就帶 Authorization(會員),冇就係訪客——deviceId 一定帶,俾
-// backend 分辨「同一部機」。
+// 歌」先送,背景冇播就 clearInterval(§1)。App 變 active 嗰刻即刻送一個
+// (P1,唔靠 AppState.currentState/wasActive 比較)。有 token 就帶
+// Authorization(會員),冇就係訪客——deviceId 一定帶,俾 backend 分辨
+// 「同一部機」。token 由 null↔有值轉變(登入/登出)即刻補送一個心跳
+// (P2/P4),唔使等落一次 60 秒 interval 先變返啱嘅身份。
 //
 // deviceId 唔靠 caller 傳入:`getOrCreateDeviceId()`(src/deviceId.js)本身
 // 就係一個 module 級記憶 promise,設計俾任何 caller 隨時攞、自動 converge
@@ -19,6 +22,7 @@ import { postHeartbeat } from '../api';
 import { getOrCreateDeviceId } from '../deviceId';
 
 const HEARTBEAT_INTERVAL_MS = 60 * 1000;
+const ACTIVE_SEND_DEDUP_MS = 100; // 防同一個「變 active」短時間內連環觸發送兩次(P1)
 
 export default function usePresenceHeartbeat({ token, isPlaying }) {
   const tokenRef = useRef(token);
@@ -26,6 +30,7 @@ export default function usePresenceHeartbeat({ token, isPlaying }) {
   const isPlayingRef = useRef(isPlaying);
   isPlayingRef.current = isPlaying;
   const intervalRef = useRef(null);
+  const lastActiveSendRef = useRef(0);
 
   const sendHeartbeat = useRef(async () => {
     try {
@@ -61,15 +66,30 @@ export default function usePresenceHeartbeat({ token, isPlaying }) {
       else clearIntervalIfAny();
     };
 
+    // P1(Opus 5 驗收 3d FAIL 已修):唔再靠 AppState.currentState 同
+    // wasActive 比較——RN 喺呢個 listener 跑之前已經自己更新咗
+    // currentState(module init 個內部 listener 一定排喺 app code 後來
+    // addEventListener 之前),令 `nextState === 'active' && !wasActive`
+    // 結構上永遠 false(見 ADMIN-PRESENCE-OPUS-20260905.md §3d 根因、負控
+    // F5 實測)。改為直接信 handler 收到嗰個 nextState 本身;guard 唔係
+    // 防「已經 active」,淨係防 100ms 內連環觸發送兩次。
     const sub = AppState.addEventListener('change', (nextState) => {
-      const wasActive = AppState.currentState === 'active';
-      if (nextState === 'active' && !wasActive) sendHeartbeat(); // 變 active 即刻送一個
+      if (nextState === 'active') {
+        const now = Date.now();
+        if (now - lastActiveSendRef.current >= ACTIVE_SEND_DEDUP_MS) {
+          lastActiveSendRef.current = now;
+          sendHeartbeat(); // 變 active 即刻送一個
+        }
+      }
       evaluate();
     });
 
     // mount 嗰刻(通常就係 active)都要即刻評估一次 + 送第一個心跳。
     evaluate();
-    if (AppState.currentState === 'active') sendHeartbeat();
+    if (AppState.currentState === 'active') {
+      lastActiveSendRef.current = Date.now();
+      sendHeartbeat();
+    }
 
     return () => {
       sub.remove();
@@ -90,4 +110,18 @@ export default function usePresenceHeartbeat({ token, isPlaying }) {
       intervalRef.current = null;
     }
   }, [isPlaying, sendHeartbeat]);
+
+  // P2/P4(Opus 5 驗收 2b′ FAIL 已修):token 由 null → 有值(登入,可能係
+  // 冷開機 AsyncStorage 讀值遲過呢個 hook mount)或由有值 → null(登出),
+  // 都即刻補送一個心跳,唔等落一次 60 秒 interval 先變返啱嘅 member/guest
+  // 身份。sendHeartbeat() 內部本身有 isActive/isBgPlaying guard,呢度唔使
+  // 再判斷一次前後台狀態。prevTokenRef 初值同 token 一樣,所以 mount 嗰次
+  // 唔會誤觸發多送一個(mount 個心跳已經由上面 effect1 負責)。
+  const prevTokenRef = useRef(token);
+  useEffect(() => {
+    const prevToken = prevTokenRef.current;
+    prevTokenRef.current = token;
+    if (prevToken === token) return;
+    sendHeartbeat();
+  }, [token, sendHeartbeat]);
 }
