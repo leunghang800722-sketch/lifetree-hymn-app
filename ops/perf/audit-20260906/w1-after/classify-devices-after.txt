@@ -1,0 +1,74 @@
+class	platform	deviceIdShort	rows	daysSeen	firstSeen	lastSeen	reason
+real	ios	e1b6dc8a	258	4	2026-09-02	2026-09-05	R1:出現喺 app-version.json 嘅 hlsDeviceIds(獨立來源確認,HLS-EXEC-D123-GATE-20260901 §3)
+unknown	ios	(none)	2583	13	2026-08-23	2026-09-05	R0:row 冇 deviceId(2026-08-31 之前嘅歷史行,呢個欄仲未加入白名單),唔可以歸機
+sim	ios	df3e6a93	84	1	2026-09-02	2026-09-02	R2(b-ii):單一曆日 + 完全冇生命週期 beacon(perfMarks/perfHome/perfNav/perfRenders),淨播放 event 連環爆
+unverified	android	b3bba247	73	1	2026-09-05	2026-09-05	R3:Android 且唔喺 hlsDeviceIds——冇任何獨立來源確認係真機定係持久化 AVD,唔可以當真用戶 baseline(1E §1 第 3 點)
+sim	ios	99c1defd	45	1	2026-09-02	2026-09-02	R2(b-i):單一曆日 + perfMarks 同日 11 次(≥2)——似同一日開咗多過一次 app
+unverified	android	46f35588	45	1	2026-09-05	2026-09-05	R3:Android 且唔喺 hlsDeviceIds——冇任何獨立來源確認係真機定係持久化 AVD,唔可以當真用戶 baseline(1E §1 第 3 點)
+sim	ios	d6b0638e	39	1	2026-09-05	2026-09-05	R2(b-i):單一曆日 + perfMarks 同日 7 次(≥2)——似同一日開咗多過一次 app
+unverified	android	d03463c3	33	3	2026-09-02	2026-09-05	R3:Android 且唔喺 hlsDeviceIds——冇任何獨立來源確認係真機定係持久化 AVD,唔可以當真用戶 baseline(1E §1 第 3 點)
+sim	ios	b0b3ad1a	24	1	2026-09-02	2026-09-02	R2(b-i):單一曆日 + perfMarks 同日 7 次(≥2)——似同一日開咗多過一次 app
+unknown	ios	f4595847	23	1	2026-09-05	2026-09-05	R4:iOS 但唔中 R1/R2(跨 1 個曆日,maxPerfMarksSameDay=1,hasLifecycle=true)
+sim	ios	f39fba94	17	1	2026-09-05	2026-09-05	R2(b-i):單一曆日 + perfMarks 同日 4 次(≥2)——似同一日開咗多過一次 app
+sim	ios	7e9407a6	16	1	2026-09-02	2026-09-02	R2(b-i):單一曆日 + perfMarks 同日 4 次(≥2)——似同一日開咗多過一次 app
+sim	ios	0ae6ff0c	15	1	2026-09-03	2026-09-03	R2(b-i):單一曆日 + perfMarks 同日 2 次(≥2)——似同一日開咗多過一次 app
+sim	ios	7d12eaf9	14	1	2026-09-02	2026-09-02	R2(b-i):單一曆日 + perfMarks 同日 4 次(≥2)——似同一日開咗多過一次 app
+sim	ios	90412aa2	7	1	2026-09-02	2026-09-02	R2(b-i):單一曆日 + perfMarks 同日 2 次(≥2)——似同一日開咗多過一次 app
+sim	ios	3b543f6f	7	1	2026-09-02	2026-09-02	R2(b-i):單一曆日 + perfMarks 同日 2 次(≥2)——似同一日開咗多過一次 app
+sim	ios	7bc91261	7	1	2026-09-02	2026-09-02	R2(b-i):單一曆日 + perfMarks 同日 2 次(≥2)——似同一日開咗多過一次 app
+sim	ios	34b5fefd	7	1	2026-09-02	2026-09-02	R2(b-i):單一曆日 + perfMarks 同日 2 次(≥2)——似同一日開咗多過一次 app
+sim	ios	c04f1517	7	1	2026-09-02	2026-09-02	R2(b-i):單一曆日 + perfMarks 同日 2 次(≥2)——似同一日開咗多過一次 app
+sim	ios	72da7f54	7	1	2026-09-02	2026-09-02	R2(b-i):單一曆日 + perfMarks 同日 2 次(≥2)——似同一日開咗多過一次 app
+sim	ios	c54771e5	7	1	2026-09-02	2026-09-02	R2(b-i):單一曆日 + perfMarks 同日 2 次(≥2)——似同一日開咗多過一次 app
+sim	ios	3e1c933d	7	1	2026-09-02	2026-09-02	R2(b-i):單一曆日 + perfMarks 同日 2 次(≥2)——似同一日開咗多過一次 app
+sim	ios	86de0b4c	7	1	2026-09-02	2026-09-02	R2(b-i):單一曆日 + perfMarks 同日 2 次(≥2)——似同一日開咗多過一次 app
+unknown	ios	c78f8898	5	1	2026-09-02	2026-09-02	R4:iOS 但唔中 R1/R2(跨 1 個曆日,maxPerfMarksSameDay=1,hasLifecycle=true)
+unknown	ios	e0105847	5	1	2026-09-02	2026-09-02	R4:iOS 但唔中 R1/R2(跨 1 個曆日,maxPerfMarksSameDay=1,hasLifecycle=true)
+unknown	ios	89b425ee	5	1	2026-09-02	2026-09-02	R4:iOS 但唔中 R1/R2(跨 1 個曆日,maxPerfMarksSameDay=1,hasLifecycle=true)
+unknown	ios	40899da7	5	1	2026-09-02	2026-09-02	R4:iOS 但唔中 R1/R2(跨 1 個曆日,maxPerfMarksSameDay=1,hasLifecycle=true)
+unknown	ios	33ee87c7	5	1	2026-09-02	2026-09-02	R4:iOS 但唔中 R1/R2(跨 1 個曆日,maxPerfMarksSameDay=1,hasLifecycle=true)
+unknown	ios	5958fcb8	5	1	2026-09-02	2026-09-02	R4:iOS 但唔中 R1/R2(跨 1 個曆日,maxPerfMarksSameDay=1,hasLifecycle=true)
+unknown	ios	1eee4936	5	1	2026-09-02	2026-09-02	R4:iOS 但唔中 R1/R2(跨 1 個曆日,maxPerfMarksSameDay=1,hasLifecycle=true)
+unknown	ios	5d1730cf	5	1	2026-09-02	2026-09-02	R4:iOS 但唔中 R1/R2(跨 1 個曆日,maxPerfMarksSameDay=1,hasLifecycle=true)
+unknown	ios	5cfa2e17	5	1	2026-09-02	2026-09-02	R4:iOS 但唔中 R1/R2(跨 1 個曆日,maxPerfMarksSameDay=1,hasLifecycle=true)
+unknown	ios	f889fa9f	5	1	2026-09-02	2026-09-02	R4:iOS 但唔中 R1/R2(跨 1 個曆日,maxPerfMarksSameDay=1,hasLifecycle=true)
+unknown	ios	3ce0de8e	5	1	2026-09-02	2026-09-02	R4:iOS 但唔中 R1/R2(跨 1 個曆日,maxPerfMarksSameDay=1,hasLifecycle=true)
+unverified	android	1953debe	5	1	2026-09-05	2026-09-05	R3:Android 且唔喺 hlsDeviceIds——冇任何獨立來源確認係真機定係持久化 AVD,唔可以當真用戶 baseline(1E §1 第 3 點)
+unknown	ios	b200a809	4	1	2026-09-02	2026-09-02	R4:iOS 但唔中 R1/R2(跨 1 個曆日,maxPerfMarksSameDay=1,hasLifecycle=true)
+unknown	ios	183e5b6b	4	1	2026-09-02	2026-09-02	R4:iOS 但唔中 R1/R2(跨 1 個曆日,maxPerfMarksSameDay=1,hasLifecycle=true)
+unknown	ios	dc331133	4	1	2026-09-05	2026-09-05	R4:iOS 但唔中 R1/R2(跨 1 個曆日,maxPerfMarksSameDay=1,hasLifecycle=true)
+unverified	android	c13ad407	4	1	2026-09-05	2026-09-05	R3:Android 且唔喺 hlsDeviceIds——冇任何獨立來源確認係真機定係持久化 AVD,唔可以當真用戶 baseline(1E §1 第 3 點)
+unknown	ios	9ad3615e	4	1	2026-09-05	2026-09-05	R4:iOS 但唔中 R1/R2(跨 1 個曆日,maxPerfMarksSameDay=1,hasLifecycle=true)
+unknown	ios	d7f159e7	3	1	2026-09-02	2026-09-02	R4:iOS 但唔中 R1/R2(跨 1 個曆日,maxPerfMarksSameDay=1,hasLifecycle=true)
+unknown	ios	5847d473	3	1	2026-09-02	2026-09-02	R4:iOS 但唔中 R1/R2(跨 1 個曆日,maxPerfMarksSameDay=1,hasLifecycle=true)
+unknown	ios	53fe2924	3	1	2026-09-02	2026-09-02	R4:iOS 但唔中 R1/R2(跨 1 個曆日,maxPerfMarksSameDay=1,hasLifecycle=true)
+unknown	ios	1e695608	3	1	2026-09-02	2026-09-02	R4:iOS 但唔中 R1/R2(跨 1 個曆日,maxPerfMarksSameDay=1,hasLifecycle=true)
+unknown	ios	8afac8bc	3	1	2026-09-02	2026-09-02	R4:iOS 但唔中 R1/R2(跨 1 個曆日,maxPerfMarksSameDay=1,hasLifecycle=true)
+unknown	ios	ded0a28c	3	1	2026-09-02	2026-09-02	R4:iOS 但唔中 R1/R2(跨 1 個曆日,maxPerfMarksSameDay=1,hasLifecycle=true)
+unknown	ios	69bb3c12	3	1	2026-09-02	2026-09-02	R4:iOS 但唔中 R1/R2(跨 1 個曆日,maxPerfMarksSameDay=1,hasLifecycle=true)
+unknown	ios	d87aeb88	3	1	2026-09-02	2026-09-02	R4:iOS 但唔中 R1/R2(跨 1 個曆日,maxPerfMarksSameDay=1,hasLifecycle=true)
+unknown	ios	9fdf2b66	3	1	2026-09-02	2026-09-02	R4:iOS 但唔中 R1/R2(跨 1 個曆日,maxPerfMarksSameDay=1,hasLifecycle=true)
+unknown	ios	3dfe2a6d	3	1	2026-09-02	2026-09-02	R4:iOS 但唔中 R1/R2(跨 1 個曆日,maxPerfMarksSameDay=1,hasLifecycle=true)
+unknown	ios	4e331190	3	1	2026-09-02	2026-09-02	R4:iOS 但唔中 R1/R2(跨 1 個曆日,maxPerfMarksSameDay=1,hasLifecycle=true)
+unknown	ios	8dcf598a	3	1	2026-09-02	2026-09-02	R4:iOS 但唔中 R1/R2(跨 1 個曆日,maxPerfMarksSameDay=1,hasLifecycle=true)
+unknown	ios	f40da0be	3	1	2026-09-05	2026-09-05	R4:iOS 但唔中 R1/R2(跨 1 個曆日,maxPerfMarksSameDay=1,hasLifecycle=true)
+unknown	ios	58654088	3	1	2026-09-05	2026-09-05	R4:iOS 但唔中 R1/R2(跨 1 個曆日,maxPerfMarksSameDay=1,hasLifecycle=true)
+unknown	ios	5a33079e	3	1	2026-09-05	2026-09-05	R4:iOS 但唔中 R1/R2(跨 1 個曆日,maxPerfMarksSameDay=1,hasLifecycle=true)
+unverified	android	7a4994a9	3	1	2026-09-05	2026-09-05	R3:Android 且唔喺 hlsDeviceIds——冇任何獨立來源確認係真機定係持久化 AVD,唔可以當真用戶 baseline(1E §1 第 3 點)
+unverified	android	2ec16bdc	3	1	2026-09-05	2026-09-05	R3:Android 且唔喺 hlsDeviceIds——冇任何獨立來源確認係真機定係持久化 AVD,唔可以當真用戶 baseline(1E §1 第 3 點)
+unverified	android	eef3ca06	3	1	2026-09-05	2026-09-05	R3:Android 且唔喺 hlsDeviceIds——冇任何獨立來源確認係真機定係持久化 AVD,唔可以當真用戶 baseline(1E §1 第 3 點)
+unverified	android	9a18bcbd	3	1	2026-09-05	2026-09-05	R3:Android 且唔喺 hlsDeviceIds——冇任何獨立來源確認係真機定係持久化 AVD,唔可以當真用戶 baseline(1E §1 第 3 點)
+unverified	android	88cfc779	3	1	2026-09-05	2026-09-05	R3:Android 且唔喺 hlsDeviceIds——冇任何獨立來源確認係真機定係持久化 AVD,唔可以當真用戶 baseline(1E §1 第 3 點)
+unverified	android	2f23b8e1	3	1	2026-09-05	2026-09-05	R3:Android 且唔喺 hlsDeviceIds——冇任何獨立來源確認係真機定係持久化 AVD,唔可以當真用戶 baseline(1E §1 第 3 點)
+unverified	android	1d3b5b99	3	1	2026-09-05	2026-09-05	R3:Android 且唔喺 hlsDeviceIds——冇任何獨立來源確認係真機定係持久化 AVD,唔可以當真用戶 baseline(1E §1 第 3 點)
+unknown	ios	1cc1e329	3	1	2026-09-05	2026-09-05	R4:iOS 但唔中 R1/R2(跨 1 個曆日,maxPerfMarksSameDay=1,hasLifecycle=true)
+unknown	ios	1a600ece	2	1	2026-09-02	2026-09-02	R4:iOS 但唔中 R1/R2(跨 1 個曆日,maxPerfMarksSameDay=1,hasLifecycle=true)
+unknown	ios	bbacddb5	2	1	2026-09-02	2026-09-02	R4:iOS 但唔中 R1/R2(跨 1 個曆日,maxPerfMarksSameDay=1,hasLifecycle=true)
+unknown	ios	10ec4987	2	1	2026-09-02	2026-09-02	R4:iOS 但唔中 R1/R2(跨 1 個曆日,maxPerfMarksSameDay=1,hasLifecycle=true)
+sim	ios	smokedev	1	1	2026-09-05	2026-09-05	R2(b-ii):單一曆日 + 完全冇生命週期 beacon(perfMarks/perfHome/perfNav/perfRenders),淨播放 event 連環爆
+
+--- summary (platform:class -> deviceId 數) ---
+android:unverified	12
+ios:real	1
+ios:sim	18
+ios:unknown	36

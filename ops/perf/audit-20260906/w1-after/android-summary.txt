@@ -1,0 +1,8 @@
+Android after — deviceId (persistent, no pm clear per exec sheet override) = b3bba247e09ece6f3956ca72de03e558
+OTA: updateGroup=fbc303dc-521e-4236-9b17-b1d1763c0279 (matches android OTA group in ota-groups.log)
+updateId (per manifest, seen in beacons) = 01a072e2-f15a-7d02-8539-28e0530d9949
+S1 run1 sessionId=ca829d148b2b8ad4 (launch 19:10:12Z)
+S1 run2 sessionId=47b4ff3ead4ee1e2 (launch 19:10:51Z)
+S1 run3 (+S3 15-tap +S5 shuffle/tapNext x2) sessionId=6eff6b381d54b5d1 (launch 19:11:26Z)
+pm revoke POST_NOTIFICATIONS experiment sessionId=65965bd2a6af1bd2 (launch 19:17:17Z, Allow tapped 19:19:44Z, ~147s dialog block)
+wallClockDrift captured: driftMs=145981 bgMs=125 appState=active trackState=none

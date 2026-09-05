@@ -1,0 +1,6 @@
+S1 iOS after — 3 runs
+run1 deviceId=9ad3615e447f66c7ecdce527a340d10c host_launch_ts=1788634426.260646000 sessionId=9634b5290474f8b9
+run2 deviceId=1cc1e329fb169e9ac5346bf507dfeee0 host_launch_ts=1788634490.159104000 sessionId=c69e0bfa7c88c03f
+run3 deviceId=f45958477e535d080aaadb6fafea2f4d host_launch_ts=1788634550.859038000 sessionId=2110b0ef63d07ce6
+updateId (all 3 runs) = 71bf91af-0170-48b1-80a9-32d7d013dc66
+appVersion (all 3 runs) = 1.5.1
