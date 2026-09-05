@@ -67,7 +67,6 @@ export const ODE_ICONS = {
     ],
     note: '主掣 76dp 圓 #EFE4D2 底，圖形 #1C1436，26dp',
   },
-  playSmall: { f: ['M8.8 6.1a.9.9 0 0 1 1.36-.77l7.4 5.9a.9.9 0 0 1 0 1.54l-7.4 5.9A.9.9 0 0 1 8.8 17.9Z'], note: '列表行用 18dp' },
 
   // ── Tab bar（22dp）─────────────────────────
   home: {
@@ -118,7 +117,6 @@ export const ODE_ICONS = {
 
   // ── 導航 / 通用（Claude Code 補齊）─────────────
   chevronRight: { s: ['M9.6 5.4 16.2 12 9.6 18.6'], note: '列表右箭頭，14–16dp，#6A6390' },
-  chevronLeft: { s: ['M14.4 5.4 7.8 12 14.4 18.6'] },
   chevronDown: { s: ['M5.4 9.6 12 16.2 18.6 9.6'], note: '播放器收起' },
   chevronUp: { s: ['M5.4 14.4 12 7.8 18.6 14.4'], note: '播放清單展開' },
   back: { s: ['M19.2 12H5.4', 'M11 5.4 4.6 12 11 18.6'] },
@@ -129,18 +127,7 @@ export const ODE_ICONS = {
     s: ['M4.8 7.4h14.4', 'M9.6 7.4V5.6a1.2 1.2 0 0 1 1.2-1.2h2.4a1.2 1.2 0 0 1 1.2 1.2v1.8', 'M6.6 7.4l.9 11.2a1.6 1.6 0 0 0 1.6 1.4h5.8a1.6 1.6 0 0 0 1.6-1.4l.9-11.2', 'M10.4 11v5.6M13.6 11v5.6'],
     note: '刪除清單 / 移除歌曲，用 #E8896D',
   },
-  edit: { s: ['M4.8 19.2h3.2L18.4 8.6a1.9 1.9 0 0 0-2.7-2.7L5.1 16.1Z', 'M14.4 7.2 17.8 10.6'], note: '清單改名' },
-  sort: { s: ['M4.6 7h9M4.6 12h6.6M4.6 17h4', 'M16.8 6.6v10.8M13.8 14.4 16.8 17.4 19.8 14.4'], note: '排序 / 篩選' },
   dragHandle: { s: ['M6.4 9.4h11.2M6.4 14.6h11.2'], note: '播放清單拖動排序（取代舊「=」）' },
-  nowPlaying: {
-    shapes: [
-      { type: 'rect', x: 5.4, y: 10.4, width: 2.8, height: 8, rx: 1.4, fill: true },
-      { type: 'rect', x: 10.6, y: 6, width: 2.8, height: 12.4, rx: 1.4, fill: true },
-      { type: 'rect', x: 15.8, y: 12.6, width: 2.8, height: 5.8, rx: 1.4, fill: true },
-    ],
-    note: '正在播放；三條 bar 以 0.9s ease-in-out 交替縮放，色 #EFE4D2（原本綠色）',
-  },
-  stop: { shapes: [{ type: 'rect', x: 6.6, y: 6.6, width: 10.8, height: 10.8, rx: 2.2, fill: true }], note: '通知欄控制' },
   link: {
     s: ['M10.4 13.6a3.4 3.4 0 0 0 4.8 0l2.6-2.6a3.4 3.4 0 0 0-4.8-4.8l-1 1', 'M13.6 10.4a3.4 3.4 0 0 0-4.8 0l-2.6 2.6a3.4 3.4 0 0 0 4.8 4.8l1-1'],
     note: 'URL 加歌',
@@ -156,8 +143,6 @@ export const ODE_ICONS = {
     note: '清單封面佔位（48–76dp，底 #221B3E）',
   },
   clock: { s: ['M12 7.6V12l3.2 2'], shapes: [{ type: 'circle', cx: 12, cy: 12, r: 8.4 }], note: '最近聽過 / 播放記錄' },
-  bell: { s: ['M12 4.2a5.4 5.4 0 0 0-5.4 5.4c0 3.6-1.4 4.8-1.4 6h13.6c0-1.2-1.4-2.4-1.4-6A5.4 5.4 0 0 0 12 4.2Z', 'M10.2 18.4a2 2 0 0 0 3.6 0'], note: '通知；notification icon 用單色剪影版' },
-  volume: { s: ['M4.6 9.8h2.8l4-3.4v11.2l-4-3.4H4.6Z', 'M15.4 9.4a3.4 3.4 0 0 1 0 5.2', 'M17.8 7.2a6.6 6.6 0 0 1 0 9.6'] },
   musicNote: { s: ['M13.2 16V6.6l4.4-1.2v2.8l-4.4 1.2'], shapes: [{ type: 'circle', cx: 10.4, cy: 16, r: 2.8 }], note: '通用音樂符號（空狀態、預設封面）' },
 
   // ── Claude Code 補齊(ODE-REBRAND-PLAN Q3):45 個定稿 key 對唔晒現用 43 個

@@ -64,10 +64,6 @@ export function now() {
   return Date.now();
 }
 
-export function elapsedSinceT0() {
-  return Date.now() - T0;
-}
-
 function getMark(name) { return marks.has(name) ? marks.get(name) : '-'; }
 function getNote(name) { return notes.has(name) ? notes.get(name) : '-'; }
 function durMark(a, b) {

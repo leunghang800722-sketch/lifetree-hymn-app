@@ -221,7 +221,7 @@ export default function HomeScreen({ hymns = [], loading = false, onPlayHymn, on
   // 2026-07-30 Eric 三場景規格(QUEUE-BEHAVIOR-3-SCENARIOS-PLAN)推翻
   // BUG3(a):瀏覽撳歌 = 單曲 + 30 首類似尾巴(playSingle 條路);想聽成個
   // 分類用「播晒 N 首」掣或者「睇晒」頁。播緊清單時撳呢度依然係插播——
-  // 由 playSingle 自己嘅插播分支處理,唔再需要 browseTap flag。「今日為你
+  // 由 playSingle 自己嘅插播分支處理。「今日為你
   // 預備」/「最近加入」嗰兩行卡一直都係單曲 + 隨機接續,冇改過。
   const play = useCallback((hymn, list, explicit, surface) => {
     if (onPlayHymn && hymn) onPlayHymn(hymn, list ? { playlist: list, explicit: !!explicit, surface } : undefined);

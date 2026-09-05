@@ -77,7 +77,7 @@ function Heart({ hymn }) {
 
 export default function HymnListScreen({ hymns = [], title, onPlayHymn, hasMiniPlayer = false }) {
   const { open: openAddToPlaylist } = useAddToPlaylist();
-  const { isAdmin } = useAuth() || {};
+  const { isAdmin } = useAuth();
   const { open: openAdminEdit } = useAdminEditHymn();
   const handlePlayHymn = (hymn) => {
     if (onPlayHymn) onPlayHymn(hymn);

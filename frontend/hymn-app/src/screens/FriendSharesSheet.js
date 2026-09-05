@@ -11,7 +11,7 @@ import { useAuth } from '../context/AuthContext';
 import { friendsShares } from '../api';
 
 export default function FriendSharesSheet({ friend, onClose, onOpenToken }) {
-  const { getToken } = useAuth() || {};
+  const { getToken } = useAuth();
   const insets = useInsets();
   const [loading, setLoading] = useState(true);
   const [shares, setShares] = useState([]);

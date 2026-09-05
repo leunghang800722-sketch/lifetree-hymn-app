@@ -16,7 +16,7 @@ import { COLORS } from '../theme/designSystem';
 import { useAuth } from '../context/AuthContext';
 
 export default function AvatarButton({ onPress }) {
-  const { user } = useAuth() || {};
+  const { user } = useAuth();
 
   return (
     <TouchableOpacity style={styles.avatarBtn} onPress={onPress} activeOpacity={0.75}>

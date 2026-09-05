@@ -11,7 +11,7 @@ import { useAuth } from '../context/AuthContext';
 import { friendsLookup, friendsRequest, redeemInvite, friendsErrorMessage } from '../api';
 
 export default function AddFriendSheet({ visible, onClose, onRequested, onFriended }) {
-  const { getToken } = useAuth() || {};
+  const { getToken } = useAuth();
   const [mode, setMode] = useState('phone'); // 'phone' | 'code'
   const [phone, setPhone] = useState('+852');
   const [code, setCode] = useState('');

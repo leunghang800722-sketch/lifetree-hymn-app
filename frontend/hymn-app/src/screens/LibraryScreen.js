@@ -265,7 +265,7 @@ export default function LibraryScreen({ hymns = [], onPlayHymn, onOpenAuth }) {
   const { open: openAddToPlaylist } = useAddToPlaylist();
   // admin long-press 入口(MEMBERSHIP-PHASE2-ADMIN-PLAN §3.7)—— member 冇呢個
   // onLongPress prop,UI 層面完全見唔到(API 有 requireAdmin 403 兜底)。
-  const { isAdmin } = useAuth() || {};
+  const { isAdmin } = useAuth();
   const { open: openAdminEdit } = useAdminEditHymn();
 
   // edge-to-edge:唔加 top inset 個大字標題會同狀態列時間疊埋(見 useInsets.js)
@@ -399,7 +399,7 @@ export default function LibraryScreen({ hymns = [], onPlayHymn, onOpenAuth }) {
           // 2026-07-30 Eric 三場景規格(QUEUE-BEHAVIOR-3-SCENARIOS-PLAN)推翻
           // BUG3(a):瀏覽撳歌 = 單曲 + 30 首類似尾巴(playSingle 條路);想聽
           // 成個分類用「播晒 N 首」掣或者「睇晒」頁。播緊清單時撳呢度依然係
-          // 插播——由 playSingle 自己嘅插播分支處理,唔再需要 browseTap flag。
+          // 插播——由 playSingle 自己嘅插播分支處理。
           <TouchableOpacity
             style={styles.row}
             onPress={() => { Keyboard.dismiss(); onPlayHymn && onPlayHymn(item); }}

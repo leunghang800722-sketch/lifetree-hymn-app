@@ -1109,7 +1109,7 @@ function PlayerProvider({ children }) {
         // 用戶自己撳咗過去),播放位置一行過條分隔線,「即將播放」就唔再係
         // 「即將」:線下面嗰首已經係播緊嗰首,插播歌反而喺線上面變咗「播完咗
         // 嘅嘢」,睇落就係鬼影分隔線。行到 boundary(或者更後)就清走。
-        // 純粹清 UI state,唔掂 browseTap/headLen 任何判斷邏輯(§3.4 鐵律)。
+        // 純粹清 UI state,唔掂插播判斷邏輯(§3.4 鐵律)。
         if (insertBoundaryRef.current != null && idx >= insertBoundaryRef.current) {
           insertBoundaryRef.current = null;
           setInsertBoundary(null);
@@ -2626,63 +2626,8 @@ function PlayerProvider({ children }) {
       list = playable;
       startIndex = newStart >= 0 ? newStart : 0;
     }
-    // 插播(Eric 2026-07-28)—— 原意係詩歌庫/搜尋(`opts.browseTap`)撳嘅歌唔算
-    // 「揀咗成個清單」,淨係「掃緊街見到一首想聽」。如果而家已經有第二個真.
-    // 清單播緊(唔係呢首歌本身所屬嗰個 `list`),就淨係插播嗰首,播完接返
-    // 落去嗰個清單嘅下一首,唔好成個清單換走。
-    // 2026-07-30 更新(QUEUE-BEHAVIOR-3-SCENARIOS-PLAN §3.4):Eric 三場景規格
-    // 推翻 BUG3(a) 之後,詩歌庫/即刻揀歌已經 revert 返行 playSingle() 條路
-    // (唔再傳 opts),插播改由 playSingle() 自己嗰個分支處理(§3.3)。而家
-    // **冇任何 caller 再傳 `browseTap`**——呢個分支照 `appendAutoplayTail`
-    // 先例刻意保留做死碼機關,第時有 explicit 入口需要插播行為就用得返,
-    // 唔好順手剷。分支本身邏輯冇改過一行。
-    if (opts.browseTap) {
-      const tapped = list[startIndex];
-      const curQ = queueRef.current || [];
-      const curIdx = currentQueueIndexRef.current || 0;
-      // headLen/explicitHead:同 playSingle() 果句一樣嘅道理——而家播緊嘅清單
-      // 可能已經加咗自動接續尾巴(PlaylistDetailSheet,autoRadioFrom != null),
-      // 「係咪同一個清單」呢個判斷淨係應該睇明確嗰截,唔可以連隨機尾巴嗰
-      // 30 首都攞嚟比對,唔係撳中尾巴任何一首都會誤判做「同一清單」而唔插播
-      // (P1,Opus 驗收揪出)。
-      const headLen = autoRadioFromRef.current != null ? autoRadioFromRef.current : curQ.length;
-      const explicitHead = curQ.slice(0, headLen);
-      const isDifferentExplicitQueue = headLen > 1
-        && tapped && !explicitHead.some((s) => String(s.id) === String(tapped.id));
-      const resumeRemainder = isDifferentExplicitQueue
-        ? explicitHead.slice(curIdx + 1).filter((s) => String(s.id) !== String(tapped.id))
-        : [];
-      if (resumeRemainder.length > 0) {
-        list = [tapped, ...resumeRemainder];
-        startIndex = 0;
-        // §3.3:插播恆企 index 0——再插第二首時呢個分支會用而家隊列重新砌
-        // [新插播歌, ...explicitHead 餘下],上一首插播歌(嗰陣 curIdx=0,
-        // slice(curIdx+1) 由 1 開始)自然唔會帶落新隊列,唔使動態 boundary。
-        opts = { ...opts, insertBoundary: 1 };
-      }
-    }
-    // BUG3(b) P0(Eric 實測,已於 2026-07-29 推翻)—— 呢個分支曾經俾
-    // PlaylistDetailSheet 傳 opts.appendAutoplayTail 觸發,令自訂清單播晒之後
-    // (自動播放開住)接一條隨機尾巴,唔係就死死哋停、「⏭ 冇嘢跳」變死掣。
-    // 2026-07-29 Eric 明確要求推翻:「如果我按清單就唔好加其他野」——而家已經
-    // 冇任何 caller 傳呢個 flag(PlaylistDetailSheet.js 刪咗),分支自然唔會行,
-    // 自訂清單播晒就停,最尾一首 ⏭ 冇反應係預期行為,唔算 regression
-    // (QUEUE-UX-4FIXES-PLAN §1/§7-1)。**刻意保留**呢段分支同判斷邏輯:
-    // 唔係第時邊個 caller 想要「播完接隨機尾巴」呢個機關仲喺度,冇 caller
-    // 傳就係死碼、唔會意外觸發。
     let finalList = list;
     let autoRadioFrom = opts.autoRadioFrom ?? null;
-    if (opts.appendAutoplayTail && autoplayEnabledRef.current) {
-      const seed = list[startIndex] || list[0];
-      const libr = (hymnsRef.current && hymnsRef.current.length) ? hymnsRef.current : list;
-      const tail = buildAutoplayTail(autoplayFlavorRef.current, seed, libr, {
-        playLog: getPlayLog(), recentIds: getRecentIds(),
-      }).filter((t) => !list.some((s) => String(s.id) === String(t.id))); // 唔好同個清單本身撞歌
-      if (tail.length) {
-        finalList = [...list, ...tail];
-        autoRadioFrom = list.length;
-      }
-    }
     setAutoRadioFrom(autoRadioFrom);
     // §3.2:同 autoRadioFrom 並排統一 set/clear——正常換 queue(opts 冇傳
     // insertBoundary)就自動歸零,唔使逐個 caller 執,避免漏清變鬼影分隔線。
@@ -3219,7 +3164,7 @@ function FullScreenPlayerOverlay() {
   // 2026-07-30 Eric 實測:大分類(例如兒童 476 首)撳歌之後開「播放清單」,
   // 個 list 由頭(index 0)開始 render,而家播緊嗰首坐喺隊列中間某個 index,
   // 用戶淨係見到一堆完全睇唔出邊首正播緊嘅歌,以為個queue俾成個分類換晒
-  // (其實 queueItemActive 高亮同 §3.4 嘅 browseTap 插播邏輯本身冇壞,單純
+  // (其實 queueItemActive 高亮同 §3.4 嘅插播邏輯本身冇壞,單純
   // 冇 scroll 過去)。呢度補返「開全屏 sheet 就自動 scroll 去而家播緊嗰行」。
   const queueListRef = useRef(null);
   // ⚠️ 2026-07-30 實測教訓:第一版冇 getItemLayout,scrollToIndex 喺 476 首
@@ -4254,12 +4199,7 @@ function AppContent() {
     if (opts.explicit && opts.playlist?.length) {
       const list = opts.playlist;
       const idx = Math.max(0, list.findIndex(s => s.id === h.id));
-      // BUG3(b)(2026-07-29 推翻,見 playQueue() 註解)—— opts.appendAutoplayTail
-      // 而家冇任何 caller 傳(PlaylistDetailSheet.js 刪咗),pass-through 刻意留低
-      // 做死碼機關,唔會意外觸發。
-      // browseTap:true(詩歌庫/搜尋)—— 插播判斷邏輯喺 playQueue() 入面做
-      // (嗰度先有 queueRef 呢啲 player 內部 ref,呢個 component 冇)。
-      playQueue(list, idx, { appendAutoplayTail: !!opts.appendAutoplayTail, browseTap: !!opts.browseTap, surface: opts.surface });
+      playQueue(list, idx, { surface: opts.surface });
     } else {
       // 隨機接續一律由**全庫**抽,唔用 opts.playlist 做 pool ——「今日為你預備」
       // 之類得 6 首,攞嚟做 pool 就得 5 首尾巴,太短。全庫抽先夠似 Spotify。

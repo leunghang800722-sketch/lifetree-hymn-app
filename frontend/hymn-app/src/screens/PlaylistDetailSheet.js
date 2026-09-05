@@ -44,7 +44,7 @@ const MINI_PLAYER_H = 64;
 export default function PlaylistDetailSheet({ playlistId, onClose, onPlayHymn, onOpenAuth, miniPlayer, hasMiniPlayer = false }) {
   const { playlists = [], removeFromPlaylist, deletePlaylist } = usePlaylists() || {};
   const { openRename } = useAddToPlaylist();
-  const { user, getToken } = useAuth() || {};
+  const { user, getToken } = useAuth();
   const insets = useInsets();
   const [sharing, setSharing] = useState(false);
 
@@ -138,11 +138,11 @@ export default function PlaylistDetailSheet({ playlistId, onClose, onPlayHymn, o
 
   // 播歌後要閂埋自己:播放器 overlay 係主 view hierarchy 嘅嘢(zIndex 999),
   // 畫喺 native Modal **後面**—— Modal 唔閂,用戶會以為撳咗冇反應(emulator 實測)。
-  // BUG3(b) P0(Eric 實測,已於 2026-07-29 推翻)——之前呢度加咗
-  // `appendAutoplayTail: true`,令 explicit 隊列播晒之後自動播放開住會接一條
+  // BUG3(b) P0(Eric 實測,已於 2026-07-29 推翻)——之前呢度加咗自動播放尾巴
+  // pass-through,令 explicit 隊列播晒之後自動播放開住會接一條
   // 隨機尾巴。2026-07-29 Eric 明確要求推翻:「如果我按清單就唔好加其他野」——
   // 自訂清單播晒就停,最尾一首 ⏭ 冇反應係預期行為(QUEUE-UX-4FIXES-PLAN §1/§7-1),
-  // 唔算 regression,唔好又加返呢個 flag。
+  // 唔算 regression,唔好又加返呢個機關。
   const play = (hymn) => {
     onPlayHymn && onPlayHymn(hymn, { explicit: true, playlist: songs });
     onClose && onClose();

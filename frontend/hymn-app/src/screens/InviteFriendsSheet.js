@@ -18,7 +18,7 @@ function shareText(code) {
 }
 
 export default function InviteFriendsSheet({ visible, onClose }) {
-  const { getToken } = useAuth() || {};
+  const { getToken } = useAuth();
   const insets = useInsets();
   const [loading, setLoading] = useState(true);
   const [invites, setInvites] = useState([]);

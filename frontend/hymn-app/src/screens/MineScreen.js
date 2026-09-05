@@ -47,7 +47,7 @@ export default function MineScreen({ onPlayHymn, onOpenAuth, onOpenAdminAdd, min
   const __renderT0 = now(); // D-1(PERF-STAGE2-2B-20260902) — render function 頭
   const { favorites = [], toggleFavorite } = useFavorites() || {};
   const { playlists = [], deletePlaylist } = usePlaylists() || {};
-  const { user, isAdmin, getToken } = useAuth() || {};
+  const { user, isAdmin, getToken } = useAuth();
   const { open: openAddToPlaylist, openCreate, openRename } = useAddToPlaylist();
   const [tab, setTab] = useState('favorites'); // favorites | playlists | delisted
   const [detailId, setDetailId] = useState(null); // 開緊邊個清單嘅詳情頁
