@@ -136,10 +136,3 @@ export function getPresenceSnapshot(resolveMemberName, t = nowMs()) {
   };
 }
 
-// harness/測試專用:清空、量 size,唔喺 route 用到。
-export function _resetForTest() {
-  store.clear();
-}
-export function _sizeForTest() {
-  return store.size;
-}

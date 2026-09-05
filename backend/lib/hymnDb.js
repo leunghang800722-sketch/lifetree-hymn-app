@@ -38,19 +38,6 @@ export function query(db, sql, params = []) {
   return rows;
 }
 
-// Titles that are compilations / full albums rather than a single song.
-// These are real entries in the DB (e.g. "THE WAY (全碟)", and id 800
-// "Sunset Listen Through - Hymn Of Heaven" is a 54MB ~1.5h file). They stream
-// badly (googlevideo throttles very long files toward playback rate) and they
-// aren't what someone means by "a hymn", so they're excluded from the library.
-export const COMPILATION_PATTERNS = [
-  '%全碟%', '%全專輯%', '%專輯%', '%合輯%', '%詩歌集%',
-  '%Top 100%', '%Top100%', '%Best of%', '%Best Of%', '%Ultimate%',
-  '%Playlist%', '%playlist%', '%Album%', '%Listen Through%',
-  '%Non Stop%', '%Nonstop%', '%Medley%', '%Compilation%',
-  '%小時%', '%Hours%', '%hour %',
-];
-
 export function isCompilation(title = '') {
   const t = title.toLowerCase();
   const hit = [
