@@ -20,6 +20,7 @@ import PlaylistDetailSheet from './PlaylistDetailSheet';
 import SharedPlaylistSheet from './SharedPlaylistSheet';
 import AddFriendSheet from './AddFriendSheet';
 import FriendSharesSheet from './FriendSharesSheet';
+import AdminPresenceSheet from './AdminPresenceSheet';
 import { getDisplayTitle } from '../utils/displayTitle';
 import { adminListDelistedHymns, friendsList, friendsAccept, friendsDelete, friendsErrorMessage } from '../api';
 import { useCachedHymns } from '../hooks/useCachedHymns';
@@ -50,6 +51,10 @@ export default function MineScreen({ onPlayHymn, onOpenAuth, onOpenAdminAdd, min
   const { open: openAddToPlaylist, openCreate, openRename } = useAddToPlaylist();
   const [tab, setTab] = useState('favorites'); // favorites | playlists | delisted
   const [detailId, setDetailId] = useState(null); // 開緊邊個清單嘅詳情頁
+
+  // 在線(ADMIN-PRESENCE-EXEC-20260905 §3)—— action chip,撳落開獨立 sheet,
+  // 唔佔用 tab(同「URL加歌」一樣做法)。
+  const [presenceVisible, setPresenceVisible] = useState(false);
 
   // 已下架 tab(MYPAGE-ADMIN-CHIPS-PLAN §4.3)—— 淨係 admin 先會撳到嗰粒
   // chip,簡單 useState 夠用,唔使成個 context。
@@ -251,6 +256,7 @@ export default function MineScreen({ onPlayHymn, onOpenAuth, onOpenAdminAdd, min
           ...(isAdmin ? [
             { k: 'admin-add', label: 'URL加歌', icon: 'link', kind: 'action', onPress: () => onOpenAdminAdd && onOpenAdminAdd() },
             { k: 'delisted', label: '已下架', icon: 'visibilityOff', kind: 'tab' },
+            { k: 'presence', label: '在線', icon: 'friends', kind: 'action', onPress: () => setPresenceVisible(true) },
           ] : []),
         ].map((s) => {
           const active = s.kind === 'tab' && tab === s.k;
@@ -488,6 +494,9 @@ export default function MineScreen({ onPlayHymn, onOpenAuth, onOpenAdminAdd, min
         onOpenToken={(token) => { setSharesFor(null); setFriendToken(token); }} />
       <SharedPlaylistSheet token={friendToken} onClose={() => setFriendToken(null)} onPlayHymn={onPlayHymn}
         miniPlayer={miniPlayer} hasMiniPlayer={hasMiniPlayer} />
+
+      {/* 在線(ADMIN-PRESENCE-EXEC-20260905 §3)—— admin 專屬 */}
+      <AdminPresenceSheet visible={presenceVisible} onClose={() => setPresenceVisible(false)} getToken={getToken} />
 
       {/* 發好友請求成功嘅輕量提示(§3.2)—— 非阻擋,1.8s 後自己收埋 */}
       {toast ? (
