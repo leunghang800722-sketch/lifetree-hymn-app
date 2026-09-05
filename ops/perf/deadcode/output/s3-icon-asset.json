@@ -1,0 +1,93 @@
+{
+  "scanner": "S3-icon-asset",
+  "iconCount": 53,
+  "iconZeroRef": [
+    {
+      "name": "playSmall",
+      "hitCount": 0,
+      "hits": [],
+      "classification": "ZERO_REFERENCE"
+    },
+    {
+      "name": "addedToList",
+      "hitCount": 0,
+      "hits": [],
+      "classification": "ZERO_REFERENCE"
+    },
+    {
+      "name": "chevronLeft",
+      "hitCount": 0,
+      "hits": [],
+      "classification": "ZERO_REFERENCE"
+    },
+    {
+      "name": "edit",
+      "hitCount": 0,
+      "hits": [],
+      "classification": "ZERO_REFERENCE"
+    },
+    {
+      "name": "sort",
+      "hitCount": 0,
+      "hits": [],
+      "classification": "ZERO_REFERENCE"
+    },
+    {
+      "name": "nowPlaying",
+      "hitCount": 0,
+      "hits": [],
+      "classification": "ZERO_REFERENCE"
+    },
+    {
+      "name": "stop",
+      "hitCount": 0,
+      "hits": [],
+      "classification": "ZERO_REFERENCE"
+    },
+    {
+      "name": "bell",
+      "hitCount": 0,
+      "hits": [],
+      "classification": "ZERO_REFERENCE"
+    },
+    {
+      "name": "volume",
+      "hitCount": 0,
+      "hits": [],
+      "classification": "ZERO_REFERENCE"
+    }
+  ],
+  "assetCount": 12,
+  "assetZeroRef": [
+    {
+      "file": "assets/favicon.png",
+      "inAppJson": false,
+      "directHitCount": 0,
+      "classification": "ZERO_REFERENCE"
+    },
+    {
+      "file": "assets/splash-icon.png",
+      "inAppJson": false,
+      "directHitCount": 0,
+      "classification": "ZERO_REFERENCE"
+    }
+  ],
+  "assetDensityConvention": [
+    {
+      "file": "assets/logo-ring@2x.png",
+      "inAppJson": false,
+      "directHitCount": 0,
+      "classification": "USED_VIA_DENSITY_CONVENTION"
+    },
+    {
+      "file": "assets/logo-ring@3x.png",
+      "inAppJson": false,
+      "directHitCount": 0,
+      "classification": "USED_VIA_DENSITY_CONVENTION"
+    }
+  ],
+  "positiveControl": {
+    "close": "USED",
+    "pass": true
+  }
+}

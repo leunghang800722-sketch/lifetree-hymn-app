@@ -1,0 +1,104 @@
+{
+  "scanner": "S2-unused-exports",
+  "totalExportsScanned": 114,
+  "zeroReferenceCount": 1,
+  "internalOnlyCount": 10,
+  "usedCount": 103,
+  "zeroReference": [
+    {
+      "file": "frontend/hymn-app/src/perfMarks.js",
+      "name": "elapsedSinceT0",
+      "classification": "ZERO_REFERENCE",
+      "externalHitCount": 0,
+      "sameFileHitCount": 1,
+      "commentOnlyHitCount": 0
+    }
+  ],
+  "internalOnly": [
+    {
+      "file": "frontend/hymn-app/src/deviceId.js",
+      "name": "generateDeviceId",
+      "classification": "INTERNAL_ONLY",
+      "externalHitCount": 0,
+      "sameFileHitCount": 2,
+      "commentOnlyHitCount": 1
+    },
+    {
+      "file": "frontend/hymn-app/src/deviceId.js",
+      "name": "DEVICE_ID_KEY",
+      "classification": "INTERNAL_ONLY",
+      "externalHitCount": 0,
+      "sameFileHitCount": 3,
+      "commentOnlyHitCount": 0
+    },
+    {
+      "file": "frontend/hymn-app/src/perfMarks.js",
+      "name": "installFetchCounter",
+      "classification": "INTERNAL_ONLY",
+      "externalHitCount": 0,
+      "sameFileHitCount": 2,
+      "commentOnlyHitCount": 0
+    },
+    {
+      "file": "frontend/hymn-app/src/perfMarks.js",
+      "name": "schedulePerfMarksBeacon",
+      "classification": "INTERNAL_ONLY",
+      "externalHitCount": 0,
+      "sameFileHitCount": 3,
+      "commentOnlyHitCount": 0
+    },
+    {
+      "file": "frontend/hymn-app/src/perfMarks.js",
+      "name": "schedulePerfHomeBeacon",
+      "classification": "INTERNAL_ONLY",
+      "externalHitCount": 0,
+      "sameFileHitCount": 2,
+      "commentOnlyHitCount": 0
+    },
+    {
+      "file": "frontend/hymn-app/src/perfMarks.js",
+      "name": "scheduleRenderBeacons",
+      "classification": "INTERNAL_ONLY",
+      "externalHitCount": 0,
+      "sameFileHitCount": 3,
+      "commentOnlyHitCount": 0
+    },
+    {
+      "file": "frontend/hymn-app/src/perfMarks.js",
+      "name": "PERF_MARKS_ENABLED",
+      "classification": "INTERNAL_ONLY",
+      "externalHitCount": 0,
+      "sameFileHitCount": 2,
+      "commentOnlyHitCount": 0
+    },
+    {
+      "file": "frontend/hymn-app/src/utils/autoplay.js",
+      "name": "RADIO_LEN",
+      "classification": "INTERNAL_ONLY",
+      "externalHitCount": 0,
+      "sameFileHitCount": 6,
+      "commentOnlyHitCount": 1
+    },
+    {
+      "file": "frontend/hymn-app/src/utils/autoplay.js",
+      "name": "MAX_AUTOPLAY_TRACK_SECONDS",
+      "classification": "INTERNAL_ONLY",
+      "externalHitCount": 0,
+      "sameFileHitCount": 2,
+      "commentOnlyHitCount": 0
+    },
+    {
+      "file": "frontend/hymn-app/src/utils/homeChips.js",
+      "name": "CHIP_DEFS",
+      "classification": "INTERNAL_ONLY",
+      "externalHitCount": 0,
+      "sameFileHitCount": 3,
+      "commentOnlyHitCount": 0
+    }
+  ],
+  "positiveControl": {
+    "elapsedSinceT0": "ZERO_REFERENCE",
+    "useAuth": "USED",
+    "pass": true
+  }
+}

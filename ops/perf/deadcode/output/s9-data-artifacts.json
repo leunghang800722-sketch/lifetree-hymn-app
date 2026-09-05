@@ -1,0 +1,114 @@
+{
+  "scanner": "S9-data-artifacts",
+  "note": "呢類只列唔刪（執行單 §1.1 S9 明文：Fable 決定），本掃描器唔輸出「建議刪」判斷",
+  "f5": {
+    "file": "backend/data/hymns.db",
+    "bytes": 0,
+    "mtime": "2026-09-01T13:05:04.702Z",
+    "referencedBy": [],
+    "confirmedZeroBytesZeroRef": true
+  },
+  "publicFiles": [
+    {
+      "file": "backend/public/app-version.json",
+      "referencedByCount": 5,
+      "referencedBy": [
+        "backend/server.js",
+        "frontend/hymn-app/src/deviceId.js",
+        "frontend/hymn-app/App.js",
+        "ops/deploy/apk-publish.sh",
+        "ops/perf/classify-devices.mjs"
+      ]
+    },
+    {
+      "file": "backend/public/app.apk",
+      "referencedByCount": 5,
+      "referencedBy": [
+        "backend/routes/share.js",
+        "backend/server.js",
+        "frontend/hymn-app/src/screens/InviteFriendsSheet.js",
+        "ops/deploy/apk-publish.sh",
+        "ops/perf/deadcode/output/s5-backend-route.json"
+      ]
+    },
+    {
+      "file": "backend/public/app.apk.bak-1.5.0-20260808-070853",
+      "referencedByCount": 0,
+      "referencedBy": []
+    },
+    {
+      "file": "backend/public/app.apk.bak-1.5.1-20260824-045442",
+      "referencedByCount": 0,
+      "referencedBy": []
+    },
+    {
+      "file": "backend/public/app.apk.bak-v1.1.0-20260808",
+      "referencedByCount": 0,
+      "referencedBy": []
+    },
+    {
+      "file": "backend/public/hymn-app-v1.3.0-week2.apk",
+      "referencedByCount": 1,
+      "referencedBy": [
+        "backend/server.js"
+      ]
+    },
+    {
+      "file": "backend/public/hymn-app-v212.apk",
+      "referencedByCount": 0,
+      "referencedBy": []
+    },
+    {
+      "file": "backend/public/hymn-app-v213.apk",
+      "referencedByCount": 0,
+      "referencedBy": []
+    },
+    {
+      "file": "backend/public/hymn-app-v214.apk",
+      "referencedByCount": 0,
+      "referencedBy": []
+    },
+    {
+      "file": "backend/public/hymn-app-v215.apk",
+      "referencedByCount": 0,
+      "referencedBy": []
+    },
+    {
+      "file": "backend/public/hymn-app-v231.apk",
+      "referencedByCount": 0,
+      "referencedBy": []
+    }
+  ],
+  "perfBaselineDirs": [
+    {
+      "dir": "ops/perf/audit-20260906",
+      "fileCount": 73,
+      "sizeBytes": 32989509
+    },
+    {
+      "dir": "ops/perf/baseline-20260902",
+      "fileCount": 69,
+      "sizeBytes": 7920826
+    },
+    {
+      "dir": "ops/perf/deadcode",
+      "fileCount": 27,
+      "sizeBytes": 307527
+    },
+    {
+      "dir": "ops/perf/harness",
+      "fileCount": 18,
+      "sizeBytes": 74047
+    },
+    {
+      "dir": "ops/perf/stage2-20260902",
+      "fileCount": 171,
+      "sizeBytes": 13426500
+    },
+    {
+      "dir": "ops/perf/stage3-20260902",
+      "fileCount": 2,
+      "sizeBytes": 653
+    }
+  ]
+}

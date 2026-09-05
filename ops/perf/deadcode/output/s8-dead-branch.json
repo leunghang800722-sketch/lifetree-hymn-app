@@ -1,0 +1,74 @@
+{
+  "scanner": "S8-dead-branch",
+  "findings": [
+    {
+      "id": "APP-003a-opts.browseTap",
+      "branchDefinitionLines": [
+        "/Users/macbookpro/.openclaw/workspace/hymn-app/frontend/hymn-app/App.js:2639:    if (opts.browseTap) {"
+      ],
+      "onPlayHymnPropAssignments": [
+        "/Users/macbookpro/.openclaw/workspace/hymn-app/frontend/hymn-app/App.js:4338:            onCategoryChange={setActiveCategory} onPlayHymn={handlePlayHymn} onOpenAuth={openAuth}",
+        "/Users/macbookpro/.openclaw/workspace/hymn-app/frontend/hymn-app/App.js:4344:            <LibraryScreen hymns={allSongs || []} onPlayHymn={handlePlayHymn} onOpenAuth={openAuth} />",
+        "/Users/macbookpro/.openclaw/workspace/hymn-app/frontend/hymn-app/App.js:4348:          <MineScreen onPlayHymn={handlePlayHymn} onOpenAuth={openAuth} onOpenAdminAdd={openAdminAdd}",
+        "/Users/macbookpro/.openclaw/workspace/hymn-app/frontend/hymn-app/App.js:4371:          onPlayHymn={handlePlayHymn} miniPlayer={miniPlayerNode} hasMiniPlayer={hasMiniPlayer} />"
+      ],
+      "onPlayHymnCallSites": [
+        "/Users/macbookpro/.openclaw/workspace/hymn-app/frontend/hymn-app/src/screens/MineScreen.js:289:                onPress={() => onPlayHymn && onPlayHymn(favorites[0], { explicit: true, playlist: favorites })}",
+        "/Users/macbookpro/.openclaw/workspace/hymn-app/frontend/hymn-app/src/screens/MineScreen.js:300:            <TouchableOpacity style={styles.row} onPress={() => onPlayHymn && onPlayHymn(item, { explicit: true, playlist: favorites })} activeOpacity={0.7}>",
+        "/Users/macbookpro/.openclaw/workspace/hymn-app/frontend/hymn-app/src/screens/SharedPlaylistSheet.js:75:    onPlayHymn && onPlayHymn(hymn, { explicit: true, playlist: songs });",
+        "/Users/macbookpro/.openclaw/workspace/hymn-app/frontend/hymn-app/src/screens/LibraryScreen.js:405:            onPress={() => { Keyboard.dismiss(); onPlayHymn && onPlayHymn(item); }}",
+        "/Users/macbookpro/.openclaw/workspace/hymn-app/frontend/hymn-app/src/screens/PlaylistDetailSheet.js:147:    onPlayHymn && onPlayHymn(hymn, { explicit: true, playlist: songs });",
+        "/Users/macbookpro/.openclaw/workspace/hymn-app/frontend/hymn-app/src/screens/HymnListScreen.js:83:    if (onPlayHymn) onPlayHymn(hymn);",
+        "/Users/macbookpro/.openclaw/workspace/hymn-app/frontend/hymn-app/src/components/home/HomeScreen.js:227:    if (onPlayHymn && hymn) onPlayHymn(hymn, list ? { playlist: list, explicit: !!explicit, surface } : undefined);",
+        "/Users/macbookpro/.openclaw/workspace/hymn-app/frontend/hymn-app/src/components/home/HomeScreen.js:356:                    onPress={() => onPlayHymn && onPlayHymn(h)}>"
+      ],
+      "anyCallerPassesBrowseTap": false,
+      "conclusion": "確認：全部 8 個 onPlayHymn(...) call site（含 HymnListScreen 本身唔經 handlePlayHymn 嘅獨立 inline closure）都冇一個傳 browseTap，分支恆假"
+    },
+    {
+      "id": "APP-003b-opts.appendAutoplayTail",
+      "branchDefinitionLines": [
+        "/Users/macbookpro/.openclaw/workspace/hymn-app/frontend/hymn-app/App.js:2675:    if (opts.appendAutoplayTail && autoplayEnabledRef.current) {"
+      ],
+      "onPlayHymnCallSites": [
+        "/Users/macbookpro/.openclaw/workspace/hymn-app/frontend/hymn-app/src/screens/MineScreen.js:289:                onPress={() => onPlayHymn && onPlayHymn(favorites[0], { explicit: true, playlist: favorites })}",
+        "/Users/macbookpro/.openclaw/workspace/hymn-app/frontend/hymn-app/src/screens/MineScreen.js:300:            <TouchableOpacity style={styles.row} onPress={() => onPlayHymn && onPlayHymn(item, { explicit: true, playlist: favorites })} activeOpacity={0.7}>",
+        "/Users/macbookpro/.openclaw/workspace/hymn-app/frontend/hymn-app/src/screens/SharedPlaylistSheet.js:75:    onPlayHymn && onPlayHymn(hymn, { explicit: true, playlist: songs });",
+        "/Users/macbookpro/.openclaw/workspace/hymn-app/frontend/hymn-app/src/screens/LibraryScreen.js:405:            onPress={() => { Keyboard.dismiss(); onPlayHymn && onPlayHymn(item); }}",
+        "/Users/macbookpro/.openclaw/workspace/hymn-app/frontend/hymn-app/src/screens/PlaylistDetailSheet.js:147:    onPlayHymn && onPlayHymn(hymn, { explicit: true, playlist: songs });",
+        "/Users/macbookpro/.openclaw/workspace/hymn-app/frontend/hymn-app/src/screens/HymnListScreen.js:83:    if (onPlayHymn) onPlayHymn(hymn);",
+        "/Users/macbookpro/.openclaw/workspace/hymn-app/frontend/hymn-app/src/components/home/HomeScreen.js:227:    if (onPlayHymn && hymn) onPlayHymn(hymn, list ? { playlist: list, explicit: !!explicit, surface } : undefined);",
+        "/Users/macbookpro/.openclaw/workspace/hymn-app/frontend/hymn-app/src/components/home/HomeScreen.js:356:                    onPress={() => onPlayHymn && onPlayHymn(h)}>"
+      ],
+      "anyCallerPasses": false,
+      "gitHistoryOnPlaylistDetailSheet": [
+        "e4162c8 fix(queue): 自訂清單播放唔再加自動播放尾巴(推翻 BUG3(b))",
+        "796e3ea fix(app): 3 個 P0 播放 bug + 登入頁品牌/清單 sheet 鍵盤罅"
+      ],
+      "conclusion": "確認：全部 call site 都冇傳 appendAutoplayTail，分支恆假；PlaylistDetailSheet.js git 歷史顯示曾經傳過(見 gitHistoryOnPlaylistDetailSheet)"
+    },
+    {
+      "id": "AVATAR-001-useAuth-fallback",
+      "fallbackSites": [
+        "/Users/macbookpro/.openclaw/workspace/hymn-app/frontend/hymn-app/src/screens/InviteFriendsSheet.js:21:  const { getToken } = useAuth() || {};",
+        "/Users/macbookpro/.openclaw/workspace/hymn-app/frontend/hymn-app/src/screens/FriendSharesSheet.js:14:  const { getToken } = useAuth() || {};",
+        "/Users/macbookpro/.openclaw/workspace/hymn-app/frontend/hymn-app/src/screens/MineScreen.js:50:  const { user, isAdmin, getToken } = useAuth() || {};",
+        "/Users/macbookpro/.openclaw/workspace/hymn-app/frontend/hymn-app/src/screens/AddFriendSheet.js:14:  const { getToken } = useAuth() || {};",
+        "/Users/macbookpro/.openclaw/workspace/hymn-app/frontend/hymn-app/src/screens/LibraryScreen.js:268:  const { isAdmin } = useAuth() || {};",
+        "/Users/macbookpro/.openclaw/workspace/hymn-app/frontend/hymn-app/src/screens/PlaylistDetailSheet.js:47:  const { user, getToken } = useAuth() || {};",
+        "/Users/macbookpro/.openclaw/workspace/hymn-app/frontend/hymn-app/src/screens/HymnListScreen.js:80:  const { isAdmin } = useAuth() || {};",
+        "/Users/macbookpro/.openclaw/workspace/hymn-app/frontend/hymn-app/src/components/AvatarButton.js:19:  const { user } = useAuth() || {};"
+      ],
+      "useAuthDefinitionSnippet": "export function useAuth() {\n  const ctx = useContext(AuthContext);\n  if (!ctx) throw new Error('useAuth must be used within AuthProvider');\n  return ctx;\n}\n",
+      "useAuthThrowsWhenNoProvider": true,
+      "conclusion": "確認：useAuth() 冇 ctx 會 throw（見 useAuthDefinitionSnippet），唔會返 falsy，所以 8 個 \"|| {}\" fallback 全部永不觸發（唯一保護作用係 lint/TS-like 心理安全感，運行時死碼）"
+    }
+  ],
+  "positiveControl": {
+    "note": "每個候選嘅 caller 數要 > 0（起碼搵到 caller 先可以講「有 caller 但條件永遠 false」；如果連 caller 都搵唔到，regex 本身可能有 bug，要人手覆核）",
+    "browseTapCallerCount": 8,
+    "appendAutoplayTailCallerCount": 8,
+    "avatarFallbackSiteCount": 8,
+    "pass": true
+  }
+}

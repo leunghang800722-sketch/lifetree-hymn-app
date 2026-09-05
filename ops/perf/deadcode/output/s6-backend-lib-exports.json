@@ -1,0 +1,198 @@
+{
+  "scanner": "S6-backend-lib-exports",
+  "totalExportsScanned": 155,
+  "zeroReferenceCount": 3,
+  "internalOnlyCount": 33,
+  "zeroReference": [
+    {
+      "file": "backend/lib/hymnDb.js",
+      "name": "COMPILATION_PATTERNS",
+      "classification": "ZERO_REFERENCE"
+    },
+    {
+      "file": "backend/lib/presence.js",
+      "name": "_resetForTest",
+      "classification": "ZERO_REFERENCE"
+    },
+    {
+      "file": "backend/lib/presence.js",
+      "name": "_sizeForTest",
+      "classification": "ZERO_REFERENCE"
+    }
+  ],
+  "internalOnly": [
+    {
+      "file": "backend/lib/clientLogStore.js",
+      "name": "CLIENT_LOG_DIR",
+      "classification": "INTERNAL_ONLY"
+    },
+    {
+      "file": "backend/lib/clientLogStore.js",
+      "name": "MAX_FILE_BYTES",
+      "classification": "INTERNAL_ONLY"
+    },
+    {
+      "file": "backend/lib/hymnDb.js",
+      "name": "versionPriorityTier",
+      "classification": "INTERNAL_ONLY"
+    },
+    {
+      "file": "backend/lib/hymnDb.js",
+      "name": "INSTRUMENTAL_TUTORIAL_PATTERNS_ZH",
+      "classification": "INTERNAL_ONLY"
+    },
+    {
+      "file": "backend/lib/hymnDb.js",
+      "name": "INSTRUMENTAL_TUTORIAL_PATTERNS_EN",
+      "classification": "INTERNAL_ONLY"
+    },
+    {
+      "file": "backend/lib/hymnDb.js",
+      "name": "NON_SONG_FORMAT_PATTERNS_ZH",
+      "classification": "INTERNAL_ONLY"
+    },
+    {
+      "file": "backend/lib/hymnDb.js",
+      "name": "NON_SONG_FORMAT_PATTERNS_EN",
+      "classification": "INTERNAL_ONLY"
+    },
+    {
+      "file": "backend/lib/hymnDb.js",
+      "name": "INSTRUMENTAL_LINE_EXTRA_ZH",
+      "classification": "INTERNAL_ONLY"
+    },
+    {
+      "file": "backend/lib/hymnDb.js",
+      "name": "INSTRUMENTAL_LINE_EXTRA_EN",
+      "classification": "INTERNAL_ONLY"
+    },
+    {
+      "file": "backend/lib/hymnDb.js",
+      "name": "LIVE_VERSION_PATTERNS_ZH",
+      "classification": "INTERNAL_ONLY"
+    },
+    {
+      "file": "backend/lib/hymnDb.js",
+      "name": "LIVE_VERSION_PATTERNS_EN",
+      "classification": "INTERNAL_ONLY"
+    },
+    {
+      "file": "backend/lib/hymnDb.js",
+      "name": "ALT_VERSION_PATTERNS_ZH",
+      "classification": "INTERNAL_ONLY"
+    },
+    {
+      "file": "backend/lib/hymnDb.js",
+      "name": "ALT_VERSION_PATTERNS_EN",
+      "classification": "INTERNAL_ONLY"
+    },
+    {
+      "file": "backend/lib/hymnDb.js",
+      "name": "SONG_DURATION_MAX",
+      "classification": "INTERNAL_ONLY"
+    },
+    {
+      "file": "backend/lib/instrumentalSilence.js",
+      "name": "HALLUCINATED_SILENCE_VOCAB",
+      "classification": "INTERNAL_ONLY"
+    },
+    {
+      "file": "backend/lib/instrumentalSilence.js",
+      "name": "HALLUCINATED_SILENCE_RE",
+      "classification": "INTERNAL_ONLY"
+    },
+    {
+      "file": "backend/lib/instrumentalSilence.js",
+      "name": "isHallucinatedSilence",
+      "classification": "INTERNAL_ONLY"
+    },
+    {
+      "file": "backend/lib/instrumentalSilence.js",
+      "name": "isCreditsLine",
+      "classification": "INTERNAL_ONLY"
+    },
+    {
+      "file": "backend/lib/instrumentalSilence.js",
+      "name": "isBracketSoundTag",
+      "classification": "INTERNAL_ONLY"
+    },
+    {
+      "file": "backend/lib/lyricsLangCheck.js",
+      "name": "BILINGUAL_MIN_RATIO",
+      "classification": "INTERNAL_ONLY"
+    },
+    {
+      "file": "backend/lib/lyricsLangCheck.js",
+      "name": "ENGLISH_ONLY_RATIO",
+      "classification": "INTERNAL_ONLY"
+    },
+    {
+      "file": "backend/lib/ocrMerge.js",
+      "name": "countEpisodes",
+      "classification": "INTERNAL_ONLY"
+    },
+    {
+      "file": "backend/lib/ocrMerge.js",
+      "name": "maxRun",
+      "classification": "INTERNAL_ONLY"
+    },
+    {
+      "file": "backend/lib/ocrMerge.js",
+      "name": "BLOCK_SIM_THRESHOLD",
+      "classification": "INTERNAL_ONLY"
+    },
+    {
+      "file": "backend/lib/paddleAdapter.js",
+      "name": "isPinyinLine",
+      "classification": "INTERNAL_ONLY"
+    },
+    {
+      "file": "backend/lib/paddleAdapter.js",
+      "name": "PADDLE_MIN_SCORE",
+      "classification": "INTERNAL_ONLY"
+    },
+    {
+      "file": "backend/lib/presence.js",
+      "name": "STALE_MS",
+      "classification": "INTERNAL_ONLY"
+    },
+    {
+      "file": "backend/lib/reconcileCore.js",
+      "name": "getOfficialCount",
+      "classification": "INTERNAL_ONLY"
+    },
+    {
+      "file": "backend/lib/reconcileCore.js",
+      "name": "enumerateChannel",
+      "classification": "INTERNAL_ONLY"
+    },
+    {
+      "file": "backend/lib/reconcileCore.js",
+      "name": "ENUM_DEPTH",
+      "classification": "INTERNAL_ONLY"
+    },
+    {
+      "file": "backend/lib/textSimilarity.js",
+      "name": "wordOverlap",
+      "classification": "INTERNAL_ONLY"
+    },
+    {
+      "file": "backend/lib/warmLog.js",
+      "name": "mergeWarmLog",
+      "classification": "INTERNAL_ONLY"
+    },
+    {
+      "file": "backend/lib/warmLog.js",
+      "name": "pickWarmCandidates",
+      "classification": "INTERNAL_ONLY"
+    }
+  ],
+  "positiveControl": {
+    "requireAuthDefault": {
+      "file": "backend/lib/requireAuth.js",
+      "name": "requireAuth",
+      "classification": "USED"
+    },
+    "pass": true
+  }
+}
