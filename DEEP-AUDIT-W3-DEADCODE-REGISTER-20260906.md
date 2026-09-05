@@ -199,3 +199,29 @@ PERF-FINAL-REPORT-20260902.md（09-02 已刪 29 檔 6,101 行——本冊唔重�
 - S6 嘅 30 個「export-but-internal」identifier 冇逐個查 git blame 睇「係咪本身打算俾 test 用」——時間所限，只列咗建議「P3 收窄」而冇再深挖每一個嘅原始設計意圖。
 - S9 冇量 `ops/perf/audit-20260906`（31.5MB）/`baseline-20260902`（7.6MB）/`stage2-20260902`（12.8MB）呢類歷史 baseline 目錄嘅個別檔案級死碼——執行單話呢類「只列唔刪」，本冊淨係喺 §0 掃描器輸出記低目錄大細，冇再細分。
 - 冇跑 `deprecatedRouteHits` 嘅「7 日觀察窗」（今日先 09-06，門檻要 09-13）——呢個唔係「做唔到」，係執行單本身要求等。
+
+---
+
+## 5. Fable 5.1 批示（2026-09-06 04:00 HKT）
+
+| 類 | 決定 | 理由 |
+|---|---|---|
+| S8 死分支 APP-003a/b、`useAuth() \|\| {}` ×8 | **刪** | 8 個 call site 逐個核過冇傳 flag；`useAuth` 冇 ctx 必 throw |
+| S2 `elapsedSinceT0` | **刪** | 建立起零引用 |
+| S2/S6 「export 但只內部用」共 36 個 | **唔郁** | 唔係死碼，收窄 export 冇效能/可讀性收益，純 churn |
+| S3 icon ×8（唔含 `addedToList`） | **刪** | `5b12ce8` 一次過建套 icon，8 個由第一日未駁線 |
+| S3 `favicon.png`/`splash-icon.png` | **刪** | app.json 零引用（已獨立 grep 核實）、平台只有 ios/android |
+| S6 `presence.js _resetForTest/_sizeForTest` | **刪** | 09-05 新鮮死碼，harness 從未接 |
+| S6 `hymnDb.js COMPILATION_PATTERNS` | **刪** | 已被 `isCompilation()` 內嵌清單取代（07-26 特登拎走 `%專輯%` 誤殺），舊常數留低反而誤導 |
+| S5 410 stub 23 條 | **等 09-13** | `deprecatedRouteHits` 7 日窗；`/api/search` 嗰 1 次落喺 02 時桶要下輪再睇 |
+| S5 `admin/invites` 2 條 | **留** | ops-only 端點 |
+| S9 F5 `backend/data/hymns.db`（0 bytes） | **刪**（要人手：sandbox 擋住 rm） | 1D 已判安全 |
+| S9 APK 備份 ×7 | **刪 6 個、留 1 個**（要人手：sandbox 擋住 rm） | 留 `app.apk.bak-1.5.1-20260824-045442`（最近一次 publish 前嘅 app.apk，做 rollback 用）；其餘 6 個（v212–v215 七月側載版、1.5.0/v1.1.0 .bak）冇引用、冇 rollback 價值，同 09-02 Eric「舊備份刪」決定同類；全部 untracked，只慳碟 ~558MB |
+| S7 258「零入口」 | **唔郁** | 人手 CLI 設計如此 |
+
+第二段範圍 = 上表「刪」項（唔含要人手嗰兩行）。
+
+人手清理命令（Eric / Dispatch 喺 Terminal 行）：
+```bash
+rm -f backend/data/hymns.db backend/public/app.apk.bak-1.5.0-20260808-070853 backend/public/app.apk.bak-v1.1.0-20260808 backend/public/hymn-app-v212.apk backend/public/hymn-app-v213.apk backend/public/hymn-app-v214.apk backend/public/hymn-app-v215.apk
+```
