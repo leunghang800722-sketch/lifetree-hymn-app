@@ -17,12 +17,12 @@ import authRoutes from './routes/auth.js';
 import otpAuthRoutes from './routes/otpAuth.js';
 import meRoutes from './routes/me.js';
 import streamRoutes from './routes/stream.js';
-import hlsRoutes from './routes/hls.js';
+import hlsRoutes, { getPlaylistCacheSize } from './routes/hls.js';
 import adminRoutes from './routes/admin.js';
 import shareRoutes from './routes/share.js';
 import friendsRoutes from './routes/friends.js';
 import invitesRoutes from './routes/invites.js';
-import clientLogRoutes from './routes/clientLog.js';
+import clientLogRoutes, { getClientLogRateMapSize } from './routes/clientLog.js';
 import presenceRoutes from './routes/presence.js';
 import { resolveAudioUrl, refreshAudioUrl, preVerifyUrl, cache, failCache, anyStreaming, isStreaming, getBufferCacheStats } from './lib/resolveAudio.js';
 import { YTDLP } from './lib/ytdlpBin.js';
@@ -677,10 +677,17 @@ app.listen(PORT, async () => {
   // W1(STARTUP-ROOTFIX-EXEC-BC-20260831):順手加返 bufferCache 格數/字節數 +
   // process RSS 落 sampler——40 格/256MB 呢兩個數擴大咗之後,要有得直接喺
   // ops-metrics.json 睇到實際食緊幾多,唔使每次都手動 ps。
+  // DEEP-AUDIT-W1-EXEC-20260906 B4(c)—— 加返三個冇人跟嘅 sibling gauge:
+  // failCache.size(resolveAudio.js,冇 eviction/上限,見 1D RESOLVE-P2b)、
+  // playlistCache.size(hls.js,同上見 1D HLS-1)、client-log 節流 Map size
+  // (B3 新加嘅節流本身)。純觀測,唔改任何一個 Map 嘅行為/上限。
   enableOpsMetrics({ sampler: () => ({
     cacheSize: cache.size,
     bufferCacheStats: getBufferCacheStats(),
     rssKb: process.memoryUsage().rss / 1024,
+    failCacheSize: failCache.size,
+    playlistCacheSize: getPlaylistCacheSize(),
+    clientLogRateMapSize: getClientLogRateMapSize(),
   }) });
   
   // Background pre-cache — deliberately NARROW.

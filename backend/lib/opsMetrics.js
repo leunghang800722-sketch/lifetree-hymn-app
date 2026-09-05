@@ -64,8 +64,23 @@ function blankBucket() {
       okMsSum: 0, okMsMax: 0,
       winner: {},    // strategy name -> 幾多次係佢贏
       attempts: {},  // strategy name -> { tries, ok, fail, msSum, msMax }
+      // DEEP-AUDIT-W1-EXEC-20260906 B4(b)(C9 根源:resolve 失敗路徑 76 秒
+      // vs client 死線 10-20 秒)—— 淨係加記帳,唔改 resolve 邏輯/策略/次序。
+      failMs: {
+        count: 0, sum: 0, max: 0,
+        buckets: { lt10s: 0, '10to30s': 0, '30to60s': 0, '60to120s': 0, ge120s: 0 },
+      },
     },
     cacheSize: { last: null, min: null, max: null },
+    // DEEP-AUDIT-W1-EXEC-20260906 B4(c)—— cache.size 已經有 cacheSize 呢個
+    // gauge(上面),呢度加返冇人跟嘅三個 sibling gauge:resolveAudio.js
+    // failCache.size、routes/hls.js playlistCache.size、routes/clientLog.js
+    // 節流 Map size。純 snapshot(每次 sampler tick 覆寫 last),唔係計數器。
+    gauges: { failCacheSize: null, playlistCacheSize: null, clientLogRateMapSize: null },
+    // DEEP-AUDIT-W1-EXEC-20260906 B4(a)(1D DEAD-2)—— 410 化嗰陣冇跟手加
+    // 持久計數,淨係靠 `[deprecated-route]` console.log(冇寫入任何存活過
+    // 重啟嘅地方,`/tmp` 會俾 macOS 開機清)。route path -> 幾多次命中。
+    deprecatedRouteHits: {},
   };
 }
 
@@ -202,6 +217,16 @@ export function recordResolveAttempt(strategy, ok, ms) {
   } catch (_) {}
 }
 
+// DEEP-AUDIT-W1-EXEC-20260906 B4(b)—— C9(resolve 失敗路徑 76 秒 vs client
+// 死線 10-20 秒)嘅直方圖分桶。純記帳用,唔影響任何 resolve 決策。
+function failMsBucket(ms) {
+  if (ms < 10000) return 'lt10s';
+  if (ms < 30000) return '10to30s';
+  if (ms < 60000) return '30to60s';
+  if (ms < 120000) return '60to120s';
+  return 'ge120s';
+}
+
 // ── D-4:一次完整 resolve 嘅結局(邊招贏 / 全死)──────────────────
 // rescued = 唔係第一招(default)贏 = 後備招真係救到呢一次。
 export function recordResolveOutcome(strategy, ms, firstStrategy) {
@@ -216,7 +241,23 @@ export function recordResolveOutcome(strategy, ms, firstStrategy) {
         if (firstStrategy && strategy !== firstStrategy) b.resolve.rescued++;
       } else {
         b.resolve.fail++;
+        // B4(b) —— failMs 直方圖:只喺失敗路徑記,唔動任何策略/次序。
+        b.resolve.failMs.count++;
+        b.resolve.failMs.sum += ms;
+        if (ms > b.resolve.failMs.max) b.resolve.failMs.max = ms;
+        b.resolve.failMs.buckets[failMsBucket(ms)]++;
       }
+    }
+    scheduleFlush();
+  } catch (_) {}
+}
+
+// DEEP-AUDIT-W1-EXEC-20260906 B4(a)(1D DEAD-2)—— 410 stub route 命中持久
+// 計數,補返 `[deprecated-route]` console.log 冇存活過重啟嘅缺口。
+export function recordDeprecatedRouteHit(route) {
+  try {
+    for (const b of buckets()) {
+      b.deprecatedRouteHits[route] = (b.deprecatedRouteHits[route] || 0) + 1;
     }
     scheduleFlush();
   } catch (_) {}
@@ -276,7 +317,20 @@ export function enablePersistence(opts = {}) {
         // `/api/audio/cache/warm-stats` endpoint。而家 `total` 同每個
         // `hourly[k]` 都經 `normalizeBucket()`(淺層 `{...blankBucket(), ...b}`)
         // 補齊缺欄,日後再加新 top-level bucket 欄都唔會再撞同一種炸。
-        const normalizeBucket = (b) => ({ ...blankBucket(), ...(b || {}) });
+        // DEEP-AUDIT-W1-EXEC-20260906 B4 —— 淺層 spread 補齊咗頂層新欄
+        // (`gauges`/`deprecatedRouteHits`),但 `resolve` 本身已經係舊碟
+        // 有嘅頂層 key,淺層 spread 會攞舊嗰份完整覆蓋,新加嘅
+        // `resolve.failMs` 巢狀缺欄唔會補到(同呢段 comment 講嘅
+        // bufferCache 舊病同一種形狀)。呢度額外對 `resolve` 做多一層淺
+        // merge 補返。
+        const normalizeBucket = (b) => {
+          const merged = { ...blankBucket(), ...(b || {}) };
+          const blankResolve = blankBucket().resolve;
+          merged.resolve = { ...blankResolve, ...(merged.resolve || {}) };
+          merged.resolve.failMs = { ...blankResolve.failMs, ...(merged.resolve.failMs || {}) };
+          merged.resolve.failMs.buckets = { ...blankResolve.failMs.buckets, ...(merged.resolve.failMs.buckets || {}) };
+          return merged;
+        };
         const normalizedHourly = {};
         for (const [hk, hv] of Object.entries(prev.hourly)) normalizedHourly[hk] = normalizeBucket(hv);
         state = { since: prev.since || state.since, total: normalizeBucket(prev.total), hourly: normalizedHourly };
@@ -314,6 +368,21 @@ export function enablePersistence(opts = {}) {
               b.bufferCache.totalBytes = s.bufferCacheStats.totalBytes;
             }
             if (typeof s.rssKb === 'number') b.bufferCache.rssKb = s.rssKb;
+          }
+        }
+        // DEEP-AUDIT-W1-EXEC-20260906 B4(c)—— 三個冇人跟嘅 sibling gauge:
+        // failCache.size(resolveAudio.js)、playlistCache.size(hls.js)、
+        // clientLog 節流 Map size(routes/clientLog.js)。純 snapshot,覆寫
+        // last,唔 sum。
+        if (
+          typeof s.failCacheSize === 'number' ||
+          typeof s.playlistCacheSize === 'number' ||
+          typeof s.clientLogRateMapSize === 'number'
+        ) {
+          for (const b of buckets()) {
+            if (typeof s.failCacheSize === 'number') b.gauges.failCacheSize = s.failCacheSize;
+            if (typeof s.playlistCacheSize === 'number') b.gauges.playlistCacheSize = s.playlistCacheSize;
+            if (typeof s.clientLogRateMapSize === 'number') b.gauges.clientLogRateMapSize = s.clientLogRateMapSize;
           }
         }
       }

@@ -14,11 +14,50 @@
 // 除咗 stdout(即時 tail 用)之外,再多寫一份持久化落 backend/logs/client-log/
 // (lib/clientLogStore.js,同 admin-audit.log 一樣嘅豁免目錄,唔會俾 /tmp
 // 清走影響),有 rotation + size 上限,保證至少 14 日資料唔清。
+//
+// DEEP-AUDIT-W1-EXEC-20260906 B1/B3 —— 根源文件 §C1/1D CLOG-1:呢條 route
+// 之前係全 codebase 唯一一條完全冇 per-IP 節流嘅公開寫入 route。B3 抄
+// routes/invites.js:63-83 嘅 sweep-on-threshold pattern 加返節流。B1 白名單
+// 加 appVersion/updateId/sessionId 三個新欄(src/clientLog.js F1 強制注入)。
 import { Router } from 'express';
 import { appendClientLog } from '../lib/clientLogStore.js';
+import { clientIp } from '../lib/loginRateLimit.js';
 
 function logLine(fields) {
   console.log(`[client-log] ${new Date().toISOString()} ${Object.entries(fields).map(([k, v]) => `${k}=${JSON.stringify(v)}`).join(' ')}`);
+}
+
+// ── per-IP 節流(B3)—— 抄 routes/invites.js 嘅 sweep-on-threshold pattern
+// (窗 60s,Map 上限 5000 同 presence.js 一致)。CLIENT_LOG_RATE_MAX env
+// override,方便驗收唔使等一分鐘。理據(執行單 §1.2 B3):一部機正常峰值
+// perfMarks+perfNav+diag 一分鐘唔過 30 條,同一 NAT 後幾部機都夠。
+const RATE_WINDOW_MS = 60 * 1000;
+const RATE_MAX = Number(process.env.CLIENT_LOG_RATE_MAX || 120);
+const RATE_MAP_CAP = 5000; // 同 presence.js MAX_ENTRIES 一致嘅安全閥
+const hitsByIp = new Map();
+
+function sweepExpiredHits(now) {
+  for (const [ip, rec] of hitsByIp) {
+    if (now - rec.windowStart > RATE_WINDOW_MS) hitsByIp.delete(ip);
+  }
+}
+
+function isRateLimited(ip) {
+  const now = Date.now();
+  if (hitsByIp.size > RATE_MAP_CAP) sweepExpiredHits(now);
+  const rec = hitsByIp.get(ip);
+  if (!rec || now - rec.windowStart > RATE_WINDOW_MS) {
+    hitsByIp.set(ip, { count: 1, windowStart: now });
+    return false;
+  }
+  rec.count++;
+  return rec.count > RATE_MAX;
+}
+
+// B4(c)—— opsMetrics gauge 取用:節流 Map 現時 size(唔係逐 request 計數,
+// 純粹俾 sampler 定期 snapshot)。
+export function getClientLogRateMapSize() {
+  return hitsByIp.size;
 }
 
 export default function clientLogRoutes(app) {
@@ -26,6 +65,11 @@ export default function clientLogRoutes(app) {
 
   router.post('/', (req, res) => {
     try {
+      const ip = clientIp(req);
+      if (isRateLimited(ip)) {
+        res.status(429).end();
+        return;
+      }
       const b = req.body || {};
       // 白名單 + 截斷:呢個 endpoint 冇認證,唔信任何 client 傳嚟嘅字串長度/類型。
       const safe = {
@@ -52,6 +96,13 @@ export default function clientLogRoutes(app) {
         // project-multi-sim-clientlog-contamination)。上限 40:實際生成
         // 32 hex,留少少 headroom。
         deviceId: String(b.deviceId || '').slice(0, 40),
+        // DEEP-AUDIT-W1-EXEC-20260906 B1 —— src/clientLog.js F1 強制注入嘅
+        // 三個新欄:appVersion(app.json 版本號)、updateId(expo-updates,令
+        // OTA 前後可以切數)、sessionId(呢次冷開嘅 32-hex 隨機 id,同一次
+        // 開機嘅 event 歸埋一組)。其餘欄同 slice 上限一個都冇改。
+        appVersion: String(b.appVersion || '').slice(0, 20),
+        updateId: String(b.updateId || '').slice(0, 48),
+        sessionId: String(b.sessionId || '').slice(0, 32),
       };
       logLine(safe);
       appendClientLog(safe); // 持久化底(backend/logs/client-log/),唔會俾 /tmp 清走影響

@@ -204,3 +204,10 @@ export default function hlsRoutes(getDb) {
 // 「唔准 restart backend」)嘅情況下,直接對真實 googlevideo URL 測試新嘅
 // retry 邏輯。
 export { fetchHeadBytes, resolveStructureOnce, resolveStructure, backoffMsFor };
+
+// DEEP-AUDIT-W1-EXEC-20260906 B4(c)—— playlistCache 冇 eviction/size cap
+// (1D HLS-1),之前完全冇得睇實際格數。俾 server.js sampler 讀,寫落
+// opsMetrics gauge,純觀測,唔改呢個 Map 本身任何行為。
+export function getPlaylistCacheSize() {
+  return playlistCache.size;
+}

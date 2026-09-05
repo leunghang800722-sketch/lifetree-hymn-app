@@ -5,6 +5,7 @@ import { Router } from 'express';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { recordDeprecatedRouteHit } from '../lib/opsMetrics.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const BIBLE_VERSES_PATH = path.join(__dirname, '..', 'data', 'bible-verses.json');
@@ -20,8 +21,11 @@ const router = Router();
 // `queryAll`/`queryOne` DB helper 同 `getDb` import(`/daily-verse` 本身直接
 // 讀 bible-verses.json,唔經呢兩個 helper)。唔刪檔、掛載位置/router 結構
 // 原封不動。
+// DEEP-AUDIT-W1-EXEC-20260906 B4(a)(1D DEAD-2)—— console.log 保留(即時
+// tail 用),另加持久計數,補返之前刪檔證據淨靠 stdout(冇存活過重啟)嘅缺口。
 function gone(req, res) {
   console.log(`[deprecated-route] ${new Date().toISOString()} ${req.method} ${req.originalUrl}`);
+  recordDeprecatedRouteHit(req.baseUrl || req.originalUrl);
   res.status(410).json({ error: 'Gone', message: '呢條 route 已停用 —— 前端冇再用緊(PERF-STAGE2-EXEC-20260902 §2A A-4)' });
 }
 

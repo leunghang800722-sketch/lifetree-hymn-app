@@ -9,11 +9,15 @@
 // 依家改做即刻 410 Gone,**唔再執行**呢段 inline DB loader/query 半步——
 // 唔刪檔(留返 Stage 3 先做),掛載位置/router 結構原封不動。
 import { Router } from 'express';
+import { recordDeprecatedRouteHit } from '../lib/opsMetrics.js';
 
 const router = Router();
 
+// DEEP-AUDIT-W1-EXEC-20260906 B4(a)(1D DEAD-2)—— console.log 保留(即時
+// tail 用),另加持久計數,補返之前刪檔證據淨靠 stdout(冇存活過重啟)嘅缺口。
 function gone(req, res) {
   console.log(`[deprecated-route] ${new Date().toISOString()} ${req.method} ${req.originalUrl}`);
+  recordDeprecatedRouteHit(req.baseUrl || req.originalUrl);
   res.status(410).json({ error: 'Gone', message: '呢條 route 已停用 —— 前端冇再用緊(PERF-STAGE2-EXEC-20260902 §2A A-4)' });
 }
 

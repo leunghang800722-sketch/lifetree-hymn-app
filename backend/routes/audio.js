@@ -19,12 +19,15 @@
 // 410(冇 consumer,見上面段落)。
 import { Router } from 'express';
 import { cache, failCache, FAIL_TTL_MS, FAIL_TTL_PLAYBACK_MS } from '../lib/resolveAudio.js';
-import { getOpsMetrics } from '../lib/opsMetrics.js';
+import { getOpsMetrics, recordDeprecatedRouteHit } from '../lib/opsMetrics.js';
 
 const router = Router();
 
+// DEEP-AUDIT-W1-EXEC-20260906 B4(a)(1D DEAD-2)—— console.log 保留(即時
+// tail 用),另加持久計數,補返之前刪檔證據淨靠 stdout(冇存活過重啟)嘅缺口。
 function gone(req, res) {
   console.log(`[deprecated-route] ${new Date().toISOString()} ${req.method} ${req.originalUrl}`);
+  recordDeprecatedRouteHit(req.baseUrl || req.originalUrl);
   res.status(410).json({ error: 'Gone', message: '呢條 route 已停用 —— 前端冇再用緊(PERF-STAGE2-EXEC-20260902 §2A A-4)' });
 }
 
