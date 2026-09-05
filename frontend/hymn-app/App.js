@@ -56,6 +56,7 @@ import { buildAutoplayTail, FLAVORS, poolSize } from './src/utils/autoplay';
 import { getPlayLog, getRecentIds, recordPlay } from './src/playLog';
 import { getAutoplayEnabled, setAutoplayEnabled, getAutoplayFlavor, setAutoplayFlavor } from './src/autoplayPrefs';
 import { useInsets } from './src/hooks/useInsets';
+import usePresenceHeartbeat from './src/hooks/usePresenceHeartbeat'; // ADMIN-PRESENCE-EXEC-20260905
 import { getDisplayTitle } from './src/utils/displayTitle';
 import { mark, useRenderCount, recordNavBeacon } from './src/perfMarks'; // PERF-BASELINE-1B-20260902
 // 播放清單 / 加入到清單 sheet 用 @gorhom/bottom-sheet 嘅 **inline `<BottomSheet>`**(v229)。
@@ -3943,6 +3944,7 @@ function AppContent() {
 
   // ── 會員系統 Phase 1 W2:登入合併 + 跨裝置同步(MEMBERSHIP-PHASE1-LOGIN-SYNC.md §2.3-2.5)──
   const { user, token } = useAuth();
+  usePresenceHeartbeat({ token, isPlaying: debugPlaying }); // ADMIN-PRESENCE-EXEC-20260905 §3 —— 淨係呢一行,唔掂 PlayerProvider
   const { favorites, replaceAllFavorites } = useFavorites() || {};
   const { playlists, replaceAllPlaylists } = usePlaylists() || {};
   // 「最新值」ref pattern:登入/前後台 effect 唔想因為 favorites/playlists 每次
