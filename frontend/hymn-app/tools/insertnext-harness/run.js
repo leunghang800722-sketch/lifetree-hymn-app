@@ -1,12 +1,14 @@
 #!/usr/bin/env node
 // tools/insertnext-harness/run.js — PLAYNEXT-EXEC-20260906 §2 H1
 // + PLAYNEXT-OPUS-20260906 修復驗證(P0-1/P0-2/P1-3/P3-6/P3-7/P3-8)
+// + PLAYNEXT-OPUS2-20260906 第二輪修復驗證(B1 revert P3-6/B2 shuffle 開住
+//   插入/P3-7 nit)
 //
 // 直接 require `../../src/insertNextCore.js`(而家真係俾 App.js 用緊嘅同一份
 // 源碼,冇抄副本)——呢個係純 CommonJS function,零 React/TrackPlayer 依賴,
 // 純 Node 30 秒內跑完,唔使 emulator/simulator。覆蓋執行單 §2 H1 (a)-(g)
-// 七個情境,加埋 Opus 驗收揪出嘅修復場景 (h)-(o)。任何一個 FAIL 就
-// process.exit(1),可以當 gate 用。
+// 七個情境,加埋 Opus 驗收揪出嘅修復場景 (h)-(o),再加埋 Opus2 揪出嘅
+// B1/B2 場景 (m 已改寫/p)。任何一個 FAIL 就 process.exit(1),可以當 gate 用。
 //
 // 點跑: node tools/insertnext-harness/run.js
 
@@ -182,7 +184,9 @@ function ids(list) { return list.map((s) => s.id); }
 // autoRadioFrom 0..len × dupAt ∈ {-1, 0..len-1})用真源碼(唔係 Opus scratch
 // 嗰份獨立原型)驗證四條不變式:零重複 id、newCurIdx 真係指住原本播緊嗰首、
 // 插入嗰首喺 newCurIdx+1、boundary 跟住「原本 cur[b] 嗰個元素」呢條 ground
-// truth(P3-6 override 唔喺呢度驗——嗰條規則專門測落 scenarioM)。
+// truth(B1 嘅 insertBoundary override 唔喺呢度驗——嗰條規則專門測落
+// scenarioM;autoRadioFrom 而家(B1 之後)完全唔會被 override,純粹跟呢度
+// 嘅 adjustBoundary shift,所以唔使額外隔離)。
 // ---------------------------------------------------------------------
 (function scenarioJ() {
   let tested = 0;
@@ -263,23 +267,51 @@ function ids(list) { return list.map((s) => s.id); }
 })();
 
 // ---------------------------------------------------------------------
-// (m) PLAYNEXT-OPUS-20260906 P3-6 —— 播到自動尾巴之後(curIdx>=autoRadioFrom
-// 嘅常態)插入,「自動播放:全部」線要推去插入嗰首之後(insertAt+1),等
-// 用戶親手插嘅歌唔會顯示喺線下面。對照:插入位喺線之前(用戶仲未播到
-// 尾巴)嘅正常情況,線唔應該被呢條 override 影響,行為同 (b) 一致。
+// (m) PLAYNEXT-OPUS2-20260906 B1(revert P3-6)—— 上一輪 P3-6 個修法(播到
+// 自動尾巴之後就推 autoRadioFrom)整死咗電台尾巴:autoRadioFrom 同時係
+// 「headLen」語義(playSingle/rebuildTail/applyAutoplayEnabled 三個
+// caller 都靠佢分辨「用戶真係揀咗幾多首」vs「自動接續尾巴」),推咗條線
+// = 話俾呢啲 caller 知「頭幾首全部係用戶揀」,觸發頻率高(播到尾巴入面
+// 就撞中,係常態唔係邊角)、後果係之後 playSingle() 撳散歌會行「插播」
+// 路(isExplicitQueue=true),得返 [新歌,插入嗰首] 兩首、冇尾巴、播完就
+// 停(Opus2 iOS 實測「播放清單 (2)」)。
+//
+// 而家改用現有「插播」概念:autoRadioFrom 完全唔郁(淨係跟正常
+// adjustBoundary shift),尾巴期間插入改畫 insertBoundary(insertAt+1)。
+// 對照組:插入位喺線之前(用戶仲未播到尾巴)嘅正常情況,唔應該觸發呢條
+// override,行為同 (b) 一致(autoRadioFrom 純粹 +1 shift,insertBoundary
+// 保持 null)。
 // ---------------------------------------------------------------------
 (function scenarioM() {
   // 播到尾巴入面:autoRadioFrom=1(第一首之後全部自動),而家播緊 index 3。
   const cur = [song(10), song(20), song(21), song(22), song(23)];
   const plan = computeInsertNext(cur, 3, song('X'), { autoRadioFrom: 1, insertBoundary: null });
   assertEqual(plan.insertAt, 4, '(m) insertAt = curIdx+1');
-  assertEqual(plan.autoRadioFrom, 5, '(m) autoRadioFrom pushed to insertAt+1 (inserted song counts as user-picked)');
-  assertEqual(plan.newQ[plan.insertAt].id, 'X', '(m) inserted song sits right below the (pushed) line');
-  // 對照組:插入位喺線之前(autoRadioFrom=4,insertAt=1)—— 唔應該觸發 override,
-  // 行為同原本(b)一致(4→5,純粹 +1 shift)。
+  assertEqual(plan.autoRadioFrom, 1, '(m) B1: autoRadioFrom untouched(仍然係 headLen=1,唔會俾插入推大)');
+  assertEqual(plan.insertBoundary, 5, '(m) B1: insertBoundary(插播分隔線)推去 insertAt+1 代替');
+  assertEqual(plan.newQ[plan.insertAt].id, 'X', '(m) inserted song sits right below the insert-boundary line');
+
+  // 對照組:插入位喺線之前(autoRadioFrom=4,insertAt=1)—— 唔應該觸發
+  // override,autoRadioFrom 純粹 +1 shift,insertBoundary 保持 null
+  // (冇尾巴期間插入嘅情境)。
   const curB = [song(0), song(1), song(2), song(3), song(4), song(5)];
   const planB = computeInsertNext(curB, 0, song('Y'), { autoRadioFrom: 4, insertBoundary: null });
   assertEqual(planB.autoRadioFrom, 5, '(m) control: insertion before the tail still just shifts +1, no override');
+  assertEqual(planB.insertBoundary, null, '(m) control: insertBoundary stays null (no tail-insertion override triggered)');
+
+  // B1 主要斷言 —— 尾巴期間插入之後,再撳一首散歌(playSingle):headLen
+  // 淨係睇 autoRadioFrom(冇變、仍然係 1)→ isExplicitQueue=false → 唔會
+  // 行「插播剩餘清單」嗰條路 → playSingle 會照舊起返電台尾巴(唔會變成
+  // explicit 2 首)。抄 App.js playSingle() 頭嗰段(§2478-2486)入嚟做
+  // 模擬,證明 qlen 唔會跌落 2(唔係得個「唔跌」,係跟返正常電台邏輯)。
+  const headLen = plan.autoRadioFrom != null ? plan.autoRadioFrom : plan.newQ.length;
+  const isExplicitQueue = headLen > 1;
+  assertEqual(isExplicitQueue, false, '(m) B1: playSingle 之後睇到 headLen=1(冇變)→ 唔當成明確清單');
+  const single = song(777);
+  const resumeRemainder = isExplicitQueue
+    ? plan.newQ.slice(plan.newCurIdx + 1, headLen).filter((s) => String(s.id) !== String(single.id))
+    : [];
+  assertEqual(resumeRemainder.length, 0, '(m) B1: resumeRemainder 空 → playSingle 行「自動接續尾巴」嗰條路,唔會行「[新歌,插入嗰首] 兩首 explicit」嗰條路(隊列唔會變 2 首)');
 })();
 
 // ---------------------------------------------------------------------
@@ -359,6 +391,79 @@ const scenarioOPromise = (function scenarioO() {
     }
     assertEqual(allGood, true, `(o) 20 runs of two concurrent insertNext calls all serialize correctly, no clobbering (last=${JSON.stringify(lastResult)})`);
   })();
+})();
+
+// ---------------------------------------------------------------------
+// (p) PLAYNEXT-OPUS2-20260906 B2 —— shuffle 開住嗰陣插入,originalQueueRef
+// 都要同步(唔淨係「插入」嗰下,dedupe 搬位都要跟)。上一輪個修法(P0-2)
+// 淨係覆蓋咗 `!isShuffledRef.current` 果條路,shuffle 開住插入嘅歌喺
+// originalQueueRef(pre-shuffle 次序)度從未出現過 → 關返 shuffle 用佢
+// 重砌就無聲無息消失(Opus2 iOS 實測 33→31)。呢度抄 App.js
+// insertNextImpl 而家嘅寫法(B2 patch:!isShuffled 直接覆寫,shuffle 開住
+// 就喺 originalQueueRef 度做返一次獨立嘅「去重(hymn.id)+插入(錨定播緊
+// 嗰首)」)入嚟做模擬,連續插三首(兩首全新 + 一首本身已經喺
+// originalQueueRef 度嘅歌,行埋 dedupe 搬位嗰條路)之後先熄 shuffle,
+// 證明數量唔跌、三首插入/搬位嘅歌全部仲喺度、冇重複 id。
+// ---------------------------------------------------------------------
+(function scenarioP() {
+  const original = [song(10), song(11), song(12), song(13), song(14)];
+  let originalQueueRef = original.slice(); // playQueueImpl 寫嘅 pre-shuffle 次序
+  const isShuffled = true; // 插入嘅三次全部發生喺 shuffle 開住嗰段時間
+
+  // App.js insertNextImpl 嘅 B2 patch(逐行抄):
+  function syncOriginalQueueRef(cur, curIdx, hymn, planNewQ) {
+    if (!isShuffled) {
+      originalQueueRef = planNewQ;
+    } else {
+      const o = originalQueueRef || [];
+      const without = o.filter((x) => String(x && x.id) !== String(hymn.id));
+      const anchor = cur[curIdx];
+      const oi = without.findIndex((x) => String(x && x.id) === String(anchor && anchor.id));
+      originalQueueRef = oi >= 0
+        ? [...without.slice(0, oi + 1), hymn, ...without.slice(oi + 1)]
+        : [...without, hymn];
+    }
+  }
+
+  // 假設洗牌之後嘅播放次序(播緊 song(12))。
+  let q = [song(12), song(14), song(10), song(11), song(13)];
+  let curIdx = 0;
+
+  // 插第一首:全新歌 X。
+  const hymnX = song('X');
+  const planX = computeInsertNext(q, curIdx, hymnX, { autoRadioFrom: null, insertBoundary: null });
+  syncOriginalQueueRef(q, curIdx, hymnX, planX.newQ);
+  q = planX.newQ; curIdx = planX.newCurIdx;
+
+  // 插第二首:全新歌 Y。
+  const hymnY = song('Y');
+  const planY = computeInsertNext(q, curIdx, hymnY, { autoRadioFrom: null, insertBoundary: null });
+  syncOriginalQueueRef(q, curIdx, hymnY, planY.newQ);
+  q = planY.newQ; curIdx = planY.newCurIdx;
+
+  assertEqual(ids(q).includes('X') && ids(q).includes('Y'), true, '(p) both freshly-inserted songs present in the shuffled (native) queue');
+  assertEqual(new Set(ids(q).map(String)).size, q.length, '(p) shuffled queue itself has no duplicate ids after two inserts');
+
+  // 插第三首:song(13),本身已經喺 originalQueueRef(pre-shuffle 次序)度
+  // —— 行 dedupe 搬位嗰條路,證明唔會喺 originalQueueRef 度留低兩份 '13'。
+  const dupSong = song(13);
+  const planDup = computeInsertNext(q, curIdx, dupSong, { autoRadioFrom: null, insertBoundary: null });
+  syncOriginalQueueRef(q, curIdx, dupSong, planDup.newQ);
+  q = planDup.newQ; curIdx = planDup.newCurIdx;
+
+  assertEqual(new Set(ids(originalQueueRef).map(String)).size, originalQueueRef.length, '(p) B2: originalQueueRef has no duplicate ids after re-inserting a song (13) that was already present while shuffled (dedupe path exercised)');
+  assertEqual(originalQueueRef.length, original.length + 2, '(p) B2: originalQueueRef grew by exactly 2 (X, Y) — the dedupe re-insert of 13 is a move, not a net addition');
+
+  // 熄 shuffle:toggleShuffle 現有邏輯(用 originalQueueRef 重砌,旋轉到
+  // 播緊嗰首行頭)。
+  const curNow = q[curIdx];
+  const oidx = Math.max(0, originalQueueRef.findIndex((s) => String(s.id) === String(curNow.id)));
+  const restored = [...originalQueueRef.slice(oidx), ...originalQueueRef.slice(0, oidx)];
+
+  assertEqual(restored.length, original.length + 2, '(p) B2 fix: shuffle-off restored queue length unchanged (not lost) after three inserts made while shuffled ON');
+  assertEqual(ids(restored).includes('X'), true, '(p) B2 fix: first inserted song (X) survives shuffle-off restore');
+  assertEqual(ids(restored).includes('Y'), true, '(p) B2 fix: second inserted song (Y) survives shuffle-off restore');
+  assertEqual(new Set(ids(restored).map(String)).size, restored.length, '(p) B2 fix: no duplicate ids in the restored (shuffle-off) queue');
 })();
 
 // ---------------------------------------------------------------------
