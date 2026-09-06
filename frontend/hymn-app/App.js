@@ -31,7 +31,7 @@ import { API_BASE, DIAG_ENABLED } from './src/config.js';
 import { sendClientLog } from './src/clientLog.js';
 // PLAYNEXT-EXEC-20260906 §1.1 —— insertNext() 純陣列/index 運算部分(CommonJS,
 // 等 H1 harness 喺純 Node 直接 require 同一份源碼,唔使抄副本;見該檔頭註解)。
-const { computeInsertNext, reconcileFromNativeQueue } = require('./src/insertNextCore.js');
+const { computeInsertNext, reconcileFromNativeQueue, reindexBoundaryById } = require('./src/insertNextCore.js');
 // PLAYNEXT-EXEC-20260906 §1.2 —— module-level bridge,見該檔頭註解(點解
 // AddToPlaylistSheet.js 唔用 usePlayer() context)。
 import { setPlayerBridge } from './src/playerBridge.js';
@@ -2502,16 +2502,56 @@ function PlayerProvider({ children }) {
     await playQueue(list, 0, { autoRadioFrom: tail.length > 0 ? 1 : null });
   }
 
-  // PLAYNEXT-EXEC-20260906 §1.1 —— Play Next:任何一首歌插入做「下一首播放」,
-  // 位置 = 現正播放嗰首之後(curIdx+1);再插一首又係插嗰位,之前嗰首推落
-  // 第三(後插先播)。⚠️ 呢個係新函式,唔經 playQueue()、唔 reset/唔中斷
-  // 播放、唔掂起播/watchdog 任何邏輯(§0 紅線)。queueRef/setQueue/native
-  // queue 三者要同步(§3.5 教訓),同 playQueue() 一樣「先 ref 後 state」。
-  // 陣列/index 純運算部分抽咗去 src/insertNextCore.js(H1 harness 直接
-  // require 呢個檔案做 unit test,零 TrackPlayer/React 依賴);呢度淨係
-  // 負責讀快照、call native、寫 ref/state、toast、beacon。
+  // PLAYNEXT-EXEC-20260906 §1.1 + PLAYNEXT-OPUS-20260906 修復 —— Play Next:
+  // 任何一首歌插入做「下一首播放」,位置 = 現正播放嗰首之後(curIdx+1);
+  // 再插一首又係插嗰位,之前嗰首推落第三(後插先播)。⚠️ 呢個係新函式,唔
+  // reset/唔中斷播放、唔掂起播/watchdog 任何邏輯(§0 紅線)。queueRef/
+  // setQueue/native queue 三者要同步(§3.5 教訓),同 playQueue() 一樣
+  // 「先 ref 後 state」。陣列/index 純運算部分抽咗去 src/insertNextCore.js
+  // (H1 harness 直接 require 呢個檔案做 unit test,零 TrackPlayer/React
+  // 依賴);呢度淨係負責讀快照、call native、寫 ref/state、toast、beacon。
+  //
+  // PLAYNEXT-OPUS-20260906 P2-5 —— 入口(AddToPlaylistSheet)而家永遠顯示
+  // 「下一首播放」行,唔理有冇歌播緊(舊碼靠 `canPlayNext` 閘住,`fallbackTo
+  // Single` 呢條路由 UI 行唔到,係死 code)。冇 queue/冇 current track 嗰陣
+  // 呢個函式即刻播(toast「即刻播放」)。
+  //
+  // PLAYNEXT-OPUS-20260906 P3-7 —— 「即刻播」(fallbackToSingle)呢個分支
+  // 一定要喺 playQueueChainRef 鏈**之外**判斷、即刻執行,唔可以掛入條鏈:
+  // playSingle() 內部會 call playQueue(),而 playQueue() 自己都掛喺同一條
+  // playQueueChainRef 鏈度(`.then(run, run)`)——如果連 insertNext 都要
+  // 掛喺條鏈先至喺自己嘅 run() 入面 call playSingle→playQueue,就會形成
+  // 「insertNext 嘅 next」等「playQueue 嘅 next2」、「next2」又要等「next」
+  // 先至 settle 嘅循環 promise:真死鎖,永遠 resolve 唔到(唔係得個慢,係
+  // 完全唔會完成)。所以呢個判斷(讀 queueRef/trackStateRef 現狀)要喺掛鏈
+  // 之前做,同 playSingle() 本身嘅呼叫一齊留喺鏈外——同原本(PLAYNEXT-EXEC
+  // 版本、Opus 驗收過)嗰種「insertNext 唔經 playQueue」嘅結構一致。
+  // 真正會令 queueRef/native queue 產生 mutation 嘅部分(去重/插入/native
+  // TrackPlayer 呼叫,唔會 call playQueue)先至掛入 playQueueChainRef 鏈,
+  // 防止同一時間撳「另一首歌」觸發嘅 playQueue() 交錯執行(Opus §3 P3-7:
+  // `queueRef.current = plan.newQ` 可能覆寫咗 playQueue 啱啱寫入嘅新
+  // list)。cur/curIdx 喺 insertNextImpl(即真正輪到執行嗰一刻)先重讀,
+  // 唔用掛鏈之前嘅快照。
   async function insertNext(hymn) {
     if (!hymn?.id) return;
+    // PLAYNEXT-OPUS-20260906 P1-3 —— 下架佔位項(FavoritesContext 嘅
+    // {unavailable:true} 灰態)一律阻,唔理而家有冇 queue/idle,唔理走
+    // 邊條分支——重演 2026-08-22「連續飛歌」事故嘅風險喺呢度截死。
+    if (hymn.unavailable) { showNotice('呢首歌已經下架，播唔到'); return; }
+    const cur0 = queueRef.current;
+    const idle0 = trackStateRef.current === TPState.None;
+    if (!Array.isArray(cur0) || cur0.length === 0 || idle0) {
+      showNotice('即刻播放');
+      await playSingle(hymn);
+      return;
+    }
+    const run = () => insertNextImpl(hymn);
+    const next = playQueueChainRef.current.then(run, run);
+    playQueueChainRef.current = next;
+    return next;
+  }
+
+  async function insertNextImpl(hymn) {
     const cur = queueRef.current || [];
     const curIdx = currentQueueIndexRef.current ?? 0;
     const plan = computeInsertNext(cur, curIdx, hymn, {
@@ -2519,9 +2559,12 @@ function PlayerProvider({ children }) {
       insertBoundary: insertBoundaryRef.current,
       idle: trackStateRef.current === TPState.None,
     });
-    // 1. 冇 queue / 冇 current track → 當即刻播(等同 playSingle)。
+    if (plan.blocked) { showNotice('呢首歌已經下架，播唔到'); return; }
+    // 呢兩條理論上已經俾 insertNext() 掛鏈之前嘅快照攔咗,但排隊期間狀態
+    // 有可能被唔經 playQueueChainRef 嘅 mutator(例如 toggleShuffle)改咗
+    // (極窄窗口),留呢兩個分支做保險,唔靠佢哋做主要判斷。
     if (plan.fallbackToSingle) {
-      await playSingle(hymn);
+      console.warn('insertNext: queue became empty while queued behind playQueueChainRef, skipping (rare race)');
       return;
     }
     // 3. 播緊嗰首 → 唔改,toast。
@@ -2543,11 +2586,31 @@ function PlayerProvider({ children }) {
         insertBoundaryRef.current = plan.insertBoundary;
         setInsertBoundary(plan.insertBoundary);
       }
-      // 7. queueRef/setQueue 同步;currentQueueIndexRef 唔變(插喺後面)。
+      // PLAYNEXT-OPUS-20260906 P0-1 —— 如果去重刪走嘅舊位喺播緊嗰首前面,
+      // 播緊嗰首自己個 index 郁咗(newCurIdx !== curIdx),要跟住郁
+      // currentQueueIndexRef(先 ref 後 state,同 playQueue() 一致),唔係
+      // 之後 index-based 對位(reorderQueue/PlaybackActiveTrackChanged)
+      // 會指錯歌。
+      if (plan.newCurIdx !== curIdx) {
+        currentQueueIndexRef.current = plan.newCurIdx;
+        setCurrentQueueIndex(plan.newCurIdx);
+      }
+      // 7. queueRef/setQueue 同步。
       queueRef.current = plan.newQ;
       setQueue(plan.newQ);
+      // PLAYNEXT-OPUS-20260906 P0-2 —— 同步 originalQueueRef,抄
+      // reorderQueue(App.js reorderQueue,見上面)現成做法:唔喺 shuffle
+      // 狀態先寫,等 shuffle 開→關嘅還原唔會漏咗啱啱插入嘅歌(Android 實測
+      // 34→31,插入嘅歌無聲無息消失嗰個 bug)。
+      if (!isShuffledRef.current) originalQueueRef.current = plan.newQ;
       // 8. toast。
       showNotice('已加到下一首播放');
+      // PLAYNEXT-OPUS-20260906 P2-4 —— 插入嘅歌結構上永遠係冷歌(插入
+      // 發生喺兩次轉歌之間,冇 track change,冚唔到 PlaybackActiveTrackChanged
+      // 嘅滾動 warm 窗口)。叫 backend 暖返佢個 URL——純 backend warm(同
+      // rolling warm 同一機制,`POST /api/stream/warm`),唔落本地音訊副本、
+      // 唔碰 prefetchAudio,唔違反「唔擴大本地音訊副本」嗰條紅線。
+      warmIds([hymn.id]);
       // 12. beacon —— W1 嘅 src/clientLog.js,唔經 logDiag 閘(明文常開)。
       sendClientLog('playNext', {
         hymnId: hymn.id,
@@ -2563,6 +2626,29 @@ function PlayerProvider({ children }) {
         const rebuiltQ = reconcileFromNativeQueue(cur, hymn, nativeQueue);
         queueRef.current = rebuiltQ;
         setQueue(rebuiltQ);
+        // PLAYNEXT-OPUS-20260906 P3-8 —— boundary 都要跟住用 id 對位重算,
+        // 唔可以停留喺失敗嗰刻計出嚟嘅 plan.autoRadioFrom/plan.insertBoundary
+        // (嗰啲假設咗成個 plan 都做晒,失敗咗就唔啱——native 少做咗一步)。
+        if (autoRadioFromRef.current != null) {
+          const reidx = reindexBoundaryById(cur, autoRadioFromRef.current, rebuiltQ);
+          autoRadioFromRef.current = reidx;
+          setAutoRadioFrom(reidx);
+        }
+        if (insertBoundaryRef.current != null) {
+          const reidx = reindexBoundaryById(cur, insertBoundaryRef.current, rebuiltQ);
+          insertBoundaryRef.current = reidx;
+          setInsertBoundary(reidx);
+        }
+        // currentQueueIndexRef 都用 id 搵返(P0-1 修法之後,去重刪位有可能
+        // 喺播緊嗰首前面,失敗 rollback 都要跟同一套邏輯對位)。
+        const stillCur = cur[curIdx];
+        if (stillCur) {
+          const ci = rebuiltQ.findIndex((x) => String(x && x.id) === String(stillCur.id));
+          if (ci >= 0 && ci !== currentQueueIndexRef.current) {
+            currentQueueIndexRef.current = ci;
+            setCurrentQueueIndex(ci);
+          }
+        }
       } catch (_) { /* native 都讀唔到就算,冇更好嘅辦法 */ }
     }
   }

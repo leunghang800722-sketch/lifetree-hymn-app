@@ -82,15 +82,16 @@ export function AddToPlaylistProvider({ children }) {
     close();
   }, [addToPlaylist, target, close]);
 
-  // PLAYNEXT-EXEC-20260906 §1.2 —— 「下一首播放」:唔加落自訂清單,直接插入
-  // 現正播放嘅 queue(§1.1 insertNext 自己負責去重/播緊嗰首/冇 queue 嘅
-  // fallback,呢度淨係轉call + 閂 sheet)。只喺 add mode、而且而家有嘢播緊
-  // 先顯示(冇 queue/冇 current track 嗰陣顯示呢行冇意義)。getPlayerBridge()
-  // 每次都讀「呢一刻」嘅真實值(唔訂閱、冇 staleness),render body 攞嚟
-  // 決定顯示唔顯示,onPress 嗰刻再攞多次先真正 call insertNext。
-  const bridgeForRender = getPlayerBridge();
-  const canPlayNext = mode === 'add' && !!target
-    && (bridgeForRender.queue?.length > 0) && bridgeForRender.currentHymn?.id != null;
+  // PLAYNEXT-OPUS-20260906 P2-5 —— 呢行而家永遠顯示(唔再靠
+  // `queue.length>0 && currentHymn?.id!=null` 閘住)。執行單 §1.1-1 要求
+  // 「冇 queue/冇 current track → 當即刻播」,但舊版 `canPlayNext` 淨係喺
+  // 「已經有嘢播緊」先顯示,令嗰條 fallback 路由 UI 行唔到(Opus 驗收:死
+  // code、規格自相矛盾)。Fable 拍板:兩條規格互相取消嗰陣,揀「顯示 → 冇
+  // 嘢播就即刻播」(同 YT Music 一致),原本嘅 §1.1-1 唔係死 code。
+  // insertNext() 自己(App.js)負責去重/播緊嗰首/冇 queue fallback/下架
+  // 佔位項阻擋,呢度淨係轉 call + 閂 sheet。`!target.unavailable` 係額外
+  // 一層保險(insertNext() 入面嗰道閘先係硬防線,呢度純粹令行根本唔出現)。
+  const canPlayNext = mode === 'add' && !!target && !target.unavailable;
   const handlePlayNext = useCallback(() => {
     getPlayerBridge().insertNext?.(target);
     close();

@@ -1,4 +1,4 @@
-// src/insertNextCore.js — PLAYNEXT-EXEC-20260906 §1.1
+// src/insertNextCore.js — PLAYNEXT-EXEC-20260906 §1.1 + PLAYNEXT-OPUS-20260906 修復
 //
 // insertNext(hymn)(App.js,PlayerProvider 入面)嘅純陣列/index 運算部分,抽出
 // 嚟做獨立、零依賴嘅 pure function——冇 TrackPlayer、冇 React、冇任何
@@ -13,6 +13,23 @@
 // 唔使抄一份副本。App.js 其他地方都用 require() 混 import(見 src/clientLog.js
 // 嘅 guarded require expo-constants 做法),呢度跟同一個慣例。
 //
+// PLAYNEXT-OPUS-20260906 獨立驗收揪出兩個 P0 + 一個 P1 + 一個 P3,四條都喺
+// 呢個檔案入面修(Opus 判斷全部喺 insertNext()/insertNextCore.js 入面,唔使
+// 掂 playQueue/watchdog):
+//   P0-1 去重淨係搜「播緊之後」→ 插一首頭先啱啱播過嘅歌會令 queue 出現
+//        重複 id(§3 P0-1)。修法:搜成個 queue(除咗播緊嗰個位),舊位喺
+//        播緊嗰首前面就要令 currentQueueIndexRef 跟住郁(newCurIdx)。
+//        Opus 已經寫咗原型並窮舉驗證過(910/910,零重複 id、零 index 錯位),
+//        呢度係將個驗證過嘅設計搬入正式源碼。
+//   P1-3 unavailable(下架佔位)完全冇 filter → 重演 2026-08-22「連續飛歌」
+//        事故。修法:hymn.unavailable 一律阻,唔理而家有冇 queue/idle。
+//   P3-6 播到自動尾巴之後(curIdx>=autoRadioFrom 嘅常態),插入嘅歌會顯示
+//        喺「自動播放:全部」線下面,睇落好似系統隨機揀嘅。修法:調整完嘅
+//        autoRadioFrom 如果仲係 <= insertAt,推去 insertAt+1,等插入嘅歌
+//        算「用戶揀」。
+//   P3-8 失敗 rollback 之後,autoRadioFrom/insertBoundary 要用 id 對位重算
+//        (見 reindexBoundaryById),唔可以停留喺失敗嗰刻計出嚟嘅 plan 數值。
+//
 // 契約:
 //   computeInsertNext(cur, curIdx, hymn, opts)
 //     cur           — queueRef.current 嘅陣列快照(唔會被呢個 function 改)
@@ -24,11 +41,16 @@
 //                            cur.length === 0 一齊觸發 fallbackToSingle
 //
 //   回傳其中一種:
+//     { fallbackToSingle: false, alreadyPlaying: false,
+//       blocked: true, reason: 'unavailable' }               — hymn 係下架佔位項,caller 應該 toast「呢首歌已經下架，播唔到」,唔插
 //     { fallbackToSingle: true }                              — 冇 queue/idle,caller 應該 playSingle(hymn)
 //     { fallbackToSingle: false, alreadyPlaying: true }        — hymn 已經係播緊嗰首,caller 應該 toast「播緊呢首」,唔改任何嘢
 //     { fallbackToSingle: false, alreadyPlaying: false,
-//       newQ, insertAt, removedIdx, moved, autoRadioFrom, insertBoundary }
+//       newQ, insertAt, removedIdx, newCurIdx, moved,
+//       autoRadioFrom, insertBoundary }
 //                                                               — 正常插入嘅計劃(newQ 已經係最終陣列;removedIdx=-1 代表冇去重刪位;
+//                                                                  newCurIdx=去重刪位之後「播緊嗰首」喺 newQ 嘅新 index(通常同 curIdx
+//                                                                  一樣,除非 removedIdx < curIdx 令佢郁咗一格);
 //                                                                  autoRadioFrom/insertBoundary 已經跟返 opts 入面同一個 null/number 形態,
 //                                                                  number 就已經調整咗)
 function computeInsertNext(cur, curIdx, hymn, opts) {
@@ -36,6 +58,16 @@ function computeInsertNext(cur, curIdx, hymn, opts) {
   const autoRadioFrom = typeof opts.autoRadioFrom === 'number' ? opts.autoRadioFrom : null;
   const insertBoundary = typeof opts.insertBoundary === 'number' ? opts.insertBoundary : null;
   const idle = !!opts.idle;
+
+  // PLAYNEXT-OPUS-20260906 P1-3 —— 下架佔位項(FavoritesContext 對「server
+  // 有、庫同本地 cache 都揾唔到」嘅 id 整嘅 {unavailable:true} 灰態)一律
+  // 阻,唔理而家有冇 queue/idle:插入之後 toTrack() 會砌一條
+  // /api/stream/<id>,backend 404,重演 2026-08-22「21 次 404/86 秒死寂/
+  // 連續飛歌」事故(playQueueImpl 已經有專門 filter,insertNext 呢個新
+  // mutator 之前完全冇)。呢個 check 擺喺最頭,行過任何其他判斷之前。
+  if (hymn && hymn.unavailable) {
+    return { fallbackToSingle: false, alreadyPlaying: false, blocked: true, reason: 'unavailable' };
+  }
 
   if (!Array.isArray(cur) || cur.length === 0 || idle) {
     return { fallbackToSingle: true };
@@ -48,28 +80,41 @@ function computeInsertNext(cur, curIdx, hymn, opts) {
     return { fallbackToSingle: false, alreadyPlaying: true };
   }
 
-  // §1.1-4 —— 去重搬位:淨係喺「現正播放之後」嗰截搵(i > safeIdx),唔會撞到
-  // 已經播完/播緊嗰首。dupIdx 結構上一定 >= insertAt(下面),因為搜尋範圍
-  // 由 safeIdx+1 開始。
+  // PLAYNEXT-OPUS-20260906 P0-1 —— 去重要搜成個 queue(包括 curIdx 之前),
+  // 唔止「播緊之後」嗰截。舊碼(`for (i = safeIdx+1; ...)`)對「頭先啱啱
+  // 播過」嗰種 Play Next 最典型用法(A 已播完喺 curIdx 前面 → 再插 A)
+  // 完全搜唔到 → 當佢係新歌插多一次 → queue 出現重複 id,打破
+  // playSingle(.filter id!==hymn.id)/rebuildTail(headIds Set)刻意維持
+  // 嘅「queue 冇重複 id」不變式。Opus 已經寫咗呢個修法並窮舉驗證過
+  // (910/910,零重複 id、零 index 錯位),呢度係將個驗證過嘅設計搬入
+  // 正式源碼。i===safeIdx(播緊嗰首,上面已經處理咗)之外全部搜。
   let dupIdx = -1;
-  for (let i = safeIdx + 1; i < cur.length; i++) {
+  for (let i = 0; i < cur.length; i++) {
+    if (i === safeIdx) continue;
     if (String(cur[i] && cur[i].id) === String(hymn && hymn.id)) { dupIdx = i; break; }
   }
   let workingQ = cur;
   let removedIdx = -1;
+  let newCurIdx = safeIdx;
   if (dupIdx >= 0) {
     workingQ = cur.slice(0, dupIdx).concat(cur.slice(dupIdx + 1));
     removedIdx = dupIdx;
+    // ★ 舊位喺播緊嗰首前面 → 播緊嗰首自己嘅 index 喺 workingQ 少咗一格,
+    // currentQueueIndexRef 要跟住郁,唔係之後 index-based 對位(reorderQueue
+    // / PlaybackActiveTrackChanged)會指錯歌。
+    if (dupIdx < safeIdx) newCurIdx = safeIdx - 1;
   }
 
-  // §1.1-5 —— 插入位 = curIdx + 1(後插先播:再插一首都係插呢個位,之前
-  // 嗰首自然畀推落第三)。
-  const insertAt = safeIdx + 1;
+  // §1.1-5 —— 插入位 = newCurIdx + 1(唔再一定係 safeIdx+1;dupIdx<safeIdx
+  // 嗰陣 newCurIdx 已經郁咗——後插先播:再插一首都係插呢個位,之前嗰首
+  // 自然畀推落第三)。
+  const insertAt = newCurIdx + 1;
   const newQ = workingQ.slice(0, insertAt).concat([hymn], workingQ.slice(insertAt));
 
-  // §1.1-6 —— 邊界調整。removedIdx(如果有)結構上一定 >= insertAt,所以
-  // 「刪走嘅舊位喺 boundary 之前 → -1」同「插入位喺 boundary 或之後 → +1」
-  // 呢兩條調整唔會互相影響對方個判斷結果(見 PLAYNEXT-REPORT §1.1-6 推導)。
+  // §1.1-6 —— 邊界調整。呢兩條規則(刪走嘅舊位喺 boundary 之前 → -1;
+  // 插入位喺 boundary 或之前 → +1)喺 dupIdx<safeIdx 嘅新情況下(removedIdx
+  // 可以 < insertAt,同舊碼「removedIdx 結構上一定 >= insertAt」嘅前設
+  // 唔同)依然成立——Opus N7 910 case 窮舉冚晒呢啲組合,零 mismatch。
   function adjustBoundary(b) {
     if (typeof b !== 'number') return b;
     let v = b;
@@ -78,14 +123,26 @@ function computeInsertNext(cur, curIdx, hymn, opts) {
     return v;
   }
 
+  const adjustedAutoRadioFrom = autoRadioFrom != null ? adjustBoundary(autoRadioFrom) : autoRadioFrom;
+  // PLAYNEXT-OPUS-20260906 P3-6 —— 播到自動尾巴之後(curIdx>=autoRadioFrom
+  // 嘅常態)嗰陣,調整完嘅「自動播放」線仲係 <= insertAt(即插入嘅歌落咗
+  // 喺線下面),推去 insertAt+1,等呢首用戶親手插嘅歌唔會顯示喺「自動
+  // 播放:全部」線下面(睇落好似系統隨機揀嘅)。冇尾巴(null)唔受影響;
+  // 插入位喺線之前(用戶仲未播到尾巴)嘅正常情況 adjustedAutoRadioFrom
+  // 已經 > insertAt,唔會觸發呢條 override。
+  const finalAutoRadioFrom = (adjustedAutoRadioFrom != null && adjustedAutoRadioFrom <= insertAt)
+    ? insertAt + 1
+    : adjustedAutoRadioFrom;
+
   return {
     fallbackToSingle: false,
     alreadyPlaying: false,
     newQ: newQ,
     insertAt: insertAt,
     removedIdx: removedIdx,
+    newCurIdx: newCurIdx,
     moved: dupIdx >= 0 ? 1 : 0,
-    autoRadioFrom: autoRadioFrom != null ? adjustBoundary(autoRadioFrom) : autoRadioFrom,
+    autoRadioFrom: finalAutoRadioFrom,
     insertBoundary: insertBoundary != null ? adjustBoundary(insertBoundary) : insertBoundary,
   };
 }
@@ -95,8 +152,8 @@ function computeInsertNext(cur, curIdx, hymn, opts) {
 // 陣列,每個 track 帶 `.id`)+ 舊 JS 陣列 + 想插嘅 hymn,砌一個同 native 對齊
 // 嘅 JS 陣列」——查唔到就 fallback 用 track 本身嘅 title/artist(冇 hymn 全部
 // 欄位,總好過完全冧咗)。零 TrackPlayer 呼叫,純陣列運算,H1 (g) 用嚟證
-// 「native add 冧咗、queue 完全冇變」嗰種情況,JS 陣列（經呢個 function
-// 對齊）都會跟返 native 嘅原狀,唔會停留喺一個「已插入但 native 冧咗」嘅
+// 「native add 冧咗、queue 完全冇變」嗰種情況,JS 陣列(經呢個 function
+// 對齊)都會跟返 native 嘅原狀,唔會停留喺一個「已插入但 native 冧咗」嘅
 // 錯亂中間態。
 function reconcileFromNativeQueue(cur, hymn, nativeQueue) {
   const list = Array.isArray(nativeQueue) ? nativeQueue : [];
@@ -109,4 +166,27 @@ function reconcileFromNativeQueue(cur, hymn, nativeQueue) {
   });
 }
 
-module.exports = { computeInsertNext: computeInsertNext, reconcileFromNativeQueue: reconcileFromNativeQueue };
+// PLAYNEXT-OPUS-20260906 P3-8 —— 失敗 rollback 之後,autoRadioFrom/
+// insertBoundary(兩個都係「指住 oldCur 入面第幾個元素」嘅 index)要跟住
+// 用 id 喺 rebuiltQ(reconcileFromNativeQueue 嘅結果)度重新搵返個元素而家
+// 喺邊,唔可以停留喺失敗嗰刻(native 少做咗一步)計出嚟嘅 plan 數值。
+// 語義同 §1.1-6 個 ground truth 一致(PLAYNEXT-OPUS-20260906 §1.5):
+// boundary 指住「原本 oldCur[boundary] 嗰個元素」,b===oldCur.length 代表
+// 「尾巴之後」(冇實際元素),搵唔返(元素本身俾去重刪咗)就跌返做
+// rebuiltQ.length。
+function reindexBoundaryById(oldCur, boundary, newQ) {
+  if (typeof boundary !== 'number') return boundary;
+  const safeCur = Array.isArray(oldCur) ? oldCur : [];
+  const safeNew = Array.isArray(newQ) ? newQ : [];
+  if (boundary >= safeCur.length) return safeNew.length;
+  const marker = safeCur[boundary];
+  if (!marker) return safeNew.length;
+  const idx = safeNew.findIndex((x) => String(x && x.id) === String(marker.id));
+  return idx >= 0 ? idx : safeNew.length;
+}
+
+module.exports = {
+  computeInsertNext: computeInsertNext,
+  reconcileFromNativeQueue: reconcileFromNativeQueue,
+  reindexBoundaryById: reindexBoundaryById,
+};
