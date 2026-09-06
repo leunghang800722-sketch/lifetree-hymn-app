@@ -39,7 +39,7 @@
 //       GestureHandlerRootView(RNGH 官方要求,09-05 已證實)。
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Modal, View, Text, StyleSheet, TouchableOpacity, Animated, Keyboard } from 'react-native';
+import { Modal, View, Text, StyleSheet, TouchableOpacity, Animated, Keyboard, useWindowDimensions } from 'react-native';
 import { Gesture, GestureDetector, GestureHandlerRootView } from 'react-native-gesture-handler';
 import OdeIcon from '../icons/OdeIcon';
 import { COLORS } from '../theme/designSystem';
@@ -68,9 +68,14 @@ export default function SheetShell({
   dismissOnBackdrop = true,
   scrollable = true,
   cardStyle,
+  // Opus 驗收 P3-1:scrollable sheet 嘅可下拉區預設只有 handle+title;需要更大
+  // 拖拉區(例如 AdminPresenceSheet 三個數字磚,09-05 Eric 簽收嘅手感)就經
+  // headerExtra 傳入,會一齊包入 GestureDetector。
+  headerExtra = null,
   children,
 }) {
   const insets = useInsets();
+  const win = useWindowDimensions();
   const [kbHeight, setKbHeight] = useState(0);
 
   // keyboardAware 淨係 bottom variant 用(center 冇 FlatList,鍵盤唔會遮到
@@ -156,8 +161,17 @@ export default function SheetShell({
     <View>
       <View style={styles.handle} />
       {header}
+      {headerExtra}
     </View>
   );
+
+  // Opus 驗收 P2-1:keyboardAware 抬高 card 之後,maxHeight 如果仍係成個畫面嘅
+  // 百分比(例如 85%)+ 鍵盤 40% 會 > 100%,handle/標題/✕ 全部推出畫面頂。
+  // 鍵盤彈出期間將 maxHeight 收窄到「畫面高 − 鍵盤 − buffer」同原值取細嗰個。
+  const pctToPx = (v) => (typeof v === 'string' && v.endsWith('%') ? (parseFloat(v) / 100) * win.height : v);
+  const effectiveMaxHeight = keyboardAware && kbHeight > 0
+    ? Math.min(pctToPx(maxHeight), win.height - kbHeight - KB_SAFETY_BUFFER - insets.top - 8)
+    : maxHeight;
 
   const cardInner = (
     <>
@@ -174,7 +188,7 @@ export default function SheetShell({
     <Animated.View
       style={[
         styles.bottomCard,
-        { maxHeight, paddingBottom: insets.bottom + 16 },
+        { maxHeight: effectiveMaxHeight, paddingBottom: insets.bottom + 16 },
         keyboardAware && kbHeight > 0 ? { marginBottom: kbHeight + KB_SAFETY_BUFFER } : null,
         { transform: [{ translateY: dragY }] },
         cardStyle,

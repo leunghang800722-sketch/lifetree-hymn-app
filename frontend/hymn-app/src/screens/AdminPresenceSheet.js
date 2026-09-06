@@ -66,21 +66,26 @@ export default function AdminPresenceSheet({ visible, onClose, getToken }) {
   const members = data?.members || [];
 
   return (
-    <SheetShell visible={visible} onClose={onClose} variant="bottom" title="在線" maxHeight="80%">
-      <View style={styles.statsRow}>
-        <View style={styles.statTile}>
-          <Text style={styles.statNum}>{online.total}</Text>
-          <Text style={styles.statLabel}>總在線</Text>
+    <SheetShell
+      visible={visible} onClose={onClose} variant="bottom" title="在線" maxHeight="80%"
+      // Opus 驗收 P3-1:三個數字磚要保持可下拉(09-05 簽收手感),經 headerExtra 入殼
+      headerExtra={(
+        <View style={styles.statsRow}>
+          <View style={styles.statTile}>
+            <Text style={styles.statNum}>{online.total}</Text>
+            <Text style={styles.statLabel}>總在線</Text>
+          </View>
+          <View style={styles.statTile}>
+            <Text style={styles.statNum}>{online.members}</Text>
+            <Text style={styles.statLabel}>會員</Text>
+          </View>
+          <View style={styles.statTile}>
+            <Text style={styles.statNum}>{online.guests}</Text>
+            <Text style={styles.statLabel}>訪客</Text>
+          </View>
         </View>
-        <View style={styles.statTile}>
-          <Text style={styles.statNum}>{online.members}</Text>
-          <Text style={styles.statLabel}>會員</Text>
-        </View>
-        <View style={styles.statTile}>
-          <Text style={styles.statNum}>{online.guests}</Text>
-          <Text style={styles.statLabel}>訪客</Text>
-        </View>
-      </View>
+      )}
+    >
 
       {loading ? (
         <View style={styles.centerState}><ActivityIndicator color={COLORS.glow} /></View>
