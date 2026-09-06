@@ -58,3 +58,21 @@ Commit（pathspec）：App 一個（hlsPreflight.js + App.js）、backend 一個
 
 ## 5. Opus 驗收要點（預告）
 根源覆核：預檢係咪真係喺看門狗起計之前完成（`playQueue` 內 add 之前 vs 看門狗由 add/play 起計）；自動接播 swap 嘅 race（idx+1 已成為 current）；預檢對正常起播嘅額外延遲；backend 快失敗會唔會令「本來重試一次就成功」嘅 case 變失敗（對照 09-06 `retried=true` 但 `result=ok` 有幾多）；兩平台各一次 403 情境 + 一次正常情境。
+
+---
+
+## 6. 修訂 A（09-07，Eric 問「起播會唔會慢咗」）—— §1.2 由「串行」改「並行 + 熱換」
+
+**原 §1.2 問題**：預檢 `await` 喺 `TrackPlayer.add` 之前 = 串行。正常（冇 403）情況每次起播多一趟 JS→backend 來回；tunnel RTT 地板 ~0.75s（memory `project-hymn-app-infra`/1C 量到），即 **暖 cache 起播由 ~5.0s 變 ~5.8–6.0s（+15–20%）**，唔可接受。
+
+**改為並行**：
+1. `playQueue()` 照舊即刻 `TrackPlayer.add` + play（起播零延遲，看門狗照舊由呢刻起計）。
+2. **同一刻** fire `preflightHls(url)`（唔 await）。backend `resolveAudio` 已有 per-id in-flight coalescing（`resolveAudio.js:282/307`），JS 同 AVPlayer 兩個 m3u8 請求只會觸發一次 resolve；playlist 由 `playlistCache` 或 hls route 內同一次 build 出——**要加**：hls route 對同一 `id` 嘅 in-flight playlist build 做 promise 共用（pending Map），避免檔頭 range fetch 做兩次。
+3. 預檢 `!ok`（403/404/timeout ≤5s）→ 用現有 URL 熱換機制（`TrackPlayer.add(toTrack(song,{forceProgressive:true}), idx)` swap，id 對位 guard）換走**仍係 current 而且仲未出聲**（`nextTrackMs` 未記 / position=0）嗰首；已出聲就唔換。看門狗 16s 內剩 ≥11s 俾 progressive。
+4. 預檢 ok → 乜都唔做（零成本：第二個 m3u8 請求命中 cache，server 0–1ms，只多 2–4KB tunnel 流量）。
+
+**成本結論**：正常路徑 **+0ms 起播延遲**（並行）；冷 resolve 情況兩邊等同一次 resolve，冇重複 yt-dlp；唯一代價 = 每次起播多一個細請求（≤4KB）同 client-log 一條 `hlsPreflight` beacon。
+
+**§1.3 自動接播路徑**本身已係 fire-and-forget，不變。
+
+**§3 加驗證**：H-B 改為「add 已被 call 之後 preflight 先 resolve」（次序證據：mock 記 call 順序）；H-C 加「同一 id 兩個並發 m3u8 請求 → 檔頭 fetch 只做一次、resolve 只做一次」；H-D 正常起播 `nextTrackMs` 對照 **唔准有可量測差異**（交錯 5 run，中位差 ≤ 噪音）。
