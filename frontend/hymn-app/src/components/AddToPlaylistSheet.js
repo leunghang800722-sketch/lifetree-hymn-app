@@ -19,6 +19,13 @@ import { COLORS } from '../theme/designSystem';
 import { usePlaylists, MAX_PLAYLIST_SONGS } from '../context/PlaylistsContext';
 import { useInsets } from '../hooks/useInsets';
 import SheetShell from './SheetShell';
+// PLAYNEXT-EXEC-20260906 §1.2 —— 「下一首播放」要攞 PlayerProvider 嘅
+// insertNext()/queue/currentHymn。呢個檔案(AddToPlaylistProvider)喺 App.js
+// 嘅 provider tree 係喺 PlayerProvider 外面(祖先),`usePlayer()` context
+// 喺呢度攞唔到(FullScreenPlayerOverlay 靠緊而家呢個次序,唔可以掉轉——
+// 見 App.js `const tree = (...)` 嗰段註解),所以改用 module-level bridge
+// (唔靠 context ancestry,見 src/playerBridge.js 頭註解)。
+import { getPlayerBridge } from '../playerBridge';
 
 const Ctx = createContext(null);
 // open(hymn):彈 sheet,揀清單加入呢首歌。openCreate/openRename 見檔頭。
@@ -74,6 +81,20 @@ export function AddToPlaylistProvider({ children }) {
     }
     close();
   }, [addToPlaylist, target, close]);
+
+  // PLAYNEXT-EXEC-20260906 §1.2 —— 「下一首播放」:唔加落自訂清單,直接插入
+  // 現正播放嘅 queue(§1.1 insertNext 自己負責去重/播緊嗰首/冇 queue 嘅
+  // fallback,呢度淨係轉call + 閂 sheet)。只喺 add mode、而且而家有嘢播緊
+  // 先顯示(冇 queue/冇 current track 嗰陣顯示呢行冇意義)。getPlayerBridge()
+  // 每次都讀「呢一刻」嘅真實值(唔訂閱、冇 staleness),render body 攞嚟
+  // 決定顯示唔顯示,onPress 嗰刻再攞多次先真正 call insertNext。
+  const bridgeForRender = getPlayerBridge();
+  const canPlayNext = mode === 'add' && !!target
+    && (bridgeForRender.queue?.length > 0) && bridgeForRender.currentHymn?.id != null;
+  const handlePlayNext = useCallback(() => {
+    getPlayerBridge().insertNext?.(target);
+    close();
+  }, [target, close]);
 
   // 開新清單:用戶自己打名(YT Music 咁)。add mode 開完即刻加埋當前呢首;
   // create mode(「我的」頁＋掣)冇 target,就係開一個空清單。
@@ -132,6 +153,18 @@ export function AddToPlaylistProvider({ children }) {
             keyExtractor={(item) => String(item.id)}
             contentContainerStyle={{ paddingBottom: 8 }}
             keyboardShouldPersistTaps="handled"
+            ListHeaderComponent={
+              canPlayNext ? (
+                <TouchableOpacity style={styles.playNextRow} onPress={handlePlayNext} activeOpacity={0.7}>
+                  <View style={styles.rowIcon}>
+                    <OdeIcon name="next" size={22} color={COLORS.primary} />
+                  </View>
+                  <View style={styles.rowText}>
+                    <Text style={styles.rowName}>下一首播放</Text>
+                  </View>
+                </TouchableOpacity>
+              ) : null
+            }
             ListEmptyComponent={
               !creating ? <Text style={styles.empty}>仲未有播放清單 —— 撳下面開一個</Text> : null
             }
@@ -182,6 +215,12 @@ export function AddToPlaylistProvider({ children }) {
 const styles = StyleSheet.create({
   empty: { color: COLORS.textSecondary, paddingHorizontal: 20, paddingVertical: 16 },
   row: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 12 },
+  // 「下一首播放」—— 同下面清單行同一個 row 版型,靠底部分隔線(同 newRow
+  // 嗰條視覺一致)分開,唔係加落自訂清單嘅動作。
+  playNextRow: {
+    flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 12,
+    borderBottomWidth: 1, borderBottomColor: COLORS.border, marginBottom: 4,
+  },
   rowIcon: {
     width: 44, height: 44, borderRadius: 6, backgroundColor: COLORS.cardLight,
     alignItems: 'center', justifyContent: 'center',
