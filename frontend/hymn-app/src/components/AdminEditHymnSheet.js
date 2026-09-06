@@ -10,17 +10,23 @@
 // isAdmin gate:呢個 Provider 本身唔靠自己隱藏(member 冇 long-press 入口,見
 // LibraryScreen/HymnListScreen),但 open() 都多重一重 isAdmin check——就算未來
 // 邊個漏咗喺入口度加 gate,呢度都唔會真係彈得出嚟。
-
+//
+// SHEETSHELL-EXEC-20260906 #8:殼(Modal/backdrop/handle)搬去 SheetShell.js。
+// 1A ADMIN-002 P1 順手修埋:舊版 iOS 用 KeyboardAvoidingView(behavior=
+// 'padding'),Android `behavior=undefined` 即係冇避讓(鍵盤直接遮儲存/落架
+// 掣)。改用殼嘅 keyboardAware(同 AddToPlaylistSheet 一樣嘅 keyboardDidShow
+// 手動 marginBottom 邏輯),兩個平台劃一,Android 終於有真.避讓。
 import React, { createContext, useContext, useState, useCallback } from 'react';
 import {
-  Modal, View, Text, TextInput, TouchableOpacity, ScrollView,
-  StyleSheet, Alert, KeyboardAvoidingView, Platform, Switch,
+  View, Text, TextInput, TouchableOpacity, ScrollView,
+  StyleSheet, Alert, Switch,
 } from 'react-native';
 import OdeIcon from '../icons/OdeIcon';
 import { COLORS } from '../theme/designSystem';
 import { useAuth } from '../context/AuthContext';
 import { adminGetHymn, adminPatchHymn, adminDelistHymn, adminErrorMessage } from '../api';
 import { notifyHymnsChanged } from '../hooks/useCachedHymns';
+import SheetShell from './SheetShell';
 
 const Ctx = createContext(null);
 export const useAdminEditHymn = () => useContext(Ctx) || { open: () => {} };
@@ -163,122 +169,107 @@ export function AdminEditHymnProvider({ children }) {
   return (
     <Ctx.Provider value={{ open }}>
       {children}
-      <Modal visible={visible} transparent animationType="slide" onRequestClose={close} statusBarTranslucent navigationBarTranslucent>
-        <KeyboardAvoidingView style={styles.scrim} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-          <TouchableOpacity style={{ flex: 1 }} activeOpacity={1} onPress={close} />
-          <View style={styles.card}>
-            <View style={styles.handle} />
-            <Text style={styles.title}>編輯詩歌</Text>
-
-            {loading ? (
-              <Text style={styles.loadingText}>載入緊…</Text>
-            ) : (
-              <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ paddingBottom: 8 }}>
-                {original && (
-                  <View style={styles.originalTitleWrap}>
-                    <Text style={styles.originalTitleLabel}>原始 YouTube 標題(唔可以改)</Text>
-                    <Text style={styles.originalTitleText} numberOfLines={2}>{original.title}</Text>
-                  </View>
-                )}
-
-                {row('display_title')}
-                {row('artist')}
-                {/* org 唔准留空(後端會 400)——觀察③:文案改到同行為一致 */}
-                {row('org', { placeholder: '例:泥土音樂(必填,唔可以留空)' })}
-                {row('performer', { placeholder: '例:盛曉玫(可留空,UI 會 fallback 顯示團體)' })}
-
-                <View style={styles.fieldRow}>
-                  <View style={styles.switchRow}>
-                    <Text style={styles.fieldLabel}>兒童詩歌</Text>
-                    <Switch
-                      value={form.kids}
-                      onValueChange={(v) => setField('kids', v)}
-                      trackColor={{ false: COLORS.border, true: COLORS.glow }}
-                      thumbColor={COLORS.card}
-                    />
-                  </View>
-                </View>
-
-                {/* 純音樂(INSTRUMENTAL-CATEGORY-PLAN Phase 2d)—— 兩個開關可以
-                    同時開:「兒童 × 純音樂」係真實產品(Hillsong Kids 鋼琴搖籃
-                    曲),兩個維度正交,唔互相排除。 */}
-                <View style={styles.fieldRow}>
-                  <View style={styles.switchRow}>
-                    <Text style={styles.fieldLabel}>純音樂</Text>
-                    <Switch
-                      value={form.instrumental}
-                      onValueChange={(v) => setField('instrumental', v)}
-                      trackColor={{ false: COLORS.border, true: COLORS.glow }}
-                      thumbColor={COLORS.card}
-                    />
-                  </View>
-                </View>
-
-                <View style={styles.fieldRow}>
-                  <Text style={styles.fieldLabel}>分類</Text>
-                  <View style={styles.chipRow}>
-                    {CATEGORY_SUGGESTIONS.map((c) => (
-                      <TouchableOpacity key={c} style={[styles.chip, form.category === c && styles.chipActive]}
-                        onPress={() => setField('category', c)} activeOpacity={0.7}>
-                        <Text style={[styles.chipText, form.category === c && styles.chipTextActive]}>{c}</Text>
-                      </TouchableOpacity>
-                    ))}
-                  </View>
-                  <TextInput
-                    style={styles.fieldInput}
-                    value={form.category}
-                    onChangeText={(v) => setField('category', v)}
-                    placeholder="或者自己打"
-                    placeholderTextColor={COLORS.textSecondary}
-                    maxLength={200}
-                  />
-                </View>
-
-                <View style={styles.fieldRow}>
-                  <Text style={styles.fieldLabel}>語言</Text>
-                  <View style={styles.chipRow}>
-                    {LANG_OPTIONS.map((l) => (
-                      <TouchableOpacity key={l} style={[styles.chip, form.lang === l && styles.chipActive]}
-                        onPress={() => setField('lang', l)} activeOpacity={0.7}>
-                        <Text style={[styles.chipText, form.lang === l && styles.chipTextActive]}>{l}</Text>
-                      </TouchableOpacity>
-                    ))}
-                  </View>
-                </View>
-
-                {row('album', { placeholder: '(可留空)' })}
-                {row('title_en', { placeholder: '(可留空)' })}
-
-                {!!error && <Text style={styles.errText}>{error}</Text>}
-
-                {/* disabled 一定要睇得出——舊版兩個掣 disabled 完全冇視覺變化,
-                    saving 卡死咗都好似撳得,睇落就係「撳唔郁」。 */}
-                <TouchableOpacity style={[styles.saveBtn, saving && styles.btnDisabled]} onPress={save} disabled={saving} activeOpacity={0.8}>
-                  <Text style={styles.saveBtnText}>{saving ? '儲存緊…' : '儲存'}</Text>
-                </TouchableOpacity>
-                <TouchableOpacity style={[styles.delistBtn, saving && styles.btnDisabled]} onPress={confirmDelist} disabled={saving} activeOpacity={0.8}>
-                  <OdeIcon name="trash" size={18} color={COLORS.danger} />
-                  <Text style={styles.delistBtnText}>落架呢首</Text>
-                </TouchableOpacity>
-              </ScrollView>
+      <SheetShell visible={visible} onClose={close} variant="bottom" title="編輯詩歌" keyboardAware maxHeight="85%">
+        {loading ? (
+          <Text style={styles.loadingText}>載入緊…</Text>
+        ) : (
+          <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={styles.scrollContent}>
+            {original && (
+              <View style={styles.originalTitleWrap}>
+                <Text style={styles.originalTitleLabel}>原始 YouTube 標題(唔可以改)</Text>
+                <Text style={styles.originalTitleText} numberOfLines={2}>{original.title}</Text>
+              </View>
             )}
-          </View>
-        </KeyboardAvoidingView>
-      </Modal>
+
+            {row('display_title')}
+            {row('artist')}
+            {/* org 唔准留空(後端會 400)——觀察③:文案改到同行為一致 */}
+            {row('org', { placeholder: '例:泥土音樂(必填,唔可以留空)' })}
+            {row('performer', { placeholder: '例:盛曉玫(可留空,UI 會 fallback 顯示團體)' })}
+
+            <View style={styles.fieldRow}>
+              <View style={styles.switchRow}>
+                <Text style={styles.fieldLabel}>兒童詩歌</Text>
+                <Switch
+                  value={form.kids}
+                  onValueChange={(v) => setField('kids', v)}
+                  trackColor={{ false: COLORS.border, true: COLORS.glow }}
+                  thumbColor={COLORS.card}
+                />
+              </View>
+            </View>
+
+            {/* 純音樂(INSTRUMENTAL-CATEGORY-PLAN Phase 2d)—— 兩個開關可以
+                同時開:「兒童 × 純音樂」係真實產品(Hillsong Kids 鋼琴搖籃
+                曲),兩個維度正交,唔互相排除。 */}
+            <View style={styles.fieldRow}>
+              <View style={styles.switchRow}>
+                <Text style={styles.fieldLabel}>純音樂</Text>
+                <Switch
+                  value={form.instrumental}
+                  onValueChange={(v) => setField('instrumental', v)}
+                  trackColor={{ false: COLORS.border, true: COLORS.glow }}
+                  thumbColor={COLORS.card}
+                />
+              </View>
+            </View>
+
+            <View style={styles.fieldRow}>
+              <Text style={styles.fieldLabel}>分類</Text>
+              <View style={styles.chipRow}>
+                {CATEGORY_SUGGESTIONS.map((c) => (
+                  <TouchableOpacity key={c} style={[styles.chip, form.category === c && styles.chipActive]}
+                    onPress={() => setField('category', c)} activeOpacity={0.7}>
+                    <Text style={[styles.chipText, form.category === c && styles.chipTextActive]}>{c}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+              <TextInput
+                style={styles.fieldInput}
+                value={form.category}
+                onChangeText={(v) => setField('category', v)}
+                placeholder="或者自己打"
+                placeholderTextColor={COLORS.textSecondary}
+                maxLength={200}
+              />
+            </View>
+
+            <View style={styles.fieldRow}>
+              <Text style={styles.fieldLabel}>語言</Text>
+              <View style={styles.chipRow}>
+                {LANG_OPTIONS.map((l) => (
+                  <TouchableOpacity key={l} style={[styles.chip, form.lang === l && styles.chipActive]}
+                    onPress={() => setField('lang', l)} activeOpacity={0.7}>
+                    <Text style={[styles.chipText, form.lang === l && styles.chipTextActive]}>{l}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </View>
+
+            {row('album', { placeholder: '(可留空)' })}
+            {row('title_en', { placeholder: '(可留空)' })}
+
+            {!!error && <Text style={styles.errText}>{error}</Text>}
+
+            {/* disabled 一定要睇得出——舊版兩個掣 disabled 完全冇視覺變化,
+                saving 卡死咗都好似撳得,睇落就係「撳唔郁」。 */}
+            <TouchableOpacity style={[styles.saveBtn, saving && styles.btnDisabled]} onPress={save} disabled={saving} activeOpacity={0.8}>
+              <Text style={styles.saveBtnText}>{saving ? '儲存緊…' : '儲存'}</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={[styles.delistBtn, saving && styles.btnDisabled]} onPress={confirmDelist} disabled={saving} activeOpacity={0.8}>
+              <OdeIcon name="trash" size={18} color={COLORS.danger} />
+              <Text style={styles.delistBtnText}>落架呢首</Text>
+            </TouchableOpacity>
+          </ScrollView>
+        )}
+      </SheetShell>
     </Ctx.Provider>
   );
 }
 
 const styles = StyleSheet.create({
-  scrim: { flex: 1, backgroundColor: 'rgba(0,0,0,0.55)', justifyContent: 'flex-end' },
-  card: {
-    maxHeight: '85%', backgroundColor: COLORS.card,
-    borderTopLeftRadius: 20, borderTopRightRadius: 20,
-    paddingHorizontal: 20, paddingBottom: 24,
-  },
-  handle: { width: 40, height: 5, borderRadius: 3, backgroundColor: COLORS.textSecondary, alignSelf: 'center', marginTop: 8, marginBottom: 6 },
-  title: { color: COLORS.textPrimary, fontSize: 18, fontWeight: '600', paddingVertical: 12 },
-  loadingText: { color: COLORS.textSecondary, textAlign: 'center', paddingVertical: 30 },
+  loadingText: { color: COLORS.textSecondary, textAlign: 'center', paddingVertical: 30, paddingHorizontal: 20 },
+  scrollContent: { paddingHorizontal: 20, paddingBottom: 8 },
   originalTitleWrap: {
     backgroundColor: COLORS.background, borderRadius: 10, padding: 12, marginBottom: 14,
     borderWidth: 1, borderColor: COLORS.border,

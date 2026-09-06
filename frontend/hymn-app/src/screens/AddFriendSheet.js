@@ -1,14 +1,19 @@
 // 加好友 sheet(MEMBERSHIP-PHASE4-FRIENDS-INVITES-PLAN §3.2 + 已登入用戶輸入
 // 邀請碼補漏)—— 兩種方式用 tab 分:搜電話(lookup 之後按 relation 顯示唔同
 // 文案/掣)/輸入邀請碼(朋友派俾自己嗰個碼,兌換即刻自動加為好友)。置中
-// dialog(照 AddToPlaylistSheet 嘅 create/rename 視覺,唔係貼底 sheet——呢度
-// 冇 FlatList,一格輸入夠晒)。
+// dialog(SheetShell variant="center",照 AddToPlaylistSheet 嘅 create/rename
+// 視覺,唔係貼底 sheet——呢度冇 FlatList,一格輸入夠晒)。
+//
+// SHEETSHELL-EXEC-20260906 #3:殼(Modal/backdrop/✕)搬去 SheetShell.js;
+// card 唔再自己攞 padding:20(改由 body 呢個 wrapper 供,避免同殼嘅標題列
+// 各自 20px 疊埋);「撳空白位收鍵盤」嘅 TouchableWithoutFeedback 保留,
+// 淨係包content(唔包 backdrop——backdrop 係殼畫嘅,唔喺呢度掂到)。
 import React, { useState, useCallback, useEffect, useRef } from 'react';
-import { Modal, View, Text, TextInput, TouchableOpacity, TouchableWithoutFeedback, StyleSheet, ActivityIndicator, Keyboard } from 'react-native';
-import OdeIcon from '../icons/OdeIcon';
+import { View, Text, TextInput, TouchableOpacity, TouchableWithoutFeedback, StyleSheet, ActivityIndicator, Keyboard } from 'react-native';
 import { COLORS } from '../theme/designSystem';
 import { useAuth } from '../context/AuthContext';
 import { friendsLookup, friendsRequest, redeemInvite, friendsErrorMessage } from '../api';
+import SheetShell from '../components/SheetShell';
 
 export default function AddFriendSheet({ visible, onClose, onRequested, onFriended }) {
   const { getToken } = useAuth();
@@ -114,28 +119,15 @@ export default function AddFriendSheet({ visible, onClose, onRequested, onFriend
   };
 
   return (
-    <Modal visible={visible} transparent animationType="fade" onRequestClose={close} statusBarTranslucent navigationBarTranslucent>
+    <SheetShell visible={visible} onClose={close} variant="center" title="加好友">
       {/* ⚠️ 鍵盤 bug(Eric 2026-08-22):電話輸入框用 keyboardType="phone-pad",
           iOS 呢個鍵盤根本冇 return/done 掣 —— 唯一收得返嘅方法就係撳輸入框以外
-          嘅地方。但原本成張 card 淨係一嚿普通 <View>,card 入面所有空白位
-          (標題行、tab 條、說明文字、輸入框下面)全部冇 responder,撳落去乜都
-          唔會發生;而鍵盤彈起之後,card 下面嗰塊 flex:1 backdrop 已經俾鍵盤
-          蓋住,撳唔到 —— 結果就係「鍵盤永遠收唔返」。
-          修法:喺 scrim 呢層加一個 TouchableWithoutFeedback。RN responder 係
-          由最深嗰個開始傾(deepest-first),所以下面兩塊 backdrop 嘅 onPress={close}
-          同埋 card 入面啲 TouchableOpacity / TextInput 全部照舊行先,呢層只會
-          食到「冇人認領」嗰啲 touch(card 空白位、card 左右兩條窄邊),
-          動作淨係收鍵盤,唔會閂 sheet —— 用戶收完鍵盤仲可以即刻撳「搵吓」。 */}
+          嘅地方。card 入面(tab 條、說明文字、輸入框下面空白位)冇 responder,
+          撳落去乜都唔會發生——加呢層 TouchableWithoutFeedback,食「冇人認領」
+          嗰啲 touch(RN responder deepest-first,input/掣照舊行先),淨係收
+          鍵盤,唔閂 sheet(閂 sheet 交返俾殼嘅 backdrop)。 */}
       <TouchableWithoutFeedback accessible={false} onPress={Keyboard.dismiss}>
-      <View style={styles.scrim}>
-        <TouchableOpacity style={{ flex: 1 }} activeOpacity={1} onPress={close} />
-        <View style={styles.card}>
-          <View style={styles.headerRow}>
-            <Text style={styles.title}>加好友</Text>
-            <TouchableOpacity onPress={close} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-              <OdeIcon name="close" size={22} color={COLORS.textSecondary} />
-            </TouchableOpacity>
-          </View>
+        <View style={styles.body}>
           <View style={styles.tabRow}>
             <TouchableOpacity
               style={[styles.tabBtn, mode === 'phone' && styles.tabBtnActive]}
@@ -187,24 +179,16 @@ export default function AddFriendSheet({ visible, onClose, onRequested, onFriend
             </>
           )}
         </View>
-        <TouchableOpacity style={{ flex: 1 }} activeOpacity={1} onPress={close} />
-      </View>
       </TouchableWithoutFeedback>
-    </Modal>
+    </SheetShell>
   );
 }
 
 const styles = StyleSheet.create({
-  scrim: { flex: 1, backgroundColor: 'rgba(0,0,0,0.55)' },
-  card: {
-    alignSelf: 'center', width: '86%', maxWidth: 420,
-    backgroundColor: COLORS.card, borderRadius: 20, padding: 20,
-  },
-  headerRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  title: { color: COLORS.textPrimary, fontSize: 18, fontWeight: '700' },
+  body: { paddingHorizontal: 20, paddingBottom: 6 },
   tabRow: {
     flexDirection: 'row', backgroundColor: COLORS.background, borderRadius: 12,
-    padding: 3, marginTop: 14,
+    padding: 3, marginTop: 4,
   },
   tabBtn: { flex: 1, paddingVertical: 8, borderRadius: 10, alignItems: 'center' },
   tabBtnActive: { backgroundColor: COLORS.primary },

@@ -8,13 +8,14 @@
 // 唔使額外 retry 邏輯(用戶自己閂咗再撳 link 一次就係 retry)。
 
 import React, { useEffect, useState } from 'react';
-import { Modal, View, Text, FlatList, TouchableOpacity, StyleSheet, Image, Alert, ActivityIndicator } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, StyleSheet, Image, Alert, ActivityIndicator } from 'react-native';
 import OdeIcon from '../icons/OdeIcon';
 import { COLORS, TYPOGRAPHY, effects } from '../theme/designSystem';
 import { useInsets } from '../hooks/useInsets';
 import { usePlaylists } from '../context/PlaylistsContext';
 import { API_BASE } from '../config';
 import { getDisplayTitle } from '../utils/displayTitle';
+import SheetShell from '../components/SheetShell';
 
 // mqdefault = 真 16:9 冇黑邊(同 PlaylistDetailSheet 一致)
 function Cover({ youtubeId, size = 52 }) {
@@ -95,8 +96,12 @@ export default function SharedPlaylistSheet({ token, onClose, onPlayHymn, miniPl
     }
   };
 
+  // SHEETSHELL-EXEC-20260906 #6:呢頁係全屏頁面(自己有 back 掣 + 客製標題列,
+  // 冇 backdrop/handle),用 SheetShell variant="fullscreen"——淨係 Modal +
+  // GestureHandlerRootView + 統一嘅 Android translucent props,視覺照原樣
+  // (執行單註解「而家冇 transparent——核對現時視覺,照原樣」)。
   return (
-    <Modal visible animationType="slide" onRequestClose={onClose} statusBarTranslucent>
+    <SheetShell visible={visible} onClose={onClose} variant="fullscreen">
       <View style={[styles.container, { paddingTop: insets.top + 8 }]}>
         <View style={styles.header}>
           <TouchableOpacity onPress={onClose} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} style={styles.headerBtn}>
@@ -183,7 +188,7 @@ export default function SharedPlaylistSheet({ token, onClose, onPlayHymn, miniPl
         {/* B9 — 呢個 Modal 冇 TabBar 陪住,音樂播緊要有得控制/跳返播放頁 */}
         {miniPlayer}
       </View>
-    </Modal>
+    </SheetShell>
   );
 }
 

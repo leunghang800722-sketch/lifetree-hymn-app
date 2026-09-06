@@ -2,17 +2,19 @@
 // 撳好友行「⋯ → 睇分享清單」開,列 GET /api/friends/:userId/shares,
 // 撳一個清單 → onOpenToken(token),由 caller(MineScreen)開現成
 // SharedPlaylistSheet(睇/播/儲存副本全部現成,呢度冇新同步邏輯)。
+//
+// SHEETSHELL-EXEC-20260906 #5:殼(Modal/backdrop/handle/手勢)搬去
+// SheetShell.js。
 import React, { useEffect, useState } from 'react';
-import { Modal, View, Text, FlatList, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
 import OdeIcon from '../icons/OdeIcon';
-import { COLORS, TYPOGRAPHY } from '../theme/designSystem';
-import { useInsets } from '../hooks/useInsets';
+import { COLORS } from '../theme/designSystem';
 import { useAuth } from '../context/AuthContext';
 import { friendsShares } from '../api';
+import SheetShell from '../components/SheetShell';
 
 export default function FriendSharesSheet({ friend, onClose, onOpenToken }) {
   const { getToken } = useAuth();
-  const insets = useInsets();
   const [loading, setLoading] = useState(true);
   const [shares, setShares] = useState([]);
   const [err, setErr] = useState(false);
@@ -34,58 +36,43 @@ export default function FriendSharesSheet({ friend, onClose, onOpenToken }) {
   if (!visible) return null;
 
   return (
-    <Modal visible animationType="slide" onRequestClose={onClose} statusBarTranslucent transparent>
-      <View style={styles.scrim}>
-        <TouchableOpacity style={{ flex: 1 }} activeOpacity={1} onPress={onClose} />
-        <View style={[styles.card, { paddingBottom: insets.bottom + 16 }]}>
-          <View style={styles.handle} />
-          <Text style={styles.title}>{friend.username} 分享緊嘅清單</Text>
-
-          {loading ? (
-            <View style={styles.centerState}><ActivityIndicator color={COLORS.glow} /></View>
-          ) : err ? (
-            <View style={styles.centerState}>
-              <Text style={styles.emptyText}>讀取失敗,遲啲再試</Text>
-            </View>
-          ) : (
-            <FlatList
-              data={shares}
-              keyExtractor={(item) => item.token}
-              contentContainerStyle={{ paddingBottom: 8 }}
-              renderItem={({ item }) => (
-                <TouchableOpacity style={styles.row} activeOpacity={0.7} onPress={() => onOpenToken && onOpenToken(item.token)}>
-                  <View style={styles.rowIcon}>
-                    <OdeIcon name="queue" size={22} color={COLORS.primary} />
-                  </View>
-                  <View style={styles.rowText}>
-                    <Text style={styles.rowName} numberOfLines={1}>{item.name}</Text>
-                    <Text style={styles.rowCount}>{item.song_count} 首</Text>
-                  </View>
-                  <OdeIcon name="chevronRight" size={20} color={COLORS.textSecondary} />
-                </TouchableOpacity>
-              )}
-              ListEmptyComponent={
-                <View style={styles.centerState}>
-                  <OdeIcon name="queue" size={36} color={COLORS.textSecondary} />
-                  <Text style={styles.emptyText}>佢未有分享緊嘅清單</Text>
-                </View>
-              }
-            />
-          )}
+    <SheetShell visible={visible} onClose={onClose} variant="bottom" title={`${friend.username} 分享緊嘅清單`} maxHeight="70%">
+      {loading ? (
+        <View style={styles.centerState}><ActivityIndicator color={COLORS.glow} /></View>
+      ) : err ? (
+        <View style={styles.centerState}>
+          <Text style={styles.emptyText}>讀取失敗,遲啲再試</Text>
         </View>
-      </View>
-    </Modal>
+      ) : (
+        <FlatList
+          data={shares}
+          keyExtractor={(item) => item.token}
+          contentContainerStyle={{ paddingBottom: 8 }}
+          renderItem={({ item }) => (
+            <TouchableOpacity style={styles.row} activeOpacity={0.7} onPress={() => onOpenToken && onOpenToken(item.token)}>
+              <View style={styles.rowIcon}>
+                <OdeIcon name="queue" size={22} color={COLORS.primary} />
+              </View>
+              <View style={styles.rowText}>
+                <Text style={styles.rowName} numberOfLines={1}>{item.name}</Text>
+                <Text style={styles.rowCount}>{item.song_count} 首</Text>
+              </View>
+              <OdeIcon name="chevronRight" size={20} color={COLORS.textSecondary} />
+            </TouchableOpacity>
+          )}
+          ListEmptyComponent={
+            <View style={styles.centerState}>
+              <OdeIcon name="queue" size={36} color={COLORS.textSecondary} />
+              <Text style={styles.emptyText}>佢未有分享緊嘅清單</Text>
+            </View>
+          }
+        />
+      )}
+    </SheetShell>
   );
 }
 
 const styles = StyleSheet.create({
-  scrim: { flex: 1, backgroundColor: 'rgba(0,0,0,0.55)', justifyContent: 'flex-end' },
-  card: {
-    maxHeight: '70%', backgroundColor: COLORS.card,
-    borderTopLeftRadius: 20, borderTopRightRadius: 20, overflow: 'hidden', paddingTop: 4,
-  },
-  handle: { width: 40, height: 5, borderRadius: 3, backgroundColor: COLORS.textSecondary, alignSelf: 'center', marginTop: 8, marginBottom: 6 },
-  title: { ...TYPOGRAPHY.body, fontSize: 17, fontWeight: '700', paddingHorizontal: 20, paddingVertical: 12 },
   centerState: { alignItems: 'center', paddingVertical: 40 },
   emptyText: { color: COLORS.textSecondary, fontSize: 14, marginTop: 8 },
   row: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 12 },

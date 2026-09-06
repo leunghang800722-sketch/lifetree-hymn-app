@@ -7,52 +7,31 @@
 //   * openCreate()    = 'create' 淨係名字輸入框,建立一個空清單(「我的」頁＋掣用)
 //   * openRename(pl)  = 'rename' 輸入框預填舊名,確認改名
 //
-// 點解用 native <Modal> 而唔係 gorhom:呢個 picker 要喺**任何** context 之上彈到出嚟 ——
-// 包括疊喺 zIndex:999 嘅播放器 overlay 之上(由 pill 撳),又要喺 tab 內容之上(由清單列
-// 撳)。native Modal 係獨立 window,無論邊個 z-order 都一定畫喺最面(v228/v231 踩過 gorhom
-// portal z-order 個坑)。播放清單(queue)嗰個仍然係 gorhom(要真手勢);呢個 picker 係
-// 「撳一下揀一個」嘅對話框,Modal 就啱。
-//
-// ⚠️ 冇「最愛清單」呢個選項(Eric 2026-07):心心掣已經處理最愛,呢度淨係列用戶自訂
-// 嘅播放清單。列表顯示「清單名 + N 首歌曲」(YT Music 咁);底部「＋新播放清單」撳落
-// 即場展開一個標題輸入框開新清單。
-
+// SHEETSHELL-EXEC-20260906 #1:殼(Modal/backdrop/handle/手勢/鍵盤抬高)搬去
+// SheetShell.js——add mode 用 variant="bottom"(fix Android 滑唔到收起嘅
+// 根源:呢個檔案原本冇 RNGH 手勢,淨係得 backdrop tap);create/rename 用
+// variant="center"。對外 useAddToPlaylist() 嘅 open/openCreate/openRename
+// 一個字都冇改。
 import React, { createContext, useContext, useState, useCallback, useEffect, useRef } from 'react';
-import { Modal, View, Text, TextInput, TouchableOpacity, FlatList, StyleSheet, Alert, Keyboard } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, FlatList, StyleSheet, Alert } from 'react-native';
 import OdeIcon from '../icons/OdeIcon';
 import { COLORS } from '../theme/designSystem';
 import { usePlaylists, MAX_PLAYLIST_SONGS } from '../context/PlaylistsContext';
 import { useInsets } from '../hooks/useInsets';
+import SheetShell from './SheetShell';
 
 const Ctx = createContext(null);
-// Android keyboardDidShow 高度有時唔包晒上面條建議/emoji 工具列,留返少少
-// buffer 保住輸入框/確認掣一定喺鍵盤之上。
-// ⚠️ 呢個數之前係 52 ——後來加咗 navigationBarTranslucent(令 Modal window
-// edge-to-edge)之後,kbHeight 本身已經係跟正確、較高嗰個座標系計,52 變成
-// 同 navigationBarTranslucent 「雙重補償」,將 card 多褪高咗一截,card
-// 底同鍵盤之間爆出一條透明罅,漏返個播放頁出嚟(Eric 實測 ~85 device px /
-// ~28dp)。呢度縮細做細細個安全邊(唔敢直接歸零,因為部分 IME 嘅建議列
-// 呢個高度計算方式始終唔係 100% 保證跨機一致)。真正解決漏罅嘅係下面
-// keyboardScrim(belt-and-braces):就算呢個數仲有少少誤差,keyboardScrim
-// 都會用同 card 一樣嘅實色補晒個罅,唔會再透出後面畫面。
-const KB_SAFETY_BUFFER = 12;
-// keyboardScrim 嘅高度 —— 大幅蓋過任何殘餘計算誤差(絕對定位、唔會影響
-// card 本身嘅 flex 排位,所以就算呢個數放大咗都唔會逼 card 內容爆出畫面
-// 頂)。實際畫面上佢一定俾真.系統鍵盤(topmost surface)蓋晒,所以留大啲
-// 都冇代價。
-const KB_SCRIM_HEIGHT = 140;
 // open(hymn):彈 sheet,揀清單加入呢首歌。openCreate/openRename 見檔頭。
 export const useAddToPlaylist = () => useContext(Ctx) || { open: () => {}, openCreate: () => {}, openRename: () => {} };
 
 export function AddToPlaylistProvider({ children }) {
   const { playlists = [], addToPlaylist, createPlaylist, renamePlaylist } = usePlaylists() || {};
-  const insets = useInsets(); // 底部「＋新播放清單」唔好俾導航列檔住
+  const insets = useInsets(); // toast 提示唔好俾導航列檔住
   const [mode, setMode] = useState(null); // null | 'add' | 'create' | 'rename'
   const [target, setTarget] = useState(null); // add mode:要加入邊首歌
   const [renameTarget, setRenameTarget] = useState(null); // rename mode:改邊個清單
   const [creating, setCreating] = useState(false); // add mode:展開緊新清單輸入框?
   const [newName, setNewName] = useState('');
-  const [kbHeight, setKbHeight] = useState(0); // §Eric #1:鍵盤高度,用嚟抬高個 card
   const [toast, setToast] = useState(''); // 建立清單後嘅輕量非阻擋提示(唔用 Alert —— 黑底 UI 唔啱擺白色系統對話框)
   const toastTimer = useRef(null);
   const visible = !!mode;
@@ -65,15 +44,6 @@ export function AddToPlaylistProvider({ children }) {
     toastTimer.current = setTimeout(() => setToast(''), 1800);
   }, []);
   useEffect(() => () => { if (toastTimer.current) clearTimeout(toastTimer.current); }, []);
-
-  // §Eric #1:打新清單名嗰陣,鍵盤彈出會遮住輸入框/確認掣。聽鍵盤事件,
-  // 將 card 抬高鍵盤咁多,令輸入框 keep 喺鍵盤上面。Modal + Android 用
-  // KeyboardAvoidingView 好唔穩,呢個手動做法可靠好多。
-  useEffect(() => {
-    const show = Keyboard.addListener('keyboardDidShow', (e) => setKbHeight(e.endCoordinates?.height || 0));
-    const hide = Keyboard.addListener('keyboardDidHide', () => setKbHeight(0));
-    return () => { show.remove(); hide.remove(); };
-  }, []);
 
   const open = useCallback((hymn) => {
     if (hymn?.id) { setMode('add'); setTarget(hymn); setRenameTarget(null); setCreating(false); setNewName(''); }
@@ -145,97 +115,57 @@ export function AddToPlaylistProvider({ children }) {
   return (
     <Ctx.Provider value={{ open, openCreate, openRename }}>
       {children}
-      {/* ⚠️ Bug fix(2026-07):App 成個 activity 係 edge-to-edge(styles.xml 兩條系統列透明),
-          但 native <Modal> 開嘅係另一個獨立 window —— 冇加 navigationBarTranslucent 嘅話,
-          呢個 window 會自己讓出導航列高度、唔會頂到真正嘅畫面底。結果:card 個 marginBottom
-          (跟住鍵盤高度計)喺呢個「較矮」嘅座標系入面計,會俾導航列高度咁多 —— 即係
-          sheet 同鍵盤之間漏一條罅,穿到落去見到後面畫面(玻璃海個 bug)。加呢個 prop
-          令 Modal window 都變 edge-to-edge,同 activity 座標系對齊。 */}
-      <Modal visible={visible} transparent animationType={isCentered ? 'fade' : 'slide'} onRequestClose={close} statusBarTranslucent navigationBarTranslucent>
-        <View style={styles.scrim}>
-          {/* ⚠️ backdrop 一定要 `{flex:1}`,唔可以用 absoluteFillObject ——
-              2026-07-29 Opus 5 驗收實測:改咗做絕對定位之後,呢個 TouchableOpacity
-              收唔到 touch,三個 mode(add/create/rename)「撳空白位閂」全部失靈
-              (連凍結咗嘅 'add' mode 都中招)。所以 backdrop 維持 flex:1;
-              「置中 dialog」改用「card 上下各一塊 flex:1 backdrop」嚟達成
-              (見下面 card 之後嗰塊),兩塊平分空間 = card 企正中,而且兩塊
-              都係實實在在收到 touch 嘅 backdrop,撳邊邊都閂得到。 */}
-          <TouchableOpacity style={{ flex: 1 }} activeOpacity={1} onPress={close} />
-          {/* belt-and-braces 第二重保障(淨係貼底 sheet 先需要):實色補罅,貼實個 window
-              底(絕對定位,唔參與 flex 排位,唔會逼 card 內容爆出畫面頂)。就算 marginBottom
-              個計法有少少誤差,card 底同真.鍵盤之間都唔會再透出後面畫面 ——
-              呢張色板保證俾真.系統鍵盤(topmost surface)蓋晒,冇代價可以留大啲。
-              先於 card 畫(render order 排喺 card 之前),所以 card 一定疊喺上面。
-              置中 dialog(create/rename)唔靠貼底,唔需要呢個補罅。 */}
-          {!isCentered && kbHeight > 0 && (
-            <View pointerEvents="none" style={styles.keyboardScrim} />
-          )}
-          {/* §2026-07-29 QUEUE-UX-4FIXES §2:rename/create 呢兩個 mode 冇 FlatList,
-              淨係「標題 + 一行輸入框」,根本唔需要貼底 sheet ——改置中 dialog 之後,
-              鍵盤只會佔畫面下半部,常規手機螢幕唔會遮到置中嘅內容,成套 kbHeight
-              計法對呢兩個 mode 唔再係生死攸關(唔使再靠 marginBottom 抬高)。
-              'add' mode(有 FlatList,真係 sheet)貼底行為/外觀完全維持原狀。 */}
-          <View style={[
-            styles.card,
-            isCentered
-              ? styles.cardCentered
-              : { marginBottom: kbHeight > 0 ? kbHeight + KB_SAFETY_BUFFER : 0, paddingBottom: kbHeight > 0 ? 12 : 8 + insets.bottom },
-          ]}>
-            {!isCentered && <View style={styles.handle} />}
-            <Text style={styles.title}>
-              {mode === 'create' ? '新播放清單' : mode === 'rename' ? '改清單名' : '加入到清單'}
-            </Text>
+      <SheetShell
+        visible={visible}
+        onClose={close}
+        variant={isCentered ? 'center' : 'bottom'}
+        title={mode === 'create' ? '新播放清單' : mode === 'rename' ? '改清單名' : '加入到清單'}
+        keyboardAware={!isCentered}
+        maxHeight="65%"
+      >
+        {mode === 'create' ? nameInputRow(confirmCreate, '建立') : null}
+        {mode === 'rename' ? nameInputRow(confirmRename, '改名') : null}
 
-            {mode === 'create' ? nameInputRow(confirmCreate, '建立') : null}
-            {mode === 'rename' ? nameInputRow(confirmRename, '改名') : null}
-
-            {mode === 'add' ? <FlatList
-              data={playlists}
-              keyExtractor={(item) => String(item.id)}
-              contentContainerStyle={{ paddingBottom: 8 }}
-              keyboardShouldPersistTaps="handled"
-              ListEmptyComponent={
-                !creating ? <Text style={styles.empty}>仲未有播放清單 —— 撳下面開一個</Text> : null
-              }
-              ListFooterComponent={
-                creating ? (
-                  // 開新清單:同 create/rename mode 共用同一舊輸入列 UI
-                  nameInputRow(confirmCreate, '建立')
-                ) : (
-                  <TouchableOpacity style={styles.newRow} onPress={() => setCreating(true)} activeOpacity={0.7}>
-                    <OdeIcon name="plus" size={22} color={COLORS.primary} />
-                    <Text style={styles.newText}>新播放清單</Text>
-                  </TouchableOpacity>
-                )
-              }
-              renderItem={({ item }) => {
-                const count = item.songs?.length || 0;
-                const full = count >= MAX_PLAYLIST_SONGS;
-                return (
-                  <TouchableOpacity style={[styles.row, { opacity: full ? 0.45 : 1 }]}
-                    onPress={() => addTo(item)} activeOpacity={0.7}>
-                    <View style={styles.rowIcon}>
-                      <OdeIcon name="queue" size={22} color={full ? COLORS.textSecondary : COLORS.primary} />
-                    </View>
-                    <View style={styles.rowText}>
-                      <Text style={styles.rowName} numberOfLines={1}>{item.name}</Text>
-                      <Text style={styles.rowCount}>
-                        {full ? `已滿・${MAX_PLAYLIST_SONGS} 首歌曲` : `${count} 首歌曲`}
-                      </Text>
-                    </View>
-                  </TouchableOpacity>
-                );
-              }}
-            /> : null}
-          </View>
-          {/* 置中 dialog 嘅下半塊 backdrop —— 同上面嗰塊一樣 flex:1,兩塊平分
-              剩餘空間,card 就會企喺畫面正中(唔使靠 justifyContent:'center',
-              亦唔使用收唔到 touch 嘅絕對定位)。'add' mode 冇呢塊,card 照舊貼底。 */}
-          {isCentered && (
-            <TouchableOpacity style={{ flex: 1 }} activeOpacity={1} onPress={close} />
-          )}
-        </View>
-      </Modal>
+        {mode === 'add' ? (
+          <FlatList
+            data={playlists}
+            keyExtractor={(item) => String(item.id)}
+            contentContainerStyle={{ paddingBottom: 8 }}
+            keyboardShouldPersistTaps="handled"
+            ListEmptyComponent={
+              !creating ? <Text style={styles.empty}>仲未有播放清單 —— 撳下面開一個</Text> : null
+            }
+            ListFooterComponent={
+              creating ? (
+                nameInputRow(confirmCreate, '建立')
+              ) : (
+                <TouchableOpacity style={styles.newRow} onPress={() => setCreating(true)} activeOpacity={0.7}>
+                  <OdeIcon name="plus" size={22} color={COLORS.primary} />
+                  <Text style={styles.newText}>新播放清單</Text>
+                </TouchableOpacity>
+              )
+            }
+            renderItem={({ item }) => {
+              const count = item.songs?.length || 0;
+              const full = count >= MAX_PLAYLIST_SONGS;
+              return (
+                <TouchableOpacity style={[styles.row, { opacity: full ? 0.45 : 1 }]}
+                  onPress={() => addTo(item)} activeOpacity={0.7}>
+                  <View style={styles.rowIcon}>
+                    <OdeIcon name="queue" size={22} color={full ? COLORS.textSecondary : COLORS.primary} />
+                  </View>
+                  <View style={styles.rowText}>
+                    <Text style={styles.rowName} numberOfLines={1}>{item.name}</Text>
+                    <Text style={styles.rowCount}>
+                      {full ? `已滿・${MAX_PLAYLIST_SONGS} 首歌曲` : `${count} 首歌曲`}
+                    </Text>
+                  </View>
+                </TouchableOpacity>
+              );
+            }}
+          />
+        ) : null}
+      </SheetShell>
       {/* 建立/加入清單後嘅輕量提示 —— 非阻擋(唔使用戶撳掣打斷),1.8s 後自己收埋。 */}
       {toast ? (
         <View pointerEvents="none" style={[styles.toastWrap, { bottom: insets.bottom + 24 }]}>
@@ -250,25 +180,6 @@ export function AddToPlaylistProvider({ children }) {
 }
 
 const styles = StyleSheet.create({
-  scrim: { flex: 1, backgroundColor: 'rgba(0,0,0,0.55)', justifyContent: 'flex-end' },
-  // belt-and-braces keyboard 補罅板 —— 見上面 JSX 註解。絕對定位貼實 window 底,
-  // 顏色同 card 一樣,萬一 marginBottom 計少咗都唔會透出後面畫面。
-  keyboardScrim: {
-    position: 'absolute', left: 0, right: 0, bottom: 0,
-    height: KB_SCRIM_HEIGHT, backgroundColor: COLORS.card,
-  },
-  card: {
-    maxHeight: '65%', backgroundColor: COLORS.card,
-    borderTopLeftRadius: 20, borderTopRightRadius: 20, overflow: 'hidden', paddingBottom: 8,
-  },
-  // rename/create 置中 dialog(§2026-07-29 QUEUE-UX-4FIXES §2)—— 冇 FlatList,
-  // 唔使貼底,窄啲、四角全圓,睇落似 dialog 唔似 sheet。
-  cardCentered: {
-    alignSelf: 'center', width: '86%', maxWidth: 420,
-    borderRadius: 20, marginBottom: 0, paddingBottom: 14,
-  },
-  handle: { width: 40, height: 5, borderRadius: 3, backgroundColor: COLORS.textSecondary, alignSelf: 'center', marginTop: 8, marginBottom: 6 },
-  title: { color: COLORS.textPrimary, fontSize: 18, fontWeight: '600', paddingHorizontal: 20, paddingVertical: 12 },
   empty: { color: COLORS.textSecondary, paddingHorizontal: 20, paddingVertical: 16 },
   row: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 12 },
   rowIcon: {

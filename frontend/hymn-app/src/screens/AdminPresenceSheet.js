@@ -3,13 +3,17 @@
 // 標籤/連續在線時長。30 秒自動刷新 + 落拉刷新(pattern 照 FriendSharesSheet)。
 //
 // 唔顯示正在聽邊首歌(Eric 拍板③),歷史留第二版(④淨係即時)。
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Modal, View, Text, FlatList, StyleSheet, ActivityIndicator, RefreshControl, Animated, TouchableOpacity } from 'react-native';
-import { Gesture, GestureDetector, GestureHandlerRootView } from 'react-native-gesture-handler';
+//
+// SHEETSHELL-EXEC-20260906 #2:呢個檔嘅 RNGH Pan 手勢(2026-09-06 v2 已驗證,
+// PanResponder 喺 New Architecture + idb 合成觸控完全收唔到 move 事件)係
+// 8 個面板嘅共同做法藍本,搬咗去 SheetShell.js 俾其餘 7 個共用。呢度改為
+// 用殼,自己嗰套 Modal/Animated/Gesture 全部刪走。
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { View, Text, FlatList, StyleSheet, ActivityIndicator, RefreshControl } from 'react-native';
 import OdeIcon from '../icons/OdeIcon';
-import { COLORS, TYPOGRAPHY } from '../theme/designSystem';
-import { useInsets } from '../hooks/useInsets';
+import { COLORS } from '../theme/designSystem';
 import { adminPresence } from '../api';
+import SheetShell from '../components/SheetShell';
 
 const AUTO_REFRESH_MS = 30 * 1000;
 
@@ -23,7 +27,6 @@ function formatDuration(sec) {
 }
 
 export default function AdminPresenceSheet({ visible, onClose, getToken }) {
-  const insets = useInsets();
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [data, setData] = useState(null); // { online:{total,members,guests}, members:[...] }
@@ -57,126 +60,71 @@ export default function AdminPresenceSheet({ visible, onClose, getToken }) {
     return () => clearInterval(timer);
   }, [visible, load]);
 
-  // 下滑收起(見 return 內註解)。hooks 要喺 early return 之前。
-  const dragY = useRef(new Animated.Value(0)).current;
-  const onCloseRef = useRef(onClose); onCloseRef.current = onClose;
-  // 2026-09-06 v2:第一版用 RN PanResponder,喺 RN 0.85 New Architecture + idb 合成
-  // 觸控下完全收唔到 move 事件(模擬器驗證 0/8),分唔清工具定 API 問題。改用
-  // react-native-gesture-handler 嘅 Pan(native 手勢,同 FlatList 一樣可靠;
-  // Android 嘅 Modal 入面要另包一層 GestureHandlerRootView 先識——RNGH 官方
-  // 要求)。runOnJS 唔使,呢度用 JS 線程 callback(手勢細,唔追求 60fps 跟手)。
-  const closeSheet = useCallback(() => {
-    Animated.timing(dragY, { toValue: 600, duration: 160, useNativeDriver: true }).start(() => {
-      dragY.setValue(0);
-      onCloseRef.current && onCloseRef.current();
-    });
-  }, [dragY]);
-  const dragGesture = useMemo(() => Gesture.Pan()
-    .activeOffsetY(8)
-    .failOffsetX([-20, 20])
-    .runOnJS(true)
-    .onUpdate((e) => { if (e.translationY > 0) dragY.setValue(e.translationY); })
-    .onEnd((e) => {
-      if (e.translationY > 60 || e.velocityY > 500) closeSheet();
-      else Animated.spring(dragY, { toValue: 0, useNativeDriver: true }).start();
-    })
-    .onFinalize((_e, success) => { if (!success) Animated.spring(dragY, { toValue: 0, useNativeDriver: true }).start(); }),
-  [dragY, closeSheet]);
-
   if (!visible) return null;
 
   const online = data?.online || { total: 0, members: 0, guests: 0 };
   const members = data?.members || [];
 
   return (
-    <Modal visible animationType="slide" onRequestClose={onClose} statusBarTranslucent transparent>
-      <GestureHandlerRootView style={styles.scrim}>
-        <View style={{ flex: 1 }} onTouchEnd={onClose} />
-        <Animated.View style={[styles.card, { paddingBottom: insets.bottom + 16, maxHeight: '80%', transform: [{ translateY: dragY }] }]}>
-          {/* 2026-09-06 Eric 真機:「滑下不能收起」——手柄原本純裝飾。頂部
-              (手柄+標題+三個數)掛 PanResponder:跟手落,放手超過 60px 或者
-              夠快就關;唔夠就彈返上去。FlatList 唔喺呢個區入面,滾動照舊。 */}
-          <GestureDetector gesture={dragGesture}>
-          <View>
-            <View style={styles.handle} />
-            <View style={styles.titleRow}>
-              <Text style={styles.title}>在線</Text>
-              <TouchableOpacity onPress={onClose} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }} style={styles.closeBtn} accessibilityLabel="關閉">
-                <OdeIcon name="close" size={20} color={COLORS.textSecondary} />
-              </TouchableOpacity>
-            </View>
+    <SheetShell visible={visible} onClose={onClose} variant="bottom" title="在線" maxHeight="80%">
+      <View style={styles.statsRow}>
+        <View style={styles.statTile}>
+          <Text style={styles.statNum}>{online.total}</Text>
+          <Text style={styles.statLabel}>總在線</Text>
+        </View>
+        <View style={styles.statTile}>
+          <Text style={styles.statNum}>{online.members}</Text>
+          <Text style={styles.statLabel}>會員</Text>
+        </View>
+        <View style={styles.statTile}>
+          <Text style={styles.statNum}>{online.guests}</Text>
+          <Text style={styles.statLabel}>訪客</Text>
+        </View>
+      </View>
 
-          <View style={styles.statsRow}>
-            <View style={styles.statTile}>
-              <Text style={styles.statNum}>{online.total}</Text>
-              <Text style={styles.statLabel}>總在線</Text>
+      {loading ? (
+        <View style={styles.centerState}><ActivityIndicator color={COLORS.glow} /></View>
+      ) : err ? (
+        <View style={styles.centerState}>
+          <Text style={styles.emptyText}>讀取失敗,遲啲再試</Text>
+        </View>
+      ) : (
+        <FlatList
+          data={members}
+          keyExtractor={(item) => String(item.id)}
+          contentContainerStyle={{ paddingBottom: 8 }}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={() => load('refresh')} tintColor={COLORS.glow} />
+          }
+          renderItem={({ item }) => (
+            <View style={styles.row}>
+              <View style={styles.avatar}>
+                <Text style={styles.avatarText}>{(item.name || '?').charAt(0).toUpperCase()}</Text>
+              </View>
+              <View style={styles.rowInfo}>
+                <Text style={styles.rowName} numberOfLines={1}>{item.name}</Text>
+                <Text style={styles.rowDuration}>{formatDuration(item.durationSec)}</Text>
+              </View>
+              <View style={[styles.tag, item.state === 'bg-playing' ? styles.tagBg : styles.tagFg]}>
+                <Text style={item.state === 'bg-playing' ? styles.tagTextOnGlow : styles.tagText}>
+                  {item.state === 'bg-playing' ? '背景播放' : '前台'}
+                </Text>
+              </View>
             </View>
-            <View style={styles.statTile}>
-              <Text style={styles.statNum}>{online.members}</Text>
-              <Text style={styles.statLabel}>會員</Text>
-            </View>
-            <View style={styles.statTile}>
-              <Text style={styles.statNum}>{online.guests}</Text>
-              <Text style={styles.statLabel}>訪客</Text>
-            </View>
-          </View>
-          </View>
-          </GestureDetector>
-
-          {loading ? (
-            <View style={styles.centerState}><ActivityIndicator color={COLORS.glow} /></View>
-          ) : err ? (
-            <View style={styles.centerState}>
-              <Text style={styles.emptyText}>讀取失敗,遲啲再試</Text>
-            </View>
-          ) : (
-            <FlatList
-              data={members}
-              keyExtractor={(item) => String(item.id)}
-              contentContainerStyle={{ paddingBottom: 8 }}
-              refreshControl={
-                <RefreshControl refreshing={refreshing} onRefresh={() => load('refresh')} tintColor={COLORS.glow} />
-              }
-              renderItem={({ item }) => (
-                <View style={styles.row}>
-                  <View style={styles.avatar}>
-                    <Text style={styles.avatarText}>{(item.name || '?').charAt(0).toUpperCase()}</Text>
-                  </View>
-                  <View style={styles.rowInfo}>
-                    <Text style={styles.rowName} numberOfLines={1}>{item.name}</Text>
-                    <Text style={styles.rowDuration}>{formatDuration(item.durationSec)}</Text>
-                  </View>
-                  <View style={[styles.tag, item.state === 'bg-playing' ? styles.tagBg : styles.tagFg]}>
-                    <Text style={item.state === 'bg-playing' ? styles.tagTextOnGlow : styles.tagText}>
-                      {item.state === 'bg-playing' ? '背景播放' : '前台'}
-                    </Text>
-                  </View>
-                </View>
-              )}
-              ListEmptyComponent={
-                <View style={styles.centerState}>
-                  <OdeIcon name="me" size={36} color={COLORS.textSecondary} />
-                  <Text style={styles.emptyText}>暫時冇人在線</Text>
-                </View>
-              }
-            />
           )}
-        </Animated.View>
-      </GestureHandlerRootView>
-    </Modal>
+          ListEmptyComponent={
+            <View style={styles.centerState}>
+              <OdeIcon name="me" size={36} color={COLORS.textSecondary} />
+              <Text style={styles.emptyText}>暫時冇人在線</Text>
+            </View>
+          }
+        />
+      )}
+    </SheetShell>
   );
 }
 
 const styles = StyleSheet.create({
-  scrim: { flex: 1, backgroundColor: 'rgba(0,0,0,0.55)', justifyContent: 'flex-end' },
-  card: {
-    backgroundColor: COLORS.card,
-    borderTopLeftRadius: 20, borderTopRightRadius: 20, overflow: 'hidden', paddingTop: 4,
-  },
-  titleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center' },
-  closeBtn: { position: 'absolute', right: 0, padding: 6 },
-  handle: { width: 40, height: 5, borderRadius: 3, backgroundColor: COLORS.textSecondary, alignSelf: 'center', marginTop: 8, marginBottom: 6 },
-  title: { ...TYPOGRAPHY.body, fontSize: 17, fontWeight: '700', paddingHorizontal: 20, paddingVertical: 12 },
   statsRow: { flexDirection: 'row', paddingHorizontal: 20, marginBottom: 12 },
   statTile: {
     flex: 1, alignItems: 'center', paddingVertical: 12, marginRight: 8,

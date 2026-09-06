@@ -10,7 +10,7 @@
 // 移除單曲**唔使二次確認**(re-add 好易,Spotify 同款);刪成個清單先要確認。
 
 import React, { useEffect, useState } from 'react';
-import { Modal, View, Text, FlatList, TouchableOpacity, StyleSheet, Image, Alert, Share } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, StyleSheet, Image, Alert, Share } from 'react-native';
 import OdeIcon from '../icons/OdeIcon';
 import { COLORS, TYPOGRAPHY, effects } from '../theme/designSystem';
 import { useInsets } from '../hooks/useInsets';
@@ -20,6 +20,7 @@ import { useAuth } from '../context/AuthContext';
 import { flush, getOutboxLength } from '../sync/userSync';
 import { API_BASE } from '../config';
 import { getDisplayTitle } from '../utils/displayTitle';
+import SheetShell from '../components/SheetShell';
 
 // mqdefault = 真 16:9 冇黑邊(同 MineScreen / HymnListScreen 一致)
 function Cover({ youtubeId, size = 52 }) {
@@ -153,8 +154,12 @@ export default function PlaylistDetailSheet({ playlistId, onClose, onPlayHymn, o
     play(songs[0]);
   };
 
+  // SHEETSHELL-EXEC-20260906 #7:呢頁係全屏頁面(自己有 back/⋯掣 + 客製標題列,
+  // 冇 backdrop/handle),用 SheetShell variant="fullscreen"——視覺照原樣
+  // (執行單註解「而家冇 transparent——核對現時視覺,照原樣」;分享中鎖返回
+  // SCR-018 唔喺範圍,呢度冇改)。
   return (
-    <Modal visible animationType="slide" onRequestClose={onClose} statusBarTranslucent>
+    <SheetShell visible={visible} onClose={onClose} variant="fullscreen">
       <View style={[styles.container, { paddingTop: insets.top + 8 }]}>
         {/* Header:返回 │ 清單名 + N / 30 首 │ ⋯ */}
         <View style={styles.header}>
@@ -217,7 +222,7 @@ export default function PlaylistDetailSheet({ playlistId, onClose, onPlayHymn, o
         {/* B9 — 呢個 Modal 冇 TabBar 陪住,音樂播緊要有得控制/跳返播放頁 */}
         {miniPlayer}
       </View>
-    </Modal>
+    </SheetShell>
   );
 }
 
