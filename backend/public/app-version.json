@@ -2,5 +2,9 @@
   "versionCode": 55,
   "versionName": "1.5.1",
   "url": "https://api.odemusics.com/downloads/app.apk",
-  "hlsEnabled": false
+  "hlsEnabled": true,
+  "hlsDeviceIds": [
+    "e1b6dc8a6948c3018036565007ad87d4",
+    "0ae6ff0c1202a4ddfb30e385d0f652dd"
+  ]
 }
