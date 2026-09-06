@@ -23,12 +23,21 @@
 //        呢度係將個驗證過嘅設計搬入正式源碼。
 //   P1-3 unavailable(下架佔位)完全冇 filter → 重演 2026-08-22「連續飛歌」
 //        事故。修法:hymn.unavailable 一律阻,唔理而家有冇 queue/idle。
-//   P3-6 播到自動尾巴之後(curIdx>=autoRadioFrom 嘅常態),插入嘅歌會顯示
-//        喺「自動播放:全部」線下面,睇落好似系統隨機揀嘅。修法:調整完嘅
-//        autoRadioFrom 如果仲係 <= insertAt,推去 insertAt+1,等插入嘅歌
-//        算「用戶揀」。
 //   P3-8 失敗 rollback 之後,autoRadioFrom/insertBoundary 要用 id 對位重算
 //        (見 reindexBoundaryById),唔可以停留喺失敗嗰刻計出嚟嘅 plan 數值。
+//
+// PLAYNEXT-OPUS2-20260906 B1(revert P3-6)—— 上面 P3-6 個修法(推
+// autoRadioFrom)已經 revert:autoRadioFrom 同時係「headLen」語義
+// (playSingle/rebuildTail/applyAutoplayEnabled 三個地方都靠佢分辨
+// 「用戶真係揀咗幾多首」vs「自動接續尾巴」),推咗條線 = 話俾呢三個
+// caller 知「頭幾首全部係用戶揀」,而佢哋其實係系統隨機抽嘅尾巴——
+// 觸發頻率高(播到尾巴入面就撞中,係常態唔係邊角),後果係電台尾巴
+// 死亡(playSingle 之後撳散歌行「插播」路,得返兩首,播完就停)。
+// 而家改用現有「插播」概念畫線:尾巴期間插入(adjustedAutoRadioFrom
+// != null 且 <= insertAt,即插入位喺自動尾巴入面或線上)→
+// insertBoundary 推去 insertAt+1(「即將播放」分隔線畫喺新歌下面),
+// autoRadioFrom 本身完全唔郁。呢條插播線行過就自動清(App.js:1128
+// PlaybackActiveTrackChanged 現有邏輯),唔會變成永久嘅鬼影分隔線。
 //
 // 契約:
 //   computeInsertNext(cur, curIdx, hymn, opts)
@@ -51,8 +60,11 @@
 //                                                               — 正常插入嘅計劃(newQ 已經係最終陣列;removedIdx=-1 代表冇去重刪位;
 //                                                                  newCurIdx=去重刪位之後「播緊嗰首」喺 newQ 嘅新 index(通常同 curIdx
 //                                                                  一樣,除非 removedIdx < curIdx 令佢郁咗一格);
-//                                                                  autoRadioFrom/insertBoundary 已經跟返 opts 入面同一個 null/number 形態,
-//                                                                  number 就已經調整咗)
+//                                                                  autoRadioFrom 已經跟返 opts 入面同一個 null/number 形態,number 就已經
+//                                                                  adjustBoundary 調整咗,永遠唔會被呢個 function 推去 insertAt+1(B1);
+//                                                                  insertBoundary 除咗跟 opts 嘅 null/number 形態調整之外,如果插入位喺
+//                                                                  自動尾巴入面(adjustedAutoRadioFrom<=insertAt),會被推去 insertAt+1
+//                                                                  ——即使 opts.insertBoundary 本身係 null 都可能因此變成 number)
 function computeInsertNext(cur, curIdx, hymn, opts) {
   opts = opts || {};
   const autoRadioFrom = typeof opts.autoRadioFrom === 'number' ? opts.autoRadioFrom : null;
@@ -124,15 +136,19 @@ function computeInsertNext(cur, curIdx, hymn, opts) {
   }
 
   const adjustedAutoRadioFrom = autoRadioFrom != null ? adjustBoundary(autoRadioFrom) : autoRadioFrom;
-  // PLAYNEXT-OPUS-20260906 P3-6 —— 播到自動尾巴之後(curIdx>=autoRadioFrom
-  // 嘅常態)嗰陣,調整完嘅「自動播放」線仲係 <= insertAt(即插入嘅歌落咗
-  // 喺線下面),推去 insertAt+1,等呢首用戶親手插嘅歌唔會顯示喺「自動
-  // 播放:全部」線下面(睇落好似系統隨機揀嘅)。冇尾巴(null)唔受影響;
-  // 插入位喺線之前(用戶仲未播到尾巴)嘅正常情況 adjustedAutoRadioFrom
-  // 已經 > insertAt,唔會觸發呢條 override。
-  const finalAutoRadioFrom = (adjustedAutoRadioFrom != null && adjustedAutoRadioFrom <= insertAt)
+
+  const adjustedInsertBoundary = insertBoundary != null ? adjustBoundary(insertBoundary) : insertBoundary;
+  // PLAYNEXT-OPUS2-20260906 B1(revert P3-6)—— autoRadioFrom 完全唔郁,淨係
+  // 跟正常 adjustBoundary shift(上面一行)。播到自動尾巴之後(curIdx>=
+  // autoRadioFrom 嘅常態)嗰陣,調整完嘅「自動播放」線仲係 <= insertAt
+  // (即插入位喺尾巴入面或線上),改用現有「插播」機制畫線:insertBoundary
+  // 推去 insertAt+1(「即將播放」分隔線畫喺新歌下面,播過就自動清——
+  // App.js:1128 已有邏輯)。冇尾巴(null)唔受影響;插入位喺線之前(用戶
+  // 仲未播到尾巴)嘅正常情況 adjustedAutoRadioFrom 已經 > insertAt,唔會
+  // 觸發呢條 override,insertBoundary 維持返正常 adjustBoundary 嘅結果。
+  const finalInsertBoundary = (adjustedAutoRadioFrom != null && adjustedAutoRadioFrom <= insertAt)
     ? insertAt + 1
-    : adjustedAutoRadioFrom;
+    : adjustedInsertBoundary;
 
   return {
     fallbackToSingle: false,
@@ -142,8 +158,8 @@ function computeInsertNext(cur, curIdx, hymn, opts) {
     removedIdx: removedIdx,
     newCurIdx: newCurIdx,
     moved: dupIdx >= 0 ? 1 : 0,
-    autoRadioFrom: finalAutoRadioFrom,
-    insertBoundary: insertBoundary != null ? adjustBoundary(insertBoundary) : insertBoundary,
+    autoRadioFrom: adjustedAutoRadioFrom,
+    insertBoundary: finalInsertBoundary,
   };
 }
 

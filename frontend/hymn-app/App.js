@@ -2554,9 +2554,18 @@ function PlayerProvider({ children }) {
   async function insertNextImpl(hymn) {
     const cur = queueRef.current || [];
     const curIdx = currentQueueIndexRef.current ?? 0;
+    // PLAYNEXT-OPUS2-20260906 P3-7 nit —— 呢兩個係「掛鏈嗰刻」(即呢個
+    // function 真正輪到執行嗰一刻)嘅快照,同 cur 屬於同一個 index 空間
+    // (oldCur)。catch 分支嘅 reindexBoundaryById 一定要用呢兩個做基準,
+    // 唔可以用 autoRadioFromRef.current/insertBoundaryRef.current(如果
+    // throw 發生喺下面 step 6 之後,嗰兩個 ref 已經俾寫咗做
+    // plan.autoRadioFrom/plan.insertBoundary——newQ 空間嘅 index,同 cur
+    // 對唔上位,catch 攞嚟做 reindexBoundaryById 基準會指錯歌)。
+    const arf0 = autoRadioFromRef.current;
+    const ib0 = insertBoundaryRef.current;
     const plan = computeInsertNext(cur, curIdx, hymn, {
-      autoRadioFrom: autoRadioFromRef.current,
-      insertBoundary: insertBoundaryRef.current,
+      autoRadioFrom: arf0,
+      insertBoundary: ib0,
       idle: trackStateRef.current === TPState.None,
     });
     if (plan.blocked) { showNotice('呢首歌已經下架，播唔到'); return; }
@@ -2578,11 +2587,17 @@ function PlayerProvider({ children }) {
       // 5. 插入(native 跟返 plan.insertAt)。
       await TrackPlayer.add(toTrack(hymn), plan.insertAt);
       // 6. 邊界調整——先 ref 後 state(同 playQueue() 做法一致)。
-      if (autoRadioFromRef.current != null) {
+      if (arf0 != null) {
         autoRadioFromRef.current = plan.autoRadioFrom;
         setAutoRadioFrom(plan.autoRadioFrom);
       }
-      if (insertBoundaryRef.current != null) {
+      // PLAYNEXT-OPUS2-20260906 B1(revert P3-6)—— insertBoundary 而家可能
+      // 由 null 變成有值(尾巴期間插入,插播概念畫線,見 insertNextCore.js
+      // B1 段),唔可以再淨係喺「原本已經有 boundary」(ib0 != null)先至
+      // 同步——嗰個舊 guard 會令呢個 null→number 嘅新情況冚咗俾攔住,線
+      // 永遠畫唔出。plan.insertBoundary 已經係基於 ib0 算出嚟嘅權威值,
+      // 兩個一樣就係 no-op,永遠同步係安全嘅。
+      if (plan.insertBoundary !== ib0) {
         insertBoundaryRef.current = plan.insertBoundary;
         setInsertBoundary(plan.insertBoundary);
       }
@@ -2598,11 +2613,27 @@ function PlayerProvider({ children }) {
       // 7. queueRef/setQueue 同步。
       queueRef.current = plan.newQ;
       setQueue(plan.newQ);
-      // PLAYNEXT-OPUS-20260906 P0-2 —— 同步 originalQueueRef,抄
-      // reorderQueue(App.js reorderQueue,見上面)現成做法:唔喺 shuffle
-      // 狀態先寫,等 shuffle 開→關嘅還原唔會漏咗啱啱插入嘅歌(Android 實測
-      // 34→31,插入嘅歌無聲無息消失嗰個 bug)。
-      if (!isShuffledRef.current) originalQueueRef.current = plan.newQ;
+      // PLAYNEXT-OPUS-20260906 P0-2 + PLAYNEXT-OPUS2-20260906 B2 —— 同步
+      // originalQueueRef。冇開 shuffle 抄 reorderQueue(App.js reorderQueue,
+      // 見上面)現成做法直接覆寫。**開住 shuffle 嗰陣**(B2 揪出:上一輪
+      // 淨係覆蓋咗 !isShuffled 果條路,shuffle 開住插入嘅歌喺
+      // originalQueueRef 度從未出現過,關返 shuffle 用佢重砌就無聲無息消失
+      // ——iOS 實測 33→31)要獨立處理:喺 originalQueueRef(pre-shuffle 次序)
+      // 度做返同一次「去重+插入」——先用 hymn.id 濾走佢原本可能已經存在嘅
+      // 位(順手做埋去重),再插喺「播緊嗰首」(用插入之前嘅 cur[curIdx] 做
+      // 錨,同 native/queueRef 嗰個插入位無關,因為 pre-shuffle 次序入面
+      // 播緊嗰首未必喺同一個 index)後面。
+      if (!isShuffledRef.current) {
+        originalQueueRef.current = plan.newQ;
+      } else {
+        const o = originalQueueRef.current || [];
+        const without = o.filter((x) => String(x && x.id) !== String(hymn.id));
+        const anchor = cur[curIdx];
+        const oi = without.findIndex((x) => String(x && x.id) === String(anchor && anchor.id));
+        originalQueueRef.current = oi >= 0
+          ? [...without.slice(0, oi + 1), hymn, ...without.slice(oi + 1)]
+          : [...without, hymn];
+      }
       // 8. toast。
       showNotice('已加到下一首播放');
       // PLAYNEXT-OPUS-20260906 P2-4 —— 插入嘅歌結構上永遠係冷歌(插入
@@ -2629,13 +2660,19 @@ function PlayerProvider({ children }) {
         // PLAYNEXT-OPUS-20260906 P3-8 —— boundary 都要跟住用 id 對位重算,
         // 唔可以停留喺失敗嗰刻計出嚟嘅 plan.autoRadioFrom/plan.insertBoundary
         // (嗰啲假設咗成個 plan 都做晒,失敗咗就唔啱——native 少做咗一步)。
-        if (autoRadioFromRef.current != null) {
-          const reidx = reindexBoundaryById(cur, autoRadioFromRef.current, rebuiltQ);
+        // PLAYNEXT-OPUS2-20260906 P3-7 nit —— 基準用 arf0/ib0(掛鏈嗰刻嘅
+        // 快照,同 cur 同一個 index 空間),唔用 autoRadioFromRef.current/
+        // insertBoundaryRef.current:如果 throw 發生喺上面 step 6 之後,
+        // 嗰兩個 ref 已經俾寫咗做 plan.autoRadioFrom/plan.insertBoundary
+        // (newQ 空間嘅 index),用嚟做 reindexBoundaryById(cur, ...) 嘅
+        // 基準會同 cur 對錯位(cur 係 oldCur/舊空間)。
+        if (arf0 != null) {
+          const reidx = reindexBoundaryById(cur, arf0, rebuiltQ);
           autoRadioFromRef.current = reidx;
           setAutoRadioFrom(reidx);
         }
-        if (insertBoundaryRef.current != null) {
-          const reidx = reindexBoundaryById(cur, insertBoundaryRef.current, rebuiltQ);
+        if (ib0 != null) {
+          const reidx = reindexBoundaryById(cur, ib0, rebuiltQ);
           insertBoundaryRef.current = reidx;
           setInsertBoundary(reidx);
         }
