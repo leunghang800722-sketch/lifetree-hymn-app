@@ -146,8 +146,10 @@ function computeInsertNext(cur, curIdx, hymn, opts) {
   // App.js:1128 已有邏輯)。冇尾巴(null)唔受影響;插入位喺線之前(用戶
   // 仲未播到尾巴)嘅正常情況 adjustedAutoRadioFrom 已經 > insertAt,唔會
   // 觸發呢條 override,insertBoundary 維持返正常 adjustBoundary 嘅結果。
+  // PLAYNEXT-OPUS3 R1:連續插入時唔可以將既有分隔線收窄——第一首會跌落線下面。
+  // 取 max,令條線隨後插嘅歌向下生長(後插先播,線包住全部插入歌)。
   const finalInsertBoundary = (adjustedAutoRadioFrom != null && adjustedAutoRadioFrom <= insertAt)
-    ? insertAt + 1
+    ? Math.max(insertAt + 1, adjustedInsertBoundary ?? 0)
     : adjustedInsertBoundary;
 
   return {
