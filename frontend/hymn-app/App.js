@@ -29,6 +29,12 @@ import { AdminEditHymnProvider } from './src/components/AdminEditHymnSheet';
 import { setAuthToken, pullData, pushSync, flush as flushOutbox, getOwner, setOwner, clearOutbox } from './src/sync/userSync';
 import { API_BASE, DIAG_ENABLED } from './src/config.js';
 import { sendClientLog } from './src/clientLog.js';
+// PLAYNEXT-EXEC-20260906 §1.1 —— insertNext() 純陣列/index 運算部分(CommonJS,
+// 等 H1 harness 喺純 Node 直接 require 同一份源碼,唔使抄副本;見該檔頭註解)。
+const { computeInsertNext, reconcileFromNativeQueue } = require('./src/insertNextCore.js');
+// PLAYNEXT-EXEC-20260906 §1.2 —— module-level bridge,見該檔頭註解(點解
+// AddToPlaylistSheet.js 唔用 usePlayer() context)。
+import { setPlayerBridge } from './src/playerBridge.js';
 import { consumeRemotePauseExpected } from './src/playback-intent.js';
 // HLS-EXEC-D123-GATE-20260901 P3 — 單機 gate 用嘅 deviceId(純 app 內隨機,
 // 唔係硬件識別碼)。見 src/deviceId.js 頂部註解。
@@ -659,8 +665,17 @@ function PlayerProvider({ children }) {
           }
           const swappedTrack = toTrack(song); // toTrack() 而家已經會揀返本地 URI
           try {
-            await TrackPlayer.remove(idx);
-            await TrackPlayer.add(swappedTrack, idx);
+            // PLAYNEXT-EXEC-20260906 §1.1-10 —— 上面個 idx 係「快照」:如果
+            // `insertNext()` 喺呢個 await(getProgress)之間插咗歌(insertAt=
+            // curIdx+1,同呢度 idx===curIdx+1 嗰個分支撞正),native queue 個
+            // idx 位置已經郁咗,直接用快照 idx 做 remove/add 會換錯歌(換走
+            // 啱啱插入嗰首,而唔係本來想換本地 URI 嗰首)。remove/add 郁手前
+            // 用 track id 對返 native queue 嘅真實位置先算,唔信呢個快照。
+            const nativeQueue = await TrackPlayer.getQueue();
+            const nativeIdx = nativeQueue.findIndex((t) => String(t.id) === String(songId));
+            if (nativeIdx < 0) return; // 搵唔返(冧咗/搬咗位)寧願唔換好過換錯
+            await TrackPlayer.remove(nativeIdx);
+            await TrackPlayer.add(swappedTrack, nativeIdx);
           } catch (_) { /* 換失敗就算數,原本 stream URL 照行 */ }
         } catch (_) {}
       })();
@@ -2487,6 +2502,71 @@ function PlayerProvider({ children }) {
     await playQueue(list, 0, { autoRadioFrom: tail.length > 0 ? 1 : null });
   }
 
+  // PLAYNEXT-EXEC-20260906 §1.1 —— Play Next:任何一首歌插入做「下一首播放」,
+  // 位置 = 現正播放嗰首之後(curIdx+1);再插一首又係插嗰位,之前嗰首推落
+  // 第三(後插先播)。⚠️ 呢個係新函式,唔經 playQueue()、唔 reset/唔中斷
+  // 播放、唔掂起播/watchdog 任何邏輯(§0 紅線)。queueRef/setQueue/native
+  // queue 三者要同步(§3.5 教訓),同 playQueue() 一樣「先 ref 後 state」。
+  // 陣列/index 純運算部分抽咗去 src/insertNextCore.js(H1 harness 直接
+  // require 呢個檔案做 unit test,零 TrackPlayer/React 依賴);呢度淨係
+  // 負責讀快照、call native、寫 ref/state、toast、beacon。
+  async function insertNext(hymn) {
+    if (!hymn?.id) return;
+    const cur = queueRef.current || [];
+    const curIdx = currentQueueIndexRef.current ?? 0;
+    const plan = computeInsertNext(cur, curIdx, hymn, {
+      autoRadioFrom: autoRadioFromRef.current,
+      insertBoundary: insertBoundaryRef.current,
+      idle: trackStateRef.current === TPState.None,
+    });
+    // 1. 冇 queue / 冇 current track → 當即刻播(等同 playSingle)。
+    if (plan.fallbackToSingle) {
+      await playSingle(hymn);
+      return;
+    }
+    // 3. 播緊嗰首 → 唔改,toast。
+    if (plan.alreadyPlaying) {
+      showNotice('播緊呢首');
+      return;
+    }
+    try {
+      // 4. 去重搬位(native 跟返 plan.removedIdx)。
+      if (plan.removedIdx >= 0) await TrackPlayer.remove(plan.removedIdx);
+      // 5. 插入(native 跟返 plan.insertAt)。
+      await TrackPlayer.add(toTrack(hymn), plan.insertAt);
+      // 6. 邊界調整——先 ref 後 state(同 playQueue() 做法一致)。
+      if (autoRadioFromRef.current != null) {
+        autoRadioFromRef.current = plan.autoRadioFrom;
+        setAutoRadioFrom(plan.autoRadioFrom);
+      }
+      if (insertBoundaryRef.current != null) {
+        insertBoundaryRef.current = plan.insertBoundary;
+        setInsertBoundary(plan.insertBoundary);
+      }
+      // 7. queueRef/setQueue 同步;currentQueueIndexRef 唔變(插喺後面)。
+      queueRef.current = plan.newQ;
+      setQueue(plan.newQ);
+      // 8. toast。
+      showNotice('已加到下一首播放');
+      // 12. beacon —— W1 嘅 src/clientLog.js,唔經 logDiag 閘(明文常開)。
+      sendClientLog('playNext', {
+        hymnId: hymn.id,
+        detail: `moved=${plan.moved} at=${plan.insertAt} qlen=${plan.newQ.length}`,
+      });
+    } catch (e) {
+      // 9. 失敗 rollback —— native 可能已經 add(或去重 remove)成功而 JS
+      // 冇同步埋,用 TrackPlayer.getQueue() 重讀對位,唔留低錯亂嘅 queueRef
+      // (寧願用返 native 嘅真相,都唔好裝返一個同 native 對唔上嘅 JS 陣列)。
+      console.warn('insertNext error:', e?.message || e);
+      try {
+        const nativeQueue = await TrackPlayer.getQueue();
+        const rebuiltQ = reconcileFromNativeQueue(cur, hymn, nativeQueue);
+        queueRef.current = rebuiltQ;
+        setQueue(rebuiltQ);
+      } catch (_) { /* native 都讀唔到就算,冇更好嘅辦法 */ }
+    }
+  }
+
   // 熱切換 flavor / toggle:唔斷歌 —— 剪走舊尾巴、生成新尾巴 add 返。
   // 只喺而家有自動尾巴(autoRadioFrom != null)先郁;冇尾巴就淨係存設定,下次
   // playSingle 先生效。⚠️ removeUpcomingTracks 之後 native queue = [0..current],
@@ -2829,6 +2909,11 @@ function PlayerProvider({ children }) {
 
   const activeHymn = hymn || currentHymn || { title: '', artist: '', youtube_id: '', id: null };
 
+  // PLAYNEXT-EXEC-20260906 §1.2 —— 同步寫 module-level bridge(唔經
+  // useEffect,同下面/上面好多處 `xxxRef.current = xxx` render-body 直寫
+  // ref 嘅慣例一致),俾 AddToPlaylistSheet.js 讀(見 src/playerBridge.js)。
+  setPlayerBridge({ insertNext, queue, currentHymn: activeHymn });
+
   return (
     <PlayerCtx.Provider value={{
       currentHymn: activeHymn, hymn, hymns, setHymns,
@@ -2836,7 +2921,7 @@ function PlayerProvider({ children }) {
       repeatMode, isShuffled, setIsShuffled,
       currentQueueIndex, setCurrentQueueIndex, queue,
       overlayExpanded, queueReady, isLoading,
-      playQueue, playSingle, autoRadioFrom, insertBoundary,
+      playQueue, playSingle, insertNext, autoRadioFrom, insertBoundary,
       cmd_play, cmd_pause, togglePlayPause,
       skipToQueueIndex, reorderQueue, handleNextTrack, handlePrevTrack,
       autoplayEnabled, autoplayFlavor, applyAutoplayEnabled, applyAutoplayFlavor,
@@ -4534,6 +4619,15 @@ export default function App() {
   // 兩個 sheet 用 inline `<BottomSheet>`(唔經 portal),所以**故意唔加**
   // BottomSheetModalProvider:加返佢就會走返 v228 嗰條 portal 路,個 hosting
   // container 冇 zIndex,又會俾 zIndex:999 嘅播放器 overlay 蓋住。詳見檔頭註解。
+  // PLAYNEXT-EXEC-20260906 §1.2 —— ⚠️ 曾經諗過對調 AddToPlaylistProvider/
+  // PlayerProvider 巢狀次序嚟俾 AddToPlaylistSheet 攞 usePlayer(),但發現
+  // 兩個方向互相排斥、冇一個線性次序可以同時滿足:`FullScreenPlayerOverlay`
+  // (PlayerProvider 自己 return 出嚟,唔喺 `{children}` 入面——見上面
+  // `<PlayerCtx.Provider>{children}<FullScreenPlayerOverlay/>...`)本身已經
+  // 要用 `useAddToPlaylist()`(App.js 3235 行附近),對調次序會令佢攞唔到,
+  // 變成整多一個 regression 嚟修一個新 gap。維持原本次序,AddToPlaylistSheet
+  // 攞 insertNext 改用 src/playerBridge.js(唔靠 React context 嘅 module-level
+  // 讀寫,見該檔頭註解)。
   const tree = (
     <AuthProvider><AdminEditHymnProvider><FavoritesProvider><PlaylistsProvider><AddToPlaylistProvider><PlayerProvider>
       <AppContent />
