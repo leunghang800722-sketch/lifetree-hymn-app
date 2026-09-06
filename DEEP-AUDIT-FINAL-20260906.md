@@ -119,3 +119,15 @@ Eric 原話：「改善這個 App 嘅效能。先建立效能基準，找出瓶�
 
 ## 6. 文件索引
 `DEEP-AUDIT-PLAN` → 1A / 1B (+1B-OPUS) / 1C (+1C-OPUS) / 1D / 1E → `ROOTCAUSE`（含 C12 補遺）→ W1-EXEC / W1-REPORT / W1-OPUS / W1-AFTER-EXEC / W1-AFTER → W2-EXEC / W2-REPORT / W2-OPUS → W3-DEADCODE-EXEC / -REGISTER / -REPORT / W3-OPUS → 本報告。Raw：`ops/perf/audit-20260906/`、harness：`ops/perf/harness/w1|w2/`、掃描器：`ops/perf/deadcode/`。
+
+---
+
+## 7. Eric 拍板記錄（2026-09-06）
+| 項 | 決定 |
+|---|---|
+| D-1 | (b) 靜靜標記失效 + 頂部提示條 + 下次要登入嘅動作先擋 |
+| D-3 | 接線「加入清單」成功動效 |
+| D-4 | 換真 keystore，夾住 D-6 一齊出 |
+| D-5 | 暫時唔做（邀請文案唔改） |
+| D-6 | 出新 native build（iOS build 18 + Android vc56） |
+| D-2 | 待 Eric 決定（已另俾非技術解釋） |
