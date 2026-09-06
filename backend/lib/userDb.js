@@ -36,6 +36,9 @@ function initSchema(db) {
   // 新欄係 NULL,所有讀嗰邊都要容忍 NULL(username 一早已經係咁)。
   try { db.run('ALTER TABLE users ADD COLUMN gender TEXT'); } catch (_) {}
   try { db.run('ALTER TABLE users ADD COLUMN birth_year INTEGER'); } catch (_) {}
+  // 2026-09-06:會員心跳順手記低最後一部機嘅 deviceId(HLS 單機 allowlist 用
+  // deviceId,冇呢欄就冇辦法由電話/帳號對返部機)。純加欄,零破壞。
+  try { db.run('ALTER TABLE users ADD COLUMN last_device_id TEXT'); } catch (_) {}
 
   // ── 會員系統 Phase 1:跨裝置同步(MEMBERSHIP-PHASE1-LOGIN-SYNC §1.1)──────
   db.run(`CREATE TABLE IF NOT EXISTS favorites (
@@ -99,6 +102,17 @@ function initSchema(db) {
     revoked    INTEGER DEFAULT 0,
     created_at TEXT DEFAULT (datetime('now'))
   )`);
+}
+
+// 會員心跳:deviceId 變咗先寫(in-memory cache 擋住每 60 秒一次嘅全檔重寫)。
+const lastDeviceCache = new Map();
+export function recordUserDevice(db, userId, deviceId) {
+  if (!db || userId == null || !deviceId) return false;
+  if (lastDeviceCache.get(userId) === deviceId) return false;
+  db.run('UPDATE users SET last_device_id = ? WHERE id = ?', [deviceId, userId]);
+  lastDeviceCache.set(userId, deviceId);
+  saveUserDb(db);
+  return true;
 }
 
 export function saveUserDb(db) {

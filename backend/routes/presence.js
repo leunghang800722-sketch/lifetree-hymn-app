@@ -14,7 +14,7 @@
 //                                     回在線快照。
 import jwt from 'jsonwebtoken';
 import { JWT_SECRET } from '../lib/authSecret.js';
-import { getUserDb } from '../lib/userDb.js';
+import { getUserDb, recordUserDevice } from '../lib/userDb.js';
 import { clientIp } from '../lib/loginRateLimit.js';
 import { recordHeartbeat, getPresenceSnapshot } from '../lib/presence.js';
 import { makeLimiter } from '../lib/rateLimit.js';
@@ -100,6 +100,10 @@ export default function presenceRoutes(app) {
       const state = String(b.state || '').slice(0, 20);
       const user = await tryAuthenticate(req);
       recordHeartbeat({ userId: user ? user.id : null, deviceId, state });
+      // 2026-09-06:會員 + 有 deviceId → 記入 users.last_device_id(變咗先寫碟)。
+      if (user && deviceId) {
+        try { recordUserDevice(await getUserDb(), user.id, deviceId); } catch (_) {}
+      }
     } catch (_) {
       // fire-and-forget beacon,壞咗靜靜算,唔拖累 app。
     }
