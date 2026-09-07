@@ -18,6 +18,7 @@ import { fileURLToPath } from 'url';
 import { resolveAudioUrl, bustCache } from '../lib/resolveAudio.js';
 import { parsePlaylistStructure, buildM3U8 } from '../lib/hlsPlaylist.js';
 import { recordUpstream403, recordHlsPlaylist } from '../lib/opsMetrics.js';
+import { extractItagClen } from '../lib/urlItagClen.js';
 
 // 逐級加大嘅 head fetch 大細——大部份 YouTube DASH 音訊 ftyp+moov+sidx 頭都
 // 喺 4KB 之內(實測 id=4423:723+248=971 bytes),但唔准假設呢個上限一定夠
@@ -34,19 +35,32 @@ const HEAD_FETCH_SIZES = [8 * 1024, 65 * 1024, 256 * 1024, 1024 * 1024];
 // 埋首咗 `clen`(對應嗰次 resolve 到嘅 googlevideo `content-range` 總長),
 // 俾下面嘅「命中校驗」用嚟偵測「同一個 youtube_id 換咗 format/variant」
 // (HLS Stage B 記錄過 1.7% no-sidx「同一首歌隨機」,唔可以假設 itag 永遠
-// 一致)。TTL 24 小時、上限 2,000 條 LRU(FIRST-TRACK-STEP01-EXEC-20260907
-// §2 N1 原文數字)。兩個都做成 env 可覆蓋(純測試用途,harness 可以用細
-// 上限/短 TTL 快速驗 LRU/過期,production 冇設呢兩個 env 就用返呢度嘅
-// 預設值,行為零改動)。
+// 一致)。TTL 24 小時。
+// FIRST-TRACK-STEP01-OPUS-20260907 其餘細項——上限由執行單原文 2,000 收窄
+// 做 500:entry 存住成個 `segments` array(一首 5 分鐘歌 ≈75 段 ≈4KB
+// JSON),2,000 條 = 最壞 ~8MB `writeFileSync` 每 5 秒一次,阻塞 event
+// loop;而家 gauge 實測長期得個位數,500 已經有 60 倍以上 headroom。
+// 兩個都做成 env 可覆蓋(純測試用途,harness 可以用細上限/短 TTL 快速驗
+// LRU/過期,production 冇設呢兩個 env 就用返呢度嘅預設值)。
 const PLAYLIST_CACHE_TTL_MS = Number(process.env.HLS_PLAYLIST_CACHE_TTL_MS) > 0
   ? Number(process.env.HLS_PLAYLIST_CACHE_TTL_MS) : 24 * 60 * 60 * 1000;
 const PLAYLIST_CACHE_MAX_ENTRIES = Number(process.env.HLS_PLAYLIST_CACHE_MAX_ENTRIES) > 0
-  ? Number(process.env.HLS_PLAYLIST_CACHE_MAX_ENTRIES) : 2000;
-const playlistCache = new Map(); // key: youtubeId -> { structure, clen, initSize, expiresAt, savedAt }
+  ? Number(process.env.HLS_PLAYLIST_CACHE_MAX_ENTRIES) : 500;
+const playlistCache = new Map(); // key: youtubeId -> { structure, clen, itag, initSize, expiresAt, savedAt }
 
 // §2 N1 ——「命中要唔要校驗」由 env 控制,兩個 mode 都做(FIRST-TRACK-
 // STEP01-EXEC-20260907 §2 N1 原文:S0-2 sidx 穩定性數據俾 Fable 睇完先定
 // 要唔要切 `0`,執行者兩個 mode 都要做)。預設 `1`(校驗)。
+//
+// FIRST-TRACK-STEP01-FIX-20260907 #2(Opus P1-2 修正)——預設 `1` 而家嘅
+// 行為唔再係「一定打一次 googlevideo」:`resolveAudioUrl()` 攞返嚟嗰條
+// URL 個 query string 本身已經帶住 `clen`/`itag`(383/383 抽查樣本全部
+// 有),同 routes/stream.js 已經有嘅 `extractItagClen()` 一樣攞得到——校驗
+// 呢兩個值同快取存低嘅一唔一致,係完全離線嘅字串比較,零上游請求。淨係
+// 極罕見「URL 冇 clen」(理論上唔會,防禦性)先退返舊嘅 `Range: bytes=0-0`
+// 網絡校驗(見 `verifyClenMatches`,保留做 fallback)。`HLS_PLAYLIST_
+// VERIFY=0` 保留做「完全唔校驗」嘅逃生門(純測試/緊急止血用),production
+// 用返預設 `1`。
 const VERIFY_ON_HIT = process.env.HLS_PLAYLIST_VERIFY !== '0';
 
 // ── §2 N1 持久化:backend/cache/hls-playlist-cache.json ─────────────────
@@ -108,10 +122,34 @@ function evictPlaylistCacheOverflow() {
   }
 }
 
-// §2 N1 命中校驗:淨係攞 `Range: bytes=0-0` 嘅 1 byte,讀 `content-range`
+// FIRST-TRACK-STEP01-FIX-20260907 #2 —— 免費(零上游請求)命中校驗:直接
+// 由 `resolveAudioUrl()` 攞返嚟嗰條 URL 個 query string 讀 `clen`/`itag`
+// (`extractItagClen()`,同 routes/stream.js 用緊嗰個係同一份共用函式),
+// 同快取存低嘅 `{ clen, itag }` 比對。淨係比較字串/數字,冧成本網絡請求
+// 都冇。回傳 `true`(一致)/`false`(唔一致,verifyfail)/`null`(URL 冇
+// clen,理論上唔會發生,叫 caller 退返網絡校驗)。
+//   - clen 一定要一致先算數(檔案大細變咗 = 唔同 itag/variant,byte offset
+//     唔可信)。
+//   - itag 「順手」對埋(比淨係對 clen 更準):快取入面冇存過 itag(理論上
+//     唔會,舊碟升級過渡期)或者 URL 冇帶 itag,就唔當佢係唔一致嘅證據。
+function urlClenMatches(url, cached) {
+  const { itag: urlItag, clen: urlClenStr } = extractItagClen(url);
+  if (urlClenStr === '-') return null; // URL 冇 clen —— 叫 caller 退返網絡校驗
+  const urlClen = Number(urlClenStr);
+  if (!Number.isFinite(urlClen)) return null;
+  const clenMatches = urlClen === cached.clen;
+  const itagMatches = urlItag === '-' || cached.itag == null || urlItag === cached.itag;
+  return clenMatches && itagMatches;
+}
+
+// §2 N1 命中校驗(fallback 路徑):`urlClenMatches()` 讀唔到 URL 帶嘅 clen
+// 先會行到呢度——淨係攞 `Range: bytes=0-0` 嘅 1 byte,讀 `content-range`
 // 嘅總長(clen)同快取入面存低嘅 clen 對比。呢個係一個輕量 round trip(唔使
 // 好似 miss 咁解成個 sidx),但足以偵測「同一個 youtube_id 換咗 format/
 // variant」(clen 唔同 = 唔同檔案大細 = 唔同 itag,快取嘅 byte offset 唔可信)。
+// FIRST-TRACK-STEP01-FIX-20260907 §細項——加返 `recordUpstream403`:呢個
+// fallback 本身都係一次真.googlevideo head-fetch,之前完全冇入呢個 403
+// metric 嘅分母/分子,403 風暴期間對呢條路徑係隱形。
 async function verifyClenMatches(url, storedClen) {
   if (storedClen == null) return false; // 冇記錄過 clen(理論上唔會,防禦性)—— 當要重新resolve
   const controller = new AbortController();
@@ -119,6 +157,7 @@ async function verifyClenMatches(url, storedClen) {
   try {
     const r = await fetch(url, { method: 'GET', headers: { Range: 'bytes=0-0' }, signal: controller.signal });
     clearTimeout(timer);
+    recordUpstream403('hls', r.status === 403);
     if (r.status !== 200 && r.status !== 206) { try { await r.body?.cancel?.(); } catch (_) {} return false; }
     const cr = r.headers.get('content-range');
     try { await r.body?.cancel?.(); } catch (_) {}
@@ -127,6 +166,7 @@ async function verifyClenMatches(url, storedClen) {
     return total != null && total === storedClen;
   } catch (_) {
     clearTimeout(timer);
+    recordUpstream403('hls', false);
     return false;
   }
 }
@@ -147,6 +187,17 @@ async function verifyClenMatches(url, storedClen) {
 // offset 係媒體檔屬性,唔跟簽名 URL),呢度嘅 in-flight de-dup key 都應該
 // 跟埋轉,先可以喺「快取命中」路徑都繼續做到「兩個幾乎同一刻嘅並發請求
 // 淨係校驗一次」(唔改 dedup 目的本身,只係令佢對得住新 key 空間)。
+// FIRST-TRACK-STEP01-OPUS-20260907 其餘細項——呢個 key 由 `${youtubeId}::${url}`
+// 改咗做純 `youtubeId` 之後,理論上有個新窿:兩條**URL 唔同**嘅並發請求
+// (例如撞正 URL 續期嗰一刻)而家會共用第一條嘅結果,B 可能繼承 A 條已死
+// URL 嘅 404。接受呢個風險,唔改埋——(a) `resolveAudioUrl()` 本身已經
+// 對 yt-dlp resolve 做緊 per-id in-flight coalescing,兩個幾乎同一刻嘅
+// request 絕大部份情況本身就會攞到同一條 url,呢個窿嘅觸發窗口好窄;
+// (b) 呢層 de-dup 本身只係「慳一次 head-fetch」嘅效能優化,唔係正確性
+// 保證——就算撞正,壞極都係當次 404(client 側已經有 hlsPreflight 熱換
+// progressive 嘅後備路)。改用 `${youtubeId}::${url}` 做 key 會令 playlist
+// cache key(`youtubeId`)同 in-flight de-dup key 語意分裂,兩個 map 各自
+// 追唔同粒度嘅「重複」,得不償失。
 const structureInFlight = new Map(); // cacheKey(youtubeId) -> Promise<{ structure, badStatus, retried, finalUrl, cacheStatus }>
 
 async function resolveStructureShared(youtubeId, url) {
@@ -235,9 +286,16 @@ async function resolveStructureInner(youtubeId, url) {
   const hasFreshCached = !!(cached && cached.expiresAt > Date.now());
 
   if (hasFreshCached) {
-    // §2 N1:命中要唔要校驗由 `HLS_PLAYLIST_VERIFY` env 控制(預設校驗)。
-    // 唔校驗嗰個 mode 純粹跳過呢個輕量 fetch,直接信 24 小時 TTL 內嘅快取。
-    const verified = VERIFY_ON_HIT ? await verifyClenMatches(url, cached.clen) : true;
+    // FIRST-TRACK-STEP01-FIX-20260907 #2:命中要唔要校驗由 `HLS_PLAYLIST_
+    // VERIFY` env 控制(預設校驗)。校驗優先行「離線 URL clen/itag 比對」
+    // (`urlClenMatches`,零網絡)——URL 冇 clen(理論上唔會發生,防禦性)
+    // 先退返舊嘅網絡 `Range: bytes=0-0` fallback(`verifyClenMatches`)。
+    // 唔校驗嗰個 mode(`HLS_PLAYLIST_VERIFY=0`)純粹信 24 小時 TTL 內嘅快取。
+    let verified = true;
+    if (VERIFY_ON_HIT) {
+      const offlineResult = urlClenMatches(url, cached);
+      verified = offlineResult != null ? offlineResult : await verifyClenMatches(url, cached.clen);
+    }
     if (verified) {
       touchPlaylistCache(youtubeId, cached); // LRU:命中就搬去最新
       recordHlsPlaylist('hit');
@@ -246,8 +304,14 @@ async function resolveStructureInner(youtubeId, url) {
     // 校驗失敗(clen 對唔上,= 呢個 youtube_id 換咗 format/variant)——快取
     // 唔可信,落去下面完整重新 resolve;呢個 entry 而家已經作廢,即刻
     // 剷走(唔留住個錯 offset 等下一個 request 再校驗一次先發現)。
+    // FIRST-TRACK-STEP01-FIX-20260907 §細項——即刻排一次 flush:之前呢個
+    // delete 冇觸發 flush,如果之後嘅重新 resolve 撞 403/410 唔成功
+    // (`structure` 保持 null),呢個作廢 entry 會停留喺記憶體(冇問題)
+    // 但下次 flush 之前碟上舊版本仲喺度,萬一之後即刻 restart 就會由碟
+    // 讀返個已經知道錯咗嘅 entry。排喺呢度確保刪除本身都會落實到碟。
     playlistCache.delete(youtubeId);
     recordHlsPlaylist('verifyFail');
+    schedulePlaylistFlush();
   } else {
     recordHlsPlaylist('miss');
   }
@@ -274,9 +338,13 @@ async function resolveStructureInner(youtubeId, url) {
   }
 
   if (structure) {
+    // FIRST-TRACK-STEP01-FIX-20260907 #2 —— entry 同時存 `itag`(由呢次
+    // resolve 到嘅 url 攞),俾下次命中做 `urlClenMatches()` 順手校 itag。
+    const { itag: resolvedItag } = extractItagClen(url);
     touchPlaylistCache(youtubeId, {
       structure,
       clen,
+      itag: resolvedItag !== '-' ? resolvedItag : null,
       initSize: structure.initSize,
       expiresAt: Date.now() + PLAYLIST_CACHE_TTL_MS,
       savedAt: Date.now(),

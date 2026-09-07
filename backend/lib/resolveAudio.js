@@ -449,20 +449,21 @@ let bufferCacheTotalBytes = 0; // touchBufferEntry/evictBufferCacheOverflow 維�
 // BYTES` 4MB,見 warmBuffer() 入面),pinned 總數硬 clamp 喺
 // `128MB(MAX_BUFFER_TOTAL_BYTES)的一半 ÷ 4MB` = 16 個,防 caller(理論上
 // 應該傳 12 個)傳漏咗上限都唔會爆錶——12×4MB=48MB,喺 64MB 嘅一半閘之內。
+//
+// FIRST-TRACK-STEP01-OPUS-20260907 P1-3——上面呢個「16×4MB=64MB」淨係
+// PINNED_MAX_COUNT(個數)嘅算術,冇任何代碼真正逼住成個 pinned 集合嘅
+// **總 bytes**唔准超過 64MB。Opus 實測拆到兩條缺口:(a) `adoptStreamedHead()`
+// (真播放順手 tee 入池嗰條**主**路)完全冇理 pinnedIds,可以帶成隻
+// `WARM_CAP_BYTES`(12MB)head 入池;(b) `warmBuffer()` 喺 pin 之前已經
+// 用 12MB cap 入咗池嘅 entry,pin 落嚟嗰刻冇被追溯裁剪,一世留喺 12MB。
+// 兩條都已經修(見 `adoptStreamedHead()`/`setPinnedIds()`),但呢度仲加多
+// 一條硬閘做保險絲:`evictBufferCacheOverflow()` 入面實測 pinned 總 bytes,
+// 超咗 `PINNED_TOTAL_CAP_BYTES` 就 unpin 最舊嗰個(等佢下一輪可以正常俾
+// LRU 踢),先至再行返原本嘅格數/總字節 eviction loop——三條路一齊守住
+// 「pinned 唔准食晒成個 128MB 閘」呢個保證,唔淨係靠個數上限嘅算術。
 let pinnedIds = new Set();
 const PINNED_MAX_COUNT = Math.floor((MAX_BUFFER_TOTAL_BYTES / 2) / LONG_WARM_CAP_BYTES); // = 16
-
-// 俾 server.js 嘅定期 refresh(每 30 分鐘)call。純設值,唔做任何網絡/DB
-// 嘢——呢個模組保持「淨係識 resolve+buffer」嘅單一職責。
-export function setPinnedIds(youtubeIds) {
-  const arr = Array.isArray(youtubeIds) ? youtubeIds.filter((x) => typeof x === 'string' && x).slice(0, PINNED_MAX_COUNT) : [];
-  pinnedIds = new Set(arr);
-}
-
-// 俾 opsMetrics gauge / harness 讀,純觀測。
-export function getPinnedIds() {
-  return new Set(pinnedIds);
-}
+const PINNED_TOTAL_CAP_BYTES = Math.floor(MAX_BUFFER_TOTAL_BYTES / 2); // = 64MB(執行單原文數字)
 
 function entryByteSize(entry) {
   if (!entry) return 0;
@@ -477,14 +478,79 @@ function touchBufferEntry(youtubeId, entry) {
   bufferCacheTotalBytes += entryByteSize(entry);
 }
 
+// P1-3(b)——`setPinnedIds()` 灌入新名單嗰刻,對已經喺 bufferCache 入面、
+// 但大過 `LONG_WARM_CAP_BYTES`(4MB)cap 嘅 entry 即刻裁剪(唔係「唔 pin
+// 佢」):揀裁剪而唔係揀跳過唔 pin,理由——pinned 嘅存在意義係「呢首熱門
+// 歌唔准俾冷門歌擠走」,寧願淨係保住個 4MB head 都好過完全冇保底(4MB 已
+// 經夠 AVFoundation 起播,warmBuffer() 對新入池嘅 pinned entry 本身都係
+// 用同一個 cap)。裁剪掉尾巴(tailBuf/tailOffset 對嘅係原本嘅完整檔案
+// offset,截短咗個 head 之後呢兩個字段唔再準,清埋佢——中段續播行返冷
+// 路徑,可接受)。用 `touchBufferEntry()` 入嚟做,四條記帳路徑(warm入/
+// adopt入/evict出/呢度嘅 pin裁剪)全部經同一個「先扣舊、後加新」嘅函式,
+// `bufferCacheTotalBytes` 唔會有第二份唔一致嘅算法。
+function truncateEntryForPin(youtubeId) {
+  const entry = bufferCache.get(youtubeId);
+  if (!entry || !entry.buf || entry.buf.length <= LONG_WARM_CAP_BYTES) return;
+  touchBufferEntry(youtubeId, {
+    ...entry,
+    buf: entry.buf.subarray(0, LONG_WARM_CAP_BYTES),
+    tailBuf: null,
+    tailOffset: null,
+  });
+}
+
+// 俾 server.js 嘅定期 refresh(每 30 分鐘)call。純設值,唔做任何網絡/DB
+// 嘢——呢個模組保持「淨係識 resolve+buffer」嘅單一職責。
+export function setPinnedIds(youtubeIds) {
+  const arr = Array.isArray(youtubeIds) ? youtubeIds.filter((x) => typeof x === 'string' && x).slice(0, PINNED_MAX_COUNT) : [];
+  pinnedIds = new Set(arr);
+  for (const id of arr) truncateEntryForPin(id);
+}
+
+// 俾 opsMetrics gauge / harness 讀,純觀測。
+export function getPinnedIds() {
+  return new Set(pinnedIds);
+}
+
+// P1-3(c)——pinned entry 合共食緊幾多 bytes(唔理呢個 id 而家有冇入池,
+// 純粹掃 bufferCache 入面同時喺 pinnedIds 嘅 entry 加埋佢哋嘅
+// entryByteSize)。俾下面 evictBufferCacheOverflow() 同 getBufferCacheStats()
+// 用,純讀。
+function pinnedTotalBytes() {
+  let total = 0;
+  for (const [key, entry] of bufferCache) {
+    if (pinnedIds.has(key)) total += entryByteSize(entry);
+  }
+  return total;
+}
+
+// P1-3(c)——unpin「最舊」嗰個 pinned entry(bufferCache Map 插入/touch 順序
+// = LRU 順序,第一個「入面有 entry 又係 pinned」嘅 key 就係最舊)。淨係
+// unpin(剷走 pinnedIds 呢個「唔准踢」標籤),唔直接刪 entry——刪唔刪、
+// 幾時刪留返俾下面正常嘅 LRU eviction loop 決定,呢度只負責解除保護。
+function unpinOldestPinned() {
+  for (const key of bufferCache.keys()) {
+    if (pinnedIds.has(key)) { pinnedIds.delete(key); return key; }
+  }
+  return null;
+}
+
 // 雙閘:格數 OR 總字節數,兩個任何一個超咗就踢最舊(Map 插入順序 = LRU 順序,
 // 同 touchBufferEntry 嘅「攞中/寫入都搬去尾」配合)。
 // N5:揀「最舊」嗰陣跳過 pinned entry——揾第一個唔喺 `pinnedIds` 入面嘅
-// key 先踢。如果成個 bufferCache 入面剩返嘅全部都係 pinned(理論上唔應該
-// 發生:pinned 上限 16×4MB=64MB,遠細過 128MB 閘),寧願暫時超少少上限都
-// 唔踢 pinned(踢咗等於違反「保底」呢個功能本身嘅存在意義),唔會 infinite
-// loop(`victimKey === undefined` 即刻 break)。
+// key 先踢。
+// FIRST-TRACK-STEP01-FIX-20260907 #3(c)——之前呢個 while loop 對 pinned
+// entry 全面豁免,冇任何嘢逼住 pinned 總 bytes 唔准超過 `PINNED_TOTAL_CAP_
+// BYTES`(64MB)——理論上 PINNED_MAX_COUNT×LONG_WARM_CAP_BYTES=64MB 啱啱貼
+// 頂閘,但 warmBuffer()/adoptStreamedHead() 嘅尾巴補攞(`fetchTailBuf`)
+// 對 pinned entry 一樣會加多 ≤512KB,16 個就係 +8MB,實測足以撞穿 64MB。
+// 而家喺原本嘅 eviction loop 之前加一個獨立嘅 while:pinned 總 bytes 超咗
+// 就 unpin 最舊嗰個,等佢喺下面嘅正常 loop 可以被當普通 entry 踢走,直至
+// 冇更多 pinned 可以 unpin(`unpinOldestPinned()` 回 null)先停手。
 function evictBufferCacheOverflow() {
+  while (pinnedTotalBytes() > PINNED_TOTAL_CAP_BYTES) {
+    if (unpinOldestPinned() === null) break;
+  }
   while (bufferCache.size > MAX_BUFFER_ENTRIES || bufferCacheTotalBytes > MAX_BUFFER_TOTAL_BYTES) {
     let victimKey;
     for (const key of bufferCache.keys()) {
@@ -665,8 +731,12 @@ export function evictBufferedChunk(youtubeId) {
 // bytes(唔係 cache.size 嗰個 URL cache)。純讀,唔改任何行為。
 // N5:加返 `pinned` count(而家有幾多個 id 受保底保護——唔等於呢啲 id
 // 一定已經入咗 bufferCache,`pinnedIds` 純粹係「唔准踢」名單本身)。
+// FIRST-TRACK-STEP01-FIX-20260907 #3(d)——加返 `pinnedBytes`(pinned entry
+// 合共實際食緊幾多 bytes,唔淨係個數),俾 harness 直接斷言 P1-3 嗰條
+// 「pinned 總 bytes ≤64MB」修好咗未,亦俾 production 監察「totalBytes 長
+// 期貼住 128MB 而 pinned 又高」呢個 Opus 報告點名嘅病徵。
 export function getBufferCacheStats() {
-  return { entries: bufferCache.size, totalBytes: bufferCacheTotalBytes, pinned: pinnedIds.size };
+  return { entries: bufferCache.size, totalBytes: bufferCacheTotalBytes, pinned: pinnedIds.size, pinnedBytes: pinnedTotalBytes() };
 }
 
 // BATCH5 §7.3-A:冷路徑 stream 順手收落嚟嘅頭截,採納入 bufferCache(tee)。
@@ -676,6 +746,15 @@ export function getBufferCacheStats() {
 export async function adoptStreamedHead(youtubeId, url, buf, totalLength, contentType) {
   return withWarmLock(async () => {
     try {
+      // FIRST-TRACK-STEP01-FIX-20260907 #3(a)(Opus P1-3 主缺口修正)——
+      // 「真播放順手 tee」係熱門歌入池嘅**主**路徑,之前完全冇理 pinnedIds,
+      // 可以帶成隻 `WARM_CAP_BYTES`(12MB)head 入池,同 warmBuffer() 對
+      // pinned id 已經做緊嘅 4MB head-only cap 唔一致——Opus 實測正正係
+      // 呢條路徑令 16 個 pinned entry 冧到 120MB。截喺任何長度比較之前,
+      // 令下面「新 buf 冇長過現存嗰個就跳過」嗰個 guard 都係對住截完之後
+      // 嘅長度比,唔會因為截短咗反而誤判做「更短」而錯誤跳過真正嘅更新。
+      const isPinned = pinnedIds.has(youtubeId);
+      const cappedBuf = (isPinned && buf.length > LONG_WARM_CAP_BYTES) ? buf.subarray(0, LONG_WARM_CAP_BYTES) : buf;
       // 已經有同 url 嘅未過期 entry,新嚟嘅冇長過佢就唔好蓋——BATCH7 B7-4:
       // 舊 guard 淨係睇「有冇 entry」,唔睇長度,令「最快完成嗰條 tee 永久
       // 贏」:AVFoundation 冷開常見一條 1MB probe 最先完成,佢個 1MB stub
@@ -683,18 +762,20 @@ export async function adoptStreamedHead(youtubeId, url, buf, totalLength, conten
       // (SECOND-PASS-REVIEW-20260820.md b1)。改成:淨係新 buf 冇長過現存
       // 嗰個先跳過,等真正大嘅 head 有機會蓋返個 stub。
       const existing = bufferCache.get(youtubeId);
-      if (existing && existing.expiresAt > Date.now() && existing.url === url && buf.length <= existing.buf.length) return;
-      try { zeroFragmentedMp4Durations(buf); } catch (_) {}
+      if (existing && existing.expiresAt > Date.now() && existing.url === url && cappedBuf.length <= existing.buf.length) return;
+      try { zeroFragmentedMp4Durations(cappedBuf); } catch (_) {}
       // BATCH6 C1:B2 同款「有人聽緊就讓路」——head 係正播 stream 順手抄嘅,零
       // 額外頻寬,照 adopt;補尾巴係額外一條 upstream 連線,聽緊就跳過(entry
       // tail-less 係合法狀態,尾巴 range 行返冷路徑;之後 /warm 嘅 warmBuffer
       // 會無條件蓋寫補完整)。喺 lock 入面執行嗰刻先 check,唔係入隊嗰刻。
-      const tail = (totalLength && buf.length < totalLength && !anyStreaming())
-        ? await fetchTailBuf(url, totalLength, buf.length)
+      // ⚠️ pinned id 呢度冇額外攔尾巴——同 warmBuffer() 一致(佢對 pinned
+      // 都係無條件補尾),頭 4MB cap 已經係 Opus 揪出嗰個主缺口。
+      const tail = (totalLength && cappedBuf.length < totalLength && !anyStreaming())
+        ? await fetchTailBuf(url, totalLength, cappedBuf.length)
         : null;
       touchBufferEntry(youtubeId, {
         url,
-        buf,
+        buf: cappedBuf,
         tailBuf: tail ? tail.tailBuf : null,
         tailOffset: tail ? tail.tailOffset : null,
         totalLength,

@@ -23,13 +23,32 @@ const HOT_IDS_DIR = path.dirname(HOT_IDS_FILE);
 
 const WINDOW_MS = 24 * 60 * 60 * 1000; // 滾動 24 小時
 const MAX_TRACKED_IDS = 5000; // 上限,防長期運行漏記憶體(執行單原文數字)
-// 同一首歌一次播放,AVPlayer/ExoPlayer 會開十幾廿條 range 連線——如果逐個
-// HTTP request 都計一次會嚴重高估(同 opsMetrics.js `recordStreamRequest`
-// 個 `TRACK_GAP_MS` 一樣嘅教訓)。呢度用相同嘅「開一首歌」去重手法:同一
-// DB hymn id(即 /api/stream/:id 嗰個 id,唔係 youtube_id)隔咗呢個窗口先再嚟嘅第一個 request 先算一次「真播放」。
-// env 可覆蓋(純測試用途——harness 可以用細窗口喺幾毫秒內製造多個「唔同次
-// 播放」嚟驗排序,唔使真係等 60 秒;production 冇設呢個 env 就用返 60 秒)。
-const HIT_DEDUP_MS = Number(process.env.HOT_IDS_DEDUP_MS) > 0 ? Number(process.env.HOT_IDS_DEDUP_MS) : 60 * 1000;
+// FIRST-TRACK-STEP01-FIX-20260907 #5(Opus P2-5 修正)——舊版「同一 DB hymn
+// id 隔咗呢個窗口先再嚟嘅第一個 request 先算一次」有個隱藏假設:`recentHitAt`
+// 淨係喺真係計咗數嗰陣先更新(唔計嗰陣唔更新)。呢個寫法同 opsMetrics.js
+// `recordStreamRequest` 個 `TRACK_GAP_MS`(**每個** request 都更新
+// lastSeen,所以持續播一首歌 = 1 次)睇落一樣,實際完全唔同:呢度變咗
+// 「每隔一個窗口就 +1」,持續播放 N 分鐘就計 N/窗口 次(實測:40 分鐘純
+// 音樂 ≈ 40 分,4 分鐘詩歌得 4 分,長檔洗版熱門榜,而長檔正正係最唔應該
+// pin 嘅——pin 佢哋只 warm 4MB head 都仲要嘥 4MB×N)。
+//
+// 真正修法唔淨係「改返 opsMetrics 嗰句」(照抄嗰個 window 都撞唔正:AVPlayer
+// 每個 HLS segment 都打一次 `/api/stream/:id`,segment 唔會由 byte 0 開始,
+// 逐個 request 計都一樣會高估)——而係改埋「計乜嘢」:淨係「呢個 request
+// 係起播」(冇 Range,或者 Range 由 byte 0 開始)先算一次「開一首歌」,中段
+// 續播 range 一律唔計(見 caller `routes/stream.js` 嘅 `isStart` 判斷)。
+// 呢個窗口而家嘅語意變咗「同一 id 同一 client 幾耐內嘅另一個『起播』當係
+// 同一次播放(例如 native reload/seek 返 byte 0)」,唔再係「持續播放攞幾多
+// 分」,執行單原文數字由 60 秒放寬做 5 分鐘。env 可覆蓋(純測試用途——
+// harness 可以用細窗口喺幾毫秒內製造多個「唔同次播放」嚟驗排序)。
+const HIT_DEDUP_MS = Number(process.env.HOT_IDS_DEDUP_MS) > 0 ? Number(process.env.HOT_IDS_DEDUP_MS) : 5 * 60 * 1000;
+
+// FIRST-TRACK-STEP01-FIX-20260907 §細項 —— 持久化格式版本號。計法由「串流
+// 分鐘」改做「開歌次數」之後,舊碟(v1,或者根本冇 `v` 呢個欄嘅更舊格式)
+// 記錄嘅係完全唔同語意嘅數字,冇得直接沿用(唔係「小」咗,係「錯」咗)。
+// version 唔夾就當冇檔,清零重計——寧願啱 0 分都好過將舊嘅分鐘數當做新
+// 嘅「次數」用。
+const HOT_IDS_FORMAT_VERSION = 2;
 
 // UA 判斷(執行單原文:「非 curl、非 warm burst」)——用排除法,唔白名單:
 // 已知嘅合成流量(健康檢查/curl/監控探針)先擋,寧濫勿缺(呢度係「揀熱門
@@ -73,7 +92,9 @@ function scheduleFlush() {
         const pruned = pruneOld(arr, now);
         if (pruned.length) obj[id] = pruned;
       }
-      fs.writeFileSync(HOT_IDS_FILE, JSON.stringify(obj), 'utf8');
+      // §細項 —— 版本號包住 payload,俾 loadFromDisk() 分得出「舊語意嘅
+      // 分鐘數」同「新語意嘅開歌次數」,唔會誤讀。
+      fs.writeFileSync(HOT_IDS_FILE, JSON.stringify({ v: HOT_IDS_FORMAT_VERSION, hits: obj }), 'utf8');
     } catch (e) {
       console.warn('hot-ids flush failed:', e?.message);
     }
@@ -84,28 +105,49 @@ function scheduleFlush() {
 function loadFromDisk() {
   try {
     const raw = fs.readFileSync(HOT_IDS_FILE, 'utf8');
-    const obj = JSON.parse(raw);
+    const parsed = JSON.parse(raw);
+    // 舊格式(v1 = 冇 `v` 呢個欄,payload 直接就係 `{id: [...]}`)語意係
+    // 「串流分鐘」,同而家「開歌次數」唔相容——版本唔夾一律當冇檔,清零
+    // 重計(§細項:寧願啱 0 分都好過將舊分鐘數當做新次數)。
+    if (!parsed || parsed.v !== HOT_IDS_FORMAT_VERSION || typeof parsed.hits !== 'object' || parsed.hits === null) {
+      console.log('🗃️  hot-ids:碟上格式版本唔夾(舊「串流分鐘」語意)或者冇檔,清零重計');
+      return;
+    }
     const now = Date.now();
     let n = 0;
-    for (const [id, arr] of Object.entries(obj)) {
+    for (const [id, arr] of Object.entries(parsed.hits)) {
       if (!Array.isArray(arr)) continue;
       const pruned = pruneOld(arr, now);
-      if (pruned.length) { hits.set(id, pruned); n++; }
+      if (pruned.length) { hits.set(String(id), pruned); n++; }
     }
-    if (n) console.log(`🗃️  hot-ids:由碟載返 ${n} 首歌嘅 24h 串流記錄`);
+    if (n) console.log(`🗃️  hot-ids:由碟載返 ${n} 首歌嘅 24h 串流記錄(v${HOT_IDS_FORMAT_VERSION})`);
   } catch (_) { /* 第一次冇檔,正常 */ }
 }
 loadFromDisk();
 
 // 每個真播放 request call 一次(routes/stream.js GET handler)。`ua` 用嚟
 // 過濾合成流量;`hymnId`(DB id)假嘅/冇嘅一律 no-op。
-export function recordStreamHit(hymnId, ua) {
+//
+// FIRST-TRACK-STEP01-FIX-20260907 #4/#5 —— 兩個修正:
+//  (a) key 一律 `String(hymnId)`——caller 傳嘅係 `Number(req.params.hymnId)`,
+//      但由碟載返嘅 entry key 一定係 string(JSON object key 冇第二種可能)。
+//      舊版冧收兩種型別做 key,restart 之後同一首歌會分裂成 number/string
+//      兩條獨立記錄(Opus P2-4 實測)。
+//  (b) `opts.isStart` 決定計唔計數(caller 應該傳「呢個 request 係咪起播」;
+//      唔傳就當 `true`,保留俾直接 unit test 呢個 module 嘅 call site 一個
+//      冇 breaking change 嘅預設值)。`opts.clientKey` 用嚟做「同一 id 同
+//      一 client」嘅去重(冇傳就跌返用 `ua` 做 key,同舊版行為一致)。
+export function recordStreamHit(hymnId, ua, opts = {}) {
   if (!hymnId) return;
   if (isSyntheticUa(ua)) return;
+  const { isStart = true, clientKey = null } = opts || {};
+  if (!isStart) return; // 中段續播 range——唔算「開一首歌」(P2-5)
+  hymnId = String(hymnId);
+  const dedupKey = `${hymnId}::${clientKey || ua || '-'}`;
   const now = Date.now();
-  const last = recentHitAt.get(hymnId);
-  if (last && now - last < HIT_DEDUP_MS) return; // 同一次播放嘅另一條 range 連線
-  recentHitAt.set(hymnId, now);
+  const last = recentHitAt.get(dedupKey);
+  if (last && now - last < HIT_DEDUP_MS) return; // 同一個 client 短時間內另一個「起播」(reload/seek返0)
+  recentHitAt.set(dedupKey, now);
   // recentHitAt 本身都要有上限,防止長期運行漏記憶體——順手清走舊過
   // 5× dedup 窗口嘅 entry(呢個 map 純粹做短期去重,唔需要長期保留)。
   if (recentHitAt.size > MAX_TRACKED_IDS * 2) {

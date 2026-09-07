@@ -9,6 +9,8 @@ import { zeroFragmentedMp4Durations } from '../lib/fixFragmentedMp4Duration.js';
 import { recordWarmIds } from '../lib/warmLog.js';
 import { recordStreamRequest, recordBufferCacheHit, recordUpstream403 } from '../lib/opsMetrics.js';
 import { recordStreamHit, getHotIds } from '../lib/hotIds.js';
+import { extractItagClen } from '../lib/urlItagClen.js';
+import { clientIp } from '../lib/loginRateLimit.js';
 
 // BG-PLAYBACK-STOPS-PLAN Fix D:純 observability helper,唔改任何 proxy 行為。
 // 一行 log,帶 ISO timestamp,用嚟診斷背景播放 3-4 首自動停個 bug(client abort
@@ -34,18 +36,9 @@ function sanitizeLogToken(s, maxLen) {
 // googlevideo URL 嘅 query string 攞 itag/clen——答「今日 resolve 出嚟嗰個
 // format variant 係咪有問題」。url 未 resolve/resolve 失敗/parse 唔到就
 // 一律 `-`,唔會拋錯累到成個 request 死。
-function extractItagClen(u) {
-  try {
-    if (!u) return { itag: '-', clen: '-' };
-    const parsed = new URL(u);
-    return {
-      itag: parsed.searchParams.get('itag') || '-',
-      clen: parsed.searchParams.get('clen') || '-',
-    };
-  } catch (_) {
-    return { itag: '-', clen: '-' };
-  }
-}
+// FIRST-TRACK-STEP01-FIX-20260907 #2:呢個函式而家搬咗去 lib/urlItagClen.js
+// (上面 import),俾 routes/hls.js 都可以攞嚟做免費(零上游請求)嘅 playlist
+// cache 命中校驗,唔使兩份幾乎一樣嘅 parse 邏輯分喺兩個檔案。行為冇變。
 
 // NATIVE-STALL-ROOTFIX-PLAN-20260830 §6 Phase A:「呢條 request 真係寫咗幾多
 // body bytes 俾 client」用 socket.bytesWritten 喺 request 開始/結束嗰陣嘅
@@ -128,7 +121,11 @@ const MIN_TEE_BYTES = 256 * 1024;
 
 // FIRST-TRACK-STEP01-EXEC-20260907 §2 N3 —— `/warm` 總數上限(client 名單
 // + backend 熱門補位),env 可覆蓋(純測試用途,production 用返呢個預設)。
-const WARM_TOTAL_CAP = Number(process.env.WARM_TOTAL_CAP) > 0 ? Number(process.env.WARM_TOTAL_CAP) : 16;
+// FIRST-TRACK-STEP01-OPUS-20260907 P2-6:16 個 id 每個最壞 12MB(WARM_CAP_
+// BYTES)= 192MB upstream fetch,遠超 128MB bufferCache 閘,而排喺頭嗰批
+// (client 名單、非 pinned)反而會俾之後 hot 補位嗰批擠走。第一波收窄做
+// 10,降低單次 `/warm` 嘅 upstream 流量峰值同埋自己人打交嘅風險。
+const WARM_TOTAL_CAP = Number(process.env.WARM_TOTAL_CAP) > 0 ? Number(process.env.WARM_TOTAL_CAP) : 10;
 
 // W4(BACKEND-CACHE-FIX-EXEC-20260831 §2.2 Design B)dedup 守衛——見下面
 // `!startsAtZero` 分支嘅完整解釋。呢個 Set 只有兩條 mutation 路:排隊前
@@ -272,8 +269,20 @@ export default function streamRoutes(getDb) {
     recordStreamRequest(hymn.youtube_id, warm);
     // FIRST-TRACK-STEP01-EXEC-20260907 §2 N3 —— 記低「呢個 DB hymn id 而家
     // 有真人播緊」,俾 `/warm` 補位用。純觀測(hotIds.js 內部自己做 UA 過濾
-    // + 60 秒去重),唔改呢條 route 任何行為/timing。
-    recordStreamHit(id, uaShort);
+    // + 去重),唔改呢條 route 任何行為/timing。
+    // FIRST-TRACK-STEP01-FIX-20260907 #5(Opus P2-5 修正)——舊版每個 request
+    // 過咗去重窗口都計一次,變咗「串流分鐘數」(一首 40 分鐘純音樂 ≈ 40 分,
+    // 一首 4 分鐘詩歌得 4 分,長檔洗版熱門榜)。而家淨係「呢個 request 係
+    // 起播」(冇 Range,或者 Range 由 byte 0 開始——AVFoundation/ExoPlayer
+    // 一首歌一定有一個呢種請求打頭陣,中段續播 range 唔算)先計一次「開歌」。
+    // 呢度要喺 `clientRange`/`parsedRange`(下面 §372 先聲明)之前提早重複
+    // 判斷一次同一條件,避免將呢兩個 local 變數嘅聲明搬前(改咗會動落 fMP4
+    // duration 修補嗰段嘅變數次序,唔值得為呢個純觀測 helper 冒呢個風險)。
+    // `clientKey` = ip+ua(呢條 route 冇 deviceId,App 一個字冇改前提下攞
+    // 唔到——同一 id 同一 client 5 分鐘內再嚟(例如 native reload/seek 返
+    // byte 0)唔應該計多次「開歌」)。
+    const isStreamStartReq = !req.headers.range || /^bytes=0-/.test(req.headers.range);
+    recordStreamHit(id, uaShort, { isStart: isStreamStartReq, clientKey: `${clientIp(req)}|${uaShort}` });
     let resolveMs = 0;
     let retried = false;
     let logged = false;
