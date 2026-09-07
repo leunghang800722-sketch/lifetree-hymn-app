@@ -59,7 +59,9 @@ function parseTaggedLine(line, tag) {
     if (eq < 0) continue;
     fields[tok.slice(0, eq)] = tok.slice(eq + 1);
   }
-  return { tag, ts, tsIso, fields };
+  // FIRST-TRACK-STEP01-FIX-20260907 #6/#7 —— 保留原始行文字,俾 `--control`
+  // 可以印返一字不漏嘅原行(而唔係摘要重印一次),做真.正控。
+  return { tag, ts, tsIso, fields, raw: line };
 }
 
 function loadBackendLog(filePath) {
@@ -117,7 +119,10 @@ function loadClientLog(dates) {
       const ts = Date.parse(ev.clientTs || ev.ts);
       if (!Number.isFinite(ts)) continue;
       const detail = parseDetail(ev.detail);
-      const rec = { ...ev, tsEpoch: ts, detail };
+      // FIRST-TRACK-STEP01-FIX-20260907 #6/#7 —— 保留原始一行 JSON,俾
+      // `--control` 印返原文,唔靠重新 JSON.stringify(順序/欄位可能同原文
+      // 唔一樣)。
+      const rec = { ...ev, tsEpoch: ts, detail, rawLine: line };
       if (ev.event === 'nextTrackMs' && (detail.origin === 'start' || detail.origin === 'jsRecover')) {
         starts.push(rec);
       } else if (ev.event === 'hlsStartupKick') {
@@ -174,6 +179,7 @@ function buildTimelineForEvent(ev, backendLogs, clientLogs) {
       initSize: hlsEntry.fields.initSize ? Number(hlsEntry.fields.initSize) : null,
       reqStartOffset: reqStart != null ? reqStart - T0 : null,
       reqEndOffset: reqEnd - T0,
+      raw: hlsEntry.raw, // #6/#7:原始 [hls] log 行,俾 --control 印
     };
   }
 
@@ -197,6 +203,7 @@ function buildTimelineForEvent(ev, backendLogs, clientLogs) {
       sent: s.fields.sent,
       reqStartOffset: reqStart != null ? reqStart - T0 : null,
       reqEndOffset: reqEnd - T0,
+      raw: s.raw, // #6/#7:原始 [stream] log 行,俾 --control 印
     };
   });
 
@@ -216,12 +223,12 @@ function buildTimelineForEvent(ev, backendLogs, clientLogs) {
   }
 
   const kicks = clientLogs.kicks.filter((k) => String(k.hymnId) === hymnId && within(k.tsEpoch, winLo, winHi))
-    .map((k) => ({ tsOffset: k.tsEpoch - T0, detail: k.detail }));
+    .map((k) => ({ tsOffset: k.tsEpoch - T0, detail: k.detail, raw: k.rawLine }));
   const preflights = clientLogs.preflights.filter((p) => String(p.hymnId) === hymnId && within(p.tsEpoch, winLo, winHi))
-    .map((p) => ({ tsOffset: p.tsEpoch - T0, detail: p.detail }));
+    .map((p) => ({ tsOffset: p.tsEpoch - T0, detail: p.detail, raw: p.rawLine }));
   // nativeStall 冇 hymnId/deviceId —— 淨係時間窗重疊,唔保證屬於呢首歌(見檔頭註釋限制 1)。
   const nativeStallsInWindow = clientLogs.nativeStalls.filter((n) => within(n.tsEpoch, winLo, winHi))
-    .map((n) => ({ tsOffset: n.tsEpoch - T0, detail: n.detail }));
+    .map((n) => ({ tsOffset: n.tsEpoch - T0, detail: n.detail, raw: n.rawLine }));
 
   // 未歸屬 = ms − 已知(hls/stream)覆蓋到嘅最後一個 offset。
   const knownEnds = [];
@@ -274,6 +281,59 @@ function renderEventBlock(t) {
   return lines.join('\n');
 }
 
+// FIRST-TRACK-STEP01-FIX-20260907 #6/#7(Opus P3-7 修正)—— 舊版 `--control`
+// 分支淨係 `renderEventBlock(t)`,即係將自動摘要原封不動再印一次,冇引任何
+// 原始 log 行,冇檢驗力(執行單明文要求「逐段人手核」)。而家改成印返一字
+// 不漏嘅原始行(`[hls]` 原行 + 頭三條 `[stream]` 原行 + nextTrackMs/
+// hlsStartupKick/hlsPreflight beacon 嘅原始 JSON 行),俾人手逐行對住原始
+// log 檔核實,唔係對住 script 自己嘅摘要核自己。
+function renderControlBlock(t) {
+  const lines = [];
+  lines.push(`### 正控:hymnId=${t.hymnId} platform=${t.platform} source=${t.source} surface=${t.surface} origin=${t.origin} deviceId=${t.deviceId}`);
+  lines.push('');
+  lines.push(`T0(撳掣時刻)= ${new Date(t.T0).toISOString()}，量得 ms=${t.ms}`);
+  lines.push('');
+  lines.push('**原始 nextTrackMs beacon(client-log 原行 JSON,一字不漏)：**');
+  lines.push('```json');
+  lines.push(t.ev.rawLine || `(冇原文,回退摘要:${JSON.stringify(t.ev)})`);
+  lines.push('```');
+  lines.push('');
+  lines.push('**原始 `[hls]` log 行：**');
+  if (t.hlsInfo && t.hlsInfo.raw) {
+    lines.push('```');
+    lines.push(t.hlsInfo.raw);
+    lines.push('```');
+  } else {
+    lines.push('（窗口內冇搵到 `[hls]` 行,或者呢條 [hls] 行舊到未加 raw 追蹤——見上面已知限制）');
+  }
+  lines.push('');
+  lines.push(`**頭 ${t.streamInfo.length} 條原始 \`[stream]\` log 行：**`);
+  if (t.streamInfo.length) {
+    lines.push('```');
+    for (const s of t.streamInfo) lines.push(s.raw || '(冇原行)');
+    lines.push('```');
+  } else {
+    lines.push('（窗口內冇搵到任何 [stream] range request）');
+  }
+  if (t.kicks.length) {
+    lines.push('');
+    lines.push('**原始 `hlsStartupKick` beacon(client-log 原行 JSON)：**');
+    lines.push('```json');
+    for (const k of t.kicks) lines.push(k.raw || JSON.stringify(k.detail));
+    lines.push('```');
+  }
+  if (t.preflights.length) {
+    lines.push('');
+    lines.push('**原始 `hlsPreflight` beacon(client-log 原行 JSON)：**');
+    lines.push('```json');
+    for (const p of t.preflights) lines.push(p.raw || JSON.stringify(p.detail));
+    lines.push('```');
+  }
+  lines.push('');
+  lines.push('⚠️ 呢個 block 刻意**唔**經 `renderEventBlock()`(自動摘要)——用嚟俾人手逐行對住原始 log 核對,唔係對住 script 自己嘅摘要核自己。想睇自動摘要,見下面「逐條起播事件時間軸」入面同一個 hymnId 嗰段。');
+  return lines.join('\n');
+}
+
 function main() {
   const args = parseArgs(process.argv.slice(2));
   const backendLogs = loadBackendLog(args.backendLog);
@@ -308,15 +368,18 @@ function main() {
   out.push(`- 估算 miss 率（ms>500）= ${missCount}/${hlsMsList.length} = ${hlsMsList.length ? (100 * missCount / hlsMsList.length).toFixed(1) : '-'}%`);
   out.push('');
 
-  // === 核心結論:playlist 步驟佔咗 ms 幾多 % + init/seg0 gap 分佈 ===
-  // 呢個係讀完全部 timeline 之後浮現嘅發現,寫成獨立段落,答返「2.3 秒未歸屬
-  // 去咗邊」——真身唔係一嚿獨立嘅黑盒時間,而係「playlist 步驟本身已經食咗
-  // 個 total ms 嘅大部份」,而 init/seg0 兩步(warm buffer 之下)反而好快,
-  // 快到 seg0 成條 request 完全落完嘅時刻仲跌喺 nextTrackMs(有聲)之後 ——
-  // 即係話 AVPlayer 唔使等成個 segment 0 派晒先開聲,seg0 嘅 total_ms 唔應該
-  // 攞嚟做「起播done」嘅終點,先會解釋到點解「未歸屬」成日係負數。
+  // === 核心結論:累積 offset + init/seg0 gap 分佈 ===
+  // FIRST-TRACK-STEP01-FIX-20260907 #6/#7(Opus P1-1/P3-8 修正)—— 呢個比例
+  // 算嘅係「playlist 回應**完成嗰一刻**距離撳掣已經過咗幾多 %(累積
+  // offset)」,**唔係**「playlist 呢一步本身用咗幾多 %(步驟耗時)」——
+  // `reqEndOffset` 包晒 App JS、tunnel 來回、`resolveAudioUrl`,唔淨係
+  // backend 吐 playlist 嗰段。舊版本段文字用咗「步驟佔…八成以上」呢種讀法
+  // 混淆咗「累積位置」同「步驟耗時」,Opus 獨立重算指出:呢批樣本入面,
+  // 真正**直接量到**`[hls] ms=`(backend 自己報嘅 playlist 步驟耗時)嘅
+  // 得返好少幾個,大部份仲係加 `ms=` 之前嘅舊格式(`ms=-`)。
   const iosHlsWithPlaylist = timelines.filter((t) => t.platform === 'ios' && t.hlsInfo && t.hlsInfo.reqEndOffset != null);
   const playlistRatios = iosHlsWithPlaylist.map((t) => (100 * t.hlsInfo.reqEndOffset) / t.ms);
+  const iosHlsWithRealMs = iosHlsWithPlaylist.filter((t) => t.hlsInfo.ms != null);
   const initSeg0Gaps = [];
   for (const t of timelines) {
     const initSeg = t.streamInfo.find((s) => s.classified === 'init');
@@ -327,10 +390,14 @@ function main() {
   }
   out.push('## 核心結論(讀晒全部 timeline 之後浮現,答 S0-1「2.3 秒未歸屬去咗邊」)');
   out.push('');
-  out.push(`1. **playlist(.m3u8)步驟佔 total ms 嘅比例**(n=${playlistRatios.length},iOS HLS 有齊 [hls] 記錄嘅樣本):p50=${fmtMs(median(playlistRatios))}%，p90=${fmtMs(pct(playlistRatios, 90))}%，min=${fmtMs(Math.min(...playlistRatios))}%，max=${fmtMs(Math.max(...playlistRatios))}%。`);
-  out.push('   → 喺絕大部份樣本入面,由撳掣到 backend 吐返 playlist(含 resolveAudioUrl cache 查詢 + sidx head-fetch + 一嚟一回網絡)已經食咗成個「起播耗時」嘅八成以上。呢個先係「2.3 秒」真正嘅去向 —— 唔係一嚿獨立嘅黑盒,而係集中晒喺 playlist 呢一步,同 N1(playlist 持久化)嘅目標完全對得上。');
+  out.push(`1. **playlist(.m3u8)回應完成時,距離撳掣已經去到起播窗口嘅幾多 %(累積 offset,唔係步驟耗時)**(n=${playlistRatios.length},iOS HLS 有齊 [hls] 記錄嘅樣本):p50=${fmtMs(median(playlistRatios))}%，p90=${fmtMs(pct(playlistRatios, 90))}%，min=${fmtMs(Math.min(...playlistRatios))}%，max=${fmtMs(Math.max(...playlistRatios))}%。`);
+  out.push(`   → ⚠️ **呢個係「累積 offset」,唔係「呢一步用咗幾耐」**。上面呢 ${playlistRatios.length} 個樣本入面,真正直接量到 \`[hls] ms=\`(backend 自己報嘅 playlist 步驟耗時,唔係由 nextTrackMs 反推)嘅淨係 **${iosHlsWithRealMs.length} 個樣本**${iosHlsWithRealMs.length ? `(${iosHlsWithRealMs.map((t) => `hymnId=${t.hymnId} ms=${fmtMs(t.hlsInfo.ms)}`).join('; ')})` : ''}——其餘全部撞正加 \`ms=\` 之前嘅舊格式(\`ms=-\`),完全冇量過 playlist 呢一步本身用咗幾耐。`);
+  out.push(`   → 另外睇 S0-4(G-9)嗰組更大嘅獨立樣本(全庫 [hls] 行,唔一定同 nextTrackMs 事件對得上,n=${hlsMsList.length}):p50=${fmtMs(median(hlsMsList))}ms、p90=${fmtMs(pct(hlsMsList, 90))}ms。對 Eric 09-06 中位起播 4,975ms 嚟講 ≈ ${hlsMsList.length ? (100 * median(hlsMsList) / 4975).toFixed(0) : '-'}%,遠低過「累積 offset」讀出嚟嘅 ${fmtMs(median(playlistRatios))}%。`);
+  out.push(`   → **成立嘅講法**:「playlist 回應完成嗰一刻,已經行咗起播窗口嘅 p50 ${fmtMs(median(playlistRatios))}% 位」——方向仍然指住「樽頸集中喺 playlist 回應之前(App JS + tunnel 來回 + resolveAudioUrl + sidx head-fetch)」,同 N1(playlist 持久化)目標對得上;但**唔等於**「playlist 呢一步本身用咗 ${fmtMs(median(playlistRatios))}% 時間」——兩個講法唔可以交換用,樣本量太細(直接量到 ms= 嘅得 ${iosHlsWithRealMs.length} 個)都唔支持斬釘截鐵嘅步驟耗時結論。`);
   out.push(`2. **init/seg0 gap 分佈**(n=${initSeg0Gaps.length}):p50=${fmtMs(median(initSeg0Gaps))}ms，全部樣本 gap ${initSeg0Gaps.every((g) => g >= 50) ? '≥50ms' : '有部份<50ms'} → G-3 答案:**串行**(AVPlayer 攞完 init 隔 ~400ms 先發 segment 0 request,唔係同一刻並行發兩條)。`);
-  out.push('3. **「未歸屬」時常見負數嘅解釋**:seg0 request 嘅 `total_ms` 係「成個 range 派晒」嘅時間(呢度睇到嘅係 162KB 幾嘅完整 segment),但 AVPlayer 唔需要等成個 segment 派完先開聲 —— 樣本入面成日見到 `nextTrackMs`(有聲)落喺 seg0 request 仲**未開始**或者**仲未派完**嗰陣,即係話真正嘅「開始有聲」門檻遠低過「攞晒 segment 0」。呢個係「未歸屬」出現負數嘅根源,唔係量錯,而係我哋用嘅「seg0 完整落完」呢個代理指標本身就大過真正嘅起播門檻。');
+  out.push('3. **「未歸屬」時常見負數嘅解釋(兩個原因可以同時成立,唔應該淨係報一個)**:');
+  out.push('   - (a) seg0 request 嘅 `total_ms` 係「成個 range 派晒」嘅時間(呢度睇到嘅係 162KB 幾嘅完整 segment),但 AVPlayer 唔需要等成個 segment 派完先開聲 —— 樣本入面成日見到 `nextTrackMs`(有聲)落喺 seg0 request 仲**未開始**或者**仲未派完**嗰陣,即係話真正嘅「開始有聲」門檻遠低過「攞晒 segment 0」。');
+  out.push('   - (b) ⚠️ **已知儀器偏差**(memory `project-hls-b3-resolved-conditional-go`):Stage B 已經記錄過 HLS 之下 `nextTrackMs`(client 報嘅起播耗時)本身會**早報 2–3 秒**(事件分類令轉歌 nudge 撞正當起播計)。分母(`ms`)俾呢個偏差報細咗,直接拉細成條「未歸屬」數(甚至令佢變負數)——呢個係已經入咗 memory 嘅結論,同上面(a)嘅解釋可以**同時成立**,唔應該淨係揀新嗰個解釋而漏咗呢個已知偏差。');
   out.push('');
 
   // === 逐條 timeline ===
@@ -357,13 +424,15 @@ function main() {
   out.push('');
 
   // === 正控 ===
+  // FIRST-TRACK-STEP01-FIX-20260907 #6/#7:改印原始 log 行(renderControlBlock),
+  // 唔再係摘要重印一次(renderEventBlock)——見 renderControlBlock() 上面註釋。
   if (args.control) {
     const controlEvents = timelines.filter((t) => t.hymnId === args.control);
-    out.push(`## 正控：hymnId=${args.control} 逐段人手核`);
+    out.push(`## 正控：hymnId=${args.control} 逐段人手核（原始 log 行,唔係摘要）`);
     if (!controlEvents.length) {
       out.push(`⚠️ 窗口內搵唔到 hymnId=${args.control} 嘅起播事件。`);
     } else {
-      for (const t of controlEvents) out.push(renderEventBlock(t));
+      for (const t of controlEvents) { out.push(renderControlBlock(t)); out.push(''); }
     }
     out.push('');
   }

@@ -53,7 +53,7 @@ async function main() {
   console.log(`[mock googlevideo] 監聽 ${MOCK_BASE}`);
 
   const mod = await import(pathToFileURL(path.join(BACKEND_ROOT, 'lib', 'resolveAudio.js')).href);
-  const { setPinnedIds, getPinnedIds, warmBuffer, getBufferedChunk, evictBufferedChunk, getBufferCacheStats } = mod;
+  const { setPinnedIds, getPinnedIds, warmBuffer, getBufferedChunk, evictBufferedChunk, getBufferCacheStats, adoptStreamedHead } = mod;
 
   // ============ (1) PINNED_MAX_COUNT 硬 clamp(spec:64MB/4MB=16)==========
   const tooMany = Array.from({ length: 30 }, (_, i) => `pin-clamp-${i}`);
@@ -82,6 +82,29 @@ async function main() {
     check(`(2) pinned id 用 LONG_WARM_CAP_BYTES(4MB-1=4194303)做 Range 上限,實測 requested end=${capturedRangeEnd}`, capturedRangeEnd === 4 * 1024 * 1024 - 1, capturedRangeEnd);
     const c = getBufferedChunk(yt, `${MOCK_BASE}/capture`);
     check('(2) pinned id 真係入咗 bufferCache', !!c, c);
+    evictBufferedChunk(yt);
+    setPinnedIds([]);
+  }
+
+  // ============ (2b) FIRST-TRACK-STEP01-FIX #3(a):adoptStreamedHead()
+  // 對 pinned id 都要 head-only(4MB)cap ============
+  // Opus P1-3 揪出嘅**主**缺口:「真播放順手 tee」(adoptStreamedHead,
+  // routes/stream.js 冷路徑 pipe 俾 client 嗰陣順手 tee 落 bufferCache)
+  // 之前完全冇理 pinnedIds,可以帶成隻 `WARM_CAP_BYTES`(12MB)head 入池,
+  // 同 warmBuffer() 對 pinned id 做嘅 4MB cap 唔一致——呢個先係「16 個
+  // pinned entry 冧到 120MB」嘅主因(warmBuffer() 本身已經有 isPinned
+  // check,一直冇出事嗰條路)。
+  {
+    const yt = 'yt-n5-pinned-adopt';
+    setPinnedIds([yt]);
+    // 模擬 routes/stream.js 個 tee:已經收咗成 WARM_CAP_BYTES(12MB),遠
+    // 大過 pinned 應該用嘅 4MB cap。
+    const teeBuf = Buffer.alloc(12 * 1024 * 1024, 3);
+    const totalLength = 20 * 1024 * 1024; // 檔案總長 20MB,大過 tee 咗嘅 12MB,會觸發尾巴補攞
+    routes['/adopt-tail'] = makeRangeEndpoint(smallFixture, SMALL_FILE_BYTES); // 尾巴 fetch 淨係要 200/206,細 fixture 夠用
+    await adoptStreamedHead(yt, `${MOCK_BASE}/adopt-tail`, teeBuf, totalLength, 'audio/mp4');
+    const c = getBufferedChunk(yt, `${MOCK_BASE}/adopt-tail`);
+    check(`(2b) pinned id 經 adoptStreamedHead 入池,head 截到 LONG_WARM_CAP_BYTES(4MB=4194304),實測 buf.length=${c && c.buf.length}`, !!c && c.buf.length === 4 * 1024 * 1024, c && c.buf.length);
     evictBufferedChunk(yt);
     setPinnedIds([]);
   }
@@ -141,6 +164,34 @@ async function main() {
     check('(4) 最早入嘅普通 id(id=0)已經俾 LRU 踢走', !getBufferedChunk('yt-n5-lru-normal-0', `${MOCK_BASE}/lru?id=0`));
     check('(4) 最新入嘅普通 id 仲喺度', !!getBufferedChunk(`yt-n5-lru-normal-${NORMAL_COUNT + 1}`, `${MOCK_BASE}/lru?id=${NORMAL_COUNT + 1}`));
     setPinnedIds([]);
+  }
+
+  // ============ (5) FIRST-TRACK-STEP01-FIX #3(c):pinned 總 bytes 硬頂
+  // PINNED_TOTAL_CAP_BYTES(64MB)============
+  // Opus P1-3 實測:16 個 pinned entry 可以冧到 120MB(靠 PINNED_MAX_COUNT
+  // 個數上限(16)冇用,因為 pin 之前入池嗰啲 entry 冇被追溯裁剪)。(2)/(2b)
+  // 已經修咗兩條「點解會咁大」嘅主因,但呢度加多一條獨立驗證:就算頭
+  // 已經係 4MB cap,warmBuffer()/adoptStreamedHead() 嘅尾巴補攞(≤512KB
+  // TAIL_BYTES)對 pinned 一樣照做,16×(4MB+512KB)≈72MB,單靠個數上限
+  // (16×4MB=64MB 嘅算術)都仲係會撞穿 64MB 閘——一定要有嗰條獨立嘅
+  // 「pinned 總 bytes 超咗就 unpin 最舊」保險絲先守得住。
+  {
+    const BIG_BYTES = 20 * 1024 * 1024; // 大過 4MB head cap,會觸發 fetchTailBuf 補 ≤512KB 尾
+    const bigFixture = Buffer.alloc(BIG_BYTES, 9);
+    routes['/pin64'] = makeRangeEndpoint(bigFixture, BIG_BYTES);
+    const pinIds = Array.from({ length: 16 }, (_, i) => `yt-n5-pin64-${i}`);
+    setPinnedIds(pinIds);
+    for (const yt of pinIds) {
+      await warmBuffer(yt, `${MOCK_BASE}/pin64?id=${yt}`, 60);
+    }
+    const stats = getBufferCacheStats();
+    console.log(`  [debug] 16 個 pinned(4MB head+尾巴)之後: entries=${stats.entries} totalBytes=${stats.totalBytes} pinned=${stats.pinned} pinnedBytes=${stats.pinnedBytes}`);
+    check(`(5) pinned 總 bytes 冇超過 PINNED_TOTAL_CAP_BYTES(64MB),實測 ${stats.pinnedBytes} bytes(${(stats.pinnedBytes / 1024 / 1024).toFixed(2)}MB)`, stats.pinnedBytes <= 64 * 1024 * 1024, stats);
+    check(`(5) 撞穿 64MB 閘之後,最舊嗰個 pinned(index 0)已經俾 unpin(實測 pinnedIds 仲有冇佢:${getPinnedIds().has(pinIds[0])})`, !getPinnedIds().has(pinIds[0]), [...getPinnedIds()]);
+    check(`(5) pinned count 因為 unpin 而少過設定嘅 16(實測 ${getPinnedIds().size})`, getPinnedIds().size < 16, getPinnedIds().size);
+    // 清場
+    setPinnedIds([]);
+    for (const yt of pinIds) evictBufferedChunk(yt);
   }
 
   server.close();

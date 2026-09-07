@@ -23,11 +23,11 @@
 
 ### S0-1(G-1 起播時間軸)—— `ops/perf/first-track/timeline.mjs` + `timeline-20260907.md`
 
-覆蓋 09-06(46 條 nextTrackMs origin=start/jsRecover,其中 Eric 部機 13 條)+ 09-07 全部,連 hlsStartupKick(90)/hlsPreflight(2)/nativeStall(275,⚠️呢個 beacon 冇 hymnId/deviceId,配對淨係時間窗重疊,已喺報告寫明限制)。**正控**:hymnId=1550(09-06,4,975ms)逐段人手核,結果收錄喺報告「正控」段。
+覆蓋 09-06(46 條 nextTrackMs origin=start/jsRecover,其中 Eric 部機 13 條)+ 09-07 全部,連 hlsStartupKick(90)/hlsPreflight(2)/nativeStall(275,⚠️呢個 beacon 冇 hymnId/deviceId,配對淨係時間窗重疊,已喺報告寫明限制)。**正控**:hymnId=1550(09-06,4,975ms)逐段人手核,結果收錄喺報告「正控」段——FIRST-TRACK-STEP01-FIX-20260907 #6/#7 已經改咗:正控而家印**原始 log 行**(`[hls]` 原行、頭幾條 `[stream]` 原行、nextTrackMs/hlsStartupKick beacon 原始 JSON),唔係 Opus 揪出嘅「摘要重印一次」(舊版 `--control` 淨係 call `renderEventBlock(t)`,自己核自己,冇檢驗力)。
 
-**一句話結論**:喺已配對到 `[hls]` 記錄嘅 16 個 iOS HLS 樣本入面,**由撳掣到 backend 吐返 playlist(.m3u8)呢一步本身就食咗 total ms 嘅 p50 88%(p90 93%,min 52%,max 95%)**。「2.3 秒未歸屬」原本嘅框架(三段串行 vs 觀測值)喺真實生產數據下唔成立——真身係幾乎全部起播耗時都集中喺 playlist 步驟(sidx resolve + head-fetch),同 N1 嘅目標完全對得上。init/seg0 兩步(warm buffer 之下)本身好快:init→seg0 gap 全部樣本 ≥50ms(p50 435ms)= **串行**(G-3 答案),但呢個 gap 本身只係總時間嘅一細截。
+**一句話結論(#6/#7 已修正措辭)**:喺已配對到 `[hls]` 記錄嘅 16 個 iOS HLS 樣本入面,**playlist(.m3u8)回應完成嗰一刻,距離撳掣已經行咗起播窗口嘅 p50 88%(p90 93%,min 52%,max 95%)位——呢個係「累積 offset」,唔係「playlist 呢一步本身用咗幾多時間」**。Opus 驗收指出舊版報告寫「呢一步本身就食咗 88%」係讀錯咗個數嘅意思(算術冇錯):`reqEndOffset` 包晒 App JS、tunnel 來回、`resolveAudioUrl`,唔淨係 backend 吐 playlist 嗰段;而且呢 16 個樣本入面**真正直接量到 `[hls] ms=`(backend 自己報嘅步驟耗時)嘅淨係 1 個樣本(835ms)**,其餘全部撞正加 `ms=` 之前嘅舊格式(`ms=-`)。另外睇 S0-4(G-9)嗰組更大嘅獨立樣本(n=10,全庫 [hls] 行):p50=835ms、p90=4760ms,對 Eric 09-06 中位起播 4,975ms 嚟講 ≈17%,遠低過「累積 offset」讀出嚟嘅 88%。**成立嘅講法**:「playlist 回應完成時已經去到起播窗口 p50 88% 位」,方向仍然指住樽頸集中喺 playlist 回應之前(App JS + tunnel + resolve + head-fetch),同 N1 嘅目標對得上,但唔可以講成「呢一步用咗 88% 時間」。init/seg0 兩步(warm buffer 之下)本身好快:init→seg0 gap 全部樣本 ≥50ms(p50 435ms)= **串行**(G-3 答案),但呢個 gap 本身只係總時間嘅一細截。
 
-**額外發現(非事先假設)**:「未歸屬」呢個指標喺 iOS HLS 樣本入面經常出現負數(p50 −1,299ms,分組數字見報告),原因係 seg0 request 嘅 `total_ms`(成個 162KB range 派晒)呢個代理指標,大過 AVPlayer 真正開聲嘅門檻——樣本入面成日見到 `nextTrackMs`(client 報有聲)落喺 seg0 request 仲未開始或者未派完嗰陣。呢個唔係量錯,係「seg0 完整落完」呢個代理指標本身用得唔啱嚟做「起播 done」嘅終點,已喺報告寫明,唔應該攞嚟直接減數。
+**額外發現(非事先假設,#6/#7 已補一個已知偏差)**:「未歸屬」呢個指標喺 iOS HLS 樣本入面經常出現負數(p50 −1,299ms,分組數字見報告),兩個原因可以同時成立:(a) seg0 request 嘅 `total_ms`(成個 162KB range 派晒)呢個代理指標,大過 AVPlayer 真正開聲嘅門檻——樣本入面成日見到 `nextTrackMs`(client 報有聲)落喺 seg0 request 仲未開始或者未派完嗰陣;(b) ⚠️ **已知儀器偏差**(memory `project-hls-b3-resolved-conditional-go`):HLS 之下 `nextTrackMs` 本身已經記錄過會**早報 2–3 秒**,分母報細咗會直接拉細甚至令「未歸屬」變負數。舊版報告淨係報咗 (a),漏咗已經入咗 memory 嘅 (b),而 −1,299ms 正正落喺 2–3 秒呢個已知偏差 band 之內——兩個原因唔應該淨係揀一個講。
 
 S0-4(G-9,`[hls] ms=` 分佈,已收錄喺同一份報告):樣本(有 `ms=` 欄嘅 [hls] 行)僅 10 條(其餘 46-10=36 條係加呢個欄之前嘅舊格式,`ms=` 顯示 `-`)——p50=835ms,p90=4760ms,估算 miss 率(ms>500 當 miss)= 8/10 = 80%。樣本太細,呢個 p50/p90 只可以做量級參考。
 
