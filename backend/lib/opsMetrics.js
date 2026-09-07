@@ -60,7 +60,7 @@ function blankBucket() {
     // FIRST-TRACK-STEP01-EXEC-20260907 §2 N5 —— `pinned` 加喺呢個 gauge
     // 旁邊(而唔係開新頂層 key):同 entries/totalBytes 一樣係 bufferCache
     // 嘅 snapshot,語意上屬於同一組觀測。
-    bufferCache: { req: 0, hit: 0, entries: null, totalBytes: null, rssKb: null, pinned: null },
+    bufferCache: { req: 0, hit: 0, entries: null, totalBytes: null, rssKb: null, pinned: null, pinnedBytes: null },
     keepWarm: { tick: 0, ceiling: 0, dailyCap: 0, streaming: 0, offHours: 0, warmed: 0, failed: 0 },
     resolve: {
       total: 0, ok: 0, fail: 0, rescued: 0,
@@ -426,6 +426,7 @@ export function enablePersistence(opts = {}) {
               // N5:pinned count(可能係 undefined,舊 sampler 冇呢個欄——
               // 淨係喺有值先寫,唔好用 undefined 蓋走舊值)。
               if (typeof s.bufferCacheStats.pinned === 'number') b.bufferCache.pinned = s.bufferCacheStats.pinned;
+              if (typeof s.bufferCacheStats.pinnedBytes === 'number') b.bufferCache.pinnedBytes = s.bufferCacheStats.pinnedBytes; // Opus2 P2
             }
             if (typeof s.rssKb === 'number') b.bufferCache.rssKb = s.rssKb;
           }

@@ -493,7 +493,8 @@ function truncateEntryForPin(youtubeId) {
   if (!entry || !entry.buf || entry.buf.length <= LONG_WARM_CAP_BYTES) return;
   touchBufferEntry(youtubeId, {
     ...entry,
-    buf: entry.buf.subarray(0, LONG_WARM_CAP_BYTES),
+    // Opus2 P1:subarray 係 view,唔 copy,真記憶體一個 byte 都唔慳——要 Buffer.from copy。
+    buf: Buffer.from(entry.buf.subarray(0, LONG_WARM_CAP_BYTES)),
     tailBuf: null,
     tailOffset: null,
   });
@@ -754,7 +755,8 @@ export async function adoptStreamedHead(youtubeId, url, buf, totalLength, conten
       // 令下面「新 buf 冇長過現存嗰個就跳過」嗰個 guard 都係對住截完之後
       // 嘅長度比,唔會因為截短咗反而誤判做「更短」而錯誤跳過真正嘅更新。
       const isPinned = pinnedIds.has(youtubeId);
-      const cappedBuf = (isPinned && buf.length > LONG_WARM_CAP_BYTES) ? buf.subarray(0, LONG_WARM_CAP_BYTES) : buf;
+      // Opus2 P1:同上,裁剪要真 copy,否則 12MB 底層 ArrayBuffer 照霸住。
+      const cappedBuf = (isPinned && buf.length > LONG_WARM_CAP_BYTES) ? Buffer.from(buf.subarray(0, LONG_WARM_CAP_BYTES)) : buf;
       // 已經有同 url 嘅未過期 entry,新嚟嘅冇長過佢就唔好蓋——BATCH7 B7-4:
       // 舊 guard 淨係睇「有冇 entry」,唔睇長度,令「最快完成嗰條 tee 永久
       // 贏」:AVFoundation 冷開常見一條 1MB probe 最先完成,佢個 1MB stub

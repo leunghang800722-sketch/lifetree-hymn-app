@@ -146,7 +146,7 @@ export default function streamRoutes(getDb) {
     // FIRST-TRACK-STEP01-EXEC-20260907 §2 N3 —— 「今日為你預備 6 首」名單
     // 同真實起播入口(隨心聽/chip/最近加入)幾乎完全脫靶(1E 實測 92.6%)。
     // 呢度喺 client 名單(≤10)之後,補返 backend 側量到嘅「最近 24h 真.
-    // 熱門」id,總數封頂 `WARM_TOTAL_CAP`(預設 16)。純加法:client 名單
+    // 熱門」id,總數封頂 `WARM_TOTAL_CAP`(預設 10)。純加法:client 名單
     // 一個字冇改、次序唔變(佢哋照舊行先),`anyStreaming()` 讓路邏輯喺
     // 下面 for-loop 完全照舊,補位嘅 id 同 client id 用同一條 warm 邏輯,
     // 冇開後門。
