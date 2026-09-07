@@ -139,8 +139,77 @@ async function run() {
     check('fetch throw 非 Error 物件都唔會令 preflightHls 本身 throw', threw === false && r && r.ok === false, r);
   }
 
+  // Case 7 —— HLS-PREFLIGHT-FIX-20260907 #1:預設 timeoutMs 而家係 9000(唔係
+  // 5000)。攔截 global.setTimeout 攞返 abort timer 個 delay 參數,唔使真係
+  // 等 9 秒。
+  {
+    const origSetTimeout = global.setTimeout;
+    let capturedDelay = null;
+    global.setTimeout = (fn, delay, ...rest) => {
+      if (capturedDelay === null) capturedDelay = delay;
+      return origSetTimeout(fn, delay, ...rest);
+    };
+    global.fetch = async () => makeRes({ status: 200, body: '#EXTM3U' });
+    await preflightHls('https://x/test7.m3u8', { hymnId: 7 });
+    global.setTimeout = origSetTimeout;
+    check('冇傳 timeoutMs 預設用 9000ms(HLS-PREFLIGHT-FIX-20260907 #1)', capturedDelay === 9000, { capturedDelay });
+  }
+
+  // Case 8 —— HLS-PREFLIGHT-FIX-20260907 #2:React Native `XMLHttpRequest.
+  // abort()` 唔會 dispatch abort event,`whatwg-fetch` 最後由 `onerror`
+  // reject `TypeError('Network request failed')`(name 唔係 AbortError、
+  // message 冇 `abort` 呢個字)。舊code 靠 error 形狀分辨 timeout,呢種真機
+  // 形狀會錯判做 network——而家改用 timer callback 自己 set 嘅 flag,唔理
+  // error 形狀,一定判斷啱。
+  {
+    global.fetch = (url, opts) => new Promise((resolve, reject) => {
+      if (opts && opts.signal) {
+        opts.signal.addEventListener('abort', () => {
+          reject(new TypeError('Network request failed'));
+        });
+      }
+      // 故意永遠唔 resolve,等 abort 先有反應(同 RN 真身行為一致)。
+    });
+    const t0 = Date.now();
+    const r = await preflightHls('https://x/test8.m3u8', { hymnId: 8, timeoutMs: 300 });
+    const elapsed = Date.now() - t0;
+    check(
+      "RN abort 後 reject TypeError('Network request failed')(冇 AbortError name/冇 abort 字眼)要判成 timeout 唔係 network",
+      r.ok === false && r.reason === 'timeout',
+      r
+    );
+    check('真係喺 timeoutMs 附近就有結果(~300ms)', elapsed < 800, { elapsed });
+  }
+
+  // Case 9 —— Fable 拍板嘅執行單直接要求嘅 harness case:「冷 resolve 6s 後
+  // 200 → 唔降級」。真實用 setTimeout 等 6.2 秒(唔 mock 時間,直接證明
+  // 9000ms 嘅新預設 timeoutMs 冚得住呢種冷 resolve 分佈——Opus 驗收實測
+  // loopback 冷 resolve 3.7–6.0s,舊 5000ms 會喺呢個範圍中段就撞閘)。
+  {
+    global.fetch = (url, opts) => new Promise((resolve, reject) => {
+      const t = setTimeout(() => resolve(makeRes({ status: 200, body: '#EXTM3U\n#EXT-X-VERSION:7\n...' })), 6200);
+      if (opts && opts.signal) {
+        opts.signal.addEventListener('abort', () => {
+          clearTimeout(t);
+          const err = new Error('The operation was aborted');
+          err.name = 'AbortError';
+          reject(err);
+        });
+      }
+    });
+    const t0 = Date.now();
+    const r = await preflightHls('https://x/test9.m3u8', { hymnId: 9 }); // 冇傳 timeoutMs,用預設 9000
+    const elapsed = Date.now() - t0;
+    check(
+      '冷 resolve 6.2s 後先 200 → 用預設 9000ms timeoutMs 唔會撞閘,ok=true(唔會觸發降級)',
+      r.ok === true && r.status === 200 && r.reason === null,
+      r
+    );
+    check('真係等到 6.2s 先有結果(冇提早撞 timeout)', elapsed >= 6100 && elapsed < 9000, { elapsed });
+  }
+
   // 每次都送咗 beacon(唔驗證送信本身,淨係驗證每次 call 完 clientLogCalls 都加咗一條)
-  check('每次 preflightHls 完結都送咗一條 hlsPreflight beacon(6 次 call → 6 條)', clientLogCalls.length === 6, { n: clientLogCalls.length });
+  check('每次 preflightHls 完結都送咗一條 hlsPreflight beacon(9 次 call → 9 條)', clientLogCalls.length === 9, { n: clientLogCalls.length });
   check('beacon detail 帶埋 ctx/reason/status/ms', /ctx=start/.test(clientLogCalls[0].fields.detail), clientLogCalls[0]);
 
   global.fetch = origFetch;

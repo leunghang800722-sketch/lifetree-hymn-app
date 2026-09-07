@@ -145,7 +145,9 @@ async function main() {
 
   console.log(`[抽查] resolveStructureShared 存在: ${typeof hlsMod.resolveStructureShared === 'function'}`);
   console.log(`[抽查] resolveStructureInner 存在: ${typeof hlsMod.resolveStructureInner === 'function'}`);
-  console.log(`[抽查] backoffMsFor()=${hlsMod.backoffMsFor()}ms(§2.1 spec:固定 800ms)`);
+  // HLS-PREFLIGHT-FIX-20260907 #1/#4 —— backoffMsFor()/重試 已經剷咗(403/410
+  // 而家即刻 bustCache+回404,唔再等 backoff/重新 resolve),舊 export 已刪。
+  console.log(`[抽查] backoffMsFor 已刪(#1/#4:403/410 唔再重試):${typeof hlsMod.backoffMsFor === 'undefined'}`);
 
   // express 起真 app,同 server.js 一樣嘅掛法。
   const expressUrl = pathToFileURL(path.join(BACKEND_ROOT, 'node_modules', 'express', 'index.js')).href;
@@ -158,23 +160,48 @@ async function main() {
   const APP_BASE = `http://127.0.0.1:${appPort}`;
   console.log(`[hls route app] 監聽 ${APP_BASE}\n`);
 
-  // ============ (a) 403×2 → 404,總耗時 ≤4s(暖 resolve mock) ============
+  // ============ (a) HLS-PREFLIGHT-FIX-20260907 #1/#4:403 → 即刻 bustCache
+  // + 回 404,唔再重試,總耗時 ≤1s ============
   {
     const id = 1001;
     const yt = 'yt-403loop';
     HYMN_TABLE.set(id, yt);
     resolveTable.set(yt, `${MOCK_BASE}/always403`);
     const before = opsMetrics.getOpsMetrics().total.upstream403;
+    const beforeBust = globalThis.__hcBustCalls || 0;
     const t0 = Date.now();
     const res = await fetch(`${APP_BASE}/api/stream/${id}.m3u8`);
     const elapsed = Date.now() - t0;
     const body = await res.json().catch(() => null);
     const after = opsMetrics.getOpsMetrics().total.upstream403;
-    check('(a) 403×2 → HTTP 404', res.status === 404, res.status);
+    const afterBust = globalThis.__hcBustCalls || 0;
+    check('(a) 403 → HTTP 404', res.status === 404, res.status);
     check('(a) reason 帶 headfetch-failed(status=403)', body && /headfetch-failed\(status=403\)/.test(body.error || ''), body);
-    check(`(a) 總耗時 ≤4s(暖 resolve mock),實測 ${elapsed}ms`, elapsed <= 4000, elapsed);
-    check('(a) mock googlevideo 真係打咗 2 次 403(頭一次+一次重試)', mockCounters.always403 === 2, mockCounters.always403);
-    check('(a) opsMetrics upstream403.hls 加咗 2、hlsTotal 加咗 2', (after.hls - before.hls) === 2 && (after.hlsTotal - before.hlsTotal) === 2, { before, after });
+    check(`(a) 總耗時 ≤1s(#1/#4:唔再等 backoff/重新 resolve),實測 ${elapsed}ms`, elapsed <= 1000, elapsed);
+    check('(a) mock googlevideo 淨係打咗 1 次 403(#1/#4:唔再重試)', mockCounters.always403 === 1, mockCounters.always403);
+    check('(a) bustCache(youtubeId) 真係俾 call 咗一次(#1/#4:令下次 resolve 攞新 URL)', (afterBust - beforeBust) === 1, { beforeBust, afterBust });
+    check('(a) opsMetrics upstream403.hls 加咗 1、hlsTotal 加咗 1(唔再重試,淨係一次 head-fetch)', (after.hls - before.hls) === 1 && (after.hlsTotal - before.hlsTotal) === 1, { before, after });
+  }
+
+  // ============ (a2) HLS-PREFLIGHT-FIX-20260907 #4:403→404 耗時三次量度
+  // (呢個 harness 嘅 resolveAudioUrl 仍然係 stub——真 yt-dlp resolve 條件
+  // 下嘅三次量度留俾 iOS Simulator + 隔離 backend 副本嗰邊做,呢度純粹係
+  // 「唔理 resolve 耗時,head-fetch 呢一層本身有冇重試」嘅重複量度,confirm
+  // 三次都一致咁快、冇偶發變回慢) ============
+  {
+    const id = 1005;
+    const yt = 'yt-403loop-again';
+    HYMN_TABLE.set(id, yt);
+    resolveTable.set(yt, `${MOCK_BASE}/always403`);
+    const timings = [];
+    for (let i = 0; i < 3; i++) {
+      const t0 = Date.now();
+      const res = await fetch(`${APP_BASE}/api/stream/${id}.m3u8`);
+      await res.json().catch(() => null);
+      timings.push(Date.now() - t0);
+    }
+    check(`(a2) 403→404 三次耗時全部 ≤1s(實測 ${timings.join('ms, ')}ms)`, timings.every((t) => t <= 1000), timings);
+    console.log(`  ℹ️  (a2) 403→404 三次耗時: ${timings.map((t) => t + 'ms').join(', ')}`);
   }
 
   // ============ (b) 檔頭 fetch 掛住 → 3s timeout 回 404 ============

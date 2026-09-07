@@ -48,7 +48,7 @@ Module._extensions['.js'] = function (mod, filename) {
   }
   return origJsCompiler(mod, filename);
 };
-const { preflightHls } = require(PREFLIGHT_PATH);
+const { preflightHls, isExplicitHttpFailure } = require(PREFLIGHT_PATH);
 Module._extensions['.js'] = origJsCompiler; // 用完即刻還原,唔影響之後嘅正常 require
 
 // ---- 2) 由 App.js 原文抽取 §1.2/§6 個 if-block(字元級 brace matching)。----
@@ -74,7 +74,15 @@ const blockSrc = appSrc.slice(startIdx, endIdx + 1);
 console.log(`[抽取] 由 offset ${startIdx} 到 ${endIdx},共 ${blockSrc.length} 字元。`);
 // 自證:抽出嚟嘅文字要包含幾個已知關鍵字(如果冇,即係抽錯咗位/App.js 已經
 // 改到面目全非,寧願 harness 爆咗都唔好靜靜哋測緊過時邏輯)。
-for (const must of ['preflightHls(startTrack.url', 'hlsDowngradedTrackRef.current', 'TrackPlayer.load(freshTrack)', 'TrackPlayer.getActiveTrack()', 'transitionT0Ref.current !== myT0']) {
+for (const must of [
+  'preflightHls(startTrack.url', 'hlsDowngradedTrackRef.current', 'TrackPlayer.load(freshTrack)',
+  'TrackPlayer.getActiveTrack()', 'transitionT0Ref.current !== myT0',
+  // HLS-PREFLIGHT-FIX-20260907 自證:確保呢四項修復真係落咗喺呢段抽出嚟嘅
+  // 文字入面,唔係得個「文檔話已改」——冇呢啲字眼即係 harness 同源碼分岔。
+  'isExplicitHttpFailure(pre)', // #1:淨係明確 HTTP status 先降級
+  "origin: 'jsRecover'", // #3:熱換前補返轉場標記,避免假 nativeSkipAttributed
+  'expectPlayingRef.current === false', // #6:用戶暫停咗就唔夾硬 play() 番
+]) {
   if (!blockSrc.includes(must)) throw new Error(`抽取到嘅 block 冇包含預期字串: ${JSON.stringify(must)} —— harness 同 App.js 可能已經分岔`);
 }
 
@@ -103,6 +111,10 @@ function makeRunner() {
     'Platform', 'HLS_ENABLED', 'trackList', 'startIndex', 'finalList',
     'transitionT0Ref', 'hlsDowngradedTrackRef', 'currentQueueIndexRef',
     'preflightHls', 'TrackPlayer', 'toTrack', 'logDiag', 'appStateRef', 'expectPlayingRef',
+    // HLS-PREFLIGHT-FIX-20260907 —— App.js 呢段而家多用咗呢兩個自由變量:
+    // `NATIVE_WD_V2`(module-level const,#3 嘅 transitionT0Ref marker 由佢
+    // 閘住)、`isExplicitHttpFailure`(#1,由 src/hlsPreflight.js 真身 import)。
+    'NATIVE_WD_V2', 'isExplicitHttpFailure',
     transformedBlock,
   );
   return (...args) => fn(scopedRequire, ...args);
@@ -126,7 +138,7 @@ function makeMockTrackPlayer(callLog) {
     async add(t) { callLog.push({ fn: 'add', arg: t }); },
     async skip(i) { callLog.push({ fn: 'skip', arg: i }); },
     async play() { callLog.push({ fn: 'play' }); },
-    async remove(i) { callLog.push({ fn: 'remove', arg: i }); },
+    async remove(i) { callLog.push({ fn: 'remove', arg: i }); if (this._removeShouldThrow) throw new Error('remove boom'); },
     async load(t) { callLog.push({ fn: 'load', arg: t }); if (this._loadShouldThrow) throw new Error('load boom'); },
     async getActiveTrack() { callLog.push({ fn: 'getActiveTrack' }); return this._activeTrack; },
     async getProgress() { callLog.push({ fn: 'getProgress' }); return this._progress; },
@@ -140,10 +152,37 @@ function makeMockFetchOk() {
 function makeMockFetch403() {
   return async () => ({ ok: false, status: 403, text: async () => '', body: { cancel: async () => {} } });
 }
+function makeMockFetch404() {
+  return async () => ({ ok: false, status: 404, text: async () => '', body: { cancel: async () => {} } });
+}
+// HLS-PREFLIGHT-FIX-20260907 #1 —— 模擬 fetch throw(非 abort)= reason=network。
+function makeMockFetchNetworkError() {
+  return async () => { throw new Error('getaddrinfo ENOTFOUND'); };
+}
+// HLS-PREFLIGHT-FIX-20260907 #1 —— 模擬「攞極都唔答,撞 timeoutMs」= reason=timeout。
+// 用返真身 preflightHls 嘅 AbortController signal:fetch 永遠唔 resolve,
+// 直到 signal abort 先 reject(同真 fetch/undici 行為一致,唔係 RN 嗰種
+// 「abort 唔 dispatch event」病態——H-A 已經專門驗過嗰個病態,呢度淨係要
+// 一個乾淨嘅 timeout 案例)。
+function makeMockFetchHang() {
+  return (url, opts) => new Promise((resolve, reject) => {
+    if (opts && opts.signal) {
+      opts.signal.addEventListener('abort', () => {
+        const err = new Error('The operation was aborted');
+        err.name = 'AbortError';
+        reject(err);
+      });
+    }
+  });
+}
 
 async function sleep(ms) { return new Promise((r) => setTimeout(r, ms)); }
 
-async function runOneScenario({ name, fetchImpl, activeTrack, progress, transitionT0Same = true, alreadyDowngraded = false, loadThrows = false }) {
+async function runOneScenario({
+  name, fetchImpl, activeTrack, progress, transitionT0Same = true, alreadyDowngraded = false,
+  loadThrows = false, removeThrows = false, nativeWdV2 = true, preflightTimeoutMs = null,
+  pauseDuringPreflight = false, sleepAfterMs = null,
+}) {
   const callLog = [];
   const startSong = { id: 501 };
   const otherSong = { id: 502 };
@@ -158,6 +197,7 @@ async function runOneScenario({ name, fetchImpl, activeTrack, progress, transiti
   mockTP._activeTrack = activeTrack;
   mockTP._progress = progress;
   mockTP._loadShouldThrow = loadThrows;
+  mockTP._removeShouldThrow = removeThrows;
 
   const t0Obj = { ts: Date.now(), origin: 'start', trackChangedSeen: false, bufferingSeen: false, hymnId: null };
   const transitionT0Ref = { current: t0Obj };
@@ -166,11 +206,21 @@ async function runOneScenario({ name, fetchImpl, activeTrack, progress, transiti
   const logDiagCalls = [];
   const appStateRef = { current: 'active' };
   const expectPlayingRef = { current: false };
+  // preflightTimeoutMs 淨係俾 harness 自己嘅 wrappedPreflightHls 用(縮短
+  // timeout 等 timeout/hang case 唔使真係等 9 秒),唔改真身 preflightHls
+  // 嘅 default。
+  const preflightHlsForRun = preflightTimeoutMs == null
+    ? preflightHls
+    : (url, opts) => preflightHls(url, { ...opts, timeoutMs: preflightTimeoutMs });
 
   // 模擬「add/skip/play 已經即刻做咗」(§6 點1:呢啲喺 real App.js 係喺呢個
-  // block 之前執行,harness 呢度手動先call一次,反映返真實次序)。
+  // block 之前執行,harness 呢度手動先call一次,反映返真實次序)。真身
+  // App.js(~App.js:2942)喺呢個 play() 之後、進入呢段 preflight 邏輯之前,
+  // 同步 set 咗 `expectPlayingRef.current = true`——harness 呢度要照做,
+  // 否則 #6 嘅「用戶冇暫停」對照組會錯誤咁睇落好似「一開波已經係 false」。
   await mockTP.add(trackList);
   await mockTP.play();
+  expectPlayingRef.current = true;
 
   const runner = makeRunner();
   // 執行段落本身(fire-and-forget 嗰個 IIFE 響入面,呢個 call 本身唔會 block)。
@@ -183,9 +233,10 @@ async function runOneScenario({ name, fetchImpl, activeTrack, progress, transiti
   runner(
     { OS: 'ios' }, true, trackList, startIndex, finalList,
     transitionT0Ref, hlsDowngradedTrackRef, currentQueueIndexRef,
-    preflightHls, mockTP, toTrackMock,
+    preflightHlsForRun, mockTP, toTrackMock,
     (event, fields) => logDiagCalls.push({ event, fields }),
     appStateRef, expectPlayingRef,
+    nativeWdV2, isExplicitHttpFailure,
   );
   const syncCallMs = Number(process.hrtime.bigint() - tSyncStart) / 1e6;
 
@@ -195,13 +246,21 @@ async function runOneScenario({ name, fetchImpl, activeTrack, progress, transiti
     // 模擬「呢次轉歌已經完結/俾蓋過」——preflight 都仲未 resolve 嗰陣就換咗個新 t0。
     transitionT0Ref.current = { ts: Date.now(), origin: 'auto', trackChangedSeen: true, bufferingSeen: false, hymnId: null };
   }
+  if (pauseDuringPreflight) {
+    // HLS-PREFLIGHT-FIX-20260907 #6 —— 模擬用戶喺預檢窗口期間自己撳
+    // cmd_pause()(App.js:3036 同步 set false,「唔好嗌醒」嗰句)。
+    expectPlayingRef.current = false;
+  }
 
-  // preflightHls 用真 timeoutMs 預設 5000ms,呢度啲 mock fetch 全部即刻resolve/reject,
-  // 淨係俾少少時間等 microtask/setTimeout(0) 跑晒。
-  await sleep(50);
+  // preflightHls 用真 timeoutMs(預設 9000ms,個別 case 會用
+  // preflightTimeoutMs 縮短),呢度啲 mock fetch 全部即刻resolve/reject
+  // (或者靠 AbortController abort 觸發),淨係俾少少時間等 microtask/
+  // setTimeout 跑晒。`sleepAfterMs` 俾個別故意加咗網絡延遲嘅 mock fetch
+  // (例如「403 喺 0.5s」個case)攞多啲時間先算完。
+  await sleep(sleepAfterMs != null ? sleepAfterMs : (preflightTimeoutMs != null ? preflightTimeoutMs + 80 : 50));
 
   global.fetch = origFetch;
-  return { callLog, logDiagCalls, hlsDowngradedTrackRef, addSkipPlayDoneBeforePreflightStarts, syncCallMs };
+  return { callLog, logDiagCalls, hlsDowngradedTrackRef, transitionT0Ref, addSkipPlayDoneBeforePreflightStarts, syncCallMs, t0Obj };
 }
 
 async function run() {
@@ -232,6 +291,18 @@ async function run() {
     check('熱換用嘅係 progressive URL(冇 .m3u8)', loadCalls[0] && !/\.m3u8/.test(loadCalls[0].arg.url), loadCalls[0]);
     check('熱換之後 hlsDowngradedTrackRef set 咗做 501', r.hlsDowngradedTrackRef.current === 501);
     check('有送 hlsFallback via=preflight beacon', r.logDiagCalls.some((c) => c.event === 'hlsFallback' && /via=preflight/.test(c.fields.detail)), r.logDiagCalls);
+    // HLS-PREFLIGHT-FIX-20260907 #3(Opus 驗收)—— 熱換之前一定要補
+    // transitionT0Ref = { origin: 'jsRecover', ... },唔係就會製造假
+    // nativeSkipAttributed(PlaybackActiveTrackChanged 誤判做 native skip)。
+    check(
+      '#3:熱換之前 transitionT0Ref 已經換咗做 origin=jsRecover 嘅新 marker(identity 同開頭嗰個 t0Obj 唔同)',
+      r.transitionT0Ref.current !== r.t0Obj && r.transitionT0Ref.current.origin === 'jsRecover',
+      r.transitionT0Ref.current
+    );
+    // HLS-PREFLIGHT-FIX-20260907 #6(Opus 驗收)—— 用戶冇暫停過,熱換之後
+    // 應該照舊夾硬 play() 一次(初始 add() 之後嗰個 play() + 熱換完呢個
+    // play(),一共 2 次)。
+    check('#6:用戶冇暫停 → 熱換之後照舊 play() 一次(連初始嗰次共 2 次)', r.callLog.filter((c) => c.fn === 'play').length === 2, r.callLog);
   }
 
   // Scenario 3:預檢 403,但已經出聲(position>=0.5)→ 唔換
@@ -285,7 +356,7 @@ async function run() {
     check('active track id 唔 match → 冇熱換(避免換錯歌)', swapCalls.length === 0, r.callLog);
   }
 
-  // Scenario 7:load() throw → fallback remove+add+skip
+  // Scenario 7:load() throw → fallback remove+add+skip(fallback 成功)
   {
     const r = await runOneScenario({
       name: '403 + TrackPlayer.load() 拋錯 → fallback remove+add+skip',
@@ -299,6 +370,113 @@ async function run() {
     const removeIdx = fns.indexOf('remove');
     const secondAddIdx = fns.indexOf('add', 1); // 第一個 add 係開頭嗰個,搵第二個
     check('load() 拋錯之後 fallback 行 remove→add→skip', loadIdx >= 0 && removeIdx > loadIdx && secondAddIdx > removeIdx, r.callLog);
+    // HLS-PREFLIGHT-FIX-20260907 #5(Opus 驗收)—— fallback 成功咗(remove/
+    // add/skip 都冇拋錯)→ 應該照樣 set hlsDowngradedTrackRef,同之前行為
+    // 一致,唔係「淨係 load() 成功先算」。
+    check('#5:load() 拋錯但 fallback 成功 → hlsDowngradedTrackRef 照樣 set 咗做 501', r.hlsDowngradedTrackRef.current === 501);
+  }
+
+  // Scenario 7b —— HLS-PREFLIGHT-FIX-20260907 #5(Opus 驗收):load() 同
+  // fallback(remove)成條路都拋錯 → hlsDowngradedTrackRef **唔准** set。
+  // 呢個係 Opus 揪出嘅缺口:之前寫法喺 load() 之前就 set 咗支旗,成條路失敗
+  // 會令隊列入面仲係死 `.m3u8`,但支旗已經話「已經降級過」,閂死
+  // PlaybackError/handleStuckTrackEnd 兩條現有 HLS 降級分支,D2 家族原病
+  // 復發。
+  {
+    const r = await runOneScenario({
+      name: '403 + load() 同 fallback remove() 都拋錯 → 唔准 set hlsDowngradedTrackRef',
+      fetchImpl: makeMockFetch403(),
+      activeTrack: { id: '501', url: 'https://api/stream/501.m3u8' },
+      progress: { position: 0 },
+      loadThrows: true,
+      removeThrows: true,
+    });
+    check(
+      '#5:熱換成條路(load+fallback)都失敗 → hlsDowngradedTrackRef 保持 null(唔閂死 PlaybackError/handleStuckTrackEnd 兩條現有分支)',
+      r.hlsDowngradedTrackRef.current === null,
+      r.hlsDowngradedTrackRef.current
+    );
+  }
+
+  // Scenario 9 —— HLS-PREFLIGHT-FIX-20260907 #1(Opus 驗收):reason=timeout
+  // (冇任何實質證據)唔准觸發降級,同 App.js handleStuckTrackEnd 嘅 HLS 分支
+  // (HLS-EXEC-STARTUP-GRACE-20260902 R4)紅線一致。用短 preflightTimeoutMs
+  // (200ms)令 case 快,唔使真係等 9 秒。
+  {
+    const r = await runOneScenario({
+      name: '#1: reason=timeout → 唔降級',
+      fetchImpl: makeMockFetchHang(),
+      activeTrack: { id: '501', url: 'https://api/stream/501.m3u8' },
+      progress: { position: 0 },
+      preflightTimeoutMs: 200,
+    });
+    const swapCalls = r.callLog.filter((c) => c.fn === 'load' || c.fn === 'remove');
+    check('#1: reason=timeout(冇明確 HTTP status)→ 冇熱換', swapCalls.length === 0, r.callLog);
+    check('#1: reason=timeout → hlsDowngradedTrackRef 保持 null', r.hlsDowngradedTrackRef.current === null);
+  }
+
+  // Scenario 10 —— HLS-PREFLIGHT-FIX-20260907 #1(Opus 驗收):
+  // reason=network(fetch throw,唔係 abort)一樣冇明確 HTTP status,唔准降級。
+  {
+    const r = await runOneScenario({
+      name: '#1: reason=network → 唔降級',
+      fetchImpl: makeMockFetchNetworkError(),
+      activeTrack: { id: '501', url: 'https://api/stream/501.m3u8' },
+      progress: { position: 0 },
+    });
+    const swapCalls = r.callLog.filter((c) => c.fn === 'load' || c.fn === 'remove');
+    check('#1: reason=network(冇明確 HTTP status)→ 冇熱換', swapCalls.length === 0, r.callLog);
+  }
+
+  // Scenario 11 —— HLS-PREFLIGHT-FIX-20260907 #1(Opus 驗收):正控,明確
+  // 404(4xx)一樣要降級,唔係淨係 403 先得。
+  {
+    const r = await runOneScenario({
+      name: '#1 正控: 明確 404 → 照樣降級',
+      fetchImpl: makeMockFetch404(),
+      activeTrack: { id: '501', url: 'https://api/stream/501.m3u8' },
+      progress: { position: 0 },
+    });
+    const loadCalls = r.callLog.filter((c) => c.fn === 'load');
+    check('#1 正控: 明確 404(4xx)→ 照樣熱換', loadCalls.length === 1, r.callLog);
+  }
+
+  // Scenario 11b —— Fable 拍板嘅執行單直接要求嘅 harness case:「403 喺 0.5s
+  // → 降級」。同 Case 9(H-A)配對:證明「值唔值得降級」淨係睇明確 HTTP
+  // status,同耗時快慢完全無關(0.5s 嘅 403 一樣要降級,6.2s 嘅 200 一樣
+  // 唔降級)。
+  {
+    const delayed403 = () => async () => {
+      await sleep(500);
+      return { ok: false, status: 403, text: async () => '', body: { cancel: async () => {} } };
+    };
+    const r = await runOneScenario({
+      name: '#1: 403 喺 0.5s → 降級',
+      fetchImpl: delayed403(),
+      activeTrack: { id: '501', url: 'https://api/stream/501.m3u8' },
+      progress: { position: 0 },
+      sleepAfterMs: 650,
+    });
+    const loadCalls = r.callLog.filter((c) => c.fn === 'load');
+    check('#1: 403 喺 0.5s(有延遲但係明確 status)→ 照樣熱換降級', loadCalls.length === 1, r.callLog);
+  }
+
+  // Scenario 12 —— HLS-PREFLIGHT-FIX-20260907 #6(Opus 驗收):用戶喺預檢
+  // 窗口期間自己撳咗暫停(expectPlayingRef 同步 set false)→ 熱換照做
+  // (URL 要換走死嘅 .m3u8),但唔准夾硬再 play() 一次。
+  {
+    const r = await runOneScenario({
+      name: '#6: 熱換期間用戶已暫停 → 換URL但唔play()',
+      fetchImpl: makeMockFetch403(),
+      activeTrack: { id: '501', url: 'https://api/stream/501.m3u8' },
+      progress: { position: 0 },
+      pauseDuringPreflight: true,
+    });
+    const loadCalls = r.callLog.filter((c) => c.fn === 'load');
+    const playCalls = r.callLog.filter((c) => c.fn === 'play');
+    check('#6: 用戶已暫停 → 熱換(load)照做', loadCalls.length === 1, r.callLog);
+    check('#6: 用戶已暫停 → 唔夾硬 play()(淨係初始嗰次 1 次,冇熱換後嗰次)', playCalls.length === 1, r.callLog);
+    check('#6: 用戶已暫停 → hlsDowngradedTrackRef 照樣 set(URL 已經換咗)', r.hlsDowngradedTrackRef.current === 501);
   }
 
   // ============================================================
