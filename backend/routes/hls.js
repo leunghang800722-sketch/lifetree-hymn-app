@@ -53,17 +53,6 @@ async function resolveStructureShared(youtubeId, url) {
   return promise;
 }
 
-// HLS-PREFLIGHT-EXEC-20260907 §2.1 —— 之前呢度抄 stream.js 嗰套「30秒窗、
-// 800ms/2000ms 兩級」升級 backoff(見舊 comment)。而家改做固定 800ms,唔再
-// 升級:HLS 路徑而家有 client 側 5 秒 preflight 兜底(src/hlsPreflight.js),
-// backend 呢邊唔應該賭「越嚟越耐先反彈」,一律短 backoff 早死早著,等 client
-// 側嘅 5 秒 timeout 或者起播預檢去接手。目標:403 路徑 backend 回 404 嘅時間
-// 由 ~14s → ≤4s(暖 resolve)/ ≤8s(冷 resolve)。
-const HLS_RETRY_BACKOFF_MS = 800;
-function backoffMsFor() {
-  return HLS_RETRY_BACKOFF_MS;
-}
-
 // HLS-PREFLIGHT-EXEC-20260907 §2.1 —— head fetch 加 3 秒 AbortController
 // timeout,唔重試(重試留返俾外層 403/410 嗰一次)。timeout 當
 // `badStatus: 'timeout'`,同其他「攞唔到 bytes」嘅原因分開報(唔會撞入
@@ -128,32 +117,28 @@ async function resolveStructureInner(youtubeId, url) {
     return { structure: cached.structure, badStatus: null, retried: false, finalUrl: url };
   }
 
-  let { structure, badStatus } = await resolveStructureOnce(url);
-  let retried = false;
-  let finalUrl = url;
+  const { structure, badStatus } = await resolveStructureOnce(url);
 
-  // 只喺 403/410(認證/URL 過期類)先值得重試——照抄 stream.js:backoff→
-  // bustCache→重新 resolve→再試一次。其他 bad status(網絡錯誤/其他 4xx5xx)
-  // 換條新 URL 未必有用,唔喺呢度自創擴大重試範圍,直接落 headfetch-failed
-  // 交 caller 報。
+  // HLS-PREFLIGHT-FIX-20260907 #1/#4(Opus 驗收)—— 之前呢度撞 403/410 會
+  // backoff 800ms → bustCache → 重新 yt-dlp resolve → 再試一次 head-fetch。
+  // Opus 用隔離 backend 副本 + mock 403 + **真 resolveAudioUrl(真
+  // yt-dlp)**量過:呢條「重試」路徑喺生產條件下同「唔重試」幾乎一樣慢
+  // (主要成本係 fresh yt-dlp re-resolve 嘅 3–5s,唔係 800ms backoff 嗰
+  // 一截),即係對 403 情境嚟講「等 backend 重試」接近 no-op,而且真機
+  // 實測試過一次撞到 ms=12428 先回 404,冇達到 §2.1 個「≤8s(冷)」目標。
+  // 而家改做:403/410 一見到即刻 bustCache(令下次 resolve 攞新 URL)+
+  // 即刻回 404,唔喺呢個 request 入面再等/再重新 resolve——真正嘅重試
+  // 留俾兩條已經存在嘅路:(a) client 側 hlsPreflight 熱換去 progressive
+  // (App.js §1.2/§1.3),(b) progressive 本身喺 routes/stream.js 嘅 403
+  // 重試邏輯(呢度一個字冇改,佢先係 progressive 後備嘅依靠)。目標:
+  // 403→404 由 ~14s(甚至 ms=12428)→ ≤1s。
   if (!structure && (badStatus === 403 || badStatus === 410)) {
-    retried = true;
-    const backoffMs = backoffMsFor();
-    await new Promise((resolve) => setTimeout(resolve, backoffMs));
-    bustCache(youtubeId);
-    try {
-      finalUrl = await resolveAudioUrl(youtubeId);
-    } catch (e) {
-      console.warn(`[hls] retry resolve failed: yt=${youtubeId} err=${e?.message || e}`);
-      return { structure: null, badStatus, retried, finalUrl: url };
-    }
-    const retry = await resolveStructureOnce(finalUrl);
-    structure = retry.structure;
-    badStatus = retry.badStatus;
+    try { bustCache(youtubeId); } catch (_) {}
+    return { structure: null, badStatus, retried: false, finalUrl: url };
   }
 
-  if (structure) playlistCache.set(`${youtubeId}::${finalUrl}`, { structure, expiresAt: Date.now() + PLAYLIST_CACHE_TTL_MS });
-  return { structure, badStatus, retried, finalUrl };
+  if (structure) playlistCache.set(cacheKey, { structure, expiresAt: Date.now() + PLAYLIST_CACHE_TTL_MS });
+  return { structure, badStatus, retried: false, finalUrl: url };
 }
 
 export default function hlsRoutes(getDb) {
@@ -234,7 +219,7 @@ export default function hlsRoutes(getDb) {
 // route 行為。俾方法可以喺唔起 server(唔撞紅線「唔准另起 node server.js」/
 // 「唔准 restart backend」)嘅情況下,直接對真實 googlevideo URL 測試新嘅
 // retry 邏輯。
-export { fetchHeadBytes, resolveStructureOnce, resolveStructureInner, resolveStructureShared, backoffMsFor };
+export { fetchHeadBytes, resolveStructureOnce, resolveStructureInner, resolveStructureShared };
 // 保留舊名俾未改過嘅 harness/caller 用——語義而家係「入面經 in-flight
 // de-dup」,同 route handler 用緊嘅係同一個函式。
 export { resolveStructureShared as resolveStructure };
