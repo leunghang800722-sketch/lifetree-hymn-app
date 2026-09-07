@@ -24,26 +24,40 @@ import { sendClientLog } from './clientLog.js';
 //   reason — !ok 先有意義:`status:<n>` / `timeout` / `network` / `not-m3u8`
 //
 // opts:
-//   timeoutMs — 預設 5000(§1.1 spec)
+//   timeoutMs — 預設 9000(HLS-PREFLIGHT-FIX-20260907 #1:Opus 驗收實測本機
+//               loopback 冷 resolve 分佈 3.7–6.0s,原本 5000 會撞閘,15 次
+//               有 4 次誤殺、其中 3 次事後證實健康歌;9000 距 native 16 秒
+//               看門狗死線仲有 7 秒,同 §6 點3 原意一致)
 //   hymnId    — beacon 用,冇傳就 null
 //   ctx       — beacon 用,`start`(playQueue 起播)或 `next`(滾動預熱),
 //               冇傳就 'start'
 export async function preflightHls(url, opts = {}) {
-  const { timeoutMs = 5000, hymnId = null, ctx = 'start' } = opts;
+  const { timeoutMs = 9000, hymnId = null, ctx = 'start' } = opts;
   const t0 = Date.now();
   let result;
   let controller;
   let timer;
+  // HLS-PREFLIGHT-FIX-20260907 #2 —— React Native 嘅
+  // `XMLHttpRequest.abort()`(RN 內建,whatwg-fetch 底層用嗰個)唔會 dispatch
+  // `abort` event,所以 whatwg-fetch 個 `xhr.onabort`(唯一會 reject
+  // `DOMException('Aborted','AbortError')` 嗰條路)行唔到,最後跌落
+  // `onerror` reject `TypeError: Network request failed`——name 唔係
+  // AbortError、message 又冇 `abort` 呢個字,靠 error 形狀分辨喺真機一律
+  // 錯判做 `network`(Opus 實測 5/5)。改用 timer callback 自己設嘅 flag,
+  // 唔理個 error 睇落係咩形狀。
+  let didTimeout = false;
   try {
     controller = new AbortController();
-    timer = setTimeout(() => { try { controller.abort(); } catch (_) {} }, timeoutMs);
+    timer = setTimeout(() => {
+      didTimeout = true;
+      try { controller.abort(); } catch (_) {}
+    }, timeoutMs);
     let res;
     try {
       res = await fetch(url, { method: 'GET', signal: controller.signal });
     } catch (e) {
       const ms = Date.now() - t0;
-      const isAbort = e && (e.name === 'AbortError' || String(e.message || '').toLowerCase().includes('abort'));
-      result = { ok: false, status: null, ms, reason: isAbort ? 'timeout' : 'network' };
+      result = { ok: false, status: null, ms, reason: didTimeout ? 'timeout' : 'network' };
       return result;
     }
     const ms = Date.now() - t0;
@@ -78,4 +92,18 @@ export async function preflightHls(url, opts = {}) {
       });
     } catch (_) {}
   }
+}
+
+// HLS-PREFLIGHT-FIX-20260907 #1 —— Opus 驗收 §1 #1:5 秒(而家 9 秒)限額
+// 始終有機會低過真實冷 resolve 耗時,`timeout`/`network` 呢兩種失敗冇任何
+// 實質證據答到「條 playlist 真係攞唔到」,同 App.js `handleStuckTrackEnd`
+// 嘅 HLS 分支(HLS-EXEC-STARTUP-GRACE-20260902 R4)明文紅線一致:「起播期
+// giveup 唔准降級去 progressive,因為 progressive 本身正正係沉緊嗰隻船」——
+// 嗰條紅線嘅前提正正係「冇實質證據」。呢個 helper 俾 App.js §1.2/§1.3 兩個
+// call site 共用同一條「值唔值得觸發熱換」判斷:淨係明確 HTTP status
+// (4xx/5xx)先算數;`timeout`/`network`/`not-m3u8` 一律唔郁(維持今日行為,
+// 交返俾 PlaybackError/handleStuckTrackEnd 兩條現有分支——真係播到嗰刻先
+// 有實證先降級)。
+export function isExplicitHttpFailure(pre) {
+  return !!(pre && !pre.ok && typeof pre.status === 'number' && pre.status >= 400 && pre.status < 600);
 }
