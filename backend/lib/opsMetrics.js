@@ -88,6 +88,12 @@ function blankBucket() {
     // 完成一次 / stream 一次 upstream fetch 完成一次),兩條 route 分開計因為
     // 失敗性質唔同(hls.js 淨係讀 head bytes,stream.js 先係真播放)。
     upstream403: { hls: 0, stream: 0, hlsTotal: 0, streamTotal: 0 },
+    // FIRST-TRACK-STEP01-EXEC-20260907 §2 N1 —— playlistCache(routes/hls.js)
+    // 由「純記憶體、key 帶 url」改做「持久化、key=youtubeId」之後嘅命中/
+    // 校驗計數。`hit` = 快取命中(校驗通過或者跳過咗校驗);`miss` = 冇快取
+    // 或者已過期,行完整 sidx 解析;`verifyFail` = 有快取但 clen 校驗唔到
+    // (同一 youtube_id 換咗 format/variant),落返 miss 路徑重新解。
+    hlsPlaylist: { hit: 0, miss: 0, verifyFail: 0 },
   };
 }
 
@@ -288,6 +294,18 @@ export function recordUpstream403(kind, is403) {
     for (const b of buckets()) {
       b.upstream403[totalKey] = (b.upstream403[totalKey] || 0) + 1;
       if (is403) b.upstream403[kind] = (b.upstream403[kind] || 0) + 1;
+    }
+    scheduleFlush();
+  } catch (_) {}
+}
+
+// FIRST-TRACK-STEP01-EXEC-20260907 §2 N1 —— kind ∈ 'hit' | 'miss' | 'verifyFail'。
+// 純觀測,唔改任何 hls.js 快取決策。
+export function recordHlsPlaylist(kind) {
+  try {
+    if (kind !== 'hit' && kind !== 'miss' && kind !== 'verifyFail') return;
+    for (const b of buckets()) {
+      b.hlsPlaylist[kind] = (b.hlsPlaylist[kind] || 0) + 1;
     }
     scheduleFlush();
   } catch (_) {}
