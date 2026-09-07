@@ -112,3 +112,8 @@ backend/data/**/*.log
 # 歌詞殭屍session reaper armed flag(LYRICS-ZOMBIE-REAPER-EXEC-20260830.md T1)——
 # 存在=armed(真殺)、唔存在=dry-run,純本機運行時開關,唔准入repo。
 ops/lyrics/.reaper-armed
+
+# FIRST-TRACK-STEP01-EXEC-20260907 §3 H1/H2 harness 隔離 cache scratch(每次
+# 行 harness 都會重新起,唔准入repo)。
+ops/perf/first-track/.scratch-n1/
+ops/perf/first-track/.scratch-n3/
