@@ -8,6 +8,7 @@ import { resolveAudioUrl, bustCache, preVerifyUrl, markStreaming, unmarkStreamin
 import { zeroFragmentedMp4Durations } from '../lib/fixFragmentedMp4Duration.js';
 import { recordWarmIds } from '../lib/warmLog.js';
 import { recordStreamRequest, recordBufferCacheHit, recordUpstream403 } from '../lib/opsMetrics.js';
+import { recordStreamHit, getHotIds } from '../lib/hotIds.js';
 
 // BG-PLAYBACK-STOPS-PLAN Fix D:純 observability helper,唔改任何 proxy 行為。
 // 一行 log,帶 ISO timestamp,用嚟診斷背景播放 3-4 首自動停個 bug(client abort
@@ -125,6 +126,10 @@ function backoffMsFor(youtubeId) {
 // 連 moov probe 都唔夠幫,唔值得叫多一次 adoptStreamedHead。
 const MIN_TEE_BYTES = 256 * 1024;
 
+// FIRST-TRACK-STEP01-EXEC-20260907 §2 N3 —— `/warm` 總數上限(client 名單
+// + backend 熱門補位),env 可覆蓋(純測試用途,production 用返呢個預設)。
+const WARM_TOTAL_CAP = Number(process.env.WARM_TOTAL_CAP) > 0 ? Number(process.env.WARM_TOTAL_CAP) : 16;
+
 // W4(BACKEND-CACHE-FIX-EXEC-20260831 §2.2 Design B)dedup 守衛——見下面
 // `!startsAtZero` 分支嘅完整解釋。呢個 Set 只有兩條 mutation 路:排隊前
 // `.add()`,`warmBuffer()` 個 promise 落地(唔理成定敗)喺 `.finally()` 度
@@ -140,13 +145,37 @@ export default function streamRoutes(getDb) {
   // ⚠️ 純附加路由,冇掂下面 GET /:hymnId 個 proxy(嗰個 Range 語義係 load-bearing)。
   // 即回 202,resolve 喺背景單線程行,唔阻 response。
   router.post('/warm', async (req, res) => {
-    const ids = Array.isArray(req.body?.ids) ? req.body.ids.slice(0, 10) : [];
+    const clientIds = Array.isArray(req.body?.ids) ? req.body.ids.slice(0, 10) : [];
+    // FIRST-TRACK-STEP01-EXEC-20260907 §2 N3 —— 「今日為你預備 6 首」名單
+    // 同真實起播入口(隨心聽/chip/最近加入)幾乎完全脫靶(1E 實測 92.6%)。
+    // 呢度喺 client 名單(≤10)之後,補返 backend 側量到嘅「最近 24h 真.
+    // 熱門」id,總數封頂 `WARM_TOTAL_CAP`(預設 16)。純加法:client 名單
+    // 一個字冇改、次序唔變(佢哋照舊行先),`anyStreaming()` 讓路邏輯喺
+    // 下面 for-loop 完全照舊,補位嘅 id 同 client id 用同一條 warm 邏輯,
+    // 冇開後門。
+    const clientCount = clientIds.length;
+    const seen = new Set(clientIds.map((x) => Number(x)));
+    const ids = [...clientIds];
+    if (ids.length < WARM_TOTAL_CAP) {
+      const hotCandidates = getHotIds(WARM_TOTAL_CAP);
+      for (const raw of hotCandidates) {
+        if (ids.length >= WARM_TOTAL_CAP) break;
+        const n = Number(raw);
+        if (!Number.isInteger(n) || n <= 0 || seen.has(n)) continue;
+        seen.add(n);
+        ids.push(n);
+      }
+    }
+    const hotAdded = ids.length - clientCount;
     res.status(202).json({ warming: ids.length });
+    console.log(`[warm] ${new Date().toISOString()} client=${clientCount} hot=${hotAdded} total=${ids.length}`);
     // BATCH5 §7.3-C:記低邊啲 id 俾 /warm 摸過,俾 daily cron(server.js
     // startDailyWarmCron)揀「噚日+今日」精選預 resolve 用。fire-and-forget,
     // recordWarmIds 內部 best-effort try/catch,唔會影響返上面已經 send 咗
-    // 嘅 202 response。
-    recordWarmIds(ids);
+    // 嘅 202 response。⚠️ 淨係記 client 原裝名單(唔記 hot 補位嗰啲)——
+    // daily cron 揀嘅係「App 開機/換歌摸過乜嘢」,同 hotIds.js 自己嗰個
+    // 獨立 24h 滾動窗口係兩件事,唔應該互相污染。
+    recordWarmIds(clientIds);
     if (!ids.length) return;
     try {
       const db = await getDb();
@@ -241,6 +270,10 @@ export default function streamRoutes(getDb) {
     // mode=warm|cold,但 log 檔會輪替/清走,又冚唔到「一首歌開咗幾多條 range
     // 連線」呢個高估問題 —— opsMetrics 會分開數 track start)。純觀測,零行為改動。
     recordStreamRequest(hymn.youtube_id, warm);
+    // FIRST-TRACK-STEP01-EXEC-20260907 §2 N3 —— 記低「呢個 DB hymn id 而家
+    // 有真人播緊」,俾 `/warm` 補位用。純觀測(hotIds.js 內部自己做 UA 過濾
+    // + 60 秒去重),唔改呢條 route 任何行為/timing。
+    recordStreamHit(id, uaShort);
     let resolveMs = 0;
     let retried = false;
     let logged = false;

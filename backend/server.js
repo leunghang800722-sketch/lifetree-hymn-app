@@ -29,11 +29,12 @@ import friendsRoutes from './routes/friends.js';
 import invitesRoutes from './routes/invites.js';
 import clientLogRoutes, { getClientLogRateMapSize } from './routes/clientLog.js';
 import presenceRoutes from './routes/presence.js';
-import { resolveAudioUrl, refreshAudioUrl, preVerifyUrl, cache, failCache, anyStreaming, isStreaming, getBufferCacheStats } from './lib/resolveAudio.js';
+import { resolveAudioUrl, refreshAudioUrl, preVerifyUrl, cache, failCache, anyStreaming, isStreaming, getBufferCacheStats, setPinnedIds } from './lib/resolveAudio.js';
 import { YTDLP } from './lib/ytdlpBin.js';
 import { getUserDb } from './lib/userDb.js';
 import { getDb, getDataVersion, DB_PATH, maybeReload } from './lib/serverDb.js';
 import { getWarmCandidates } from './lib/warmLog.js';
+import { getHotIds } from './lib/hotIds.js';
 import { enablePersistence as enableOpsMetrics, recordKeepWarmTick } from './lib/opsMetrics.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -811,6 +812,7 @@ app.listen(PORT, async () => {
 
   startKeepWarm();
   startDailyWarmCron();
+  startPinnedIdsRefresh();
 });
 
 // §1c 保溫 loop —— URL 過期前自動續熱,令日常播放永遠行 warm 路徑。
@@ -1026,6 +1028,44 @@ async function runDailyWarmJob() {
     await new Promise((resolve) => setTimeout(resolve, DAILY_WARM_SLEEP_MS));
   }
   console.log(`☀️  daily warm cron 完成:${success}/${ids.length} 成功`);
+}
+
+// FIRST-TRACK-STEP01-EXEC-20260907 §2 N5 —— pinned 熱池:`lib/resolveAudio.js`
+// 個 bufferCache 保底名單由呢度定期(30 分鐘)灌入。`resolveAudio.js` 本身
+// 完全唔識 DB/邊啲 id 熱門(避免整多一條循環 import,見嗰邊 comment),
+// 呢個 function 做橋接:`getHotIds()`(`lib/hotIds.js`,24h 滾動、DB hymn
+// id)→ 查 DB 攞 youtube_id → `setPinnedIds()`。純觀測+補位,唔改 resolve
+// 策略/揀歌邏輯——淨係話俾 bufferCache「呢幾個 id 唔准踢」。
+const PIN_N = Number(process.env.BUFFER_CACHE_PIN_N) >= 0 ? Number(process.env.BUFFER_CACHE_PIN_N) : 12;
+const PIN_REFRESH_MS = 30 * 60 * 1000;
+
+async function refreshPinnedIdsFromHotIds() {
+  try {
+    const hotHymnIds = getHotIds(PIN_N);
+    if (!hotHymnIds.length) { setPinnedIds([]); return; }
+    const db = await getDb();
+    const youtubeIds = [];
+    for (const raw of hotHymnIds) {
+      const id = Number(raw);
+      if (!Number.isInteger(id) || id <= 0) continue;
+      const stmt = db.prepare('SELECT youtube_id FROM hymns WHERE id = ?');
+      stmt.bind([id]);
+      const found = stmt.step();
+      const row = found ? stmt.getAsObject() : null;
+      stmt.free();
+      if (row?.youtube_id) youtubeIds.push(row.youtube_id);
+    }
+    setPinnedIds(youtubeIds);
+    console.log(`[pin] ${new Date().toISOString()} 熱池刷新:${youtubeIds.length}/${hotHymnIds.length} 個 id 對到 youtube_id`);
+  } catch (e) {
+    console.warn('[pin] 熱池刷新失敗:', e?.message);
+  }
+}
+
+function startPinnedIdsRefresh() {
+  refreshPinnedIdsFromHotIds(); // 開機即刻算一次,唔使等 30 分鐘先有保底名單
+  const t = setInterval(refreshPinnedIdsFromHotIds, PIN_REFRESH_MS);
+  if (t.unref) t.unref();
 }
 
 function startDailyWarmCron() {

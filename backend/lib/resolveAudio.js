@@ -436,6 +436,34 @@ const MAX_BUFFER_TOTAL_BYTES = 128 * 1024 * 1024; // 128MB
 const bufferCache = new Map(); // youtubeId -> { url, buf, tailBuf, tailOffset, totalLength, contentType, expiresAt }
 let bufferCacheTotalBytes = 0; // touchBufferEntry/evictBufferCacheOverflow 維護,唔喺其他地方直接改
 
+// ── FIRST-TRACK-STEP01-EXEC-20260907 §2 N5:熱池保底(pinned)────────────
+// `pinnedIds` = 一組 youtubeId,俾 `evictBufferCacheOverflow()` 跳過唔踢。
+// 呢個模組本身**唔識揀邊啲 id 熱門**(冇 DB、冇 hotIds.js 依賴,避免整多一
+// 條循環/交叉 import——同 opsMetrics.js sampler 果句「避免反過來 import
+// resolveAudio.js」係同一條紀律)。真正嘅揀法(`lib/hotIds.js` 24h 滾動
+// 熱門 + DB id→youtube_id 對應)由 server.js 定期(30 分鐘)算好,經
+// `setPinnedIds()` 灌落嚟——呢度淨係負責「俾咗名單就唔踢」呢個純粹嘅
+// 記憶體管理決定。
+//
+// 記憶體預算(執行單原文數字):pinned 入池一律 head-only(`LONG_WARM_CAP_
+// BYTES` 4MB,見 warmBuffer() 入面),pinned 總數硬 clamp 喺
+// `128MB(MAX_BUFFER_TOTAL_BYTES)的一半 ÷ 4MB` = 16 個,防 caller(理論上
+// 應該傳 12 個)傳漏咗上限都唔會爆錶——12×4MB=48MB,喺 64MB 嘅一半閘之內。
+let pinnedIds = new Set();
+const PINNED_MAX_COUNT = Math.floor((MAX_BUFFER_TOTAL_BYTES / 2) / LONG_WARM_CAP_BYTES); // = 16
+
+// 俾 server.js 嘅定期 refresh(每 30 分鐘)call。純設值,唔做任何網絡/DB
+// 嘢——呢個模組保持「淨係識 resolve+buffer」嘅單一職責。
+export function setPinnedIds(youtubeIds) {
+  const arr = Array.isArray(youtubeIds) ? youtubeIds.filter((x) => typeof x === 'string' && x).slice(0, PINNED_MAX_COUNT) : [];
+  pinnedIds = new Set(arr);
+}
+
+// 俾 opsMetrics gauge / harness 讀,純觀測。
+export function getPinnedIds() {
+  return new Set(pinnedIds);
+}
+
 function entryByteSize(entry) {
   if (!entry) return 0;
   return (entry.buf ? entry.buf.length : 0) + (entry.tailBuf ? entry.tailBuf.length : 0);
@@ -451,13 +479,21 @@ function touchBufferEntry(youtubeId, entry) {
 
 // 雙閘:格數 OR 總字節數,兩個任何一個超咗就踢最舊(Map 插入順序 = LRU 順序,
 // 同 touchBufferEntry 嘅「攞中/寫入都搬去尾」配合)。
+// N5:揀「最舊」嗰陣跳過 pinned entry——揾第一個唔喺 `pinnedIds` 入面嘅
+// key 先踢。如果成個 bufferCache 入面剩返嘅全部都係 pinned(理論上唔應該
+// 發生:pinned 上限 16×4MB=64MB,遠細過 128MB 閘),寧願暫時超少少上限都
+// 唔踢 pinned(踢咗等於違反「保底」呢個功能本身嘅存在意義),唔會 infinite
+// loop(`victimKey === undefined` 即刻 break)。
 function evictBufferCacheOverflow() {
   while (bufferCache.size > MAX_BUFFER_ENTRIES || bufferCacheTotalBytes > MAX_BUFFER_TOTAL_BYTES) {
-    const oldestKey = bufferCache.keys().next().value;
-    if (oldestKey === undefined) break;
-    const oldest = bufferCache.get(oldestKey);
-    bufferCacheTotalBytes -= entryByteSize(oldest);
-    bufferCache.delete(oldestKey);
+    let victimKey;
+    for (const key of bufferCache.keys()) {
+      if (!pinnedIds.has(key)) { victimKey = key; break; }
+    }
+    if (victimKey === undefined) break;
+    const victim = bufferCache.get(victimKey);
+    bufferCacheTotalBytes -= entryByteSize(victim);
+    bufferCache.delete(victimKey);
   }
 }
 
@@ -550,7 +586,11 @@ export async function warmBuffer(youtubeId, url, durationSec = null, onDequeue =
     if (typeof onDequeue === 'function') { try { onDequeue(); } catch (_) {} }
     try {
       const isLong = typeof durationSec === 'number' && durationSec > LONG_TRACK_SECONDS;
-      const capBytes = isLong ? LONG_WARM_CAP_BYTES : WARM_CAP_BYTES;
+      // N5:pinned id 一律 head-only(4MB),唔理長度——熱池要慳記憶體
+      // (12 個 pinned × 4MB = 48MB,喺 64MB 嘅一半閘之內),普通歌都可以
+      // 攞成首(12MB)咁著數。
+      const isPinned = pinnedIds.has(youtubeId);
+      const capBytes = (isLong || isPinned) ? LONG_WARM_CAP_BYTES : WARM_CAP_BYTES;
       const r = await fetchHeadWithRetry(url, capBytes);
       if (!r) return;
       const buf = Buffer.from(await r.arrayBuffer());
@@ -623,8 +663,10 @@ export function evictBufferedChunk(youtubeId) {
 
 // W1 觀測:俾 opsMetrics sampler 讀,量返而家 bufferCache 實際食緊幾多格/幾多
 // bytes(唔係 cache.size 嗰個 URL cache)。純讀,唔改任何行為。
+// N5:加返 `pinned` count(而家有幾多個 id 受保底保護——唔等於呢啲 id
+// 一定已經入咗 bufferCache,`pinnedIds` 純粹係「唔准踢」名單本身)。
 export function getBufferCacheStats() {
-  return { entries: bufferCache.size, totalBytes: bufferCacheTotalBytes };
+  return { entries: bufferCache.size, totalBytes: bufferCacheTotalBytes, pinned: pinnedIds.size };
 }
 
 // BATCH5 §7.3-A:冷路徑 stream 順手收落嚟嘅頭截,採納入 bufferCache(tee)。

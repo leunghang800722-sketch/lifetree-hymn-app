@@ -57,7 +57,10 @@ function blankBucket() {
     // 完全獨立(URL 冷都可以 buffer 熱、反之亦然)。逐個 range request 數
     // (rangeStart != null 先算一次「有做過查詢」),量返擴大 40 格/256MB
     // 之後真係有冇提升命中。
-    bufferCache: { req: 0, hit: 0, entries: null, totalBytes: null, rssKb: null },
+    // FIRST-TRACK-STEP01-EXEC-20260907 §2 N5 —— `pinned` 加喺呢個 gauge
+    // 旁邊(而唔係開新頂層 key):同 entries/totalBytes 一樣係 bufferCache
+    // 嘅 snapshot,語意上屬於同一組觀測。
+    bufferCache: { req: 0, hit: 0, entries: null, totalBytes: null, rssKb: null, pinned: null },
     keepWarm: { tick: 0, ceiling: 0, dailyCap: 0, streaming: 0, offHours: 0, warmed: 0, failed: 0 },
     resolve: {
       total: 0, ok: 0, fail: 0, rescued: 0,
@@ -377,6 +380,12 @@ export function enablePersistence(opts = {}) {
           merged.resolve = { ...blankResolve, ...(merged.resolve || {}) };
           merged.resolve.failMs = { ...blankResolve.failMs, ...(merged.resolve.failMs || {}) };
           merged.resolve.failMs.buckets = { ...blankResolve.failMs.buckets, ...(merged.resolve.failMs.buckets || {}) };
+          // FIRST-TRACK-STEP01-EXEC-20260907 §2 N5 —— `bufferCache` 本身
+          // 已經係舊碟有嘅頂層 key(同 `resolve` 一樣嘅形狀陷阱),淺層
+          // spread 會用舊碟嗰份完整覆蓋,新加嘅 `bufferCache.pinned` 喺
+          // 舊碟入面唔存在就會冇咗(唔係 undefined 咁簡單,係成個 key 唔見)。
+          // 額外做一層淺 merge 補返。
+          merged.bufferCache = { ...blankBucket().bufferCache, ...(merged.bufferCache || {}) };
           return merged;
         };
         const normalizedHourly = {};
@@ -414,6 +423,9 @@ export function enablePersistence(opts = {}) {
             if (s.bufferCacheStats) {
               b.bufferCache.entries = s.bufferCacheStats.entries;
               b.bufferCache.totalBytes = s.bufferCacheStats.totalBytes;
+              // N5:pinned count(可能係 undefined,舊 sampler 冇呢個欄——
+              // 淨係喺有值先寫,唔好用 undefined 蓋走舊值)。
+              if (typeof s.bufferCacheStats.pinned === 'number') b.bufferCache.pinned = s.bufferCacheStats.pinned;
             }
             if (typeof s.rssKb === 'number') b.bufferCache.rssKb = s.rssKb;
           }
