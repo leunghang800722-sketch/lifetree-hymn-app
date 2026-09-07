@@ -14,6 +14,7 @@
 import { Router } from 'express';
 import { resolveAudioUrl, bustCache } from '../lib/resolveAudio.js';
 import { parsePlaylistStructure, buildM3U8 } from '../lib/hlsPlaylist.js';
+import { recordUpstream403 } from '../lib/opsMetrics.js';
 
 // 逐級加大嘅 head fetch 大細——大部份 YouTube DASH 音訊 ftyp+moov+sidx 頭都
 // 喺 4KB 之內(實測 id=4423:723+248=971 bytes),但唔准假設呢個上限一定夠
@@ -28,40 +29,62 @@ const HEAD_FETCH_SIZES = [8 * 1024, 65 * 1024, 256 * 1024, 1024 * 1024];
 const PLAYLIST_CACHE_TTL_MS = 4 * 60 * 60 * 1000;
 const playlistCache = new Map(); // key: `${youtubeId}::${url}` -> { structure, expiresAt }
 
-// HLS-EXEC-PREWINDOW-20260901 §1 W-a —— Opus5 對 resolve-cache.json 起底:
-// 220 首掃描報嘅 18 個「no-sidx」全部係「啱啱 fresh resolve 完、即刻
-// head-fetch 失敗」,20 分鐘後覆查用緊同一條 URL/itag、期間冇再 resolve
-// 過,全部反轉做 200 ——即係 googlevideo 間歇 403,唔係「呢首歌冇 sidx」。
-// 隔籬 routes/stream.js 對呢種情況一早有 bust+backoff+重 resolve
-// 嘅自癒鏈(見該檔 backoffMsFor() 個 comment),hls.js 呢個 route 一直冇
-// 抄呢套——呢度原封不動照抄嗰個節流保護(30秒窗、800ms/2000ms 兩級
-// backoff),唔自創新數。故意唔同 stream.js share 同一個 Map:兩條 route
-// 嘅失敗性質唔同(呢度淨係讀 head bytes,唔算真播放失敗),混埋會令
-// 「30秒內第一次/第二次」嘅語義撈亂。
-const RECENT_FAIL_WINDOW_MS = 30 * 1000;
-const recentHeadFetchFail = new Map(); // youtubeId -> last-fail timestamp(ms)
-function backoffMsFor(youtubeId) {
-  const now = Date.now();
-  const last = recentHeadFetchFail.get(youtubeId);
-  recentHeadFetchFail.set(youtubeId, now);
-  if (recentHeadFetchFail.size > 200) {
-    for (const [k, ts] of recentHeadFetchFail) {
-      if (now - ts > RECENT_FAIL_WINDOW_MS) recentHeadFetchFail.delete(k);
-    }
-  }
-  if (last && now - last < RECENT_FAIL_WINDOW_MS) return 2000;
-  return 800;
+// HLS-PREFLIGHT-EXEC-20260907 §6 修訂 A 點 2 —— 並行預檢之下,同一首歌會有
+// 兩個幾乎同一刻嘅 GET `/:hymnId.m3u8` 請求(JS `preflightHls()` 一個、
+// AVPlayer 真正 fetch 一個)。`resolveAudioUrl()` 本身已經對 yt-dlp resolve
+// 做緊 in-flight coalescing(resolveAudio.js `inFlight` Map),但呢度嘅
+// head-fetch+parse-sidx(`resolveStructure()`)之前完全冇做——兩個並發請求
+// 撞正 `playlistCache` 未暖(cold resolve)嗰陣,會各自對 googlevideo 發一輪
+// escalating-size range fetch,即係「檔頭 range fetch 做兩次」。呢度加一個
+// pending Map,將同一個 cacheKey(`${youtubeId}::${url}`)嘅並發 call 全部
+// 指去同一個 in-flight promise——第一個 call 真正去 fetch,之後嚟嘅全部
+// 攞返同一份結果,唔會重複打 googlevideo。唔改 `resolveStructure()` 本身
+// 嘅重試/cache 邏輯,純粹喺出面加一層 de-dup。
+const structureInFlight = new Map(); // cacheKey -> Promise<{ structure, badStatus, retried, finalUrl }>
+
+async function resolveStructureShared(youtubeId, url) {
+  const cacheKey = `${youtubeId}::${url}`;
+  const pending = structureInFlight.get(cacheKey);
+  if (pending) return pending;
+  const promise = resolveStructureInner(youtubeId, url).finally(() => {
+    structureInFlight.delete(cacheKey);
+  });
+  structureInFlight.set(cacheKey, promise);
+  return promise;
 }
 
-// 單一 HEAD fetch 嘗試——而家分開返 status 同 buf,等 caller 分得到
-// 「403/410(值得重試)」同「其他任何原因攞唔到 bytes」。
+// HLS-PREFLIGHT-EXEC-20260907 §2.1 —— 之前呢度抄 stream.js 嗰套「30秒窗、
+// 800ms/2000ms 兩級」升級 backoff(見舊 comment)。而家改做固定 800ms,唔再
+// 升級:HLS 路徑而家有 client 側 5 秒 preflight 兜底(src/hlsPreflight.js),
+// backend 呢邊唔應該賭「越嚟越耐先反彈」,一律短 backoff 早死早著,等 client
+// 側嘅 5 秒 timeout 或者起播預檢去接手。目標:403 路徑 backend 回 404 嘅時間
+// 由 ~14s → ≤4s(暖 resolve)/ ≤8s(冷 resolve)。
+const HLS_RETRY_BACKOFF_MS = 800;
+function backoffMsFor() {
+  return HLS_RETRY_BACKOFF_MS;
+}
+
+// HLS-PREFLIGHT-EXEC-20260907 §2.1 —— head fetch 加 3 秒 AbortController
+// timeout,唔重試(重試留返俾外層 403/410 嗰一次)。timeout 當
+// `badStatus: 'timeout'`,同其他「攞唔到 bytes」嘅原因分開報(唔會撞入
+// 403/410 嗰條重試路——timeout ≠ 認證過期,換 URL 冇用)。
+// DEEP-AUDIT-W1-EXEC-20260906 §2.2 —— 每次完成一次 head fetch(唔理成敗)
+// 就計一次 `upstream403` 嘅分母,403 先計分子,俾長期追出口 IP 問題。
+const HEAD_FETCH_TIMEOUT_MS = 3000;
 async function fetchHeadBytes(url, nBytes) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => { try { controller.abort(); } catch (_) {} }, HEAD_FETCH_TIMEOUT_MS);
   let r;
   try {
-    r = await fetch(url, { method: 'GET', headers: { Range: `bytes=0-${nBytes - 1}` } });
+    r = await fetch(url, { method: 'GET', headers: { Range: `bytes=0-${nBytes - 1}` }, signal: controller.signal });
   } catch (e) {
-    return { status: null, buf: null, err: e };
+    clearTimeout(timer);
+    const timedOut = !!(e && (e.name === 'AbortError' || String(e.message || '').toLowerCase().includes('abort')));
+    recordUpstream403('hls', false);
+    return { status: null, buf: null, err: e, timedOut };
   }
+  clearTimeout(timer);
+  recordUpstream403('hls', r.status === 403);
   if (r.status !== 200 && r.status !== 206) {
     try { await r.body?.cancel?.(); } catch (_) {}
     return { status: r.status, buf: null };
@@ -74,14 +97,15 @@ async function fetchHeadBytes(url, nBytes) {
 //   - 解到 sidx  → { structure }
 //   - 撞 403/410 → 即刻停手唔再加大(換 URL 都仲係嗰個節流窗口,加大冇用)
 //                  → { badStatus: 403|410 },俾 caller 決定值唔值得重試
+//   - timeout(3秒攞唔到)→ { badStatus: 'timeout' }
 //   - 其他任何攞唔到 bytes 嘅原因(其他 status / 網絡錯誤)→ { badStatus: status||'network' }
 //   - 真係讀齊晒 bytes 但解唔到 sidx(唔係 bytes 唔夠嗰種)→ { structure: null, badStatus: null }(真 no-sidx)
 async function resolveStructureOnce(url) {
   for (const nBytes of HEAD_FETCH_SIZES) {
-    const { status, buf, err } = await fetchHeadBytes(url, nBytes);
+    const { status, buf, err, timedOut } = await fetchHeadBytes(url, nBytes);
     if (status === 403 || status === 410) return { structure: null, badStatus: status };
     if (!buf || buf.length === 0) {
-      const bad = err ? 'network' : (status && status !== 200 && status !== 206 ? status : null);
+      const bad = timedOut ? 'timeout' : (err ? 'network' : (status && status !== 200 && status !== 206 ? status : null));
       return { structure: null, badStatus: bad };
     }
     const result = parsePlaylistStructure(buf);
@@ -94,7 +118,10 @@ async function resolveStructureOnce(url) {
 
 // 回傳 { structure, badStatus, retried, finalUrl }——badStatus 淨係喺
 // structure 攞唔到嗰陣先有意義,俾 route 層分開報 no-sidx / headfetch-failed。
-async function resolveStructure(youtubeId, url) {
+// HLS-PREFLIGHT-EXEC-20260907 §6 修訂 A 點 2 —— 改名做 `*Inner`,對外(route
+// handler + 舊 export 名)一律經 `resolveStructureShared()` 入嚟做
+// in-flight de-dup,呢個函式本身邏輯一個字冇改。
+async function resolveStructureInner(youtubeId, url) {
   const cacheKey = `${youtubeId}::${url}`;
   const cached = playlistCache.get(cacheKey);
   if (cached && cached.expiresAt > Date.now()) {
@@ -111,7 +138,7 @@ async function resolveStructure(youtubeId, url) {
   // 交 caller 報。
   if (!structure && (badStatus === 403 || badStatus === 410)) {
     retried = true;
-    const backoffMs = backoffMsFor(youtubeId);
+    const backoffMs = backoffMsFor();
     await new Promise((resolve) => setTimeout(resolve, backoffMs));
     bustCache(youtubeId);
     try {
@@ -133,6 +160,10 @@ export default function hlsRoutes(getDb) {
   const router = Router();
 
   router.get('/:hymnId.m3u8', async (req, res) => {
+    // HLS-PREFLIGHT-EXEC-20260907 §2.1 —— 「總耗時」量法:由呢個 request
+    // handler 一開始計,俾 log 行印低 ms=<總耗時>,答返 §2.1 目標「403 路徑
+    // backend 回 404 嘅時間 ~14s → ≤4s(暖)/≤8s(冷)」有冇達到。
+    const reqStart0 = Date.now();
     const id = Number(req.params.hymnId);
     if (!Number.isInteger(id) || id <= 0) {
       return res.status(400).json({ error: 'bad id' });
@@ -155,13 +186,13 @@ export default function hlsRoutes(getDb) {
       // 真播放請求(routes/stream.js)嗰個短 60 秒重試視野,兩條路徑各自獨立。
       url = await resolveAudioUrl(hymn.youtube_id);
     } catch (e) {
-      console.warn(`[hls] resolve failed: id=${id} yt=${hymn.youtube_id} err=${e?.message || e}`);
+      console.warn(`[hls] resolve failed: id=${id} yt=${hymn.youtube_id} err=${e?.message || e} ms=${Date.now() - reqStart0}`);
       return res.status(404).json({ error: 'resolve failed' });
     }
 
     let structure, badStatus, retried;
     try {
-      ({ structure, badStatus, retried } = await resolveStructure(hymn.youtube_id, url));
+      ({ structure, badStatus, retried } = await resolveStructureShared(hymn.youtube_id, url));
     } catch (e) {
       console.warn(`[hls] structure parse threw: id=${id} yt=${hymn.youtube_id} err=${e?.message || e}`);
       structure = null; badStatus = null; retried = false;
@@ -172,7 +203,7 @@ export default function hlsRoutes(getDb) {
       // 冇)vs head-fetch 撞非 200/206(badStatus 有,即使已經 retry 過都仲係
       // 失敗)。之前一個 code 冚兩種病,統計數字冇意義。
       const reason = badStatus ? `headfetch-failed(status=${badStatus})` : 'no-sidx';
-      console.log(`[hls] ${new Date().toISOString()} id=${id} yt=${hymn.youtube_id} result=404-${reason} retried=${retried}`);
+      console.log(`[hls] ${new Date().toISOString()} id=${id} yt=${hymn.youtube_id} result=404-${reason} retried=${retried} ms=${Date.now() - reqStart0}`);
       return res.status(404).json({ error: reason });
     }
 
@@ -190,7 +221,7 @@ export default function hlsRoutes(getDb) {
     const swr = typeof swrRaw === 'string' && /^[0-9]+$/.test(swrRaw) ? swrRaw : null;
     const streamPath = swr ? `/api/stream/${id}?swr=${swr}` : `/api/stream/${id}`;
     const body = buildM3U8({ streamPath, initSize: structure.initSize, segments: structure.segments });
-    console.log(`[hls] ${new Date().toISOString()} id=${id} yt=${hymn.youtube_id} result=ok initSize=${structure.initSize} refs=${structure.referenceCount} segBytes=${structure.segmentsByteTotal}`);
+    console.log(`[hls] ${new Date().toISOString()} id=${id} yt=${hymn.youtube_id} result=ok initSize=${structure.initSize} refs=${structure.referenceCount} segBytes=${structure.segmentsByteTotal} ms=${Date.now() - reqStart0}`);
     res.setHeader('Content-Type', 'application/vnd.apple.mpegurl');
     res.setHeader('Cache-Control', 'no-store');
     return res.status(200).send(body);
@@ -203,7 +234,10 @@ export default function hlsRoutes(getDb) {
 // route 行為。俾方法可以喺唔起 server(唔撞紅線「唔准另起 node server.js」/
 // 「唔准 restart backend」)嘅情況下,直接對真實 googlevideo URL 測試新嘅
 // retry 邏輯。
-export { fetchHeadBytes, resolveStructureOnce, resolveStructure, backoffMsFor };
+export { fetchHeadBytes, resolveStructureOnce, resolveStructureInner, resolveStructureShared, backoffMsFor };
+// 保留舊名俾未改過嘅 harness/caller 用——語義而家係「入面經 in-flight
+// de-dup」,同 route handler 用緊嘅係同一個函式。
+export { resolveStructureShared as resolveStructure };
 
 // DEEP-AUDIT-W1-EXEC-20260906 B4(c)—— playlistCache 冇 eviction/size cap
 // (1D HLS-1),之前完全冇得睇實際格數。俾 server.js sampler 讀,寫落

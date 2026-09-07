@@ -82,6 +82,12 @@ function blankBucket() {
     // 重啟嘅地方,`/tmp` 會俾 macOS 開機清)。route path -> 幾多次命中。
     deprecatedRouteHits: {},
     clientLogRateLimited: 0, // W1 Opus #2:/api/client-log 429 累計
+    // HLS-PREFLIGHT-EXEC-20260907 §2.2 —— googlevideo 檔頭 403 長期追蹤(出口
+    // IP 問題嘅指紋)。`hls`/`stream` 係喺各自 route 撞到 403 嘅次數,
+    // `hlsTotal`/`streamTotal` 係嗰條 route 「值得計」嘅嘗試總數(HEAD-fetch
+    // 完成一次 / stream 一次 upstream fetch 完成一次),兩條 route 分開計因為
+    // 失敗性質唔同(hls.js 淨係讀 head bytes,stream.js 先係真播放)。
+    upstream403: { hls: 0, stream: 0, hlsTotal: 0, streamTotal: 0 },
   };
 }
 
@@ -268,6 +274,21 @@ export function recordDeprecatedRouteHit(route) {
 export function recordClientLogRateLimited() {
   try {
     for (const b of buckets()) b.clientLogRateLimited = (b.clientLogRateLimited || 0) + 1;
+    scheduleFlush();
+  } catch (_) {}
+}
+
+// HLS-PREFLIGHT-EXEC-20260907 §2.2 —— kind ∈ 'hls' | 'stream'。每次「值得計」
+// 嘅嘗試(hls.js 一次 HEAD-fetch 完成、stream.js 一次 upstream fetch 完成)都
+// call 一次,`is403` 答呢次係咪 403。純觀測,唔改任何 route 嘅重試決策/timing。
+export function recordUpstream403(kind, is403) {
+  try {
+    if (kind !== 'hls' && kind !== 'stream') return;
+    const totalKey = `${kind}Total`;
+    for (const b of buckets()) {
+      b.upstream403[totalKey] = (b.upstream403[totalKey] || 0) + 1;
+      if (is403) b.upstream403[kind] = (b.upstream403[kind] || 0) + 1;
+    }
     scheduleFlush();
   } catch (_) {}
 }

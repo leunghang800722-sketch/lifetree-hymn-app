@@ -7,7 +7,7 @@ import { Readable } from 'stream';
 import { resolveAudioUrl, bustCache, preVerifyUrl, markStreaming, unmarkStreaming, cache, warmBuffer, getBufferedChunk, evictBufferedChunk, anyStreaming, adoptStreamedHead, WARM_CAP_BYTES, parseDurationSec } from '../lib/resolveAudio.js';
 import { zeroFragmentedMp4Durations } from '../lib/fixFragmentedMp4Duration.js';
 import { recordWarmIds } from '../lib/warmLog.js';
-import { recordStreamRequest, recordBufferCacheHit } from '../lib/opsMetrics.js';
+import { recordStreamRequest, recordBufferCacheHit, recordUpstream403 } from '../lib/opsMetrics.js';
 
 // BG-PLAYBACK-STOPS-PLAN Fix D:純 observability helper,唔改任何 proxy 行為。
 // 一行 log,帶 ISO timestamp,用嚟診斷背景播放 3-4 首自動停個 bug(client abort
@@ -476,10 +476,15 @@ export default function streamRoutes(getDb) {
     // 統一晒:唔理邊種失敗,一律 log(先至知係邊個 branch 中招)+ bust cache +
     // 重新 resolve + 再試一次先死心——換條新 URL 好多時等於換咗個 CDN edge,
     // 好返嘅機會好高。
+    // HLS-PREFLIGHT-EXEC-20260907 §2.2 —— 純記帳,唔改任何重試決策/timing:
+    // 記低 attemptFetch() 頭一次(§508 嗰個 `!upstream` 分支)撞到嘅 bad
+    // status,俾嗰處 call recordUpstream403() 答「呢次係咪 403」。
+    let lastBadStatus = null;
     async function attemptFetch(u) {
       try {
         const r = await doFetch(u);
         if (r.status === 200 || r.status === 206) return r;
+        lastBadStatus = r.status;
         console.warn(`[${new Date().toISOString()}] ⚠️ stream upstream bad status: id=${id} yt=${hymn.youtube_id} status=${r.status}`);
         // 唔consume嘅 body 喺 undici 底下會揸住個連線直到 GC——呢個分支而家
         // 觸發得比之前(淨係 403/410)密好多,要即刻放手,唔留手尾。
@@ -506,6 +511,9 @@ export default function streamRoutes(getDb) {
     }
 
     if (!upstream) {
+      // HLS-PREFLIGHT-EXEC-20260907 §2.2 —— 純記帳,喺呢個「值得改」路徑決定
+      // 之前記(唔改下面 backoff/bust/重試 任何一行邏輯或 timing)。
+      recordUpstream403('stream', lastBadStatus === 403);
       // 2026-07-29 STREAM-403-FGS-CRASH-PLAN §1.4:即刻重試好大機會撞返同一個
       // 節流窗口(prod log 7 次失敗 5 次都係 403 retry 中招)。加 backoff 先至
       // bust+重 resolve,等節流窗口過返先。已經 abort 咗嘅客戶端唔使陪佢等,
