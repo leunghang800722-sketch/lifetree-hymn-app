@@ -8,6 +8,7 @@
 #
 # 開:  nohup bash ops/lyrics/producer-keeper.sh >/dev/null 2>&1 & disown
 # 停:  touch /tmp/lyrics-sprint-stop      (≤5 分鐘內自然退場)
+# 時段: 2026-09-17 起淨係 19:00–09:00 先行(日間會停走 OCR worker),KEEPER_ALLOW_START/END 可調
 # 睇:  tail -30 /tmp/hymn_keeper.log
 #
 # ⚠️ 唔好用嚟恢復 launchd 個 com.hymnapp.fetchlyrics job —— 佢係 2026-08-13 刻意
@@ -40,6 +41,37 @@ COOL_403=7200            # 連續兩轉開波即斷路 → 唞 2 個鐘保 IP
 # 攻得」),放返出嚟 680 首入 OCR 池頂住三條複核線嘅消耗,順便實測新引擎
 # 救唔救得返呢批。要重新押後就填返:SKIP_ORGS="天韻合唱團,CantonHymn,悦雨音樂,原始和聲"
 SKIP_ORGS=""
+# 2026-09-17 Eric 拍板(方案3):keeper 淨係晚上 19:00 → 早上 09:00 先行。日間
+# (09:00–19:00)唔開新一轉 OCR/CC,而且一入日間窗口就即刻停走正在跑嘅
+# fetchLyrics + PaddleOCR worker(背景:兩個 paddleframe 各食 100% CPU 令 Mac 發熱,
+# 09-07 同 09-17 兩次都係咁)。窗口用 env 可調:ALLOW_START=19 ALLOW_END=9(跨午夜)。
+ALLOW_START="${KEEPER_ALLOW_START:-19}"
+ALLOW_END="${KEEPER_ALLOW_END:-9}"
+DAYMARK=/tmp/lyrics-sprint-daytime       # 日間停機狀態(只 log 一次轉換)
+
+# 而家係咪喺允許運行嘅時段(支援跨午夜:START > END 即係「晚上 START 點至翌日 END 點」)。
+in_window() {
+  local h; h=$((10#$(date +%H)))
+  if (( ALLOW_START > ALLOW_END )); then
+    (( h >= ALLOW_START || h < ALLOW_END ))
+  else
+    (( h >= ALLOW_START && h < ALLOW_END ))
+  fi
+}
+
+# 日間:停走 producer 同佢嘅 OCR worker(fetchLyrics 逐首歌寫入,殺中途最多蝕當前一首)。
+stop_daytime_workers() {
+  local n=1   # bash 慣例:return 0 = 「有殺到嘢」,俾 caller 用 if 判斷要唔要 log
+  if pgrep -f 'scripts/fetchLyrics.js' >/dev/null 2>&1; then
+    pkill -TERM -f 'scripts/fetchLyrics.js' 2>/dev/null; n=0
+    sleep 3
+    pkill -TERM -f 'tools/paddleframe.py' 2>/dev/null
+    sleep 2
+    pkill -KILL -f 'tools/paddleframe.py' 2>/dev/null
+    rm -f "$MARK"   # 呢轉係被日間窗口斬嘅,唔好當「開波即斷路」計入 403 風暴掣
+  fi
+  return $n
+}
 
 log() { echo "[$(date '+%Y-%m-%d %H:%M:%S')] $*" >> "$LOG"; }
 
@@ -118,6 +150,21 @@ while true; do
   fi
 
   maybe_report
+
+  # ── 日間窗口(2026-09-17 Eric 方案3):唔喺 19:00–09:00 就停晒、唔開新一轉 ──
+  if ! in_window; then
+    if stop_daytime_workers; then
+      log "🌞 入咗日間窗口($(printf '%02d' "$ALLOW_END"):00–$(printf '%02d' "$ALLOW_START"):00),已停走正在跑嘅 fetchLyrics/PaddleOCR"
+    fi
+    if [[ ! -f "$DAYMARK" ]]; then
+      touch "$DAYMARK"
+      log "🌞 日間停機:$(printf '%02d' "$ALLOW_END"):00–$(printf '%02d' "$ALLOW_START"):00 唔開新一轉,等到 $(printf '%02d' "$ALLOW_START"):00 先恢復"
+    fi
+    sleep "$TICK"; continue
+  elif [[ -f "$DAYMARK" ]]; then
+    rm -f "$DAYMARK"
+    log "🌙 入咗晚間窗口,恢復正常運作"
+  fi
 
   if pgrep -f 'scripts/fetchLyrics.js' >/dev/null 2>&1; then
     sleep "$TICK"; continue
