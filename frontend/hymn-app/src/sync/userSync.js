@@ -10,6 +10,14 @@
 import { getStorage } from '../storage';
 import { API_BASE } from '../config';
 import { sendClientLog } from '../clientLog.js';
+import { reportUnauthorized } from '../authSession';
+
+// 401 = token 過期/失效(2026-09-28 事故:之前靜靜 fail,outbox 越積越多冇人
+// 知)。報俾 AuthContext 叫用戶重新登入;回傳值照舊,queue 原封不動留低。
+function checkAuth(r, token) {
+  if (r.status === 401) reportUnauthorized(token);
+  return r;
+}
 
 // BATCH5 O10:MMKV instance 收歸 storage.js 一份共用(零行為改變,本身就係
 // 同一份 default instance)。
@@ -72,28 +80,29 @@ async function runOp(op) {
   // 冇 body 嗰啲(POST/DELETE 淨靠 URL)唔可以帶 Content-Type: application/json——
   // 後端 express.json() 見到呢個 header 但冇 body 會 throw → 400,fav_add/
   // fav_remove/pl_delete 永遠推唔郁(P0,Opus 驗收揪出)。
-  const authHeaders = { Authorization: `Bearer ${_token}` };
+  const token = _token;
+  const authHeaders = { Authorization: `Bearer ${token}` };
   const jsonHeaders = { ...authHeaders, 'Content-Type': 'application/json' };
   try {
     if (op.op === 'fav_add') {
-      const r = await fetch(`${API_BASE}/api/me/favorites/${op.hymn_id}`, { method: 'POST', headers: authHeaders });
+      const r = checkAuth(await fetch(`${API_BASE}/api/me/favorites/${op.hymn_id}`, { method: 'POST', headers: authHeaders }), token);
       return r.ok;
     }
     if (op.op === 'fav_remove') {
-      const r = await fetch(`${API_BASE}/api/me/favorites/${op.hymn_id}`, { method: 'DELETE', headers: authHeaders });
+      const r = checkAuth(await fetch(`${API_BASE}/api/me/favorites/${op.hymn_id}`, { method: 'DELETE', headers: authHeaders }), token);
       return r.ok;
     }
     if (op.op === 'pl_upsert') {
-      const r = await fetch(`${API_BASE}/api/me/playlists/${op.playlist.id}`, {
+      const r = checkAuth(await fetch(`${API_BASE}/api/me/playlists/${op.playlist.id}`, {
         method: 'PUT', headers: jsonHeaders, body: JSON.stringify(op.playlist),
-      });
+      }), token);
       if (!r.ok) return false;
       const data = await r.json().catch(() => ({}));
       if (data?.stale && data.server && _onStalePlaylist) _onStalePlaylist(data.server);
       return true;
     }
     if (op.op === 'pl_delete') {
-      const r = await fetch(`${API_BASE}/api/me/playlists/${op.id}`, { method: 'DELETE', headers: authHeaders });
+      const r = checkAuth(await fetch(`${API_BASE}/api/me/playlists/${op.id}`, { method: 'DELETE', headers: authHeaders }), token);
       return r.ok;
     }
     // DEEP-AUDIT-W1-EXEC-20260906 F6(INF-010)—— 未知 op 之前係完全靜默
@@ -147,7 +156,8 @@ export async function flush() {
 export async function pullData() {
   if (!_token) return null;
   try {
-    const r = await fetch(`${API_BASE}/api/me/data`, { headers: { Authorization: `Bearer ${_token}` } });
+    const token = _token;
+    const r = checkAuth(await fetch(`${API_BASE}/api/me/data`, { headers: { Authorization: `Bearer ${token}` } }), token);
     if (!r.ok) return null;
     return await r.json();
   } catch (_) { return null; }
@@ -157,11 +167,12 @@ export async function pullData() {
 export async function pushSync(favorites, playlists) {
   if (!_token) return null;
   try {
-    const r = await fetch(`${API_BASE}/api/me/sync`, {
+    const token = _token;
+    const r = checkAuth(await fetch(`${API_BASE}/api/me/sync`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${_token}` },
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
       body: JSON.stringify({ favorites, playlists }),
-    });
+    }), token);
     if (!r.ok) return null;
     return await r.json();
   } catch (_) { return null; }

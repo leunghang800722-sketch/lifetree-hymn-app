@@ -4286,7 +4286,7 @@ function AppContent() {
   const [hymnListVisible, setHymnListVisible] = useState(false);
 
   // ── 會員系統 Phase 1 W2:登入合併 + 跨裝置同步(MEMBERSHIP-PHASE1-LOGIN-SYNC.md §2.3-2.5)──
-  const { user, token } = useAuth();
+  const { user, token, sessionExpired, acknowledgeSessionExpired } = useAuth();
   usePresenceHeartbeat({ token, isPlaying: debugPlaying }); // ADMIN-PRESENCE-EXEC-20260905 §3 —— 淨係呢一行,唔掂 PlayerProvider
   const { favorites, replaceAllFavorites } = useFavorites() || {};
   const { playlists, replaceAllPlaylists } = usePlaylists() || {};
@@ -4419,6 +4419,18 @@ function AppContent() {
 
   const openAuth = useCallback(() => setAuthVisible(true), []);
   const closeAuth = useCallback(() => setAuthVisible(false), []);
+
+  // 登入 token 過期(30 日)或者俾 server 拒(401)→ AuthContext 已經清咗
+  // session,呢度話俾用戶知+帶佢去登入。本地最愛/清單/outbox 原封不動,
+  // 同一個人登入返就照 §2.3 合併推返上去。
+  useEffect(() => {
+    if (!sessionExpired) return;
+    acknowledgeSessionExpired();
+    Alert.alert('登入已過期', '為咗保障帳戶安全,請重新登入。你嘅最愛同清單唔會唔見。', [
+      { text: '稍後', style: 'cancel' },
+      { text: '重新登入', onPress: () => setAuthVisible(true) },
+    ]);
+  }, [sessionExpired, acknowledgeSessionExpired]);
   // Admin「貼連結加歌」畫面(MEMBERSHIP-PHASE2-ADMIN-PLAN §3.7)—— 同 Auth Modal
   // 一樣做法:slide-in 全螢幕 Modal,由 MineScreen 個入口開。
   const [adminAddVisible, setAdminAddVisible] = useState(false);

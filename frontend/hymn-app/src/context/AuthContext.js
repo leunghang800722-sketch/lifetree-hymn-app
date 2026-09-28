@@ -1,8 +1,13 @@
 // Auth Context — 會員系統
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { API_BASE } from '../config';
 import { setAuthToken, clearOutbox } from '../sync/userSync';
+import { tokenExpiryMs, isTokenExpired, setUnauthorizedHandler } from '../authSession';
+
+// token 30 日過期;淨低少過呢個數就開機順手續期,日常有用 App 嘅人永遠
+// 唔會撞到過期。
+const RENEW_WHEN_LEFT_MS = 23 * 24 * 60 * 60 * 1000;
 
 const AUTH_KEY = '@hymn…uth';
 
@@ -12,6 +17,10 @@ export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [token, setToken] = useState(null);
   const [loading, setLoading] = useState(true);
+  // token 過期/俾 server 拒(401)→ true,App.js 見到就叫用戶重新登入。
+  const [sessionExpired, setSessionExpired] = useState(false);
+  const tokenRef = useRef(null);
+  tokenRef.current = token;
 
   // Load saved auth on mount
   useEffect(() => {
@@ -20,12 +29,21 @@ export function AuthProvider({ children }) {
         const raw = await AsyncStorage.getItem(AUTH_KEY);
         if (raw) {
           const saved = JSON.parse(raw);
-          setToken(saved.token);
-          setUser(saved.user);
+          if (isTokenExpired(saved.token)) {
+            // 過咗期嘅 token 帶住都係逐個 request 食 401,直接當登出。
+            // outbox 特登唔清——同一個人重新登入之後要推返上去。
+            await AsyncStorage.removeItem(AUTH_KEY);
+            setSessionExpired(true);
+          } else {
+            setToken(saved.token);
+            setUser(saved.user);
+            renewIfNeeded(saved.token, saved.user);
+          }
         }
       } catch (_) {}
       setLoading(false);
     })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // userSync 係獨立 lib(唔係 context),要靠呢度灌 token 落去先識打 /api/me/*
@@ -47,6 +65,36 @@ export function AuthProvider({ children }) {
     setUser(null);
     try { await AsyncStorage.removeItem(AUTH_KEY); } catch (_) {}
   }, []);
+
+  // 續期失敗(冇網/舊 backend 冇呢條 route)一律靜靜算,舊 token 照用。
+  const renewIfNeeded = useCallback(async (current, currentUser) => {
+    const exp = tokenExpiryMs(current);
+    if (exp == null || exp - Date.now() > RENEW_WHEN_LEFT_MS) return;
+    try {
+      const resp = await fetch(`${API_BASE}/api/auth/renew`, {
+        method: 'POST', headers: { Authorization: `Bearer ${current}` },
+      });
+      if (!resp.ok) return;
+      const data = await resp.json();
+      if (!data?.token || !data?.user) return;
+      if (tokenRef.current !== current) return; // 期間登出/換咗帳戶
+      // server 回嘅 user 冇 gender/birthYear,merge 落舊嗰個唔好冚走;role 跟 server。
+      await saveAuth(data.token, { ...currentUser, ...data.user });
+    } catch (_) {}
+  }, [saveAuth]);
+
+  // api.js / userSync 食到 401 會報返嚟。淨係現役 token 先處理——舊 request
+  // 遲返嘅 401 唔可以踢走啱啱重新登入嘅 session。
+  useEffect(() => {
+    setUnauthorizedHandler((rejected) => {
+      if (!rejected || rejected !== tokenRef.current) return;
+      clearAuth();
+      setSessionExpired(true);
+    });
+    return () => setUnauthorizedHandler(null);
+  }, [clearAuth]);
+
+  const acknowledgeSessionExpired = useCallback(() => setSessionExpired(false), []);
 
   const login = useCallback(async (email, password) => {
     const resp = await fetch(`${API_BASE}/api/auth/login`, {
@@ -156,6 +204,7 @@ export function AuthProvider({ children }) {
   return (
     <AuthContext.Provider value={{
       user, token, loading, isAdmin, login, logout, getToken,
+      sessionExpired, acknowledgeSessionExpired,
       requestOtp, verifyOtpTicket, registerPhone, loginPhone, resetPassword,
       fetchOtpStatus, checkInviteCode,
     }}>

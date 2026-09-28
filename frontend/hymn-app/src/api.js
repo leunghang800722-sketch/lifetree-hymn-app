@@ -1,5 +1,16 @@
 // API 連接
 import { API_BASE } from './config';
+import { reportUnauthorized } from './authSession';
+
+// 帶住 token 打嘅 request 食 401 = token 過期/失效。報俾 AuthContext 清
+// session,錯誤訊息轉做人話(之前原字彈「unauthorized」)。
+function throwIfUnauthorized(res, token) {
+  if (res.status !== 401) return;
+  reportUnauthorized(token);
+  const err = new Error('登入已過期,請重新登入');
+  err.code = 'unauthorized';
+  throw err;
+}
 
 // ── Admin APIs(MEMBERSHIP-PHASE2-ADMIN-PLAN §3.7)──────────────────────
 // 呢個檔案本身唔存/唔讀 token(D4 已剷咗舊嘅 authHeaders()/getToken())。
@@ -43,6 +54,7 @@ export function adminErrorMessage(e, fallback) {
 
 export async function adminGetHymn(token, id) {
   const res = await fetch(`${API_BASE}/api/admin/hymns/${id}`, { headers: adminAuthHeaders(token) });
+  throwIfUnauthorized(res, token);
   const json = await adminJson(res, '讀取失敗');
   return json.hymn;
 }
@@ -53,6 +65,7 @@ export async function adminPatchHymn(token, id, fields) {
     headers: adminAuthHeaders(token, true),
     body: JSON.stringify(fields),
   });
+  throwIfUnauthorized(res, token);
   return adminJson(res, '儲存失敗'); // { ok, hymn, dataVersion }
 }
 
@@ -62,6 +75,7 @@ export async function adminPreviewHymn(token, url) {
     headers: adminAuthHeaders(token, true),
     body: JSON.stringify({ url }),
   });
+  throwIfUnauthorized(res, token);
   return adminJson(res, '查詢失敗'); // { exists|relistable|youtube_id..., ... }
 }
 
@@ -71,6 +85,7 @@ export async function adminAddHymn(token, fields) {
     headers: adminAuthHeaders(token, true),
     body: JSON.stringify(fields),
   });
+  throwIfUnauthorized(res, token);
   return adminJson(res, '入庫失敗'); // { ok, hymn, dataVersion }
 }
 
@@ -79,6 +94,7 @@ export async function adminDelistHymn(token, id) {
     method: 'POST',
     headers: adminAuthHeaders(token),
   });
+  throwIfUnauthorized(res, token);
   return adminJson(res, '落架失敗'); // { ok, hymn, dataVersion }
 }
 
@@ -86,12 +102,14 @@ export async function adminDelistHymn(token, id) {
 // audit log join hymns_all,回 { items: [{ hymn, in_library, listed, acted_at/delisted_at }] }
 export async function adminListAddedHymns(token) {
   const res = await fetch(`${API_BASE}/api/admin/activity/added`, { headers: adminAuthHeaders(token) });
+  throwIfUnauthorized(res, token);
   const json = await adminJson(res, '讀取失敗');
   return json.items;
 }
 
 export async function adminListDelistedHymns(token) {
   const res = await fetch(`${API_BASE}/api/admin/activity/delisted`, { headers: adminAuthHeaders(token) });
+  throwIfUnauthorized(res, token);
   const json = await adminJson(res, '讀取失敗');
   return json.items;
 }
@@ -99,6 +117,7 @@ export async function adminListDelistedHymns(token) {
 // Admin「在線」頁(ADMIN-PRESENCE-EXEC-20260905 §3)—— 讀在線快照。
 export async function adminPresence(token) {
   const res = await fetch(`${API_BASE}/api/admin/presence`, { headers: adminAuthHeaders(token) });
+  throwIfUnauthorized(res, token);
   return adminJson(res, '讀取失敗'); // { now, online:{total,members,guests}, members:[...] }
 }
 
@@ -141,6 +160,7 @@ export async function friendsLookup(token, phone) {
   const res = await fetch(`${API_BASE}/api/friends/lookup`, {
     method: 'POST', headers: meAuthHeaders(token, true), body: JSON.stringify({ phone }),
   });
+  throwIfUnauthorized(res, token);
   return meJson(res, '搵唔到');
 }
 
@@ -149,41 +169,48 @@ export async function friendsRequest(token, phone) {
   const res = await fetch(`${API_BASE}/api/friends/request`, {
     method: 'POST', headers: meAuthHeaders(token, true), body: JSON.stringify({ phone }),
   });
+  throwIfUnauthorized(res, token);
   return meJson(res, '發出請求失敗');
 }
 
 // { friends: [{user_id,username}], incoming: [{user_id,username,created_at}], outgoing: [{user_id,phone_tail,created_at}] }
 export async function friendsList(token) {
   const res = await fetch(`${API_BASE}/api/friends`, { headers: meAuthHeaders(token) });
+  throwIfUnauthorized(res, token);
   return meJson(res, '讀取失敗');
 }
 
 export async function friendsAccept(token, userId) {
   const res = await fetch(`${API_BASE}/api/friends/${userId}/accept`, { method: 'POST', headers: meAuthHeaders(token) });
+  throwIfUnauthorized(res, token);
   return meJson(res, '接受失敗');
 }
 
 // 一個 API 三用:拒絕請求 / 收回自己嘅請求 / 解除好友
 export async function friendsDelete(token, userId) {
   const res = await fetch(`${API_BASE}/api/friends/${userId}`, { method: 'DELETE', headers: meAuthHeaders(token) });
+  throwIfUnauthorized(res, token);
   return meJson(res, '操作失敗');
 }
 
 // { shares: [{ token, name, song_count }] }
 export async function friendsShares(token, userId) {
   const res = await fetch(`${API_BASE}/api/friends/${userId}/shares`, { headers: meAuthHeaders(token) });
+  throwIfUnauthorized(res, token);
   return meJson(res, '讀取失敗');
 }
 
 // { code: 'K7NM-WP4E' }
 export async function createInvite(token) {
   const res = await fetch(`${API_BASE}/api/me/invites`, { method: 'POST', headers: meAuthHeaders(token) });
+  throwIfUnauthorized(res, token);
   return meJson(res, '生成失敗');
 }
 
 // { invites: [{ code, used, used_by_name, created_at }] }
 export async function listMyInvites(token) {
   const res = await fetch(`${API_BASE}/api/me/invites`, { headers: meAuthHeaders(token) });
+  throwIfUnauthorized(res, token);
   return meJson(res, '讀取失敗');
 }
 
@@ -193,6 +220,7 @@ export async function redeemInvite(token, code) {
   const res = await fetch(`${API_BASE}/api/invites/redeem`, {
     method: 'POST', headers: meAuthHeaders(token, true), body: JSON.stringify({ code }),
   });
+  throwIfUnauthorized(res, token);
   return meJson(res, '兌換失敗');
 }
 

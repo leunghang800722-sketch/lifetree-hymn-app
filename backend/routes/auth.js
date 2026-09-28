@@ -3,6 +3,7 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { JWT_SECRET } from '../lib/authSecret.js';
 import { ipLoginLimiter, clientIp } from '../lib/loginRateLimit.js';
+import requireAuth from '../lib/requireAuth.js';
 
 const TOKEN_EXPIRY = '30d';
 
@@ -55,6 +56,16 @@ export default function authRoutes(app, getUserDb) {
       console.error('Login error:', err);
       res.status(500).json({ error: 'Server error' });
     }
+  });
+
+  // POST /api/auth/renew —— 用仲有效嘅 token 換一個新 30 日 token(2026-09-28
+  // 「URL加歌 unauthorized」事故:token 到期冇續期機制,日日用都照樣 30 日
+  // 後被登出)。App 開機見 token 淨低少過 23 日就打嚟。過咗期嘅 token 過唔到
+  // requireAuth,一定要重新登入——呢度唔開 ignoreExpiration 後門。
+  app.post('/api/auth/renew', requireAuth, (req, res) => {
+    const u = req.user;
+    const token = jwt.sign({ id: u.id, username: u.username }, JWT_SECRET, { expiresIn: TOKEN_EXPIRY });
+    res.json({ token, user: { id: u.id, username: u.username, email: u.email, phone: u.phone, role: u.role } });
   });
 
   app.get('/api/auth/me', async (req, res) => {
