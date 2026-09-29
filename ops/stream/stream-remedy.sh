@@ -95,7 +95,9 @@ INCIDENT="$(printf '%s' "$INCIDENT" | tr -cd 'A-Za-z0-9_-' | cut -c1-40)"; [[ -z
 
 action="${1:-}"; nargs=$#
 
-san() { printf '%s' "$1" | tr -d '\000-\037\177' | perl -CS -pe 's/[\x{85}\x{2028}\x{2029}\x{200b}-\x{200f}\x{202a}-\x{202e}\x{2066}-\x{2069}\x{feff}]//g' | cut -c1-200; }   # L2:strip 控制字元/換行、截 200 字
+# L2:strip 控制字元/換行、截 200 字;Opus 最終驗收 L2:唔用 perl -CS(遇到被 cut 切爛嘅 UTF-8 會 fatal 令成格變空),改 byte 模式剷
+# Unicode 行分隔/bidi/零寬(U+0085/U+2028-9/U+200B-F 除 U+200D ZWJ/U+202A-E/U+2066-9/BOM)
+san() { printf '%s' "$1" | tr -d '\000-\037\177' | perl -pe 's/\xc2\x85|\xe2\x80[\xa8\xa9\x8b\x8c\x8e\x8f\xaa-\xae]|\xe2\x81[\xa6-\xa9]|\xef\xbb\xbf//g' | cut -c1-200; }
 log_line() { # $1=result
   [[ "$DRY" == "1" && -z "${REMEDY_LOG:-}" ]] && return 0
   mkdir -p "$(dirname "$LOG")" 2>/dev/null
@@ -258,7 +260,9 @@ case "$action" in
     fi
     q="$(quota drill)"
     if [[ "$q" != OK ]]; then echo "QUOTA: ${q#DENY }"; log_line "quota-denied: ${q#DENY }"; exit 3; fi
-    d_pat='backend/server\.js'; [[ $TESTMODE -eq 1 && -n "${DRILL_PGREP_PAT:-}" ]] && d_pat="$DRILL_PGREP_PAT"   # 只測試模式可換(t9 F2 用 scratch 假 backend)
+    # Opus 最終驗收 M1:`pgrep -f backend/server\.js` 會撞任何命令行含該字串嘅 process(監察 shell/tail/grep),
+    # 20:37 演習就記錯 pid_after。改為錨定「絕對路徑 node + 絕對路徑 server.js」(⚠️ 唔可以用 `^node `,真命令行係 /opt/homebrew/bin/node)。
+    d_pat='^[^ ]*/node [^ ]*/backend/server\.js$'; [[ $TESTMODE -eq 1 && -n "${DRILL_PGREP_PAT:-}" ]] && d_pat="$DRILL_PGREP_PAT"   # 只測試模式可換(t9 F2 用 scratch 假 backend)
     d_pid() { pgrep -f "$d_pat" 2>/dev/null | head -1; }
     d_lst() { [[ -n "$1" ]] && ps -o lstart= -p "$1" 2>/dev/null | tr -s ' ' || true; }
     pid0="$(d_pid)"; lst0="$(d_lst "$pid0")"
