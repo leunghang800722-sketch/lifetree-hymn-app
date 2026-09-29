@@ -33,7 +33,7 @@
 # 排程:launchd `com.hymnstream.healthcheck`,每 1800s(30 分鐘,STREAM-SELFHEAL-
 # PLAN-20260905 S1 由 3 小時進一步加密——連續 2 次 fail 最遲 1 小時內就會觸發
 # ops/stream/stream-selfheal.sh 自動修復;plist 改完要 bootout + bootstrap 一次)。
-# 手動試:  ops/lyrics/stream-healthcheck.sh --verbose
+# 手動試:  ops/lyrics/stream-healthcheck.sh --verbose   (STREAM-HARDEN2:喺 Claude 工具 shell 要 HC_MANUAL=1;測試用 STREAM_WATCH_TEST=1 + tmp WATCH_DIR,見 ops/stream/README.md)
 #
 # 2026-09-05:每次判斷完之後,尾段會呼叫 ops/stream/stream-selfheal.sh(傳入
 # healthy_a/healthy_b/mid/midfail/ok/fail/detail),由佢決定要唔要自動修
@@ -44,6 +44,57 @@ REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 LOG="$REPO/docs/SUPERVISION-LOG.md"
 STATE="$REPO/backend/data/stream-health-state.json"
 HISTORY="$REPO/backend/data/stream-health.log"
+HC_WATCH_LOG="${HC_WATCH_LOG:-/tmp/hymn_stream_watch.log}"   # 路徑:prod 預設同舊寫死值一樣;測試模式強制落 $WATCH_DIR/watch.log(見下)
+
+# ── STREAM-HARDEN2 入口 guard(任何寫入之前;三層防呆同 stream-watch.sh 同款)──────────────────────
+# 真 launchd tick:冇 STREAM_WATCH_TEST、冇 CLAUDECODE ⇒ 下面 if/elif 兩個分支都唔入 ⇒ HC_TEST=0,零改動(短路)。
+# (a) 測試模式 = STREAM_WATCH_TEST=1 + WATCH_DIR 解析 symlink 後喺 tmp;唔合 → REFUSED exit 2 零寫入(連 watch log 都唔寫)。
+#     測試模式下所有寫入路徑強制落 $WATCH_DIR/(STATE/HISTORY/LOG/watch log),Layer A/B 不准打真 backend / 真 YouTube / googlevideo。
+# (b) 非測試模式 + CLAUDECODE 非空(Claude 工具 shell)+ 冇 HC_MANUAL=1 → REFUSED exit 2 零寫入。
+_hc_tmpok() { # 要絕對路徑、無 `..`、解析 symlink 後喺 tmp 下
+  local p="$1" r
+  [[ "$p" == /* ]] || return 1
+  case "$p" in *..*) return 1 ;; esac
+  r="$(/usr/bin/python3 -c 'import os,sys;print(os.path.realpath(sys.argv[1]))' "$p" 2>/dev/null)" || return 1
+  case "$r" in /private/tmp/*|/private/var/folders/*|/tmp/*|/var/folders/*) return 0 ;; esac
+  return 1
+}
+HC_TEST=0
+if [[ "${STREAM_WATCH_TEST:-0}" == "1" ]]; then
+  _hc_bad=""
+  _hc_tmpok "${WATCH_DIR:-}" || _hc_bad="WATCH_DIR"
+  [[ -z "${YTDLP_BIN:-}" ]] || _hc_tmpok "$YTDLP_BIN" || _hc_bad="$_hc_bad YTDLP_BIN"
+  case "${HYMN_STREAM_BASE:-}" in *:3001*) _hc_bad="$_hc_bad HYMN_STREAM_BASE(唔准指真 backend :3001)" ;; esac
+  if [[ -n "$_hc_bad" ]]; then echo "REFUSED: STREAM_WATCH_TEST=1 要求 WATCH_DIR(同已設嘅 YTDLP_BIN)喺 tmp 下(解析 symlink 後)、HYMN_STREAM_BASE 唔係真 backend;不合:$_hc_bad" >&2; exit 2; fi
+  HC_TEST=1
+  # 測試模式路徑強制落 $WATCH_DIR(唔信 caller env)
+  LOG="$WATCH_DIR/SUPERVISION-LOG.md"
+  STATE="$WATCH_DIR/stream-health-state.json"
+  HISTORY="$WATCH_DIR/stream-health.log"
+  HC_WATCH_LOG="$WATCH_DIR/watch.log"
+  export HEALTH_STATE="$STATE" SELFHEAL_STATE="${SELFHEAL_STATE:-$WATCH_DIR/stream-selfheal-state.json}"   # 俾 selfheal 測試模式三 env 齊
+  mkdir -p "$WATCH_DIR" 2>/dev/null
+  # 測試模式 Layer A/B 預設全部 stub:base=死 port;yt-dlp=scratch stub;CDN 直打=固定 206(HC_CDN_FETCH_CMD 可 override)
+  export HYMN_STREAM_BASE="${HYMN_STREAM_BASE:-http://127.0.0.1:9}"
+  if [[ -z "${YTDLP_BIN:-}" ]]; then
+    YTDLP_BIN="$WATCH_DIR/hc-yt-dlp-stub"
+    printf '#!/bin/sh\n[ "$1" = "--version" ] && { echo stub; exit 0; }\necho "http://stub.invalid/audio"\n' > "$YTDLP_BIN"; chmod +x "$YTDLP_BIN"
+  fi
+elif [[ -n "${CLAUDECODE:-}" && "${HC_MANUAL:-0}" != "1" ]]; then
+  echo "REFUSED: stream-healthcheck.sh 只准由 launchd tick 行;喺 Claude 工具 shell 人手行請設 HC_MANUAL=1(測試請用 STREAM_WATCH_TEST=1 + tmp WATCH_DIR)" >&2
+  exit 2
+fi
+_hc_cdn_stub() { echo 206; }   # 測試模式 Layer B 直打 CDN 嘅預設 stub
+
+# ── tick 憑證(selfheal prod 模式靠佢判斷「喺 healthcheck tick 內」)──────────────────────────────
+# $WATCH_DIR/.tick-ctx(pid=<本 pid> ts=<epoch>,umask 077);任何 exit 路徑 trap 刪(只刪內容 pid==自己)。kill -9 會殘留,靠 pid 死 + 30 分鐘期限失效。
+# prod 路徑 = $HOME/.hymn-deploy(同下面 stream-watch.on 一樣由 HOME 計;selfheal 端 prod 用真 home)。
+if [[ $HC_TEST -eq 1 ]]; then HC_CTX="$WATCH_DIR/.tick-ctx"; else HC_CTX="$HOME/.hymn-deploy/.tick-ctx"; fi
+mkdir -p "$(dirname "$HC_CTX")" 2>/dev/null
+( umask 077; printf 'pid=%s ts=%s\n' "$$" "$(date +%s)" > "$HC_CTX" ) 2>/dev/null
+_hc_ctx_rm() { [[ "$(sed -n 's/^pid=\([0-9][0-9]*\).*$/\1/p' "$HC_CTX" 2>/dev/null | head -1)" == "$$" ]] && rm -f "$HC_CTX" 2>/dev/null; return 0; }
+trap '_hc_ctx_rm' EXIT
+trap 'exit 143' TERM INT HUP
 
 # 固定三首(唔同 org / 唔同年代),兩首以上 OK 就當健康。
 # ⚠️ 呢三首 2026-08-22 查實音軌大細 = 5.6MB / 4.4MB / 3.0MB,全部遠過 Layer B 個
@@ -101,7 +152,11 @@ if [[ -x "$YTDLP" ]]; then
       say "  B $yid → resolve FAIL"
       continue
     fi
+    if [[ $HC_TEST -eq 1 ]]; then   # 測試模式:唔直打 googlevideo,用 stub(預設固定 206)
+      code=$(${HC_CDN_FETCH_CMD:-_hc_cdn_stub} "$url" "$MID_RANGE" 2>/dev/null)
+    else
     code=$(curl -s -o /dev/null -w "%{http_code}" --max-time "$TIMEOUT" -r "$MID_RANGE" "$url" 2>/dev/null)
+    fi
     say "  B $yid → HTTP ${code:-timeout} (mid-range)"
     case "$code" in
       206) mid=$((mid+1)) ;;
@@ -212,8 +267,9 @@ fi
 # ~/.hymn-deploy/stream-watch.on 存在先接線(啟用/停用 = 建立/刪除呢個檔,唔使 reload plist)。
 # perl alarm 頂硬上限(預設 1500s < 30 分鐘 tick;launchd 冇 AbandonProcessGroup,背景 detach 會被殺,
 # 所以用同步 + 硬上限)。任何失敗一律吞,唔影響本 script 嘅 exit code。
-if [[ -f "$HOME/.hymn-deploy/stream-watch.on" && -x "$REPO/ops/stream/stream-watch.sh" ]]; then
+HC_WATCH_ON="$HOME/.hymn-deploy/stream-watch.on"; [[ $HC_TEST -eq 1 ]] && HC_WATCH_ON="$WATCH_DIR/stream-watch.on"   # 路徑:測試模式落 $WATCH_DIR
+if [[ -f "$HC_WATCH_ON" && -x "$REPO/ops/stream/stream-watch.sh" ]]; then
   perl -e 'alarm shift; exec @ARGV or exit 127' "${WATCH_HARD_CAP:-1500}" \
-    "$REPO/ops/stream/stream-watch.sh" >> /tmp/hymn_stream_watch.log 2>&1 || true
+    "$REPO/ops/stream/stream-watch.sh" >> "$HC_WATCH_LOG" 2>&1 || true
 fi
 exit 0

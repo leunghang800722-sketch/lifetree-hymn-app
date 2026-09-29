@@ -71,8 +71,8 @@
 # 網絡 resolve/curl、寫 state/log)一律跳過,淨係印「會做乜」;唔受節流影響
 # (手動試嘅時候想睇成套流程行一次)。
 #
-# 手動試(唔會郁任何嘢):
-#   SELFHEAL_DRY_RUN=1 ops/stream/stream-selfheal.sh --healthy-a 1 --healthy-b 0 \
+# 手動試(唔會郁任何嘢;STREAM-HARDEN2 起 prod 模式要 SELFHEAL_MANUAL=1,SELFHEAL_DRY_RUN 唔算憑證):
+#   SELFHEAL_MANUAL=1 SELFHEAL_DRY_RUN=1 ops/stream/stream-selfheal.sh --healthy-a 1 --healthy-b 0 \
 #     --mid 0 --midfail 3 --ok 3 --fail 0 --detail "B:x:403" --verbose
 
 set -u
@@ -86,19 +86,67 @@ REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 # 會 rc=128。喺呢度 cd 入 repo(子 process 繼承 cwd);入唔到就唔做任何動作。
 cd "$REPO" || { echo "cannot cd to $REPO" >&2; exit 1; }
 
+# ── STREAM-HARDEN2 入口 guard(任何寫入/動作之前;同 stream-remedy.sh 三層防呆同款)──────────────────
+# 測試模式 = STREAM_WATCH_TEST=1 + SELFHEAL_STATE、HEALTH_STATE、WATCH_DIR 三個齊且解析 symlink 後都喺 tmp;缺一 = prod 模式。
+# prod 模式(真 launchd tick 行呢條):HOME 重設為本 uid 真 home(值同 launchd HOME 一樣);要 $HOME/.hymn-deploy/.tick-ctx
+#   (healthcheck 寫;普通檔、非 symlink、mtime<30 分鐘、pid 生存)或 SELFHEAL_MANUAL=1;CLAUDECODE 非空冇 MANUAL 一律拒。
+#   拒絕 = stderr 印 REFUSED、exit 2、零寫入。SELFHEAL_DRY_RUN 唔算憑證。
+_sh_tmpok() { # 要絕對路徑、無 `..`、解析 symlink 後喺 tmp 下
+  local p="$1" r
+  [[ "$p" == /* ]] || return 1
+  case "$p" in *..*) return 1 ;; esac
+  r="$(/usr/bin/python3 -c 'import os,sys;print(os.path.realpath(sys.argv[1]))' "$p" 2>/dev/null)" || return 1
+  case "$r" in /private/tmp/*|/private/var/folders/*|/tmp/*|/var/folders/*) return 0 ;; esac
+  return 1
+}
+_sh_ctx_valid() { # $1=ctx 檔路徑
+  local f="$1" pid m now
+  [[ -f "$f" && ! -L "$f" ]] || return 1
+  m="$(stat -f %m "$f" 2>/dev/null)" || return 1
+  now="$(date +%s)"; (( now - m < 1800 )) || return 1
+  pid="$(sed -n 's/^pid=\([0-9][0-9]*\).*$/\1/p' "$f" 2>/dev/null | head -1)"
+  [[ -n "$pid" ]] || return 1
+  kill -0 "$pid" 2>/dev/null
+}
+if [[ "${STREAM_WATCH_TEST:-0}" == "1" ]] && _sh_tmpok "${SELFHEAL_STATE:-}" && _sh_tmpok "${HEALTH_STATE:-}" && _sh_tmpok "${WATCH_DIR:-}"; then
+  SH_TEST=1
+  # 測試模式:唔准經 YTDLP_LINK 跑真 yt-dlp
+  if [[ -n "${YTDLP_LINK:-}" ]] && ! _sh_tmpok "$YTDLP_LINK"; then echo "REFUSED: 測試模式 YTDLP_LINK 要喺 tmp 下" >&2; exit 2; fi
+  case "${HYMN_STREAM_BASE:-}" in *:3001*) echo "REFUSED: 測試模式 HYMN_STREAM_BASE 唔准指真 backend :3001" >&2; exit 2 ;; esac
+else
+  SH_TEST=0
+  _sh_user="$(/usr/bin/id -un 2>/dev/null)"
+  _sh_home="$(/usr/bin/dscl . -read "/Users/$_sh_user" NFSHomeDirectory 2>/dev/null | /usr/bin/awk '{print $2}')"
+  if [[ -z "$_sh_home" || "$_sh_home" != /* || ! -d "$_sh_home" ]]; then _sh_home="$(eval echo "~$_sh_user" 2>/dev/null)"; fi
+  if [[ -z "$_sh_home" || "$_sh_home" != /* || ! -d "$_sh_home" ]]; then echo "REJECTED: 攞唔到真 HOME" >&2; exit 2; fi
+  export HOME="$_sh_home"
+  if [[ "${SELFHEAL_MANUAL:-0}" != "1" ]]; then
+    if [[ -n "${CLAUDECODE:-}" ]] || ! _sh_ctx_valid "$HOME/.hymn-deploy/.tick-ctx"; then
+      echo "REFUSED: prod 模式只准由 stream-healthcheck tick 內呼叫;人手用請設 SELFHEAL_MANUAL=1" >&2
+      exit 2
+    fi
+  fi
+fi
+
 LOG="${SELFHEAL_LOG_MD:-$REPO/docs/SUPERVISION-LOG.md}"
 STATE="${SELFHEAL_STATE:-$REPO/backend/data/stream-selfheal-state.json}"
 HEALTH_STATE="${HEALTH_STATE:-$REPO/backend/data/stream-health-state.json}"
 HISTORY="${SELFHEAL_HISTORY:-$REPO/backend/data/stream-selfheal.log}"
+if [[ $SH_TEST -eq 1 ]]; then LOG="$WATCH_DIR/SUPERVISION-LOG.md"; HISTORY="$WATCH_DIR/stream-selfheal.log"; fi   # 路徑:測試模式強制落 $WATCH_DIR
 
-YTDLP_LINK="${YTDLP_LINK:-$REPO/backend/tools/yt-dlp}"
+if [[ $SH_TEST -eq 1 ]]; then YTDLP_LINK="${YTDLP_LINK:-$WATCH_DIR/yt-dlp-none}"   # 路徑:測試模式預設唔指真 yt-dlp
+else YTDLP_LINK="${YTDLP_LINK:-$REPO/backend/tools/yt-dlp}"; fi
 YTDLP_DIR="$(dirname "$YTDLP_LINK")"
 APPLY_CMD="${SELFHEAL_APPLY_CMD:-$REPO/ops/ytdlp/update-ytdlp.sh --apply}"
 RESTART_CMD="${SELFHEAL_RESTART_CMD:-$REPO/ops/deploy/backend-restart.sh --same-code}"
+# 測試模式 + 預設指令:永遠唔會真 restart/swap(restart 加 --dry-run;apply 唔行)——同 stream-remedy.sh 做法一致
+if [[ $SH_TEST -eq 1 && -z "${SELFHEAL_RESTART_CMD:-}" ]]; then RESTART_CMD="$RESTART_CMD --dry-run"; fi
+if [[ $SH_TEST -eq 1 && -z "${SELFHEAL_APPLY_CMD:-}" ]]; then APPLY_CMD="echo TEST-MODE-default-apply-not-run"; fi
 DRY_RUN="${SELFHEAL_DRY_RUN:-0}"
 RECHECK_SLEEP="${SELFHEAL_RECHECK_SLEEP:-15}"
 
 BASE="${HYMN_STREAM_BASE:-http://127.0.0.1:3001}"
+[[ $SH_TEST -eq 1 ]] && BASE="${HYMN_STREAM_BASE:-http://127.0.0.1:9}"   # 路徑:測試模式預設死 port,唔打真 backend
 IDS=(${SELFHEAL_IDS:-42 77 5431})
 RANGE="${SELFHEAL_RANGE:-0-65535}"
 YT_IDS=(${SELFHEAL_YT_IDS:-PG_J_0gsMXA 7UkwavM5L1E 2GbxXhvdhhA})
@@ -235,12 +283,16 @@ verify_layer_b() {
     url=$(run_capped "$RESOLVE_TIMEOUT" "$YTDLP_LINK" -f "bestaudio[ext=m4a]/bestaudio" \
           --get-url --no-playlist "https://www.youtube.com/watch?v=$yid" | head -1)
     if [[ "$url" != http* ]]; then mf=$((mf+1)); say "  [verifyB] $yid → resolve FAIL"; continue; fi
+    if [[ $SH_TEST -eq 1 ]]; then code=$(${SELFHEAL_CDN_FETCH_CMD:-_sh_cdn_stub} "$url" "$MID_RANGE" 2>/dev/null)   # 測試模式:唔直打 googlevideo
+    else
     code=$(curl -s -o /dev/null -w "%{http_code}" --max-time "$CURL_TIMEOUT" -r "$MID_RANGE" "$url" 2>/dev/null)
+    fi
     say "  [verifyB] $yid → HTTP ${code:-timeout}"
     [[ "$code" == "206" ]] && m=$((m+1)) || mf=$((mf+1))
   done
   VB_MID=$m; VB_MIDFAIL=$mf
 }
+_sh_cdn_stub() { echo 206; }   # 測試模式 verify Layer B 直打 CDN 預設 stub
 verify_layer_a() {
   local o=0 f=0 id code
   for id in "${IDS[@]}"; do
