@@ -59,7 +59,11 @@ trap 'rm -rf "$TMPD"; rmdir "$LOCK" 2>/dev/null' EXIT   # 攞到 lock 先掛,唔
 DRILL_REQ="$WATCH_DIR/stream-drill.request"; DRILL_INFL="$WATCH_DIR/stream-drill.inflight"
 if [[ -e "$DRILL_REQ" || -L "$DRILL_REQ" ]]; then
   DRILL_CMD="${WATCH_DRILL_CMD:-$REPO/ops/stream/stream-remedy.sh}"
-  if mv -f "$DRILL_REQ" "$DRILL_INFL" 2>/dev/null; then
+  # Opus F4:request 唔係普通檔(目錄/symlink/fifo)→ 即刻掉走,唔 mv(mv 目錄會令 inflight 變目錄永遠刪唔走)
+  if [[ -L "$DRILL_REQ" || ! -f "$DRILL_REQ" ]]; then
+    rm -rf "$DRILL_REQ" 2>/dev/null; echo "$(wlib_ts) watch:演習 request 唔係普通檔,已掉走"
+  # Opus F1:mv 保留 mtime,remedy 嘅 10 分鐘期限會由人手 touch 嗰刻起計 → mv 完 touch 一下,期限由呢個 tick 起計
+  elif mv -f "$DRILL_REQ" "$DRILL_INFL" 2>/dev/null && touch "$DRILL_INFL" 2>/dev/null; then
     d0=$(date +%s)
     dout="$(REMEDY_ENGINE=drill wlib_capped_pg "${WATCH_DRILL_CAP:-240}" $DRILL_CMD drill-restart 2>&1)"; drc=$?
     dres="$(printf '%s' "$dout" | grep '^DRILL-RESULT ' | tail -1 | tr -d '\000-\037\177' | wlib_filter)"
