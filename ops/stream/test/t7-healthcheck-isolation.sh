@@ -9,8 +9,9 @@ cp "$SRC/ops/lyrics/stream-healthcheck.sh" "$R/ops/lyrics/"; cp "$SRC/ops/stream
 export HOME="$H" HYMN_STREAM_BASE="http://127.0.0.1:9" SELFHEAL_DRY_RUN=1
 run() { # $1=label
   s=$(date +%s); "$R/ops/lyrics/stream-healthcheck.sh" >/dev/null 2>&1; rc=$?; e=$(( $(date +%s)-s ))
-  echo "$1 | healthcheck exit=$rc elapsed=${e}s | /tmp/hymn_stream_watch.log 新增=$(( $(wc -l < /tmp/hymn_stream_watch.log 2>/dev/null || echo 0) ))行"; }
-: > /tmp/hymn_stream_watch.log
+  echo "$1 | healthcheck exit=$rc elapsed=${e}s | /tmp/hymn_stream_watch.log 新增=$(( $(wc -l < /tmp/hymn_stream_watch.log 2>/dev/null || echo 0) - WL0 ))行"; }
+# Opus AI M1b:唔准 truncate prod log(/tmp/hymn_stream_watch.log 係 healthcheck 寫死嘅路徑);用行數差代替
+WL0=$(wc -l < /tmp/hymn_stream_watch.log 2>/dev/null || echo 0)
 mkwatch() { printf '#!/usr/bin/env bash\n%s\n' "$1" > "$R/ops/stream/stream-watch.sh"; chmod +x "$R/ops/stream/stream-watch.sh"; }
 echo "(healthcheck 對死 port 探測,本身會判 unhealthy;比較只睇 exit code 同耗時)"
 echo "--- 0. 冇 .on 檔(預設 off):watch 唔會被 call"

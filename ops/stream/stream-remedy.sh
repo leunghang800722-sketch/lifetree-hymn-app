@@ -1,5 +1,6 @@
 #!/bin/bash -p
-# (shebang `-p`:bash 3.2 privileged mode,啟動時忽略 BASH_ENV/ENV/SHELLOPTS/BASHOPTS/CDPATH/GLOBIGNORE,堵 env 注入 N1 殘餘)
+# (shebang `-p`:bash 3.2 privileged mode,啟動時忽略 BASH_ENV/ENV/SHELLOPTS/BASHOPTS + 唔 import exported function,堵 env 注入 N1 殘餘;
+#  Opus 實測 -p **唔擋** CDPATH/GLOBIGNORE,而 BASH_ENV 仍會傳落子 script → 下面 set -u 之後顯式 unset)
 # ops/stream/stream-remedy.sh <action> — 串流事故「修復動作」唯一入口(STREAM-WATCH-EXEC-20260929 §1.3)
 #
 # AI(headless claude)同規則診斷共用。AI 冇自由 shell,只准 call 呢支 script;
@@ -26,6 +27,7 @@
 #   SELFHEAL_APPLY_CMD SELFHEAL_RESTART_CMD REMEDY_STATUS_CMD HYMN_STREAM_BASE REMEDY_INCIDENT REMEDY_ENGINE
 #   REMEDY_LIMIT_{PROBE,SWAP,RESTART} REMEDY_TOTAL_{SWAP,RESTART}
 set -u
+unset CDPATH GLOBIGNORE BASH_ENV ENV SHELLOPTS 2>/dev/null   # Opus AI L2:-p 擋唔晒/會傳落子 process
 REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 # 2026-09-29:launchd 冇 WorkingDirectory(cwd=/),backend-restart.sh 靠 `git rev-parse` 搵 repo
 # 會 rc=128。喺呢度 cd 入 repo(子 process 繼承 cwd);入唔到就唔做任何動作。
@@ -93,7 +95,7 @@ INCIDENT="$(printf '%s' "$INCIDENT" | tr -cd 'A-Za-z0-9_-' | cut -c1-40)"; [[ -z
 
 action="${1:-}"; nargs=$#
 
-san() { printf '%s' "$1" | tr -d '\000-\037\177' | cut -c1-200; }   # L2:strip 控制字元/換行、截 200 字
+san() { printf '%s' "$1" | tr -d '\000-\037\177' | perl -CS -pe 's/[\x{85}\x{2028}\x{2029}\x{200b}-\x{200f}\x{202a}-\x{202e}\x{2066}-\x{2069}\x{feff}]//g' | cut -c1-200; }   # L2:strip 控制字元/換行、截 200 字
 log_line() { # $1=result
   [[ "$DRY" == "1" && -z "${REMEDY_LOG:-}" ]] && return 0
   mkdir -p "$(dirname "$LOG")" 2>/dev/null

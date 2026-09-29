@@ -203,7 +203,7 @@ if not isinstance(res, str): out('none')
 paras = [p for p in re.split(r'\n[ \t]*\n', res.strip()) if p.strip()]
 if not paras: out('none')
 lines = [l.rstrip() for l in paras[-1].split('\n') if l.strip()]
-ctl = re.compile(r'[\x00-\x1f\x7f`$]')
+ctl = re.compile(r'[\x00-\x1f\x7f`$\x85\u2028\u2029\u200b-\u200f\u202a-\u202e\u2066-\u2069\ufeff]')  # Opus AI L1:連 Unicode 行分隔/bidi/零寬都 strip(防喺 SUPERVISION-LOG 偽造 ✅ 行)
 if mode == 'r1' and lines and re.fullmatch(r'PROBES:( none)?', lines[0]):
     ign = 0; pr = []
     for l in lines[1:]:
