@@ -20,6 +20,7 @@
 #   `stale` 觸發喺 healthcheck 內結構上幾乎唔會 fire。偵測本身死咗,呢層唔會知。
 # env override(測試):WATCH_DIR WATCH_STATE WATCH_STATUS_CMD WATCH_DIAGNOSE_CMD WATCH_NOTIFY_CMD WATCH_LOG_MD
 #   WATCH_ALERT_FILE WATCH_NOW(epoch,模擬時間) WATCH_DIAG_TIMEOUT WATCH_RENOTIFY_SEC
+# 演習:stream-drill.request → 見 0.5 節;WATCH_DRILL_CMD / WATCH_DRILL_CAP 只係測試 override。
 # 任何子步驟失敗一律吞掉,exit 0(唔准影響 healthcheck)。
 set -u
 REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
@@ -50,6 +51,26 @@ if ! mkdir "$LOCK" 2>/dev/null; then
 fi
 TMPD="$(mktemp -d "${TMPDIR:-/tmp}/streamwatch.XXXXXX" 2>/dev/null)" || { rmdir "$LOCK" 2>/dev/null; exit 0; }
 trap 'rm -rf "$TMPD"; rmdir "$LOCK" 2>/dev/null' EXIT   # 攞到 lock 先掛,唔會拆人哋嘅 lock
+
+# ── 0.5 演習入口(TOKEN-REVOKE-DRILL-EXEC-20260929 Part B)────────────
+# 人手 touch ~/.hymn-deploy/stream-drill.request → 呢個 tick mv 成 inflight → remedy drill-restart(真 --same-code,
+# 喺 launchd context)。一次性;結果 append stream-drill.log;演習任何失敗(rc≠0/hang/spawn 失敗)一律吞,唔影響下面狀態機同 exit 0。
+# stream-watch.off 已喺頂部 exit,所以 off 時唔行演習。
+DRILL_REQ="$WATCH_DIR/stream-drill.request"; DRILL_INFL="$WATCH_DIR/stream-drill.inflight"
+if [[ -e "$DRILL_REQ" || -L "$DRILL_REQ" ]]; then
+  DRILL_CMD="${WATCH_DRILL_CMD:-$REPO/ops/stream/stream-remedy.sh}"
+  if mv -f "$DRILL_REQ" "$DRILL_INFL" 2>/dev/null; then
+    d0=$(date +%s)
+    dout="$(REMEDY_ENGINE=drill wlib_capped_pg "${WATCH_DRILL_CAP:-240}" $DRILL_CMD drill-restart 2>&1)"; drc=$?
+    dres="$(printf '%s' "$dout" | grep '^DRILL-RESULT ' | tail -1 | tr -d '\000-\037\177' | wlib_filter)"
+    [[ -z "$dres" ]] && dres="(冇 DRILL-RESULT)$(printf '%s' "$dout" | tail -2 | tr '\n' ' ' | tr -d '\000-\037\177' | cut -c1-200 | wlib_filter)"
+    printf '%s | watch-rc=%s | total=%ss | %s\n' "$(date '+%Y-%m-%d %H:%M:%S')" "$drc" "$(( $(date +%s) - d0 ))" "$dres" >> "$WATCH_DIR/stream-drill.log" 2>/dev/null
+    echo "$(wlib_ts) DRILL rc=$drc(詳見 stream-drill.log)"
+    rm -f "$DRILL_INFL" 2>/dev/null   # 一次性:萬一 remedy 冇消耗(如 hang 被殺)都唔留低
+  else
+    echo "$(wlib_ts) watch:演習 request mv 失敗,skip"
+  fi
+fi
 
 # ── 1. status ────────────────────────────────────────────────────
 $STATUS_CMD > "$TMPD/status.json" 2>/dev/null; SRC=$?

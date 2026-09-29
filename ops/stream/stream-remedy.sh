@@ -9,6 +9,7 @@
 #   probe <hymnId>         經 localhost 打 /api/stream/<id> Range 0-1MB + 1MB-2MB,回 status/ttfb(唔落檔;每 incident ≤6)
 #   swap-ytdlp             行 selfheal 用緊嘅同一個 apply 指令 + 換咗即重驗 Layer B + 唔過 rollback(每日 ≤1;selfheal 今日換過就唔准)
 #   restart-backend        ops/deploy/backend-restart.sh --same-code(每日 ≤1;連 selfheal 合共 ≤3;gate 唔過唔重試)
+#   drill-restart          (只俾 stream-watch.sh 演習用;要 stream-drill.inflight 存在且 <10 分鐘;每日 ≤1;唔食 restarts 配額;AI 一律拒)
 #   wait                   乜都唔做,記「判為上游暫時性,下一 tick 重驗」
 #   escalate "<reason>"    即刻升級(寫 escalate.request,stream-watch.sh 下次讀到即刻寫警報+通知)
 #
@@ -116,8 +117,8 @@ if dry != '1':
         print("DENY 攞唔到 quota lock: " + str(e)); sys.exit(0)
 st = load(path)
 if st.get('date') != today:
-    st = {'date': today, 'swaps': 0, 'restarts': 0, 'probes': {}}
-st.setdefault('swaps', 0); st.setdefault('restarts', 0); st.setdefault('probes', {})
+    st = {'date': today, 'swaps': 0, 'restarts': 0, 'drills': 0, 'probes': {}}
+st.setdefault('drills', 0); st.setdefault('swaps', 0); st.setdefault('restarts', 0); st.setdefault('probes', {})
 st['probes'] = {k: v for k, v in st['probes'].items() if k == inc}   # 只留當前 incident,唔會無限增長
 sh = load(shpath)
 sh_swaps = sh.get('swapsToday', 0) if sh.get('date') == today else 0
@@ -131,6 +132,9 @@ elif kind == 'swap':
     if st['swaps'] >= ls_: deny = f"swap-ytdlp 今日已用 {st['swaps']}/{ls_}"
     elif st['swaps'] + int(sh_swaps) >= ts_: deny = f"swap-ytdlp 合共(remedy {st['swaps']} + selfheal {sh_swaps})今日已到上限 {ts_}"
     else: st['swaps'] += 1
+elif kind == 'drill':
+    if st['drills'] >= 1: deny = f"drill-restart 今日已用 {st['drills']}/1"
+    else: st['drills'] += 1
 elif kind == 'restart':
     if st['restarts'] >= lr: deny = f"restart-backend 今日已用 {st['restarts']}/{lr}"
     elif st['restarts'] + int(sh_restarts) >= tr: deny = f"restart-backend 合共(remedy {st['restarts']} + selfheal {sh_restarts})今日已到上限 {tr}"
@@ -219,6 +223,44 @@ case "$action" in
     echo "$out" | tail -8 | wlib_filter; echo "restart-backend exit=$rc"
     if [[ $rc -ne 0 ]] && echo "$out" | grep -q 'abort'; then echo "GATE-BLOCKED: 部署 gate 唔俾過,唔會重試/繞過"; log_line "gate-blocked exit=$rc"; exit 1; fi
     log_line "exit=$rc"; [[ $rc -eq 0 ]] && exit 0 || exit 1 ;;
+  drill-restart)
+    # 演習入口(TOKEN-REVOKE-DRILL-EXEC-20260929 Part B):喺真 launchd context 行一次真 --same-code。
+    # N1 教訓:唔准擴大 env 繞過面——呢個 action 唔信任何 env 去「授權」,授權只靠 WATCH_DIR 內由 stream-watch.sh
+    # 由 request mv 出嚟嘅 inflight(prod 下 WATCH_DIR 已被重設做 ~/.hymn-deploy);AI/manual 標籤一律拒。
+    [[ $nargs -eq 1 ]] || reject "drill-restart 唔收參數"
+    ACTION_DESC="drill-restart"
+    [[ "$ENGINE" == "drill" ]] || reject "drill-restart 只准 stream-watch 演習流程叫(REMEDY_ENGINE=drill;AI/手動一律拒)"
+    INFL="$WATCH_DIR/stream-drill.inflight"
+    if [[ -L "$INFL" || ! -f "$INFL" || ! -O "$INFL" ]]; then reject "冇有效 stream-drill.inflight(要係自己嘅普通檔,唔係 symlink)"; fi
+    infl_age=$(( $(date +%s) - $(stat -f %m "$INFL" 2>/dev/null || echo 0) ))
+    if (( infl_age >= 600 )); then reject "stream-drill.inflight 過期(age=${infl_age}s >= 600s)"; fi
+    if [[ "$DRY" == "1" ]]; then echo "DRY-RUN: 會消耗 inflight、記 drills 配額、行 $RESTART_CMD,等 10 秒打 $BASE/api/health"; log_line "dry-run"; exit 0; fi
+    rm -f "$INFL"    # 一次性:一開始就刪,之後任何失敗都唔會重試
+    if ! command -v "$NODE_BIN" >/dev/null 2>&1; then
+      echo "precondition-failed: 搵唔到 $NODE_BIN(PATH=$PATH)"; log_line "precondition-failed: $NODE_BIN not found"; exit 4
+    fi
+    q="$(quota drill)"
+    if [[ "$q" != OK ]]; then echo "QUOTA: ${q#DENY }"; log_line "quota-denied: ${q#DENY }"; exit 3; fi
+    d_pid() { pgrep -f 'backend/server\.js' 2>/dev/null | head -1; }
+    d_lst() { [[ -n "$1" ]] && ps -o lstart= -p "$1" 2>/dev/null | tr -s ' ' || true; }
+    pid0="$(d_pid)"; lst0="$(d_lst "$pid0")"
+    echo "drill: cwd=$(pwd) PATH=$PATH uid=$(id -u) XPC_SERVICE_NAME=${XPC_SERVICE_NAME:-<unset>} PPID=$PPID ppid_comm=$(ps -o comm= -p "$PPID" 2>/dev/null | tr -d '\n') backend_before=${pid0:-none}[$lst0]"
+    echo "run: $RESTART_CMD"
+    t0=$(date +%s)
+    out="$(wlib_capped_pg 200 $RESTART_CMD 2>&1)"; rc=$?
+    dur=$(( $(date +%s) - t0 ))
+    echo "$out" | tail -8 | wlib_filter; echo "restart exit=$rc dur=${dur}s"
+    hcode="skipped"; pid1="$pid0"; lst1="$lst0"
+    if [[ $rc -eq 0 ]]; then
+      sleep "$([[ $TESTMODE -eq 1 ]] && echo "${DRILL_HEALTH_WAIT:-10}" || echo 10)"
+      hcode="$(curl -s -o /dev/null -w '%{http_code}' --max-time 10 "$BASE/api/health" 2>/dev/null)"; [[ -z "$hcode" ]] && hcode=000
+      pid1="$(d_pid)"; lst1="$(d_lst "$pid1")"
+    elif echo "$out" | grep -q 'abort'; then echo "GATE-BLOCKED: 部署 gate 唔俾過,唔會重試/繞過"
+    fi
+    res="DRILL-RESULT cwd=$(pwd) uid=$(id -u) xpc=${XPC_SERVICE_NAME:-unset} ppid=$PPID restart_rc=$rc dur=${dur}s health=$hcode pid_before=${pid0:-none} pid_after=${pid1:-none} lstart_after=${lst1:-none} path=$PATH"
+    echo "$res" | wlib_filter
+    log_line "$(echo "$res" | cut -c14-)"
+    [[ $rc -eq 0 ]] && exit 0 || exit 1 ;;
   wait)
     [[ $nargs -eq 1 ]] || reject "wait 唔收參數"
     ACTION_DESC="wait"; echo "wait: 判為上游暫時性(例如 googlevideo 403 窗),下一 tick 重驗"; log_line "noop"; exit 0 ;;

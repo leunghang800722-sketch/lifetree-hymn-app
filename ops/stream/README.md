@@ -31,7 +31,7 @@ Eric 09-29 拍板:唔要手機推送、唔要 dead-man;出事**自動即刻診�
 | `stream-watch.sh` | 邊緣觸發狀態機(state:`~/.hymn-deploy/stream-watch-state.json`)。ok→bad 只記 incident;bad 連續 2 tick 觸發**一次**診斷;診斷後仲未好再過 2 tick(或診斷員/規則要求 escalate)→ 升級:`~/.hymn-deploy/STREAM-ALERT.md` + `docs/SUPERVISION-LOG.md` 🔴 行 + macOS 通知;已升級每 6 小時重發通知;恢復時只有升級過先發「已恢復」通知(自動修好嘅唔煩人)。 |
 | `stream-diagnose.sh` | 砌診斷包 `~/.hymn-deploy/stream-incident-<id>/bundle.md`(pattern 級遮蓋密鑰/URL 簽名;包自足,AI 唔使讀 repo)→ **AI 預設關**:`~/.hymn-deploy/stream-watch.ai-on` 存在(且冇 `stream-watch.no-ai`)先起 headless `claude -p`,cwd=`stream-incident-<id>/ai/`(只有 bundle.md),`--restricted --setting-sources "" --permission-mode dontAsk --permission-prompts none --tools Read,Grep,Glob,Bash --allowedTools "Read,Grep,Glob,Bash(<絕對路徑>/ops/stream/stream-remedy.sh:*)" --disallowedTools "Edit,Write,NotebookEdit,WebFetch,WebSearch,Agent"`(唔加 `--add-dir`)。VERDICT 只由 `--output-format json` 嘅 `result` 欄最後一個非空段落行首解析;AI 聲稱 `fixed-pending-verify` 但 `stream-remedy.log` 冇本 incident 成功動作 → 降為 escalate。冇 ai-on / 冇 claude / 未登入 / timeout / VERDICT 唔合格 → 行 `stream-diagnose-rules.sh`(`engine=rules`)。結果 `diagnosis.md`。 |
 | `stream-diagnose-rules.sh` | 規則診斷:backend 死/health≠200→`restart-backend`;最近 1 個鐘 resolve 全 fail(total≥3)且閒置 slot yt-dlp 較新→`swap-ytdlp`;最近 1 個鐘(樣本<10 用 3 個鐘)403 率高→`wait`;其餘→`escalate`。讀邊個欄見檔頭。 |
-| `stream-remedy.sh <action>` | AI 同規則共用嘅**唯一**修復入口:`status` / `probe <id>` / `swap-ytdlp` / `restart-backend` / `wait` / `escalate "<reason>"`。其他 exit 2;precondition(node/python3 缺)exit 4 且唔消耗配額。`swap-ytdlp`=行 selfheal 同一 apply 指令 + 換咗即重驗 Layer B + 唔過 rollback(每日 remedy≤1,selfheal 今日換過就唔准)。`restart-backend`=`backend-restart.sh --same-code`(每日 remedy≤1,連 selfheal 合共≤3;gate 唔過唔重試)。配額用 flock,記 `~/.hymn-deploy/stream-remedy-state.json`;每次呼叫記 `stream-remedy.log`(控制字元已 strip、截 200 字)。**危險 env(`REMEDY_STATE`/`REMEDY_LOG`/`REMEDY_DRY_RUN`/`SELFHEAL_*_CMD`/`WATCH_DIR` 等)一律忽略**,只有 `STREAM_WATCH_TEST=1` 且 `REMEDY_STATE` 喺 tmp 下先認(測試用;測試模式下預設 restart 自動加 `--dry-run`、預設 swap 唔真行)。**冇 `bust-resolve-cache`**(冇安全入口,已由 allowlist 同 prompt 移除)。 |
+| `stream-remedy.sh <action>` | AI 同規則共用嘅**唯一**修復入口:`status` / `probe <id>` / `swap-ytdlp` / `restart-backend` / `wait` / `escalate "<reason>"`(另有 `drill-restart`,只供演習,見下節,**唔喺 AI allowlist / prompt / 規則診斷內**)。其他 exit 2;precondition(node/python3 缺)exit 4 且唔消耗配額。`swap-ytdlp`=行 selfheal 同一 apply 指令 + 換咗即重驗 Layer B + 唔過 rollback(每日 remedy≤1,selfheal 今日換過就唔准)。`restart-backend`=`backend-restart.sh --same-code`(每日 remedy≤1,連 selfheal 合共≤3;gate 唔過唔重試)。配額用 flock,記 `~/.hymn-deploy/stream-remedy-state.json`;每次呼叫記 `stream-remedy.log`(控制字元已 strip、截 200 字)。**危險 env(`REMEDY_STATE`/`REMEDY_LOG`/`REMEDY_DRY_RUN`/`SELFHEAL_*_CMD`/`WATCH_DIR` 等)一律忽略**,只有 `STREAM_WATCH_TEST=1` 且 `REMEDY_STATE` 喺 tmp 下先認(測試用;測試模式下預設 restart 自動加 `--dry-run`、預設 swap 唔真行)。**冇 `bust-resolve-cache`**(冇安全入口,已由 allowlist 同 prompt 移除)。 |
 | `stream-watch-lib.sh` | 共用:補 launchd 缺嘅 PATH(`/opt/homebrew/bin` 等)、密鑰過濾 `wlib_filter`(JWT/Twilio/Bearer/URL sig/userinfo/`secret|password|token=` 遮值)、perl alarm timeout(`wlib_capped_pg` 殺自己起嘅 process group)。 |
 
 ### 人手操作
@@ -53,3 +53,14 @@ tail -f /tmp/hymn_stream_watch.log ~/.hymn-deploy/stream-remedy.log
 - 每個 tick(連健康 tick)都會短暫 `mkdir`/`rmdir` `~/.hymn-deploy/stream-watch.lock`(M1:所有 state 讀寫喺 lock 內);攞唔到 lock=成個 tick 零寫。
 - state 損毀(JSON 壞/型別錯)會備份 `stream-watch-state.json.corrupt-<ts>` 並重置,SUPERVISION-LOG 記一行。
 - launchd 下 healthcheck/selfheal 本身冇補 PATH(本層已補,selfheal 未改):見 `STREAM-WATCH-FIX-REPORT-20260929.md`。
+
+### 點做演習(自動 restart 真演習;TOKEN-REVOKE-DRILL-EXEC-20260929 Part B)
+目的:喺真 launchd context(healthcheck tick 內)行一次真 `backend-restart.sh --same-code`,驗最後 `launchctl bootout/bootstrap gui/$UID` 喺 agent context 得唔得。
+```bash
+touch ~/.hymn-deploy/stream-drill.request     # 然後等下一個 healthcheck tick(≤30 分鐘)
+cat ~/.hymn-deploy/stream-drill.log           # 一行:時間 | watch-rc | 總用時 | DRILL-RESULT cwd/uid/xpc/ppid/restart_rc/dur/health/pid_before/pid_after/lstart_after/path
+```
+- `stream-watch.sh` tick 開頭(攞到 lock 後、狀態機前)見到 request → `mv` 成 `stream-drill.inflight` → `REMEDY_ENGINE=drill stream-remedy.sh drill-restart`(上限 240 秒)→ 結果 append `stream-drill.log`。**一次性**;`stream-watch.off` 存在時唔行;演習失敗/逾時唔影響狀態機同 exit 0。
+- `drill-restart` 前置:`REMEDY_ENGINE=drill`(AI/手動/其他標籤 exit 2)、inflight 係自己嘅普通檔(唔准 symlink)且 <10 分鐘,否則 exit 2 零側效應;一開始就刪 inflight;自己每日 ≤1 配額(`drills`,同 `restarts` 互不影響),用晒 exit 3。
+- gate 唔過(HEAD 未 approve)=回報 `GATE-BLOCKED`,唔重試唔繞過——**演習前要先由人 approve + 部署**。成功後等 10 秒打 `/api/health`,記 http code + backend pid/lstart 前後。
+- 測試:`test/t9-drill.sh <scratchdir>`(`STREAM_WATCH_TEST=1`,自動 `--dry-run`,唔會真 restart)。
