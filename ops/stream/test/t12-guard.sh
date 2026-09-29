@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 # T12:prod 模式守衛(STREAM-HARDEN §2.2)——「唔設 env 就冇可能寫 prod」。用法:t12-guard.sh <scratchdir>
+#  (i) 半設 env / (j) watch guard / (k) symlink:見下。L4:凡係 prod 模式 + MANUAL 嘅呼叫,一律只喺 scratch 假 repo 副本行。
 #  (a)(e)(g) 用真 script、唔設 REMEDY_STATE 等任何 env:證明 REFUSED exit 2 + 零寫入(remedy.log/state md5 不變),testlib 快照做雙保險。
 #  (c)(d) 需要「prod 模式 + 可控 .watch-ctx」:用 scratch 假 repo 副本,只 sed 換兩處「真 HOME」取值(remedy 嘅 export HOME、lib 嘅 wlib_real_home)
 #  指去 scratch 假 home——守衛邏輯(wlib_prod_guard/wlib_ctx_valid)原封不動。
@@ -34,16 +35,6 @@ echo "=== (g) 重演事故:zsh 唔拆字 env \$E(整串變成一個 env 賦值,S
 refused "zsh: E='STREAM_WATCH_TEST=1 REMEDY_STATE=/tmp/x' env \$E remedy wait" /bin/zsh -c "E='STREAM_WATCH_TEST=1 REMEDY_STATE=/tmp/x-t12-should-not-exist REMEDY_LOG=/tmp/x-t12.log'; env \$E '$R' wait"
 [[ ! -e /tmp/x-t12-should-not-exist && ! -e /tmp/x-t12.log ]]; chk "/tmp/x-t12* 冇被建" $?
 fi
-echo "=== (b) 明示 MANUAL(真 script,dry-run → 零寫入)==="
-b1="$(prodsum)"
-(cd / && "${NOENV[@]}" REMEDY_MANUAL=1 REMEDY_DRY_RUN=1 "$R" wait) >"$S/out" 2>"$S/err"; rc=$?; [[ $rc -eq 0 ]] && grep -q '^wait:' "$S/out"; chk "REMEDY_MANUAL=1 REMEDY_DRY_RUN=1 wait → 行到(rc=$rc)" $?
-(cd / && "${NOENV[@]}" REMEDY_MANUAL=1 REMEDY_DRY_RUN=1 "$R" restart-backend) >"$S/out" 2>"$S/err"; rc=$?; [[ ($rc -eq 0 || $rc -eq 3) ]] && ! grep -q REFUSED "$S/err"; chk "REMEDY_MANUAL=1 DRY restart-backend → 過守衛(rc=$rc:0 DRY-RUN 或 3 今日配額用晒,唔係 2)" $?
-[[ "$b1" == "$(prodsum)" ]]; chk "(b) 前後 prod 摘要不變" $?
-echo "=== (f) diagnose MANUAL(prod 模式 + DIAG_MANUAL=1,DIAG_DIR=scratch + 預製 bundle/facts + 規則 + REMEDY_DRY_RUN=1)==="
-(cd / && "${NOENV[@]}" DIAG_MANUAL=1 DIAG_DIR="$S/diag-manual" DIAG_FORCE_RULES=1 REMEDY_DRY_RUN=1 DIAG_BUNDLE_FILE="$T/fixtures/bundle-backend-down.md" DIAG_FACTS_FILE="$T/fixtures/facts-backend-down.env" "$DG" t12man) >"$S/out" 2>"$S/err"
-rc=$?; [[ $rc -eq 0 ]] && grep -q '^engine=rules' "$S/out" && ! grep -q REFUSED "$S/err"; chk "DIAG_MANUAL=1 diagnose → 行到(rc=$rc)$(grep -E '^(engine|VERDICT|ACTIONS)' "$S/out" | tr '\n' ' ')" $?
-[[ "$b1" == "$(prodsum)" ]]; chk "(f) 前後 prod 摘要不變" $?
-
 echo "=== 假 repo(prod 模式 + 可控 .watch-ctx)==="
 FR="$S/fr"; FH="$S/fh"; mkdir -p "$FR/ops/stream" "$FR/backend/data" "$FH/.hymn-deploy"
 cp "$SRC/stream-remedy.sh" "$SRC/stream-diagnose.sh" "$SRC/stream-diagnose-rules.sh" "$SRC/stream-watch-lib.sh" "$FR/ops/stream/"
@@ -57,6 +48,15 @@ fr() { (cd / && "${FENV[@]}" "$@") >"$S/out" 2>"$S/err"; }
 # 自己起嘅活 pid(sleep,測試尾巴自己收)
 /bin/sleep 120 & LIVE=$!; sleep 0.3; echo "  測試自起 live pid=$LIVE  $(ps -o pid=,ppid=,lstart=,command= -p $LIVE)"
 /bin/sleep 0.1 & DEAD=$!; wait $DEAD 2>/dev/null
+echo "=== (b) 明示 MANUAL(L4:只喺 scratch 假 repo 副本 + 假 home 行;真 repo 唔准用 prod 模式跑)==="
+b1="$(prodsum)"
+fr REMEDY_MANUAL=1 REMEDY_DRY_RUN=1 "$FR_R" wait; rc=$?; [[ $rc -eq 0 ]] && grep -q '^wait:' "$S/out"; chk "假 repo:MANUAL 加 DRY wait → 行到(rc=$rc)" $?
+fr REMEDY_MANUAL=1 REMEDY_DRY_RUN=1 "$FR_R" restart-backend; rc=$?; [[ ($rc -eq 0 || $rc -eq 3) ]] && ! grep -q REFUSED "$S/err"; chk "假 repo:MANUAL 加 DRY restart-backend → 過守衛(rc=$rc)" $?
+[[ ! -e "$FLOG" ]]; chk "(b) 假 home remedy.log 冇被寫(DRY)" $?
+echo "=== (f) diagnose 人手模式(假 repo 副本 + 假 home + DRY + 規則 + 預製 bundle/facts)==="
+fr DIAG_MANUAL=1 DIAG_DIR="$S/diag-manual" DIAG_FORCE_RULES=1 REMEDY_DRY_RUN=1 DIAG_BUNDLE_FILE="$T/fixtures/bundle-backend-down.md" DIAG_FACTS_FILE="$T/fixtures/facts-backend-down.env" "$FR_D" t12man
+rc=$?; [[ $rc -eq 0 ]] && grep -q '^engine=rules' "$S/out" && ! grep -q REFUSED "$S/err"; chk "假 repo:diagnose 人手 → 行到(rc=$rc)$(grep -E '^(engine|VERDICT|ACTIONS)' "$S/out" | tr '\n' ' ')" $?
+[[ "$b1" == "$(prodsum)" ]]; chk "(b)(f) 前後真 prod 摘要不變" $?
 echo "=== (c) .watch-ctx 存在但 pid 已死 → REFUSED ==="
 printf 'pid=%s ts=%s\n' "$DEAD" "$(date +%s)" > "$CTX"; rm -f "$FLOG"
 fr "$FR_R" wait; rc=$?; [[ $rc -eq 2 && ! -e "$FLOG" ]] && grep -q REFUSED "$S/err"; chk "remedy:dead pid → exit 2、零寫入(remedy.log 不存在)rc=$rc" $?
@@ -81,6 +81,28 @@ rm -f "$CTX"
 echo "=== (h) 測試模式(STREAM_WATCH_TEST=1 + tmp REMEDY_STATE)唔受守衛限制(t1–t11 靠佢),但 REMEDY_STATE 唔喺 tmp 就跌返 prod → REFUSED ==="
 fr STREAM_WATCH_TEST=1 REMEDY_STATE="$S/h.json" REMEDY_LOG="$S/h.log" WATCH_DIR="$S/hwd" "$FR_R" wait; rc=$?; [[ $rc -eq 0 ]]; chk "測試模式 tmp state → 行到 rc=$rc" $?
 fr STREAM_WATCH_TEST=1 REMEDY_STATE="$REALHOME/x.json" "$FR_R" wait; rc=$?; [[ $rc -eq 2 ]]; chk "STREAM_WATCH_TEST=1 但 state 唔喺 tmp → exit 2 rc=$rc" $?
+if [[ $SKIPREAL -eq 0 ]]; then
+echo "=== (i) M1:半設 env → REFUSED(真 script、prod 模式、無憑證⇒零寫入)==="
+i0="$(prodsum)"; ISM="$(/sbin/md5 -q /tmp/hymn_stream_watch.log 2>/dev/null)"
+mkdir -p "$S/half"
+for combo in "REMEDY_STATE=$S/half/s.json" "REMEDY_STATE=$S/half/s.json REMEDY_LOG=$S/half/l.log" "REMEDY_STATE=$S/half/s.json WATCH_DIR=$S/half/wd" "REMEDY_LOG=$S/half/l.log WATCH_DIR=$S/half/wd" "WATCH_DIR=$S/half/wd"; do
+  refused "half-env[$(echo "$combo" | sed "s#$S/half/##g")] escalate" env -i PATH=/usr/bin:/bin:/usr/sbin:/sbin HOME="$REALHOME" STREAM_WATCH_TEST=1 $combo "$R" escalate "t12 half env"
+done
+[[ ! -e "$REALHOME/.hymn-deploy/stream-escalate.request" && -z "$(ls -A "$S/half")" ]]; chk "半設 env:真 stream-escalate.request 冇出現、scratch 半設路徑冇被建" $?
+[[ "$i0" == "$(prodsum)" ]]; chk "(i) 前後真 prod 摘要不變" $?
+echo "=== (j) M2:watch guard(真 watch script;預期全部拒絕⇒零寫入,故可喺真 repo 跑)==="
+W="$SRC/stream-watch.sh"; j0="$(prodsum)"; JLOG="$(/sbin/md5 -q "$SRC/../../docs/SUPERVISION-LOG.md" 2>/dev/null)"; JW="$(/sbin/md5 -q /tmp/hymn_stream_watch.log 2>/dev/null)"
+(cd / && env -u STREAM_WATCH_TEST CLAUDECODE=1 "$W") >"$S/out" 2>"$S/err"; rc=$?; [[ $rc -eq 2 ]] && grep -q '^REFUSED' "$S/err"; chk "watch + CLAUDECODE=1(冇 WATCH_MANUAL)→ exit 2 REFUSED rc=$rc" $?
+(cd / && "${NOENV[@]}" STREAM_WATCH_TEST=1 WATCH_DIR=/usr/local/t12-nonexistent-wd "$W") >"$S/out" 2>"$S/err"; rc=$?; [[ $rc -eq 2 ]] && grep -q '^REFUSED' "$S/err"; chk "watch + STREAM_WATCH_TEST=1 但 WATCH_DIR 唔喺 tmp(用寫唔入嘅 /usr/local 路徑,壞咗都寫唔到真 home) → exit 2 rc=$rc" $?
+(cd / && "${NOENV[@]}" STREAM_WATCH_TEST=1 WATCH_DIR="$S/jwd" WATCH_LOG_MD=/usr/local/t12-nonexistent-log.md "$W") >"$S/out" 2>"$S/err"; rc=$?; [[ $rc -eq 2 && ! -e "$S/jwd" ]]; chk "watch + 測試模式但 WATCH_LOG_MD 唔喺 tmp(同樣用寫唔入路徑) → exit 2 rc=$rc" $?
+[[ "$j0" == "$(prodsum)" && "$JLOG" == "$(/sbin/md5 -q "$SRC/../../docs/SUPERVISION-LOG.md" 2>/dev/null)" && "$JW" == "$(/sbin/md5 -q /tmp/hymn_stream_watch.log 2>/dev/null)" ]]; chk "(j) 前後真 ~/.hymn-deploy、SUPERVISION-LOG、watch log 不變" $?
+echo "=== (k) L1 symlink:scratch symlink → 非 tmp 目錄(/usr,寫唔入)"
+mkdir -p "$S/k"; ln -s /usr "$S/k/lnk"
+(eval "$(sed -n '/^_sw_tmpok()/,/^}/p' "$SRC/stream-remedy.sh")"; _sw_tmpok "$S/k/lnk/x"); [[ $? -ne 0 ]]; chk "remedy _sw_tmpok:symlink→/usr 被拒" $?
+(eval "$(sed -n '/^_sw_tmpok()/,/^}/p' "$SRC/stream-remedy.sh")"; _sw_tmpok "$S/k/plain/x"); chk "remedy _sw_tmpok:普通 scratch 路徑接受" $?
+(eval "$(sed -n '/^tl_tmpok()/,/^}/p' "$T/testlib.sh")"; tl_tmpok "$S/k/lnk/x"); [[ $? -ne 0 ]]; chk "testlib tl_tmpok:symlink→/usr 被拒" $?
+refused "remedy:三個 env 齊但經 symlink 指出 tmp → 當 prod → REFUSED" env -i PATH=/usr/bin:/bin:/usr/sbin:/sbin HOME="$REALHOME" STREAM_WATCH_TEST=1 REMEDY_STATE="$S/k/lnk/s.json" REMEDY_LOG="$S/k/lnk/l.log" WATCH_DIR="$S/k/lnk/wd" "$R" wait
+fi
 echo "=== 收尾:殺自己起嘅 sleep pid=$LIVE(核 PPID=$$ + 命令行)==="
 ps -o pid=,ppid=,command= -p "$LIVE"; if [[ "$(ps -o ppid= -p "$LIVE" | tr -d ' ')" == "$$" && "$(ps -o command= -p "$LIVE")" == "/bin/sleep 120" ]]; then kill "$LIVE"; wait "$LIVE" 2>/dev/null; echo killed; fi
 echo "=== 總結:FAILS=$FAILS ==="

@@ -3,8 +3,22 @@
 基準 HEAD `fa16c5a`。執行:Sonnet(只出證據,唔判 PASS/FAIL,Opus 驗收要用「唔設任何 env 直接跑」做負控)。
 scratch:`/private/tmp/claude-501/-Users-macbookpro--openclaw-workspace-hymn-app/dbef9ccd-547a-4212-8309-0735348d98c1/scratchpad/harden/`(`t*.final2.out` 係最後一輪 t1–t12 全輸出、`v3.result`、`v3.sh`、`v2-neg.sh`)。
 
-## 2.1 根因(俾 Eric 睇)
-兩次事故(Opus 第二輪 t2 section D;Opus 最終驗收 20:47 zsh `env $E …`)同 Fable 中午誤觸,共同點:**remedy/diagnose 預設就係 prod 模式**,測試模式要靠 caller 記得設 `STREAM_WATCH_TEST=1` + tmp 路徑。一個 shell 拆字差異(zsh 唔拆 `$E`,整串變成一個 env 賦值)、一次 edit 出錯,就靜靜跌落 prod。設計上「忘記 = 寫 prod」係錯嘅方向。今次改成「忘記 = 拒絕」:prod 模式要 watch tick 內先有嘅憑證(或者人手明示 MANUAL),否則 exit 2、零寫入;測試 harness 再加一道 prod 快照斷言做最後防線。
+## 2.1 根因(俾 Eric 睇)(第二輪按 Opus 驗收第 7 點修正)
+三次事故,唔係「同一個手誤」:
+1. **Opus 第二輪 t2 section D**:嗰個 case 係**故意模擬 prod**,靠 `HOME=假 home` 將寫入引開。F6 之後 prod 模式一律用真 home,HOME 引唔開,結果就寫咗落真 home。(唔係「忘記設 env」。)
+2. **Opus 最終驗收 20:47 zsh `env $E …`**:zsh 唔拆字,整串變成一個 env 賦值,`STREAM_WATCH_TEST` 唔係 `1`,靜靜跌落 prod。
+3. **執行者 21:30 跑 t7 寫咗 2 行真 watch log**:watch / healthcheck 本身**冇測試模式**,而且 healthcheck 寫死 `/tmp/hymn_stream_watch.log`。第一輪加嘅 remedy/diagnose guard 擋唔到;真正修好佢嘅係 t7 個 sed(副本換路徑),快照只係事後捉到。
+另外 Fable 中午誤觸真 yt-dlp swap。
+
+共同點:remedy/diagnose 預設就係 prod 模式,測試模式靠 caller 記得設齊 env。「忘記 = 寫 prod」係錯方向,改成「忘記 = 拒絕」。**適用範圍(如實)**:remedy、diagnose、watch(第二輪補)。第一輪只包「完全唔設 env」;Opus 揪出「設咗一半」(M1:只設 `STREAM_WATCH_TEST` + tmp `REMEDY_STATE`,log/escalate.request 就落真 home)同 watch 冇 guard(M2),第二輪已補:remedy 測試模式要 `REMEDY_STATE`、`REMEDY_LOG`、`WATCH_DIR` 三個齊 + 解析 symlink 後喺 tmp;watch 入口有 guard。**唔包**:`ops/lyrics/stream-healthcheck.sh`、`stream-selfheal.sh`(範圍外,紅線唔准改;t7 靠 scratch 副本 + 快照斷言兜底)。測試 harness 另有 prod 快照斷言(第二輪加:watch log md5、`stream-*.log`、yt-dlp symlink 目標、backend pid)做最後防線,但係「事後偵測」唔係預防。
+
+**Eric 白話版**:以前測試如果漏咗一個開關、或者開咗一半,程式會當真咁寫入正式紀錄,甚至彈真通知。而家做法係「唔肯定就唔做」:修復同診斷程式,要監察程式自己排程行嗰陣、或者有人明確講「我係人手行」先肯寫;測試要成套安全設定齊晒、而且全部指去臨時目錄先當測試。監察程式本身而家亦一樣:喺 Claude 入面直接行會被拒,測試用法就一定要用臨時目錄,唔會掂正式紀錄同通知。測試跑完仲會對比正式檔案有冇變、歌曲來源程式有冇被換、主程式有冇重開,有變就即刻報紅。唔包嘅係另外兩個舊檢查程式(每半小時嗰個同自動修復),因為唔准改。
+
+## 第二輪(STREAM-HARDEN-EXEC 第二輪)改動摘要
+- M1:remedy 測試模式判定 = `STREAM_WATCH_TEST=1` 且 `REMEDY_STATE`+`REMEDY_LOG`+`WATCH_DIR` 齊 + 解析 symlink 後喺 tmp;測試模式 `SELFHEAL_STATE` 預設 `$WATCH_DIR/selfheal-state.json`(diagnose 測試模式同)。
+- M2:`stream-watch.sh` 入口 guard(CLAUDECODE 拒 / 測試模式 WATCH_DIR+STATE+LOG_MD+ALERT 要 tmp,LOG_MD/ALERT 預設 WATCH_DIR、notify 預設 `/usr/bin/true`)。
+- M3:testlib 預設 export `WATCH_LOG_MD`、`WATCH_NOTIFY_CMD`(stub)、`STUB_DIR`;快照加 watch log md5、`backend/data/stream-*.log`、yt-dlp readlink、:3001 pid(`PROD-RESTART DETECTED`)。
+- L1:三處 `tmpok` 改 python `os.path.realpath`。L4:t12 (b)(f)、t9 B-7 改用 scratch 假 repo 副本。L5:watch 收尾 trap 只刪 pid==$$ 嘅 ctx。t12 新增 (i) 半設 env、(j) watch guard、(k) symlink。
 
 ## Part 1 四個小瑕疵
 | # | 狀態 |

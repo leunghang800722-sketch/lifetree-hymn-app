@@ -77,10 +77,15 @@ rm -f "$D/wd/rs.json"; touch "$D/wd/stream-drill.inflight"
 E REMEDY_ENGINE=drill DRILL_PGREP_PAT="$TOK" FAKEPID_FILE="$D/fakepid" SELFHEAL_RESTART_CMD="$T/stub-drill-kill.sh" HYMN_STREAM_BASE="http://127.0.0.1:9" "$R" drill-restart 2>&1 | grep -E "^(drill:|DRILL-RESULT|restart exit)" | sed 's/path=.*//'
 echo "   假 backend 仍存活?$(ps -p $FP >/dev/null 2>&1 && echo yes || echo no)(預期 no);DRILL-RESULT 應 restart_rc=1 health=000 pid_after=none"
 kill "$FP" 2>/dev/null; wait "$FP" 2>/dev/null
-echo "=== B-7. F6:HOME 唔可以搬 state。測試模式 + scratch REMEDY_STATE 下 HOME=/tmp/x 唔改路徑;prod 模式用 REMEDY_DRY_RUN=1(零寫入)+ xtrace 睇解析出嚟嘅 WATCH_DIR/STATE ==="
+echo "=== B-7. F6:HOME 唔可以搬 state(L4:改用 scratch 假 repo 副本 + sed 換真 home 取值,唔喺真 repo 行 prod 模式)==="
+FR="$D/fr"; FH="$D/fh"; mkdir -p "$FR/ops/stream" "$FR/backend/data" "$FH/.hymn-deploy"
+cp "$T/../stream-remedy.sh" "$T/../stream-watch-lib.sh" "$FR/ops/stream/"
+sed -i '' 's|^  export HOME="\$_sw_home"$|  export HOME="'"$FH"'"|' "$FR/ops/stream/stream-remedy.sh"
+sed -i '' 's|^wlib_real_home() {$|wlib_real_home() { printf "%s" "'"$FH"'"; return 0;|' "$FR/ops/stream/stream-watch-lib.sh"
+grep -q "export HOME=\"$FH\"" "$FR/ops/stream/stream-remedy.sh" && echo "   假 repo 已 patch(HOME=$FH)" || echo "   假 repo patch 失敗"
 mkdir -p /tmp/x-f6-home 2>/dev/null
-echo "--- prod 模式(冇 STREAM_WATCH_TEST;§2.2 後要 REMEDY_MANUAL=1 先過守衛)、HOME=/tmp/x-f6-home、DRY-RUN:xtrace 出嚟嘅 HOME/WATCH_DIR/STATE 賦值"
-(cd / && env -i HOME=/tmp/x-f6-home PATH=/usr/bin:/bin REMEDY_MANUAL=1 REMEDY_DRY_RUN=1 /bin/bash -p -x "$R" wait 2>&1 | grep -E "^\++ (export )?(HOME|WATCH_DIR|STATE|LOG)=" | sed 's/^+* //')
-echo "   /tmp/x-f6-home 之下有冇被寫嘢?$(ls -A /tmp/x-f6-home | wc -l | tr -d ' ')(預期 0)"; rmdir /tmp/x-f6-home 2>/dev/null
+echo "--- 假 repo 副本 prod 模式(冇 STREAM_WATCH_TEST)、HOME=/tmp/x-f6-home、DRY-RUN:xtrace 出嚟嘅 HOME/WATCH_DIR/STATE 賦值(HOME 應被覆蓋,唔係 /tmp/x-f6-home)"
+(cd / && env -i HOME=/tmp/x-f6-home PATH=/usr/bin:/bin REMEDY_MANUAL=1 REMEDY_DRY_RUN=1 /bin/bash -p -x "$FR/ops/stream/stream-remedy.sh" wait 2>&1 | grep -E "^\++ (export )?(HOME|WATCH_DIR|STATE|LOG)=" | sed 's/^+* //')
+echo "   /tmp/x-f6-home 之下有冇被寫嘢?$(ls -A /tmp/x-f6-home | wc -l | tr -d ' ')(預期 0);假 home 之下有冇被寫嘢?$(ls -A "$FH/.hymn-deploy" | wc -l | tr -d ' ')(預期 0)"; rmdir /tmp/x-f6-home 2>/dev/null
 echo "=== 收尾:殺自己起嘅 http server pid=$HP(核 lstart/命令)==="
 ps -o pid=,ppid=,lstart=,command= -p "$HP"; kill "$HP" 2>/dev/null; sleep 0.5; ps -p "$HP" >/dev/null 2>&1 && echo "仍在" || echo "已停"
