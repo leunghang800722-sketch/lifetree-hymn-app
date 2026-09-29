@@ -7,6 +7,10 @@ set -u
 S="${1:?}"; T="$(cd "$(dirname "$0")" && pwd)"; SRC="$(cd "$T/../../.." && pwd)"
 R="$S/t7/repo"; H="$S/t7/home"; rm -rf "$S/t7"; mkdir -p "$R/ops/lyrics" "$R/ops/stream" "$R/docs" "$R/backend/data" "$H/.hymn-deploy"
 cp "$SRC/ops/lyrics/stream-healthcheck.sh" "$R/ops/lyrics/"; cp "$SRC/ops/stream/stream-selfheal.sh" "$R/ops/stream/"
+# STREAM-HARDEN 1a 根治(Fable):healthcheck 寫死 /tmp/hymn_stream_watch.log,紅線唔准改真 healthcheck,
+# 但呢個係 scratch **副本**——直接將副本嘅路徑換去 scratch,令 t7 結構上冇可能再寫 prod log(上面行數 assert 保留做第二防線)。
+sed -i '' "s#/tmp/hymn_stream_watch.log#$S/t7/watch.log#g" "$R/ops/lyrics/stream-healthcheck.sh"
+grep -q "/tmp/hymn_stream_watch.log" "$R/ops/lyrics/stream-healthcheck.sh" && { echo "t7: 副本仍含 prod log 路徑,abort"; exit 2; }
 export HOME="$H" WATCH_DIR="$H/.hymn-deploy" HYMN_STREAM_BASE="http://127.0.0.1:9" SELFHEAL_DRY_RUN=1
 run() { # $1=label
   s=$(date +%s); "$R/ops/lyrics/stream-healthcheck.sh" >/dev/null 2>&1; rc=$?; e=$(( $(date +%s)-s ))
