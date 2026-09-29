@@ -141,7 +141,7 @@
 ## 側效應(如實)
 
 - ⚠️ **我寫咗 3 行落 prod `~/.hymn-deploy/stream-remedy.log`(違反「唔寫 ~/.hymn-deploy」)。**
-  - 20:47:13–15,`engine=manual incident=20260929-190631`:`wait | noop`、`status | exit=0`、`status | exit=127`。
+  - 20:47:13–15,`engine=manual incident=20260929-190631`:`wait | noop`、`status | exit=0`、`status | exit=1`(舊版副本搵唔到 status script)。
   - 成因:第一次 CDPATH/BASH_ENV 測試喺 zsh 用咗 `env $E …`。zsh 唔會將 `$E` 拆字,`STREAM_WATCH_TEST` 冇設到,remedy 就行咗 prod 模式。
   - 行咗嘅只係 `wait`(乜都唔做)同 `status`(行真 `stream-status.sh`,唯讀,冇 curl)。**冇掂配額 state、冇 restart、冇 swap、冇 drill**。
   - 冇刪嗰 3 行(刪都係寫 prod)。之後嘅測試全部改用 bash script 加 tmp guard 重做,前後 snapshot 一致。
@@ -157,5 +157,12 @@
 - 冇 restart、冇 launchctl、冇 approve、冇 OTA、冇 swap、冇 drill.request/inflight、冇打 YouTube/googlevideo、冇真模型 call、冇讀 .env/secret/keychain/users.db、冇改 code、冇 git 寫操作。
 - `docs/SUPERVISION-LOG.md`、`backend/**` 冇寫(md5 前後不變)。唯一寫入 repo 嘅檔係本報告。
 
-## 補記:下一個 tick(約 21:07)
-(見下)
+## 補記:下一個 tick(21:07)✅ 冇誤報
+- `stream-health.log`:`21:07 ok=3 fail=0 mid=2 midfail=1 consecutiveFail=0 B:PG_J_0gsMXA:302`。Layer B 有一首 302,屬平時嘅間歇噪音,`consecutiveFail` 仍然係 0。
+- watch state:`ok badTicks=0 diagnosed=False notifyCount=0`。
+- SUPERVISION-LOG:20:12 之後冇新行。
+- `~/.hymn-deploy`:冇 ALERT、冇 incident 目錄、冇 drill 殘留。
+- deploy.log:冇新 restart。
+- backend:仍然係 91265(20:37:25 起),health 200。
+- 備註:`/tmp/hymn_stream_watch.log` 今個 tick 冇加行,因為 ok→ok 係靜音嘅。
+- 更正:remedy.log 最後一行(我 20:47:15 誤寫嗰行)係 `status | exit=1`,唔係 `exit=127`。
