@@ -6,6 +6,9 @@
 #     所有 source 呢個 lib 嘅 script 統一補 PATH。(healthcheck/selfheal 本身嘅 PATH 唔喺本層改。)
 export PATH="/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
 
+# launchd 冇 USER:claude 用帳戶名搵 keychain 憑證,冇 USER 會報 Not logged in(09-29 實測)。全線 source 者受惠。
+export USER="${USER:-$(id -un)}"
+
 WATCH_DIR="${WATCH_DIR:-$HOME/.hymn-deploy}"
 
 # 密鑰/URL 過濾(M4:pattern 級遮蓋,唔再成行刪走——正常診斷字眼同 🔴 行骨架要保留)。stdin → stdout。

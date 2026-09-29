@@ -1,4 +1,5 @@
-#!/usr/bin/env bash
+#!/bin/bash -p
+# (shebang `-p`:bash 3.2 privileged mode,啟動時忽略 BASH_ENV/ENV/SHELLOPTS/BASHOPTS/CDPATH/GLOBIGNORE,堵 env 注入 N1 殘餘)
 # ops/stream/stream-remedy.sh <action> — 串流事故「修復動作」唯一入口(STREAM-WATCH-EXEC-20260929 §1.3)
 #
 # AI(headless claude)同規則診斷共用。AI 冇自由 shell,只准 call 呢支 script;
@@ -46,6 +47,15 @@ else
         REMEDY_LIMIT_PROBE REMEDY_LIMIT_SWAP REMEDY_LIMIT_RESTART REMEDY_TOTAL_SWAP REMEDY_TOTAL_RESTART \
         SELFHEAL_YT_IDS SELFHEAL_MID_RANGE SELFHEAL_RESOLVE_TIMEOUT SELFHEAL_CURL_TIMEOUT
   [[ $_sw_dry -eq 1 ]] && REMEDY_DRY_RUN=1
+  # F6(Opus 驗收 drill):HOME 都係搬 WATCH_DIR/state 嘅入口(`HOME=/tmp/x stream-remedy.sh …`)。
+  # prod 模式一律用「本 uid 帳戶」嘅真 home 覆蓋(絕對路徑 dscl,唔信 caller PATH);攞唔到就拒,唔靜靜沿用 caller 嘅 HOME。
+  _sw_user="$(/usr/bin/id -un 2>/dev/null)"
+  _sw_home="$(/usr/bin/dscl . -read "/Users/$_sw_user" NFSHomeDirectory 2>/dev/null | /usr/bin/awk '{print $2}')"
+  if [[ -z "$_sw_home" || "$_sw_home" != /* || ! -d "$_sw_home" ]]; then
+    _sw_home="$(eval echo "~$_sw_user" 2>/dev/null)"
+  fi
+  if [[ -z "$_sw_home" || "$_sw_home" != /* || ! -d "$_sw_home" ]]; then echo "REJECTED: 攞唔到真 HOME" >&2; exit 2; fi
+  export HOME="$_sw_home"
 fi
 . "$REPO/ops/stream/stream-watch-lib.sh"
 
@@ -165,6 +175,11 @@ verify_swap() {
   [[ $m -ge 2 ]]
 }
 
+# AI 引擎(REMEDY_ENGINE=ai)只准六個動作(drill-restart 等其他一律拒)
+if [[ "$ENGINE" == "ai" ]]; then
+  case "$action" in status|probe|wait|escalate|swap-ytdlp|restart-backend) ;; *) reject "engine=ai 唔准動作 '${action:0:40}'" ;; esac
+fi
+
 case "$action" in
   status)
     [[ $nargs -eq 1 ]] || reject "status 唔收參數"
@@ -241,7 +256,8 @@ case "$action" in
     fi
     q="$(quota drill)"
     if [[ "$q" != OK ]]; then echo "QUOTA: ${q#DENY }"; log_line "quota-denied: ${q#DENY }"; exit 3; fi
-    d_pid() { pgrep -f 'backend/server\.js' 2>/dev/null | head -1; }
+    d_pat='backend/server\.js'; [[ $TESTMODE -eq 1 && -n "${DRILL_PGREP_PAT:-}" ]] && d_pat="$DRILL_PGREP_PAT"   # 只測試模式可換(t9 F2 用 scratch 假 backend)
+    d_pid() { pgrep -f "$d_pat" 2>/dev/null | head -1; }
     d_lst() { [[ -n "$1" ]] && ps -o lstart= -p "$1" 2>/dev/null | tr -s ' ' || true; }
     pid0="$(d_pid)"; lst0="$(d_lst "$pid0")"
     echo "drill: cwd=$(pwd) PATH=$PATH uid=$(id -u) XPC_SERVICE_NAME=${XPC_SERVICE_NAME:-<unset>} PPID=$PPID ppid_comm=$(ps -o comm= -p "$PPID" 2>/dev/null | tr -d '\n') backend_before=${pid0:-none}[$lst0]"
@@ -250,13 +266,13 @@ case "$action" in
     out="$(wlib_capped_pg 200 $RESTART_CMD 2>&1)"; rc=$?
     dur=$(( $(date +%s) - t0 ))
     echo "$out" | tail -8 | wlib_filter; echo "restart exit=$rc dur=${dur}s"
-    hcode="skipped"; pid1="$pid0"; lst1="$lst0"
-    if [[ $rc -eq 0 ]]; then
-      sleep "$([[ $TESTMODE -eq 1 ]] && echo "${DRILL_HEALTH_WAIT:-10}" || echo 10)"
-      hcode="$(curl -s -o /dev/null -w '%{http_code}' --max-time 10 "$BASE/api/health" 2>/dev/null)"; [[ -z "$hcode" ]] && hcode=000
-      pid1="$(d_pid)"; lst1="$(d_lst "$pid1")"
+    # F2(Opus 驗收 drill):restart 成敗都重新量(只讀 pgrep/ps + 一次 GET /api/health),唔抄 before 值,
+    # 免得 backend 死咗都似仍然生存。rc=0 先等 10 秒俾新 process 起身;失敗唔等。
+    if [[ $rc -eq 0 ]]; then sleep "$([[ $TESTMODE -eq 1 ]] && echo "${DRILL_HEALTH_WAIT:-10}" || echo 10)"
     elif echo "$out" | grep -q 'abort'; then echo "GATE-BLOCKED: 部署 gate 唔俾過,唔會重試/繞過"
     fi
+    hcode="$(curl -s -o /dev/null -w '%{http_code}' --max-time 10 "$BASE/api/health" 2>/dev/null)"; [[ -z "$hcode" ]] && hcode=000
+    pid1="$(d_pid)"; lst1="$(d_lst "$pid1")"
     res="DRILL-RESULT cwd=$(pwd) uid=$(id -u) xpc=${XPC_SERVICE_NAME:-unset} ppid=$PPID restart_rc=$rc dur=${dur}s health=$hcode pid_before=${pid0:-none} pid_after=${pid1:-none} lstart_after=${lst1:-none} path=$PATH"
     echo "$res" | wlib_filter
     log_line "$(echo "$res" | cut -c14-)"
