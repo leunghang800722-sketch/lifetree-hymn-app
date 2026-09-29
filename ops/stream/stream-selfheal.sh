@@ -82,6 +82,9 @@ set -u
 # 喺呢度補 PATH(子 process 繼承);只影響搵 binary,唔改修復梯/配額/節流任何邏輯。
 export PATH="/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
 REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+# 2026-09-29:launchd 冇 WorkingDirectory(cwd=/),backend-restart.sh 靠 `git rev-parse` 搵 repo
+# 會 rc=128。喺呢度 cd 入 repo(子 process 繼承 cwd);入唔到就唔做任何動作。
+cd "$REPO" || { echo "cannot cd to $REPO" >&2; exit 1; }
 
 LOG="${SELFHEAL_LOG_MD:-$REPO/docs/SUPERVISION-LOG.md}"
 STATE="${SELFHEAL_STATE:-$REPO/backend/data/stream-selfheal-state.json}"

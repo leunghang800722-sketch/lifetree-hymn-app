@@ -25,6 +25,9 @@
 #   REMEDY_LIMIT_{PROBE,SWAP,RESTART} REMEDY_TOTAL_{SWAP,RESTART}
 set -u
 REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+# 2026-09-29:launchd 冇 WorkingDirectory(cwd=/),backend-restart.sh 靠 `git rev-parse` 搵 repo
+# 會 rc=128。喺呢度 cd 入 repo(子 process 繼承 cwd);入唔到就唔做任何動作。
+cd "$REPO" || { echo "cannot cd to $REPO" >&2; exit 1; }
 
 # M5:危險 env 入口一律忽略/重設。AI(或任何 caller)喺命令前面加 `REMEDY_STATE=/tmp/x ...`、
 # `SELFHEAL_RESTART_CMD=... ...` 都冇用——只有 STREAM_WATCH_TEST=1 **而且** REMEDY_STATE 喺 tmp 目錄下
