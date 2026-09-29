@@ -76,6 +76,11 @@
 #     --mid 0 --midfail 3 --ok 3 --fail 0 --detail "B:x:403" --verbose
 
 set -u
+# 2026-09-29(Eric 拍板修):launchd 嘅 healthcheck plist 冇 EnvironmentVariables,PATH 得
+# /usr/bin:/bin:/usr/sbin:/sbin —— 下游 backend-restart.sh 要 `node`(/opt/homebrew/bin)
+# 會 `command not found`(exit 127),即形態②自動重開由 09-05 起喺排程下從未行得通。
+# 喺呢度補 PATH(子 process 繼承);只影響搵 binary,唔改修復梯/配額/節流任何邏輯。
+export PATH="/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
 REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 
 LOG="${SELFHEAL_LOG_MD:-$REPO/docs/SUPERVISION-LOG.md}"
