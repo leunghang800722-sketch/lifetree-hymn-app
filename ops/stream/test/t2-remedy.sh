@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # T2:stream-remedy.sh allowlist / 配額。用法:t2-remedy.sh <scratchdir>
 set -u
+. "$(dirname "$0")/testlib.sh" "$@"   # STREAM-HARDEN §2.3:硬防呆(必須 source;第一個參數=scratch)
 S="${1:?scratch dir}"; T="$(cd "$(dirname "$0")" && pwd)"; R="$T/../stream-remedy.sh"
 rm -rf "$S/t2"; mkdir -p "$S/t2/wd" "$S/t2/stub"
 export STREAM_WATCH_TEST=1 STUB_DIR="$S/t2/stub" WATCH_DIR="$S/t2/wd" REMEDY_STATE="$S/t2/wd/rs.json" REMEDY_LOG="$S/t2/wd/remedy.log" \
@@ -36,18 +37,19 @@ cp "$T/../stream-remedy.sh" "$T/../stream-watch-lib.sh" "$FR/ops/stream/"
 printf '#!/usr/bin/env bash\necho "REAL-RESTART-CALLED argv=[$*]" >> "%s/called"; echo ok; exit 0\n' "$S/t2" > "$FR/ops/deploy/backend-restart.sh"; chmod +x "$FR/ops/deploy/backend-restart.sh"
 printf '#!/usr/bin/env bash\necho "REAL-APPLY-CALLED argv=[$*]" >> "%s/called"; exit 0\n' "$S/t2" > "$FR/ops/ytdlp/update-ytdlp.sh"; chmod +x "$FR/ops/ytdlp/update-ytdlp.sh"
 rm -f "$S/t2/called" "$S/t2/evil.state" "$S/t2/evil.log"; rm -rf "$S/t2/wd-evil"
-echo "--- D1. 攻擊:REMEDY_STATE/REMEDY_LOG/WATCH_DIR/SELFHEAL_RESTART_CMD/REMEDY_DRY_RUN=1 全部指去 evil(冇 STREAM_WATCH_TEST)"
-env -u STREAM_WATCH_TEST HOME="$FH" REMEDY_STATE="$S/t2/evil.state" REMEDY_LOG="$S/t2/evil.log" WATCH_DIR="$S/t2/wd-evil" \
+echo "--- D1. 攻擊(舊事故寫法):REMEDY_STATE/REMEDY_LOG/WATCH_DIR/SELFHEAL_RESTART_CMD/REMEDY_DRY_RUN=1 全部指去 evil(冇 STREAM_WATCH_TEST、冇 MANUAL)"
+echo "    STREAM-HARDEN §2.2 後:prod 模式冇 watch 憑證 → REFUSED exit 2,零寫入(舊版係靜靜行落 prod)"
+env -u STREAM_WATCH_TEST -u CLAUDECODE HOME="$FH" REMEDY_STATE="$S/t2/evil.state" REMEDY_LOG="$S/t2/evil.log" WATCH_DIR="$S/t2/wd-evil" \
   SELFHEAL_RESTART_CMD="$T/stub-cmd.sh EVIL-RESTART" SELFHEAL_STATE="$S/t2/evil-sh.json" REMEDY_DRY_RUN=1 REMEDY_LIMIT_RESTART=99 REMEDY_TOTAL_RESTART=99 \
-  "$FR/ops/stream/stream-remedy.sh" restart-backend; echo "   exit=$?"
-echo "   假 repo 真 restart 被 call?(DRY=1 若生效就唔會 call):$(cat "$S/t2/called" 2>/dev/null || echo 無)"
+  "$FR/ops/stream/stream-remedy.sh" restart-backend; echo "   exit=$?(預期 2 REFUSED)"
+echo "   假 repo 真 restart 被 call?$(cat "$S/t2/called" 2>/dev/null || echo 無)(預期 無)"
 echo "   EVIL-RESTART stub 被 call?$(grep -c EVIL-RESTART "$STUB_DIR/cmd.calls" 2>/dev/null || true)(預期 0)"
 echo "   evil.state / evil.log / wd-evil 被建?$([ -e "$S/t2/evil.state" ] && echo YES-BAD || echo no) / $([ -e "$S/t2/evil.log" ] && echo YES-BAD || echo no) / $([ -e "$S/t2/wd-evil" ] && echo YES-BAD || echo no)"
-echo "   實際 state/log 落咗假 HOME:$(ls "$FH/.hymn-deploy" 2>/dev/null | tr '\n' ' ')"
-echo "--- D2. (Opus AI M1:F6 後 prod 模式一律用真 HOME,呢段唔可以再非 dry 跑——會寫真 ~/.hymn-deploy 兼食真配額;改為 dry-run 驗 override 仍被忽略)"
-env -u STREAM_WATCH_TEST HOME="$FH" REMEDY_DRY_RUN=1 REMEDY_LIMIT_RESTART=99 REMEDY_TOTAL_RESTART=99 "$FR/ops/stream/stream-remedy.sh" restart-backend; echo "   exit=$?(dry:0 或 QUOTA:3 都可;唔准有真 restart)"
-echo "--- D3. 有 STREAM_WATCH_TEST=1 但 REMEDY_STATE 唔喺 tmp(/Users/...)→ 仍當非測試,override 被忽略"
-env STREAM_WATCH_TEST=1 HOME="$FH" REMEDY_STATE="$HOME/evil.state" REMEDY_DRY_RUN=1 "$FR/ops/stream/stream-remedy.sh" wait; echo "   exit=$?  (evil.state 存在?$([ -e "$HOME/evil.state" ] && echo YES-BAD || echo no))"
+echo "   假 HOME 下有咩:$(ls "$FH" 2>/dev/null | tr '\n' ' ')(預期空;prod 模式 HOME 本來就唔信 caller,真 prod 寫入由 testlib 快照守)"
+echo "--- D2. 同 D1 但只帶 REMEDY_DRY_RUN=1(冇 MANUAL):dry 唔算憑證 → 同樣 REFUSED"
+env -u STREAM_WATCH_TEST -u CLAUDECODE HOME="$FH" REMEDY_DRY_RUN=1 REMEDY_LIMIT_RESTART=99 REMEDY_TOTAL_RESTART=99 "$FR/ops/stream/stream-remedy.sh" restart-backend; echo "   exit=$?(預期 2)"
+echo "--- D3. 有 STREAM_WATCH_TEST=1 但 REMEDY_STATE 唔喺 tmp(/Users/...)→ 仍當非測試 → REFUSED,evil.state 唔會出現"
+env -u CLAUDECODE STREAM_WATCH_TEST=1 HOME="$FH" REMEDY_STATE="$HOME/evil.state" REMEDY_DRY_RUN=1 "$FR/ops/stream/stream-remedy.sh" wait; echo "   exit=$?(預期 2)  (evil.state 存在?$([ -e "$HOME/evil.state" ] && echo YES-BAD || echo no))"
 echo "--- D4. 測試模式 + 預設 restart 指令 → 自動加 --dry-run(用假 repo 驗 argv)"
 rm -f "$S/t2/called"; env -u SELFHEAL_RESTART_CMD STREAM_WATCH_TEST=1 HOME="$FH" REMEDY_STATE="$S/t2/tm.state" REMEDY_LOG="$S/t2/tm.log" SELFHEAL_STATE="$S/t2/tm-sh.json" WATCH_DIR="$S/t2/tm-wd" "$FR/ops/stream/stream-remedy.sh" restart-backend; echo "   exit=$?  called: $(cat "$S/t2/called" 2>/dev/null)"
 echo "=== E. H1:precondition-failed(node 缺:REMEDY_NODE_BIN 指去唔存在嘅名)不消耗配額、不當試過 ==="

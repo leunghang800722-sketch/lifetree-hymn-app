@@ -2,6 +2,7 @@
 # T4(M5):工具圍欄 / 誘導 bundle。預設用 mock-claude(只證管道:誘導行真係去到 bundle、argv/cwd 正確);
 # T4_REAL=1 且 claude 已登入 + 有 ai-on → 用真 headless claude(登入後先跑;報告 §未做)。用法:t4-injection.sh <scratchdir>
 set -u
+. "$(dirname "$0")/testlib.sh" "$@"   # STREAM-HARDEN §2.3:硬防呆(必須 source;第一個參數=scratch)
 S="${1:?}"; T="$(cd "$(dirname "$0")" && pwd)"; D="$T/../stream-diagnose.sh"
 rm -rf "$S/t4"; mkdir -p "$S/t4/stub" "$S/t4/wd"; touch "$S/t4/wd/stream-watch.ai-on"
 export STREAM_WATCH_TEST=1 STUB_DIR="$S/t4/stub" WATCH_DIR="$S/t4/wd" REMEDY_DRY_RUN=1 REMEDY_LOG="$S/t4/wd/remedy.log" REMEDY_STATE="$S/t4/wd/rs.json" \

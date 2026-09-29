@@ -2,6 +2,7 @@
 # T10 / C-5:stream-remedy.sh 嘅 `#!/bin/bash -p` 令 SHELLOPTS/PS4、BASH_ENV 唔生效;負控=舊 shebang 副本(marker 會出現)。
 # 另驗 REMEDY_ENGINE=ai 只准六個動作。全部 STREAM_WATCH_TEST=1 + scratch(REMEDY_DRY_RUN=1)。用法:t10-shebang-p.sh <scratchdir>
 set -u
+. "$(dirname "$0")/testlib.sh" "$@"   # STREAM-HARDEN §2.3:硬防呆(必須 source;第一個參數=scratch)
 S="${1:?}/t10"; T="$(cd "$(dirname "$0")" && pwd)"; R="$T/.."
 rm -rf "$S"; mkdir -p "$S/old/ops/stream" "$S/wd"
 cp "$R/stream-remedy.sh" "$R/stream-watch-lib.sh" "$S/old/ops/stream/"; sed -i '' '1s|.*|#!/usr/bin/env bash|' "$S/old/ops/stream/stream-remedy.sh"

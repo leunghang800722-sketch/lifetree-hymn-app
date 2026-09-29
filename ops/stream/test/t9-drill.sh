@@ -2,6 +2,7 @@
 # T9:演習入口 drill-restart(TOKEN-REVOKE-DRILL-EXEC-20260929 Part B)。用法:t9-drill.sh <scratchdir>
 # 全部 cd / + env -i + 絕對路徑 + STREAM_WATCH_TEST=1 + scratch state。測試模式自動 --dry-run,唔會真 restart。
 set -u
+. "$(dirname "$0")/testlib.sh" "$@"   # STREAM-HARDEN §2.3:硬防呆(必須 source;第一個參數=scratch)
 S="${1:?scratch dir}"; T="$(cd "$(dirname "$0")" && pwd)"; R="$T/../stream-remedy.sh"; W="$T/../stream-watch.sh"
 D="$S/t9"; rm -rf "$D"; mkdir -p "$D/wd" "$D/stub" "$D/www/api"
 echo ok > "$D/stub/mode"; echo '{}' > "$D/selfheal.json"; echo '{"ok":true}' > "$D/www/api/health"
@@ -78,8 +79,8 @@ echo "   假 backend 仍存活?$(ps -p $FP >/dev/null 2>&1 && echo yes || echo n
 kill "$FP" 2>/dev/null; wait "$FP" 2>/dev/null
 echo "=== B-7. F6:HOME 唔可以搬 state。測試模式 + scratch REMEDY_STATE 下 HOME=/tmp/x 唔改路徑;prod 模式用 REMEDY_DRY_RUN=1(零寫入)+ xtrace 睇解析出嚟嘅 WATCH_DIR/STATE ==="
 mkdir -p /tmp/x-f6-home 2>/dev/null
-echo "--- prod 模式(冇 STREAM_WATCH_TEST)、HOME=/tmp/x-f6-home、DRY-RUN:xtrace 出嚟嘅 HOME/WATCH_DIR/STATE 賦值"
-(cd / && env -i HOME=/tmp/x-f6-home PATH=/usr/bin:/bin REMEDY_DRY_RUN=1 /bin/bash -p -x "$R" wait 2>&1 | grep -E "^\++ (export )?(HOME|WATCH_DIR|STATE|LOG)=" | sed 's/^+* //')
+echo "--- prod 模式(冇 STREAM_WATCH_TEST;§2.2 後要 REMEDY_MANUAL=1 先過守衛)、HOME=/tmp/x-f6-home、DRY-RUN:xtrace 出嚟嘅 HOME/WATCH_DIR/STATE 賦值"
+(cd / && env -i HOME=/tmp/x-f6-home PATH=/usr/bin:/bin REMEDY_MANUAL=1 REMEDY_DRY_RUN=1 /bin/bash -p -x "$R" wait 2>&1 | grep -E "^\++ (export )?(HOME|WATCH_DIR|STATE|LOG)=" | sed 's/^+* //')
 echo "   /tmp/x-f6-home 之下有冇被寫嘢?$(ls -A /tmp/x-f6-home | wc -l | tr -d ' ')(預期 0)"; rmdir /tmp/x-f6-home 2>/dev/null
 echo "=== 收尾:殺自己起嘅 http server pid=$HP(核 lstart/命令)==="
 ps -o pid=,ppid=,lstart=,command= -p "$HP"; kill "$HP" 2>/dev/null; sleep 0.5; ps -p "$HP" >/dev/null 2>&1 && echo "仍在" || echo "已停"

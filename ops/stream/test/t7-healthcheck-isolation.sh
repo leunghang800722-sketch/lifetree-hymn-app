@@ -3,15 +3,16 @@
 # 用 scratch「假 repo」(複製 healthcheck+selfheal,stream-watch 換成 stub),HOME 指去 scratch(.on 檔喺 scratch HOME)。
 # 用法:t7-healthcheck-isolation.sh <scratchdir>
 set -u
+. "$(dirname "$0")/testlib.sh" "$@"   # STREAM-HARDEN §2.3:硬防呆(必須 source;第一個參數=scratch)
 S="${1:?}"; T="$(cd "$(dirname "$0")" && pwd)"; SRC="$(cd "$T/../../.." && pwd)"
 R="$S/t7/repo"; H="$S/t7/home"; rm -rf "$S/t7"; mkdir -p "$R/ops/lyrics" "$R/ops/stream" "$R/docs" "$R/backend/data" "$H/.hymn-deploy"
 cp "$SRC/ops/lyrics/stream-healthcheck.sh" "$R/ops/lyrics/"; cp "$SRC/ops/stream/stream-selfheal.sh" "$R/ops/stream/"
-export HOME="$H" HYMN_STREAM_BASE="http://127.0.0.1:9" SELFHEAL_DRY_RUN=1
+export HOME="$H" WATCH_DIR="$H/.hymn-deploy" HYMN_STREAM_BASE="http://127.0.0.1:9" SELFHEAL_DRY_RUN=1
 run() { # $1=label
   s=$(date +%s); "$R/ops/lyrics/stream-healthcheck.sh" >/dev/null 2>&1; rc=$?; e=$(( $(date +%s)-s ))
   echo "$1 | healthcheck exit=$rc elapsed=${e}s | /tmp/hymn_stream_watch.log 新增=$(( $(wc -l < /tmp/hymn_stream_watch.log 2>/dev/null || echo 0) - WL0 ))行"; }
 # Opus AI M1b:唔准 truncate prod log(/tmp/hymn_stream_watch.log 係 healthcheck 寫死嘅路徑);用行數差代替
-WL0=$(wc -l < /tmp/hymn_stream_watch.log 2>/dev/null || echo 0)
+WL0=$(wc -l < /tmp/hymn_stream_watch.log 2>/dev/null | tr -d " " || echo 0)
 mkwatch() { printf '#!/usr/bin/env bash\n%s\n' "$1" > "$R/ops/stream/stream-watch.sh"; chmod +x "$R/ops/stream/stream-watch.sh"; }
 echo "(healthcheck 對死 port 探測,本身會判 unhealthy;比較只睇 exit code 同耗時)"
 echo "--- 0. 冇 .on 檔(預設 off):watch 唔會被 call"
@@ -26,3 +27,7 @@ echo "--- 5. stream-watch.sh 真身 + 死 status(WATCH_STATUS_CMD=exit 99 亂碼
 printf '#!/usr/bin/env bash\necho garbage; exit 99\n' > "$S/t7/badstatus.sh"; chmod +x "$S/t7/badstatus.sh"
 WATCH_STATUS_CMD="$S/t7/badstatus.sh" WATCH_NOTIFY_CMD="$T/stub-notify.sh" STUB_DIR="$S/t7" WATCH_DIAGNOSE_CMD="$T/stub-diagnose.sh" WATCH_LOG_MD="$S/t7/LOG.md" run "watch 真身+status 亂碼"
 echo "--- baseline 對照(watch 完全唔接線:刪 .on)"; rm -f "$H/.hymn-deploy/stream-watch.on"; run "baseline(off)"
+# STREAM-HARDEN 1a:healthcheck 寫死 /tmp/hymn_stream_watch.log(紅線唔准改 healthcheck),所以用 assert 兜:跑完行數必須不變,否則 exit 1 + PROD-WRITE
+WL1=$(wc -l < /tmp/hymn_stream_watch.log 2>/dev/null | tr -d " " || echo 0)
+if [[ "$WL1" != "$WL0" ]]; then echo "PROD-WRITE: /tmp/hymn_stream_watch.log 行數 $WL0 -> $WL1(t7 唔准寫 prod watch log)" >&2; exit 1; fi
+echo "t7 assert:/tmp/hymn_stream_watch.log 行數不變($WL0)"

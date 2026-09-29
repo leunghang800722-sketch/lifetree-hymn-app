@@ -2,6 +2,7 @@
 # 第二輪修正單驗證:V1(launchd 等效環境)、V3(並發 tick)、V6(L1 state 損毀 / L2 stale request / L6 見 t2)。
 # 全部 scratch env override,唔掂 prod state。用法:t6-fixes.sh <scratchdir>
 set -u
+. "$(dirname "$0")/testlib.sh" "$@"   # STREAM-HARDEN §2.3:硬防呆(必須 source;第一個參數=scratch)
 S="${1:?}"; T="$(cd "$(dirname "$0")" && pwd)"; W="$T/../stream-watch.sh"; REPO="$(cd "$T/../../.." && pwd)"
 snapenv() { export STREAM_WATCH_TEST=1 STUB_DIR="$S/$1/stub" WATCH_DIR="$S/$1/wd" WATCH_LOG_MD="$S/$1/LOG.md" WATCH_STATUS_CMD="$T/stub-status.sh" \
   WATCH_NOTIFY_CMD="$T/stub-notify.sh" WATCH_DIAGNOSE_CMD="$T/stub-diagnose.sh"; rm -rf "$S/$1"; mkdir -p "$S/$1/stub" "$S/$1/wd"; : > "$S/$1/LOG.md"; }

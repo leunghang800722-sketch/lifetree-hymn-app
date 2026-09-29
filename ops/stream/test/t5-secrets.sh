@@ -2,6 +2,7 @@
 # T5/V5(M4):密鑰過濾。正控:raw fixture 六類密鑰全有命中;過濾後 bundle/diagnosis/alert/state/LOG/notify 全 0。
 # 負控:正常 🔴 SUPERVISION-LOG 升級行原文保留(唔准變 [filtered]);正常診斷字眼(PO token / cookies)行保留。用法:t5-secrets.sh <scratchdir>
 set -u
+. "$(dirname "$0")/testlib.sh" "$@"   # STREAM-HARDEN §2.3:硬防呆(必須 source;第一個參數=scratch)
 S="${1:?}"; T="$(cd "$(dirname "$0")" && pwd)"
 # 六類 + 混合嘅「值」特徵(唔含 key 名,只認假值本身)
 VALS='FAKEJWT|hunter2-fake|fake-not-real-123|fakefakefake|FAKESIG123|FAKELSIG|FAKESIGNATURE9|FAKEKEY77|FAKETOK55|eyJFAKEHEADER|FAKESIGPART|ACfa4e5c0de|SKfa4e5c0de|fakepass123|fakeuser'

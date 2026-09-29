@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # T1:stream-watch.sh 狀態機劇本。全部 env override 指去 $S(scratch)。用法:t1-state-machine.sh <scratchdir>
 set -u
+. "$(dirname "$0")/testlib.sh" "$@"   # STREAM-HARDEN §2.3:硬防呆(必須 source;第一個參數=scratch)
 S="${1:?scratch dir}"; T="$(cd "$(dirname "$0")" && pwd)"; W="$T/../stream-watch.sh"
 export STUB_DIR="$S/stub" WATCH_DIR="$S/wd" WATCH_LOG_MD="$S/SUPERVISION-LOG.md" \
   WATCH_STATUS_CMD="$T/stub-status.sh" WATCH_NOTIFY_CMD="$T/stub-notify.sh" WATCH_DIAGNOSE_CMD="$T/stub-diagnose.sh"

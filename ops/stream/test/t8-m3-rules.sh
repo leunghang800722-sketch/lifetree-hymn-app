@@ -2,6 +2,7 @@
 # M3:規則輸入時間窗(最近 1 個 hourly bucket;樣本<10 用 3 個;resolve total>=3)。用法:t8-m3-rules.sh <scratchdir>
 # 注意:走真 build_bundle(pgrep backend / curl localhost /api/health 只讀),remedy 全 dry-run 指去 scratch。
 set -u
+. "$(dirname "$0")/testlib.sh" "$@"   # STREAM-HARDEN §2.3:硬防呆(必須 source;第一個參數=scratch)
 S="${1:?}/m3"; T="$(cd "$(dirname "$0")" && pwd)"; D="$T/../stream-diagnose.sh"
 rm -rf "$S"; mkdir -p "$S/stub" "$S/wd"
 cat > "$S/mk.py" <<'PY'

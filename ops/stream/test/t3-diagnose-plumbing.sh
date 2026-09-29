@@ -4,6 +4,7 @@
 #  B. 有 ai-on:ok / noverdict / autherr / hang → argv / cwd / env 證據 + fallback(V2)
 #  C. 偽造 VERDICT ×5 + is_error(V4)
 set -u
+. "$(dirname "$0")/testlib.sh" "$@"   # STREAM-HARDEN §2.3:硬防呆(必須 source;第一個參數=scratch)
 S="${1:?}"; T="$(cd "$(dirname "$0")" && pwd)"; D="$T/../stream-diagnose.sh"
 rm -rf "$S/t3m"; mkdir -p "$S/t3m/stub" "$S/t3m/wd"
 export STREAM_WATCH_TEST=1 STUB_DIR="$S/t3m/stub" WATCH_DIR="$S/t3m/wd" REMEDY_DRY_RUN=1 REMEDY_LOG="$S/t3m/wd/remedy.log" REMEDY_STATE="$S/t3m/wd/rs.json" \
