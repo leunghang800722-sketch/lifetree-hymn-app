@@ -206,4 +206,14 @@ if [[ -x "$SELFHEAL" ]] && { (( healthy == 0 )) || (( prev_fail > 0 )); }; then
       --detail "$detail" >/dev/null 2>&1
   fi
 fi
+
+# ── 串流保護監察(STREAM-WATCH-EXEC-20260929)────────────────────────
+# 喺 selfheal 之後每 tick 行一次(邊緣觸發,健康時零 session/零通知)。預設 OFF:
+# ~/.hymn-deploy/stream-watch.on 存在先接線(啟用/停用 = 建立/刪除呢個檔,唔使 reload plist)。
+# perl alarm 頂硬上限(預設 1500s < 30 分鐘 tick;launchd 冇 AbandonProcessGroup,背景 detach 會被殺,
+# 所以用同步 + 硬上限)。任何失敗一律吞,唔影響本 script 嘅 exit code。
+if [[ -f "$HOME/.hymn-deploy/stream-watch.on" && -x "$REPO/ops/stream/stream-watch.sh" ]]; then
+  perl -e 'alarm shift; exec @ARGV or exit 127' "${WATCH_HARD_CAP:-1500}" \
+    "$REPO/ops/stream/stream-watch.sh" >> /tmp/hymn_stream_watch.log 2>&1 || true
+fi
 exit 0
