@@ -45,7 +45,7 @@ rm -f ~/.hymn-deploy/stream-watch-state.json ~/.hymn-deploy/STREAM-ALERT.md ~/.h
 rmdir ~/.hymn-deploy/stream-watch.lock 2>/dev/null     # 卡住嘅 lock(>20 分鐘會自動清)
 tail -f /tmp/hymn_stream_watch.log ~/.hymn-deploy/stream-remedy.log
 ```
-測試腳本 + stub + fixtures 喺 `ops/stream/test/`(t1 狀態機、t2 remedy、t3 診斷管道+偽造 VERDICT、t4 誘導、t5 密鑰、t6 launchd 等效/並發/state 損毀/stale request、t7 healthcheck 隔離、t9 演習、t10 `-p` shebang;全部 env override 去 scratch,唔掂 prod);詳見 `STREAM-WATCH-REPORT-20260929.md` 同 `STREAM-WATCH-FIX-REPORT-20260929.md`。
+測試腳本 + stub + fixtures 喺 `ops/stream/test/`(**每支必 source `testlib.sh`**,見下節「測試點寫」;t1 狀態機、t2 remedy、t3 診斷管道+偽造 VERDICT、t4 誘導、t5 密鑰、t6 launchd 等效/並發/state 損毀/stale request、t7 healthcheck 隔離、t9 演習、t10 `-p` shebang、t11 `san()`/`ctl` 剷字元、t12 prod 守衛;全部 env override 去 scratch,唔掂 prod);詳見 `STREAM-WATCH-REPORT-20260929.md` 同 `STREAM-WATCH-FIX-REPORT-20260929.md`。
 ⚠️ headless claude 要有效登入(launchd context 都要);`claude auth status` 顯示 loggedIn=false 時會自動落規則診斷,不會靜靜失效。
 
 ### 已知限制
@@ -64,3 +64,16 @@ cat ~/.hymn-deploy/stream-drill.log           # 一行:時間 | watch-rc | 總�
 - `drill-restart` 前置:`REMEDY_ENGINE=drill`(AI/手動/其他標籤 exit 2)、inflight 係自己嘅普通檔(唔准 symlink)且 <10 分鐘,否則 exit 2 零側效應;一開始就刪 inflight;自己每日 ≤1 配額(`drills`,同 `restarts` 互不影響),用晒 exit 3。
 - gate 唔過(HEAD 未 approve)=回報 `GATE-BLOCKED`,唔重試唔繞過——**演習前要先由人 approve + 部署**。成功後等 10 秒打 `/api/health`,記 http code + backend pid/lstart 前後。
 - 測試:`test/t9-drill.sh <scratchdir>`(`STREAM_WATCH_TEST=1`,自動 `--dry-run`,唔會真 restart)。
+
+### 點解會 REFUSED / 人手點用 / 測試點寫(STREAM-HARDEN-EXEC-20260929)
+**點解**:兩次手誤(Opus 第二輪 t2 D、最終驗收 zsh `env $E`)同 Fable 中午誤觸,全部係 remedy/diagnose 預設 prod 模式、測試模式靠 caller 記得設 `STREAM_WATCH_TEST=1`+tmp 路徑,一個 shell 拆字差異就靜靜寫落正式 log。方向改為「忘記 = 拒絕」。
+- `stream-watch.sh` 每個 tick 攞到 lock 後寫 `$WATCH_DIR/.watch-ctx`(`pid=<watch pid> ts=<epoch>`,umask 077),任何 exit 路徑(含 TERM/INT/HUP)trap 刪走;`kill -9` 會殘留,但 pid 死咗 / mtime ≥30 分鐘即失效。
+- `stream-remedy.sh` / `stream-diagnose.sh` **prod 模式**(非 `STREAM_WATCH_TEST=1`+tmp 路徑)必須滿足其一,否則 stderr 印 `REFUSED: prod 模式只准由 stream-watch tick 內呼叫;人手用請設 REMEDY_MANUAL=1`(diagnose 係 `DIAG_MANUAL=1`)、exit 2、**零寫入**(連 remedy.log 都唔寫):
+  1. `.watch-ctx` 存在(普通檔、唔係 symlink)、mtime <30 分鐘、pid 仍生存(prod 一律由真 HOME 計路徑,env 搬唔走);
+  2. 人手明示 `REMEDY_MANUAL=1`(diagnose:`DIAG_MANUAL=1`,並代子 remedy 一併明示)。
+- 額外:`CLAUDECODE` 非空(Claude 工具 shell)而冇 MANUAL → 即使有 ctx 都 REFUSED。
+- `REMEDY_DRY_RUN=1` **唔算**憑證(dry 都要 MANUAL)。
+
+**人手用**(睇現況/試):`REMEDY_MANUAL=1 REMEDY_DRY_RUN=1 ops/stream/stream-remedy.sh wait`;真行 `REMEDY_MANUAL=1 ops/stream/stream-remedy.sh status`(配額照計、log 照寫 engine=manual)。診斷:`DIAG_MANUAL=1 ops/stream/stream-diagnose.sh <id>`(會寫 `~/.hymn-deploy/stream-incident-<id>/`)。
+
+**測試點寫**:每支 `test/t*.sh` 開頭 `set -u` 之後必須 `. "$(dirname "$0")/testlib.sh" "$@"`(第一個參數 = tmp 下 scratch 目錄)。testlib 會:export `STREAM_WATCH_TEST=1`、預設 `WATCH_DIR/REMEDY_STATE/REMEDY_LOG/SELFHEAL_STATE/DIAG_DIR` 去 scratch(caller 預設值須過 tmp 檢查,case 內覆蓋可用 `tl_require_tmp <path>`)、記 prod 快照(`~/.hymn-deploy/*` 檔名+md5、`/tmp/hymn_stream_watch.log` 行數、`docs/SUPERVISION-LOG.md` md5、`backend/data/stream-*.json` md5),EXIT 時再比,有差異 → 印 `PROD-WRITE DETECTED: <檔>` 並 exit 1,無差異印 `PROD-SNAPSHOT OK`。⚠️ 真 launchd healthcheck tick(每小時 :07/:37)會合法更新 `stream-health-state.json` 等,跑測試避開呢啲時間窗,否則可能假紅。要測「prod 模式 + 可控 ctx」用 scratch 假 repo 副本(見 t12),唔准喺真 repo 用 prod 模式跑 remedy/diagnose。

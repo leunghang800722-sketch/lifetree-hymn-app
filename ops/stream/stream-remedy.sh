@@ -19,6 +19,8 @@
 #    HTTP 入口;刪 backend/cache/resolve-cache.json 冇用(記憶體 Map 仍在,而且下次 flush 寫返)。
 #    冇安全入口 = 唔做(見 STREAM-WATCH-REPORT-20260929.md)。
 #
+# STREAM-HARDEN §2.2:prod 模式(冇 STREAM_WATCH_TEST=1+tmp REMEDY_STATE)要 stream-watch tick 憑證($WATCH_DIR/.watch-ctx)或 REMEDY_MANUAL=1,否則 exit 2 REFUSED 零寫入;
+#   CLAUDECODE 非空而冇 REMEDY_MANUAL=1 亦拒。詳見 README「點解會 REFUSED」。
 # exit: 0 成功 / 1 動作失敗 / 2 拒絕(未知 action、參數唔啱) / 3 配額用晒 / 4 precondition-failed(node/python3 缺,冇試過)
 # REMEDY_DRY_RUN=1:全部側效應歸零(唔 call apply/restart、唔寫 state/request、唔 curl 落 backend)。
 #   prod 同測試模式都認(只收字面 1);配額檢查行先,配額用晒會回 exit 3 而唔係 DRY-RUN 輸出。
@@ -60,6 +62,10 @@ else
   export HOME="$_sw_home"
 fi
 . "$REPO/ops/stream/stream-watch-lib.sh"
+
+# STREAM-HARDEN §2.2:prod 模式(TESTMODE=0)要 watch tick 憑證或 REMEDY_MANUAL=1,否則 REFUSED exit 2 零寫入(喺任何 log/state 寫入之前)。
+# ctx 路徑由真 HOME 計(上面 F6 已重設 HOME、WATCH_DIR 已 unset),env 搬唔走。
+[[ $TESTMODE -eq 0 ]] && wlib_prod_guard "$WATCH_DIR/.watch-ctx" "${REMEDY_MANUAL:-0}" REMEDY_MANUAL
 
 DRY="${REMEDY_DRY_RUN:-0}"
 ENGINE="${REMEDY_ENGINE:-manual}"
@@ -262,9 +268,18 @@ case "$action" in
     if [[ "$q" != OK ]]; then echo "QUOTA: ${q#DENY }"; log_line "quota-denied: ${q#DENY }"; exit 3; fi
     # Opus 最終驗收 M1:`pgrep -f backend/server\.js` 會撞任何命令行含該字串嘅 process(監察 shell/tail/grep),
     # 20:37 演習就記錯 pid_after。改為錨定「絕對路徑 node + 絕對路徑 server.js」(⚠️ 唔可以用 `^node `,真命令行係 /opt/homebrew/bin/node)。
-    d_pat='^[^ ]*/node [^ ]*/backend/server\.js$'; [[ $TESTMODE -eq 1 && -n "${DRILL_PGREP_PAT:-}" ]] && d_pat="$DRILL_PGREP_PAT"   # 只測試模式可換(t9 F2 用 scratch 假 backend)
-    d_pid() { pgrep -f "$d_pat" 2>/dev/null | head -1; }
-    d_lst() { [[ -n "$1" ]] && ps -o lstart= -p "$1" 2>/dev/null | tr -s ' ' || true; }
+    # STREAM-HARDEN 1c(Eric 指定):改用「邊個真係 listen 緊 backend port」做主量度(絕對路徑 lsof,launchd PATH 有 /usr/sbin),
+    # 攞到 PID 再用 ps 核命令行含 backend/server.js;唔含=記 `<pid>?`;冇 listener=空(顯示 none)。port 由 $BASE 解析(預設 3001)。
+    # DRILL_PGREP_PAT:只測試模式保留做 override(t9 B-6 用 scratch 假 backend,佢唔 listen port;prod 模式唔認)。
+    d_pid() {
+      if [[ $TESTMODE -eq 1 && -n "${DRILL_PGREP_PAT:-}" ]]; then pgrep -f "$DRILL_PGREP_PAT" 2>/dev/null | head -1; return 0; fi
+      local port="${BASE##*:}" p cmd; port="${port%%/*}"; [[ "$port" =~ ^[0-9]+$ ]] || port=3001
+      p="$(/usr/sbin/lsof -nP -t -iTCP:"$port" -sTCP:LISTEN 2>/dev/null | head -1)"
+      [[ "$p" =~ ^[0-9]+$ ]] || return 0
+      cmd="$(ps -o command= -p "$p" 2>/dev/null)"
+      if [[ "$cmd" == *backend/server.js* ]]; then echo "$p"; else echo "$p?"; fi
+    }
+    d_lst() { local q="${1%\?}"; [[ -n "$q" ]] && ps -o lstart= -p "$q" 2>/dev/null | tr -s ' ' || true; }
     pid0="$(d_pid)"; lst0="$(d_lst "$pid0")"
     echo "drill: cwd=$(pwd) PATH=$PATH uid=$(id -u) XPC_SERVICE_NAME=${XPC_SERVICE_NAME:-<unset>} PPID=$PPID ppid_comm=$(ps -o comm= -p "$PPID" 2>/dev/null | tr -d '\n') backend_before=${pid0:-none}[$lst0]"
     echo "run: $RESTART_CMD"

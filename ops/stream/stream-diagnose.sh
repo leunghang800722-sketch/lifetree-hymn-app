@@ -22,6 +22,20 @@ set -u
 REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 . "$REPO/ops/stream/stream-watch-lib.sh"
 
+# STREAM-HARDEN §2.2:測試模式=STREAM_WATCH_TEST=1 且 WATCH_DIR(及 DIAG_DIR 如有)喺 tmp 下;否則 prod 模式,
+# 要 stream-watch tick 憑證(真 HOME 嘅 .watch-ctx)或 DIAG_MANUAL=1,否則 REFUSED exit 2 零寫入(喺 mkdir 之前)。
+_sw_tmpok() { case "$1" in *..*) return 1 ;; /tmp/*|/private/tmp/*|/var/folders/*|/private/var/folders/*) return 0 ;; esac; return 1; }
+if [[ "${STREAM_WATCH_TEST:-0}" == "1" ]] && _sw_tmpok "${WATCH_DIR:-}" && { [[ -z "${DIAG_DIR:-}" ]] || _sw_tmpok "$DIAG_DIR"; }; then
+  DIAG_TESTMODE=1
+else
+  DIAG_TESTMODE=0
+  _sw_rh="$(wlib_real_home)"
+  [[ -n "$_sw_rh" ]] || { echo "REFUSED: 攞唔到真 HOME" >&2; exit 2; }
+  wlib_prod_guard "$_sw_rh/.hymn-deploy/.watch-ctx" "${DIAG_MANUAL:-0}" DIAG_MANUAL
+  # 人手(DIAG_MANUAL=1)明示過,代 remedy 子呼叫一併明示(否則 remedy 自己嘅憑證檢查會拒)
+  [[ "${DIAG_MANUAL:-0}" == "1" ]] && export REMEDY_MANUAL=1
+fi
+
 ID="$(printf '%s' "${1:-${STREAM_INCIDENT_ID:-manual-$(date +%Y%m%d-%H%M%S)}}" | tr -cd 'A-Za-z0-9_-' | cut -c1-40)"
 DIR="${DIAG_DIR:-$WATCH_DIR/stream-incident-$ID}"
 mkdir -p "$DIR" || exit 0
@@ -203,7 +217,7 @@ if not isinstance(res, str): out('none')
 paras = [p for p in re.split(r'\n[ \t]*\n', res.strip()) if p.strip()]
 if not paras: out('none')
 lines = [l.rstrip() for l in paras[-1].split('\n') if l.strip()]
-ctl = re.compile(r'[\x00-\x1f\x7f`$\x85\u2028\u2029\u200b-\u200f\u202a-\u202e\u2066-\u2069\ufeff]')  # Opus AI L1:連 Unicode 行分隔/bidi/零寬都 strip(防喺 SUPERVISION-LOG 偽造 ✅ 行)
+ctl = re.compile(r'[\x00-\x1f\x7f`$\x85\u2028\u2029\u200b\u200c\u200e\u200f\u202a-\u202e\u2066-\u2069\ufeff]')  # Opus AI L1:連 Unicode 行分隔/bidi/零寬都 strip(防喺 SUPERVISION-LOG 偽造 ✅ 行);STREAM-HARDEN 1d:剔走 U+200D ZWJ(組合 emoji 唔可拆),同 remedy san() 同一名單
 if mode == 'r1' and lines and re.fullmatch(r'PROBES:( none)?', lines[0]):
     ign = 0; pr = []
     for l in lines[1:]:

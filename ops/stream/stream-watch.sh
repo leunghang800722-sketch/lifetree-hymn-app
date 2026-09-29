@@ -50,7 +50,13 @@ if ! mkdir "$LOCK" 2>/dev/null; then
   else echo "$(wlib_ts) watch:另一個 tick 仲行緊(lock age=${age}s),skip(零寫)"; exit 0; fi
 fi
 TMPD="$(mktemp -d "${TMPDIR:-/tmp}/streamwatch.XXXXXX" 2>/dev/null)" || { rmdir "$LOCK" 2>/dev/null; exit 0; }
-trap 'rm -rf "$TMPD"; rmdir "$LOCK" 2>/dev/null' EXIT   # 攞到 lock 先掛,唔會拆人哋嘅 lock
+# STREAM-HARDEN §2.2:合法 caller 憑證。攞到 lock 後寫 .watch-ctx(pid=<本 watch pid> ts=<epoch>,umask 077),
+# remedy/diagnose 喺 prod 模式靠佢判斷「喺 watch tick 內」;任何 exit 路徑(包括 TERM/INT/HUP)trap 刪走。kill -9 會殘留,
+# 但 pid 死咗 + mtime 30 分鐘期限令佢失效。
+CTX="$WATCH_DIR/.watch-ctx"
+( umask 077; printf 'pid=%s ts=%s\n' "$$" "$(date +%s)" > "$CTX" ) 2>/dev/null
+trap 'rm -rf "$TMPD"; rm -f "$CTX" 2>/dev/null; rmdir "$LOCK" 2>/dev/null' EXIT   # 攞到 lock 先掛,唔會拆人哋嘅 lock
+trap 'exit 143' TERM INT HUP
 
 # ── 0.5 演習入口(TOKEN-REVOKE-DRILL-EXEC-20260929 Part B)────────────
 # 人手 touch ~/.hymn-deploy/stream-drill.request → 呢個 tick mv 成 inflight → remedy drill-restart(真 --same-code,
