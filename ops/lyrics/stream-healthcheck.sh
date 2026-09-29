@@ -91,7 +91,9 @@ _hc_cdn_stub() { echo 206; }   # 測試模式 Layer B 直打 CDN 嘅預設 stub
 # prod 路徑 = $HOME/.hymn-deploy(同下面 stream-watch.on 一樣由 HOME 計;selfheal 端 prod 用真 home)。
 if [[ $HC_TEST -eq 1 ]]; then HC_CTX="$WATCH_DIR/.tick-ctx"; else HC_CTX="$HOME/.hymn-deploy/.tick-ctx"; fi
 mkdir -p "$(dirname "$HC_CTX")" 2>/dev/null
-( umask 077; printf 'pid=%s ts=%s\n' "$$" "$(date +%s)" > "$HC_CTX" ) 2>/dev/null
+# Opus F4:寫憑證唔准跟 symlink(殘留/惡意 symlink 會令我覆寫第三方檔)——係 symlink 就先剷,再寫 tmp 後 mv(原子)
+[[ -L "$HC_CTX" ]] && rm -f "$HC_CTX" 2>/dev/null
+( umask 077; printf 'pid=%s ts=%s\n' "$$" "$(date +%s)" > "$HC_CTX.$$.tmp" && mv -f "$HC_CTX.$$.tmp" "$HC_CTX" ) 2>/dev/null
 _hc_ctx_rm() { [[ "$(sed -n 's/^pid=\([0-9][0-9]*\).*$/\1/p' "$HC_CTX" 2>/dev/null | head -1)" == "$$" ]] && rm -f "$HC_CTX" 2>/dev/null; return 0; }
 trap '_hc_ctx_rm' EXIT
 trap 'exit 143' TERM INT HUP

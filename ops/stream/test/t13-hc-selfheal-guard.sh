@@ -21,7 +21,9 @@ prodsig() { # 真 prod 檔摘要(md5+行數+檔清單)
     for f in "$REPO"/backend/data/stream-*.json "$REPO"/backend/data/stream-*.log; do [[ -e "$f" ]] && /sbin/md5 -q "$f"; done; } | /sbin/md5 -q
 }
 if [[ -e "$REALHOME/.hymn-deploy/.tick-ctx" || -e "$REALHOME/.hymn-deploy/.watch-ctx" ]]; then SKIPREAL=1; echo "SKIP 真 repo 嘅 case:真 ~/.hymn-deploy 有 .tick-ctx/.watch-ctx(launchd tick 正喺行);稍後重跑"; else SKIPREAL=0; fi
-NOENV=(env -i PATH=/usr/bin:/bin:/usr/sbin:/sbin HOME="$REALHOME")   # 完全冇 STREAM_WATCH_TEST 等
+# Opus F2:真 repo 嘅 refused case 一律帶 CLAUDECODE=1——冇 CLAUDECODE 嘅 env -i 撞正真 tick(.tick-ctx 存在)會過 guard 真寫 prod;
+#   「完全冇 env」嘅拒絕行為由假 repo case 驗(Opus 已做 ~35 case)。
+NOENV=(env -i PATH=/usr/bin:/bin:/usr/sbin:/sbin HOME="$REALHOME" CLAUDECODE=1)
 mkdir -p "$S/z"; ZDIR="$S/z"   # 「唔應該被建」嘅偵測目錄
 
 # ── 假 repo(同一份 code):healthcheck + selfheal;HOME 相關取值 sed 換去假 home ─────────────
@@ -85,8 +87,8 @@ if [[ $SKIPREAL -eq 0 && $B0$B1$B2$B3$B4$B5$B6 == 0000000 ]]; then
   refused_real "selfheal 半設[缺 SELFHEAL_STATE]" "${NOENV[@]}" STREAM_WATCH_TEST=1 HEALTH_STATE="$S/b/h.json" WATCH_DIR="$S/b/wd" "$SH" "${SHARGS[@]}"
   refused_real "selfheal 缺 STREAM_WATCH_TEST" "${NOENV[@]}" SELFHEAL_STATE="$S/b/s.json" HEALTH_STATE="$S/b/h.json" WATCH_DIR="$S/b/wd" "$SH" "${SHARGS[@]}"
   refused_real "selfheal CLAUDECODE=1" "${NOENV[@]}" CLAUDECODE=1 "$SH" "${SHARGS[@]}"
-  refused_real "selfheal 偽造 .tick-ctx(HOME=$S/forgedhome、有效 live pid ctx)" env -i PATH=/usr/bin:/bin:/usr/sbin:/sbin HOME="$S/forgedhome" "$SH" "${SHARGS[@]}"
-  refused_real "selfheal 偽造 .tick-ctx + WATCH_DIR 指去偽造 home(prod 模式應忽略 WATCH_DIR)" env -i PATH=/usr/bin:/bin:/usr/sbin:/sbin HOME="$S/forgedhome" WATCH_DIR="$S/forgedhome/.hymn-deploy" "$SH" "${SHARGS[@]}"
+  refused_real "selfheal 偽造 .tick-ctx(HOME=$S/forgedhome、有效 live pid ctx)" env -i PATH=/usr/bin:/bin:/usr/sbin:/sbin CLAUDECODE=1 HOME="$S/forgedhome" "$SH" "${SHARGS[@]}"
+  refused_real "selfheal 偽造 .tick-ctx + WATCH_DIR 指去偽造 home(prod 模式應忽略 WATCH_DIR)" env -i PATH=/usr/bin:/bin:/usr/sbin:/sbin CLAUDECODE=1 HOME="$S/forgedhome" WATCH_DIR="$S/forgedhome/.hymn-deploy" "$SH" "${SHARGS[@]}"
   [[ ! -e "$S/b/wd" && -z "$(ls -A "$S/b")" ]]; chk "[real] 半設 env 指去嘅 scratch 路徑冇被建(零寫入)" $?
 else echo "  (SKIP 真 repo selfheal:SKIPREAL=$SKIPREAL 假 repo 預檢=$B0$B1$B2$B3$B4$B5$B6)"; fi
 
