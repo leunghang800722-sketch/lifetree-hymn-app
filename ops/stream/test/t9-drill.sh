@@ -67,5 +67,19 @@ echo "--- stream-watch.off 存在時唔行演習"
 touch "$D/wd/stream-watch.off" "$D/wd/stream-drill.request"; : > "$D/stub/drill-stub.calls"; E DRILL_STUB_MODE=fail WATCH_DRILL_CMD="$T/stub-drill-fail.sh" "$W"; echo "   watch exit=$?  stub calls=$(wc -l < "$D/stub/drill-stub.calls" | tr -d ' ')  request 仍在?$([ -e "$D/wd/stream-drill.request" ] && echo yes || echo no)"
 rm -f "$D/wd/stream-watch.off" "$D/wd/stream-drill.request"
 echo "--- 冇 request:零側效應(ok tick)"; echo ok > "$D/stub/mode"; rm -f "$D/wd/stream-drill.log"; E "$W"; echo "   watch exit=$?  drill.log 存在?$([ -e "$D/wd/stream-drill.log" ] && echo yes || echo no)"
+echo "=== B-6. F2:restart 失敗 + backend 死咗 → pid/lstart/health 要重新量(唔准抄 before)==="
+# scratch 假 backend(自己起、自己收;cmdline 有獨一 token,測試模式用 DRILL_PGREP_PAT 指住佢,唔會碰真 backend)
+TOK="scratchfakebackend$RANDOM$RANDOM"
+perl -e 'sleep 300' "$TOK" & FP=$!; echo "$FP" > "$D/fakepid"; sleep 0.5
+echo "   假 backend pid=$FP lstart=$(ps -o lstart= -p $FP | tr -s ' ')"
+rm -f "$D/wd/rs.json"; touch "$D/wd/stream-drill.inflight"
+E REMEDY_ENGINE=drill DRILL_PGREP_PAT="$TOK" FAKEPID_FILE="$D/fakepid" SELFHEAL_RESTART_CMD="$T/stub-drill-kill.sh" HYMN_STREAM_BASE="http://127.0.0.1:9" "$R" drill-restart 2>&1 | grep -E "^(drill:|DRILL-RESULT|restart exit)" | sed 's/path=.*//'
+echo "   假 backend 仍存活?$(ps -p $FP >/dev/null 2>&1 && echo yes || echo no)(預期 no);DRILL-RESULT 應 restart_rc=1 health=000 pid_after=none"
+kill "$FP" 2>/dev/null; wait "$FP" 2>/dev/null
+echo "=== B-7. F6:HOME 唔可以搬 state。測試模式 + scratch REMEDY_STATE 下 HOME=/tmp/x 唔改路徑;prod 模式用 REMEDY_DRY_RUN=1(零寫入)+ xtrace 睇解析出嚟嘅 WATCH_DIR/STATE ==="
+mkdir -p /tmp/x-f6-home 2>/dev/null
+echo "--- prod 模式(冇 STREAM_WATCH_TEST)、HOME=/tmp/x-f6-home、DRY-RUN:xtrace 出嚟嘅 HOME/WATCH_DIR/STATE 賦值"
+(cd / && env -i HOME=/tmp/x-f6-home PATH=/usr/bin:/bin REMEDY_DRY_RUN=1 /bin/bash -p -x "$R" wait 2>&1 | grep -E "^\++ (export )?(HOME|WATCH_DIR|STATE|LOG)=" | sed 's/^+* //')
+echo "   /tmp/x-f6-home 之下有冇被寫嘢?$(ls -A /tmp/x-f6-home | wc -l | tr -d ' ')(預期 0)"; rmdir /tmp/x-f6-home 2>/dev/null
 echo "=== 收尾:殺自己起嘅 http server pid=$HP(核 lstart/命令)==="
 ps -o pid=,ppid=,lstart=,command= -p "$HP"; kill "$HP" 2>/dev/null; sleep 0.5; ps -p "$HP" >/dev/null 2>&1 && echo "仍在" || echo "已停"
