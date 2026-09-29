@@ -18,6 +18,7 @@
 #
 # exit: 0 成功 / 1 動作失敗 / 2 拒絕(未知 action、參數唔啱) / 3 配額用晒 / 4 precondition-failed(node/python3 缺,冇試過)
 # REMEDY_DRY_RUN=1:全部側效應歸零(唔 call apply/restart、唔寫 state/request、唔 curl 落 backend)。
+#   prod 同測試模式都認(只收字面 1);配額檢查行先,配額用晒會回 exit 3 而唔係 DRY-RUN 輸出。
 #
 # env override(測試用):REMEDY_STATE REMEDY_LOG WATCH_DIR WATCH_STATE SELFHEAL_STATE
 #   SELFHEAL_APPLY_CMD SELFHEAL_RESTART_CMD REMEDY_STATUS_CMD HYMN_STREAM_BASE REMEDY_INCIDENT REMEDY_ENGINE
@@ -33,10 +34,14 @@ if [[ "${STREAM_WATCH_TEST:-0}" == "1" ]] && _sw_tmpok "${REMEDY_STATE:-}"; then
   TESTMODE=1
 else
   TESTMODE=0
+  # N2(Opus 第二輪):REMEDY_DRY_RUN 只會令動作「少做」,唔係攻擊面——prod 模式照認,
+  # 唔准靜靜忽略變真 restart。只收字面 "1"。
+  _sw_dry=0; [[ "${REMEDY_DRY_RUN:-0}" == "1" ]] && _sw_dry=1
   unset REMEDY_STATE REMEDY_LOG REMEDY_DRY_RUN SELFHEAL_STATE SELFHEAL_APPLY_CMD SELFHEAL_RESTART_CMD \
         REMEDY_STATUS_CMD REMEDY_VERIFY_CMD REMEDY_NODE_BIN WATCH_DIR WATCH_STATE HYMN_STREAM_BASE YTDLP_LINK \
         REMEDY_LIMIT_PROBE REMEDY_LIMIT_SWAP REMEDY_LIMIT_RESTART REMEDY_TOTAL_SWAP REMEDY_TOTAL_RESTART \
         SELFHEAL_YT_IDS SELFHEAL_MID_RANGE SELFHEAL_RESOLVE_TIMEOUT SELFHEAL_CURL_TIMEOUT
+  [[ $_sw_dry -eq 1 ]] && REMEDY_DRY_RUN=1
 fi
 . "$REPO/ops/stream/stream-watch-lib.sh"
 
