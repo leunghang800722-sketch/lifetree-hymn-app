@@ -7,10 +7,8 @@ set -u
 S="${1:?}"; T="$(cd "$(dirname "$0")" && pwd)"; SRC="$(cd "$T/../../.." && pwd)"
 R="$S/t7/repo"; H="$S/t7/home"; rm -rf "$S/t7"; mkdir -p "$R/ops/lyrics" "$R/ops/stream" "$R/docs" "$R/backend/data" "$H/.hymn-deploy"
 cp "$SRC/ops/lyrics/stream-healthcheck.sh" "$R/ops/lyrics/"; cp "$SRC/ops/stream/stream-selfheal.sh" "$R/ops/stream/"
-# STREAM-HARDEN 1a 根治(Fable):healthcheck 寫死 /tmp/hymn_stream_watch.log,紅線唔准改真 healthcheck,
-# 但呢個係 scratch **副本**——直接將副本嘅路徑換去 scratch,令 t7 結構上冇可能再寫 prod log(上面行數 assert 保留做第二防線)。
-sed -i '' "s#/tmp/hymn_stream_watch.log#$S/t7/watch.log#g" "$R/ops/lyrics/stream-healthcheck.sh"
-grep -q "/tmp/hymn_stream_watch.log" "$R/ops/lyrics/stream-healthcheck.sh" && { echo "t7: 副本仍含 prod log 路徑,abort"; exit 2; }
+# STREAM-HARDEN2:healthcheck 本身而家有測試模式(STREAM_WATCH_TEST=1 + tmp WATCH_DIR ⇒ STATE/HISTORY/LOG/watch log 強制落 $WATCH_DIR、
+# Layer B stub),所以唔再 sed 換副本路徑;副本淨係為咗可以換 stream-watch.sh 做 stub。行數斷言保留做第二防線。
 export HOME="$H" WATCH_DIR="$H/.hymn-deploy" HYMN_STREAM_BASE="http://127.0.0.1:9" SELFHEAL_DRY_RUN=1
 run() { # $1=label
   s=$(date +%s); "$R/ops/lyrics/stream-healthcheck.sh" >/dev/null 2>&1; rc=$?; e=$(( $(date +%s)-s ))
@@ -31,6 +29,8 @@ echo "--- 5. stream-watch.sh 真身 + 死 status(WATCH_STATUS_CMD=exit 99 亂碼
 printf '#!/usr/bin/env bash\necho garbage; exit 99\n' > "$S/t7/badstatus.sh"; chmod +x "$S/t7/badstatus.sh"
 WATCH_STATUS_CMD="$S/t7/badstatus.sh" WATCH_NOTIFY_CMD="$T/stub-notify.sh" STUB_DIR="$S/t7" WATCH_DIAGNOSE_CMD="$T/stub-diagnose.sh" WATCH_LOG_MD="$S/t7/LOG.md" run "watch 真身+status 亂碼"
 echo "--- baseline 對照(watch 完全唔接線:刪 .on)"; rm -f "$H/.hymn-deploy/stream-watch.on"; run "baseline(off)"
+echo "--- 6. 真 repo 嘅 healthcheck(測試模式,唔係副本):exit code + 有冇寫 \$WATCH_DIR/watch.log 以外嘅嘢"
+s=$(date +%s); "$T/../../lyrics/stream-healthcheck.sh" >/dev/null 2>&1; rc=$?; echo "真 healthcheck(測試模式) exit=$rc elapsed=$(( $(date +%s)-s ))s | \$WATCH_DIR 內檔:$(ls -A "$WATCH_DIR" | tr '\n' ' ')"
 # STREAM-HARDEN 1a:healthcheck 寫死 /tmp/hymn_stream_watch.log(紅線唔准改 healthcheck),所以用 assert 兜:跑完行數必須不變,否則 exit 1 + PROD-WRITE
 WL1=$(wc -l < /tmp/hymn_stream_watch.log 2>/dev/null | tr -d " " || echo 0)
 if [[ "$WL1" != "$WL0" ]]; then echo "PROD-WRITE: /tmp/hymn_stream_watch.log 行數 $WL0 -> $WL1(t7 唔准寫 prod watch log)" >&2; exit 1; fi

@@ -54,6 +54,8 @@ _tl_snapshot() {
   if [[ -d "$d" ]]; then find "$d" -mindepth 1 | LC_ALL=C sort | while IFS= read -r f; do
       if [[ -f "$f" ]]; then printf '%s  %s\n' "$(/sbin/md5 -q "$f" 2>/dev/null)" "$f"; else printf 'DIR/OTHER  %s\n' "$f"; fi; done
   else echo "(不存在)"; fi
+  echo "## 憑證隱藏檔(.tick-ctx/.watch-ctx)存在性(healthcheck/watch tick 內先有;測試前後都唔應該出現/消失)"
+  for f in .tick-ctx .watch-ctx; do if [[ -e "$d/$f" ]]; then echo "EXISTS $f"; else echo "absent $f"; fi; done
   echo "## /tmp/hymn_stream_watch.log 行數+md5"; wc -l < /tmp/hymn_stream_watch.log 2>/dev/null | tr -d ' ' || echo none; /sbin/md5 -q /tmp/hymn_stream_watch.log 2>/dev/null || echo none
   echo "## docs/SUPERVISION-LOG.md"; /sbin/md5 -q "$_TL_REPO/docs/SUPERVISION-LOG.md" 2>/dev/null || echo none
   echo "## backend/data/stream-*.json"
