@@ -4,8 +4,12 @@
 #
 # 規則次序(同執行單條目次序有一處對調:backend 死咗優先,因為 backend 死咗嗰陣 403 率冇意義):
 #   1. backend pid 唔存在 或 /api/health 非 200      → restart-backend
-#   2. resolve 全 fail(total>0 且 fail==total)且 yt-dlp 候選(閒置 slot)版本較新 → swap-ytdlp
+#   2. resolve 全 fail(最近 1 個 hourly bucket:total>=3 且 fail==total)且 yt-dlp 候選(閒置 slot)版本較新 → swap-ytdlp
 #   3. 403 率高(>=RULE_403_HIGH,預設 30%)          → wait(記錄,交返下一 tick 重驗)
+# 讀 facts.env 邊個欄(M3,欄位由 stream-diagnose.sh 由 ops-metrics.json 算):
+#   RATE403 = 最近 1 個 hourly bucket 嘅 upstream403 (hls+stream)/(hlsTotal+streamTotal);樣本<10 用最近 3 個 bucket;仍<10 = 空(唔判)
+#   RESOLVE_TOTAL/RESOLVE_FAIL = 最近 1 個 hourly bucket 嘅 resolve.total / resolve.fail
+# 注意:08-22 嗰種病(resolve 成功、URL 1MiB 後 403)唔係 resolve fail,規則唔會自己 swap——swap 由 selfheal ① 負責。
 #   4. 其餘                                          → escalate
 # 輸出固定格式 VERDICT / REASON / ACTIONS(俾 stream-diagnose.sh 收)。動作一律經 stream-remedy.sh。
 set -u
@@ -34,8 +38,8 @@ if [[ -z "$pid" || "$pid" == "none" || "$health" != "200" ]]; then
   else
     echo "VERDICT: escalate"; echo "REASON: rules: $reason → restart-backend 失敗/被拒(gate 或配額)"; echo "ACTIONS: restart-backend(failed)"
   fi
-elif [[ "$rt" -gt 0 && "$rf" -eq "$rt" ]] && newer "$idle" "$act"; then
-  reason="resolve 全 fail($rf/$rt)而候選 yt-dlp $idle 新過現役 $act"
+elif [[ "$rt" -ge 3 && "$rf" -eq "$rt" ]] && newer "$idle" "$act"; then
+  reason="最近 1 個鐘 resolve 全 fail($rf/$rt)而候選 yt-dlp $idle 新過現役 $act"
   if run swap-ytdlp; then
     echo "VERDICT: fixed-pending-verify"; echo "REASON: rules: $reason → 已 swap-ytdlp,下一 tick 重驗"; echo "ACTIONS: swap-ytdlp"
   else
