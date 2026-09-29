@@ -19,7 +19,7 @@
 #    HTTP 入口;刪 backend/cache/resolve-cache.json 冇用(記憶體 Map 仍在,而且下次 flush 寫返)。
 #    冇安全入口 = 唔做(見 STREAM-WATCH-REPORT-20260929.md)。
 #
-# STREAM-HARDEN §2.2:prod 模式(冇 STREAM_WATCH_TEST=1+tmp REMEDY_STATE)要 stream-watch tick 憑證($WATCH_DIR/.watch-ctx)或 REMEDY_MANUAL=1,否則 exit 2 REFUSED 零寫入;
+# STREAM-HARDEN §2.2:prod 模式(冇「STREAM_WATCH_TEST=1 且 REMEDY_STATE/REMEDY_LOG/WATCH_DIR 三個都設咗而且解析 symlink 後都喺 tmp 下」)要 stream-watch tick 憑證($WATCH_DIR/.watch-ctx)或 REMEDY_MANUAL=1,否則 exit 2 REFUSED 零寫入;
 #   CLAUDECODE 非空而冇 REMEDY_MANUAL=1 亦拒。詳見 README「點解會 REFUSED」。
 # exit: 0 成功 / 1 動作失敗 / 2 拒絕(未知 action、參數唔啱) / 3 配額用晒 / 4 precondition-failed(node/python3 缺,冇試過)
 # REMEDY_DRY_RUN=1:全部側效應歸零(唔 call apply/restart、唔寫 state/request、唔 curl 落 backend)。
@@ -36,10 +36,17 @@ REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 cd "$REPO" || { echo "cannot cd to $REPO" >&2; exit 1; }
 
 # M5:危險 env 入口一律忽略/重設。AI(或任何 caller)喺命令前面加 `REMEDY_STATE=/tmp/x ...`、
-# `SELFHEAL_RESTART_CMD=... ...` 都冇用——只有 STREAM_WATCH_TEST=1 **而且** REMEDY_STATE 喺 tmp 目錄下
+# `SELFHEAL_RESTART_CMD=... ...` 都冇用——只有 STREAM_WATCH_TEST=1 **而且** REMEDY_STATE、REMEDY_LOG、WATCH_DIR 三個齊全並喺 tmp 目錄下(解析 symlink 後;缺任何一個=prod 模式)
 # (冇 `..`)先認呢批 override(測試用)。REMEDY_ENGINE / REMEDY_INCIDENT 只係標籤,照收(唔係攻擊面)。
-_sw_tmpok() { case "$1" in *..*) return 1 ;; /tmp/*|/private/tmp/*|/var/folders/*|/private/var/folders/*) return 0 ;; esac; return 1; }
-if [[ "${STREAM_WATCH_TEST:-0}" == "1" ]] && _sw_tmpok "${REMEDY_STATE:-}"; then
+_sw_tmpok() { # L1:解析 symlink 後先比對(python realpath);要絕對路徑、無 `..`、解析後喺 tmp 下
+  local p="$1" r
+  [[ "$p" == /* ]] || return 1
+  case "$p" in *..*) return 1 ;; esac
+  r="$(/usr/bin/python3 -c 'import os,sys;print(os.path.realpath(sys.argv[1]))' "$p" 2>/dev/null)" || return 1
+  case "$r" in /private/tmp/*|/private/var/folders/*|/tmp/*|/var/folders/*) return 0 ;; esac
+  return 1
+}
+if [[ "${STREAM_WATCH_TEST:-0}" == "1" ]] && _sw_tmpok "${REMEDY_STATE:-}" && _sw_tmpok "${REMEDY_LOG:-}" && _sw_tmpok "${WATCH_DIR:-}"; then
   TESTMODE=1
 else
   TESTMODE=0
@@ -72,7 +79,8 @@ ENGINE="${REMEDY_ENGINE:-manual}"
 STATE="${REMEDY_STATE:-$WATCH_DIR/stream-remedy-state.json}"
 LOG="${REMEDY_LOG:-$WATCH_DIR/stream-remedy.log}"
 WATCH_STATE="${WATCH_STATE:-$WATCH_DIR/stream-watch-state.json}"
-SELFHEAL_STATE="${SELFHEAL_STATE:-$REPO/backend/data/stream-selfheal-state.json}"
+if [[ $TESTMODE -eq 1 ]]; then SELFHEAL_STATE="${SELFHEAL_STATE:-$WATCH_DIR/selfheal-state.json}"   # 測試模式唔准 fallback 去 backend/data
+else SELFHEAL_STATE="${SELFHEAL_STATE:-$REPO/backend/data/stream-selfheal-state.json}"; fi
 APPLY_DEFAULT=1; [[ -n "${SELFHEAL_APPLY_CMD:-}" ]] && APPLY_DEFAULT=0
 RESTART_DEFAULT=1; [[ -n "${SELFHEAL_RESTART_CMD:-}" ]] && RESTART_DEFAULT=0
 APPLY_CMD="${SELFHEAL_APPLY_CMD:-$REPO/ops/ytdlp/update-ytdlp.sh --apply}"

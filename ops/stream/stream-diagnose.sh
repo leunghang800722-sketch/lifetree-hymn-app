@@ -24,9 +24,17 @@ REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 
 # STREAM-HARDEN §2.2:測試模式=STREAM_WATCH_TEST=1 且 WATCH_DIR(及 DIAG_DIR 如有)喺 tmp 下;否則 prod 模式,
 # 要 stream-watch tick 憑證(真 HOME 嘅 .watch-ctx)或 DIAG_MANUAL=1,否則 REFUSED exit 2 零寫入(喺 mkdir 之前)。
-_sw_tmpok() { case "$1" in *..*) return 1 ;; /tmp/*|/private/tmp/*|/var/folders/*|/private/var/folders/*) return 0 ;; esac; return 1; }
+_sw_tmpok() { # L1:解析 symlink 後先比對(python realpath);要絕對路徑、無 `..`、解析後喺 tmp 下
+  local p="$1" r
+  [[ "$p" == /* ]] || return 1
+  case "$p" in *..*) return 1 ;; esac
+  r="$(/usr/bin/python3 -c 'import os,sys;print(os.path.realpath(sys.argv[1]))' "$p" 2>/dev/null)" || return 1
+  case "$r" in /private/tmp/*|/private/var/folders/*|/tmp/*|/var/folders/*) return 0 ;; esac
+  return 1
+}
 if [[ "${STREAM_WATCH_TEST:-0}" == "1" ]] && _sw_tmpok "${WATCH_DIR:-}" && { [[ -z "${DIAG_DIR:-}" ]] || _sw_tmpok "$DIAG_DIR"; }; then
   DIAG_TESTMODE=1
+  SELFHEAL_STATE="${SELFHEAL_STATE:-$WATCH_DIR/selfheal-state.json}"   # 測試模式唔准 fallback 去 backend/data
 else
   DIAG_TESTMODE=0
   _sw_rh="$(wlib_real_home)"

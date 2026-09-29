@@ -18,6 +18,8 @@
 # M1:所有 state 讀寫都喺 lock 內;攞唔到 lock = 成個 tick 零寫(連 status 都唔行)。
 # 已知限制(L3,Eric 已拍板唔要 dead-man):watch 掛喺 healthcheck 尾,healthcheck 自己死咗/唔行,watch 都唔會行;
 #   `stale` 觸發喺 healthcheck 內結構上幾乎唔會 fire。偵測本身死咗,呢層唔會知。
+# 入口 guard(STREAM-HARDEN 2):非測試模式 CLAUDECODE 非空而冇 WATCH_MANUAL=1 → REFUSED exit 2;STREAM_WATCH_TEST=1 要 WATCH_DIR(+已設 STATE/LOG_MD/ALERT)喺 tmp,
+#   LOG_MD/ALERT 預設落 WATCH_DIR、NOTIFY 預設 /usr/bin/true。
 # env override(測試):WATCH_DIR WATCH_STATE WATCH_STATUS_CMD WATCH_DIAGNOSE_CMD WATCH_NOTIFY_CMD WATCH_LOG_MD
 #   WATCH_ALERT_FILE WATCH_NOW(epoch,模擬時間) WATCH_DIAG_TIMEOUT WATCH_RENOTIFY_SEC
 # 演習:stream-drill.request → 見 0.5 節;WATCH_DRILL_CMD / WATCH_DRILL_CAP 只係測試 override。
@@ -25,6 +27,34 @@
 set -u
 REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 . "$REPO/ops/stream/stream-watch-lib.sh"
+
+# ── STREAM-HARDEN 2 M2:入口 guard(lock 之前、任何寫入之前)─────────────────────
+# (b) STREAM_WATCH_TEST=1:WATCH_DIR 必須(解析 symlink 後)喺 tmp 下,否則 exit 2;LOG_MD/ALERT/STATE 如有明設亦要喺 tmp;
+#     LOG_MD/ALERT 預設落 $WATCH_DIR、NOTIFY 預設 /usr/bin/true(唔發真通知)⇒ 測試模式下結構上唔會掂 docs/SUPERVISION-LOG.md、真 alert、真 osascript。
+#     (DIAGNOSE_CMD 未設 → 真 diagnose,佢自己有測試模式判定;drill 用嘅 remedy 因冇 REMEDY_STATE/LOG 而跌 prod 模式 → REFUSED)
+# (a) 非測試模式:CLAUDECODE 非空(Claude 工具 shell)而冇 WATCH_MANUAL=1 → REFUSED exit 2 零寫入。launchd tick 冇 CLAUDECODE、冇 STREAM_WATCH_TEST,唔受影響。
+_sw_tmpok() { # L1:解析 symlink 後先比對;要絕對路徑、無 `..`
+  local p="$1" r
+  [[ "$p" == /* ]] || return 1
+  case "$p" in *..*) return 1 ;; esac
+  r="$(/usr/bin/python3 -c 'import os,sys;print(os.path.realpath(sys.argv[1]))' "$p" 2>/dev/null)" || return 1
+  case "$r" in /private/tmp/*|/private/var/folders/*|/tmp/*|/var/folders/*) return 0 ;; esac
+  return 1
+}
+if [[ "${STREAM_WATCH_TEST:-0}" == "1" ]]; then
+  _sw_bad=""
+  _sw_tmpok "${WATCH_DIR:-}" || _sw_bad="WATCH_DIR"
+  for _sw_v in WATCH_STATE WATCH_LOG_MD WATCH_ALERT_FILE; do
+    [[ -z "${!_sw_v:-}" ]] || _sw_tmpok "${!_sw_v}" || _sw_bad="$_sw_bad $_sw_v"
+  done
+  if [[ -n "$_sw_bad" ]]; then echo "REFUSED: STREAM_WATCH_TEST=1 要求 WATCH_DIR 同已設嘅 WATCH_STATE/WATCH_LOG_MD/WATCH_ALERT_FILE 都喺 tmp 下(解析 symlink 後);不合:$_sw_bad" >&2; exit 2; fi
+  WATCH_LOG_MD="${WATCH_LOG_MD:-$WATCH_DIR/SUPERVISION-LOG.md}"
+  WATCH_ALERT_FILE="${WATCH_ALERT_FILE:-$WATCH_DIR/STREAM-ALERT.md}"
+  WATCH_NOTIFY_CMD="${WATCH_NOTIFY_CMD:-/usr/bin/true}"
+elif [[ -n "${CLAUDECODE:-}" && "${WATCH_MANUAL:-0}" != "1" ]]; then
+  echo "REFUSED: stream-watch.sh 只准由 launchd healthcheck tick 行;喺 Claude 工具 shell 人手行請設 WATCH_MANUAL=1(測試請用 STREAM_WATCH_TEST=1 + tmp WATCH_DIR)" >&2
+  exit 2
+fi
 
 STATE="${WATCH_STATE:-$WATCH_DIR/stream-watch-state.json}"
 STATUS_CMD="${WATCH_STATUS_CMD:-$REPO/ops/stream/stream-status.sh}"
@@ -55,7 +85,9 @@ TMPD="$(mktemp -d "${TMPDIR:-/tmp}/streamwatch.XXXXXX" 2>/dev/null)" || { rmdir 
 # 但 pid 死咗 + mtime 30 分鐘期限令佢失效。
 CTX="$WATCH_DIR/.watch-ctx"
 ( umask 077; printf 'pid=%s ts=%s\n' "$$" "$(date +%s)" > "$CTX" ) 2>/dev/null
-trap 'rm -rf "$TMPD"; rm -f "$CTX" 2>/dev/null; rmdir "$LOCK" 2>/dev/null' EXIT   # 攞到 lock 先掛,唔會拆人哋嘅 lock
+# L5:stale lock 被第二個 tick 清走後,第一個 tick 收尾只准刪「內容 pid==自己」嘅憑證(唔好刪第二個 tick 嘅)
+_sw_ctx_rm() { [[ "$(sed -n 's/^pid=\([0-9][0-9]*\).*$/\1/p' "$CTX" 2>/dev/null | head -1)" == "$$" ]] && rm -f "$CTX" 2>/dev/null; return 0; }
+trap 'rm -rf "$TMPD"; _sw_ctx_rm; rmdir "$LOCK" 2>/dev/null' EXIT   # 攞到 lock 先掛,唔會拆人哋嘅 lock
 trap 'exit 143' TERM INT HUP
 
 # ── 0.5 演習入口(TOKEN-REVOKE-DRILL-EXEC-20260929 Part B)────────────
