@@ -16,6 +16,7 @@ import jwt from 'jsonwebtoken';
 import { JWT_SECRET } from '../lib/authSecret.js';
 import { getUserDb, recordUserDevice } from '../lib/userDb.js';
 import { clientIp } from '../lib/loginRateLimit.js';
+import { isTokenRevoked } from '../lib/tokenValidity.js';
 import { recordHeartbeat, getPresenceSnapshot } from '../lib/presence.js';
 import { makeLimiter } from '../lib/rateLimit.js';
 
@@ -69,7 +70,7 @@ async function tryAuthenticate(req) {
     const token = authHeader.slice(7);
     const decoded = jwt.verify(token, JWT_SECRET);
     const db = await getUserDb();
-    const stmt = db.prepare('SELECT id, username, email, phone, role FROM users WHERE id = ?');
+    const stmt = db.prepare('SELECT id, username, email, phone, role, token_valid_after FROM users WHERE id = ?');
     stmt.bind([decoded.id]);
     if (!stmt.step()) {
       stmt.free();
@@ -77,6 +78,7 @@ async function tryAuthenticate(req) {
     }
     const user = stmt.getAsObject();
     stmt.free();
+    if (isTokenRevoked(decoded, user)) return null; // 已撤銷 → 當訪客,同無效 token 一樣
     try {
       db.run('UPDATE users SET last_seen_at = ? WHERE id = ?', [new Date().toISOString(), user.id]);
     } catch (_) {}

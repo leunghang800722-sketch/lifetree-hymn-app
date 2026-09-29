@@ -4,6 +4,7 @@ import jwt from 'jsonwebtoken';
 import { JWT_SECRET } from '../lib/authSecret.js';
 import { ipLoginLimiter, clientIp } from '../lib/loginRateLimit.js';
 import requireAuth from '../lib/requireAuth.js';
+import { isTokenRevoked } from '../lib/tokenValidity.js';
 
 const TOKEN_EXPIRY = '30d';
 
@@ -85,12 +86,15 @@ export default function authRoutes(app, getUserDb) {
       }
 
       const db = await getUserDb();
-      const stmt = db.prepare('SELECT id, username, email, phone, role, gender, birth_year FROM users WHERE id = ?');
+      const stmt = db.prepare('SELECT id, username, email, phone, role, gender, birth_year, token_valid_after FROM users WHERE id = ?');
       stmt.bind([decoded.id]);
 
       if (!stmt.step()) { stmt.free(); return res.status(404).json({ error: 'User not found' }); }
 
       const user = stmt.getAsObject(); stmt.free();
+      if (isTokenRevoked(decoded, user)) {
+        return res.status(401).json({ error: 'Invalid or expired token' });
+      }
       res.json({
         user: {
           id: user.id, username: user.username, email: user.email, phone: user.phone,

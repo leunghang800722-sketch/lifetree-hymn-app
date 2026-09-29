@@ -39,6 +39,9 @@ function initSchema(db) {
   // 2026-09-06:會員心跳順手記低最後一部機嘅 deviceId(HLS 單機 allowlist 用
   // deviceId,冇呢欄就冇辦法由電話/帳號對返部機)。純加欄,零破壞。
   try { db.run('ALTER TABLE users ADD COLUMN last_device_id TEXT'); } catch (_) {}
+  // 2026-09-29:改密碼即令舊 token 失效(unix 秒;NULL = 冇限制,舊用戶零影響)。
+  // 見 lib/tokenValidity.js。純加欄,零破壞。
+  try { db.run('ALTER TABLE users ADD COLUMN token_valid_after INTEGER'); } catch (_) {}
 
   // ── 會員系統 Phase 1:跨裝置同步(MEMBERSHIP-PHASE1-LOGIN-SYNC §1.1)──────
   db.run(`CREATE TABLE IF NOT EXISTS favorites (

@@ -13,6 +13,7 @@ import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 import { JWT_SECRET } from '../lib/authSecret.js';
 import { saveUserDb } from '../lib/userDb.js';
+import { markTokensRevoked } from '../lib/tokenValidity.js';
 import { ipLoginLimiter, phoneLoginLimiter, clientIp } from '../lib/loginRateLimit.js';
 import { REGISTRATION_MODE } from '../lib/registrationMode.js';
 import { redeemInviteAndFriend } from '../lib/inviteRedeem.js';
@@ -521,6 +522,9 @@ export default function otpAuthRoutes(app, getUserDb) {
 
       const hash = await bcrypt.hash(password, SALT_ROUNDS);
       db.run('UPDATE users SET password_hash = ? WHERE id = ?', [hash, existing.id]);
+      // 改密碼即令舊 token 失效(TOKEN-REVOKE-DRILL-EXEC-20260929 Part A);
+      // 同一個流程、同一次 saveUserDb 落盤。新 token 喺下面先簽,iat >= 呢個值。
+      markTokensRevoked(db, existing.id);
 
       // 補完 profile(§2.3):只喺該欄目前係 NULL 先寫入,有值一律唔覆蓋。
       if (!existing.username && username !== undefined && username !== null && validateUsername(username)) {

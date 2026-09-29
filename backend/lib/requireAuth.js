@@ -7,6 +7,7 @@
 import jwt from 'jsonwebtoken';
 import { JWT_SECRET } from './authSecret.js';
 import { getUserDb } from './userDb.js';
+import { isTokenRevoked } from './tokenValidity.js';
 
 export default async function requireAuth(req, res, next) {
   try {
@@ -20,7 +21,7 @@ export default async function requireAuth(req, res, next) {
     const db = await getUserDb();
     // role 由 DB 每個 request 重新讀(唔信 token payload)—— MEMBERSHIP-PHASE2-ADMIN-PLAN
     // §2.3/§3.1:requireAdmin 直接用呢個 req.user.role,revoke 即時生效,零額外 query。
-    const stmt = db.prepare('SELECT id, username, email, phone, role FROM users WHERE id = ?');
+    const stmt = db.prepare('SELECT id, username, email, phone, role, token_valid_after FROM users WHERE id = ?');
     stmt.bind([decoded.id]);
     if (!stmt.step()) {
       stmt.free();
@@ -28,6 +29,11 @@ export default async function requireAuth(req, res, next) {
     }
     const user = stmt.getAsObject();
     stmt.free();
+    // 改密碼後簽發前嘅 token 一律 401(token_valid_after,見 lib/tokenValidity.js)
+    if (isTokenRevoked(decoded, user)) {
+      return res.status(401).json({ error: 'unauthorized' });
+    }
+    delete user.token_valid_after; // 唔外洩落 req.user / renew response
     user.role = user.role || 'member';
 
     try {
