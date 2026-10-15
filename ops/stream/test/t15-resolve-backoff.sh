@@ -26,6 +26,7 @@ const secs = () => Math.round((st().until - fake) / 1000);
 const warn = []; const ow = console.warn; console.warn = (...a) => { warn.push(a.join(' ')); };
 const log = []; console.log = (...a) => log.push(a.join(' '));
 const out = (...a) => process.stderr.write(a.join(' ') + '\n');
+async function tryResolve0(id, opts) { try { await R.resolveAudioUrl(id, opts); return 'ok'; } catch (e) { return 'err:' + String(e.message).slice(0, 40); } }
 let i = 0; const nid = () => 'vid' + (++i);
 async function tryResolve(opts) { try { await R.resolveAudioUrl(nid(), opts); return 'ok'; } catch (e) { return 'err:' + String(e.message).slice(0, 40); } }
 mode('bot');
@@ -62,16 +63,38 @@ mode('bot'); fake = Math.max(fake, st().until) + 1000;
 const rr = await tryResolve({}); out(`after-reset bot-check → ${rr}; cooldownSecs=${secs()} streak=${st().streak}`);
 out('--- 第二輪 #2:5 個並發背景 resolve 同時撞 bot-check → 只加 1 次(每冷卻窗一次)');
 mode('bot'); R.__rateLimitStateForTest({ streak: 0, until: 0, baseUntil: 0 }); fake += 5000;
-const cdBefore = M.getOpsMetrics().total.botCheck.cooldowns;
+const cdBefore = M.getOpsMetrics().total.botCheck.cooldownWindows;
+const hitsBefore = M.getOpsMetrics().total.botCheck.hits;
 const rs = await Promise.all([1, 2, 3, 4, 5].map(() => tryResolve({})));
-out(`concurrent x5 → streak=${st().streak}(應 1) cooldownSecs=${secs()}(應 30) cooldowns記帳增量=${M.getOpsMetrics().total.botCheck.cooldowns - cdBefore}(應 1) results=${rs.length}`);
+out(`hits記帳增量=${M.getOpsMetrics().total.botCheck.hits - hitsBefore}(應 5:每次撞都計,同冷卻窗數分開)`);
+out(`concurrent x5 → streak=${st().streak}(應 1) cooldownSecs=${secs()}(應 30) cooldownWindows記帳增量=${M.getOpsMetrics().total.botCheck.cooldownWindows - cdBefore}(應 1) results=${rs.length}`);
 out('--- 並發窗內再撞(窗內第 6 個)→ 仍唔加;窗過後再撞 → 第 2 次 60s');
 fake = st().until + 1000; const r6 = await tryResolve({});
 out(`window-expired bot-check → streak=${st().streak}(應 2) cooldownSecs=${secs()}(應 60)`);
 const m = M.getOpsMetrics().total.botCheck;
 out('opsMetrics.total.botCheck=' + JSON.stringify(m));
 // 第二輪 #4:舊碟(冇 botCheck 欄)normalize 補齊 → blankBucket 有 botCheck
-out('blankBucket 含 botCheck(新 process 未撞過都有欄位)=' + (m && typeof m.cooldowns === 'number'));
+out('blankBucket 含 botCheck(新 process 未撞過都有欄位)=' + (m && typeof m.cooldownWindows === 'number' && typeof m.hits === 'number'));
+out('--- 第三輪 B1:成功連 baseUntil 一齊歸零(窗內 straggler 令 base 超過 until,之後背景成功,真人閘即開)');
+mode('ok'); fake += 100000;
+R.__rateLimitStateForTest({ streak: 3, until: fake - 1000, baseUntil: fake + 25000 });
+const rbg = await tryResolve({});
+out(`background(until 已過) → ${rbg}; 成功後 baseUntil=${st().baseUntil}(應 0) streak=${st().streak}(應 0)`);
+const rpb = await tryResolve({ playbackRetry: true });
+out(`playbackRetry 緊接 → ${rpb}(應 ok,唔再多等 25s)`);
+out('--- 第三輪 B2:冷卻期 fail-fast 跳過唔寫 failCache;60s 內真人播放仍會試 YouTube');
+mode('bot'); fake += 1000;
+R.__rateLimitStateForTest({ streak: 4, until: fake + 240000, baseUntil: fake + 30000 });
+const sid = 'skipvid';
+const rsk = await tryResolve0(sid, {});
+out(`background 冷卻期 → ${rsk}; failCache.has=${R.failCache.has(sid)}(應 false)`);
+mode('ok'); R.__rateLimitStateForTest({ baseUntil: 0 });   // 模擬 Eric 換 VPN、30s 已過
+const rpl = await tryResolve0(sid, { playbackRetry: true });
+out(`60s 內真人播放同一首 → ${rpl}(應 ok,唔係 Known-bad)`);
+out('--- 控制組:真正試過 YouTube 失敗仍寫 failCache');
+mode('bot'); R.__rateLimitStateForTest({ streak: 0, until: 0, baseUntil: 0 });
+const rfc = await tryResolve0('realfail', {});
+out(`真失敗 → ${rfc}; failCache.has=${R.failCache.has('realfail')}(應 true)`);
 Date.now = realNow;
 process.exit(0);
 JS

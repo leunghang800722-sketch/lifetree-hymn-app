@@ -116,3 +116,31 @@ commit:backend `6a23d3a`、ops `70e6aaf`、test+本節(下一個 commit)。backe
 - selfheal 的 resolve-fail/403 比例由 `--detail` 字串計(light 模式只探 1 首 ⇒ 樣本 1;④ 閾值 backend log + botcheckB >= 3 仍需 backend log 補足)。
 - healthcheck 現在每 tick 多一個 `mktemp`(`$TMPDIR`,失敗則退回 /dev/null),**ops 改動於 commit 後下一個真 tick(16:07)即 live**;本輪測試全部避開 :07±2 與 :12。
 - backend 三檔仍未 restart/部署。
+
+## 8. 第三輪(Opus 第二輪驗收 `STREAM-PHONE-NOTIFY-OPUS2-20261015.md` 細修;2026-10-15)
+| # | 項 | 狀態 | 改動 / 證據 |
+|---|---|---|---|
+| 1 | B1 成功連 `baseUntil` 歸零 | ✅ | `resolveAudio.js` runStrategy 成功時 `ytRateLimitedBaseUntil=0`。t15:until 已過、base 仲剩 25s → 背景成功後 base=0、緊接 playbackRetry 即 ok |
+| 2 | B2 冷卻 skip 唔寫 failCache | ✅ | skip error 帶 `rateLimitedSkip`,`resolveAudioUrl`/`refreshAudioUrl` 兩個 catch 只喺非 skip 先寫。t15:冷卻期背景 failCache.has=false;60s 內真人播放同一首 ok(唔係 Known-bad);控制組真失敗 failCache.has=true |
+| 3 | botCheck 語義 | ✅ | `cooldowns` → `cooldownWindows`(每窗一次)+ 新 `hits`(每次撞都計,`recordBotCheckHit`);blankBucket/normalizeBucket 同步,舊碟 `cooldowns` 轉入 `cooldownWindows`。t15:並發 ×5 → hits +5、cooldownWindows +1 |
+| 4 | harness | ✅ | t15 擴充(B1/B2/控制組/hits),全部符預期 |
+| 5 | O1 | ✅ | `stream-diagnose.sh` 測試模式 `HEALTH_STATE` 強制喺 `$WATCH_DIR/` 內(指去 prod 路徑都被改寫);t8 釘 fixture(含 healthyB/botcheckB/bResolveFail/b403)+斷言:案3 swap-ytdlp、④ escalate、缺欄 fail-safe、prod 路徑隔離,FAILS=0 |
+| 6 | HEALTHY_B 空 fail-safe | ✅ | rules 新 1c:HEALTHY_B 缺/空且本來會落 swap → escalate(只收窄 swap 路徑,其他規則不變)。t8 斷言 C |
+| 7 | ④訊息 | ✅ | 「backend log 近 30 分鐘 N 條 + 健康檢查 Layer B M 條 bot-check 證據(合共 K)」;t14 P5 案1=6+0、案5=0+3 |
+| 8 | 手機白話化 | ✅ | 見下;sanitize 改為保留換行(其餘控制字元/bidi/零寬照剷、過濾不變、≤400);t14 P9 斷言四款×形態 + 禁用內部字眼(rc= ignored selfheal alert- verdict escalate 形態 Layer) |
+| 9 | 回歸 | ✅ | t1–t17 全 rc=0、`PROD-SNAPSHOT OK`、`PROD-WRITE DETECTED`=0;t13 FAILS=0;t14 P9 FAIL=0;bash -n 全部 ops/stream 與 test、node --check 兩檔過 |
+
+### 四款訊息文案
+- 🔴 首發④:`🔴 Odely 播歌出問題（由 10-15 15:42 起）` / `原因：VPN 出口 IP 被 YouTube 當機械人擋住` / `自動修復：已判斷換 yt-dlp 無用，未自動修` / `要你做：換 NordVPN server（揀另一個城市），換完等 30 分鐘會自動確認`
+- 🔴 重發:標題改 `🔴 Odely 播歌仍未恢復（由 10-15 15:42 起，已 6.5 小時）`,其餘三行同形態
+- ① 原因「yt-dlp 版本過舊，YouTube 唔收」/ 自動修復「系統會自動試換新版」/ 要你做「暫時唔使做——yt-dlp 版本過舊，系統會自動試換」
+- ② 原因「backend 死咗」/「系統會自動重開」/「暫時唔使做——backend 死咗，系統會自動重開（如果重開唔到會再通知你）」
+- ③ 原因「YouTube 側問題」/「冇得自動修，系統每 30 分鐘會自動重試」/「暫時唔使做——YouTube 側問題，通常等 1–2 次檢查（約 30–60 分鐘）自己好」
+- 形態不明:原因「未能確定（可能係 VPN 出口 IP 被 YouTube 擋）」,要你做「試換 NordVPN server…」
+- ✅ 恢復:`✅ Odely 播歌已恢復（10-15 18:12）` / `停咗大約 2.5 小時` / `要你做：唔使做嘢`
+- ℹ️ IP 變:`ℹ️ Odely 網絡出口 IP 變咗（可能係 VPN 重連或者 Mac 重啟）` / `系統下一次檢查（約 30 分鐘內）會自動確認播歌有冇受影響` / `要你做：暫時唔使做`(不再帶 IP 數字)
+
+### 側效應 / 事故中安全
+- ops 已 live:只改訊息字串、sanitize、diagnose 測試模式、rules 的缺欄分支、selfheal 的 alert_msg 文字。watch state 機(escalated/notifyCount/lastNotifyAt)、重發計時、selfheal 形態判定與節流全部未改 → 唔會重複升級/重發;進行中 incident 22:12 重發會用新白話文案。
+- backend 改動(1a204ff)要 gate restart 先生效,未 restart。
+- 只寫 scratch;prod 零寫入(PROD-SNAPSHOT OK);冇真發 Telegram、冇 restart/launchctl/swap/YouTube。

@@ -5,5 +5,8 @@ case "$m" in
   ok)  echo '{"healthy":true,"stale":false,"needsHuman":false,"summary":"健康(stub)","consecutiveFail":0}'; exit 0 ;;
   bad) echo '{"healthy":false,"stale":false,"needsHuman":true,"summary":"唔健康,形態③(stub)","consecutiveFail":3}'; exit 1 ;;
   bad4) echo '{"healthy":false,"stale":false,"needsHuman":true,"summary":"唔健康,形態④出口IP被bot-check(stub)","consecutiveFail":3,"form":"④出口IP被bot-check","lastAction":"alert-ip-botcheck"}'; exit 1 ;;
+  bad1) echo '{"healthy":false,"stale":false,"needsHuman":true,"summary":"形態①(stub)","consecutiveFail":3,"form":"①yt-dlp","lastAction":"apply-failed"}'; exit 1 ;;
+  bad2) echo '{"healthy":false,"stale":false,"needsHuman":true,"summary":"形態②(stub)","consecutiveFail":3,"form":"②backend","lastAction":"restart-failed"}'; exit 1 ;;
+  bad3) echo '{"healthy":false,"stale":false,"needsHuman":true,"summary":"形態③(stub)","consecutiveFail":3,"form":"③YouTube側","lastAction":"alert-youtube"}'; exit 1 ;;
   stale) echo '{"healthy":false,"stale":true,"needsHuman":true,"summary":"stale(stub)"}'; exit 2 ;;
 esac

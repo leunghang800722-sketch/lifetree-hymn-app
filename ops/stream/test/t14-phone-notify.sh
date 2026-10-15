@@ -74,7 +74,7 @@ import sys
 t = open(sys.argv[1], encoding='utf-8').read()
 print("  收到 -m 長度(字元)=%d(<=400)" % len(t))
 print("  含 [REDACTED-JWT]=%s  含原 JWT 片段=%s" % ('[REDACTED-JWT]' in t, 'SflKxwRJSM' in t))
-print("  含 U+202E=%s  含換行=%s  含 abc123def456ghi=%s" % ('‮' in t, '\n' in t, 'abc123def456ghi' in t))
+print("  含 U+202E=%s  含換行(第三輪起保留,預期 True)=%s  含 abc123def456ghi=%s" % ('‮' in t, '\n' in t, 'abc123def456ghi' in t))
 print("  $() 與反引號字面保留(冇被 shell 展開)=%s" % ('$(touch' in t))
 print("  開頭 60 字:" + t[:60].replace('\n', ' '))
 PY
@@ -113,6 +113,9 @@ print("  lastAction=%s alert.form=%s swapsToday=%s restartsToday=%s" % (d['lastA
 print("  apply/restart 被 call 次數=%d %s" % (len(calls), [c.split(' ', 2)[1:] for c in calls]))
 print("  alert.message 含「VPN」=%s 含「換 yt-dlp 無用」=%s" % ('VPN' in a['message'], '換 yt-dlp 無用' in a['message']))
 print("  SUPERVISION 行含④=%s" % ('形態④' in sup))
+import re
+m = re.search(r'backend log 近 30 分鐘 (\d+) 條 \+ 健康檢查 Layer B (\d+) 條', a['message'])
+print("  ④訊息分開寫(第三輪 #7)=%s" % (('backend log %s 條 + Layer B %s 條' % m.groups()) if m else '(非④或冇此句)'))
 PY
 }
 echo "== 案1(正控)近期 bot-check ×6 行,A/B 都死,midfail=3"; sh_case c1 "$S/p5/bot-recent.log" 0 0 3
@@ -153,7 +156,7 @@ hc() { echo "$1" > "$S/p6/ip"; env HC_IP_CMD="$S/p6/ipcmd.sh" SELFHEAL_DRY_RUN=1
     "$(tail -1 "$WATCH_DIR/stream-health.log" | grep -o 'ip=[^ ]*')" "$(grep -c 'ℹ️' "$WATCH_DIR/SUPERVISION-LOG.md" 2>/dev/null || true)" "$(phones)"; }
 hc 203.0.113.10; hc 203.0.113.10; hc 198.51.100.7; hc '?'; hc 198.51.100.7; hc 203.0.113.99
 echo "  SUPERVISION ℹ️ 行:"; grep 'ℹ️' "$WATCH_DIR/SUPERVISION-LOG.md" | sed 's/^/    /'
-echo "  手機訊息:"; sed 's/^/    /' "$STUB_DIR/phone.msgs"
+echo "  手機訊息:"; sed 's/^/    /' "$STUB_DIR/phone.msgs"; cp "$STUB_DIR/phone.last" "$S/p9-ipchange.txt"
 echo "  watch.log:"; sed 's/^/    /' "$WATCH_DIR/watch.log"
 
 echo; echo "################ P7a R5(a) healthcheck 少探(--verbose 數 A/B 探測行)################"
@@ -180,3 +183,35 @@ for c in 0 1 2 5; do echo "{\"consecutiveFail\": $c}" > "$S/hs$c.json"; echo "--
 echo 'garbage' > "$S/hsbad.json"; echo "-- state 壞:"; "$REPO/ops/ytdlp/canary-note.sh" "$S/hsbad.json" | cut -c1-80
 echo "-- state 唔存在:"; "$REPO/ops/ytdlp/canary-note.sh" "$S/nonexist.json" | cut -c1-80
 echo "(update-ytdlp.sh 本身會 pip install + 打 YouTube,唔行;只驗 canary-note.sh 同 bash -n)"
+
+echo; echo "################ P9 第三輪:手機訊息白話化(四款 × 形態①②③④)斷言 ################"
+P9FAIL=0
+chk() { # $1=標籤 $2=訊息檔 $3...=必須包含嘅字串(以 || 分隔不用;逐個參數);另外固定檢查:<=400 字、冇內部字眼
+  local label="$1" f="$2"; shift 2
+  python3 - "$label" "$f" "$@" <<'PY' || P9FAIL=$((P9FAIL+1))
+import sys
+label, f, *need = sys.argv[1:]
+t = open(f, encoding='utf-8').read()
+bad = [n for n in need if n not in t]
+for w in ('rc=', 'ignored', 'selfheal', 'alert-', 'verdict', 'escalate', '形態', 'Layer'):
+    if w in t: bad.append('不應含內部字眼:' + w)
+if len(t) > 400: bad.append('超 400 字:%d' % len(t))
+print("  [%s] %s | %d 字 | 行數=%d" % (label, 'PASS' if not bad else 'FAIL ' + str(bad), len(t), t.count('\n') + 1))
+if bad: print(t); sys.exit(1)
+PY
+}
+for f in 1 2 3 4; do
+  setup p9$f; echo escalate > "$STUB_DIR/verdict"; tick bad$f; tick bad$f
+  cp "$STUB_DIR/phone.last" "$S/p9-down$f.txt"
+  for i in $(seq 1 12); do tick bad$f; done; cp "$STUB_DIR/phone.last" "$S/p9-renotify$f.txt"
+  tick ok; cp "$STUB_DIR/phone.last" "$S/p9-recover$f.txt"
+done
+chk "首發④" "$S/p9-down4.txt" "🔴 Odely 播歌出問題（由 " "起）" $'\n原因：VPN 出口 IP 被 YouTube 當機械人擋住' $'\n自動修復：已判斷換 yt-dlp 無用，未自動修' $'\n要你做：換 NordVPN server（揀另一個城市），換完等 30 分鐘會自動確認'
+chk "重發④" "$S/p9-renotify4.txt" "🔴 Odely 播歌仍未恢復（由 " "已 6.5 小時）" $'\n原因：VPN 出口 IP 被 YouTube 當機械人擋住' $'\n要你做：換 NordVPN server'
+chk "首發①" "$S/p9-down1.txt" $'\n原因：yt-dlp 版本過舊' $'\n要你做：暫時唔使做——yt-dlp 版本過舊，系統會自動試換'
+chk "首發②" "$S/p9-down2.txt" $'\n原因：backend 死咗' $'\n要你做：暫時唔使做——backend 死咗，系統會自動重開'
+chk "首發③" "$S/p9-down3.txt" $'\n原因：YouTube 側問題' $'\n要你做：暫時唔使做——YouTube 側問題，通常等 1–2 次檢查'
+chk "恢復" "$S/p9-recover4.txt" "✅ Odely 播歌已恢復（" $'\n停咗大約 7.0 小時'
+chk "IP變" "$S/p9-ipchange.txt" "ℹ️ Odely 網絡出口 IP 變咗" $'\n要你做：暫時唔使做'
+echo "  IP變訊息含 IP 數字=$(grep -cE '[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+' "$S/p9-ipchange.txt")(預期 0)"
+echo "  P9 FAIL 項數=$P9FAIL(預期 0)"
