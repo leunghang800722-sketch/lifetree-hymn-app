@@ -334,10 +334,11 @@ fi
 # 計法見 stream-botcheck-count.py)。再要求 Layer B 自己都死(healthy_b==0):直打 resolve 仲通嘅話 bot-check 行只係舊尾巴,照舊走①/②/③。
 # 第二輪 #8:證據 = backend log 計數 + healthcheck Layer B 自己 stderr 嘅 bot-check 命中數(state.botcheckB;backend log 睇唔到 healthcheck 自己嘅 resolve);
 # 並要求 Layer B 失敗以 resolve-fail 為主(resolve-fail 數 >= 403 數,且 >=1)——真 yt-dlp 過舊(B resolve 得、URL 403)加背景噪音唔會誤判④。
-botN=0; botB=0
+botN=0; botB=0; botL=0
 if (( healthy_b == 0 )); then
   botN="$(python3 "$REPO/ops/stream/stream-botcheck-count.py" "$BOTLOG" "${SELFHEAL_BOTCHECK_MIN:-30}" 2>/dev/null)"
   [[ "$botN" =~ ^[0-9]+$ ]] || botN=0
+  botL="$botN"   # 第三輪 #7:backend log 命中數單獨保留(訊息分開寫)
   botB="$(python3 -c "
 import json
 try: print(int(json.load(open('$HEALTH_STATE')).get('botcheckB',0)))
@@ -482,7 +483,7 @@ case "$form" in
   # 唔行 apply / swap / restart,唔食任何配額(swaps/restarts 原樣帶落 write_state)。只警報;節流同③一致(due 先寫 SUPERVISION-LOG)。
   action="alert-ip-botcheck"
   alert_active=1
-  alert_msg="形態④(出口 IP 被 YouTube bot-check):backend log 近 30 分鐘有 $botN 條 bot-check 證據行,Layer B 直打 resolve 亦失敗。換 yt-dlp 無用、重開 backend 無用,**冇做任何自動修復、冇消耗配額**;要人手換 VPN server(Eric 自己做,唔同城市嘅 US server)。實際:$detail"
+  alert_msg="形態④(出口 IP 被 YouTube bot-check):backend log 近 30 分鐘 $botL 條 + 健康檢查 Layer B $botB 條 bot-check 證據(合共 $botN),Layer B 直打 resolve 亦失敗。換 yt-dlp 無用、重開 backend 無用,**冇做任何自動修復、冇消耗配額**;要人手換 VPN server(Eric 自己做,唔同城市嘅 US server)。實際:$detail"
   hist "alert-ip-botcheck botcheckLines=$botN consecutiveFail=$consecutiveFail due=$due(冇 apply/restart,冇食配額)"
   (( due == 1 )) && supervision "- 🔴 **自動修復梯:形態④出口 IP 被 bot-check,要人手換 VPN server $(ts)** — $alert_msg"
   ;;

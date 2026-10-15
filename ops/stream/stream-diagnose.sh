@@ -49,7 +49,11 @@ DIR="${DIAG_DIR:-$WATCH_DIR/stream-incident-$ID}"
 mkdir -p "$DIR" || exit 0
 BUNDLE="$DIR/bundle.md"; FACTS="$DIR/facts.env"
 STATUS_CMD="${STATUS_CMD:-$REPO/ops/stream/stream-status.sh}"
-HEALTH_STATE="${HEALTH_STATE:-$REPO/backend/data/stream-health-state.json}"
+if [[ "$DIAG_TESTMODE" == "1" ]]; then   # 第三輪 O1:測試模式 HEALTH_STATE 強制喺 $WATCH_DIR/ 入面(唔讀 prod state)
+  case "${HEALTH_STATE:-}" in "$WATCH_DIR"/*) ;; *) HEALTH_STATE="$WATCH_DIR/stream-health-state.json" ;; esac
+else
+  HEALTH_STATE="${HEALTH_STATE:-$REPO/backend/data/stream-health-state.json}"
+fi
 SELFHEAL_STATE="${SELFHEAL_STATE:-$REPO/backend/data/stream-selfheal-state.json}"
 SELFHEAL_HISTORY="${SELFHEAL_HISTORY:-$REPO/backend/data/stream-selfheal.log}"
 BACKEND_LOG="${BACKEND_LOG:-/tmp/hymn_backend.log}"

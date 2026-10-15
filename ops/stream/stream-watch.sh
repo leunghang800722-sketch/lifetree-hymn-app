@@ -254,29 +254,33 @@ f = str(d.get('form') or '?'); a = str(d.get('lastAction') or '?')
 print(f.replace('|', '/')[:40] + '|' + a.replace('|', '/')[:40])
 PY
 }
-phone_suggest() { # $1=形態字串 $2=reason → 一句建議
+phone_plain() { # $1=形態字串 $2=reason → 印三行:原因|自動修復|要你做(白話,Eric 唔識 code;唔含內部字眼)
   case "$1$2" in
-    *④*|*bot-check*|*"not a bot"*) echo "換 NordVPN server（連去唔同城市嘅 US server）；換 yt-dlp 無用" ;;
-    *①*) echo "睇 yt-dlp 版本（ops/ytdlp/update-ytdlp.sh --apply）" ;;
-    *②*) echo "backend 要 restart（可能撞 deploy gate，需 approve）" ;;
-    *) echo "睇 STREAM-ALERT.md；常見原因係出口 IP 被 YouTube 擋，可試換 VPN server" ;;
+    *④*|*bot-check*|*"not a bot"*)
+      echo "VPN 出口 IP 被 YouTube 當機械人擋住|已判斷換 yt-dlp 無用，未自動修|換 NordVPN server（揀另一個城市），換完等 30 分鐘會自動確認" ;;
+    *①*)
+      echo "yt-dlp 版本過舊，YouTube 唔收|系統會自動試換新版|暫時唔使做——yt-dlp 版本過舊，系統會自動試換" ;;
+    *②*)
+      echo "backend 死咗|系統會自動重開|暫時唔使做——backend 死咗，系統會自動重開（如果重開唔到會再通知你）" ;;
+    *③*)
+      echo "YouTube 側問題|冇得自動修，系統每 30 分鐘會自動重試|暫時唔使做——YouTube 側問題，通常等 1–2 次檢查（約 30–60 分鐘）自己好" ;;
+    *)
+      echo "未能確定（可能係 VPN 出口 IP 被 YouTube 擋）|未能自動修|試換 NordVPN server（揀另一個城市），或者叫 Claude 睇 STREAM-ALERT.md" ;;
   esac
 }
 phone_hours() { # $1=秒 → "N.N 小時" 或 "N 分鐘"
   local s="$1"; (( s < 0 )) && s=0
   if (( s < 3600 )); then echo "$(( s / 60 )) 分鐘"; else echo "$(( s / 3600 )).$(( (s % 3600) * 10 / 3600 )) 小時"; fi
 }
-phone_msg_down() { # $1=1 → 持續未恢復重發版;0 → 首次升級版
-  local since pf form la acts rsn sug
-  since="$(getf since)"; since="${since:-$(wlib_now)}"; pf="$(phone_form)"; form="${pf%%|*}"; la="${pf##*|}"
-  acts="$(getf diagActions)"; rsn="$(getf escalateReason)"
-  sug="$(phone_suggest "$form" "$rsn")"
-  local tried="診斷動作 ${acts:-無}／selfheal ${la}"
-  if [[ "$1" == 1 ]]; then
-    echo "🔴 Odely 串流仍未恢復（$(date -r "$since" '+%m-%d %H:%M' 2>/dev/null) 起，已 $(phone_hours $(( $(wlib_now) - since )))），形態 $form，$tried，需要你：$sug"
-  else
-    echo "🔴 Odely 串流中斷 $(date -r "$since" '+%m-%d %H:%M' 2>/dev/null) 起，形態 $form，$tried，需要你：$sug"
-  fi
+phone_msg_down() { # $1=1 → 持續未恢復重發版;0 → 首次升級版。格式:標題行\n原因\n自動修復\n要你做(第三輪白話化)
+  local since pf form rsn pl why fix todo head ts
+  since="$(getf since)"; since="${since:-$(wlib_now)}"; pf="$(phone_form)"; form="${pf%%|*}"
+  rsn="$(getf escalateReason)"
+  pl="$(phone_plain "$form" "$rsn")"; why="${pl%%|*}"; pl="${pl#*|}"; fix="${pl%%|*}"; todo="${pl#*|}"
+  ts="$(date -r "$since" '+%m-%d %H:%M' 2>/dev/null)"
+  if [[ "$1" == 1 ]]; then head="🔴 Odely 播歌仍未恢復（由 $ts 起，已 $(phone_hours $(( $(wlib_now) - since )))）"
+  else head="🔴 Odely 播歌出問題（由 $ts 起）"; fi
+  printf '%s\n原因：%s\n自動修復：%s\n要你做：%s' "$head" "$why" "$fix" "$todo"
 }
 sm() { # SUPERVISION-LOG append(pattern 級過濾,🔴 行骨架保留;唔存在就唔寫)
   [[ -d "$(dirname "$LOG_MD")" ]] || return 0
@@ -348,7 +352,7 @@ PY
 )"
 if [[ -n "$ipc" ]]; then
   set -- $ipc
-  if phone_send ipchange "ℹ️ Odely 出口 IP 由 $1 變 $2（Mac 重啟/VPN 重連？），下個 tick 會驗串流"; then ipn=sent; else ipn=no; fi
+  if phone_send ipchange "$(printf 'ℹ️ Odely 網絡出口 IP 變咗（可能係 VPN 重連或者 Mac 重啟）\n系統下一次檢查（約 30 分鐘內）會自動確認播歌有冇受影響\n要你做：暫時唔使做')"; then ipn=sent; else ipn=no; fi
   echo "$(wlib_ts) IPCHANGE $1 -> $2 phone=$ipn"
 fi
 
@@ -391,7 +395,7 @@ while IFS= read -r line; do
         sm "- ✅ **串流監察恢復 $(wlib_ts)** — incident \`$id\` 已恢復(曾升級人手;診斷 $(getf diagEngine)/$(getf verdict);動作 $(getf diagActions))。"
         rm -f "$ALERT" "$REQ_FILE"
         n="$(notify "Odely 串流監察" "串流已恢復(incident $id)")"
-        phone_send recover "✅ Odely 串流已恢復 $(date -r "$(wlib_now)" '+%m-%d %H:%M' 2>/dev/null)（停咗 $(phone_hours $(( $(wlib_now) - $(getf since) )))）" && n="$n phone=sent" || n="$n phone=no"
+        phone_send recover "$(printf '✅ Odely 播歌已恢復（%s）\n停咗大約 %s\n要你做：唔使做嘢' "$(date -r "$(wlib_now)" '+%m-%d %H:%M' 2>/dev/null)" "$(phone_hours $(( $(wlib_now) - $(getf since) )))")" && n="$n phone=sent" || n="$n phone=no"
         echo "$(wlib_ts) RECOVER(escalated) incident=$id $n"
       else
         sm "- ✅ **串流監察:自動修復成功 $(wlib_ts)** — incident \`$id\` 冇升級就自己好返(診斷 $(getf diagEngine)/$(getf verdict);動作 $(getf diagActions);selfheal 最後動作見 stream-selfheal.log)。"

@@ -99,8 +99,8 @@ wlib_phone_conf_get() { # $1=KEY → 印值(白名單字元;冇/壞印空)
   [[ "$v" =~ ^[-A-Za-z0-9_:@.+]{1,64}$ ]] && printf '%s' "$v"
   return 0
 }
-wlib_phone_sanitize() { # stdin → stdout:換行→空格、剷控制字元/bidi/零寬、過密鑰 filter、截 400 字元
-  perl -CSD -0777 -pe 's/[\r\n\t]+/ /g; s/[\x00-\x1f\x7f\x{85}\x{2028}\x{2029}\x{200B}-\x{200F}\x{202A}-\x{202E}\x{2066}-\x{2069}\x{FEFF}]//g' \
+wlib_phone_sanitize() { # stdin → stdout:保留換行(第三輪:白話分行訊息)、tab/CR→空格、剷其他控制字元/bidi/零寬、過密鑰 filter、截 400 字元
+  perl -CSD -0777 -pe 's/[\r\t]+/ /g; s/\n{3,}/\n\n/g; s/[\x00-\x09\x0b-\x1f\x7f\x{85}\x{2028}\x{2029}\x{200B}-\x{200F}\x{202A}-\x{202E}\x{2066}-\x{2069}\x{FEFF}]//g' \
     | wlib_filter | perl -CSD -0777 -pe '$_ = substr($_, 0, 400)'
 }
 wlib_phone_mask() { # stdin → stdout:遮走 $1(target)同其數字核心

@@ -5,6 +5,7 @@
 # 規則次序(同執行單條目次序有一處對調:backend 死咗優先,因為 backend 死咗嗰陣 403 率冇意義):
 #   1. backend pid 唔存在 或 /api/health 非 200      → restart-backend
 #   1b. (BOTCHECK_RECENT + BOTCHECK_B)>=3 且 HEALTHY_B==0(Layer B 死,同 selfheal 一致)且 B_RESOLVE_FAIL>=1 且 >=B_403 → escalate「出口 IP 被 YouTube bot-check…要人手換 VPN server」(唔 swap)
+#   1c. HEALTHY_B 缺/空 且 本來會落 swap(規則 2 條件成立)→ escalate(fail-safe,唔食 swap 配額)
 #   2. resolve 全 fail(最近 1 個 hourly bucket:total>=3 且 fail==total)且 yt-dlp 候選(閒置 slot)版本較新 → swap-ytdlp
 #   3. 403 率高(>=RULE_403_HIGH,預設 30%)          → wait(記錄,交返下一 tick 重驗)
 # 讀 facts.env 邊個欄(M3,欄位由 stream-diagnose.sh 由 ops-metrics.json 算):
@@ -26,7 +27,7 @@ act="$(f YTDLP_ACTIVE)"; idle="$(f YTDLP_IDLE)"; r403="$(f RATE403)"; botn="$(f 
 botB="$(f BOTCHECK_B)"; [[ "$botB" =~ ^[0-9]+$ ]] || botB=0
 brf="$(f B_RESOLVE_FAIL)"; [[ "$brf" =~ ^[0-9]+$ ]] || brf=0
 b403="$(f B_403)"; [[ "$b403" =~ ^[0-9]+$ ]] || b403=0
-hb="$(f HEALTHY_B)"   # 空/缺 = 唔知 → 唔判④(fail-safe 走舊規則)
+hb="$(f HEALTHY_B)"   # 空/缺 = 唔知 → 第三輪 #6:fail-safe 走 escalate(唔跌落 swap 規則食配額)
 botn=$(( botn + botB ))
 rt="${rt:-0}"; rf="${rf:-0}"
 
@@ -47,6 +48,9 @@ if [[ -z "$pid" || "$pid" == "none" || "$health" != "200" ]]; then
 elif [[ "$hb" == "0" ]] && (( botn >= 3 && brf >= 1 && brf >= b403 )); then
   # R1(STREAM-PHONE-NOTIFY 20261015):出口 IP 被 bot-check——唔 swap、唔 restart,直接升級,講明要人手換 VPN server
   echo "VERDICT: escalate"; echo "REASON: rules: 出口 IP 被 YouTube bot-check(backend log + healthcheck Layer B stderr 近期共 $botn 條證據,Layer B resolve-fail=$brf 403=$b403);換 yt-dlp 無用,要人手換 VPN server(Eric 自己做)"; echo "ACTIONS: none"
+elif [[ "$hb" != "0" && "$hb" != "1" ]] && [[ "$rt" -ge 3 && "$rf" -eq "$rt" ]] && newer "$idle" "$act"; then
+  # 第三輪 #6:HEALTHY_B 缺/空(state 舊或讀唔到)= 分唔到 yt-dlp 過舊定出口 IP 被擋 → 唔 swap,升級俾人睇
+  echo "VERDICT: escalate"; echo "REASON: rules: HEALTHY_B 缺失(Layer B 狀態未知),分唔到係 yt-dlp 問題定出口 IP 被 bot-check,唔自動 swap,交人手睇"; echo "ACTIONS: none"
 elif [[ "$rt" -ge 3 && "$rf" -eq "$rt" ]] && newer "$idle" "$act"; then
   reason="最近 1 個鐘 resolve 全 fail($rf/$rt)而候選 yt-dlp $idle 新過現役 $act"
   if run swap-ytdlp; then
