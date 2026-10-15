@@ -11,7 +11,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { zeroFragmentedMp4Durations } from './fixFragmentedMp4Duration.js';
 import { YTDLP } from './ytdlpBin.js';
-import { recordResolveAttempt, recordResolveOutcome, recordBotCheckCooldown } from './opsMetrics.js';
+import { recordResolveAttempt, recordResolveOutcome, recordBotCheckCooldown, recordBotCheckHit } from './opsMetrics.js';
 
 const exec = promisify(execCb);
 
@@ -178,6 +178,7 @@ export function nextRateLimitCooldownMs(streak) {
 }
 function armRateLimitCooldown() {
   const now = Date.now();
+  recordBotCheckHit();   // 第三輪 #3:「撞次數」(hits)同「冷卻窗數」(cooldownWindows)分開記
   // 第二輪 #2:每個冷卻窗只加一次。窗內(until 未到)再撞——例如 5 個並發背景 resolve 同時撞 bot-check——
   // 唔累加 streak、唔延長 until,只刷新 base(真人播放 30s 閘)。否則並發 N 個 = streak 一跳 N 級。
   if (now < ytRateLimitedUntil) {
@@ -222,6 +223,7 @@ function runStrategy(youtubeId, strat) {
       recordResolveAttempt(strat.name, true, ms);
       ytRateLimitStreak = 0;   // R5(b):任何一次 resolve 成功 = IP 暫時冇事,退避歸零
       ytRateLimitedUntil = 0;  // 第二輪 #3:同時即時解除冷卻(背景即刻恢復,同上面註釋一致)
+      ytRateLimitedBaseUntil = 0; // 第三輪 B1:base 一齊歸零,否則窗內 straggler 撞過之後背景成功,真人閘仲擋最多 ~25s
       console.log(`[resolve] ok strategy=${strat.name} id=${youtubeId} ms=${ms}`);
       return url;
     }
@@ -240,7 +242,9 @@ async function resolveViaYtDlp(youtubeId, opts = {}) {
   if (Date.now() < gateUntil) {
     const secsLeft = Math.ceil((gateUntil - Date.now()) / 1000);
     console.warn(`⚠️ yt-dlp rate-limit 冷卻中(仲有 ${secsLeft}s)—— 跳過 ${youtubeId},唔好加重個 block`);
-    throw new Error(`yt-dlp rate-limited (cooldown), skipping ${youtubeId}`);
+    const skipErr = new Error(`yt-dlp rate-limited (cooldown), skipping ${youtubeId}`);
+    skipErr.rateLimitedSkip = true;   // 第三輪 B2:冷卻 fail-fast 唔係「試過 YouTube 失敗」,catch 唔好寫 failCache
+    throw skipErr;
   }
   // D-4 觀測:一次完整 resolve(可能試幾招)嘅結局 —— 邊招最後贏、成個過程幾耐。
   // `rescued` = 唔係第一招贏,即係後備招(tv / default-any)真係救返呢一次。
@@ -332,7 +336,9 @@ export async function resolveAudioUrl(youtubeId, opts = {}) {
       scheduleFlush();
       return url;
     } catch (e) {
-      failCache.set(youtubeId, Date.now() + FAIL_TTL_MS);
+      // 第三輪 B2:只有真正試過 YouTube 失敗先寫 failCache;冷卻期 fail-fast 跳過唔寫
+      //(否則換完 VPN 後 60s 內真人撳同一首會食 Known-bad,完全冇去試)。
+      if (!e?.rateLimitedSkip) failCache.set(youtubeId, Date.now() + FAIL_TTL_MS);
       throw e;
     } finally {
       inFlight.delete(youtubeId);
@@ -356,7 +362,9 @@ export async function refreshAudioUrl(youtubeId) {
       scheduleFlush();
       return url;
     } catch (e) {
-      failCache.set(youtubeId, Date.now() + FAIL_TTL_MS);
+      // 第三輪 B2:只有真正試過 YouTube 失敗先寫 failCache;冷卻期 fail-fast 跳過唔寫
+      //(否則換完 VPN 後 60s 內真人撳同一首會食 Known-bad,完全冇去試)。
+      if (!e?.rateLimitedSkip) failCache.set(youtubeId, Date.now() + FAIL_TTL_MS);
       throw e;
     } finally {
       inFlight.delete(youtubeId);

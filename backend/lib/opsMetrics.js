@@ -98,7 +98,8 @@ function blankBucket() {
     // (同一 youtube_id 換咗 format/variant),落返 miss 路徑重新解。
     hlsPlaylist: { hit: 0, miss: 0, verifyFail: 0 },
     // STREAM-PHONE-NOTIFY 第二輪 #4 —— bot-check/429 指數退避記帳(recordBotCheckCooldown),補入 blank/normalize(W1 教訓)。
-    botCheck: { cooldowns: 0, maxStreak: 0, maxSecs: 0, secsSum: 0 },
+    // cooldownWindows=冷卻窗數(每窗一次);hits=撞 bot-check/429 嘅總次數(含窗內並發再撞)。第三輪由 cooldowns 改名拆分。
+    botCheck: { cooldownWindows: 0, hits: 0, maxStreak: 0, maxSecs: 0, secsSum: 0 },
   };
 }
 
@@ -321,11 +322,21 @@ export function recordHlsPlaylist(kind) {
 export function recordBotCheckCooldown(n, secs) {
   try {
     for (const b of buckets()) {
-      const c = (b.botCheck ||= { cooldowns: 0, maxStreak: 0, maxSecs: 0, secsSum: 0 });
-      c.cooldowns++;
+      const c = (b.botCheck ||= { cooldownWindows: 0, hits: 0, maxStreak: 0, maxSecs: 0, secsSum: 0 });
+      c.cooldownWindows = (c.cooldownWindows || 0) + 1;
       c.secsSum += secs;
       if (n > c.maxStreak) c.maxStreak = n;
       if (secs > c.maxSecs) c.maxSecs = secs;
+    }
+    scheduleFlush();
+  } catch (_) {}
+}
+
+export function recordBotCheckHit() {
+  try {
+    for (const b of buckets()) {
+      const c = (b.botCheck ||= { cooldownWindows: 0, hits: 0, maxStreak: 0, maxSecs: 0, secsSum: 0 });
+      c.hits = (c.hits || 0) + 1;
     }
     scheduleFlush();
   } catch (_) {}
@@ -404,6 +415,11 @@ export function enablePersistence(opts = {}) {
           // 額外做一層淺 merge 補返。
           merged.bufferCache = { ...blankBucket().bufferCache, ...(merged.bufferCache || {}) };
           merged.botCheck = { ...blankBucket().botCheck, ...(merged.botCheck || {}) };
+          // 第二輪舊欄 cooldowns(其實係冷卻窗數)→ cooldownWindows
+          if ('cooldowns' in merged.botCheck) {
+            if (!merged.botCheck.cooldownWindows) merged.botCheck.cooldownWindows = merged.botCheck.cooldowns || 0;
+            delete merged.botCheck.cooldowns;
+          }
           return merged;
         };
         const normalizedHourly = {};
