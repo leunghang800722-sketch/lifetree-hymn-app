@@ -206,8 +206,8 @@ for f in 1 2 3 4; do
   for i in $(seq 1 12); do tick bad$f; done; cp "$STUB_DIR/phone.last" "$S/p9-renotify$f.txt"
   tick ok; cp "$STUB_DIR/phone.last" "$S/p9-recover$f.txt"
 done
-chk "首發④" "$S/p9-down4.txt" "🔴 Odely 播歌出問題（由 " "起）" $'\n原因：VPN 出口 IP 被 YouTube 當機械人擋住' $'\n自動修復：已判斷換 yt-dlp 無用，未自動修' $'\n要你做：換 NordVPN server（揀另一個城市），換完等 30 分鐘會自動確認'
-chk "重發④" "$S/p9-renotify4.txt" "🔴 Odely 播歌仍未恢復（由 " "已 6.5 小時）" $'\n原因：VPN 出口 IP 被 YouTube 當機械人擋住' $'\n要你做：換 NordVPN server'
+chk "首發④" "$S/p9-down4.txt" "🔴 Odely 播歌出問題（由 " "起）" $'\n原因：VPN 出口 IP 被 YouTube 當機械人擋住' $'\n自動修復：已判斷換 yt-dlp 無用，未自動修' $'\n要你做：可以先等 30–60 分鐘（揀另一個城市），換完等 30 分鐘會自動確認'
+chk "重發④" "$S/p9-renotify4.txt" "🔴 Odely 播歌仍未恢復（由 " "已 6.5 小時）" $'\n原因：VPN 出口 IP 被 YouTube 當機械人擋住' $'\n要你做：可以先等 30–60 分鐘'
 chk "首發①" "$S/p9-down1.txt" $'\n原因：播歌程式版本過舊' $'\n要你做：請叫 Claude 跟進'
 chk "首發②" "$S/p9-down2.txt" $'\n原因：伺服器死咗' $'\n要你做：請叫 Claude 跟進'
 chk "首發③" "$S/p9-down3.txt" $'\n原因：YouTube 嗰邊有問題' $'\n要你做：通常等 30–60 分鐘會自己好'
