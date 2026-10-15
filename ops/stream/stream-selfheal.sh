@@ -14,6 +14,8 @@
 #   ① yt-dlp   — midfail>=2(1MiB 病,不論 A 點)
 #   ② backend  — healthy_a==0 而 healthy_b==1(upstream 好地地,backend 側死)
 #   ③ YouTube側 — 其他(兩層都壞 / ① 試完都唔得)
+#   ④ 出口IP被bot-check — (STREAM-PHONE-NOTIFY 20261015 R1)healthy_b==0 且 backend log 近 30 分鐘 bot-check 證據行>=3:
+#      優先於①②③;唔 apply/swap/restart、唔食配額,只警報(要人手換 VPN server)
 #
 # ── 動作 ──────────────────────────────────────────────────────────
 #   ① swapsToday<1:行 $SELFHEAL_APPLY_CMD(預設 ops/ytdlp/update-ytdlp.sh --apply)。
@@ -147,6 +149,9 @@ RECHECK_SLEEP="${SELFHEAL_RECHECK_SLEEP:-15}"
 
 BASE="${HYMN_STREAM_BASE:-http://127.0.0.1:3001}"
 [[ $SH_TEST -eq 1 ]] && BASE="${HYMN_STREAM_BASE:-http://127.0.0.1:9}"   # 路徑:測試模式預設死 port,唔打真 backend
+# R1:bot-check 證據來源。測試模式預設唔讀真 /tmp/hymn_backend.log(落 $WATCH_DIR/backend.log,通常唔存在=0)
+BOTLOG="${SELFHEAL_BACKEND_LOG:-${BACKEND_LOG:-/tmp/hymn_backend.log}}"
+[[ $SH_TEST -eq 1 ]] && BOTLOG="${SELFHEAL_BACKEND_LOG:-$WATCH_DIR/backend.log}"
 IDS=(${SELFHEAL_IDS:-42 77 5431})
 RANGE="${SELFHEAL_RANGE:-0-65535}"
 YT_IDS=(${SELFHEAL_YT_IDS:-PG_J_0gsMXA 7UkwavM5L1E 2GbxXhvdhhA})
@@ -324,7 +329,17 @@ if (( consecutiveFail < 2 )); then
 fi
 
 # ══ 3. 形態判定 ═════════════════════════════════════════════════
-if (( midfail >= 2 )); then
+# STREAM-PHONE-NOTIFY-EXEC-20261015 R1(10-14 事故):出口 IP 被 YouTube bot-check 時 resolve 全死,但換 yt-dlp / restart backend 都冇用,
+# 之前會誤判①(midfail>=2)→ 食 swap 配額 + 誤導「先查 yt-dlp 版本」。判形態前先數 backend log 近 30 分鐘 bot-check 證據行(>=3,
+# 計法見 stream-botcheck-count.py)。再要求 Layer B 自己都死(healthy_b==0):直打 resolve 仲通嘅話 bot-check 行只係舊尾巴,照舊走①/②/③。
+botN=0
+if (( healthy_b == 0 )); then
+  botN="$(python3 "$REPO/ops/stream/stream-botcheck-count.py" "$BOTLOG" "${SELFHEAL_BOTCHECK_MIN:-30}" 2>/dev/null)"
+  [[ "$botN" =~ ^[0-9]+$ ]] || botN=0
+fi
+if (( botN >= ${SELFHEAL_BOTCHECK_MIN_HITS:-3} )); then
+  form="④出口IP被bot-check"
+elif (( midfail >= 2 )); then
   form="①yt-dlp"
 elif (( healthy_a == 0 && healthy_b == 1 )); then
   form="②backend"
@@ -451,6 +466,14 @@ case "$form" in
       fi
     fi
   fi
+  ;;
+④*)
+  # 唔行 apply / swap / restart,唔食任何配額(swaps/restarts 原樣帶落 write_state)。只警報;節流同③一致(due 先寫 SUPERVISION-LOG)。
+  action="alert-ip-botcheck"
+  alert_active=1
+  alert_msg="形態④(出口 IP 被 YouTube bot-check):backend log 近 30 分鐘有 $botN 條 bot-check 證據行,Layer B 直打 resolve 亦失敗。換 yt-dlp 無用、重開 backend 無用,**冇做任何自動修復、冇消耗配額**;要人手換 VPN server(Eric 自己做,唔同城市嘅 US server)。實際:$detail"
+  hist "alert-ip-botcheck botcheckLines=$botN consecutiveFail=$consecutiveFail due=$due(冇 apply/restart,冇食配額)"
+  (( due == 1 )) && supervision "- 🔴 **自動修復梯:形態④出口 IP 被 bot-check,要人手換 VPN server $(ts)** — $alert_msg"
   ;;
 ②*)
   if (( ST_RESTARTS >= RESTART_LIMIT )); then

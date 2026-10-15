@@ -171,7 +171,8 @@ if (( canary_ok == 0 )); then
   {
     echo ""
     echo "- ⚠️ **yt-dlp nightly canary 唔過 $(ts)** — 新版 \`$latest\` 驗唔過,**現役 \`$cur\` 維持唔郁**(fail-safe 方向啱)。細節:$canary_detail"
-    echo "  唔使急住做嘢:呢個唔代表而家播歌有事(串流健康檢查另外每 3 個鐘驗緊)。如果連續幾日都 canary-FAIL,就要人手睇下係 YouTube 側擋緊(429/bot-check)定係 nightly 真係壞咗。log:\`backend/data/ytdlp-update.log\`"
+    # R7(STREAM-PHONE-NOTIFY 20261015):串流健康檢查正喺失敗(consecutiveFail>=2)就唔准講「唔代表播歌有事」——見 canary-note.sh
+    "$REPO/ops/ytdlp/canary-note.sh" "${HEALTH_STATE:-$REPO/backend/data/stream-health-state.json}"
   } >> "$LOG"
   say "⚠ canary 唔過,已寫警報"
   exit 0

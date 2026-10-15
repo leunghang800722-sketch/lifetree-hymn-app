@@ -87,3 +87,32 @@ cat ~/.hymn-deploy/stream-drill.log           # 一行:時間 | watch-rc | 總�
 - **`ops/stream/stream-selfheal.sh`**:測試模式 = `STREAM_WATCH_TEST=1` + `SELFHEAL_STATE`、`HEALTH_STATE`、`WATCH_DIR` 三個齊且喺 tmp(缺一 = prod);測試模式 SUPERVISION-LOG/history 強制落 `$WATCH_DIR/`,`SELFHEAL_RESTART_CMD` 未設 = 預設指令加 `--dry-run`、`SELFHEAL_APPLY_CMD` 未設 = 唔行,`YTDLP_LINK` 要 tmp(預設 `$WATCH_DIR/yt-dlp-none`)、base 預設 `:9`、verify Layer B 直打 CDN 預設 stub(`SELFHEAL_CDN_FETCH_CMD`)。prod 模式:HOME 重設真 home;要 `$HOME/.hymn-deploy/.tick-ctx`(普通檔、非 symlink、<30 分鐘、pid 生存)或 `SELFHEAL_MANUAL=1`;`CLAUDECODE` 非空冇 MANUAL 一律拒。`SELFHEAL_DRY_RUN` 唔算憑證。
 - 人手:`HC_MANUAL=1 ops/lyrics/stream-healthcheck.sh --verbose`(healthcheck 內叫嘅 selfheal 喺 Claude shell 下仍會 REFUSED,除非另加 `SELFHEAL_MANUAL=1`);`SELFHEAL_MANUAL=1 SELFHEAL_DRY_RUN=1 ops/stream/stream-selfheal.sh --healthy-a 1 ...`。
 - 測試:`test/t13-hc-selfheal-guard.sh <scratchdir>`(真 script 嘅 REFUSED case 先喺 scratch 假 repo 預檢,通過先跑真 repo);`t7` 而家用測試模式、唔再 sed 換路徑。
+
+## 手機推送(STREAM-PHONE-NOTIFY-EXEC-20261015;Eric 10-15 推翻 09-29「唔要手機推送」)
+
+10-14 串流中斷 8.5 小時,11:27 已升級、Mac 通知彈咗但 Eric 唔喺 Mac 前面。而家 `stream-watch.sh` 升級時**加發 Telegram**(經 openclaw gateway,即 Dispatch 同 Eric 講嘢嗰條線)。Mac 通知、`STREAM-ALERT.md`、SUPERVISION-LOG 照舊,手機只係**加一條**,失敗唔影響前三樣。
+
+**配置(opt-in)**:`~/.hymn-deploy/stream-notify.conf`(權限 600,**唔入 repo**;冇呢個檔/缺欄 = 唔發):
+```
+PHONE_CHANNEL=telegram
+PHONE_ACCOUNT=<openclaw account id>
+PHONE_TARGET=<chat id>            # 🔴 任何 log/報告一律遮成 <target>,script 唔會印佢
+PHONE_RENOTIFY_SEC=21600          # 可選,>=600;預設 6 小時;同 Mac 通知共用計時
+```
+**點停**:`rm ~/.hymn-deploy/stream-notify.conf`(即刻停,唔使 reload)。
+
+| 事件 | 手機訊息(一句,<=400 字,先過 strip 控制/bidi 字元 + `wlib_filter` 密鑰遮蓋) |
+|---|---|
+| 本 incident **首次升級** | `🔴 Odely 串流中斷 <開始時間> 起，形態 <①–④>，診斷動作／selfheal 動作，需要你：<建議>` |
+| 已升級且距上次通知 >= `PHONE_RENOTIFY_SEC` | `🔴 Odely 串流仍未恢復（<時間> 起，已 N 小時）…` |
+| 恢復(**曾升級**先發;冇升級就自己好返唔煩人) | `✅ Odely 串流已恢復 <時間>（停咗 N 小時）` |
+| healthcheck 記到出口 IP 變咗(R3) | `ℹ️ Odely 出口 IP 由 A 變 B（Mac 重啟/VPN 重連？），下個 tick 會驗串流` |
+
+實作:`stream-watch-lib.sh` 的 `wlib_notify_phone <kind> <text>`:只 grep conf 白名單 key(唔 source),`/opt/homebrew/bin/openclaw message send --channel … --account … --target … -m "<text>"`,包 `wlib_capped_pg 30`(hang 都殺到成個 process group),rc≠0/逾時只寫 `~/.hymn-deploy/stream-notify.log` 一行(時間、類型、rc、耗時;target 遮成 `<target>`),`return` 唔 `exit`。測試 env:`WATCH_PHONE_CMD`(stub 取代 openclaw;**測試模式冇設 = 結構上唔發**)`WATCH_PHONE_CONF` `WATCH_PHONE_LOG` `WATCH_PHONE_CAP` `PHONE_DRY_RUN=1`(加 `--dry-run`)。gateway 死咗 = 手機通知失敗 + log 一行,Mac 通知/警報檔照出。
+
+### 10-14 事故四項改善(同單落實)
+- **R1 形態④「出口 IP 被 bot-check」**:`stream-selfheal.sh` 判形態前用 `stream-botcheck-count.py` 數 backend log 近 30 分鐘 `Sign in to confirm you.{1,3}re not a bot|LOGIN_REQUIRED|bot-check 偵測到` 證據行(>=3,且 Layer B 自己亦失敗 `healthy_b==0`)⇒ 形態④:**唔 apply / swap / restart、唔食配額**,只警報,訊息寫明「換 yt-dlp 無用,要人手換 VPN server(Eric 自己做)」。`stream-diagnose-rules.sh` 同樣 `escalate`(facts `BOTCHECK_RECENT`)。backend log 行冇時間戳,靠 `[tag] <ISO-Z>` 錨行保守估時(舊事故殘留行唔會被當而家);測試模式 selfheal 預設唔讀真 `/tmp/hymn_backend.log`(`SELFHEAL_BACKEND_LOG` 可指)。
+- **R3 出口 IP**:`stream-healthcheck.sh` 每 tick `curl -s -m 5 https://ifconfig.me`(失敗記 `?`;測試模式用 `HC_IP_CMD` stub,冇設=`?`),`stream-health.log` 尾欄 `ip=<x>`,`stream-health-state.json` 的 `exitIp`(`?` 唔覆蓋)。A→B(兩邊非 `?`)⇒ SUPERVISION-LOG ℹ️ 一行 + state `ipChanged` 旗(只喺該 tick)⇒ watch 發手機 ℹ️。首次記錄唔算變。
+- **R5(a) 事故少探**:上一 tick 已 `consecutiveFail>=2` ⇒ Layer A/B 各先探 1 首(77 / 7UkwavM5L1E);1 首失敗 = 該層照判 unhealthy 唔追加;1 首過 = 即補探其餘再按原判斷(恢復偵測唔慢)。selfheal 嘅 due tick(連續 fail=2、14、26…)照舊全探,修復梯/節流不變。log 行多 `light=1`。`HC_LIGHT=0|1` 只供測試。
+- **R5(b) 指數退避**(`backend/lib/resolveAudio.js`,**要 backend restart 先生效**):bot-check/429 全局冷卻由固定 30s 改 `min(30s×2^(n-1), 30min)`(n=連續撞次數,任何一次 resolve 成功 → n 歸零；背景冷卻窗自然到期先放行);log `冷卻 <秒>（第 n 次）`;`opsMetrics` `botCheck` 計數。真人播放(`playbackRetry`)只受舊 30s base 冷卻管,唔受長冷卻影響(Eric 換 VPN 後第一次撳播就可試;成功令 n 歸零,但背景冷卻窗要自然到期先放行)。
+- **R7 canary 告示**:`ops/ytdlp/canary-note.sh`(`update-ytdlp.sh` canary-FAIL 時呼叫):`stream-health-state.json` `consecutiveFail>=2` ⇒ 寫「⚠️ 而家串流健康檢查正在失敗」,否則維持舊句。

@@ -129,24 +129,51 @@ run_capped() {  # run_capped <秒> <cmd...>
   perl -e 'alarm shift; exec @ARGV or exit 127' "$@" 2>/dev/null
 }
 
+# ── R5(a) 事故期間少探(STREAM-PHONE-NOTIFY-EXEC-20261015)──────────────────────────────
+# 上一 tick 已連續 fail>=2(事故進行中)→ Layer A/B 各先只探 1 首(取 IDS[1]=77 / YT_IDS[1]=7UkwavM5L1E);
+#   · 呢 1 首失敗 ⇒ 該層照舊判 unhealthy(ok>=2 / mid>=2 / b_tested 規則一字未改,只係樣本少),唔再追加探測 ⇒ 少打 YouTube;
+#   · 呢 1 首過 ⇒ 即刻補探其餘(變返標準 3+3)再按原判斷,所以恢復偵測唔會慢一個 tick,亦唔會單憑 1 首宣告健康。
+# 例外(保持 selfheal 修復梯/節流行為不變):selfheal 嘅「due」tick(本 tick 連續 fail 值 = 2、14、26…,即 (n-2)%12==0)照舊全探——
+#   selfheal 形態①判定要 midfail>=2,少探樣本做唔到。
+# 測試/手動覆蓋:HC_LIGHT=0 強制全探、HC_LIGHT=1 強制少探(只供測試)。
+prev_fail0=$(python3 -c "
+import json,sys
+try: print(int(json.load(open('$STATE')).get('consecutiveFail',0)))
+except Exception: print(0)" 2>/dev/null || echo 0)
+[[ "$prev_fail0" =~ ^[0-9]+$ ]] || prev_fail0=0
+LIGHT=0
+if (( prev_fail0 >= 2 )) && (( (prev_fail0 + 1 - 2) % 12 != 0 )); then LIGHT=1; fi
+[[ "${HC_LIGHT:-}" == "0" || "${HC_LIGHT:-}" == "1" ]] && LIGHT="$HC_LIGHT"
+if (( LIGHT == 1 )); then
+  IDS_FIRST=("${IDS[1]}"); IDS_REST=("${IDS[0]}" "${IDS[@]:2}")
+  YT_FIRST=("${YT_IDS[1]}"); YT_REST=("${YT_IDS[0]}" "${YT_IDS[@]:2}")
+else
+  IDS_FIRST=("${IDS[@]}"); IDS_REST=(); YT_FIRST=("${YT_IDS[@]}"); YT_REST=()
+fi
+
 # ── Layer A:經 backend 攞頭 64KB ──────────────────────────────────
 ok=0; fail=0; detail=""
-for id in "${IDS[@]}"; do
-  code=$(curl -s -o /dev/null -w "%{http_code}" --max-time "$TIMEOUT" -r "$RANGE" \
-         "$BASE/api/stream/$id" 2>/dev/null)
-  say "  A id=$id → HTTP ${code:-timeout}"
-  if [[ "$code" == "206" ]]; then ok=$((ok+1)); else fail=$((fail+1)); detail="$detail A:id=$id:${code:-timeout}"; fi
-done
+probe_a() {
+  local id code
+  for id in "$@"; do
+    code=$(curl -s -o /dev/null -w "%{http_code}" --max-time "$TIMEOUT" -r "$RANGE" \
+           "$BASE/api/stream/$id" 2>/dev/null)
+    say "  A id=$id → HTTP ${code:-timeout}"
+    if [[ "$code" == "206" ]]; then ok=$((ok+1)); else fail=$((fail+1)); detail="$detail A:id=$id:${code:-timeout}"; fi
+  done
+}
+probe_a "${IDS_FIRST[@]}"
+(( LIGHT == 1 && fail == 0 )) && probe_a "${IDS_REST[@]}"
+(( LIGHT == 1 )) && say "  (R5a 少探模式:Layer A 先探 ${#IDS_FIRST[@]} 首,fail=$fail 所以$( (( fail == 0 )) && echo 已補探其餘 || echo 唔補探 ))"
 
 # ── Layer B:直打 googlevideo 攞 1MiB 之後嘅 mid-range ─────────────
 # cfgerr = 探測配置本身有問題(binary 唔見咗 / 揀咗首細過 2MiB 嘅歌收 416),
 # 唔算 upstream fail,唔好亂響警報,但要喺 log 見到。
 mid=0; midfail=0; midcfg=0
 ytver="?"
-if [[ -x "$YTDLP" ]]; then
-  ytver=$("$YTDLP" --version 2>/dev/null | tr -d '\n')
-  [[ -z "$ytver" ]] && ytver="?"
-  for yid in "${YT_IDS[@]}"; do
+probe_b() {
+  local yid url code
+  for yid in "$@"; do
     url=$(run_capped "$RESOLVE_TIMEOUT" "$YTDLP" -f "bestaudio[ext=m4a]/bestaudio" \
           --get-url --no-playlist "https://www.youtube.com/watch?v=$yid" | head -1)
     if [[ "$url" != http* ]]; then
@@ -166,6 +193,12 @@ if [[ -x "$YTDLP" ]]; then
       *)   midfail=$((midfail+1)); detail="$detail B:$yid:${code:-timeout}" ;;
     esac
   done
+}
+if [[ -x "$YTDLP" ]]; then
+  ytver=$("$YTDLP" --version 2>/dev/null | tr -d '\n')
+  [[ -z "$ytver" ]] && ytver="?"
+  probe_b "${YT_FIRST[@]}"
+  (( LIGHT == 1 && midfail == 0 )) && probe_b "${YT_REST[@]}"
 else
   midcfg=${#YT_IDS[@]}
   detail="$detail B:no-binary($YTDLP)"
@@ -200,16 +233,45 @@ else
   new_fail=$((prev_fail + 1))
 fi
 
-python3 - "$STATE" "$new_fail" "$ok" "$fail" "$mid" "$midfail" "$midcfg" "$ytver" <<'PY' 2>/dev/null
+# ── R3 出口 IP(STREAM-PHONE-NOTIFY-EXEC-20261015)────────────────────────────────
+# 每 tick 問一次中立 IP echo(curl -m 5 https://ifconfig.me;失敗/格式唔啱記 `?`),寫入 stream-health.log 尾欄 ip=<x> 同 state.exitIp。
+# exitIp 只存「最後一個成功攞到嘅 IP」(`?` 唔覆蓋)。A→B(兩邊都非 `?` 且唔同)⇒ state.ipChanged={from,to,at}(只喺呢個 tick 有;下個 tick 重寫即消失)
+# + SUPERVISION-LOG 一行 ℹ️;stream-watch 見 ipChanged 旗發手機一句。首次記錄(之前冇 exitIp)唔算變。
+# 測試模式:唔打真網絡,用 HC_IP_CMD(冇設 = `?`)。只讀 echo 服務,唔掂 VPN/路由/網絡設定。
+exit_ip="?"
+if [[ $HC_TEST -eq 1 ]]; then
+  [[ -n "${HC_IP_CMD:-}" ]] && exit_ip="$(${HC_IP_CMD} 2>/dev/null | head -1 | tr -d '[:space:]')"
+else
+  exit_ip="$(curl -s -m 5 https://ifconfig.me 2>/dev/null | head -c 64 | tr -d '[:space:]')"
+fi
+[[ "$exit_ip" =~ ^[0-9A-Fa-f:.]{3,45}$ ]] || exit_ip="?"
+prev_ip=$(python3 -c "
+import json
+try: print(json.load(open('$STATE')).get('exitIp','') or '')
+except Exception: print('')" 2>/dev/null)
+[[ "$prev_ip" =~ ^[0-9A-Fa-f:.]{3,45}$ ]] || prev_ip=""
+ip_from=""; ip_to=""
+if [[ "$exit_ip" != "?" && -n "$prev_ip" && "$exit_ip" != "$prev_ip" ]]; then ip_from="$prev_ip"; ip_to="$exit_ip"; fi
+keep_ip="$prev_ip"; [[ "$exit_ip" != "?" ]] && keep_ip="$exit_ip"
+
+python3 - "$STATE" "$new_fail" "$ok" "$fail" "$mid" "$midfail" "$midcfg" "$ytver" "$keep_ip" "$ip_from" "$ip_to" <<'PY' 2>/dev/null
 import json,sys,datetime
-json.dump({'lastCheck': datetime.datetime.now().isoformat(timespec='seconds'),
-           'consecutiveFail': int(sys.argv[2]), 'ok': int(sys.argv[3]), 'fail': int(sys.argv[4]),
-           'mid': int(sys.argv[5]), 'midFail': int(sys.argv[6]), 'midCfgErr': int(sys.argv[7]),
-           'ytdlp': sys.argv[8]},
-          open(sys.argv[1],'w'), indent=1)
+now = datetime.datetime.now().isoformat(timespec='seconds')
+d = {'lastCheck': now,
+     'consecutiveFail': int(sys.argv[2]), 'ok': int(sys.argv[3]), 'fail': int(sys.argv[4]),
+     'mid': int(sys.argv[5]), 'midFail': int(sys.argv[6]), 'midCfgErr': int(sys.argv[7]),
+     'ytdlp': sys.argv[8]}
+if sys.argv[9]: d['exitIp'] = sys.argv[9]
+if sys.argv[10] and sys.argv[11]: d['ipChanged'] = {'from': sys.argv[10], 'to': sys.argv[11], 'at': now}
+json.dump(d, open(sys.argv[1],'w'), indent=1)
 PY
+if [[ -n "$ip_from" ]]; then
+  { echo ""; echo "- ℹ️ **串流:出口 IP 變咗 $(ts)** — \`$ip_from\` → \`$ip_to\`(Mac 重啟 / VPN 重連?)。下個 tick 會驗串流;如果之後 resolve 出現 \`not a bot\`,即係新 IP 被 YouTube 擋,要人手換 VPN server。"; } >> "$LOG"
+  say "  ℹ️ 出口 IP $ip_from → $ip_to,已寫 SUPERVISION-LOG"
+fi
 cfgnote=""; (( midcfg > 0 )) && cfgnote=" mid=cfg-err:$midcfg"
-echo "$(ts) ok=$ok fail=$fail mid=$mid midfail=$midfail$cfgnote ver=$ytver consecutiveFail=$new_fail$detail" >> "$HISTORY"
+lightnote=""; (( LIGHT == 1 )) && lightnote=" light=1"
+echo "$(ts) ok=$ok fail=$fail mid=$mid midfail=$midfail$cfgnote ver=$ytver consecutiveFail=$new_fail$detail$lightnote ip=$exit_ip" >> "$HISTORY"
 say "  → A ok=$ok fail=$fail | B mid=$mid midfail=$midfail cfgerr=$midcfg | ver=$ytver | consecutiveFail=$new_fail"
 
 # 寫警報嘅時機:①啱啱由健康變唔健康(第 1 次)②之後每 12 次連續失敗提一次

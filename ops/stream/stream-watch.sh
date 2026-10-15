@@ -11,6 +11,9 @@
 #            診斷後 verdict=escalate / remedy 登記 escalate → 即刻升級;否則診斷後再過 >=2 個 bad tick 仍未好 → 升級
 #            已升級:警報檔更新 lastSeen;每 6 小時重發一次 macOS 通知
 #   bad→ok   有診斷過/升級過先寫恢復行落 SUPERVISION-LOG(單 tick blip 靜靜哋過);刪警報檔;只有升級過先發「已恢復」通知
+# 手機推送(STREAM-PHONE-NOTIFY-EXEC-20261015):~/.hymn-deploy/stream-notify.conf 存在先發(Telegram 經 openclaw,見 lib wlib_notify_phone);
+#   首次升級發 🔴、已升級且距上次通知 >= RENOTIFY_SEC(conf PHONE_RENOTIFY_SEC,預設 21600,同 Mac 通知共用計時)重發、恢復(曾升級)發 ✅、
+#   healthcheck 記到出口 IP 變咗(stream-health-state.json ipChanged 旗)發 ℹ️。失敗只寫 stream-notify.log,唔影響 exit code/警報檔/Mac 通知。
 # 升級 = 寫 ~/.hymn-deploy/STREAM-ALERT.md + SUPERVISION-LOG 🔴 行 + macOS 通知(通知唔出到都仲有前兩樣)。
 #
 # 停用:touch ~/.hymn-deploy/stream-watch.off(成層停)。AI 診斷**預設關**:要 stream-watch.ai-on 存在先行
@@ -21,7 +24,7 @@
 # 入口 guard(STREAM-HARDEN 2):非測試模式 CLAUDECODE 非空而冇 WATCH_MANUAL=1 → REFUSED exit 2;STREAM_WATCH_TEST=1 要 WATCH_DIR(+已設 STATE/LOG_MD/ALERT)喺 tmp,
 #   LOG_MD/ALERT 預設落 WATCH_DIR、NOTIFY 預設 /usr/bin/true。
 # env override(測試):WATCH_DIR WATCH_STATE WATCH_STATUS_CMD WATCH_DIAGNOSE_CMD WATCH_NOTIFY_CMD WATCH_LOG_MD
-#   WATCH_ALERT_FILE WATCH_NOW(epoch,模擬時間) WATCH_DIAG_TIMEOUT WATCH_RENOTIFY_SEC
+#   WATCH_ALERT_FILE WATCH_NOW(epoch,模擬時間) WATCH_DIAG_TIMEOUT WATCH_RENOTIFY_SEC WATCH_PHONE_CMD WATCH_PHONE_CONF WATCH_PHONE_LOG WATCH_PHONE_CAP PHONE_DRY_RUN HEALTH_STATE
 # 演習:stream-drill.request → 見 0.5 節;WATCH_DRILL_CMD / WATCH_DRILL_CAP 只係測試 override。
 # 任何子步驟失敗一律吞掉,exit 0(唔准影響 healthcheck)。
 set -u
@@ -64,7 +67,14 @@ ALERT="${WATCH_ALERT_FILE:-$WATCH_DIR/STREAM-ALERT.md}"
 REQ_FILE="$WATCH_DIR/stream-escalate.request"
 LOCK="$WATCH_DIR/stream-watch.lock"
 DIAG_TIMEOUT="${WATCH_DIAG_TIMEOUT:-600}"
-RENOTIFY_SEC="${WATCH_RENOTIFY_SEC:-21600}"
+# 重發間隔:env WATCH_RENOTIFY_SEC > conf PHONE_RENOTIFY_SEC(>=600)> 21600。Mac 通知同手機共用呢個計時。
+RENOTIFY_SEC="${WATCH_RENOTIFY_SEC:-}"
+if [[ -z "$RENOTIFY_SEC" ]]; then
+  RENOTIFY_SEC="$(wlib_phone_conf_get PHONE_RENOTIFY_SEC)"
+  [[ "$RENOTIFY_SEC" =~ ^[0-9]{3,7}$ ]] && (( RENOTIFY_SEC >= 600 )) || RENOTIFY_SEC=21600
+fi
+if [[ "${STREAM_WATCH_TEST:-0}" == "1" ]]; then HEALTH_F="${HEALTH_STATE:-$WATCH_DIR/stream-health-state.json}"   # 測試模式唔讀真 backend/data
+else HEALTH_F="${HEALTH_STATE:-$REPO/backend/data/stream-health-state.json}"; fi
 export WATCH_DIR WATCH_STATE="$STATE"
 
 [[ -f "$WATCH_DIR/stream-watch.off" ]] && exit 0
@@ -221,7 +231,7 @@ PY
 getf() { python3 -c "import json,sys;d=json.load(open(sys.argv[1]));print(d.get(sys.argv[2],''))" "$STATE" "$1" 2>/dev/null; }
 
 ACTS="$(decide tick "$SRC" "$TMPD/status1.json" 2>"$TMPD/decide.err")" || { echo "$(wlib_ts) watch:decide 失敗:$(head -c 300 "$TMPD/decide.err")"; exit 0; }
-[[ -z "$ACTS" ]] && exit 0
+
 
 # ── 通知 / 警報 / log ───────────────────────────────────────────
 notify() { # $1=title $2=message → 印 channel 結果
@@ -229,6 +239,44 @@ notify() { # $1=title $2=message → 印 channel 結果
   if [[ -n "${WATCH_NOTIFY_CMD:-}" ]]; then wlib_capped 20 $WATCH_NOTIFY_CMD "$1" "$2" >/dev/null 2>&1; rc=$?
   else wlib_capped 20 osascript -e 'on run argv' -e 'display notification (item 2 of argv) with title (item 1 of argv) sound name "Basso"' -e 'end run' "$1" "$2" >/dev/null 2>&1; rc=$?; fi
   echo "notify rc=$rc"; return 0
+}
+# ── 手機推送訊息(STREAM-PHONE-NOTIFY-EXEC-20261015 §1)──────────────────────────
+# 文字全部先過 wlib_notify_phone 內嘅 sanitize(strip 控制/bidi、wlib_filter、截 400)。冇 conf = 靜靜唔發。
+phone_send() { # $1=kind $2=text → 0=送出;1=冇發/失敗。永不 exit。
+  wlib_notify_phone "$1" "$2" 2>/dev/null; return $?
+}
+phone_form() { # 由本 tick status JSON 攞 selfheal 形態 + lastAction(攞唔到印 "?|?")
+  python3 - "$TMPD/status1.json" <<'PY' 2>/dev/null || echo "?|?"
+import json, sys
+try: d = json.load(open(sys.argv[1]))
+except Exception: d = {}
+f = str(d.get('form') or '?'); a = str(d.get('lastAction') or '?')
+print(f.replace('|', '/')[:40] + '|' + a.replace('|', '/')[:40])
+PY
+}
+phone_suggest() { # $1=形態字串 $2=reason → 一句建議
+  case "$1$2" in
+    *④*|*bot-check*|*"not a bot"*) echo "換 NordVPN server（連去唔同城市嘅 US server）；換 yt-dlp 無用" ;;
+    *①*) echo "睇 yt-dlp 版本（ops/ytdlp/update-ytdlp.sh --apply）" ;;
+    *②*) echo "backend 要 restart（可能撞 deploy gate，需 approve）" ;;
+    *) echo "睇 STREAM-ALERT.md；常見原因係出口 IP 被 YouTube 擋，可試換 VPN server" ;;
+  esac
+}
+phone_hours() { # $1=秒 → "N.N 小時" 或 "N 分鐘"
+  local s="$1"; (( s < 0 )) && s=0
+  if (( s < 3600 )); then echo "$(( s / 60 )) 分鐘"; else echo "$(( s / 3600 )).$(( (s % 3600) * 10 / 3600 )) 小時"; fi
+}
+phone_msg_down() { # $1=1 → 持續未恢復重發版;0 → 首次升級版
+  local since pf form la acts rsn sug
+  since="$(getf since)"; since="${since:-$(wlib_now)}"; pf="$(phone_form)"; form="${pf%%|*}"; la="${pf##*|}"
+  acts="$(getf diagActions)"; rsn="$(getf escalateReason)"
+  sug="$(phone_suggest "$form" "$rsn")"
+  local tried="診斷動作 ${acts:-無}／selfheal ${la}"
+  if [[ "$1" == 1 ]]; then
+    echo "🔴 Odely 串流仍未恢復（$(date -r "$since" '+%m-%d %H:%M' 2>/dev/null) 起，已 $(phone_hours $(( $(wlib_now) - since )))），形態 $form，$tried，需要你：$sug"
+  else
+    echo "🔴 Odely 串流中斷 $(date -r "$since" '+%m-%d %H:%M' 2>/dev/null) 起，形態 $form，$tried，需要你：$sug"
+  fi
 }
 sm() { # SUPERVISION-LOG append(pattern 級過濾,🔴 行骨架保留;唔存在就唔寫)
   [[ -d "$(dirname "$LOG_MD")" ]] || return 0
@@ -264,12 +312,16 @@ write_alert() {
 }
 do_escalate() { # $1=reason(M4:入 state/alert/log 前過同一個 filter;L1:state 寫入原子)
   local reason; reason="$(printf '%s' "$1" | tr -d '\000-\037\177' | wlib_filter)"
+  local first_esc=0; [[ "$(getf escalatedFor)" != "$(getf incidentId)" ]] && first_esc=1
   decide escalated "$reason" >/dev/null 2>&1
   write_alert
   local id summ; id="$(getf incidentId)"; summ="$(getf summary)"
   sm "- 🔴 **串流監察升級 $(wlib_ts)** — incident \`$id\`:${reason}。狀態:${summ}。診斷:$(getf diagEngine)/$(getf verdict) — $(getf diagReason)。警報檔 \`$ALERT\`,診斷包 \`$WATCH_DIR/stream-incident-$id/\`。"
   local n; n="$(notify "Odely 串流監察" "串流需要人手:$(printf '%s' "$summ" | tr -d '"\\' | cut -c1-70)(詳見 STREAM-ALERT.md)")"
-  echo "$(wlib_ts) ESCALATE incident=$id reason=$reason $n"
+  # 手機:只喺本 incident 首次升級發(已升級後嘅「診斷員登記升級」更新唔重發;持續未好由 RENOTIFY 共用計時管)
+  local pn=""
+  if [[ "$first_esc" == 1 ]]; then phone_send escalate "$(phone_msg_down 0)" && pn=" phone=sent" || pn=" phone=no"; fi
+  echo "$(wlib_ts) ESCALATE incident=$id reason=$reason $n$pn"
 }
 # L2:stream-escalate.request 要帶 incidentId 而且等於當前 incident,否則掉。印 reason(已過濾)或空。
 take_request() {
@@ -281,6 +333,26 @@ take_request() {
   if [[ -z "$rid" || "$rid" != "$cur" ]]; then echo "$(wlib_ts) watch:掉咗 stale/冇 incidentId 嘅 escalate.request(request incident='${rid:-無}' 當前='$cur')" >&2; return 0; fi
   printf '%s' "${rsn:-(冇 reason)}"
 }
+
+# ── R3 出口 IP 變咗(healthcheck 本 tick 寫 stream-health-state.json 的 ipChanged 旗;下個 tick healthcheck 重寫 state 即消失,所以每次變動最多發一次)──
+# 日常(冇旗)零輸出零寫檔。只喺 conf 存在先會真發;SUPERVISION-LOG 的 ℹ️ 行由 healthcheck 寫,呢度唔重覆寫。
+ipc="$(python3 - "$HEALTH_F" <<'PY' 2>/dev/null
+import json, sys, re
+try: d = json.load(open(sys.argv[1])).get('ipChanged')
+except Exception: d = None
+if isinstance(d, dict):
+    a, b = str(d.get('from', '')), str(d.get('to', ''))
+    ok = re.compile(r'^[0-9A-Fa-f:.]{3,45}$')
+    if ok.match(a) and ok.match(b) and a != b: print(a + ' ' + b)
+PY
+)"
+if [[ -n "$ipc" ]]; then
+  set -- $ipc
+  if phone_send ipchange "ℹ️ Odely 出口 IP 由 $1 變 $2（Mac 重啟/VPN 重連？），下個 tick 會驗串流"; then ipn=sent; else ipn=no; fi
+  echo "$(wlib_ts) IPCHANGE $1 -> $2 phone=$ipn"
+fi
+
+[[ -z "$ACTS" ]] && exit 0
 
 # ── 2. 執行動作 ──────────────────────────────────────────────────
 while IFS= read -r line; do
@@ -309,6 +381,7 @@ while IFS= read -r line; do
     RENOTIFY)
       id="$(getf incidentId)"; decide renotified >/dev/null 2>&1
       n="$(notify "Odely 串流監察" "串流仍然需要人手(已 $(( ($(wlib_now) - $(getf escalatedAt)) / 3600 )) 小時):詳見 STREAM-ALERT.md")"
+      phone_send renotify "$(phone_msg_down 1)" && n="$n phone=sent" || n="$n phone=no"
       echo "$(wlib_ts) RENOTIFY incident=$id $n" ;;
     ALERT_REFRESH) rq="$(take_request)"; [[ -n "$rq" ]] && do_escalate "診斷員登記升級:$rq"; write_alert ;;
     RECOVER*)
@@ -318,6 +391,7 @@ while IFS= read -r line; do
         sm "- ✅ **串流監察恢復 $(wlib_ts)** — incident \`$id\` 已恢復(曾升級人手;診斷 $(getf diagEngine)/$(getf verdict);動作 $(getf diagActions))。"
         rm -f "$ALERT" "$REQ_FILE"
         n="$(notify "Odely 串流監察" "串流已恢復(incident $id)")"
+        phone_send recover "✅ Odely 串流已恢復 $(date -r "$(wlib_now)" '+%m-%d %H:%M' 2>/dev/null)（停咗 $(phone_hours $(( $(wlib_now) - $(getf since) )))）" && n="$n phone=sent" || n="$n phone=no"
         echo "$(wlib_ts) RECOVER(escalated) incident=$id $n"
       else
         sm "- ✅ **串流監察:自動修復成功 $(wlib_ts)** — incident \`$id\` 冇升級就自己好返(診斷 $(getf diagEngine)/$(getf verdict);動作 $(getf diagActions);selfheal 最後動作見 stream-selfheal.log)。"
