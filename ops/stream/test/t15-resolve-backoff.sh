@@ -53,16 +53,32 @@ out(`background @31s → ${rb}(應仍被擋)`);
 mode('ok');
 const rp = await tryResolve({ playbackRetry: true });
 out(`playbackRetry @31s mode=ok → ${rp};成功後 streak=${st().streak}(應 0)`);
-out('--- 成功只歸零 streak(背景冷卻窗自然到期先放行;唔提早解除)');
+out('--- 第二輪 #3:成功即歸零 streak 並即時解除冷卻(背景即刻放行)');
+out(`success 後 until=${st().until}(應 0) cooldownSecs=${secs() > 0 ? secs() : 0}`);
 const rb2 = await tryResolve({});
-out(`background right after success (cooldown 未到期) → ${rb2}`);
+out(`background right after success → ${rb2}(應 ok,唔再被擋)`);
 out('--- 歸零後再撞 → 又係 30s');
 mode('bot'); fake = Math.max(fake, st().until) + 1000;
 const rr = await tryResolve({}); out(`after-reset bot-check → ${rr}; cooldownSecs=${secs()} streak=${st().streak}`);
+out('--- 第二輪 #2:5 個並發背景 resolve 同時撞 bot-check → 只加 1 次(每冷卻窗一次)');
+mode('bot'); R.__rateLimitStateForTest({ streak: 0, until: 0, baseUntil: 0 }); fake += 5000;
+const cdBefore = M.getOpsMetrics().total.botCheck.cooldowns;
+const rs = await Promise.all([1, 2, 3, 4, 5].map(() => tryResolve({})));
+out(`concurrent x5 → streak=${st().streak}(應 1) cooldownSecs=${secs()}(應 30) cooldowns記帳增量=${M.getOpsMetrics().total.botCheck.cooldowns - cdBefore}(應 1) results=${rs.length}`);
+out('--- 並發窗內再撞(窗內第 6 個)→ 仍唔加;窗過後再撞 → 第 2 次 60s');
+fake = st().until + 1000; const r6 = await tryResolve({});
+out(`window-expired bot-check → streak=${st().streak}(應 2) cooldownSecs=${secs()}(應 60)`);
 const m = M.getOpsMetrics().total.botCheck;
 out('opsMetrics.total.botCheck=' + JSON.stringify(m));
+// 第二輪 #4:舊碟(冇 botCheck 欄)normalize 補齊 → blankBucket 有 botCheck
+out('blankBucket 含 botCheck(新 process 未撞過都有欄位)=' + (m && typeof m.cooldowns === 'number'));
 Date.now = realNow;
 process.exit(0);
 JS
 YTDLP_BIN="$S/stub-ytdlp" node "$S/run.mjs" "$S" 2>&1 | grep -v "^$"
 echo "(resolve-cache 寫入目標=scratch:$(ls "$S/backend/cache" | wc -l | tr -d " ") 檔;真 backend/cache 唔掂——測試用複製出嚟嘅 lib)"
+
+echo "--- 第二輪 #1:routes/hls.js resolve call 帶 playbackRetry(靜態核對;行為見上面 playbackRetry @31s ok)"
+grep -n "resolveAudioUrl(hymn.youtube_id" "$REPO/backend/routes/hls.js"
+grep -c "resolveAudioUrl(hymn.youtube_id, { playbackRetry: true })" "$REPO/backend/routes/hls.js" | sed 's/^/hls.js playbackRetry 命中行數=/'
+grep -n "resolveAudioUrl(" "$REPO/backend/routes/stream.js" | head -3

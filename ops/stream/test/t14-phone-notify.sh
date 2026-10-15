@@ -98,12 +98,12 @@ mkdir -p "$S/p5"; mklog "$S/p5/bot-recent.log" -120 3; mklog "$S/p5/bot-stale.lo
 echo "== 計數器直測"
 for f in bot-recent bot-stale bot-none; do echo "  $f.log(30 分鐘窗)→ $(python3 -I "$T/../stream-botcheck-count.py" "$S/p5/$f.log" 30)"; done
 echo "  真 /tmp/hymn_backend.log(唯讀,30 分鐘窗)→ $(python3 -I "$T/../stream-botcheck-count.py" /tmp/hymn_backend.log 30)"
-sh_case() { # $1=name $2=logfile $3=healthy_a $4=healthy_b $5=midfail
+sh_case() { # $1=name $2=logfile $3=healthy_a $4=healthy_b $5=midfail [$6=detail(預設 B:x:resolve-fail) $7=health.json]
   local d="$S/p5/$1"; rm -rf "${d:?}"; mkdir -p "$d/wd" "$d/stub"; ln -s "ytdlp-venv-a/bin/yt-dlp" "$d/yt-dlp"
-  echo '{"consecutiveFail":3}' > "$d/health.json"
+  local hj='{"consecutiveFail":3}'; [[ -n "${7:-}" ]] && hj="$7"; echo "$hj" > "$d/health.json"
   ( export STUB_DIR="$d/stub" WATCH_DIR="$d/wd" SELFHEAL_STATE="$d/sh.json" HEALTH_STATE="$d/health.json" YTDLP_LINK="$d/yt-dlp" SELFHEAL_BACKEND_LOG="$2" \
       SELFHEAL_APPLY_CMD="$T/stub-cmd.sh apply" SELFHEAL_RESTART_CMD="$T/stub-cmd.sh restart" SELFHEAL_RECHECK_SLEEP=0
-    "$SH" --healthy-a "$3" --healthy-b "$4" --mid 0 --midfail "$5" --ok 0 --fail 3 --detail "B:x:resolve-fail" >/dev/null 2>&1; echo "  selfheal rc=$?" )
+    "$SH" --healthy-a "$3" --healthy-b "$4" --mid 0 --midfail "$5" --ok 0 --fail 3 --detail "${6:-B:x:resolve-fail}" >/dev/null 2>&1; echo "  selfheal rc=$?" )
   python3 - "$d/sh.json" "$d/stub/cmd.calls" "$d/wd/SUPERVISION-LOG.md" <<'PY'
 import json, sys, os
 d = json.load(open(sys.argv[1])); a = d['alert']
@@ -119,19 +119,29 @@ echo "== 案1(正控)近期 bot-check ×6 行,A/B 都死,midfail=3"; sh_case c1 
 echo "== 案2(負控)冇 bot-check 行:同樣輸入 → 形態①(apply 被 call、swapsToday=1)"; sh_case c2 "$S/p5/bot-none.log" 0 0 3
 echo "== 案3(負控)bot-check 行有但錨係 3 小時前(舊事故殘留)→ 形態①"; sh_case c3 "$S/p5/bot-stale.log" 0 0 3
 echo "== 案4(負控)有近期 bot-check 行但 Layer B 健康(healthy_b=1)、A 死 → 形態②(restart 被 call)"; sh_case c4 "$S/p5/bot-recent.log" 0 1 0
+echo "== 案5(第二輪#8 正控)backend log 冇 bot-check 行,但 healthcheck state.botcheckB=3(Layer B 自己 stderr)→ ④"; sh_case c5 "$S/p5/bot-none.log" 0 0 3 "B:x:resolve-fail B:y:resolve-fail B:z:resolve-fail" '{"consecutiveFail":3,"botcheckB":3}'
+echo "== 案6(第二輪#8 負控)backend log 近期 bot-check×6 但 Layer B 失敗以 403 為主(resolve-fail 1 < 403 ×2)→ 形態①(真 yt-dlp 過舊 + 背景噪音唔誤判)"; sh_case c6 "$S/p5/bot-recent.log" 0 0 3 "B:x:resolve-fail B:y:403 B:z:403"
 echo "== 規則診斷"
-mkfacts() { printf 'BACKEND_PID=123\nHEALTH_HTTP=200\nRATE403=0.0\nRESOLVE_TOTAL=5\nRESOLVE_FAIL=5\nYTDLP_ACTIVE=2026.09.27\nYTDLP_IDLE=2026.10.10\nBOTCHECK_RECENT=%s\n' "$1" > "$2"; }
-for b in 5 0; do
-  mkfacts $b "$S/p5/f$b.env"; export STUB_DIR="$S/p5"; rm -f "$S/p5/cmd.calls"
-  echo "-- BOTCHECK_RECENT=$b(resolve 5/5 fail、候選較新)"; REMEDY_CMD="$T/stub-cmd.sh" STREAM_WATCH_TEST=1 "$RULES" "$S/p5/f$b.env" 2>/dev/null | sed 's/^/   /'
+mkfacts() { # $1=BOTCHECK_RECENT $2=out [$3=HEALTHY_B(預設0) $4=B_RESOLVE_FAIL(預設3) $5=B_403(預設0) $6=BOTCHECK_B(預設0)]
+  printf 'BACKEND_PID=123\nHEALTH_HTTP=200\nRATE403=0.0\nRESOLVE_TOTAL=5\nRESOLVE_FAIL=5\nYTDLP_ACTIVE=2026.09.27\nYTDLP_IDLE=2026.10.10\nBOTCHECK_RECENT=%s\nHEALTHY_B=%s\nB_RESOLVE_FAIL=%s\nB_403=%s\nBOTCHECK_B=%s\n' "$1" "${3-0}" "${4-3}" "${5-0}" "${6-0}" > "$2"; }
+rules_case() { # $1=標籤 $2=facts
+  export STUB_DIR="$S/p5"; rm -f "$S/p5/cmd.calls"
+  echo "-- $1"; REMEDY_CMD="$T/stub-cmd.sh" STREAM_WATCH_TEST=1 "$RULES" "$2" 2>/dev/null | sed 's/^/   /'
   echo "   remedy stub 被 call 次數=$([[ -f $S/p5/cmd.calls ]] && cnt $S/p5/cmd.calls || echo 0)"
-done
+}
+mkfacts 5 "$S/p5/f5.env";            rules_case "BOTCHECK_RECENT=5 HEALTHY_B=0 resolve-fail=3 403=0(正控 → ④ escalate,零 swap)" "$S/p5/f5.env"
+mkfacts 0 "$S/p5/f0.env";            rules_case "BOTCHECK_RECENT=0(resolve 5/5 fail、候選較新 → swap)" "$S/p5/f0.env"
+mkfacts 5 "$S/p5/fh1.env" 1;         rules_case "第二輪#7 負控:BOTCHECK_RECENT=5 但 HEALTHY_B=1(Layer B 健康)→ 唔判④(走 swap)" "$S/p5/fh1.env"
+mkfacts 5 "$S/p5/fhx.env" "" ;       rules_case "第二輪#7 負控:HEALTHY_B 空(未知)→ 唔判④(fail-safe)" "$S/p5/fhx.env"
+mkfacts 5 "$S/p5/f403.env" 0 1 2;    rules_case "第二輪#8 負控:resolve-fail=1 < 403=2(真 yt-dlp 過舊形)→ 唔判④(走 swap)" "$S/p5/f403.env"
+mkfacts 2 "$S/p5/fb.env" 0 3 0 1;    rules_case "第二輪#8 正控:backend log 2 + healthcheck Layer B stderr 1 = 3 → ④ escalate" "$S/p5/fb.env"
 echo "-- diagnose.sh 寫 facts(BACKEND_LOG=近期 fixture,DIAG_FORCE_RULES;remedy 全 dry-run)"
 ( export STUB_DIR="$S/p5/stub"; mkdir -p "$S/p5/stub" "$S/p5/dwd"
-  STREAM_WATCH_TEST=1 WATCH_DIR="$S/p5/dwd" DIAG_DIR="$S/p5/inc" REMEDY_DRY_RUN=1 REMEDY_LOG="$S/p5/dwd/r.log" REMEDY_STATE="$S/p5/dwd/rs.json" SELFHEAL_STATE="$S/p5/sh2.json" \
+  echo '{"consecutiveFail":3,"botcheckB":1,"bResolveFail":3,"b403":0,"healthyB":0}' > "$S/p5/health-fix.json"
+  HEALTH_STATE="$S/p5/health-fix.json" STREAM_WATCH_TEST=1 WATCH_DIR="$S/p5/dwd" DIAG_DIR="$S/p5/inc" REMEDY_DRY_RUN=1 REMEDY_LOG="$S/p5/dwd/r.log" REMEDY_STATE="$S/p5/dwd/rs.json" SELFHEAL_STATE="$S/p5/sh2.json" \
     REMEDY_STATUS_CMD="$T/stub-status.sh" STATUS_CMD="$T/stub-status.sh" OPS_METRICS_FILE=/dev/null DIAG_FORCE_RULES=1 BACKEND_LOG="$S/p5/bot-recent.log" HYMN_STREAM_BASE=http://127.0.0.1:9 \
     "$T/../stream-diagnose.sh" p5 2>/dev/null | tail -3 | sed 's/^/   /'
-  echo "   facts.env:$(grep BOTCHECK "$S/p5/inc/facts.env")  bundle 含 bot-check 證據行 句:$(grep -c 'bot-check 證據行' "$S/p5/inc/bundle.md") 行" )
+  echo "   facts.env:$(grep -E "BOTCHECK|HEALTHY_B|B_RESOLVE|B_403" "$S/p5/inc/facts.env" | tr "\n" " ")  bundle 含 bot-check 證據行 句:$(grep -c 'bot-check 證據行' "$S/p5/inc/bundle.md") 行" )
 
 echo; echo "################ P6 R3 出口 IP(healthcheck 測試模式 + watch + 手機 stub)################"
 setup p6; touch "$WATCH_DIR/stream-watch.on"; echo ok > "$STUB_DIR/mode"

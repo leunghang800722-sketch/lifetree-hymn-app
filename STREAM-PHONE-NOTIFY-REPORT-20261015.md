@@ -58,7 +58,7 @@ diagnose.sh 寫 facts:BOTCHECK_RECENT=6,bundle 含 bot-check 證據行一句
 ```
 prev=0 全探健康 A3 B3 | prev=1 A死 A3 B3 cf=2
 prev=2 A死B死 → A1 B1 cf=3 (log light=1) | A死B過 → A1 B3(B 過即補探) | A過B死 → A3 B1
-A過B過(恢復) → A3 B3 cf=0(恢復偵測冇慢一個 tick)
+A過B過(恢復) → A3 B3 cf=0(如實:B 首探 id 7UkwavM5L1E 健康時都有約 12% 間歇 403〔Opus:10 月 684 tick 入面 80 次〕⇒ 恢復約 12% 機會遲一個 tick;原寫「冇慢一個 tick」講大咗)
 prev=7 A死B死 → A1 B1 | prev=13(新=14,selfheal due) → A3 B3 | prev=1(新=2) → A3 B3
 ```
 (b) `t15`(真 module 複製去 scratch,stub yt-dlp 出真 `Sign in to confirm you’re not a bot`,假時鐘):連續 n=1..9 冷卻秒數 `30,60,120,240,480,960,1800,1800,1800`(MATCH 預期);冷卻中背景 caller fail-fast(streak 9→9,until 不變);真人 `playbackRetry` 過 base 30s 後可試且成功 → streak=0;背景喺冷卻窗內仍被擋;歸零後再撞 = 30s(streak=1);`opsMetrics.total.botCheck={"cooldowns":10,"maxStreak":9,"maxSecs":1800,…}`。
@@ -88,3 +88,31 @@ prev=7 A死B死 → A1 B1 | prev=13(新=14,selfheal due) → A3 B3 | prev=1(新=
 - 冇測「真 gateway 死咗」(唔准殺 gateway;以 stub exit 1 / hang 代);冇真 launchd tick 驗證(要部署後睇 `stream-health.log` 出現 `ip=`)。
 - R5(b) 要 backend gate restart 先生效(需 approve);healthcheck/watch/selfheal 係 script,下個 tick 即生效。
 - 真發一條測試訊息由 Fable 喺 Opus 驗收後做;發之前 `PHONE_RENOTIFY_SEC`、`PHONE_ACCOUNT` 值由 conf 提供(我冇睇值)。
+
+## 7. 第二輪(Opus 驗收 `STREAM-PHONE-NOTIFY-OPUS-20261015.md` 修正;2026-10-15)
+
+commit:backend `6a23d3a`、ops `70e6aaf`、test+本節(下一個 commit)。backend 仍**未 restart**(要等 IP 回復 + gate)。
+
+| # | 項 | 狀態 | 證據 |
+|---|---|---|---|
+| 1 | `routes/hls.js:387` 加 `{ playbackRetry: true }` | ✅ | t15 靜態核對命中行數=1;行為:harness「playbackRetry @31s」於長冷卻(剩 ~1469s)內成功。副作用(如實):playbackRetry 同時令 HLS 失敗只入 60s 短視野 failCache(同 stream.js);原註釋刻意唔傳,已改寫 |
+| 2 | 並發每冷卻窗只加一次 | ✅ | harness:5 個並發背景 resolve 同撞 bot-check → streak=1、冷卻 30s、`botCheck.cooldowns` 記帳增量=1;窗過後再撞 → streak=2、60s。窗內再撞只刷新 base(真人 30s 閘),不加 streak、不延長 until |
+| 3 | 成功即解除冷卻 | ✅ | harness:長冷卻中 playbackRetry 成功 → streak=0、until=0;緊接背景 caller → ok(舊:仲被擋 440s) |
+| 4 | `botCheck` 入 `blankBucket`/`normalizeBucket` | ✅ | harness:新 process 未撞過 `total.botCheck` 已有欄位;normalize 對舊碟補齊 |
+| 5 | harness | ✅ | `ops/stream/test/t15-resolve-backoff.sh`(真 module 複製去 scratch、假時鐘):序列 `30,60,120,240,480,960,1800,1800,1800` MATCH(不變);並發/成功解除/hls 靜態如上。PROD-SNAPSHOT OK |
+| 6 | R3 `curl -4` | ✅ | t17:`curl -4 -s -m 5 https://ifconfig.me` 命中 1 行(測試模式不打網絡) |
+| 7 | rules 1b 加 `healthy_b==0` | ✅ | rules 讀新 fact `HEALTHY_B`(diagnose 由 state.healthyB 寫);缺/空=不判④(fail-safe)。t14:HEALTHY_B=1 / 空 → 走 swap(負控),HEALTHY_B=0 → ④ escalate、零 remedy |
+| 8 | R1 盲點:Layer B stderr 計數 | ✅ | healthcheck probe_b 把 yt-dlp stderr 落暫存檔(`mktemp`,EXIT trap 清),resolve-fail 時 grep `(^|[^0-9])429([^0-9]|$)|Sign in to confirm|LOGIN_REQUIRED` → state 新欄 `botcheckB`/`bResolveFail`/`b403`/`healthyB`。selfheal:證據=backend log 計數+`state.botcheckB`(閾值仍 3),並要求 `resolve-fail>=1 且 >= 403 數`(從 `--detail` 數)。t17 C1–C3 三種 stderr 全計、backend log 檔不存在時 selfheal 單靠 state 判④;C4 stderr 含 14291/24290 數字不誤中、C5 resolve 得+403 → 非④(判①) |
+| 9 | 警報文字 | ✅ | 僅「A 過 B 死」分支:`midfail>0 && resolve-fail==midfail && mid==0 && botcheckB>=1` → 寫「⚠️ 出口 IP 疑被 YouTube bot-check/429(換 yt-dlp 無用,要換 VPN server)」且不含「1MiB 病」「第一件事查 yt-dlp」;其餘照舊(t17 C4/C5 仍出舊文字)。探測/判定邏輯一字未改;「兩層都失敗」「backend 側」分支文字未改 |
+| 10 | §P7「冇慢一個 tick」 | ✅ | 已改如實(約 12% 機會遲一個 tick),見 §3 P7 |
+
+**回歸**:t1–t17 全部 rc=0,每支 `PROD-SNAPSHOT OK`、`PROD-WRITE DETECTED`=0(t13 FAILS=0)。測試改動:t14 規則診斷改為帶 `HEALTHY_B/B_RESOLVE_FAIL/B_403/BOTCHECK_B` facts(原 `BOTCHECK_RECENT` 單欄已不足以判④,屬規格改變);加案5/案6(selfheal 用 state、403 為主)、規則 4 個新案;diagnose facts 案 pin `HEALTH_STATE` fixture。新增 `t17-second-round.sh`。
+
+**過程中自己揪出嘅 bug**:改 `stream-diagnose.sh` 時把 heredoc 結束符 `PY` 後面接咗註釋 ⇒ heredoc 不終止(`bash -n` 唔報),t14 的「diagnose 寫 facts」案顯示「冇 facts 檔」先發現,已修(註釋搬返 echo 行)。
+
+**偏離/注意**
+- 窗內再撞冷卻:唔延長 `until`(只刷新 base)。若要「窗內再撞延長」需另議。
+- 成功只清 `ytRateLimitedUntil`,`ytRateLimitedBaseUntil`(≤30s)任其自然過。
+- selfheal 的 resolve-fail/403 比例由 `--detail` 字串計(light 模式只探 1 首 ⇒ 樣本 1;④ 閾值 backend log + botcheckB >= 3 仍需 backend log 補足)。
+- healthcheck 現在每 tick 多一個 `mktemp`(`$TMPDIR`,失敗則退回 /dev/null),**ops 改動於 commit 後下一個真 tick(16:07)即 live**;本輪測試全部避開 :07±2 與 :12。
+- backend 三檔仍未 restart/部署。
