@@ -332,10 +332,21 @@ fi
 # STREAM-PHONE-NOTIFY-EXEC-20261015 R1(10-14 事故):出口 IP 被 YouTube bot-check 時 resolve 全死,但換 yt-dlp / restart backend 都冇用,
 # 之前會誤判①(midfail>=2)→ 食 swap 配額 + 誤導「先查 yt-dlp 版本」。判形態前先數 backend log 近 30 分鐘 bot-check 證據行(>=3,
 # 計法見 stream-botcheck-count.py)。再要求 Layer B 自己都死(healthy_b==0):直打 resolve 仲通嘅話 bot-check 行只係舊尾巴,照舊走①/②/③。
-botN=0
+# 第二輪 #8:證據 = backend log 計數 + healthcheck Layer B 自己 stderr 嘅 bot-check 命中數(state.botcheckB;backend log 睇唔到 healthcheck 自己嘅 resolve);
+# 並要求 Layer B 失敗以 resolve-fail 為主(resolve-fail 數 >= 403 數,且 >=1)——真 yt-dlp 過舊(B resolve 得、URL 403)加背景噪音唔會誤判④。
+botN=0; botB=0
 if (( healthy_b == 0 )); then
   botN="$(python3 "$REPO/ops/stream/stream-botcheck-count.py" "$BOTLOG" "${SELFHEAL_BOTCHECK_MIN:-30}" 2>/dev/null)"
   [[ "$botN" =~ ^[0-9]+$ ]] || botN=0
+  botB="$(python3 -c "
+import json
+try: print(int(json.load(open('$HEALTH_STATE')).get('botcheckB',0)))
+except Exception: print(0)" 2>/dev/null)"
+  [[ "$botB" =~ ^[0-9]+$ ]] || botB=0
+  botN=$(( botN + botB ))
+  rfN=$(printf '%s' "$detail" | grep -o 'B:[^: ]*:resolve-fail' | wc -l | tr -d ' ')
+  f403N=$(printf '%s' "$detail" | grep -o 'B:[^: ]*:403' | wc -l | tr -d ' ')
+  (( rfN >= 1 && rfN >= f403N )) || botN=0
 fi
 if (( botN >= ${SELFHEAL_BOTCHECK_MIN_HITS:-3} )); then
   form="④出口IP被bot-check"

@@ -95,7 +95,7 @@ mkdir -p "$(dirname "$HC_CTX")" 2>/dev/null
 [[ -L "$HC_CTX" ]] && rm -f "$HC_CTX" 2>/dev/null
 ( umask 077; printf 'pid=%s ts=%s\n' "$$" "$(date +%s)" > "$HC_CTX.$$.tmp" && mv -f "$HC_CTX.$$.tmp" "$HC_CTX" ) 2>/dev/null
 _hc_ctx_rm() { [[ "$(sed -n 's/^pid=\([0-9][0-9]*\).*$/\1/p' "$HC_CTX" 2>/dev/null | head -1)" == "$$" ]] && rm -f "$HC_CTX" 2>/dev/null; return 0; }
-trap '_hc_ctx_rm' EXIT
+trap '_hc_ctx_rm; rm -f "${B_ERRF:-}" 2>/dev/null' EXIT
 trap 'exit 143' TERM INT HUP
 
 # 固定三首(唔同 org / 唔同年代),兩首以上 OK 就當健康。
@@ -127,6 +127,12 @@ say() { [[ $VERBOSE -eq 1 ]] && echo "$@"; return 0; }
 # 自己睇落好似行緊。所以用 perl 嘅 alarm(macOS 一定有 perl)做硬性上限。
 run_capped() {  # run_capped <秒> <cmd...>
   perl -e 'alarm shift; exec @ARGV or exit 127' "$@" 2>/dev/null
+}
+
+# 第二輪 #8:Layer B 自己 yt-dlp 嘅 stderr 另存暫存檔(唔再 2>/dev/null 吞咗),用嚟數 bot-check/429 證據(backend log 睇唔到 healthcheck 自己嘅 resolve)。
+B_ERRF="$(mktemp "${TMPDIR:-/tmp}/hc-berr.XXXXXX" 2>/dev/null || echo "")"
+run_capped_e() {  # 同 run_capped,但 stderr 落 $B_ERRF(冇暫存檔就丟棄)
+  perl -e 'alarm shift; exec @ARGV or exit 127' "$@" 2>"${B_ERRF:-/dev/null}"
 }
 
 # ── R5(a) 事故期間少探(STREAM-PHONE-NOTIFY-EXEC-20261015)──────────────────────────────
@@ -170,14 +176,20 @@ probe_a "${IDS_FIRST[@]}"
 # cfgerr = 探測配置本身有問題(binary 唔見咗 / 揀咗首細過 2MiB 嘅歌收 416),
 # 唔算 upstream fail,唔好亂響警報,但要喺 log 見到。
 mid=0; midfail=0; midcfg=0
+botcheckB=0; rfailB=0; b403=0   # 第二輪 #8:Layer B 嘅 bot-check stderr 命中數 / resolve-fail 數 / HTTP 403 數(寫入 state;selfheal/rules 形態④用)
 ytver="?"
 probe_b() {
   local yid url code
   for yid in "$@"; do
-    url=$(run_capped "$RESOLVE_TIMEOUT" "$YTDLP" -f "bestaudio[ext=m4a]/bestaudio" \
+    : > "${B_ERRF:-/dev/null}" 2>/dev/null
+    url=$(run_capped_e "$RESOLVE_TIMEOUT" "$YTDLP" -f "bestaudio[ext=m4a]/bestaudio" \
           --get-url --no-playlist "https://www.youtube.com/watch?v=$yid" | head -1)
     if [[ "$url" != http* ]]; then
-      midfail=$((midfail+1)); detail="$detail B:$yid:resolve-fail"
+      midfail=$((midfail+1)); rfailB=$((rfailB+1)); detail="$detail B:$yid:resolve-fail"
+      # 429 要獨立數字(唔好撞 URL/id 入面嘅數字);Sign in to confirm = not a bot;LOGIN_REQUIRED = player 回應
+      if [[ -n "${B_ERRF:-}" && -s "$B_ERRF" ]] && grep -Eq '(^|[^0-9])429([^0-9]|$)|Sign in to confirm|LOGIN_REQUIRED' "$B_ERRF" 2>/dev/null; then
+        botcheckB=$((botcheckB+1)); say "  B $yid → stderr 有 bot-check/429 證據"
+      fi
       say "  B $yid → resolve FAIL"
       continue
     fi
@@ -190,7 +202,7 @@ probe_b() {
     case "$code" in
       206) mid=$((mid+1)) ;;
       416) midcfg=$((midcfg+1)); detail="$detail B:$yid:416-too-short" ;;   # 條歌細過 2MiB = 探測配置問題
-      *)   midfail=$((midfail+1)); detail="$detail B:$yid:${code:-timeout}" ;;
+      *)   midfail=$((midfail+1)); [[ "$code" == "403" ]] && b403=$((b403+1)); detail="$detail B:$yid:${code:-timeout}" ;;
     esac
   done
 }
@@ -242,7 +254,7 @@ exit_ip="?"
 if [[ $HC_TEST -eq 1 ]]; then
   [[ -n "${HC_IP_CMD:-}" ]] && exit_ip="$(${HC_IP_CMD} 2>/dev/null | head -1 | tr -d '[:space:]')"
 else
-  exit_ip="$(curl -s -m 5 https://ifconfig.me 2>/dev/null | head -c 64 | tr -d '[:space:]')"
+  exit_ip="$(curl -4 -s -m 5 https://ifconfig.me 2>/dev/null | head -c 64 | tr -d '[:space:]')"
 fi
 [[ "$exit_ip" =~ ^[0-9A-Fa-f:.]{3,45}$ ]] || exit_ip="?"
 prev_ip=$(python3 -c "
@@ -254,13 +266,14 @@ ip_from=""; ip_to=""
 if [[ "$exit_ip" != "?" && -n "$prev_ip" && "$exit_ip" != "$prev_ip" ]]; then ip_from="$prev_ip"; ip_to="$exit_ip"; fi
 keep_ip="$prev_ip"; [[ "$exit_ip" != "?" ]] && keep_ip="$exit_ip"
 
-python3 - "$STATE" "$new_fail" "$ok" "$fail" "$mid" "$midfail" "$midcfg" "$ytver" "$keep_ip" "$ip_from" "$ip_to" <<'PY' 2>/dev/null
+python3 - "$STATE" "$new_fail" "$ok" "$fail" "$mid" "$midfail" "$midcfg" "$ytver" "$keep_ip" "$ip_from" "$ip_to" "$botcheckB" "$rfailB" "$b403" "$healthy_b" <<'PY' 2>/dev/null
 import json,sys,datetime
 now = datetime.datetime.now().isoformat(timespec='seconds')
 d = {'lastCheck': now,
      'consecutiveFail': int(sys.argv[2]), 'ok': int(sys.argv[3]), 'fail': int(sys.argv[4]),
      'mid': int(sys.argv[5]), 'midFail': int(sys.argv[6]), 'midCfgErr': int(sys.argv[7]),
      'ytdlp': sys.argv[8]}
+d['botcheckB'] = int(sys.argv[12]); d['bResolveFail'] = int(sys.argv[13]); d['b403'] = int(sys.argv[14]); d['healthyB'] = int(sys.argv[15])
 if sys.argv[9]: d['exitIp'] = sys.argv[9]
 if sys.argv[10] and sys.argv[11]: d['ipChanged'] = {'from': sys.argv[10], 'to': sys.argv[11], 'at': now}
 json.dump(d, open(sys.argv[1],'w'), indent=1)
@@ -282,6 +295,10 @@ if (( healthy == 0 )) && { (( new_fail == 1 )) || (( new_fail % 12 == 0 )); }; t
     echo ""
     if (( healthy_a == 0 && healthy_b == 0 )); then
       echo "- 🔴 **串流健康警報 $(ts)** — **兩層都失敗**(連續第 $new_fail 次)。Layer A(經 backend 頭 64KB)${#IDS[@]} 首得 $ok 首 206;Layer B(直打 googlevideo,64KB @ 2MiB)得 $mid 首 206。yt-dlp=$ytver。實際:$detail"
+    elif (( healthy_a == 1 && healthy_b == 0 )) && (( midfail > 0 && rfailB == midfail && mid == 0 )) && (( botcheckB >= 1 )); then
+      # 第二輪 #9:Layer B 全部 resolve-fail 且 stderr 有 bot-check/429 證據 → 唔係 1MiB 病,係出口 IP 被擋(換 yt-dlp 無用)。只改文字,探測判斷不變。
+      echo "- 🔴 **串流健康警報 $(ts)** — ⚠️ 出口 IP 疑被 YouTube bot-check/429(換 yt-dlp 無用,要換 VPN server):Layer A(經 backend)$ok/${#IDS[@]} 首過,但 Layer B 直打 resolve 全部失敗($rfailB/$midfail resolve-fail,其中 $botcheckB 次 stderr 含 bot-check/429;連續第 $new_fail 次)。實際:$detail"
+      echo "  **唔好先查 yt-dlp 版本**;要 Eric 人手換 NordVPN server(唔同城市嘅 US server)。yt-dlp 現役 \`$ytver\`。"
     elif (( healthy_a == 1 && healthy_b == 0 )); then
       echo "- 🔴 **串流健康警報 $(ts)** — ⚠️ **典型「1MiB 病」形態**:Layer A(頭 64KB,經 backend)$ok/${#IDS[@]} 首**過**,但 Layer B(直打 googlevideo,64KB @ 2MiB)得 $mid 首 206(連續第 $new_fail 次)。即係頭段派得、1MiB 之後 403 —— 用戶感受係「全庫播得幾秒就死/completely 播唔到」。實際:$detail"
       echo "  **第一件事查 yt-dlp 版本**(而家現役 \`$ytver\`,路徑 \`backend/tools/yt-dlp\`):2026-08-22 全庫事故就係 binary 太舊,YouTube 新 player 簽出嚟嘅 URL 只開放頭 1MiB。修法見 \`YTDLP-UNIFY-PLAN-20260822.md\`;人手升級:\`ops/ytdlp/update-ytdlp.sh --apply\`(canary 過先換,舊版留 \`backend/tools/yt-dlp.prev\` 可以 \`mv\` 返轉頭)。"

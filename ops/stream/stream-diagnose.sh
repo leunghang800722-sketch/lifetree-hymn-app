@@ -175,6 +175,16 @@ print(f"RATE403={rate}"); print(f"RATE403_SAMPLES={samples}"); print(f"RESOLVE_T
 print(f"YTDLP_ACTIVE={clean(ya)}"); print(f"YTDLP_IDLE={clean(yi)}")
 PY
   echo "BOTCHECK_RECENT=$botn" >> "$FACTS"   # R1:backend log 近 30 分鐘 bot-check 證據行數(stream-botcheck-count.py)
+  # 第二輪 #8:healthcheck Layer B 自己嘅 bot-check 命中 / resolve-fail / 403 數 + healthyB(state 由 healthcheck 每 tick 寫),俾規則 1b 用
+  python3 - "$HEALTH_STATE" >> "$FACTS" <<'PY' 2>/dev/null
+import json, sys
+try: d = json.load(open(sys.argv[1]))
+except Exception: d = {}
+def n(k):
+    v = d.get(k); return v if isinstance(v, int) and v >= 0 else 0
+print(f"BOTCHECK_B={n('botcheckB')}"); print(f"B_RESOLVE_FAIL={n('bResolveFail')}"); print(f"B_403={n('b403')}")
+hb = d.get('healthyB'); print(f"HEALTHY_B={hb if hb in (0, 1) else ''}")
+PY
 }
 
 if [[ -n "${DIAG_BUNDLE_FILE:-}" ]]; then
