@@ -208,9 +208,9 @@ for f in 1 2 3 4; do
 done
 chk "首發④" "$S/p9-down4.txt" "🔴 Odely 播歌出問題（由 " "起）" $'\n原因：VPN 出口 IP 被 YouTube 當機械人擋住' $'\n自動修復：已判斷換 yt-dlp 無用，未自動修' $'\n要你做：換 NordVPN server（揀另一個城市），換完等 30 分鐘會自動確認'
 chk "重發④" "$S/p9-renotify4.txt" "🔴 Odely 播歌仍未恢復（由 " "已 6.5 小時）" $'\n原因：VPN 出口 IP 被 YouTube 當機械人擋住' $'\n要你做：換 NordVPN server'
-chk "首發①" "$S/p9-down1.txt" $'\n原因：yt-dlp 版本過舊' $'\n要你做：暫時唔使做——yt-dlp 版本過舊，系統會自動試換'
-chk "首發②" "$S/p9-down2.txt" $'\n原因：backend 死咗' $'\n要你做：暫時唔使做——backend 死咗，系統會自動重開'
-chk "首發③" "$S/p9-down3.txt" $'\n原因：YouTube 側問題' $'\n要你做：暫時唔使做——YouTube 側問題，通常等 1–2 次檢查'
+chk "首發①" "$S/p9-down1.txt" $'\n原因：播歌程式版本過舊' $'\n要你做：請叫 Claude 跟進'
+chk "首發②" "$S/p9-down2.txt" $'\n原因：伺服器死咗' $'\n要你做：請叫 Claude 跟進'
+chk "首發③" "$S/p9-down3.txt" $'\n原因：YouTube 嗰邊有問題' $'\n要你做：通常等 30–60 分鐘會自己好'
 chk "恢復" "$S/p9-recover4.txt" "✅ Odely 播歌已恢復（" $'\n停咗大約 7.0 小時'
 chk "IP變" "$S/p9-ipchange.txt" "ℹ️ Odely 網絡出口 IP 變咗" $'\n要你做：暫時唔使做'
 echo "  IP變訊息含 IP 數字=$(grep -cE '[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+' "$S/p9-ipchange.txt")(預期 0)"
