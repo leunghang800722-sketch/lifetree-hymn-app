@@ -257,7 +257,7 @@ PY
 phone_plain() { # $1=形態字串 $2=reason → 印三行:原因|自動修復|要你做(白話,Eric 唔識 code;唔含內部字眼)
   case "$1$2" in
     *④*|*bot-check*|*"not a bot"*)
-      echo "VPN 出口 IP 被 YouTube 當機械人擋住|已判斷換 yt-dlp 無用，未自動修|可以先等 30–60 分鐘（YouTube 限速有時會自己解，好返會通知你）；如果再收到呢個訊息，就換 NordVPN server（揀另一個城市），換完等 30 分鐘會自動確認" ;;
+      echo "VPN 出口 IP 被 YouTube 當機械人擋住|已判斷換 yt-dlp 無用，未自動修|可以先等 30–60 分鐘（限速有時會自己解，好返會通知你）；再收到呢個訊息就換 NordVPN server（揀另一個城市），換完等 30 分鐘會自動確認" ;;
     *①*)
       echo "播歌程式版本過舊，YouTube 唔收|系統試過自動換新版但仲未好|請叫 Claude 跟進（話「串流有警報」就得）" ;;
     *②*)
