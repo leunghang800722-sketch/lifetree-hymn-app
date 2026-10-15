@@ -11,7 +11,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { zeroFragmentedMp4Durations } from './fixFragmentedMp4Duration.js';
 import { YTDLP } from './ytdlpBin.js';
-import { recordResolveAttempt, recordResolveOutcome } from './opsMetrics.js';
+import { recordResolveAttempt, recordResolveOutcome, recordBotCheckCooldown } from './opsMetrics.js';
 
 const exec = promisify(execCb);
 
@@ -163,6 +163,38 @@ function computeExpiresAt(url) {
 // 唔好再打 YouTube 火上加油。
 let ytRateLimitedUntil = 0;
 const YT_RATE_LIMIT_COOLDOWN_MS = 30 * 1000;
+// ── STREAM-PHONE-NOTIFY-EXEC-20261015 R5(b):冷卻改指數退避 ───────────────────────────────
+// 10-14 事故(出口 IP 被 bot-check)背景 keep-warm / warmColdBacklog 每次冷卻一過就再撞一次,穩定 60-80 次/小時,
+// 佔當日 466 次 bot-check 約 80%,對換 server 之前完全冇益處,仲可能延長 IP 信譽懲罰。
+// 連續第 n 次撞(中間冇任何一次 resolve 成功)→ 冷卻 min(30s × 2^(n-1), 30min):30/60/120/240/480/960/1800s…
+// 任何一次 resolve 成功(runStrategy 出到有效 URL)→ n 歸零。
+// ⚠️ 真人播放(opts.playbackRetry)唔受長冷卻影響:佢只被「最近一次撞 + 30s」(ytRateLimitedBaseUntil,即舊行為)擋住。
+//    否則 Eric 換咗 VPN server 之後,backend 仲要 fail-fast 到 30 分鐘,播放照死;真人嘗試一次成功即歸零,背景即刻恢復。
+const YT_RATE_LIMIT_COOLDOWN_MAX_MS = 30 * 60 * 1000;
+let ytRateLimitStreak = 0;
+let ytRateLimitedBaseUntil = 0;
+export function nextRateLimitCooldownMs(streak) {
+  return Math.min(YT_RATE_LIMIT_COOLDOWN_MS * 2 ** Math.max(0, streak - 1), YT_RATE_LIMIT_COOLDOWN_MAX_MS);
+}
+function armRateLimitCooldown() {
+  ytRateLimitStreak = Math.min(ytRateLimitStreak + 1, 30);   // 封頂防 2**n 溢出;cap 早喺第 7 次已到
+  const ms = nextRateLimitCooldownMs(ytRateLimitStreak);
+  const now = Date.now();
+  ytRateLimitedUntil = now + ms;
+  ytRateLimitedBaseUntil = now + YT_RATE_LIMIT_COOLDOWN_MS;
+  recordBotCheckCooldown(ytRateLimitStreak, Math.round(ms / 1000));
+  console.warn(`⚠️ 冷卻 ${Math.round(ms / 1000)}s（第 ${ytRateLimitStreak} 次）`);
+  return ms;
+}
+// 測試/觀測 hook(純讀寫模組內 state,唔掂網絡)
+export function __rateLimitStateForTest(set) {
+  if (set) {
+    if ('streak' in set) ytRateLimitStreak = set.streak;
+    if ('until' in set) ytRateLimitedUntil = set.until;
+    if ('baseUntil' in set) ytRateLimitedBaseUntil = set.baseUntil;
+  }
+  return { streak: ytRateLimitStreak, until: ytRateLimitedUntil, baseUntil: ytRateLimitedBaseUntil };
+}
 function isRateLimitError(msg) {
   return /HTTP Error 429|Too Many Requests|Sign in to confirm you.{0,3}re not a bot/i.test(String(msg || ''));
 }
@@ -182,6 +214,7 @@ function runStrategy(youtubeId, strat) {
     if (url && url.startsWith('http')) {
       const ms = Date.now() - t0;
       recordResolveAttempt(strat.name, true, ms);
+      ytRateLimitStreak = 0;   // R5(b):任何一次 resolve 成功 = IP 暫時冇事,退避歸零
       console.log(`[resolve] ok strategy=${strat.name} id=${youtubeId} ms=${ms}`);
       return url;
     }
@@ -194,9 +227,11 @@ function runStrategy(youtubeId, strat) {
   });
 }
 
-async function resolveViaYtDlp(youtubeId) {
-  if (Date.now() < ytRateLimitedUntil) {
-    const secsLeft = Math.ceil((ytRateLimitedUntil - Date.now()) / 1000);
+async function resolveViaYtDlp(youtubeId, opts = {}) {
+  // R5(b):真人播放只受 base 冷卻(最近一次撞 + 30s)管;背景/預取受指數冷卻管
+  const gateUntil = opts.playbackRetry ? ytRateLimitedBaseUntil : ytRateLimitedUntil;
+  if (Date.now() < gateUntil) {
+    const secsLeft = Math.ceil((gateUntil - Date.now()) / 1000);
     console.warn(`⚠️ yt-dlp rate-limit 冷卻中(仲有 ${secsLeft}s)—— 跳過 ${youtubeId},唔好加重個 block`);
     throw new Error(`yt-dlp rate-limited (cooldown), skipping ${youtubeId}`);
   }
@@ -219,8 +254,8 @@ async function resolveViaYtDlp(youtubeId) {
     } catch (aggErr) {
       const hitRateLimit = (aggErr?.errors || []).some((e) => isRateLimitError(e?.message));
       if (hitRateLimit) {
-        ytRateLimitedUntil = Date.now() + YT_RATE_LIMIT_COOLDOWN_MS;
-        console.warn(`⚠️ YouTube rate-limit/bot-check 偵測到(parallel)—— 全局冷卻 ${YT_RATE_LIMIT_COOLDOWN_MS / 1000}s,唔再試第三個 strategy`);
+        const cdMs = armRateLimitCooldown();
+        console.warn(`⚠️ YouTube rate-limit/bot-check 偵測到(parallel)—— 全局冷卻 ${cdMs / 1000}s,唔再試第三個 strategy`);
         console.error(`❌ All yt-dlp strategies failed for ${youtubeId}`);
         recordResolveOutcome(null, Date.now() - resolveT0, firstName);
         throw new Error(`All yt-dlp strategies failed for ${youtubeId}`);
@@ -243,8 +278,8 @@ async function resolveViaYtDlp(youtubeId) {
       return url;
     } catch (e) {
       if (isRateLimitError(e?.message)) {
-        ytRateLimitedUntil = Date.now() + YT_RATE_LIMIT_COOLDOWN_MS;
-        console.warn(`⚠️ YouTube rate-limit/bot-check 偵測到 id=${youtubeId} strategy=${strat.name} —— 全局冷卻 ${YT_RATE_LIMIT_COOLDOWN_MS / 1000}s,停晒呢次剩低嘅 strategy`);
+        const cdMs = armRateLimitCooldown();
+        console.warn(`⚠️ YouTube rate-limit/bot-check 偵測到 id=${youtubeId} strategy=${strat.name} —— 全局冷卻 ${cdMs / 1000}s,停晒呢次剩低嘅 strategy`);
         break;
       }
     }
@@ -284,7 +319,7 @@ export async function resolveAudioUrl(youtubeId, opts = {}) {
 
   const promise = (async () => {
     try {
-      const url = await resolveViaYtDlp(youtubeId);
+      const url = await resolveViaYtDlp(youtubeId, { playbackRetry: !!opts.playbackRetry });
       cache.set(youtubeId, { url, expiresAt: computeExpiresAt(url) });
       failCache.delete(youtubeId); // recovered — forget the old failure
       scheduleFlush();

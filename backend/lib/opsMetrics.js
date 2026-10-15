@@ -314,6 +314,21 @@ export function recordHlsPlaylist(kind) {
   } catch (_) {}
 }
 
+// STREAM-PHONE-NOTIFY-EXEC-20261015 R5(b)—— bot-check/429 全局冷卻(指數退避)記帳。n = 連續第幾次,secs = 今次冷卻秒數。
+// 純觀測。bucket 欄位用 ||= 補(舊持久化 bucket 冇呢個欄位)。
+export function recordBotCheckCooldown(n, secs) {
+  try {
+    for (const b of buckets()) {
+      const c = (b.botCheck ||= { cooldowns: 0, maxStreak: 0, maxSecs: 0, secsSum: 0 });
+      c.cooldowns++;
+      c.secsSum += secs;
+      if (n > c.maxStreak) c.maxStreak = n;
+      if (secs > c.maxSecs) c.maxSecs = secs;
+    }
+    scheduleFlush();
+  } catch (_) {}
+}
+
 export function getOpsMetrics() {
   const out = JSON.parse(JSON.stringify(state));
   const rate = (n, d) => (d > 0 ? Math.round((n / d) * 1000) / 10 : null);
