@@ -97,6 +97,8 @@ function blankBucket() {
     // 或者已過期,行完整 sidx 解析;`verifyFail` = 有快取但 clen 校驗唔到
     // (同一 youtube_id 換咗 format/variant),落返 miss 路徑重新解。
     hlsPlaylist: { hit: 0, miss: 0, verifyFail: 0 },
+    // STREAM-PHONE-NOTIFY 第二輪 #4 —— bot-check/429 指數退避記帳(recordBotCheckCooldown),補入 blank/normalize(W1 教訓)。
+    botCheck: { cooldowns: 0, maxStreak: 0, maxSecs: 0, secsSum: 0 },
   };
 }
 
@@ -401,6 +403,7 @@ export function enablePersistence(opts = {}) {
           // 舊碟入面唔存在就會冇咗(唔係 undefined 咁簡單,係成個 key 唔見)。
           // 額外做一層淺 merge 補返。
           merged.bufferCache = { ...blankBucket().bufferCache, ...(merged.bufferCache || {}) };
+          merged.botCheck = { ...blankBucket().botCheck, ...(merged.botCheck || {}) };
           return merged;
         };
         const normalizedHourly = {};

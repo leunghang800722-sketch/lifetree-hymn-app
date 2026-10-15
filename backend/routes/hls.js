@@ -381,9 +381,10 @@ export default function hlsRoutes(getDb) {
 
     let url;
     try {
-      // 呢度唔傳 `playbackRetry: true`——攞 playlist 結構嘅失敗唔應該搶咗
-      // 真播放請求(routes/stream.js)嗰個短 60 秒重試視野,兩條路徑各自獨立。
-      url = await resolveAudioUrl(hymn.youtube_id);
+      // 第二輪 #1:傳 `playbackRetry: true`(同 routes/stream.js 真人播放一致)——HLS 起播係真人等緊出聲,
+      // 只受 base 30s 冷卻管、唔受指數長冷卻(≤30min)擋,失敗亦只入短視野 failCache(60s),
+      // 避免 HLS 預檢降級去 progressive 時同一首歌撞 `Known-bad`。
+      url = await resolveAudioUrl(hymn.youtube_id, { playbackRetry: true });
     } catch (e) {
       console.warn(`[hls] resolve failed: id=${id} yt=${hymn.youtube_id} err=${e?.message || e} ms=${Date.now() - reqStart0}`);
       return res.status(404).json({ error: 'resolve failed' });

@@ -177,9 +177,15 @@ export function nextRateLimitCooldownMs(streak) {
   return Math.min(YT_RATE_LIMIT_COOLDOWN_MS * 2 ** Math.max(0, streak - 1), YT_RATE_LIMIT_COOLDOWN_MAX_MS);
 }
 function armRateLimitCooldown() {
+  const now = Date.now();
+  // 第二輪 #2:每個冷卻窗只加一次。窗內(until 未到)再撞——例如 5 個並發背景 resolve 同時撞 bot-check——
+  // 唔累加 streak、唔延長 until,只刷新 base(真人播放 30s 閘)。否則並發 N 個 = streak 一跳 N 級。
+  if (now < ytRateLimitedUntil) {
+    ytRateLimitedBaseUntil = now + YT_RATE_LIMIT_COOLDOWN_MS;
+    return ytRateLimitedUntil - now;
+  }
   ytRateLimitStreak = Math.min(ytRateLimitStreak + 1, 30);   // 封頂防 2**n 溢出;cap 早喺第 7 次已到
   const ms = nextRateLimitCooldownMs(ytRateLimitStreak);
-  const now = Date.now();
   ytRateLimitedUntil = now + ms;
   ytRateLimitedBaseUntil = now + YT_RATE_LIMIT_COOLDOWN_MS;
   recordBotCheckCooldown(ytRateLimitStreak, Math.round(ms / 1000));
@@ -215,6 +221,7 @@ function runStrategy(youtubeId, strat) {
       const ms = Date.now() - t0;
       recordResolveAttempt(strat.name, true, ms);
       ytRateLimitStreak = 0;   // R5(b):任何一次 resolve 成功 = IP 暫時冇事,退避歸零
+      ytRateLimitedUntil = 0;  // 第二輪 #3:同時即時解除冷卻(背景即刻恢復,同上面註釋一致)
       console.log(`[resolve] ok strategy=${strat.name} id=${youtubeId} ms=${ms}`);
       return url;
     }
