@@ -140,5 +140,28 @@
 - `BLUEPRINT.md`／`IRON-RULES.md` 要**更新或標註「v117 歷史文件，播放器佈局以 REDESIGN-PLAN/SheetShell 為準」**，免日後再撞——呢個係純文件改動，建議一齊做（要 Eric 同意改佢哋）。
 - Opus 獨立審計（`REFACTOR-REQUEST-AUDIT-OPUS-20261017.md`）進行中；有出入會補喺本文件 §6。
 
-## 6. Opus 審計補充
-（待補）
+## 6. Opus 審計補充（`REFACTOR-REQUEST-AUDIT-OPUS-20261017.md`，10-17）
+
+**根源實錘**：規格書 10 點同 v1.0.0 baseline commit `0de3b6c`（2026-07-08）逐點吻合——`prefetchNextTrack`、`shuffleHistoryRef`、`CATEGORIES`、`192.168.30.45:3001`、`execSync`+`--print-json`、SettingsScreen `:3000` 全部只喺嗰個 commit 出現。即係**規格書係對住 7 月初 baseline 寫嘅**，之後 3 個月嘅工程全部冇計入。
+
+Opus 對我 §1–§4 嘅更正／補充：
+- **P0-1a**：REDESIGN-PLAN §3.4 係 Eric 拍板用 gorhom、唔用 PanResponder；HANDOFF §2.6 同樣規定；HANDOFF:472 已將 BLUEPRINT 標做「舊文件」；REDESIGN §336 甚至將「Modal 做清單」列為要保留嘅教訓——同規格書講「Modal 違反鐵律」啱啱相反。還原會倒退：gorhom 滑上滑落／常駐 handle／拖曳排序、Play Next 分隔線同 `insertBoundary`（Opus 三輪驗收）、隊列三場景 13 條驗收、PanResponder 撞 FlatList scroll（v179–189）同 v228 z-order 兩個老病會返嚟。
+- **P0-1b**：Active 底部小點**已經有**（`ctrlActiveDot`，App.js:4142/3813/3849）——我上面寫「冇綠點」唔準，更正。真係當 icon 用嘅殘留 glyph 只得 2 處（`⚠️` admin 頁、`≡♪` 過時提示——播放頁個掣而家係 queue icon +「清單」字）；`🎵` 喺分享文字、`⋯`/`…`/`·` 係標點，唔算。換 MaterialIcons 要出 native build。
+- **P0-2a**：`/api/audio/:id` 已係 410（`ebe29ba`，09-02）；resolve 單次 `--get-url`（resolveAudio.js:216）。**P0-2b**：`PRECACHE_CONCURRENCY = 2 // was 4`（server.js:763），以前 4 被 ban IP——規格書要求「3–4」反而會倒退。
+- **P1-5**：`progressStore` 落地 commit `7278cc2`/`3855e40`（08-19）；pollState（:2497）係 native 安全網，屬紅線。
+- **P1-6a**：Opus 判「已唔成立」——首頁每 chip 最多 20 首、今日精選 6 首、最近 12 首，唔值得改 FlatList。我 §4 嘅 E 項**降為「唔做」**。
+- **P1-6b/6c**：`7b1da09`（O7）、`c9bd715`（O2，singleton + `refreshKicked` guard）。**P1-7**：SettingsScreen 已刪（`d7023b4`）；Opus **唔建議**接 `EXPO_PUBLIC_API_BASE`——OTA 時漏設 env 會令全員打錯 host。我 §4 嘅 D 項**降為「唔做」**。
+- **P2-8**：7 個舊 script 喺 `5baf3e1`（09-02）刪；hymns.db 有 2 個 REFERENCES 表，開 FK 有 orphan row 風險，唔好開。**P2-9a**：4 個備份檔喺 `d8b7f04` 刪。**P2-9b**：孤兒 code 喺 `e9c5f18` 刪咗 24 個檔；剩 App.js 4,966 行未拆（刻意押後，大部分紅線區）+ thumbnail URL 8 份 inline 重複。**P2-9c**：`788b10b`（D7）。
+- **fee16c4 覆核**：兩個 free 位置啱（小瑕疵：冇 try/finally，可接受）；備份檔實為 v131，零引用；`.gitignore` 0 個 tracked 檔受影響，`nightly-db-sync.mjs:183` 用精確 pathspec，dbautosync 不受影響，佢嘅備份名 `hymns.db.bak-gitsync-*` 唔會中 `*.bak`。另發現 `backend/data/hymns.db` 係 0 byte untracked 空檔可刪（舊項，Eric 早前手動清單入面）。
+
+### §4 修訂後嘅執行清單
+| # | 項 | 做法 | 風險 | 部署 |
+|---|---|---|---|---|
+| A | 兩個 `stmt.free()` | 已 commit `fee16c4` | 零 | 跟**下次正常** backend restart 生效（唔值得專登 restart） |
+| B | 刪備份檔 + `.gitignore` | 已 commit `fee16c4` | 零 | 無 |
+| C1 | `PlaylistDetailSheet.js:218` 提示改「撳『清單』掣」 | 純文案 | 極低 | OTA（下次一齊） |
+| C2 | `AdminAddHymnScreen.js:334` 刪 `⚠️` | 1 行 | 極低 | OTA（下次一齊） |
+| C3（可選） | 抽共用 `ytThumb()` 取代 8 份 inline URL；兩份 `fetchWithTimeout` 合一 | 細重構 | 低（要睇封面） | OTA |
+| 文件 | `BLUEPRINT.md`／`IRON-RULES.md` 加頂部標註「v117 歷史文件；播放器佈局以 REDESIGN-PLAN / HANDOFF §2.6 / SHEETSHELL 為準；仍有效：禁 onLayout 驅動 native 動畫、APK build 指令」 | 純文件 | 零 | 無（要 Eric 同意改佢哋） |
+| ✗ | P0-1a、P0-1b 換庫／64×64、P0-2b 加並發、P1-5 拆 pollState、P1-6a FlatList、P1-7 env、P2-8 async/FK、拆 App.js | — | 倒退／紅線／收益細 | 唔做（拆 App.js 留下個 cycle） |
+
