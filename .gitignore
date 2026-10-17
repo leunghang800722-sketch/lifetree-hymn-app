@@ -117,3 +117,15 @@ ops/lyrics/.reaper-armed
 # 行 harness 都會重新起,唔准入repo)。
 ops/perf/first-track/.scratch-n1/
 ops/perf/first-track/.scratch-n3/
+
+# 2026-10-17:通用 DB/備份副本防呆(⚠️ 刻意唔加 `*.db`:backend/hymns.db 係 tracked 兼每晚 dbautosync 自動 commit;
+#   亦唔用 `*bak*` 咁闊——用明確後綴)
+*.sqlite
+*.sqlite3
+*.db-journal
+*.db-wal
+*.db-shm
+*.bak
+*.bak.*
+*.fullbak
+*.backup

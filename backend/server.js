@@ -577,6 +577,7 @@ async function computeHymnsEntry(lite) {
   while (stmt.step()) {
     hymns.push(stmt.getAsObject());
   }
+  stmt.free(); // 2026-10-17:sql.js prepared statement 用完要 free,否則 WASM heap 洩漏(每次 cache miss 漏一個)
   // TAXONOMY-5D-PLAN.md §3.4 K-E 兼容墊:kids=1 嘅歌對外 lang 永遠show
   // 「兒童」(舊 client filter `lang==='兒童'` 唔會斷),真語言另開 real_lang
   // 出——而家(C4 換血前)kids=1 嘅 row 喺 DB 入面 lang 本身就係「兒童」,
@@ -657,6 +658,7 @@ async function computeHymnsLyricsEntry() {
     data[row.id] = row.lyrics;
     count++;
   }
+  stmt.free(); // 2026-10-17:同上,/api/hymns/lyrics cache 重建時 free
   const dataVersion = getDataVersion();
   console.log(`📚 /api/hymns/lyrics fetch → ${count} hymns, dataVersion=${dataVersion}`);
   const body = JSON.stringify({ data, dataVersion });
