@@ -1,0 +1,30 @@
+    
+    /usr/bin/codesign --force --sign - --entitlements /tmp/claude-501/-Users-macbookpro--openclaw-workspace-hymn-app/dbef9ccd-547a-4212-8309-0735348d98c1/scratchpad/1c-derivedData/Build/Intermediates.noindex/Odely.build/Release-iphonesimulator/Odely.build/Odely.app.xcent --timestamp\=none --generate-entitlement-der /tmp/claude-501/-Users-macbookpro--openclaw-workspace-hymn-app/dbef9ccd-547a-4212-8309-0735348d98c1/scratchpad/1c-derivedData/Build/Products/Release-iphonesimulator/Odely.app
+
+RegisterExecutionPolicyException /tmp/claude-501/-Users-macbookpro--openclaw-workspace-hymn-app/dbef9ccd-547a-4212-8309-0735348d98c1/scratchpad/1c-derivedData/Build/Products/Release-iphonesimulator/Odely.app (in target 'Odely' from project 'Odely')
+    cd /Users/macbookpro/.openclaw/workspace/hymn-app/frontend/hymn-app/ios
+    builtin-RegisterExecutionPolicyException /tmp/claude-501/-Users-macbookpro--openclaw-workspace-hymn-app/dbef9ccd-547a-4212-8309-0735348d98c1/scratchpad/1c-derivedData/Build/Products/Release-iphonesimulator/Odely.app
+
+Validate /tmp/claude-501/-Users-macbookpro--openclaw-workspace-hymn-app/dbef9ccd-547a-4212-8309-0735348d98c1/scratchpad/1c-derivedData/Build/Products/Release-iphonesimulator/Odely.app (in target 'Odely' from project 'Odely')
+    cd /Users/macbookpro/.openclaw/workspace/hymn-app/frontend/hymn-app/ios
+    builtin-validationUtility /tmp/claude-501/-Users-macbookpro--openclaw-workspace-hymn-app/dbef9ccd-547a-4212-8309-0735348d98c1/scratchpad/1c-derivedData/Build/Products/Release-iphonesimulator/Odely.app -validate-for-store -shallow-bundle -infoplist-subpath Info.plist
+
+Touch /tmp/claude-501/-Users-macbookpro--openclaw-workspace-hymn-app/dbef9ccd-547a-4212-8309-0735348d98c1/scratchpad/1c-derivedData/Build/Products/Release-iphonesimulator/Odely.app (in target 'Odely' from project 'Odely')
+    cd /Users/macbookpro/.openclaw/workspace/hymn-app/frontend/hymn-app/ios
+    /usr/bin/touch -c /tmp/claude-501/-Users-macbookpro--openclaw-workspace-hymn-app/dbef9ccd-547a-4212-8309-0735348d98c1/scratchpad/1c-derivedData/Build/Products/Release-iphonesimulator/Odely.app
+
+warning: Run script build phase '[CP-User] [Hermes] Replace Hermes for the right configuration, if needed' will be run during every build because it does not specify any outputs. To address this issue, either add output dependencies to the script phase, or configure it to run in every build by unchecking "Based on dependency analysis" in the script phase. (in target 'hermes-engine' from project 'Pods')
+note: Run script build phase '[CP-User] [RNDeps] Replace React Native Dependencies for the right configuration, if needed' will be run during every build because the option to run the script phase "Based on dependency analysis" is unchecked. (in target 'ReactNativeDependencies' from project 'Pods')
+note: Run script build phase '[CP-User] [RN]Check FBReactNativeSpec' will be run during every build because the option to run the script phase "Based on dependency analysis" is unchecked. (in target 'React-RCTFBReactNativeSpec' from project 'Pods')
+note: Run script build phase '[CP-User] [RNCore] Replace React Native Core for the right configuration, if needed' will be run during every build because the option to run the script phase "Based on dependency analysis" is unchecked. (in target 'React-Core-prebuilt' from project 'Pods')
+note: Run script build phase '[CP-User] [Expo] Switch ExpoModulesWorklets XCFramework for build configuration' will be run during every build because the option to run the script phase "Based on dependency analysis" is unchecked. (in target 'ExpoModulesWorklets' from project 'Pods')
+note: Run script build phase '[CP-User] Build ExpoModulesJSI xcframework' will be run during every build because the option to run the script phase "Based on dependency analysis" is unchecked. (in target 'ExpoModulesJSI' from project 'Pods')
+note: Run script build phase '[CP-User] [Expo] Switch ExpoModulesCore XCFramework for build configuration' will be run during every build because the option to run the script phase "Based on dependency analysis" is unchecked. (in target 'ExpoModulesCore' from project 'Pods')
+note: Run script build phase '[CP-User] [Expo] Switch ExpoFont XCFramework for build configuration' will be run during every build because the option to run the script phase "Based on dependency analysis" is unchecked. (in target 'ExpoFont' from project 'Pods')
+note: Run script build phase '[CP-User] [Expo] Switch ExpoFileSystem XCFramework for build configuration' will be run during every build because the option to run the script phase "Based on dependency analysis" is unchecked. (in target 'ExpoFileSystem' from project 'Pods')
+note: Run script build phase 'Bundle React Native code and images' will be run during every build because the option to run the script phase "Based on dependency analysis" is unchecked. (in target 'Odely' from project 'Odely')
+note: Run script build phase '[Expo] Configure project' will be run during every build because the option to run the script phase "Based on dependency analysis" is unchecked. (in target 'Odely' from project 'Odely')
+note: Run script build phase '[CP-User] Generate updates resources for expo-updates' will be run during every build because the option to run the script phase "Based on dependency analysis" is unchecked. (in target 'EXUpdates' from project 'Pods')
+note: Run script build phase '[CP-User] Generate app.config for prebuilt Constants.manifest' will be run during every build because the option to run the script phase "Based on dependency analysis" is unchecked. (in target 'EXConstants' from project 'Pods')
+** BUILD SUCCEEDED **
+

@@ -1,0 +1,13 @@
+2026-09-02T07:15:31Z
+start RSS=49.0MB
+after initSqlJs (wasm loaded) RSS=53.2MB
+run 1: dbLoad_ms=21.28 query_ms=149.08 stringify_ms=19.34 rows=6405 jsonBytes=5433117 RSS=174.4MB
+run 2: dbLoad_ms=9.02 query_ms=157.88 stringify_ms=8.94 rows=6405 jsonBytes=5433117 RSS=257.0MB
+run 3: dbLoad_ms=7.56 query_ms=129.10 stringify_ms=12.87 rows=6405 jsonBytes=5433117 RSS=288.8MB
+run 4: dbLoad_ms=7.30 query_ms=124.58 stringify_ms=7.34 rows=6405 jsonBytes=5433117 RSS=295.5MB
+run 5: dbLoad_ms=6.93 query_ms=97.34 stringify_ms=12.20 rows=6405 jsonBytes=5433117 RSS=296.3MB
+--- summary ---
+dbLoad_ms {"min":6.932542,"median":7.560125,"max":21.281792}
+query_ms {"min":97.337292,"median":129.096334,"max":157.881666}
+stringify_ms {"min":7.341458,"median":12.204875,"max":19.343291}
+final RSS=296.3MB

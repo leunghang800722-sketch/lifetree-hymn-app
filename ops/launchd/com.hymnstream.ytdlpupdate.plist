@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  yt-dlp 版本檢查 + canary(Eric 2026-08-22 拍板嘅**保守做法**)。每日 05:30 行
+  ops/ytdlp/update-ytdlp.sh:有新 nightly 就落載去 temp 驗三關(--version /
+  兩首 resolve / 64KB @ 2MiB mid-range 206),**驗完都唔會自己換 binary** ——
+  淨係寫通知落 docs/SUPERVISION-LOG.md 等人手 `--apply`。
+
+  點解要有呢個 job:2026-08-22 全庫 100% 播歌事故,根因係串流用嘅 yt-dlp 舊咗
+  6 個星期,YouTube 新 player 簽出嚟嘅 URL 只開放頭 1MiB。同一個 bug class
+  8/18、8/19、8/22 撞咗三次。詳見 YTDLP-UNIFY-PLAN-20260822.md。
+
+  ⚠️ 個 label 特登**唔用 com.hymnapp.* prefix** —— 各班 checkpoint 會核對
+  `launchctl list | grep hymnapp | wc -l` 要夠 **7 個**,用 hymnapp prefix 就會變 8,
+  班次會誤以為出事。同 com.hymnstream.healthcheck 一樣分開命名。
+
+  唔使 set PATH:個 script 全程用絕對路徑(curl/python3/perl 都喺 /usr/bin)。
+
+  裝法:
+    cp ops/launchd/com.hymnstream.ytdlpupdate.plist ~/Library/LaunchAgents/
+    launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.hymnstream.ytdlpupdate.plist
+-->
+<plist version="1.0">
+<dict>
+  <key>Label</key><string>com.hymnstream.ytdlpupdate</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>/bin/bash</string>
+    <string>/Users/macbookpro/.openclaw/workspace/hymn-app/ops/ytdlp/update-ytdlp.sh</string>
+  </array>
+  <!-- 每日 05:30 —— 全日最靜,避開 17:30 taxonomy 夜班同日間收聽 -->
+  <key>StartCalendarInterval</key>
+  <dict>
+    <key>Hour</key><integer>5</integer>
+    <key>Minute</key><integer>30</integer>
+  </dict>
+  <key>RunAtLoad</key><false/>
+  <key>StandardOutPath</key><string>/tmp/hymn_ytdlpupdate.log</string>
+  <key>StandardErrorPath</key><string>/tmp/hymn_ytdlpupdate.log</string>
+</dict>
+</plist>

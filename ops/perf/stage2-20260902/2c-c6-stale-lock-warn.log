@@ -1,0 +1,17 @@
+=== step1: touch DB(改咗檔案),but 未有 lock -> 應該 reload,零 warn ===
+dataVersion after step1 = 1788341224207-61054976  warnings so far = 0
+
+=== step2: touch 檔案再變 + 建一個 31 分鐘前(stale)嘅 lock -> 應該唔 reload,但要 warn 一次 ===
+[db] stale lock /private/tmp/claude-501/-Users-macbookpro--openclaw-workspace-hymn-app/dbef9ccd-547a-4212-8309-0735348d98c1/scratchpad/c6/hymns-copy4.db.lock age=1860s(>1800s)—— maybeReload() 持續俾佢擋住,唔會 reload,可能要人手核實/刪走殘鎖(PERF-STAGE2-2C-OPUS-20260902.md §4.4:hymns.db.lock.bak* 係歷史證據)
+dataVersion after step2 = 1788341224207-61054976 (應該 == 改前 = true , 冇 reload)
+warnings after step2 = 1 (expect 1)
+
+=== step3: 連續再 call maybeReload() 幾次(lock 仍然 stale)-> throttle,唔應該再 warn ===
+warnings after step3 = 1 (expect 仍然 1 — 10 分鐘throttle)
+
+=== step4:對照組 —— lock 存在但年輕(啱啱建,冇 30 分鐘)-> 唔 reload,亦唔 warn ===
+dataVersion after step4 = 1788341224207-61054976 (應該仍然 == 改前= true )
+warnings after step4 = 1 (expect 仍然 1 — 新鮮 lock 唔 warn)
+
+=== step5:解鎖 -> 應該正常 reload ===
+dataVersion after step5 = 1788341234208-61054976 (應該 != 改前= true )

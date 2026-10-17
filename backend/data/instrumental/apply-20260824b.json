@@ -1,0 +1,442 @@
+[
+  {
+    "id": 739,
+    "reason": "whisper實錘(幻覺型靜音·Phase1.5)cov=99% uniqSegs=2 cjk=19 latin=0 標記=詞曲李宗盛編曲李宗盛/詞李宗盛編曲李宗盛;歌名證據「靈修音樂」",
+    "title": "《Amazing Piano 2》基恩敬拜鋼琴靈修音樂 - 基恩敬拜 AGWMM"
+  },
+  {
+    "id": 2987,
+    "reason": "whisper實錘(幻覺型靜音·Phase1.5)cov=99% uniqSegs=3 cjk=16 latin=0 標記=詞李宗盛曲李宗盛/詞李宗盛/曲李宗盛;歌名證據「Piano Cover」",
+    "title": "一生不會捨棄祢 Piano Cover"
+  },
+  {
+    "id": 2988,
+    "reason": "whisper實錘(佔位符型)cov=97% uniqSegs=1 cjk=0 latin=5 標記=[MUSIC];歌名證據「Piano Cover」",
+    "title": "靠著祢寶血 Piano Cover"
+  },
+  {
+    "id": 3224,
+    "reason": "whisper實錘(幻覺型靜音·Phase1.5)cov=89% uniqSegs=2 cjk=18 latin=0 標記=詞曲李宗盛編曲李宗盛/詞李宗盛曲李宗盛;歌名證據「鋼琴版」",
+    "title": "【執子之手】鋼琴版"
+  },
+  {
+    "id": 3227,
+    "reason": "whisper實錘(幻覺型靜音·Phase1.5)cov=96% uniqSegs=2 cjk=15 latin=0 標記=詞曲李宗盛編曲李宗盛/詞曲李宗盛;歌名證據「鋼琴版」",
+    "title": "【最美麗的路】鋼琴版"
+  },
+  {
+    "id": 3228,
+    "reason": "whisper實錘(幻覺型靜音·Phase1.5)cov=97% uniqSegs=2 cjk=12 latin=0 標記=詞李宗盛曲李宗盛/詞李宗盛;歌名證據「鋼琴版」",
+    "title": "【好好戀愛】鋼琴版"
+  },
+  {
+    "id": 3229,
+    "reason": "whisper實錘(幻覺型靜音·Phase1.5)cov=100% uniqSegs=2 cjk=12 latin=0 標記=詞李宗盛曲李宗盛/詞李宗盛;歌名證據「鋼琴版」",
+    "title": "【天愛】鋼琴版"
+  },
+  {
+    "id": 3231,
+    "reason": "whisper實錘(幻覺型靜音·Phase1.5)cov=98% uniqSegs=2 cjk=12 latin=0 標記=詞李宗盛曲李宗盛/詞李宗盛;歌名證據「鋼琴版」",
+    "title": "【婚約】鋼琴版"
+  },
+  {
+    "id": 3233,
+    "reason": "whisper實錘(幻覺型靜音·Phase1.5)cov=91% uniqSegs=1 cjk=8 latin=0 標記=詞李宗盛曲李宗盛;歌名證據「鋼琴版」",
+    "title": "【愛若微風】鋼琴版"
+  },
+  {
+    "id": 3989,
+    "reason": "whisper實錘(幻覺型靜音·Phase1.5)cov=98% uniqSegs=3 cjk=19 latin=0 標記=詞曲李宗盛編曲李宗盛/詞李宗盛/詞曲李宗盛;歌名證據「演奏」",
+    "title": "與你同走過－大提琴演奏 Walking with You - Cello performance"
+  },
+  {
+    "id": 4160,
+    "reason": "whisper實錘(佔位符型)cov=95% uniqSegs=1 cjk=0 latin=5 標記=[MUSIC];歌名證據「弦樂」",
+    "title": "【Mozart - Divertimento in D major, K. 136】| 台北青少年弦樂團"
+  },
+  {
+    "id": 4163,
+    "reason": "whisper實錘(佔位符型)cov=99% uniqSegs=1 cjk=0 latin=5 標記=[MUSIC];歌名證據「弦樂」",
+    "title": "【深愛耶穌 Loving Jesus】| 台北青少年弦樂團"
+  },
+  {
+    "id": 4164,
+    "reason": "whisper實錘(幻覺型靜音·Phase1.5)cov=98% uniqSegs=2 cjk=15 latin=0 標記=詞曲李宗盛編曲李宗盛/詞曲李宗盛;歌名證據「弦樂」",
+    "title": "【望春風 Spring Breezes】| 台北青少年弦樂團"
+  },
+  {
+    "id": 4820,
+    "reason": "whisper實錘(佔位符型)cov=100% uniqSegs=1 cjk=0 latin=5 標記=[MUSIC];歌名證據「Lullabies」",
+    "title": "Piano Lullabies (Great I AM)"
+  },
+  {
+    "id": 4821,
+    "reason": "whisper實錘(佔位符型)cov=99% uniqSegs=1 cjk=0 latin=5 標記=[MUSIC];歌名證據「Lullaby」",
+    "title": "Blown Away - Piano Lullaby"
+  },
+  {
+    "id": 4822,
+    "reason": "whisper實錘(佔位符型)cov=96% uniqSegs=1 cjk=0 latin=5 標記=[MUSIC];歌名證據「Lullaby」",
+    "title": "Worthy Is The Lamb - Piano Lullaby"
+  },
+  {
+    "id": 4823,
+    "reason": "whisper實錘(佔位符型)cov=101% uniqSegs=1 cjk=0 latin=5 標記=[MUSIC];歌名證據「Lullaby」",
+    "title": "The Potter's Hand - Piano Lullaby"
+  },
+  {
+    "id": 4824,
+    "reason": "whisper實錘(佔位符型)cov=104% uniqSegs=2 cjk=0 latin=15 標記=[MUSIC]/[BLANK_AUDIO];歌名證據「Lullaby」",
+    "title": "Freedom Is Here - Piano Lullaby"
+  },
+  {
+    "id": 4825,
+    "reason": "whisper實錘(佔位符型)cov=95% uniqSegs=1 cjk=0 latin=5 標記=[MUSIC];歌名證據「Lullaby」",
+    "title": "Mighty To Save - Piano Lullaby"
+  },
+  {
+    "id": 4826,
+    "reason": "whisper實錘(佔位符型)cov=91% uniqSegs=1 cjk=0 latin=5 標記=[MUSIC];歌名證據「Lullaby」",
+    "title": "Turn Your Eyes Upon Jesus - Piano Lullaby"
+  },
+  {
+    "id": 4827,
+    "reason": "whisper實錘(佔位符型)cov=97% uniqSegs=1 cjk=0 latin=5 標記=[MUSIC];歌名證據「Lullaby」",
+    "title": "Jesus, What A Beautiful Name - Piano Lullaby"
+  },
+  {
+    "id": 4828,
+    "reason": "whisper實錘(佔位符型)cov=95% uniqSegs=1 cjk=0 latin=5 標記=[MUSIC];歌名證據「Lullaby」",
+    "title": "You Are My World - Piano Lullaby"
+  },
+  {
+    "id": 4829,
+    "reason": "whisper實錘(佔位符型)cov=96% uniqSegs=1 cjk=0 latin=5 標記=[MUSIC];歌名證據「Lullaby」",
+    "title": "Carry Me - Piano Lullaby"
+  },
+  {
+    "id": 4830,
+    "reason": "whisper實錘(佔位符型)cov=100% uniqSegs=1 cjk=0 latin=5 標記=[MUSIC];歌名證據「Lullaby」",
+    "title": "Give Thanks - Piano Lullaby"
+  },
+  {
+    "id": 4831,
+    "reason": "whisper實錘(佔位符型)cov=97% uniqSegs=1 cjk=0 latin=5 標記=[MUSIC];歌名證據「Lullaby」",
+    "title": "Eagle's Wings - Piano Lullaby"
+  },
+  {
+    "id": 4832,
+    "reason": "whisper實錘(佔位符型)cov=101% uniqSegs=1 cjk=0 latin=5 標記=[MUSIC];歌名證據「Lullaby」",
+    "title": "Magnificent - Piano Lullaby"
+  },
+  {
+    "id": 4977,
+    "reason": "whisper實錘(幻覺型靜音·Phase1.5)cov=91% uniqSegs=2 cjk=15 latin=0 標記=詞曲李宗盛編曲李宗盛/詞曲李宗盛;歌名證據「靈修音樂」",
+    "title": "《Amazing Piano 1》 鋼琴靈修音樂 - 明天祢為我掌舵"
+  },
+  {
+    "id": 5065,
+    "reason": "whisper實錘(佔位符型)cov=97% uniqSegs=1 cjk=0 latin=5 標記=[MUSIC];歌名證據「弦樂」",
+    "title": "【聖誕弦樂四重奏】馬槽聖嬰 Away in a Manger / 平安夜 Silent Night / 齊來崇拜 O Come O Ye Faithful｜《Stage》"
+  },
+  {
+    "id": 5690,
+    "reason": "whisper實錘(佔位符型)cov=100% uniqSegs=2 cjk=0 latin=17 標記=[MUSIC]/waterrunning;歌名證據「演奏」",
+    "title": "【謝謝祢 Thank You Lord / 十架為我榮耀 Jesus Keep Me Near the Cross】- 鋼琴演奏系列 (3) by 游智婷 Sandy Yu"
+  },
+  {
+    "id": 5691,
+    "reason": "whisper實錘(佔位符型)cov=101% uniqSegs=2 cjk=0 latin=15 標記=[MUSIC]/[BLANK_AUDIO];歌名證據「演奏」",
+    "title": "【天上的家 My Heavenly Home】- 鋼琴演奏系列 (3) by 游智婷 Sandy Yu"
+  },
+  {
+    "id": 5698,
+    "reason": "whisper實錘(佔位符型)cov=99% uniqSegs=1 cjk=0 latin=5 標記=[MUSIC];歌名證據「演奏」",
+    "title": "【安靜 Be Still】- 鋼琴演奏系列 (3) by 游智婷 Sandy Yu"
+  },
+  {
+    "id": 5699,
+    "reason": "已知名單(title-match)+ whisper 靜 cov=97% uniqSegs=1 cjk=11 latin=0",
+    "title": "【能不能 Let Me Stay】- 鋼琴演奏系列 (3) by 游智婷 Sandy Yu"
+  },
+  {
+    "id": 5700,
+    "reason": "whisper實錘(佔位符型)cov=97% uniqSegs=1 cjk=0 latin=5 標記=[MUSIC];歌名證據「演奏」",
+    "title": "【在祢同在裡 In Your Presence】- 鋼琴演奏系列 (3) by 游智婷 Sandy Yu"
+  },
+  {
+    "id": 5701,
+    "reason": "whisper實錘(佔位符型)cov=101% uniqSegs=1 cjk=0 latin=5 標記=[MUSIC];歌名證據「演奏」",
+    "title": "【我在這裡敬拜 Here to Worship】- 鋼琴演奏系列 (3) by 游智婷 Sandy Yu"
+  },
+  {
+    "id": 5792,
+    "reason": "whisper實錘(佔位符型)cov=102% uniqSegs=2 cjk=0 latin=15 標記=[MUSIC]/[BLANK_AUDIO];歌名證據「演奏」",
+    "title": "【一生愛祢 With All My Love】- 鋼琴演奏系列 (2) by 曾祥怡 Grace Tseng"
+  },
+  {
+    "id": 5793,
+    "reason": "whisper實錘(佔位符型)cov=96% uniqSegs=1 cjk=0 latin=5 標記=[MUSIC];歌名證據「演奏」",
+    "title": "【晨光 Morning Light】- 鋼琴演奏系列 (2) by 曾祥怡 Grace Tseng"
+  },
+  {
+    "id": 5794,
+    "reason": "whisper實錘(佔位符型)cov=100% uniqSegs=1 cjk=0 latin=5 標記=[MUSIC];歌名證據「演奏」",
+    "title": "【主祢是我力量 You Are My Strength】- 鋼琴演奏系列 (2) by 曾祥怡 Grace Tseng"
+  },
+  {
+    "id": 5795,
+    "reason": "whisper實錘(佔位符型)cov=98% uniqSegs=1 cjk=0 latin=5 標記=[MUSIC];歌名證據「演奏」",
+    "title": "【生命的話語 Speak to Met】- 鋼琴演奏系列 (2) by 曾祥怡 Grace Tseng"
+  },
+  {
+    "id": 5796,
+    "reason": "whisper實錘(佔位符型)cov=97% uniqSegs=1 cjk=0 latin=5 標記=[MUSIC];歌名證據「演奏」",
+    "title": "【我要歡唱 Lord, I Will Sing】- 鋼琴演奏系列 (2) by 曾祥怡 Grace Tseng"
+  },
+  {
+    "id": 5797,
+    "reason": "whisper實錘(佔位符型)cov=100% uniqSegs=1 cjk=0 latin=5 標記=[MUSIC];歌名證據「演奏」",
+    "title": "【祢恩典不離開 Your Grace】- 鋼琴演奏系列 (2) by 曾祥怡 Grace Tseng"
+  },
+  {
+    "id": 5798,
+    "reason": "whisper實錘(佔位符型)cov=97% uniqSegs=1 cjk=0 latin=5 標記=[MUSIC];歌名證據「演奏」",
+    "title": "【生命活水充滿我 Living Water】- 鋼琴演奏系列 (2) by 曾祥怡 Grace Tseng"
+  },
+  {
+    "id": 5799,
+    "reason": "whisper實錘(佔位符型)cov=95% uniqSegs=1 cjk=0 latin=5 標記=[MUSIC];歌名證據「演奏」",
+    "title": "【與父同行 The Time With My Father】- 鋼琴演奏系列 (2) by 曾祥怡 Grace Tseng"
+  },
+  {
+    "id": 5800,
+    "reason": "whisper實錘(佔位符型)cov=97% uniqSegs=1 cjk=0 latin=5 標記=[MUSIC];歌名證據「演奏」",
+    "title": "【我心切切渴慕祢 My Heart Shall Long For You】- 鋼琴演奏系列 (2) by 曾祥怡 Grace Tseng"
+  },
+  {
+    "id": 5801,
+    "reason": "whisper實錘(佔位符型)cov=101% uniqSegs=1 cjk=0 latin=5 標記=[MUSIC];歌名證據「演奏」",
+    "title": "【主的喜樂是我力量 The Joy of the Lord Is My Strength】- 鋼琴演奏系列 (2) by 曾祥怡 Grace Tseng"
+  },
+  {
+    "id": 5802,
+    "reason": "whisper實錘(佔位符型)cov=93% uniqSegs=1 cjk=0 latin=5 標記=[MUSIC];歌名證據「演奏」",
+    "title": "【愛與擁抱 Love and Embrace】- 鋼琴演奏系列 (2) by 曾祥怡 Grace Tseng"
+  },
+  {
+    "id": 5803,
+    "reason": "whisper實錘(佔位符型)cov=98% uniqSegs=1 cjk=0 latin=5 標記=[MUSIC];歌名證據「安靜系列」",
+    "title": "【更多充滿 Come Overflow】- 安靜系列 (2) 找一個地方 I Want to Go to a Place"
+  },
+  {
+    "id": 5804,
+    "reason": "whisper實錘(佔位符型)cov=99% uniqSegs=1 cjk=0 latin=5 標記=[MUSIC];歌名證據「安靜系列」",
+    "title": "【展開清晨的翅膀 Wings of the Dawn】- 安靜系列 (2) 找一個地方 I Want to Go to a Place"
+  },
+  {
+    "id": 5805,
+    "reason": "whisper實錘(佔位符型)cov=99% uniqSegs=1 cjk=0 latin=5 標記=[MUSIC];歌名證據「安靜系列」",
+    "title": "【在耶穌的腳前 At Your Feet】- 安靜系列 (2) 找一個地方 I Want to Go to a Place"
+  },
+  {
+    "id": 5806,
+    "reason": "whisper實錘(佔位符型)cov=99% uniqSegs=2 cjk=0 latin=24 標記=[WATERRUNNING]/[MUSICPLAYING];歌名證據「安靜系列」",
+    "title": "【全然向祢 All for You】- 安靜系列 (2) 找一個地方 I Want to Go to a Place"
+  },
+  {
+    "id": 5807,
+    "reason": "whisper實錘(佔位符型)cov=100% uniqSegs=3 cjk=0 latin=44 標記=watertrickling/gentlepianomusic/watersplashing;歌名證據「安靜系列」",
+    "title": "【安靜 Be Still】- 安靜系列 (2) 找一個地方 I Want to Go to a Place"
+  },
+  {
+    "id": 5808,
+    "reason": "whisper實錘(佔位符型)cov=99% uniqSegs=2 cjk=0 latin=25 標記=watertrickling/gentlemusic;歌名證據「安靜系列」",
+    "title": "【醫治我 Heal Me Lord】- 安靜系列 (2) 找一個地方 I Want to Go to a Place"
+  },
+  {
+    "id": 5809,
+    "reason": "whisper實錘(佔位符型)cov=98% uniqSegs=2 cjk=0 latin=25 標記=watertrickling/gentlemusic;歌名證據「安靜系列」",
+    "title": "【更深之處 Take Me Deeper】- 安靜系列 (2) 找一個地方 I Want to Go to a Place"
+  },
+  {
+    "id": 5810,
+    "reason": "whisper實錘(佔位符型)cov=97% uniqSegs=1 cjk=0 latin=5 標記=[MUSIC];歌名證據「安靜系列」",
+    "title": "【找一個地方 I Want to Go to a Place】- 安靜系列 (2) 找一個地方 I Want to Go to a Place"
+  },
+  {
+    "id": 5812,
+    "reason": "whisper實錘(幻覺型靜音·Phase1.5)cov=100% uniqSegs=2 cjk=15 latin=0 標記=詞曲李宗盛編曲李宗盛/詞曲李宗盛;歌名證據「安靜系列」",
+    "title": "【祢的同在 Your Presence】- 安靜系列 (2) 找一個地方 I Want to Go to a Place"
+  },
+  {
+    "id": 5904,
+    "reason": "whisper實錘(佔位符型)cov=101% uniqSegs=1 cjk=0 latin=5 標記=[MUSIC];歌名證據「弦樂」",
+    "title": "【親近祢 Close to You】 - 弦樂四重奏 (1) String Quartet"
+  },
+  {
+    "id": 5905,
+    "reason": "whisper實錘(佔位符型)cov=101% uniqSegs=2 cjk=0 latin=15 標記=[MUSIC]/[BLANK_AUDIO];歌名證據「弦樂」",
+    "title": "【耶和華祝福滿滿 Jehovah's Blessings Abound】 - 弦樂四重奏 (1) String Quartet"
+  },
+  {
+    "id": 5911,
+    "reason": "whisper實錘(佔位符型)cov=98% uniqSegs=1 cjk=0 latin=5 標記=[MUSIC];歌名證據「弦樂」",
+    "title": "【寶貴十架 Precious Cross】 - 弦樂四重奏 (1) String Quartet"
+  },
+  {
+    "id": 5912,
+    "reason": "whisper實錘(佔位符型)cov=98% uniqSegs=1 cjk=0 latin=5 標記=[MUSIC];歌名證據「弦樂」",
+    "title": "【一生愛祢 With All My Love】 - 弦樂四重奏 (1) String Quartet"
+  },
+  {
+    "id": 5913,
+    "reason": "whisper實錘(佔位符型)cov=97% uniqSegs=1 cjk=0 latin=5 標記=[MUSIC];歌名證據「弦樂」",
+    "title": "【平安的七月夜 Peaceful July】 - 弦樂四重奏 (1) String Quartet"
+  },
+  {
+    "id": 5914,
+    "reason": "whisper實錘(佔位符型)cov=99% uniqSegs=2 cjk=0 latin=15 標記=[MUSIC]/[BLANK_AUDIO];歌名證據「弦樂」",
+    "title": "【展開清晨的翅膀 Wings of the Dawn】 - 弦樂四重奏 (1) String Quartet"
+  },
+  {
+    "id": 5915,
+    "reason": "whisper實錘(佔位符型)cov=99% uniqSegs=1 cjk=0 latin=5 標記=[MUSIC];歌名證據「弦樂」",
+    "title": "【有一位神 There Is A God】 - 弦樂四重奏 (1) String Quartet"
+  },
+  {
+    "id": 5916,
+    "reason": "whisper實錘(佔位符型)cov=95% uniqSegs=1 cjk=0 latin=5 標記=[MUSIC];歌名證據「弦樂」",
+    "title": "【我親愛的耶穌 My Sweet Jesus】 - 弦樂四重奏 (1) String Quartet"
+  },
+  {
+    "id": 5922,
+    "reason": "whisper實錘(佔位符型)cov=95% uniqSegs=1 cjk=0 latin=5 標記=[MUSIC];歌名證據「弦樂」",
+    "title": "【我的天堂 My Heaven】 - 弦樂四重奏 (1) String Quartet"
+  },
+  {
+    "id": 5925,
+    "reason": "已知名單(SUPERVISION-LOG:4145)+ whisper 靜 cov=99% uniqSegs=2 cjk=0 latin=8",
+    "title": "【我要歡唱 Lord, I Will Sing】 - 弦樂四重奏 (1) String Quartet"
+  },
+  {
+    "id": 5980,
+    "reason": "whisper實錘(佔位符型)cov=101% uniqSegs=1 cjk=0 latin=5 標記=[MUSIC];歌名證據「安靜系列」",
+    "title": "【寶貴十架 Precious Cross】- 安靜系列 (1) Come Away With Me"
+  },
+  {
+    "id": 5982,
+    "reason": "whisper實錘(佔位符型)cov=100% uniqSegs=1 cjk=0 latin=5 標記=[MUSIC];歌名證據「安靜系列」",
+    "title": "【謝謝祢 Thank You, Lord】- 安靜系列 (1) Come Away With Me"
+  },
+  {
+    "id": 5983,
+    "reason": "whisper實錘(幻覺型靜音·Phase1.5)cov=95% uniqSegs=3 cjk=19 latin=0 標記=詞曲李宗盛編曲李宗盛/詞曲李宗盛/詞李宗盛;歌名證據「安靜系列」",
+    "title": "【Stream of Praise】- 安靜系列 (1) Come Away With Me"
+  },
+  {
+    "id": 5988,
+    "reason": "whisper實錘(幻覺型靜音·Phase1.5)cov=99% uniqSegs=1 cjk=5 latin=0 標記=詞曲陳零九;歌名證據「安靜系列」",
+    "title": "【注目看耶穌 Look Upon Jesus】- 安靜系列 (1) Come Away With Me"
+  },
+  {
+    "id": 5989,
+    "reason": "whisper實錘(佔位符型)cov=101% uniqSegs=2 cjk=0 latin=15 標記=[MUSIC]/[BLANK_AUDIO];歌名證據「安靜系列」",
+    "title": "【以馬內利 Emmanuel】- 安靜系列 (1) Come Away With Me"
+  },
+  {
+    "id": 5990,
+    "reason": "whisper實錘(佔位符型)cov=100% uniqSegs=1 cjk=0 latin=5 標記=[Music];歌名證據「安靜系列」",
+    "title": "【Come Away with Me】- 安靜系列 (1) Come Away With Me"
+  },
+  {
+    "id": 5991,
+    "reason": "whisper實錘(佔位符型)cov=98% uniqSegs=1 cjk=0 latin=5 標記=[MUSIC];歌名證據「安靜系列」",
+    "title": "【救贖的恩典 The Grace of Redemption】- 安靜系列 (1) Come Away With Me"
+  },
+  {
+    "id": 5998,
+    "reason": "whisper實錘(佔位符型)cov=97% uniqSegs=1 cjk=0 latin=5 標記=[MUSIC];歌名證據「安靜系列」",
+    "title": "【單單愛祢 I Love You, Lord】- 安靜系列 (1) Come Away With Me"
+  },
+  {
+    "id": 6033,
+    "reason": "whisper實錘(幻覺型靜音·Phase1.5)cov=98% uniqSegs=2 cjk=12 latin=0 標記=詞李宗盛曲李宗盛/詞李宗盛;歌名證據「靈修音樂」",
+    "title": "《祢是耶穌 我的一切》Devotional Music [Piano Cover by Samuel] 靈修音樂"
+  },
+  {
+    "id": 6734,
+    "reason": "已知名單(title-match):歌名明示器樂版,whisper 冇 timeline,依 SUPERVISION-LOG 人手判定",
+    "title": "【這就是愛了 / This Is Love】演奏版"
+  },
+  {
+    "id": 6735,
+    "reason": "whisper實錘(佔位符型)cov=100% uniqSegs=1 cjk=0 latin=5 標記=[MUSIC];歌名證據「演奏」",
+    "title": "【台北的聖誕節 / Christmas in Taipei】演奏版"
+  },
+  {
+    "id": 8137,
+    "reason": "whisper實錘(佔位符型)cov=98% uniqSegs=1 cjk=0 latin=5 標記=[MUSIC];歌名證據「禱告音樂」",
+    "title": "【禱告音樂】Spring Time 春曉 | EnterCalm《寧靜時分》系列"
+  },
+  {
+    "id": 8140,
+    "reason": "whisper實錘(佔位符型)cov=99% uniqSegs=1 cjk=0 latin=5 標記=[MUSIC];歌名證據「禱告音樂」",
+    "title": "【禱告音樂】常在我裡面 | EnterCalm《寧靜時分》系列"
+  },
+  {
+    "id": 8144,
+    "reason": "whisper實錘(佔位符型)cov=93% uniqSegs=1 cjk=0 latin=5 標記=[MUSIC];歌名證據「禱告音樂」",
+    "title": "【禱告音樂】穩固的盼望 | EnterCalm《寧靜時分》系列"
+  },
+  {
+    "id": 8650,
+    "reason": "已知名單(title-match):歌名明示器樂版,whisper 冇 timeline,依 SUPERVISION-LOG 人手判定",
+    "title": "【深愛耶穌 Loving Jesus】安靜純音樂 Devotional Music｜ 「靜」系列"
+  },
+  {
+    "id": 8651,
+    "reason": "已知名單(title-match):歌名明示器樂版,whisper 冇 timeline,依 SUPERVISION-LOG 人手判定",
+    "title": "【聖潔的羔羊 The Holy Lamb of God】安靜純音樂 Devotional Music｜ 「靜」系列"
+  },
+  {
+    "id": 8652,
+    "reason": "已知名單(title-match):歌名明示器樂版,whisper 冇 timeline,依 SUPERVISION-LOG 人手判定",
+    "title": "【復興聖潔 Revive Holiness】- 鋼琴演奏系列 (1) by 游智婷 Sandy Yu"
+  },
+  {
+    "id": 8653,
+    "reason": "已知名單(title-match):歌名明示器樂版,whisper 冇 timeline,依 SUPERVISION-LOG 人手判定",
+    "title": "【我親愛的耶穌 My Sweet Jesus】- 鋼琴演奏系列 (1) by 游智婷 Sandy Yu"
+  },
+  {
+    "id": 8654,
+    "reason": "已知名單(title-match):歌名明示器樂版,whisper 冇 timeline,依 SUPERVISION-LOG 人手判定",
+    "title": "【展開清晨的翅膀 Wings of the Dawn】- 鋼琴演奏系列 (1) by 游智婷 Sandy Yu"
+  },
+  {
+    "id": 8655,
+    "reason": "已知名單(title-match):歌名明示器樂版,whisper 冇 timeline,依 SUPERVISION-LOG 人手判定",
+    "title": "【主的恩典乃是一生之久 The Light of Your Grace】- 鋼琴演奏系列 (1) by 游智婷 Sandy Yu"
+  },
+  {
+    "id": 8656,
+    "reason": "已知名單(title-match):歌名明示器樂版,whisper 冇 timeline,依 SUPERVISION-LOG 人手判定",
+    "title": "【耶穌，我的耶穌 Jesus, My Jesus】- 鋼琴演奏系列 (1) by 游智婷 Sandy Yu"
+  },
+  {
+    "id": 8657,
+    "reason": "已知名單(title-match):歌名明示器樂版,whisper 冇 timeline,依 SUPERVISION-LOG 人手判定",
+    "title": "【Stream of Praise】- 鋼琴演奏系列 (1) by 游智婷 Sandy Yu"
+  },
+  {
+    "id": 8658,
+    "reason": "已知名單(title-match):歌名明示器樂版,whisper 冇 timeline,依 SUPERVISION-LOG 人手判定",
+    "title": "【我愛祢，我主 I Love You My Lord】- 鋼琴演奏系列 (1) by 游智婷 Sandy Yu"
+  },
+  {
+    "id": 8659,
+    "reason": "已知名單(title-match):歌名明示器樂版,whisper 冇 timeline,依 SUPERVISION-LOG 人手判定",
+    "title": "【單單愛慕你 [二重奏] Simply Loving You [Duet]】- 鋼琴演奏系列 (1) by 游智婷 Sandy Yu"
+  }
+]

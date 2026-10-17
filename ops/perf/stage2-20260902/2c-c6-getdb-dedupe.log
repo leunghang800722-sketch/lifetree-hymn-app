@@ -1,0 +1,10 @@
+=== 改前(HEAD,C-6 之前)3 個並發 getDb() ===
+readFileSync 被 call 咗 3 次 (改前 bug:expect 3)
+三個係咪同一個 object: false (改前 bug: expect false)
+=== case A: 3 個並發 getDb()(同一個 macrotask 內起飛)===
+readFileSync 被 call 咗 1 次 (expect 1)
+三個 resolve 出嚟嘅係咪同一個 object reference: true
+
+=== case B: 隔一個 macrotask 先再 call(理應繼續 hit 緊個已經 resolve 咗嘅 promise,唔會再讀)===
+readFileSync 累計被 call 咗 1 次 (expect 仍然 1)
+db4 === db1 ? true

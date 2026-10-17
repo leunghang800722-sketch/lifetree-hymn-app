@@ -1,0 +1,10 @@
+node_modules
+venv
+.git
+*.webm
+hymns.db.backup-*
+hymn-check-report.txt
+cookies.txt
+public/app.apk
+public/*.txt
+tools/

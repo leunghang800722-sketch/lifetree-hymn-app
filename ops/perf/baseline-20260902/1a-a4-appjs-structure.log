@@ -1,0 +1,85 @@
+=== top-level function/component declarations ===
+113:const MAIN_BG_COLOR
+114:const CARD_BG_COLOR
+115:const GLOW_COLOR
+116:const PRIMARY_COLOR
+117:const TEXT_ON_GLOW
+118:const TEXT_PRIMARY
+119:const TEXT_SECONDARY
+124:function getAlbumCoverUrl
+129:function getAlbumCoverUrlHi
+156:function toTrack
+188:function formatLyrics
+201:function formatLyricsStanzas
+217:function warmIds
+245:function classifyFirstTapSurface
+274:function logDiag
+298:function swNudgePlay
+305:function CoverImage
+330:function BigCover
+363:function FavHeart
+386:function useBottomInset
+411:const PlayerCtx
+418:const progressStore
+419:function usePlayerProgress
+421:function PlayerProvider
+2928:const noticeStyles
+2939:export function usePlayer
+2943:const olStyles
+2959:function MiniPlayer
+2987:const miStyles
+3020:const TAB_CONFIG
+3025:function TabBar
+3051:const tbStyles
+3076:function HomeScreen
+3101:const hs
+3144:const QUEUE_COLLAPSED_H
+3145:const QUEUE_SNAP_POINTS
+3151:function ProgressSection
+3175:const REPEAT_MODE_LABELS
+3177:function FullScreenPlayerOverlay
+3710:const fsStyles
+3870:const SHARE_TOKEN_RE
+3871:const SHARE_URL_PREFIXES
+3876:function parseSharedToken
+3891:function AppContent
+4361:function UpdateBanner
+4379:const updateBannerStyles
+4431:const NATIVE_WD_V2
+4438:const NATIVE_WD_V3
+4440:function ApkUpdateBanner
+4506:const apkUpdateBannerStyles
+4520:export default function App
+4543:const pageStyles
+=== console.log/logDiag counts ===
+0
+23
+24
+
+--- computed line ranges (top-level only, function/component only) ---
+getAlbumCoverUrl               function               lines 124-128 (5 lines)
+getAlbumCoverUrlHi             function               lines 129-155 (27 lines)
+toTrack                        function               lines 156-187 (32 lines)
+formatLyrics                   function               lines 188-200 (13 lines)
+formatLyricsStanzas            function               lines 201-216 (16 lines)
+warmIds                        function               lines 217-244 (28 lines)
+classifyFirstTapSurface        function               lines 245-273 (29 lines)
+logDiag                        function               lines 274-297 (24 lines)
+swNudgePlay                    function               lines 298-304 (7 lines)
+CoverImage                     function               lines 305-329 (25 lines)
+BigCover                       function               lines 330-362 (33 lines)
+FavHeart                       function               lines 363-385 (23 lines)
+useBottomInset                 function               lines 386-418 (33 lines)
+usePlayerProgress              function               lines 419-420 (2 lines)
+PlayerProvider                 function               lines 421-2938 (2518 lines)
+usePlayer                      export function        lines 2939-2958 (20 lines)
+MiniPlayer                     function               lines 2959-3024 (66 lines)
+TabBar                         function               lines 3025-3075 (51 lines)
+HomeScreen                     function               lines 3076-3150 (75 lines)
+ProgressSection                function               lines 3151-3176 (26 lines)
+FullScreenPlayerOverlay        function               lines 3177-3875 (699 lines)
+parseSharedToken               function               lines 3876-3890 (15 lines)
+AppContent                     function               lines 3891-4360 (470 lines)
+UpdateBanner                   function               lines 4361-4439 (79 lines)
+ApkUpdateBanner                function               lines 4440-4519 (80 lines)
+App                            export default function lines 4520-4558 (39 lines)

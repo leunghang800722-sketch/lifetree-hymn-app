@@ -1,0 +1,12 @@
+=== S2 run 1 ===
+2026-09-02T07:22:53Z
+backend_log_lines_before=21200
+host_launch_ts=1788333774.376590000
+com.hymnapp.praise: 91634
+pid=91634
+rss_at_launch+3s_kb=517056
+rss_at_launch+20s_kb=357200
+[client-log] 2026-09-02T07:23:10.832Z event="perfMarks" clientTs="1788333790631" appState="" hymnId=null position=null duration=null trackState="" repeatMode=null errorSkipCount=null detail="rnst:st=352586122.4073334,rt=-,ep=- b0=0 app=109 cont=187 mmkvRead=17 parse=19 n=6405 cacheReady=181 home=894 verMs=963 verSkip=1 hymnsMs=- fetch=6(api/version:1,api/health:1,api/stream:2,api/home:1,api/app-version:1) rss=na" platform="ios" deviceId="b0b3ad1a1df3fb27ad53970ded69ecf2"
+[client-log] 2026-09-02T07:23:10.834Z event="perfRenders" clientTs="1788333790632" appState="" hymnId=null position=null duration=null trackState="" repeatMode=null errorSkipCount=null detail="t=15 Home=4 Library=4 Mine=4 Mini=4 TabBar=4 FullPlayer=0 AppContent=4" platform="ios" deviceId="b0b3ad1a1df3fb27ad53970ded69ecf2"
+2026-09-02T07:23:14Z
+=== end run 1 ===

@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.hymnapp.deadlinkcheck</string>
+
+    <key>ProgramArguments</key>
+    <array>
+        <string>/opt/homebrew/bin/node</string>
+        <string>/Users/macbookpro/.openclaw/workspace/hymn-app/backend/scripts/checkDeadLinks.js</string>
+        <string>--limit</string>
+        <string>150</string>
+        <string>--delay</string>
+        <string>3000</string>
+    </array>
+
+    <key>WorkingDirectory</key>
+    <string>/Users/macbookpro/.openclaw/workspace/hymn-app/backend</string>
+
+    <!-- Same trap as the backend agent: launchd's default PATH has no
+         /opt/homebrew/bin, and this script shells out to yt-dlp. Without this
+         every check would "fail" with command-not-found and the 3-strike rule
+         would happily mark the ENTIRE library dead. -->
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>PATH</key>
+        <string>/opt/homebrew/bin:/opt/homebrew/sbin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+    </dict>
+
+    <!-- 04:00 nightly. 150 songs x 3s ~= 8 min, concurrency 1. At this rate the
+         full 1518-song library rotates roughly every 10 nights. Deliberately
+         slow: the Mac's residential IP is the only IP YouTube still serves. -->
+    <key>StartCalendarInterval</key>
+    <dict>
+        <key>Hour</key>
+        <integer>4</integer>
+        <key>Minute</key>
+        <integer>0</integer>
+    </dict>
+
+    <!-- One-shot job: must NOT KeepAlive, or launchd would restart it forever. -->
+    <key>RunAtLoad</key>
+    <false/>
+
+    <key>StandardOutPath</key>
+    <string>/tmp/hymn_deadlink.log</string>
+    <key>StandardErrorPath</key>
+    <string>/tmp/hymn_deadlink.log</string>
+</dict>
+</plist>

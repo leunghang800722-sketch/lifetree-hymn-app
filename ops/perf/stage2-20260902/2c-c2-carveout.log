@@ -1,0 +1,5 @@
+🗃️  resolve-cache:由碟載返 365 條未過期 URL
+/cache/stats -> 200 {"cacheSize":365,"failCacheSize":0,"failTtlSec":900,"failTtlPlaybackSec":60,"failing":[]}
+/cache/warm-stats -> 200 {"since":"2026-09-02T08:27:06.702Z","total":{"stream":{"req":0,"warm":0,"cold":0,"startReq":0,"startWarm":0,"startCold":0},"bufferCache":{"req":0,"hit":0,"entries":null,"totalBytes":null,"rssKb":null}
+[deprecated-route] 2026-09-02T08:27:06.747Z GET /api/audio/PG_J_0gsMXA
+/PG_J_0gsMXA -> 410 {"error":"Gone","message":"呢條 route 已停用 —— 前端冇再用緊(PERF-STAGE2-EXEC-20260902 §2A A-4)"}

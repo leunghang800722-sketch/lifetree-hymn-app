@@ -1,0 +1,12 @@
+--- r1: baseline /api/hymns (miss, cold compute) ---
+dataVersion= 1788338447709.8293-61054976 computeCount= 1
+--- r2: repeat, same file, should be cache HIT (computeCount unchanged) ---
+computeCount= 1 (expect unchanged)
+--- r3: touch DB (no lock) -> /api/hymns should MISS once (maybeReload picks up new dataVersion) ---
+dataVersion= 1788338453023-61054976 changed= true computeCount= 2 (expect +1)
+--- r4: repeat again -> HIT (computeCount unchanged) ---
+computeCount= 2 (expect unchanged)
+--- r5: touch DB WITH lock present -> /api/hymns must stay on stale cached dataVersion (no reload) ---
+dataVersion= 1788338453023-61054976 still old= true computeCount= 2 (expect unchanged -- guard held)
+--- r6: remove lock -> next /api/hymns finally sees the pending change ---
+dataVersion= 1788338458166-61054976 changed= true computeCount= 3 (expect +1)

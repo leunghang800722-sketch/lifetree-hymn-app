@@ -1,0 +1,21 @@
+# A-4 after (search/category/audio all 410; home 9/10 410, daily-verse kept) — 2026-09-02T07:55:12Z
+-- RSS before 5 hits --
+  PID    RSS
+14214  64192
+run=1 /api/category/mandarin code=410 total=0.008815 size=113
+run=2 /api/category/mandarin code=410 total=0.000911 size=113
+run=3 /api/category/mandarin code=410 total=0.000660 size=113
+run=4 /api/category/mandarin code=410 total=0.000586 size=113
+run=5 /api/category/mandarin code=410 total=0.000498 size=113
+-- RSS after 5 hits --
+  PID    RSS
+14214  65840
+-- other routes --
+GET /api/category/cantonese -> code=410 total=0.000660
+GET /api/search/all?q=x -> code=410 total=0.001000
+GET /api/audio/PG_J_0gsMXA -> code=410 total=0.000543
+GET /api/audio/cache/stats -> code=410 total=0.000590
+GET /api/home/genre-recommendation -> code=410 total=0.000630
+GET /api/home/daily-verse (MUST stay 200) -> code=200 total=0.000659 size=185
+{"error":"Gone","message":"呢條 route 已停用 —— 前端冇再用緊(PERF-STAGE2-EXEC-20260902 §2A A-4)"}
+body: 

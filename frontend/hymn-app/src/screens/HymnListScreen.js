@@ -1,299 +1,157 @@
-// 畫面 1：詩歌列表
+// 歌單頁 —— 首頁「即刻揀歌」撳「睇晒 N 首」入到嚟嘅全清單頁。
+//
+// ⚠️ v234 之前呢個係全 App 最後一塊冇跟色板嘅畫面:白底 #fff、黑字、灰線,
+// 喺深色 App 入面撞到出面。而且啲寫死 hex 犯咗 §5.2「唔准再寫死 hex」。
+// 而家跟返 Ode 色板同 LibraryScreen / MineScreen 嘅列表樣式(ODE-REBRAND-PLAN):
+//   * 靛紫底 #0B0913、米白字、淡紫次要字
+//   * 暖光 #EFE4D2 = 播放 / 選中狀態
+//   * 主色紫 #B9A6F2 = 已收藏 / 連結
+//   * 歌名 18pt(§5.3 列表可讀性)、封面縮圖、行尾心心同其他歌單一致
+
 import React, { useState, useEffect } from 'react';
 import {
   View,
-  Text,
-  TextInput,
   FlatList,
   TouchableOpacity,
+  Text,
   StyleSheet,
-  ActivityIndicator,
-  StatusBar,
+  Image,
 } from 'react-native';
-import { fetchHymns, fetchCategories } from '../api';
+import OdeIcon from '../icons/OdeIcon';
+import { COLORS, TYPOGRAPHY, effects } from '../theme/designSystem';
 import { useFavorites } from '../context/FavoritesContext';
+import { useAddToPlaylist } from '../components/AddToPlaylistSheet';
+import { useAdminEditHymn } from '../components/AdminEditHymnSheet';
+import { useAuth } from '../context/AuthContext';
+import { useInsets } from '../hooks/useInsets';
+import { getDisplayTitle } from '../utils/displayTitle';
 
-export default function HymnListScreen({ navigation, route }) {
-  const [hymns, setHymns] = useState([]);
-  const [categories, setCategories] = useState([]);
-  const [selectedCategory, setSelectedCategory] = useState(route?.params?.category || '');
-  const [search, setSearch] = useState(route?.params?.search || '');
-  const [loading, setLoading] = useState(true);
-  const { toggleFavorite, isFavorite } = useFavorites();
+// B9 — 呢頁而家可能有 App.js 傳落嚟嘅 mini player 企喺底(見 App.js
+// hymnListModal),要留返呢個高度嘅空間,唔係尾幾行歌會俾佢遮咗。約數
+// (44 封面 + 上下 padding 10*2)已經夠準,唔使逐 px 對正。
+const MINI_PLAYER_H = 64;
 
-  // Listen for route params changes (coming from Home screen)
-  useEffect(() => {
-    if (route?.params?.category !== undefined) {
-      setSelectedCategory(route.params.category);
-    }
-    if (route?.params?.search !== undefined) {
-      setSearch(route.params.search);
-    }
-  }, [route?.params?.category, route?.params?.search]);
-
-  async function loadHymns() {
-    setLoading(true);
-    try {
-      const data = await fetchHymns(search, selectedCategory);
-      setHymns(data);
-    } catch (err) {
-      console.error(err);
-    }
-    setLoading(false);
-  }
-
-  async function loadCategories() {
-    try {
-      const data = await fetchCategories();
-      setCategories(['全部', ...data]);
-    } catch (err) {
-      console.error(err);
-    }
-  }
-
-  useEffect(() => {
-    loadCategories();
-  }, []);
-
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      loadHymns();
-    }, 300);
-    return () => clearTimeout(timer);
-  }, [search, selectedCategory]);
-
-  function renderHymn({ item }) {
-    const fav = isFavorite(item.id);
+// mqdefault = 真 16:9 冇黑邊(hqdefault 係 4:3,黑邊 baked 咗入張圖)
+function Cover({ youtubeId, size = 52 }) {
+  const [failed, setFailed] = useState(false);
+  // youtubeId 變咗要重試新縮圖(舊版 failed 唔會自動清,BATCH5 S6)。
+  useEffect(() => { setFailed(false); }, [youtubeId]);
+  const uri = youtubeId ? `https://img.youtube.com/vi/${youtubeId}/mqdefault.jpg` : null;
+  if (!uri || failed) {
     return (
-      <TouchableOpacity
-        style={styles.hymnItem}
-        onPress={() => navigation.navigate('Player', { hymnId: item.id })}
-      >
-        <View style={styles.hymnInfo}>
-          <Text style={styles.hymnTitle}>{item.title}</Text>
-          <Text style={styles.hymnArtist}>{item.artist} · {item.duration}</Text>
-        </View>
-        <TouchableOpacity
-          style={styles.favBtn}
-          onPress={() => toggleFavorite(item)}
-          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-        >
-          <Text style={styles.favIcon}>{fav ? '❤️' : '♡'}</Text>
-        </TouchableOpacity>
-        <Text style={styles.playIcon}>▶</Text>
-      </TouchableOpacity>
+      <View style={[styles.cover, { width: size, height: size, alignItems: 'center', justifyContent: 'center' }]}>
+        <OdeIcon name="musicNote" size={size * 0.42} color={COLORS.textSecondary} />
+      </View>
     );
   }
+  return (
+    <Image
+      source={{ uri }}
+      style={[styles.cover, { width: size, height: size }]}
+      onError={() => setFailed(true)}
+    />
+  );
+}
+
+// 同播放清單 / 首頁一致:喺清單度直接加最愛,唔使入返播放頁
+function Heart({ hymn }) {
+  const { isFavorite, toggleFavorite } = useFavorites() || {};
+  if (!hymn?.id || typeof toggleFavorite !== 'function') return null;
+  const on = typeof isFavorite === 'function' ? isFavorite(hymn.id) : false;
+  return (
+    <TouchableOpacity
+      onPress={(e) => { e?.stopPropagation?.(); toggleFavorite(hymn); }}
+      hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+      style={styles.heart}
+      activeOpacity={0.6}
+    >
+      <OdeIcon
+        name="heart"
+        size={20}
+        filled={on}
+        color={on ? COLORS.primary : COLORS.textSecondary}
+      />
+    </TouchableOpacity>
+  );
+}
+
+export default function HymnListScreen({ hymns = [], title, onPlayHymn, hasMiniPlayer = false }) {
+  const { open: openAddToPlaylist } = useAddToPlaylist();
+  const { isAdmin } = useAuth();
+  const { open: openAdminEdit } = useAdminEditHymn();
+  const handlePlayHymn = (hymn) => {
+    if (onPlayHymn) onPlayHymn(hymn);
+  };
+  // B8 修 —— 之前呢度寫死 `paddingBottom: 32`,edge-to-edge 底下嗰 32px 冚
+  // 唔到手勢導航列(見 useInsets.js 檔頭大段解釋),尾幾行歌就俾條白色
+  // gesture pill 蓋住半截。跟返 PlaylistDetailSheet.js 個做法用 useInsets()。
+  const insets = useInsets();
+  const bottomPad = 24 + insets.bottom + (hasMiniPlayer ? MINI_PLAYER_H : 0);
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="#1A2E26" />
-      
-      {/* Header */}
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>🎵 詩歌</Text>
-        <TextInput
-          style={styles.searchBar}
-          placeholder="🔍 搜尋詩歌..."
-          placeholderTextColor="#8B9D83"
-          value={search}
-          onChangeText={setSearch}
-        />
+      <View style={styles.headerWrap}>
+        <Text style={styles.header} numberOfLines={1}>{title}</Text>
+        <Text style={styles.count}>{hymns.length} 首</Text>
       </View>
 
-      {/* Categories */}
-      <View style={styles.categoryRow}>
-        {categories.map((cat) => (
+      <FlatList
+        data={hymns}
+        keyExtractor={(item) => String(item.id)}
+        contentContainerStyle={{ paddingBottom: bottomPad }}
+        ListEmptyComponent={
+          <View style={styles.empty}>
+            <OdeIcon name="musicOff" size={36} color={COLORS.textSecondary} />
+            <Text style={styles.emptyText}>呢個清單暫時冇歌</Text>
+          </View>
+        }
+        renderItem={({ item }) => (
           <TouchableOpacity
-            key={cat}
-            style={[
-              styles.categoryBtn,
-              {
-                backgroundColor:
-                  selectedCategory === cat || (cat === '全部' && selectedCategory === '')
-                    ? '#F5E6CA'
-                    : '#E2E8F0',
-              },
-            ]}
-            onPress={() => setSelectedCategory(cat === '全部' ? '' : cat)}
+            style={styles.row}
+            onPress={() => handlePlayHymn(item)}
+            onLongPress={isAdmin ? () => openAdminEdit(item) : undefined}
+            activeOpacity={0.7}
           >
-            <Text
-              style={[
-                styles.categoryText,
-                {
-                  color:
-                    selectedCategory === cat || (cat === '全部' && selectedCategory === '')
-                      ? '#FFF'
-                      : '#475569',
-                },
-              ]}
+            <Cover youtubeId={item.youtube_id} />
+            <View style={styles.rowInfo}>
+              <Text style={styles.rowTitle} numberOfLines={2}>{getDisplayTitle(item)}</Text>
+              <Text style={styles.rowArtist} numberOfLines={1}>{item.artist || '未知'}</Text>
+            </View>
+            {/* ≡♪ 加入到清單 —— 彈揀清單 sheet(同 Mine / 播放頁「清單」pill 一致) */}
+            <TouchableOpacity
+              onPress={(e) => { e?.stopPropagation?.(); openAddToPlaylist(item); }}
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              style={styles.rowAction}
+              activeOpacity={0.6}
             >
-              {cat}
-            </Text>
+              <OdeIcon name="addToList" size={22} color={COLORS.textSecondary} />
+            </TouchableOpacity>
+            <Heart hymn={item} />
           </TouchableOpacity>
-        ))}
-      </View>
-
-      {/* List */}
-      {loading ? (
-        <ActivityIndicator style={styles.loader} size="large" color="#F5E6CA" />
-      ) : (
-        <FlatList
-          data={hymns}
-          renderItem={renderHymn}
-          keyExtractor={(item) => String(item.id)}
-          contentContainerStyle={[
-            styles.list,
-            { paddingBottom: 20 },
-          ]}
-          ListEmptyComponent={
-            <Text style={styles.emptyText}>搵唔到詩歌 😢</Text>
-          }
-        />
-      )}
-
-
+        )}
+      />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#F8FAFC',
+  container: { flex: 1, backgroundColor: COLORS.background },
+  headerWrap: {
+    paddingHorizontal: 16, paddingTop: 4, paddingBottom: 12,
+    borderBottomWidth: 1, borderBottomColor: COLORS.border,
   },
-  header: {
-    backgroundColor: '#1A2E26',
-    paddingTop: 50,
-    paddingBottom: 20,
-    paddingHorizontal: 20,
-    borderBottomLeftRadius: 24,
-    borderBottomRightRadius: 24,
+  header: { ...TYPOGRAPHY.title },
+  count: { ...TYPOGRAPHY.artist, marginTop: 2 },
+  row: {
+    flexDirection: 'row', alignItems: 'center',
+    paddingHorizontal: 16, paddingVertical: 8,
   },
-  headerTitle: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#FFF',
-    marginBottom: 16,
-  },
-  searchBar: {
-    backgroundColor: '#334155',
-    borderRadius: 24,
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    fontSize: 16,
-    color: '#FFF',
-  },
-  categoryRow: {
-    flexDirection: 'row',
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    gap: 8,
-  },
-  categoryBtn: {
-    paddingHorizontal: 20,
-    paddingVertical: 8,
-    borderRadius: 20,
-  },
-  categoryText: {
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  list: {
-    paddingHorizontal: 20,
-  },
-  hymnItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FFF',
-    padding: 16,
-    borderRadius: 12,
-    marginBottom: 8,
-    elevation: 1,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-  },
-  hymnInfo: {
-    flex: 1,
-  },
-  hymnTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#1E293B',
-  },
-  hymnArtist: {
-    fontSize: 13,
-    color: '#6B7D65',
-    marginTop: 4,
-  },
-  favBtn: {
-    paddingHorizontal: 8,
-  },
-  favIcon: {
-    fontSize: 20,
-  },
-  playIcon: {
-    fontSize: 20,
-    color: '#F5E6CA',
-    marginLeft: 12,
-  },
-  loader: {
-    marginTop: 40,
-  },
-  emptyText: {
-    textAlign: 'center',
-    color: '#94A3B8',
-    fontSize: 16,
-    marginTop: 40,
-  },
-  // Mini Player Bar
-  miniPlayer: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    backgroundColor: '#1A2E26',
-    borderTopLeftRadius: 16,
-    borderTopRightRadius: 16,
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    paddingBottom: 24, // safe area for Android bottom bar
-    elevation: 10,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: -3 },
-    shadowOpacity: 0.2,
-    shadowRadius: 6,
-  },
-  miniPlayerContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  miniPlayerInfo: {
-    flex: 1,
-  },
-  miniPlayerTitle: {
-    color: '#FFF',
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  miniPlayerArtist: {
-    color: '#8B9D83',
-    fontSize: 12,
-    marginTop: 2,
-  },
-  miniPlayerBtn: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: '#F5E6CA',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginLeft: 12,
-  },
-  miniPlayerIcon: {
-    fontSize: 20,
-    color: '#FFF',
-  },
+  cover: { borderRadius: 6, backgroundColor: COLORS.cardLight, ...effects.coverInset },
+  rowInfo: { flex: 1, marginLeft: 12 },
+  rowTitle: { ...TYPOGRAPHY.songTitle },   // §5.3 列表 18pt
+  rowArtist: { ...TYPOGRAPHY.artist, marginTop: 2 },
+  rowAction: { paddingLeft: 14 },
+  heart: { paddingLeft: 14 },
+  empty: { alignItems: 'center', paddingTop: 60 },
+  emptyText: { ...TYPOGRAPHY.artist, marginTop: 8 },
 });

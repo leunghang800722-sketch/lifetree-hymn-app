@@ -1,0 +1,12 @@
+{
+  "name": "react-harness",
+  "private": true,
+  "type": "module",
+  "description": "O1-O2-REPLAN-20260819.md §6.2 —— useCachedHymns / externalStore 嘅 reconciler-level 回歸 gate,唔使裝置就跑得。",
+  "scripts": {
+    "test": "node run.js"
+  },
+  "devDependencies": {
+    "jsdom": "^25.0.0"
+  }
+}

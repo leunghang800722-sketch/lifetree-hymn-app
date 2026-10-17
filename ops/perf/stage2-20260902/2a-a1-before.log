@@ -1,0 +1,21 @@
+# A-1 before (no cache) — 2026-09-02T07:46:54Z
+HTTP/1.1 200 OK
+Content-Type: application/json; charset=utf-8
+ETag: W/"54f4a0-FBwNriKnuMzO0pyf9jexRd+9n/Y"
+run=1 code=200 ttfb=0.129856 total=0.131814 size=5567648
+HTTP/1.1 200 OK
+Content-Type: application/json; charset=utf-8
+ETag: W/"54f4a0-FBwNriKnuMzO0pyf9jexRd+9n/Y"
+run=2 code=200 ttfb=0.081782 total=0.086443 size=5567648
+HTTP/1.1 200 OK
+Content-Type: application/json; charset=utf-8
+ETag: W/"54f4a0-FBwNriKnuMzO0pyf9jexRd+9n/Y"
+run=3 code=200 ttfb=0.079173 total=0.081151 size=5567648
+HTTP/1.1 200 OK
+Content-Type: application/json; charset=utf-8
+ETag: W/"54f4a0-FBwNriKnuMzO0pyf9jexRd+9n/Y"
+run=4 code=200 ttfb=0.080006 total=0.083113 size=5567648
+HTTP/1.1 200 OK
+Content-Type: application/json; charset=utf-8
+ETag: W/"54f4a0-FBwNriKnuMzO0pyf9jexRd+9n/Y"
+run=5 code=200 ttfb=0.075944 total=0.078515 size=5567648

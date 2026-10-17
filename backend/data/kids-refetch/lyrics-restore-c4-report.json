@@ -1,0 +1,316 @@
+{
+  "generatedAt": "2026-08-02 00:31:33",
+  "dryRun": true,
+  "verifiedAfter": 259,
+  "caseA": [],
+  "caseB": [],
+  "skipped": [
+    {
+      "youtube_id": "9pbEJNOECW8",
+      "id": 4469,
+      "title": "Kids Praise | Whisper A Prayer In the Morning | Toddler song",
+      "curStatus": "verified"
+    },
+    {
+      "youtube_id": "Bmq5NveA6vY",
+      "id": 4809,
+      "title": "Oh How I Love Jesus (new version)",
+      "curStatus": "verified"
+    },
+    {
+      "youtube_id": "gYF6x_2Ohug",
+      "id": 4789,
+      "title": "Proverbs 4:2-23 - Listen Closely | Hillsong Kids",
+      "curStatus": "verified"
+    },
+    {
+      "youtube_id": "xrQPoVZR5Go",
+      "id": 4794,
+      "title": "1 Corinthians 15:58 - Stand Strong | Hillsong Kids",
+      "curStatus": "verified"
+    },
+    {
+      "youtube_id": "b0VUiK50pgU",
+      "id": 4812,
+      "title": "His Banner Over Me is Love - by Listener Kids",
+      "curStatus": "verified"
+    },
+    {
+      "youtube_id": "iwaJ3qh8PZc",
+      "id": 4795,
+      "title": "Born Is The King (It’s Christmas!) - Sing-A-Long Video | Hillsong Kids",
+      "curStatus": "verified"
+    },
+    {
+      "youtube_id": "1xdtEgylEyo",
+      "id": 4225,
+      "title": "【唱出耶穌的偉大 I Will Sing of Your Greatness】舞蹈版MV - 讚美之泉兒童敬拜讚美(14)",
+      "curStatus": "verified"
+    },
+    {
+      "youtube_id": "a8JcMe_xq38",
+      "id": 4226,
+      "title": "【Each Day Abiding in You】Dance Version MV - Praise Stream Children's Worship and Praise (14)",
+      "curStatus": "verified"
+    },
+    {
+      "youtube_id": "3nH6RyeAQOw",
+      "id": 4513,
+      "title": "Zacchaeus (God Is Coming to My House) 🏠🎶 | New Worship Song & Dance ✨ | CJ and Friends",
+      "curStatus": "verified"
+    },
+    {
+      "youtube_id": "yWUn-cr03GY",
+      "id": 4515,
+      "title": "Away in a Manger | Upbeat Christmas Song & Dance | CJ and Friends",
+      "curStatus": "verified"
+    },
+    {
+      "youtube_id": "nhe98jfgC2g",
+      "id": 4230,
+      "title": "【Stay [停留] 】官方歌詞MV - 讚美之泉兒童敬拜讚美 (14)",
+      "curStatus": "verified"
+    },
+    {
+      "youtube_id": "K3kvKI84Ydo",
+      "id": 5142,
+      "title": "Wheels on the Bus 🚌🎶 (CJ’s Praise Version) | Sing Along with Motions & Lyrics | CJ and Friends",
+      "curStatus": "verified"
+    },
+    {
+      "youtube_id": "O4UTnns3fT0",
+      "id": 4236,
+      "title": "【Mighty [祢愛有能力] 】兒童敬拜MV - 讚美之泉兒童敬拜讚美 (14)",
+      "curStatus": "verified"
+    },
+    {
+      "youtube_id": "_ruZj1RljSQ",
+      "id": 4580,
+      "title": "Yancy - History Maker [OFFICIAL LYRIC VIDEO] Nineties Worship Night cover of Delirious Martin Smith",
+      "curStatus": "verified"
+    },
+    {
+      "youtube_id": "Y6Vgj5H5zTk",
+      "id": 4583,
+      "title": "Yancy - Choosing Happy (Rock Party Mix) [Official Lyric Music Video] Kids Worship Song of summer",
+      "curStatus": "verified"
+    },
+    {
+      "youtube_id": "T9-EqqI3YJA",
+      "id": 4525,
+      "title": "LOVE ❤️ | Worship Song & Dance | Music Video + Lyrics | CJ and Friends",
+      "curStatus": "verified"
+    },
+    {
+      "youtube_id": "diqf3I3-kn0",
+      "id": 4526,
+      "title": "Be Brave Like Esther! | Scripture Safari Bible Story & Worship | CJ and Friends",
+      "curStatus": "verified"
+    },
+    {
+      "youtube_id": "FRkj9f7ZJyo",
+      "id": 4530,
+      "title": "I've Got the Joy, Joy, Joy (Down in My Heart) | CJ and Friends Dance Along",
+      "curStatus": "verified"
+    },
+    {
+      "youtube_id": "f8C-12FcLtE",
+      "id": 4588,
+      "title": "Yancy - Super Wonderful Funky Franklin Remix [OFFICIAL LYRIC VIDEO] Superhero worship song for kids",
+      "curStatus": "verified"
+    },
+    {
+      "youtube_id": "tDYoZ2SPWrI",
+      "id": 4436,
+      "title": "Born Is The King (It’s Christmas!) - Lyric Video | Hillsong Kids",
+      "curStatus": "verified"
+    },
+    {
+      "youtube_id": "zPV1Rw0Yfhk",
+      "id": 4438,
+      "title": "Superhero (Slowed Down/Pitched Up) - Lyric Video | Hillsong Kids",
+      "curStatus": "verified"
+    },
+    {
+      "youtube_id": "J_rpALQHFDs",
+      "id": 4440,
+      "title": "Superhero (Reimagined) - Lyric Video | Hillsong Kids",
+      "curStatus": "verified"
+    },
+    {
+      "youtube_id": "zs9G6tLQJfg",
+      "id": 4798,
+      "title": "That's The Power - Visualiser | Hillsong Kids",
+      "curStatus": "verified"
+    },
+    {
+      "youtube_id": "U38JaMs583U",
+      "id": 4780,
+      "title": "♫ YOU ARE GOOD LYRIC VIDEO ♫ | Kids on the Move",
+      "curStatus": "verified"
+    },
+    {
+      "youtube_id": "Ynis2D18sZA",
+      "id": 4781,
+      "title": "♫ UNSHAKEABLE LYRIC VIDEO ♫ | Kids on the Move",
+      "curStatus": "verified"
+    },
+    {
+      "youtube_id": "ilUveSNRpC0",
+      "id": 4451,
+      "title": "1 Timothy 4:12 (Set An Example) - Memory Verse Song | Hillsong Kids",
+      "curStatus": "verified"
+    },
+    {
+      "youtube_id": "3akVctqHxBw",
+      "id": 5143,
+      "title": "🎉 Happy Birthday 🎈 Let's Celebrate!",
+      "curStatus": "verified"
+    },
+    {
+      "youtube_id": "ulPTZnyOkak",
+      "id": 4259,
+      "title": "【敬畏上帝的人有福 Happy Are Those Who Fear The Lord】MV - 讚美之泉兒童敬拜讚美 (13)",
+      "curStatus": "verified"
+    },
+    {
+      "youtube_id": "BWTk8FJ6FNg",
+      "id": 4686,
+      "title": "《禱告得力》Prayer For Strength-祈禱仔兒童敬拜系列 基恩敬拜AGWMM",
+      "curStatus": "verified"
+    },
+    {
+      "youtube_id": "GF7jVz52x4M",
+      "id": 4689,
+      "title": "《耶穌，我愛祢》- 祈禱仔兒童敬拜系列 基恩敬拜AGWMM",
+      "curStatus": "verified"
+    },
+    {
+      "youtube_id": "uzIJDteunAA",
+      "id": 4693,
+      "title": "《祢的心意》- 祈禱仔兒童敬拜系列 基恩敬拜AGWMM",
+      "curStatus": "verified"
+    },
+    {
+      "youtube_id": "Lmpz4A6gbS4",
+      "id": 4695,
+      "title": "《一生獻作活祭》- 祈禱仔兒童敬拜系列 基恩敬拜AGWMM",
+      "curStatus": "verified"
+    },
+    {
+      "youtube_id": "Y98iX3U5SRE",
+      "id": 4735,
+      "title": "【廣東話兒童詩歌】《救主降臨》| 童唱童樂 Giggles and Tunes",
+      "curStatus": "verified"
+    },
+    {
+      "youtube_id": "az-o3J5I5ks",
+      "id": 4367,
+      "title": "你是我的好朋友 - ACM 齊唱兒歌 (官方完整CD版)",
+      "curStatus": "verified"
+    },
+    {
+      "youtube_id": "h8jqtmCAMog",
+      "id": 4698,
+      "title": "《神的榮耀》- 祈禱仔兒童敬拜系列 基恩敬拜AGWMM",
+      "curStatus": "verified"
+    },
+    {
+      "youtube_id": "BXKqwQUfNnI",
+      "id": 4369,
+      "title": "萬物同和應 Official Lyric Video - 官方完整版",
+      "curStatus": "verified"
+    },
+    {
+      "youtube_id": "cAck8pRyXIs",
+      "id": 4738,
+      "title": "【廣東話兒童詩歌】《小鳥與小花》 | 童唱童樂 Giggles and Tunes",
+      "curStatus": "verified"
+    },
+    {
+      "youtube_id": "KEPlkvtS8Vw",
+      "id": 4701,
+      "title": "《福音顏色》- 基恩敬拜AGWMM - 祈禱仔兒童敬拜系列",
+      "curStatus": "verified"
+    },
+    {
+      "youtube_id": "VDz7Ldvylhc",
+      "id": 4741,
+      "title": "【廣東話兒童詩歌】《誰造星星》| 童唱童樂 Giggles and Tunes",
+      "curStatus": "verified"
+    },
+    {
+      "youtube_id": "G3Dngndd44M",
+      "id": 4704,
+      "title": "《迷路小孩》- 基恩敬拜AGWMM - 祈禱仔兒童敬拜系列",
+      "curStatus": "verified"
+    },
+    {
+      "youtube_id": "iHmegWOm7Ck",
+      "id": 4373,
+      "title": "Praise You Everyday ﹣齊唱兒歌DVD (官方動作版)",
+      "curStatus": "verified"
+    },
+    {
+      "youtube_id": "Ik65jY5cs-A",
+      "id": 4376,
+      "title": "無盡的愛 - ACM 齊唱兒歌4 (官方完整CD版)",
+      "curStatus": "verified"
+    },
+    {
+      "youtube_id": "dL6NApBwOnI",
+      "id": 4744,
+      "title": "【廣東話兒童詩歌】《好好牧人耶穌》| 童唱童樂 Giggles and Tunes",
+      "curStatus": "verified"
+    },
+    {
+      "youtube_id": "NbuaMOYS55Q",
+      "id": 4748,
+      "title": "【廣東話兒童詩歌】《阿爸的愛念》| 童唱童樂 Giggles and Tunes",
+      "curStatus": "verified"
+    },
+    {
+      "youtube_id": "xTZCREij5-s",
+      "id": 4381,
+      "title": "彩色拼圖 - ACM 齊唱兒歌 (官方完整CD版)",
+      "curStatus": "verified"
+    },
+    {
+      "youtube_id": "BAxACHA2As0",
+      "id": 4391,
+      "title": "學習愛 - ACM 齊唱兒歌3 (官方完整CD版)",
+      "curStatus": "verified"
+    },
+    {
+      "youtube_id": "b4T2qQg8vlE",
+      "id": 4408,
+      "title": "【耶穌恩光】HKACM 兒童事工 Official Music Video",
+      "curStatus": "verified"
+    },
+    {
+      "youtube_id": "0OI_8bHPFLI",
+      "id": 4460,
+      "title": "Never Walk Alone (Lyric Video)",
+      "curStatus": "verified"
+    },
+    {
+      "youtube_id": "zzRRyNg20lE",
+      "id": 4285,
+      "title": "【在祢沒有難成的事 Nothing is Impossible】進階舞蹈版 - 讚美之泉兒童敬拜讚美 (12)",
+      "curStatus": "verified"
+    },
+    {
+      "youtube_id": "MJIkO6gWhoc",
+      "id": 4308,
+      "title": "【Shaky Shaky Time】敬拜歌詞MV - 讚美之泉兒童敬拜讚美 (1)",
+      "curStatus": "verified"
+    },
+    {
+      "youtube_id": "PQqSHWihylQ",
+      "id": 4311,
+      "title": "【最深愛的主 The Love of My Life】敬拜歌詞MV - 讚美之泉兒童敬拜讚美 (1)",
+      "curStatus": "verified"
+    }
+  ],
+  "notFoundBoth": []
+}

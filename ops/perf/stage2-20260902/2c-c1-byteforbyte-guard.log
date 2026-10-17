@@ -1,0 +1,14 @@
+C-1 正控:預設 /api/hymns(冇 ?lite=1)一定要同改動前一個 byte 都唔可以變。
+
+方法:git show HEAD(78e7acb,C-1改動之前)嘅 backend/server.js 原文 slice 出
+compression middleware(lines 48-55)+ /api/hymns route(lines 292-347,舊版
+56 行區塊),同改動後 server.js 嘅同一段(compression 48-55 不變 + hymns
+route 292-406 新版)分別喺兩個獨立 express instance 起,行真 getDb/getDataVersion
+(read-only,真 hymns.db),兩邊都用 Accept-Encoding: '' 打 /api/hymns。
+
+結果:
+BEFORE bytes= 5567648
+AFTER  bytes= 5567648
+diff /tmp/before-hymns-response.json /tmp/after-hymns-response.json → 零輸出(identical)
+
+結論:預設分支(lite 缺席)response body 逐 byte 一樣,C-1 冇動到舊 client行為。

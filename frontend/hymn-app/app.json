@@ -1,26 +1,90 @@
 {
   "expo": {
-    "name": "詩歌App",
+    "name": "Odely",
     "slug": "hymn-app",
-    "version": "1.0.0",
+    "version": "1.5.1",
     "orientation": "portrait",
+    "platforms": [
+      "ios",
+      "android"
+    ],
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
+    "scheme": "godmusic",
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.hymnapp.praise"
+      "bundleIdentifier": "com.hymnapp.praise",
+      "buildNumber": "17",
+      "runtimeVersion": "5",
+      "associatedDomains": [
+        "applinks:api.god-music.com",
+        "applinks:api.odemusics.com"
+      ],
+      "infoPlist": {
+        "UIBackgroundModes": [
+          "audio"
+        ],
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "package": "com.hymnapp.praise",
+      "versionCode": 55,
       "adaptiveIcon": {
-        "backgroundColor": "#1E1B4B"
-      }
-    },
-    "web": {
-      "favicon": "./assets/favicon.png"
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "backgroundColor": "#0B0913"
+      },
+      "allowBackup": false,
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "autoVerify": true,
+          "data": [
+            {
+              "scheme": "https",
+              "host": "api.god-music.com",
+              "pathPrefix": "/p/"
+            },
+            {
+              "scheme": "https",
+              "host": "api.odemusics.com",
+              "pathPrefix": "/p/"
+            }
+          ],
+          "category": [
+            "BROWSABLE",
+            "DEFAULT"
+          ]
+        }
+      ]
     },
     "plugins": [
-      "expo-web-browser"
-    ]
+      [
+        "expo-font",
+        {
+          "fonts": [
+            "./assets/fonts/Sora-ExtraLight.ttf",
+            "./assets/fonts/NotoSerifTC-Regular.ttf"
+          ]
+        }
+      ],
+      "./plugins/withSwiftAudioExStallFix.js",
+      "./plugins/withSwiftAudioExStallWatchdog.js"
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "2fc23a2a-dc9e-4f29-b2f6-a337ee4c692a"
+      }
+    },
+    "owner": "god-music-team",
+    "runtimeVersion": "4",
+    "updates": {
+      "url": "https://u.expo.dev/2fc23a2a-dc9e-4f29-b2f6-a337ee4c692a",
+      "requestHeaders": {
+        "expo-channel-name": "production"
+      }
+    }
   }
 }

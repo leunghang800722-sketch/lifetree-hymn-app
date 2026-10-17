@@ -1,0 +1,1563 @@
+{
+  "scanner": "S5-backend-route",
+  "totalRoutes": 82,
+  "zeroFrontendHit": [
+    {
+      "method": "get",
+      "path": "/.well-known/apple-app-site-association",
+      "file": "server.js (inline)",
+      "stubCandidate": false,
+      "frontendHitCount": 0,
+      "frontendHitFiles": [],
+      "deprecatedRouteHitKey": null,
+      "deprecatedRouteHitCount": 0
+    },
+    {
+      "method": "get",
+      "path": "/apple-app-site-association",
+      "file": "server.js (inline)",
+      "stubCandidate": false,
+      "frontendHitCount": 0,
+      "frontendHitFiles": [],
+      "deprecatedRouteHitKey": null,
+      "deprecatedRouteHitCount": 0
+    },
+    {
+      "method": "get",
+      "path": "/api/internal/activity",
+      "file": "server.js (inline)",
+      "stubCandidate": false,
+      "frontendHitCount": 0,
+      "frontendHitFiles": [],
+      "deprecatedRouteHitKey": null,
+      "deprecatedRouteHitCount": 0
+    },
+    {
+      "method": "post",
+      "path": "/api/admin/hymns/:id/delist",
+      "file": "routes/admin.js",
+      "stubCandidate": false,
+      "frontendHitCount": 0,
+      "frontendHitFiles": [],
+      "deprecatedRouteHitKey": null,
+      "deprecatedRouteHitCount": 0
+    },
+    {
+      "method": "get",
+      "path": "/api/audio/:youtubeId",
+      "file": "routes/audio.js",
+      "stubCandidate": true,
+      "frontendHitCount": 0,
+      "frontendHitFiles": [],
+      "deprecatedRouteHitKey": null,
+      "deprecatedRouteHitCount": 0
+    },
+    {
+      "method": "get",
+      "path": "/api/audio/cache/stats",
+      "file": "routes/audio.js",
+      "stubCandidate": false,
+      "frontendHitCount": 0,
+      "frontendHitFiles": [],
+      "deprecatedRouteHitKey": null,
+      "deprecatedRouteHitCount": 0
+    },
+    {
+      "method": "get",
+      "path": "/api/audio/cache/warm-stats",
+      "file": "routes/audio.js",
+      "stubCandidate": false,
+      "frontendHitCount": 0,
+      "frontendHitFiles": [],
+      "deprecatedRouteHitKey": null,
+      "deprecatedRouteHitCount": 0
+    },
+    {
+      "method": "get",
+      "path": "/api/category/chinese-name",
+      "file": "routes/category.js",
+      "stubCandidate": true,
+      "frontendHitCount": 0,
+      "frontendHitFiles": [],
+      "deprecatedRouteHitKey": null,
+      "deprecatedRouteHitCount": 0
+    },
+    {
+      "method": "get",
+      "path": "/api/category/english-name",
+      "file": "routes/category.js",
+      "stubCandidate": true,
+      "frontendHitCount": 0,
+      "frontendHitFiles": [],
+      "deprecatedRouteHitKey": null,
+      "deprecatedRouteHitCount": 0
+    },
+    {
+      "method": "get",
+      "path": "/api/category/artist",
+      "file": "routes/category.js",
+      "stubCandidate": true,
+      "frontendHitCount": 0,
+      "frontendHitFiles": [],
+      "deprecatedRouteHitKey": null,
+      "deprecatedRouteHitCount": 0
+    },
+    {
+      "method": "get",
+      "path": "/api/category/artist/:name",
+      "file": "routes/category.js",
+      "stubCandidate": true,
+      "frontendHitCount": 0,
+      "frontendHitFiles": [],
+      "deprecatedRouteHitKey": null,
+      "deprecatedRouteHitCount": 0
+    },
+    {
+      "method": "get",
+      "path": "/api/category/mandarin",
+      "file": "routes/category.js",
+      "stubCandidate": true,
+      "frontendHitCount": 0,
+      "frontendHitFiles": [],
+      "deprecatedRouteHitKey": null,
+      "deprecatedRouteHitCount": 0
+    },
+    {
+      "method": "get",
+      "path": "/api/category/cantonese",
+      "file": "routes/category.js",
+      "stubCandidate": true,
+      "frontendHitCount": 0,
+      "frontendHitFiles": [],
+      "deprecatedRouteHitKey": null,
+      "deprecatedRouteHitCount": 0
+    },
+    {
+      "method": "get",
+      "path": "/api/category/english",
+      "file": "routes/category.js",
+      "stubCandidate": true,
+      "frontendHitCount": 0,
+      "frontendHitFiles": [],
+      "deprecatedRouteHitKey": null,
+      "deprecatedRouteHitCount": 0
+    },
+    {
+      "method": "get",
+      "path": "/api/category/chinese",
+      "file": "routes/category.js",
+      "stubCandidate": true,
+      "frontendHitCount": 0,
+      "frontendHitFiles": [],
+      "deprecatedRouteHitKey": null,
+      "deprecatedRouteHitCount": 0
+    },
+    {
+      "method": "post",
+      "path": "/api/friends/:userId/accept",
+      "file": "routes/friends.js",
+      "stubCandidate": false,
+      "frontendHitCount": 0,
+      "frontendHitFiles": [],
+      "deprecatedRouteHitKey": null,
+      "deprecatedRouteHitCount": 0
+    },
+    {
+      "method": "get",
+      "path": "/api/friends/:userId/shares",
+      "file": "routes/friends.js",
+      "stubCandidate": false,
+      "frontendHitCount": 0,
+      "frontendHitFiles": [],
+      "deprecatedRouteHitKey": null,
+      "deprecatedRouteHitCount": 0
+    },
+    {
+      "method": "get",
+      "path": "/api/home/daily-quote",
+      "file": "routes/home.js",
+      "stubCandidate": true,
+      "frontendHitCount": 0,
+      "frontendHitFiles": [],
+      "deprecatedRouteHitKey": null,
+      "deprecatedRouteHitCount": 0
+    },
+    {
+      "method": "get",
+      "path": "/api/home/daily-verse",
+      "file": "routes/home.js",
+      "stubCandidate": false,
+      "frontendHitCount": 0,
+      "frontendHitFiles": [],
+      "deprecatedRouteHitKey": null,
+      "deprecatedRouteHitCount": 0
+    },
+    {
+      "method": "get",
+      "path": "/api/home/featured-artist",
+      "file": "routes/home.js",
+      "stubCandidate": true,
+      "frontendHitCount": 0,
+      "frontendHitFiles": [],
+      "deprecatedRouteHitKey": null,
+      "deprecatedRouteHitCount": 0
+    },
+    {
+      "method": "get",
+      "path": "/api/home/new-releases",
+      "file": "routes/home.js",
+      "stubCandidate": true,
+      "frontendHitCount": 0,
+      "frontendHitFiles": [],
+      "deprecatedRouteHitKey": null,
+      "deprecatedRouteHitCount": 0
+    },
+    {
+      "method": "get",
+      "path": "/api/home/genre-recommendation",
+      "file": "routes/home.js",
+      "stubCandidate": true,
+      "frontendHitCount": 0,
+      "frontendHitFiles": [],
+      "deprecatedRouteHitKey": null,
+      "deprecatedRouteHitCount": 0
+    },
+    {
+      "method": "get",
+      "path": "/api/home/based-on-taste",
+      "file": "routes/home.js",
+      "stubCandidate": true,
+      "frontendHitCount": 0,
+      "frontendHitFiles": [],
+      "deprecatedRouteHitKey": null,
+      "deprecatedRouteHitCount": 0
+    },
+    {
+      "method": "get",
+      "path": "/api/home/resonating",
+      "file": "routes/home.js",
+      "stubCandidate": true,
+      "frontendHitCount": 0,
+      "frontendHitFiles": [],
+      "deprecatedRouteHitKey": null,
+      "deprecatedRouteHitCount": 0
+    },
+    {
+      "method": "get",
+      "path": "/api/home/top-verses",
+      "file": "routes/home.js",
+      "stubCandidate": true,
+      "frontendHitCount": 0,
+      "frontendHitFiles": [],
+      "deprecatedRouteHitKey": null,
+      "deprecatedRouteHitCount": 0
+    },
+    {
+      "method": "get",
+      "path": "/api/home/folk-sharing",
+      "file": "routes/home.js",
+      "stubCandidate": true,
+      "frontendHitCount": 0,
+      "frontendHitFiles": [],
+      "deprecatedRouteHitKey": null,
+      "deprecatedRouteHitCount": 0
+    },
+    {
+      "method": "get",
+      "path": "/api/home/combined-charts",
+      "file": "routes/home.js",
+      "stubCandidate": true,
+      "frontendHitCount": 0,
+      "frontendHitFiles": [],
+      "deprecatedRouteHitKey": null,
+      "deprecatedRouteHitCount": 0
+    },
+    {
+      "method": "get",
+      "path": "/api/admin/invites",
+      "file": "routes/invites.js",
+      "stubCandidate": false,
+      "frontendHitCount": 0,
+      "frontendHitFiles": [],
+      "deprecatedRouteHitKey": null,
+      "deprecatedRouteHitCount": 0
+    },
+    {
+      "method": "post",
+      "path": "/api/admin/invites/:code/revoke",
+      "file": "routes/invites.js",
+      "stubCandidate": false,
+      "frontendHitCount": 0,
+      "frontendHitFiles": [],
+      "deprecatedRouteHitKey": null,
+      "deprecatedRouteHitCount": 0
+    },
+    {
+      "method": "get",
+      "path": "/api/search/all",
+      "file": "routes/search.js",
+      "stubCandidate": true,
+      "frontendHitCount": 0,
+      "frontendHitFiles": [],
+      "deprecatedRouteHitKey": "/api/search",
+      "deprecatedRouteHitCount": 1
+    },
+    {
+      "method": "get",
+      "path": "/api/search/title",
+      "file": "routes/search.js",
+      "stubCandidate": true,
+      "frontendHitCount": 0,
+      "frontendHitFiles": [],
+      "deprecatedRouteHitKey": "/api/search",
+      "deprecatedRouteHitCount": 1
+    },
+    {
+      "method": "get",
+      "path": "/api/search/artist",
+      "file": "routes/search.js",
+      "stubCandidate": true,
+      "frontendHitCount": 0,
+      "frontendHitFiles": [],
+      "deprecatedRouteHitKey": "/api/search",
+      "deprecatedRouteHitCount": 1
+    },
+    {
+      "method": "get",
+      "path": "/api/search/lyrics",
+      "file": "routes/search.js",
+      "stubCandidate": true,
+      "frontendHitCount": 0,
+      "frontendHitFiles": [],
+      "deprecatedRouteHitKey": "/api/search",
+      "deprecatedRouteHitCount": 1
+    },
+    {
+      "method": "get",
+      "path": "/api/search/album",
+      "file": "routes/search.js",
+      "stubCandidate": true,
+      "frontendHitCount": 0,
+      "frontendHitFiles": [],
+      "deprecatedRouteHitKey": "/api/search",
+      "deprecatedRouteHitCount": 1
+    },
+    {
+      "method": "post",
+      "path": "/api/me/playlists/:id/share",
+      "file": "routes/share.js",
+      "stubCandidate": false,
+      "frontendHitCount": 0,
+      "frontendHitFiles": [],
+      "deprecatedRouteHitKey": null,
+      "deprecatedRouteHitCount": 0
+    },
+    {
+      "method": "delete",
+      "path": "/api/me/playlists/:id/share",
+      "file": "routes/share.js",
+      "stubCandidate": false,
+      "frontendHitCount": 0,
+      "frontendHitFiles": [],
+      "deprecatedRouteHitKey": null,
+      "deprecatedRouteHitCount": 0
+    },
+    {
+      "method": "get",
+      "path": "/.well-known/assetlinks.json",
+      "file": "routes/share.js",
+      "stubCandidate": false,
+      "frontendHitCount": 0,
+      "frontendHitFiles": [],
+      "deprecatedRouteHitKey": null,
+      "deprecatedRouteHitCount": 0
+    }
+  ],
+  "stubCandidates": [
+    {
+      "method": "get",
+      "path": "/api/audio/:youtubeId",
+      "file": "routes/audio.js",
+      "stubCandidate": true,
+      "frontendHitCount": 0,
+      "frontendHitFiles": [],
+      "deprecatedRouteHitKey": null,
+      "deprecatedRouteHitCount": 0
+    },
+    {
+      "method": "get",
+      "path": "/api/category/chinese-name",
+      "file": "routes/category.js",
+      "stubCandidate": true,
+      "frontendHitCount": 0,
+      "frontendHitFiles": [],
+      "deprecatedRouteHitKey": null,
+      "deprecatedRouteHitCount": 0
+    },
+    {
+      "method": "get",
+      "path": "/api/category/english-name",
+      "file": "routes/category.js",
+      "stubCandidate": true,
+      "frontendHitCount": 0,
+      "frontendHitFiles": [],
+      "deprecatedRouteHitKey": null,
+      "deprecatedRouteHitCount": 0
+    },
+    {
+      "method": "get",
+      "path": "/api/category/artist",
+      "file": "routes/category.js",
+      "stubCandidate": true,
+      "frontendHitCount": 0,
+      "frontendHitFiles": [],
+      "deprecatedRouteHitKey": null,
+      "deprecatedRouteHitCount": 0
+    },
+    {
+      "method": "get",
+      "path": "/api/category/artist/:name",
+      "file": "routes/category.js",
+      "stubCandidate": true,
+      "frontendHitCount": 0,
+      "frontendHitFiles": [],
+      "deprecatedRouteHitKey": null,
+      "deprecatedRouteHitCount": 0
+    },
+    {
+      "method": "get",
+      "path": "/api/category/mandarin",
+      "file": "routes/category.js",
+      "stubCandidate": true,
+      "frontendHitCount": 0,
+      "frontendHitFiles": [],
+      "deprecatedRouteHitKey": null,
+      "deprecatedRouteHitCount": 0
+    },
+    {
+      "method": "get",
+      "path": "/api/category/cantonese",
+      "file": "routes/category.js",
+      "stubCandidate": true,
+      "frontendHitCount": 0,
+      "frontendHitFiles": [],
+      "deprecatedRouteHitKey": null,
+      "deprecatedRouteHitCount": 0
+    },
+    {
+      "method": "get",
+      "path": "/api/category/english",
+      "file": "routes/category.js",
+      "stubCandidate": true,
+      "frontendHitCount": 0,
+      "frontendHitFiles": [],
+      "deprecatedRouteHitKey": null,
+      "deprecatedRouteHitCount": 0
+    },
+    {
+      "method": "get",
+      "path": "/api/category/chinese",
+      "file": "routes/category.js",
+      "stubCandidate": true,
+      "frontendHitCount": 0,
+      "frontendHitFiles": [],
+      "deprecatedRouteHitKey": null,
+      "deprecatedRouteHitCount": 0
+    },
+    {
+      "method": "get",
+      "path": "/api/home/daily-quote",
+      "file": "routes/home.js",
+      "stubCandidate": true,
+      "frontendHitCount": 0,
+      "frontendHitFiles": [],
+      "deprecatedRouteHitKey": null,
+      "deprecatedRouteHitCount": 0
+    },
+    {
+      "method": "get",
+      "path": "/api/home/featured-artist",
+      "file": "routes/home.js",
+      "stubCandidate": true,
+      "frontendHitCount": 0,
+      "frontendHitFiles": [],
+      "deprecatedRouteHitKey": null,
+      "deprecatedRouteHitCount": 0
+    },
+    {
+      "method": "get",
+      "path": "/api/home/new-releases",
+      "file": "routes/home.js",
+      "stubCandidate": true,
+      "frontendHitCount": 0,
+      "frontendHitFiles": [],
+      "deprecatedRouteHitKey": null,
+      "deprecatedRouteHitCount": 0
+    },
+    {
+      "method": "get",
+      "path": "/api/home/genre-recommendation",
+      "file": "routes/home.js",
+      "stubCandidate": true,
+      "frontendHitCount": 0,
+      "frontendHitFiles": [],
+      "deprecatedRouteHitKey": null,
+      "deprecatedRouteHitCount": 0
+    },
+    {
+      "method": "get",
+      "path": "/api/home/based-on-taste",
+      "file": "routes/home.js",
+      "stubCandidate": true,
+      "frontendHitCount": 0,
+      "frontendHitFiles": [],
+      "deprecatedRouteHitKey": null,
+      "deprecatedRouteHitCount": 0
+    },
+    {
+      "method": "get",
+      "path": "/api/home/resonating",
+      "file": "routes/home.js",
+      "stubCandidate": true,
+      "frontendHitCount": 0,
+      "frontendHitFiles": [],
+      "deprecatedRouteHitKey": null,
+      "deprecatedRouteHitCount": 0
+    },
+    {
+      "method": "get",
+      "path": "/api/home/top-verses",
+      "file": "routes/home.js",
+      "stubCandidate": true,
+      "frontendHitCount": 0,
+      "frontendHitFiles": [],
+      "deprecatedRouteHitKey": null,
+      "deprecatedRouteHitCount": 0
+    },
+    {
+      "method": "get",
+      "path": "/api/home/folk-sharing",
+      "file": "routes/home.js",
+      "stubCandidate": true,
+      "frontendHitCount": 0,
+      "frontendHitFiles": [],
+      "deprecatedRouteHitKey": null,
+      "deprecatedRouteHitCount": 0
+    },
+    {
+      "method": "get",
+      "path": "/api/home/combined-charts",
+      "file": "routes/home.js",
+      "stubCandidate": true,
+      "frontendHitCount": 0,
+      "frontendHitFiles": [],
+      "deprecatedRouteHitKey": null,
+      "deprecatedRouteHitCount": 0
+    },
+    {
+      "method": "get",
+      "path": "/api/search/all",
+      "file": "routes/search.js",
+      "stubCandidate": true,
+      "frontendHitCount": 0,
+      "frontendHitFiles": [],
+      "deprecatedRouteHitKey": "/api/search",
+      "deprecatedRouteHitCount": 1
+    },
+    {
+      "method": "get",
+      "path": "/api/search/title",
+      "file": "routes/search.js",
+      "stubCandidate": true,
+      "frontendHitCount": 0,
+      "frontendHitFiles": [],
+      "deprecatedRouteHitKey": "/api/search",
+      "deprecatedRouteHitCount": 1
+    },
+    {
+      "method": "get",
+      "path": "/api/search/artist",
+      "file": "routes/search.js",
+      "stubCandidate": true,
+      "frontendHitCount": 0,
+      "frontendHitFiles": [],
+      "deprecatedRouteHitKey": "/api/search",
+      "deprecatedRouteHitCount": 1
+    },
+    {
+      "method": "get",
+      "path": "/api/search/lyrics",
+      "file": "routes/search.js",
+      "stubCandidate": true,
+      "frontendHitCount": 0,
+      "frontendHitFiles": [],
+      "deprecatedRouteHitKey": "/api/search",
+      "deprecatedRouteHitCount": 1
+    },
+    {
+      "method": "get",
+      "path": "/api/search/album",
+      "file": "routes/search.js",
+      "stubCandidate": true,
+      "frontendHitCount": 0,
+      "frontendHitFiles": [],
+      "deprecatedRouteHitKey": "/api/search",
+      "deprecatedRouteHitCount": 1
+    }
+  ],
+  "deprecatedRouteHitsRaw": {
+    "/api/search": 1
+  },
+  "deprecatedRouteHitsHourly": {
+    "2026-09-06T02": {
+      "/api/search": 1
+    }
+  },
+  "routes": [
+    {
+      "method": "get",
+      "path": "/.well-known/apple-app-site-association",
+      "file": "server.js (inline)",
+      "stubCandidate": false,
+      "frontendHitCount": 0,
+      "frontendHitFiles": [],
+      "deprecatedRouteHitKey": null,
+      "deprecatedRouteHitCount": 0
+    },
+    {
+      "method": "get",
+      "path": "/apple-app-site-association",
+      "file": "server.js (inline)",
+      "stubCandidate": false,
+      "frontendHitCount": 0,
+      "frontendHitFiles": [],
+      "deprecatedRouteHitKey": null,
+      "deprecatedRouteHitCount": 0
+    },
+    {
+      "method": "get",
+      "path": "/app.apk",
+      "file": "server.js (inline)",
+      "stubCandidate": false,
+      "frontendHitCount": 1,
+      "frontendHitFiles": [
+        "frontend/hymn-app/src/screens/InviteFriendsSheet.js"
+      ],
+      "deprecatedRouteHitKey": null,
+      "deprecatedRouteHitCount": 0
+    },
+    {
+      "method": "get",
+      "path": "/downloads/app.apk",
+      "file": "server.js (inline)",
+      "stubCandidate": false,
+      "frontendHitCount": 1,
+      "frontendHitFiles": [
+        "frontend/hymn-app/src/screens/InviteFriendsSheet.js"
+      ],
+      "deprecatedRouteHitKey": null,
+      "deprecatedRouteHitCount": 0
+    },
+    {
+      "method": "get",
+      "path": "/api/health",
+      "file": "server.js (inline)",
+      "stubCandidate": false,
+      "frontendHitCount": 1,
+      "frontendHitFiles": [
+        "frontend/hymn-app/App.js"
+      ],
+      "deprecatedRouteHitKey": null,
+      "deprecatedRouteHitCount": 0
+    },
+    {
+      "method": "get",
+      "path": "/api/version",
+      "file": "server.js (inline)",
+      "stubCandidate": false,
+      "frontendHitCount": 7,
+      "frontendHitFiles": [
+        "frontend/hymn-app/tools/react-harness/scenarios/coldBootNoCache.js",
+        "frontend/hymn-app/tools/react-harness/scenarios/notifyHymnsChanged.js",
+        "frontend/hymn-app/tools/react-harness/scenarios/killerPath.js"
+      ],
+      "deprecatedRouteHitKey": null,
+      "deprecatedRouteHitCount": 0
+    },
+    {
+      "method": "get",
+      "path": "/api/app-version",
+      "file": "server.js (inline)",
+      "stubCandidate": false,
+      "frontendHitCount": 2,
+      "frontendHitFiles": [
+        "frontend/hymn-app/App.js",
+        "frontend/hymn-app/src/deviceId.js"
+      ],
+      "deprecatedRouteHitKey": null,
+      "deprecatedRouteHitCount": 0
+    },
+    {
+      "method": "get",
+      "path": "/api/internal/activity",
+      "file": "server.js (inline)",
+      "stubCandidate": false,
+      "frontendHitCount": 0,
+      "frontendHitFiles": [],
+      "deprecatedRouteHitKey": null,
+      "deprecatedRouteHitCount": 0
+    },
+    {
+      "method": "get",
+      "path": "/api/hymns",
+      "file": "server.js (inline)",
+      "stubCandidate": false,
+      "frontendHitCount": 11,
+      "frontendHitFiles": [
+        "frontend/hymn-app/tools/react-harness/scenarios/coldBootNoCache.js",
+        "frontend/hymn-app/tools/react-harness/scenarios/notifyHymnsChanged.js",
+        "frontend/hymn-app/tools/react-harness/scenarios/killerPath.js"
+      ],
+      "deprecatedRouteHitKey": null,
+      "deprecatedRouteHitCount": 0
+    },
+    {
+      "method": "get",
+      "path": "/api/hymns/lyrics",
+      "file": "server.js (inline)",
+      "stubCandidate": false,
+      "frontendHitCount": 3,
+      "frontendHitFiles": [
+        "frontend/hymn-app/App.js",
+        "frontend/hymn-app/src/perfMarks.js",
+        "frontend/hymn-app/src/hooks/useCachedHymns.js"
+      ],
+      "deprecatedRouteHitKey": null,
+      "deprecatedRouteHitCount": 0
+    },
+    {
+      "method": "get",
+      "path": "/api/admin/hymns/:id",
+      "file": "routes/admin.js",
+      "stubCandidate": false,
+      "frontendHitCount": 2,
+      "frontendHitFiles": [
+        "frontend/hymn-app/src/components/AdminEditHymnSheet.js",
+        "frontend/hymn-app/src/api.js"
+      ],
+      "deprecatedRouteHitKey": null,
+      "deprecatedRouteHitCount": 0
+    },
+    {
+      "method": "patch",
+      "path": "/api/admin/hymns/:id",
+      "file": "routes/admin.js",
+      "stubCandidate": false,
+      "frontendHitCount": 2,
+      "frontendHitFiles": [
+        "frontend/hymn-app/src/components/AdminEditHymnSheet.js",
+        "frontend/hymn-app/src/api.js"
+      ],
+      "deprecatedRouteHitKey": null,
+      "deprecatedRouteHitCount": 0
+    },
+    {
+      "method": "post",
+      "path": "/api/admin/hymns/preview",
+      "file": "routes/admin.js",
+      "stubCandidate": false,
+      "frontendHitCount": 1,
+      "frontendHitFiles": [
+        "frontend/hymn-app/src/api.js"
+      ],
+      "deprecatedRouteHitKey": null,
+      "deprecatedRouteHitCount": 0
+    },
+    {
+      "method": "post",
+      "path": "/api/admin/hymns",
+      "file": "routes/admin.js",
+      "stubCandidate": false,
+      "frontendHitCount": 2,
+      "frontendHitFiles": [
+        "frontend/hymn-app/src/components/AdminEditHymnSheet.js",
+        "frontend/hymn-app/src/api.js"
+      ],
+      "deprecatedRouteHitKey": null,
+      "deprecatedRouteHitCount": 0
+    },
+    {
+      "method": "post",
+      "path": "/api/admin/hymns/:id/delist",
+      "file": "routes/admin.js",
+      "stubCandidate": false,
+      "frontendHitCount": 0,
+      "frontendHitFiles": [],
+      "deprecatedRouteHitKey": null,
+      "deprecatedRouteHitCount": 0
+    },
+    {
+      "method": "get",
+      "path": "/api/admin/activity/added",
+      "file": "routes/admin.js",
+      "stubCandidate": false,
+      "frontendHitCount": 1,
+      "frontendHitFiles": [
+        "frontend/hymn-app/src/api.js"
+      ],
+      "deprecatedRouteHitKey": null,
+      "deprecatedRouteHitCount": 0
+    },
+    {
+      "method": "get",
+      "path": "/api/admin/activity/delisted",
+      "file": "routes/admin.js",
+      "stubCandidate": false,
+      "frontendHitCount": 1,
+      "frontendHitFiles": [
+        "frontend/hymn-app/src/api.js"
+      ],
+      "deprecatedRouteHitKey": null,
+      "deprecatedRouteHitCount": 0
+    },
+    {
+      "method": "get",
+      "path": "/api/audio/:youtubeId",
+      "file": "routes/audio.js",
+      "stubCandidate": true,
+      "frontendHitCount": 0,
+      "frontendHitFiles": [],
+      "deprecatedRouteHitKey": null,
+      "deprecatedRouteHitCount": 0
+    },
+    {
+      "method": "get",
+      "path": "/api/audio/cache/stats",
+      "file": "routes/audio.js",
+      "stubCandidate": false,
+      "frontendHitCount": 0,
+      "frontendHitFiles": [],
+      "deprecatedRouteHitKey": null,
+      "deprecatedRouteHitCount": 0
+    },
+    {
+      "method": "get",
+      "path": "/api/audio/cache/warm-stats",
+      "file": "routes/audio.js",
+      "stubCandidate": false,
+      "frontendHitCount": 0,
+      "frontendHitFiles": [],
+      "deprecatedRouteHitKey": null,
+      "deprecatedRouteHitCount": 0
+    },
+    {
+      "method": "post",
+      "path": "/api/auth/register",
+      "file": "routes/auth.js",
+      "stubCandidate": false,
+      "frontendHitCount": 2,
+      "frontendHitFiles": [
+        "frontend/hymn-app/src/context/AuthContext.js",
+        "frontend/hymn-app/src/screens/AuthScreen.js"
+      ],
+      "deprecatedRouteHitKey": null,
+      "deprecatedRouteHitCount": 0
+    },
+    {
+      "method": "post",
+      "path": "/api/auth/login",
+      "file": "routes/auth.js",
+      "stubCandidate": false,
+      "frontendHitCount": 1,
+      "frontendHitFiles": [
+        "frontend/hymn-app/src/context/AuthContext.js"
+      ],
+      "deprecatedRouteHitKey": null,
+      "deprecatedRouteHitCount": 0
+    },
+    {
+      "method": "get",
+      "path": "/api/auth/me",
+      "file": "routes/auth.js",
+      "stubCandidate": false,
+      "frontendHitCount": 1,
+      "frontendHitFiles": [
+        "frontend/hymn-app/src/context/AuthContext.js"
+      ],
+      "deprecatedRouteHitKey": null,
+      "deprecatedRouteHitCount": 0
+    },
+    {
+      "method": "get",
+      "path": "/api/category/chinese-name",
+      "file": "routes/category.js",
+      "stubCandidate": true,
+      "frontendHitCount": 0,
+      "frontendHitFiles": [],
+      "deprecatedRouteHitKey": null,
+      "deprecatedRouteHitCount": 0
+    },
+    {
+      "method": "get",
+      "path": "/api/category/english-name",
+      "file": "routes/category.js",
+      "stubCandidate": true,
+      "frontendHitCount": 0,
+      "frontendHitFiles": [],
+      "deprecatedRouteHitKey": null,
+      "deprecatedRouteHitCount": 0
+    },
+    {
+      "method": "get",
+      "path": "/api/category/artist",
+      "file": "routes/category.js",
+      "stubCandidate": true,
+      "frontendHitCount": 0,
+      "frontendHitFiles": [],
+      "deprecatedRouteHitKey": null,
+      "deprecatedRouteHitCount": 0
+    },
+    {
+      "method": "get",
+      "path": "/api/category/artist/:name",
+      "file": "routes/category.js",
+      "stubCandidate": true,
+      "frontendHitCount": 0,
+      "frontendHitFiles": [],
+      "deprecatedRouteHitKey": null,
+      "deprecatedRouteHitCount": 0
+    },
+    {
+      "method": "get",
+      "path": "/api/category/mandarin",
+      "file": "routes/category.js",
+      "stubCandidate": true,
+      "frontendHitCount": 0,
+      "frontendHitFiles": [],
+      "deprecatedRouteHitKey": null,
+      "deprecatedRouteHitCount": 0
+    },
+    {
+      "method": "get",
+      "path": "/api/category/cantonese",
+      "file": "routes/category.js",
+      "stubCandidate": true,
+      "frontendHitCount": 0,
+      "frontendHitFiles": [],
+      "deprecatedRouteHitKey": null,
+      "deprecatedRouteHitCount": 0
+    },
+    {
+      "method": "get",
+      "path": "/api/category/english",
+      "file": "routes/category.js",
+      "stubCandidate": true,
+      "frontendHitCount": 0,
+      "frontendHitFiles": [],
+      "deprecatedRouteHitKey": null,
+      "deprecatedRouteHitCount": 0
+    },
+    {
+      "method": "get",
+      "path": "/api/category/chinese",
+      "file": "routes/category.js",
+      "stubCandidate": true,
+      "frontendHitCount": 0,
+      "frontendHitFiles": [],
+      "deprecatedRouteHitKey": null,
+      "deprecatedRouteHitCount": 0
+    },
+    {
+      "method": "post",
+      "path": "/",
+      "file": "routes/clientLog.js",
+      "stubCandidate": false,
+      "frontendHitCount": 68,
+      "frontendHitFiles": [
+        "frontend/hymn-app/react-native.config.js",
+        "frontend/hymn-app/tools/ota-harness/update-server.js",
+        "frontend/hymn-app/tools/react-harness/mocks/mmkvMock.js"
+      ],
+      "deprecatedRouteHitKey": "/api/search",
+      "deprecatedRouteHitCount": 1
+    },
+    {
+      "method": "post",
+      "path": "/api/friends/lookup",
+      "file": "routes/friends.js",
+      "stubCandidate": false,
+      "frontendHitCount": 1,
+      "frontendHitFiles": [
+        "frontend/hymn-app/src/api.js"
+      ],
+      "deprecatedRouteHitKey": null,
+      "deprecatedRouteHitCount": 0
+    },
+    {
+      "method": "post",
+      "path": "/api/friends/request",
+      "file": "routes/friends.js",
+      "stubCandidate": false,
+      "frontendHitCount": 1,
+      "frontendHitFiles": [
+        "frontend/hymn-app/src/api.js"
+      ],
+      "deprecatedRouteHitKey": null,
+      "deprecatedRouteHitCount": 0
+    },
+    {
+      "method": "get",
+      "path": "/api/friends",
+      "file": "routes/friends.js",
+      "stubCandidate": false,
+      "frontendHitCount": 2,
+      "frontendHitFiles": [
+        "frontend/hymn-app/src/screens/FriendSharesSheet.js",
+        "frontend/hymn-app/src/api.js"
+      ],
+      "deprecatedRouteHitKey": null,
+      "deprecatedRouteHitCount": 0
+    },
+    {
+      "method": "post",
+      "path": "/api/friends/:userId/accept",
+      "file": "routes/friends.js",
+      "stubCandidate": false,
+      "frontendHitCount": 0,
+      "frontendHitFiles": [],
+      "deprecatedRouteHitKey": null,
+      "deprecatedRouteHitCount": 0
+    },
+    {
+      "method": "delete",
+      "path": "/api/friends/:userId",
+      "file": "routes/friends.js",
+      "stubCandidate": false,
+      "frontendHitCount": 2,
+      "frontendHitFiles": [
+        "frontend/hymn-app/src/screens/FriendSharesSheet.js",
+        "frontend/hymn-app/src/api.js"
+      ],
+      "deprecatedRouteHitKey": null,
+      "deprecatedRouteHitCount": 0
+    },
+    {
+      "method": "get",
+      "path": "/api/friends/:userId/shares",
+      "file": "routes/friends.js",
+      "stubCandidate": false,
+      "frontendHitCount": 0,
+      "frontendHitFiles": [],
+      "deprecatedRouteHitKey": null,
+      "deprecatedRouteHitCount": 0
+    },
+    {
+      "method": "get",
+      "path": "/:hymnId.m3u8",
+      "file": "routes/hls.js",
+      "stubCandidate": false,
+      "frontendHitCount": 68,
+      "frontendHitFiles": [
+        "frontend/hymn-app/react-native.config.js",
+        "frontend/hymn-app/tools/ota-harness/update-server.js",
+        "frontend/hymn-app/tools/react-harness/mocks/mmkvMock.js"
+      ],
+      "deprecatedRouteHitKey": "/api/search",
+      "deprecatedRouteHitCount": 1
+    },
+    {
+      "method": "get",
+      "path": "/api/home/daily-quote",
+      "file": "routes/home.js",
+      "stubCandidate": true,
+      "frontendHitCount": 0,
+      "frontendHitFiles": [],
+      "deprecatedRouteHitKey": null,
+      "deprecatedRouteHitCount": 0
+    },
+    {
+      "method": "get",
+      "path": "/api/home/daily-verse",
+      "file": "routes/home.js",
+      "stubCandidate": false,
+      "frontendHitCount": 0,
+      "frontendHitFiles": [],
+      "deprecatedRouteHitKey": null,
+      "deprecatedRouteHitCount": 0
+    },
+    {
+      "method": "get",
+      "path": "/api/home/featured-artist",
+      "file": "routes/home.js",
+      "stubCandidate": true,
+      "frontendHitCount": 0,
+      "frontendHitFiles": [],
+      "deprecatedRouteHitKey": null,
+      "deprecatedRouteHitCount": 0
+    },
+    {
+      "method": "get",
+      "path": "/api/home/new-releases",
+      "file": "routes/home.js",
+      "stubCandidate": true,
+      "frontendHitCount": 0,
+      "frontendHitFiles": [],
+      "deprecatedRouteHitKey": null,
+      "deprecatedRouteHitCount": 0
+    },
+    {
+      "method": "get",
+      "path": "/api/home/genre-recommendation",
+      "file": "routes/home.js",
+      "stubCandidate": true,
+      "frontendHitCount": 0,
+      "frontendHitFiles": [],
+      "deprecatedRouteHitKey": null,
+      "deprecatedRouteHitCount": 0
+    },
+    {
+      "method": "get",
+      "path": "/api/home/based-on-taste",
+      "file": "routes/home.js",
+      "stubCandidate": true,
+      "frontendHitCount": 0,
+      "frontendHitFiles": [],
+      "deprecatedRouteHitKey": null,
+      "deprecatedRouteHitCount": 0
+    },
+    {
+      "method": "get",
+      "path": "/api/home/resonating",
+      "file": "routes/home.js",
+      "stubCandidate": true,
+      "frontendHitCount": 0,
+      "frontendHitFiles": [],
+      "deprecatedRouteHitKey": null,
+      "deprecatedRouteHitCount": 0
+    },
+    {
+      "method": "get",
+      "path": "/api/home/top-verses",
+      "file": "routes/home.js",
+      "stubCandidate": true,
+      "frontendHitCount": 0,
+      "frontendHitFiles": [],
+      "deprecatedRouteHitKey": null,
+      "deprecatedRouteHitCount": 0
+    },
+    {
+      "method": "get",
+      "path": "/api/home/folk-sharing",
+      "file": "routes/home.js",
+      "stubCandidate": true,
+      "frontendHitCount": 0,
+      "frontendHitFiles": [],
+      "deprecatedRouteHitKey": null,
+      "deprecatedRouteHitCount": 0
+    },
+    {
+      "method": "get",
+      "path": "/api/home/combined-charts",
+      "file": "routes/home.js",
+      "stubCandidate": true,
+      "frontendHitCount": 0,
+      "frontendHitFiles": [],
+      "deprecatedRouteHitKey": null,
+      "deprecatedRouteHitCount": 0
+    },
+    {
+      "method": "post",
+      "path": "/api/me/invites",
+      "file": "routes/invites.js",
+      "stubCandidate": false,
+      "frontendHitCount": 1,
+      "frontendHitFiles": [
+        "frontend/hymn-app/src/api.js"
+      ],
+      "deprecatedRouteHitKey": null,
+      "deprecatedRouteHitCount": 0
+    },
+    {
+      "method": "get",
+      "path": "/api/me/invites",
+      "file": "routes/invites.js",
+      "stubCandidate": false,
+      "frontendHitCount": 1,
+      "frontendHitFiles": [
+        "frontend/hymn-app/src/api.js"
+      ],
+      "deprecatedRouteHitKey": null,
+      "deprecatedRouteHitCount": 0
+    },
+    {
+      "method": "post",
+      "path": "/api/invites/redeem",
+      "file": "routes/invites.js",
+      "stubCandidate": false,
+      "frontendHitCount": 1,
+      "frontendHitFiles": [
+        "frontend/hymn-app/src/api.js"
+      ],
+      "deprecatedRouteHitKey": null,
+      "deprecatedRouteHitCount": 0
+    },
+    {
+      "method": "get",
+      "path": "/api/admin/invites",
+      "file": "routes/invites.js",
+      "stubCandidate": false,
+      "frontendHitCount": 0,
+      "frontendHitFiles": [],
+      "deprecatedRouteHitKey": null,
+      "deprecatedRouteHitCount": 0
+    },
+    {
+      "method": "post",
+      "path": "/api/admin/invites/:code/revoke",
+      "file": "routes/invites.js",
+      "stubCandidate": false,
+      "frontendHitCount": 0,
+      "frontendHitFiles": [],
+      "deprecatedRouteHitKey": null,
+      "deprecatedRouteHitCount": 0
+    },
+    {
+      "method": "post",
+      "path": "/api/auth/invite-check",
+      "file": "routes/invites.js",
+      "stubCandidate": false,
+      "frontendHitCount": 1,
+      "frontendHitFiles": [
+        "frontend/hymn-app/src/context/AuthContext.js"
+      ],
+      "deprecatedRouteHitKey": null,
+      "deprecatedRouteHitCount": 0
+    },
+    {
+      "method": "get",
+      "path": "/api/me/data",
+      "file": "routes/me.js",
+      "stubCandidate": false,
+      "frontendHitCount": 1,
+      "frontendHitFiles": [
+        "frontend/hymn-app/src/sync/userSync.js"
+      ],
+      "deprecatedRouteHitKey": null,
+      "deprecatedRouteHitCount": 0
+    },
+    {
+      "method": "post",
+      "path": "/api/me/favorites/:hymnId",
+      "file": "routes/me.js",
+      "stubCandidate": false,
+      "frontendHitCount": 1,
+      "frontendHitFiles": [
+        "frontend/hymn-app/src/sync/userSync.js"
+      ],
+      "deprecatedRouteHitKey": null,
+      "deprecatedRouteHitCount": 0
+    },
+    {
+      "method": "delete",
+      "path": "/api/me/favorites/:hymnId",
+      "file": "routes/me.js",
+      "stubCandidate": false,
+      "frontendHitCount": 1,
+      "frontendHitFiles": [
+        "frontend/hymn-app/src/sync/userSync.js"
+      ],
+      "deprecatedRouteHitKey": null,
+      "deprecatedRouteHitCount": 0
+    },
+    {
+      "method": "put",
+      "path": "/api/me/playlists/:id",
+      "file": "routes/me.js",
+      "stubCandidate": false,
+      "frontendHitCount": 2,
+      "frontendHitFiles": [
+        "frontend/hymn-app/src/screens/PlaylistDetailSheet.js",
+        "frontend/hymn-app/src/sync/userSync.js"
+      ],
+      "deprecatedRouteHitKey": null,
+      "deprecatedRouteHitCount": 0
+    },
+    {
+      "method": "delete",
+      "path": "/api/me/playlists/:id",
+      "file": "routes/me.js",
+      "stubCandidate": false,
+      "frontendHitCount": 2,
+      "frontendHitFiles": [
+        "frontend/hymn-app/src/screens/PlaylistDetailSheet.js",
+        "frontend/hymn-app/src/sync/userSync.js"
+      ],
+      "deprecatedRouteHitKey": null,
+      "deprecatedRouteHitCount": 0
+    },
+    {
+      "method": "post",
+      "path": "/api/me/sync",
+      "file": "routes/me.js",
+      "stubCandidate": false,
+      "frontendHitCount": 2,
+      "frontendHitFiles": [
+        "frontend/hymn-app/App.js",
+        "frontend/hymn-app/src/sync/userSync.js"
+      ],
+      "deprecatedRouteHitKey": null,
+      "deprecatedRouteHitCount": 0
+    },
+    {
+      "method": "post",
+      "path": "/api/auth/otp/request",
+      "file": "routes/otpAuth.js",
+      "stubCandidate": false,
+      "frontendHitCount": 1,
+      "frontendHitFiles": [
+        "frontend/hymn-app/src/context/AuthContext.js"
+      ],
+      "deprecatedRouteHitKey": null,
+      "deprecatedRouteHitCount": 0
+    },
+    {
+      "method": "post",
+      "path": "/api/auth/otp/verify",
+      "file": "routes/otpAuth.js",
+      "stubCandidate": false,
+      "frontendHitCount": 1,
+      "frontendHitFiles": [
+        "frontend/hymn-app/src/context/AuthContext.js"
+      ],
+      "deprecatedRouteHitKey": null,
+      "deprecatedRouteHitCount": 0
+    },
+    {
+      "method": "post",
+      "path": "/api/auth/otp/verify-ticket",
+      "file": "routes/otpAuth.js",
+      "stubCandidate": false,
+      "frontendHitCount": 1,
+      "frontendHitFiles": [
+        "frontend/hymn-app/src/context/AuthContext.js"
+      ],
+      "deprecatedRouteHitKey": null,
+      "deprecatedRouteHitCount": 0
+    },
+    {
+      "method": "post",
+      "path": "/api/auth/register-phone",
+      "file": "routes/otpAuth.js",
+      "stubCandidate": false,
+      "frontendHitCount": 1,
+      "frontendHitFiles": [
+        "frontend/hymn-app/src/context/AuthContext.js"
+      ],
+      "deprecatedRouteHitKey": null,
+      "deprecatedRouteHitCount": 0
+    },
+    {
+      "method": "post",
+      "path": "/api/auth/login-phone",
+      "file": "routes/otpAuth.js",
+      "stubCandidate": false,
+      "frontendHitCount": 1,
+      "frontendHitFiles": [
+        "frontend/hymn-app/src/context/AuthContext.js"
+      ],
+      "deprecatedRouteHitKey": null,
+      "deprecatedRouteHitCount": 0
+    },
+    {
+      "method": "post",
+      "path": "/api/auth/reset-password",
+      "file": "routes/otpAuth.js",
+      "stubCandidate": false,
+      "frontendHitCount": 1,
+      "frontendHitFiles": [
+        "frontend/hymn-app/src/context/AuthContext.js"
+      ],
+      "deprecatedRouteHitKey": null,
+      "deprecatedRouteHitCount": 0
+    },
+    {
+      "method": "get",
+      "path": "/api/auth/otp/status",
+      "file": "routes/otpAuth.js",
+      "stubCandidate": false,
+      "frontendHitCount": 2,
+      "frontendHitFiles": [
+        "frontend/hymn-app/src/context/AuthContext.js",
+        "frontend/hymn-app/src/config.js"
+      ],
+      "deprecatedRouteHitKey": null,
+      "deprecatedRouteHitCount": 0
+    },
+    {
+      "method": "post",
+      "path": "/api/presence/heartbeat",
+      "file": "routes/presence.js",
+      "stubCandidate": false,
+      "frontendHitCount": 2,
+      "frontendHitFiles": [
+        "frontend/hymn-app/src/hooks/usePresenceHeartbeat.js",
+        "frontend/hymn-app/src/api.js"
+      ],
+      "deprecatedRouteHitKey": null,
+      "deprecatedRouteHitCount": 0
+    },
+    {
+      "method": "get",
+      "path": "/api/admin/presence",
+      "file": "routes/presence.js",
+      "stubCandidate": false,
+      "frontendHitCount": 1,
+      "frontendHitFiles": [
+        "frontend/hymn-app/src/api.js"
+      ],
+      "deprecatedRouteHitKey": null,
+      "deprecatedRouteHitCount": 0
+    },
+    {
+      "method": "get",
+      "path": "/api/search/all",
+      "file": "routes/search.js",
+      "stubCandidate": true,
+      "frontendHitCount": 0,
+      "frontendHitFiles": [],
+      "deprecatedRouteHitKey": "/api/search",
+      "deprecatedRouteHitCount": 1
+    },
+    {
+      "method": "get",
+      "path": "/api/search/title",
+      "file": "routes/search.js",
+      "stubCandidate": true,
+      "frontendHitCount": 0,
+      "frontendHitFiles": [],
+      "deprecatedRouteHitKey": "/api/search",
+      "deprecatedRouteHitCount": 1
+    },
+    {
+      "method": "get",
+      "path": "/api/search/artist",
+      "file": "routes/search.js",
+      "stubCandidate": true,
+      "frontendHitCount": 0,
+      "frontendHitFiles": [],
+      "deprecatedRouteHitKey": "/api/search",
+      "deprecatedRouteHitCount": 1
+    },
+    {
+      "method": "get",
+      "path": "/api/search/lyrics",
+      "file": "routes/search.js",
+      "stubCandidate": true,
+      "frontendHitCount": 0,
+      "frontendHitFiles": [],
+      "deprecatedRouteHitKey": "/api/search",
+      "deprecatedRouteHitCount": 1
+    },
+    {
+      "method": "get",
+      "path": "/api/search/album",
+      "file": "routes/search.js",
+      "stubCandidate": true,
+      "frontendHitCount": 0,
+      "frontendHitFiles": [],
+      "deprecatedRouteHitKey": "/api/search",
+      "deprecatedRouteHitCount": 1
+    },
+    {
+      "method": "post",
+      "path": "/api/me/playlists/:id/share",
+      "file": "routes/share.js",
+      "stubCandidate": false,
+      "frontendHitCount": 0,
+      "frontendHitFiles": [],
+      "deprecatedRouteHitKey": null,
+      "deprecatedRouteHitCount": 0
+    },
+    {
+      "method": "delete",
+      "path": "/api/me/playlists/:id/share",
+      "file": "routes/share.js",
+      "stubCandidate": false,
+      "frontendHitCount": 0,
+      "frontendHitFiles": [],
+      "deprecatedRouteHitKey": null,
+      "deprecatedRouteHitCount": 0
+    },
+    {
+      "method": "get",
+      "path": "/p/:token",
+      "file": "routes/share.js",
+      "stubCandidate": false,
+      "frontendHitCount": 28,
+      "frontendHitFiles": [
+        "frontend/hymn-app/tools/ota-harness/update-server.js",
+        "frontend/hymn-app/tools/react-harness/run.js",
+        "frontend/hymn-app/plugins/withSwiftAudioExStallFix.js"
+      ],
+      "deprecatedRouteHitKey": null,
+      "deprecatedRouteHitCount": 0
+    },
+    {
+      "method": "get",
+      "path": "/api/p/:token",
+      "file": "routes/share.js",
+      "stubCandidate": false,
+      "frontendHitCount": 3,
+      "frontendHitFiles": [
+        "frontend/hymn-app/src/screens/SharedPlaylistSheet.js",
+        "frontend/hymn-app/src/hooks/usePresenceHeartbeat.js",
+        "frontend/hymn-app/src/api.js"
+      ],
+      "deprecatedRouteHitKey": null,
+      "deprecatedRouteHitCount": 0
+    },
+    {
+      "method": "get",
+      "path": "/.well-known/assetlinks.json",
+      "file": "routes/share.js",
+      "stubCandidate": false,
+      "frontendHitCount": 0,
+      "frontendHitFiles": [],
+      "deprecatedRouteHitKey": null,
+      "deprecatedRouteHitCount": 0
+    },
+    {
+      "method": "post",
+      "path": "/api/stream/warm",
+      "file": "routes/stream.js",
+      "stubCandidate": false,
+      "frontendHitCount": 1,
+      "frontendHitFiles": [
+        "frontend/hymn-app/App.js"
+      ],
+      "deprecatedRouteHitKey": null,
+      "deprecatedRouteHitCount": 0
+    },
+    {
+      "method": "get",
+      "path": "/api/stream/:hymnId",
+      "file": "routes/stream.js",
+      "stubCandidate": false,
+      "frontendHitCount": 3,
+      "frontendHitFiles": [
+        "frontend/hymn-app/plugins/withSwiftAudioExStallWatchdog.js",
+        "frontend/hymn-app/App.js",
+        "frontend/hymn-app/src/audioPrefetch.js"
+      ],
+      "deprecatedRouteHitKey": null,
+      "deprecatedRouteHitCount": 0
+    }
+  ],
+  "positiveControl": {
+    "/api/hymns": {
+      "frontendHitCount": 11,
+      "stubCandidate": false
+    },
+    "pass": true
+  }
+}

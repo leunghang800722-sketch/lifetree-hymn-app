@@ -1,0 +1,17 @@
+DB_PATH used by module = /private/tmp/claude-501/-Users-macbookpro--openclaw-workspace-hymn-app/dbef9ccd-547a-4212-8309-0735348d98c1/scratchpad/c4/hymns-copy.db
+matches scratch copy   = true
+
+=== step 1: baseline /api/version ===
+v1 = 1788338447512.3489-61054976
+
+=== step 2: touch scratch DB (mtime change), no lock ===
+v2 = 1788338452647-61054976  changed from v1 = true
+
+=== step 3: /api/hymns cache-miss-then-hit after reload ===
+hymns dataVersion after reload = 1788338452647-61054976  matches v2 = true
+
+=== step 4: lock file present -> touch again, maybeReload must NOT pick it up ===
+v3 = 1788338452647-61054976  should STILL equal v2 (lock present, blocked): true
+
+=== step 5: remove lock, maybeReload should now pick up the pending change ===
+v4 = 1788338457676-61054976  changed from v3/v2 = true

@@ -1,0 +1,17 @@
+=== A) 冇 close()(C-6 之前行為,serverDb-BEFORE.mjs)===
+module = /private/tmp/claude-501/-Users-macbookpro--openclaw-workspace-hymn-app/dbef9ccd-547a-4212-8309-0735348d98c1/scratchpad/c7/serverDb-BEFORE.mjs
+baseline: rss=49.8MB arrayBuffers=0.0MB heapUsed=3.5MB
+#1 after getDb+reloadDb+wait: rss=112.7MB arrayBuffers=58.2MB heapUsed=3.9MB
+#2 after getDb+reloadDb+wait: rss=171.0MB arrayBuffers=116.5MB heapUsed=3.9MB
+#3 after getDb+reloadDb+wait: rss=229.4MB arrayBuffers=174.7MB heapUsed=3.9MB
+#4 after getDb+reloadDb+wait: rss=287.8MB arrayBuffers=232.9MB heapUsed=3.9MB
+#5 after getDb+reloadDb+wait: rss=346.1MB arrayBuffers=291.1MB heapUsed=4.0MB
+
+=== B) 有 close(),測試用短 delay=150ms 方便快速跑 5 輪(serverDb-fastclose.mjs)===
+module = /private/tmp/claude-501/-Users-macbookpro--openclaw-workspace-hymn-app/dbef9ccd-547a-4212-8309-0735348d98c1/scratchpad/c7/serverDb-fastclose.mjs
+baseline: rss=49.9MB arrayBuffers=0.0MB heapUsed=3.5MB
+#1 after getDb+reloadDb+wait: rss=112.7MB arrayBuffers=0.0MB heapUsed=3.9MB
+#2 after getDb+reloadDb+wait: rss=112.8MB arrayBuffers=0.0MB heapUsed=3.9MB
+#3 after getDb+reloadDb+wait: rss=112.8MB arrayBuffers=0.0MB heapUsed=4.0MB
+#4 after getDb+reloadDb+wait: rss=112.8MB arrayBuffers=0.0MB heapUsed=4.0MB
+#5 after getDb+reloadDb+wait: rss=112.9MB arrayBuffers=0.0MB heapUsed=4.0MB

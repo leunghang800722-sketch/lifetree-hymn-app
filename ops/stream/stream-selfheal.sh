@@ -1,0 +1,582 @@
+#!/usr/bin/env bash
+# ops/stream/stream-selfheal.sh — 串流自動修復梯(STREAM-SELFHEAL-PLAN-20260905 S2)
+#
+# Eric 拍板:Q1(a) 只喺壞咗先自動換 yt-dlp / Q3 准自動重開 backend。
+#
+# 由 ops/lyrics/stream-healthcheck.sh 每 tick 尾段呼叫(健康 30 分鐘一 tick),
+# 傳入嗰次探測嘅七個數:
+#   --healthy-a --healthy-b --mid --midfail --ok --fail --detail
+# 自己嗰份 state 存喺 backend/data/stream-selfheal-state.json(env SELFHEAL_STATE
+# 可 override);consecutiveFail 讀返 stream-healthcheck.sh 啱啱寫低嗰份
+# backend/data/stream-health-state.json(env HEALTH_STATE 可 override)。
+#
+# ── 三種故障形態(判定次序,唔理絕對值,睇傳入嘅 midfail/healthy_a/healthy_b)──
+#   ① yt-dlp   — midfail>=2(1MiB 病,不論 A 點)
+#   ② backend  — healthy_a==0 而 healthy_b==1(upstream 好地地,backend 側死)
+#   ③ YouTube側 — 其他(兩層都壞 / ① 試完都唔得)
+#   ④ 出口IP被bot-check — (STREAM-PHONE-NOTIFY 20261015 R1)healthy_b==0 且 backend log 近 30 分鐘 bot-check 證據行>=3:
+#      優先於①②③;唔 apply/swap/restart、唔食配額,只警報(要人手換 VPN server)
+#
+# ── 動作 ──────────────────────────────────────────────────────────
+#   ① swapsToday<1:行 $SELFHEAL_APPLY_CMD(預設 ops/ytdlp/update-ytdlp.sh --apply)。
+#      swapsToday(2026-09-05 Opus 第二輪 R1(a) 修過)計嘅係「真係行咗一次
+#      $APPLY_CMD 嘅嘗試次數」——一 call 就 +1,唔理有冇候選版本、canary 過
+#      唔過(舊寫法淨係「真係換咗 symlink」先計,令 ytdlp-no-candidate 呢條
+#      路徑完全唔消耗安全閥額度)。用 readlink 前後對比判斷有冇真係換咗
+#      (而唔係 parse 佢啲 stdout 文字,因為嗰個 script 好多分支唔輸出
+#      APPLIED 字眼)嚟決定之後行邊條分支。換咗就即刻重跑 Layer B
+#      直打(唔經 backend)—— ①嘅成敗淨係睇呢個。Layer B 唔過就 rollback
+#      條 symlink,升級做③處理。Layer B 過但 Layer A(healthy_a)仍然係 0 嗰陣
+#      (2026-09-05 Opus 驗收 §2a 揭到嘅 false-green):**唔會**寫🟢/清 alert,
+#      會保持 alert.active=1,訊息講明「已換版,等 Layer A 下一 tick 重驗」
+#      (backend Layer A 打嘅係 playbackRetry:true 嗰條路,resolveAudio.js
+#      FAIL_TTL_PLAYBACK_MS=60 秒,唔係 FAIL_TTL_MS 15 分鐘嗰個——15 分鐘嗰個
+#      淨係管批量/預取,同呢度冇關)。
+#   ② restartsToday<2:行 $SELFHEAL_RESTART_CMD(預設 ops/deploy/backend-restart.sh
+#      --same-code)。嗰個 script 自己會查 approved.json/HEAD gate,gate 唔過
+#      會非 0 exit 並喺 stderr 度有 "abort:HEAD" —— 呢度攔截返嚟寫成人話警報,
+#      唔會嘗試繞過 gate。過咗就等 $SELFHEAL_RECHECK_SLEEP 秒(預設 15)重跑
+#      Layer A。
+#   ③ 或者安全閥觸頂(今日已換 yt-dlp 1 次 / 已重開 backend 2 次):只寫警報,
+#      唔郁手,交返俾下個 tick(30 分鐘後)再試。
+#   健康返(consecutiveFail==0 而之前 alert.active):寫恢復,alert.active=false,
+#      同時重置節流用嘅 lastActionTick/lastActionForm(新一輪故障由頭計)。
+#
+# 安全閥:每日(本機日曆日)最多自動換 yt-dlp 1 次、自動重開 backend 2 次。
+# 呢個 script 唔會直接改 launchctl / backend 之外嘅任何嘢,亦唔會自己起
+# node process —— 全部經返 update-ytdlp.sh / backend-restart.sh 呢兩條已經
+# 有 gate/canary 保護嘅路徑。
+#
+# ── 節流(2026-09-05 Opus 驗收 §7 P7:selfheal 自己完全冇節流,同一單故障
+#     每 30 分鐘一個 tick 就再 call 一次 apply/restart 兼寫一行 SUPERVISION-LOG,
+#     抵消咗 healthcheck 自己嗰個「每 12 次先報一次」嘅節流)──────────────
+# 除咗上面嘅「每日安全閥」之外,再加一層「幾耐先郁一次手/寫一次人話警報」:
+#   · 「連續 fail 剛到 2」(呢個故障頭一次符合郁手門檻)—— 一定郁手/寫警報。
+#   · 之後(冇論形態)每 12 個 tick(= 30 分鐘 × 12 = 6 小時)先再郁手/寫一次。
+# 2026-09-05 Opus 第二輪驗收 R1:節流 key 本來係「形態」(form_kind 換咗就即刻
+# bypass 節流),但真實故障期間 midfail 會自然喺 2 呢條界上下跳(探測得 3 首歌,
+# midfail 2 vs 1 就係 ①yt-dlp vs ③YouTube側 之差),形態 flap 會令節流完全形同
+# 虛設(20 tick flap 量得 10 次 apply/20 行 SUPERVISION,而且 swapsToday 全程 0,
+# 每日安全閥都攔唔到)。**修法:節流 key 改做單一嘅「上次郁手嗰刻」
+# (lastActionTick),唔再分形態** —— due 淨係睇「連續 fail 剛到 2」或者
+# 「距離上次郁手夠 12 tick」兩條,形態轉變**唔再** bypass 節流,改為淨係寫
+# 一行 history log(`form-changed`)俾人睇到轉咗形態,但唔會即刻再 call
+# apply/restart。lastActionForm 依然記低(俾訊息/log 顯示用),但唔再參與
+# due 判斷。
+# state 用 lastActionTick(上次真正郁手/寫警報嗰刻嘅 consecutiveFail 值)同
+# lastActionForm 記低。冇到期(due=0)嗰啲 tick:唔會 call apply/restart,唔會
+# 寫 SUPERVISION-LOG,但 `stream-selfheal.log`(history,machine log)照樣
+# 每 tick 記一行(顯示 due=0 throttled),alert 狀態(active/form/message)照樣
+# 更新落 state 俾 stream-status.sh 讀到最新現況。
+#
+# SELFHEAL_DRY_RUN=1:全部側效應(symlink 換/rollback、真正行 restart cmd、
+# 網絡 resolve/curl、寫 state/log)一律跳過,淨係印「會做乜」;唔受節流影響
+# (手動試嘅時候想睇成套流程行一次)。
+#
+# 手動試(唔會郁任何嘢;STREAM-HARDEN2 起 prod 模式要 SELFHEAL_MANUAL=1,SELFHEAL_DRY_RUN 唔算憑證):
+#   SELFHEAL_MANUAL=1 SELFHEAL_DRY_RUN=1 ops/stream/stream-selfheal.sh --healthy-a 1 --healthy-b 0 \
+#     --mid 0 --midfail 3 --ok 3 --fail 0 --detail "B:x:403" --verbose
+
+set -u
+# 2026-09-29(Eric 拍板修):launchd 嘅 healthcheck plist 冇 EnvironmentVariables,PATH 得
+# /usr/bin:/bin:/usr/sbin:/sbin —— 下游 backend-restart.sh 要 `node`(/opt/homebrew/bin)
+# 會 `command not found`(exit 127),即形態②自動重開由 09-05 起喺排程下從未行得通。
+# 喺呢度補 PATH(子 process 繼承);只影響搵 binary,唔改修復梯/配額/節流任何邏輯。
+export PATH="/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
+REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+# 2026-09-29:launchd 冇 WorkingDirectory(cwd=/),backend-restart.sh 靠 `git rev-parse` 搵 repo
+# 會 rc=128。喺呢度 cd 入 repo(子 process 繼承 cwd);入唔到就唔做任何動作。
+cd "$REPO" || { echo "cannot cd to $REPO" >&2; exit 1; }
+
+# ── STREAM-HARDEN2 入口 guard(任何寫入/動作之前;同 stream-remedy.sh 三層防呆同款)──────────────────
+# 測試模式 = STREAM_WATCH_TEST=1 + SELFHEAL_STATE、HEALTH_STATE、WATCH_DIR 三個齊且解析 symlink 後都喺 tmp;缺一 = prod 模式。
+# prod 模式(真 launchd tick 行呢條):HOME 重設為本 uid 真 home(值同 launchd HOME 一樣);要 $HOME/.hymn-deploy/.tick-ctx
+#   (healthcheck 寫;普通檔、非 symlink、mtime<30 分鐘、pid 生存)或 SELFHEAL_MANUAL=1;CLAUDECODE 非空冇 MANUAL 一律拒。
+#   拒絕 = stderr 印 REFUSED、exit 2、零寫入。SELFHEAL_DRY_RUN 唔算憑證。
+_sh_tmpok() { # 要絕對路徑、無 `..`、解析 symlink 後喺 tmp 下
+  local p="$1" r
+  [[ "$p" == /* ]] || return 1
+  case "$p" in *..*) return 1 ;; esac
+  r="$(/usr/bin/python3 -c 'import os,sys;print(os.path.realpath(sys.argv[1]))' "$p" 2>/dev/null)" || return 1
+  case "$r" in /private/tmp/*|/private/var/folders/*|/tmp/*|/var/folders/*) return 0 ;; esac
+  return 1
+}
+_sh_ctx_valid() { # $1=ctx 檔路徑
+  local f="$1" pid m now
+  [[ -f "$f" && ! -L "$f" ]] || return 1
+  m="$(stat -f %m "$f" 2>/dev/null)" || return 1
+  now="$(date +%s)"; (( now - m < 1800 )) || return 1
+  pid="$(sed -n 's/^pid=\([0-9][0-9]*\).*$/\1/p' "$f" 2>/dev/null | head -1)"
+  [[ -n "$pid" ]] || return 1
+  kill -0 "$pid" 2>/dev/null
+}
+if [[ "${STREAM_WATCH_TEST:-0}" == "1" ]] && _sh_tmpok "${SELFHEAL_STATE:-}" && _sh_tmpok "${HEALTH_STATE:-}" && _sh_tmpok "${WATCH_DIR:-}"; then
+  SH_TEST=1
+  # 測試模式:唔准經 YTDLP_LINK 跑真 yt-dlp
+  if [[ -n "${YTDLP_LINK:-}" ]] && ! _sh_tmpok "$YTDLP_LINK"; then echo "REFUSED: 測試模式 YTDLP_LINK 要喺 tmp 下" >&2; exit 2; fi
+  case "${HYMN_STREAM_BASE:-}" in *:3001*) echo "REFUSED: 測試模式 HYMN_STREAM_BASE 唔准指真 backend :3001" >&2; exit 2 ;; esac
+else
+  SH_TEST=0
+  _sh_user="$(/usr/bin/id -un 2>/dev/null)"
+  _sh_home="$(/usr/bin/dscl . -read "/Users/$_sh_user" NFSHomeDirectory 2>/dev/null | /usr/bin/awk '{print $2}')"
+  if [[ -z "$_sh_home" || "$_sh_home" != /* || ! -d "$_sh_home" ]]; then _sh_home="$(eval echo "~$_sh_user" 2>/dev/null)"; fi
+  if [[ -z "$_sh_home" || "$_sh_home" != /* || ! -d "$_sh_home" ]]; then echo "REJECTED: 攞唔到真 HOME" >&2; exit 2; fi
+  export HOME="$_sh_home"
+  if [[ "${SELFHEAL_MANUAL:-0}" != "1" ]]; then
+    if [[ -n "${CLAUDECODE:-}" ]] || ! _sh_ctx_valid "$HOME/.hymn-deploy/.tick-ctx"; then
+      echo "REFUSED: prod 模式只准由 stream-healthcheck tick 內呼叫;人手用請設 SELFHEAL_MANUAL=1" >&2
+      exit 2
+    fi
+  fi
+fi
+
+LOG="${SELFHEAL_LOG_MD:-$REPO/docs/SUPERVISION-LOG.md}"
+STATE="${SELFHEAL_STATE:-$REPO/backend/data/stream-selfheal-state.json}"
+HEALTH_STATE="${HEALTH_STATE:-$REPO/backend/data/stream-health-state.json}"
+HISTORY="${SELFHEAL_HISTORY:-$REPO/backend/data/stream-selfheal.log}"
+if [[ $SH_TEST -eq 1 ]]; then LOG="$WATCH_DIR/SUPERVISION-LOG.md"; HISTORY="$WATCH_DIR/stream-selfheal.log"; fi   # 路徑:測試模式強制落 $WATCH_DIR
+
+if [[ $SH_TEST -eq 1 ]]; then YTDLP_LINK="${YTDLP_LINK:-$WATCH_DIR/yt-dlp-none}"   # 路徑:測試模式預設唔指真 yt-dlp
+else YTDLP_LINK="${YTDLP_LINK:-$REPO/backend/tools/yt-dlp}"; fi
+YTDLP_DIR="$(dirname "$YTDLP_LINK")"
+APPLY_CMD="${SELFHEAL_APPLY_CMD:-$REPO/ops/ytdlp/update-ytdlp.sh --apply}"
+RESTART_CMD="${SELFHEAL_RESTART_CMD:-$REPO/ops/deploy/backend-restart.sh --same-code}"
+# 測試模式 + 預設指令:永遠唔會真 restart/swap(restart 加 --dry-run;apply 唔行)——同 stream-remedy.sh 做法一致
+if [[ $SH_TEST -eq 1 && -z "${SELFHEAL_RESTART_CMD:-}" ]]; then RESTART_CMD="$RESTART_CMD --dry-run"; fi
+if [[ $SH_TEST -eq 1 && -z "${SELFHEAL_APPLY_CMD:-}" ]]; then APPLY_CMD="echo TEST-MODE-default-apply-not-run"; fi
+DRY_RUN="${SELFHEAL_DRY_RUN:-0}"
+RECHECK_SLEEP="${SELFHEAL_RECHECK_SLEEP:-15}"
+
+BASE="${HYMN_STREAM_BASE:-http://127.0.0.1:3001}"
+[[ $SH_TEST -eq 1 ]] && BASE="${HYMN_STREAM_BASE:-http://127.0.0.1:9}"   # 路徑:測試模式預設死 port,唔打真 backend
+# R1:bot-check 證據來源。測試模式預設唔讀真 /tmp/hymn_backend.log(落 $WATCH_DIR/backend.log,通常唔存在=0)
+BOTLOG="${SELFHEAL_BACKEND_LOG:-${BACKEND_LOG:-/tmp/hymn_backend.log}}"
+[[ $SH_TEST -eq 1 ]] && BOTLOG="${SELFHEAL_BACKEND_LOG:-$WATCH_DIR/backend.log}"
+IDS=(${SELFHEAL_IDS:-42 77 5431})
+RANGE="${SELFHEAL_RANGE:-0-65535}"
+YT_IDS=(${SELFHEAL_YT_IDS:-PG_J_0gsMXA 7UkwavM5L1E 2GbxXhvdhhA})
+MID_RANGE="${SELFHEAL_MID_RANGE:-2097152-2162687}"
+CURL_TIMEOUT="${SELFHEAL_CURL_TIMEOUT:-45}"
+RESOLVE_TIMEOUT="${SELFHEAL_RESOLVE_TIMEOUT:-45}"
+SWAP_LIMIT="${SELFHEAL_SWAP_LIMIT:-1}"
+RESTART_LIMIT="${SELFHEAL_RESTART_LIMIT:-2}"
+THROTTLE_TICKS="${SELFHEAL_THROTTLE_TICKS:-12}"
+
+VERBOSE=0
+healthy_a=1; healthy_b=1; mid=0; midfail=0; ok=0; fail=0; detail=""
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --healthy-a) healthy_a="${2:-1}"; shift 2 ;;
+    --healthy-b) healthy_b="${2:-1}"; shift 2 ;;
+    --mid) mid="${2:-0}"; shift 2 ;;
+    --midfail) midfail="${2:-0}"; shift 2 ;;
+    --ok) ok="${2:-0}"; shift 2 ;;
+    --fail) fail="${2:-0}"; shift 2 ;;
+    --detail) detail="${2:-}"; shift 2 ;;
+    --verbose) VERBOSE=1; shift ;;
+    *) shift ;;
+  esac
+done
+
+ts() { date '+%Y-%m-%d %H:%M'; }
+say() { [[ $VERBOSE -eq 1 ]] && echo "$@"; return 0; }
+
+# ⚠️ macOS 冇 GNU `timeout`,用 perl alarm 頂硬上限(同 stream-healthcheck.sh /
+# update-ytdlp.sh 一致做法)。
+run_capped() { perl -e 'alarm shift; exec @ARGV or exit 127' "$@" 2>/dev/null; }
+
+# ── 讀 selfheal state(跨日重置計數)────────────────────────────────
+read_state() {
+  python3 - "$STATE" <<'PY'
+import json, sys, datetime
+path = sys.argv[1]
+today = datetime.date.today().isoformat()
+try:
+    d = json.load(open(path))
+    if not isinstance(d, dict):
+        d = {}
+except Exception:
+    d = {}
+if d.get('date') != today:
+    d['date'] = today
+    d['swapsToday'] = 0
+    d['restartsToday'] = 0
+d.setdefault('swapsToday', 0)
+d.setdefault('restartsToday', 0)
+d.setdefault('lastAction', 'none')
+d.setdefault('lastActionAt', '')
+al = d.get('alert') or {}
+al.setdefault('active', False)
+al.setdefault('since', '')
+al.setdefault('form', '')
+al.setdefault('message', '')
+d['alert'] = al
+d.setdefault('pendingRecheck', None)
+d.setdefault('lastActionTick', 0)
+d.setdefault('lastActionForm', '')
+
+def esc(s):
+    return str(s).replace("'", "'\\''")
+
+print(f"ST_SWAPS='{int(d['swapsToday'])}'")
+print(f"ST_RESTARTS='{int(d['restartsToday'])}'")
+print(f"ST_LASTACTION='{esc(d['lastAction'])}'")
+print(f"ST_LASTACTIONAT='{esc(d['lastActionAt'])}'")
+print(f"ST_ALERT_ACTIVE='{1 if al['active'] else 0}'")
+print(f"ST_ALERT_SINCE='{esc(al['since'])}'")
+print(f"ST_ALERT_FORM='{esc(al['form'])}'")
+print(f"ST_ALERT_MSG='{esc(al['message'])}'")
+print(f"ST_LASTACTIONTICK='{int(d['lastActionTick'] or 0)}'")
+print(f"ST_LASTACTIONFORM='{esc(d['lastActionForm'])}'")
+PY
+}
+eval "$(read_state)"
+
+consecutiveFail=$(python3 -c "
+import json
+try:
+    print(int(json.load(open('$HEALTH_STATE')).get('consecutiveFail', 0)))
+except Exception:
+    print(0)
+" 2>/dev/null || echo 0)
+
+# ── 寫 selfheal state(DRY_RUN 全跳過)────────────────────────────
+write_state() {
+  # $1=swaps $2=restarts $3=lastAction $4=lastActionAt $5=alertActive(0/1)
+  # $6=alertSince $7=alertForm $8=alertMsg $9=pendingRecheck
+  # $10=lastActionTick $11=lastActionForm
+  [[ "$DRY_RUN" == "1" ]] && return 0
+  python3 - "$STATE" "$1" "$2" "$3" "$4" "$5" "$6" "$7" "$8" "$9" "${10}" "${11}" <<'PY'
+import json, sys, datetime
+path = sys.argv[1]
+(swaps, restarts, lastAction, lastActionAt, alertActive, alertSince, alertForm,
+ alertMsg, pendingRecheck, lastActionTick, lastActionForm) = sys.argv[2:13]
+data = {
+    "date": datetime.date.today().isoformat(),
+    "swapsToday": int(swaps),
+    "restartsToday": int(restarts),
+    "lastAction": lastAction,
+    "lastActionAt": lastActionAt,
+    "alert": {
+        "active": alertActive == "1",
+        "since": alertSince,
+        "form": alertForm,
+        "message": alertMsg,
+    },
+    "pendingRecheck": (pendingRecheck if pendingRecheck else None),
+    "lastActionTick": int(lastActionTick or 0),
+    "lastActionForm": lastActionForm,
+}
+json.dump(data, open(path, "w"), indent=1, ensure_ascii=False)
+PY
+}
+
+hist() {
+  [[ "$DRY_RUN" == "1" ]] && { say "  [dry-run] history: $*"; return 0; }
+  echo "$(ts) $*" >> "$HISTORY"
+}
+supervision() {
+  # $1 = 主行, $2(可選) = 附加行
+  [[ "$DRY_RUN" == "1" ]] && { say "  [dry-run] supervision: $1"; return 0; }
+  { echo ""; echo "$1"; [[ -n "${2:-}" ]] && echo "$2"; } >> "$LOG"
+}
+
+# ── Layer B(直打 googlevideo)/ Layer A(經 backend)重驗 helper ──────
+verify_layer_b() {
+  local m=0 mf=0 yid url code
+  for yid in "${YT_IDS[@]}"; do
+    url=$(run_capped "$RESOLVE_TIMEOUT" "$YTDLP_LINK" -f "bestaudio[ext=m4a]/bestaudio" \
+          --get-url --no-playlist "https://www.youtube.com/watch?v=$yid" | head -1)
+    if [[ "$url" != http* ]]; then mf=$((mf+1)); say "  [verifyB] $yid → resolve FAIL"; continue; fi
+    if [[ $SH_TEST -eq 1 ]]; then code=$(${SELFHEAL_CDN_FETCH_CMD:-_sh_cdn_stub} "$url" "$MID_RANGE" 2>/dev/null)   # 測試模式:唔直打 googlevideo
+    else
+    code=$(curl -s -o /dev/null -w "%{http_code}" --max-time "$CURL_TIMEOUT" -r "$MID_RANGE" "$url" 2>/dev/null)
+    fi
+    say "  [verifyB] $yid → HTTP ${code:-timeout}"
+    [[ "$code" == "206" ]] && m=$((m+1)) || mf=$((mf+1))
+  done
+  VB_MID=$m; VB_MIDFAIL=$mf
+}
+_sh_cdn_stub() { echo 206; }   # 測試模式 verify Layer B 直打 CDN 預設 stub
+verify_layer_a() {
+  local o=0 f=0 id code
+  for id in "${IDS[@]}"; do
+    code=$(curl -s -o /dev/null -w "%{http_code}" --max-time "$CURL_TIMEOUT" -r "$RANGE" "$BASE/api/stream/$id" 2>/dev/null)
+    say "  [verifyA] id=$id → HTTP ${code:-timeout}"
+    [[ "$code" == "206" ]] && o=$((o+1)) || f=$((f+1))
+  done
+  VA_OK=$o; VA_FAIL=$f
+}
+
+now_iso="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+
+# ══ 1. 恢復判斷(優先於一切,包括 consecutiveFail<2 短路)══════════════
+if (( consecutiveFail == 0 )) && [[ "$ST_ALERT_ACTIVE" == "1" ]]; then
+  say "健康已恢復(之前形態 $ST_ALERT_FORM),清 alert,節流計數歸零"
+  hist "RECOVERED 之前形態=$ST_ALERT_FORM(之前訊息:$ST_ALERT_MSG)"
+  supervision "- ✅ **自動修復梯:健康已恢復 $(ts)** — 之前形態 \`$ST_ALERT_FORM\`,而家 healthy_a=$healthy_a healthy_b=$healthy_b(ok=$ok mid=$mid)。alert 已清。"
+  write_state "$ST_SWAPS" "$ST_RESTARTS" "recovered" "$now_iso" "0" "" "" "" "" "0" ""
+  exit 0
+fi
+
+# ══ 2. 容忍單次 blip:consecutiveFail<2 淨係更新 state,唔郁手 ═══════
+if (( consecutiveFail < 2 )); then
+  say "consecutiveFail=$consecutiveFail < 2,唔郁手(只做跨日重置 housekeeping)"
+  write_state "$ST_SWAPS" "$ST_RESTARTS" "$ST_LASTACTION" "$ST_LASTACTIONAT" \
+    "$ST_ALERT_ACTIVE" "$ST_ALERT_SINCE" "$ST_ALERT_FORM" "$ST_ALERT_MSG" "" \
+    "$ST_LASTACTIONTICK" "$ST_LASTACTIONFORM"
+  exit 0
+fi
+
+# ══ 3. 形態判定 ═════════════════════════════════════════════════
+# STREAM-PHONE-NOTIFY-EXEC-20261015 R1(10-14 事故):出口 IP 被 YouTube bot-check 時 resolve 全死,但換 yt-dlp / restart backend 都冇用,
+# 之前會誤判①(midfail>=2)→ 食 swap 配額 + 誤導「先查 yt-dlp 版本」。判形態前先數 backend log 近 30 分鐘 bot-check 證據行(>=3,
+# 計法見 stream-botcheck-count.py)。再要求 Layer B 自己都死(healthy_b==0):直打 resolve 仲通嘅話 bot-check 行只係舊尾巴,照舊走①/②/③。
+# 第二輪 #8:證據 = backend log 計數 + healthcheck Layer B 自己 stderr 嘅 bot-check 命中數(state.botcheckB;backend log 睇唔到 healthcheck 自己嘅 resolve);
+# 並要求 Layer B 失敗以 resolve-fail 為主(resolve-fail 數 >= 403 數,且 >=1)——真 yt-dlp 過舊(B resolve 得、URL 403)加背景噪音唔會誤判④。
+botN=0; botB=0; botL=0
+if (( healthy_b == 0 )); then
+  botN="$(python3 "$REPO/ops/stream/stream-botcheck-count.py" "$BOTLOG" "${SELFHEAL_BOTCHECK_MIN:-30}" 2>/dev/null)"
+  [[ "$botN" =~ ^[0-9]+$ ]] || botN=0
+  botL="$botN"   # 第三輪 #7:backend log 命中數單獨保留(訊息分開寫)
+  botB="$(python3 -c "
+import json
+try: print(int(json.load(open('$HEALTH_STATE')).get('botcheckB',0)))
+except Exception: print(0)" 2>/dev/null)"
+  [[ "$botB" =~ ^[0-9]+$ ]] || botB=0
+  botN=$(( botN + botB ))
+  rfN=$(printf '%s' "$detail" | grep -o 'B:[^: ]*:resolve-fail' | wc -l | tr -d ' ')
+  f403N=$(printf '%s' "$detail" | grep -o 'B:[^: ]*:403' | wc -l | tr -d ' ')
+  (( rfN >= 1 && rfN >= f403N )) || botN=0
+fi
+if (( botN >= ${SELFHEAL_BOTCHECK_MIN_HITS:-3} )); then
+  form="④出口IP被bot-check"
+elif (( midfail >= 2 )); then
+  form="①yt-dlp"
+elif (( healthy_a == 0 && healthy_b == 1 )); then
+  form="②backend"
+else
+  form="③YouTube側"
+fi
+form_kind="$form"   # 節流用嘅原始形態,唔理下面 rollback/pending 加嘅後綴
+say "形態判定:$form(healthy_a=$healthy_a healthy_b=$healthy_b mid=$mid midfail=$midfail consecutiveFail=$consecutiveFail)"
+
+# ══ 3b. F2 節流判斷(2026-09-05 Opus 第二輪 R1(b):節流 key 由「形態」改做
+#     單一嘅 lastActionTick,唔再分形態;形態轉變唔再 bypass 節流,只 log)══
+# due=1:呢個 tick 准郁手(call apply/restart)兼寫 SUPERVISION-LOG。
+#   · 呢個故障頭一次夠 consecutiveFail==2 門檻 → due(呢條保留)。
+#   · 未記過任何 lastActionTick(=0)→ due(呢單故障第一次郁手)。
+#   · 距離上次郁手夠 THROTTLE_TICKS(預設 12 = 6 小時)→ due。
+# 形態轉變(form_kind != 上次記錄嘅 lastActionForm)**唔再令 due=1**,只喺
+# history log 度留一行話俾人知轉咗形態,避免 flap(①↔③ 喺 midfail=2 界上下
+# 跳)完全繞過節流。
+due=0
+if (( consecutiveFail == 2 )); then
+  due=1
+elif (( ST_LASTACTIONTICK <= 0 )); then
+  due=1
+elif (( consecutiveFail - ST_LASTACTIONTICK >= THROTTLE_TICKS )); then
+  due=1
+fi
+say "節流判斷:due=$due(consecutiveFail=$consecutiveFail lastActionTick=$ST_LASTACTIONTICK lastActionForm=$ST_LASTACTIONFORM)"
+if [[ "$form_kind" != "$ST_LASTACTIONFORM" && -n "$ST_LASTACTIONFORM" ]]; then
+  hist "form-changed $ST_LASTACTIONFORM -> $form_kind(due=$due,唔再 bypass 節流)"
+fi
+
+alert_active=0; alert_form="$form"; alert_msg=""
+swaps=$ST_SWAPS; restarts=$ST_RESTARTS
+action="none"; pending=""
+
+case "$form" in
+①*)
+  if (( ST_SWAPS >= SWAP_LIMIT )); then
+    action="alert-safetyvalve-ytdlp"
+    alert_active=1
+    alert_msg="形態①(yt-dlp,midfail=$midfail/${#YT_IDS[@]}):今日已經嘗試 apply 過 $ST_SWAPS 次(安全閥 $SWAP_LIMIT),唔再自動換,交返俾人手查 \`ops/ytdlp/update-ytdlp.sh\`。實際:$detail"
+    hist "alert safetyvalve-ytdlp swapsToday=$ST_SWAPS/$SWAP_LIMIT due=$due"
+    (( due == 1 )) && supervision "- 🔴 **自動修復梯:形態①但安全閥觸頂 $(ts)** — $alert_msg"
+  else
+    before_target="$(readlink "$YTDLP_LINK" 2>/dev/null || true)"
+    if [[ -z "$before_target" ]]; then
+      # F1: $YTDLP_LINK 唔係 a/b symlink 佈局(空 readlink = 一係唔係 symlink,
+      # 一係啱啱 clean checkout / 俾人手殘剷咗)。唔准 apply(唔知點揈返轉頭),
+      # 亦冇嘢好 rollback,只可以叫人手處理。
+      action="ytdlp-not-symlink"
+      alert_active=1
+      form="③YouTube側(①唔准郁,yt-dlp唔係symlink)"; alert_form="$form"
+      alert_msg="形態①(yt-dlp)但 \`$YTDLP_LINK\` 唔係 a/b symlink 佈局(readlink 讀唔到 target),為安全**唔會 apply 亦唔會 rollback**,要人手查同重建 symlink(應該指返 \`ytdlp-venv-a/bin/yt-dlp\` 或 \`ytdlp-venv-b/bin/yt-dlp\`)。實際:$detail"
+      hist "ytdlp-not-symlink readlink-empty,冇郁手 due=$due"
+      (( due == 1 )) && supervision "- 🔴 **自動修復梯:形態①但 yt-dlp 唔係 symlink,要人手 $(ts)** — $alert_msg"
+    elif [[ "$DRY_RUN" == "1" ]]; then
+      say "  [dry-run] 會行:$APPLY_CMD"
+      say "  [dry-run] 換咗之後會即刻重驗 Layer B(唔經 backend)"
+      action="dry-run-ytdlp-swap"
+      alert_msg="[dry-run] 形態①(yt-dlp):會行 \`$APPLY_CMD\`,換咗即刻重驗 Layer B。今日現存 swapsToday=$ST_SWAPS/$SWAP_LIMIT。"
+      hist "$alert_msg"
+    elif (( due == 0 )); then
+      # F2:未到期,唔再 call apply,亦唔寫 SUPERVISION-LOG,只更新 state。
+      action="ytdlp-throttled-wait"
+      alert_active=1; alert_form="$form"
+      alert_msg="形態①(yt-dlp)持續(consecutiveFail=$consecutiveFail),節流中(上次郁手/警報喺 consecutiveFail=$ST_LASTACTIONTICK,每 $THROTTLE_TICKS 個 tick 先再試一次),冇再 call apply。實際:$detail"
+      hist "ytdlp-throttled-wait consecutiveFail=$consecutiveFail lastActionTick=$ST_LASTACTIONTICK"
+    else
+      # 2026-09-05 Opus 第二輪 R1(a):swapsToday 由「真係換咗 symlink 先計」
+      # 改做「凡係真係行咗一次 $APPLY_CMD(即 update-ytdlp.sh --apply,會打
+      # PyPI + 可能兩次 canary resolve/mid-range)就計一次嘗試」,唔理有冇
+      # 候選、canary 過唔過。原本嘅寫法喺「①冇候選版本」(ytdlp-no-candidate)
+      # 嗰條路徑完全唔計數,形態 flap 撞正呢條路徑就會令每日安全閥形同虛設。
+      swaps=$((ST_SWAPS+1))
+      apply_out="$(eval "$APPLY_CMD" 2>&1)"; apply_rc=$?
+      after_target="$(readlink "$YTDLP_LINK" 2>/dev/null || true)"
+      say "  apply rc=$apply_rc before=$before_target after=$after_target swapsToday(嘗試)=$swaps/$SWAP_LIMIT"
+      if [[ -n "$after_target" && "$after_target" != "$before_target" ]]; then
+        verify_layer_b
+        say "  重驗 Layer B:mid=$VB_MID midfail=$VB_MIDFAIL"
+        if (( VB_MID >= 2 )); then
+          if (( healthy_a == 1 )); then
+            # Layer A 本身已經健康(純粹係「1MiB 病」形態),換咗即刻算修復好。
+            action="ytdlp-swap-ok"
+            alert_msg="形態①(yt-dlp)已修復:$before_target → $after_target,重驗 Layer B $VB_MID/${#YT_IDS[@]} 過,Layer A 本身已經健康。今日 swapsToday=$swaps/$SWAP_LIMIT。"
+            hist "ytdlp-swap-ok $before_target -> $after_target, verifyB=$VB_MID/${#YT_IDS[@]}"
+            supervision "- 🟢 **自動修復梯:形態①已自動修復 $(ts)** — $alert_msg"
+          else
+            # 🔴 2026-09-05 Opus §2a false-green:兩層之前都死,換咗 yt-dlp 之後
+            # Layer B 過,但呢次探測嘅 healthy_a 仍然係 0 —— 用戶側好可能仍然
+            # 播唔到。唔可以寫 🟢/清 alert,要保持警報,等下個 tick 見到 A 自然
+            # 回復(backend Layer A 打嘅係 playbackRetry:true,resolveAudio.js
+            # FAIL_TTL_PLAYBACK_MS=60 秒,唔係 15 分鐘嗰個 FAIL_TTL_MS)。
+            action="ytdlp-swap-ok-pending-a"
+            alert_active=1
+            alert_form="$form"
+            pending="layerA-after-ytdlp-swap($now_iso,backend failCache(playbackRetry)約60秒,下個tick先會見到A回復)"
+            alert_msg="形態①(yt-dlp)已換版:$before_target → $after_target,重驗 Layer B $VB_MID/${#YT_IDS[@]} 過,但呢次探測 Layer A 仍然 healthy_a=0(用戶側可能仍然播唔到)。已換版,等 Layer A 下一 tick 重驗,暫時保持警報。今日 swapsToday=$swaps/$SWAP_LIMIT。"
+            hist "ytdlp-swap-ok-pending-a $before_target -> $after_target, verifyB=$VB_MID/${#YT_IDS[@]}, healthy_a=0"
+            supervision "- 🟡 **自動修復梯:形態①已換版,等 Layer A 重驗 $(ts)** — $alert_msg"
+          fi
+        else
+          # rollback。F1:再核一次 before_target 係咪仍然指住一個喺
+          # $YTDLP_DIR 下面可執行嘅檔案先揈返轉頭,避免整死條 symlink。
+          if [[ -n "$before_target" && -x "$YTDLP_DIR/$before_target" ]]; then
+            ln -sfn "$before_target" "$YTDLP_LINK" 2>/dev/null || true
+            rollback_note="已 rollback 返 $before_target"
+          else
+            rollback_note="⚠️ rollback guard 唔過(before_target='$before_target' 唔係 \`$YTDLP_DIR\` 下可執行檔),為安全冇郁 symlink,而家現役可能仍然係 $after_target,要人手核實同修正"
+          fi
+          action="ytdlp-swap-rollback"
+          form="③YouTube側(①已試過)"; alert_form="$form"; alert_active=1
+          alert_msg="形態①(yt-dlp)試過換去 $after_target,但重驗 Layer B 仍得 $VB_MID/${#YT_IDS[@]},判定換咗都冇用,$rollback_note。升級做③,可能係 YouTube 側全面擋緊。今日 swapsToday=$swaps/$SWAP_LIMIT。實際:$detail"
+          hist "ytdlp-swap-rollback $after_target -> $before_target(冇好轉), verifyB=$VB_MID/${#YT_IDS[@]}"
+          supervision "- 🔴 **自動修復梯:形態①換咗都冇用,已 rollback $(ts)** — $alert_msg"
+        fi
+      else
+        action="ytdlp-no-candidate"
+        form="③YouTube側(①冇候選版本)"; alert_form="$form"; alert_active=1
+        short_out="$(echo "$apply_out" | tail -c 300)"
+        alert_msg="形態①(yt-dlp)但閒置 slot 冇 canary-PASS 嘅新版本可換(readlink 冇變:$before_target;apply 輸出尾段:$short_out)。升級做③。今日 swapsToday(嘗試)=$swaps/$SWAP_LIMIT。實際:$detail"
+        hist "ytdlp-no-candidate before=$before_target after=$after_target apply_rc=$apply_rc"
+        supervision "- 🔴 **自動修復梯:形態①冇候選版本 $(ts)** — $alert_msg"
+      fi
+    fi
+  fi
+  ;;
+④*)
+  # 唔行 apply / swap / restart,唔食任何配額(swaps/restarts 原樣帶落 write_state)。只警報;節流同③一致(due 先寫 SUPERVISION-LOG)。
+  action="alert-ip-botcheck"
+  alert_active=1
+  alert_msg="形態④(出口 IP 被 YouTube bot-check):backend log 近 30 分鐘 $botL 條 + 健康檢查 Layer B $botB 條 bot-check 證據(合共 $botN),Layer B 直打 resolve 亦失敗。換 yt-dlp 無用、重開 backend 無用,**冇做任何自動修復、冇消耗配額**;要人手換 VPN server(Eric 自己做,唔同城市嘅 US server)。實際:$detail"
+  hist "alert-ip-botcheck botcheckLines=$botN consecutiveFail=$consecutiveFail due=$due(冇 apply/restart,冇食配額)"
+  (( due == 1 )) && supervision "- 🔴 **自動修復梯:形態④出口 IP 被 bot-check,要人手換 VPN server $(ts)** — $alert_msg"
+  ;;
+②*)
+  if (( ST_RESTARTS >= RESTART_LIMIT )); then
+    action="alert-safetyvalve-backend"
+    alert_active=1
+    alert_msg="形態②(backend):今日已經重開過 $ST_RESTARTS 次(安全閥 $RESTART_LIMIT),唔再自動重開,要人手查 backend log。實際:$detail"
+    hist "alert safetyvalve-backend restartsToday=$ST_RESTARTS/$RESTART_LIMIT due=$due"
+    (( due == 1 )) && supervision "- 🔴 **自動修復梯:形態②但安全閥觸頂 $(ts)** — $alert_msg"
+  elif [[ "$DRY_RUN" == "1" ]]; then
+    say "  [dry-run] 會行:$RESTART_CMD"
+    action="dry-run-backend-restart"
+    alert_msg="[dry-run] 形態②(backend):會行 \`$RESTART_CMD\`,等 ${RECHECK_SLEEP}s 後重驗 Layer A。今日 restartsToday=$ST_RESTARTS/$RESTART_LIMIT。"
+    hist "$alert_msg"
+  elif (( due == 0 )); then
+    # F2:未到期,唔再 call restart。
+    action="backend-restart-throttled-wait"
+    alert_active=1; alert_form="$form"
+    alert_msg="形態②(backend)持續(consecutiveFail=$consecutiveFail),節流中(上次郁手/警報喺 consecutiveFail=$ST_LASTACTIONTICK,每 $THROTTLE_TICKS 個 tick 先再試一次),冇再 call restart。實際:$detail"
+    hist "backend-restart-throttled-wait consecutiveFail=$consecutiveFail lastActionTick=$ST_LASTACTIONTICK"
+  else
+    restart_out="$(eval "$RESTART_CMD" 2>&1)"; restart_rc=$?
+    say "  restart rc=$restart_rc"
+    if (( restart_rc != 0 )) && echo "$restart_out" | grep -q "abort:HEAD"; then
+      # gate 攔咗:backend-restart.sh 喺郁手之前已經 abort,冇真係 launchctl
+      # bootout/bootstrap 過,唔算「用咗」一次安全閥額度,restarts 唔加。
+      short_out="$(echo "$restart_out" | tail -c 400)"
+      action="backend-restart-gate-blocked"
+      alert_active=1
+      alert_msg="形態②(backend)但部署 gate 唔過(HEAD≠已批准 backend.sha,有未批准 backend/ code 改動),冇自動重開,要人手 approve 先($REPO/ops/deploy/approve.sh)。輸出尾段:$short_out"
+      hist "$action restart_rc=$restart_rc restartsToday=$restarts/$RESTART_LIMIT(冇消耗,gate攔咗)"
+      supervision "- 🔴 **自動修復梯:形態②重開失敗 $(ts)** — $alert_msg"
+    elif (( restart_rc != 0 )); then
+      restarts=$((ST_RESTARTS+1))
+      short_out="$(echo "$restart_out" | tail -c 400)"
+      action="backend-restart-failed"
+      alert_active=1
+      alert_msg="形態②(backend):行 \`$RESTART_CMD\` 失敗(exit $restart_rc)。輸出尾段:$short_out"
+      hist "$action restart_rc=$restart_rc restartsToday=$restarts/$RESTART_LIMIT"
+      supervision "- 🔴 **自動修復梯:形態②重開失敗 $(ts)** — $alert_msg"
+    else
+      restarts=$((ST_RESTARTS+1))
+      sleep "$RECHECK_SLEEP"
+      verify_layer_a
+      say "  重驗 Layer A:ok=$VA_OK fail=$VA_FAIL"
+      if (( VA_OK >= 2 )); then
+        action="backend-restart-ok"
+        alert_msg="形態②(backend)已自動重開($RESTART_CMD),等 ${RECHECK_SLEEP}s 後重驗 Layer A $VA_OK/${#IDS[@]} 過,判定修復。今日 restartsToday=$restarts/$RESTART_LIMIT。"
+        hist "backend-restart-ok verifyA=$VA_OK/${#IDS[@]} restartsToday=$restarts/$RESTART_LIMIT"
+        supervision "- 🟢 **自動修復梯:形態②已自動修復 $(ts)** — $alert_msg"
+      else
+        action="backend-restart-recheck-fail"
+        alert_active=1
+        alert_msg="形態②(backend)已自動重開,但等 ${RECHECK_SLEEP}s 後重驗 Layer A 仍得 $VA_OK/${#IDS[@]},未確認修復好,要人手睇。今日 restartsToday=$restarts/$RESTART_LIMIT。"
+        hist "backend-restart-recheck-fail verifyA=$VA_OK/${#IDS[@]} restartsToday=$restarts/$RESTART_LIMIT"
+        supervision "- 🔴 **自動修復梯:形態②重開咗但未確認好返 $(ts)** — $alert_msg"
+      fi
+    fi
+  fi
+  ;;
+③*)
+  action="alert-youtube"
+  alert_active=1
+  alert_msg="形態③(YouTube 側):兩層都異常,冇得自動修。已警報,依家健康檢查每 30 分鐘一 tick 會自動重試。實際:$detail"
+  hist "alert-youtube consecutiveFail=$consecutiveFail due=$due"
+  (( due == 1 )) && supervision "- 🔴 **自動修復梯:形態③(YouTube側),冇得自動修 $(ts)** — $alert_msg"
+  ;;
+esac
+
+# 沿用之前 alert.since,除非呢次先啱啱由 inactive 變 active
+if [[ "$alert_active" == "1" ]]; then
+  if [[ "$ST_ALERT_ACTIVE" == "1" && -n "$ST_ALERT_SINCE" ]]; then
+    alert_since="$ST_ALERT_SINCE"
+  else
+    alert_since="$now_iso"
+  fi
+else
+  alert_since=""
+  alert_form=""
+fi
+
+# F2:只有真正 due 嘅 tick 先更新節流基準點(lastActionTick/lastActionForm),
+# throttled-wait 嗰啲 tick 保留返上次記錄,等下次計「距離上次夠唔夠 12 tick」
+# 唔會因為中間插咗一堆 throttled tick 而錯亂。
+if [[ "$DRY_RUN" == "1" ]]; then
+  out_tick="$ST_LASTACTIONTICK"; out_form="$ST_LASTACTIONFORM"
+elif (( due == 1 )); then
+  out_tick="$consecutiveFail"; out_form="$form_kind"
+else
+  out_tick="$ST_LASTACTIONTICK"; out_form="$ST_LASTACTIONFORM"
+fi
+
+write_state "$swaps" "$restarts" "$action" "$now_iso" "$alert_active" "$alert_since" "$alert_form" "$alert_msg" "$pending" "$out_tick" "$out_form"
+say "action=$action alert_active=$alert_active form=$alert_form due=$due"
+exit 0

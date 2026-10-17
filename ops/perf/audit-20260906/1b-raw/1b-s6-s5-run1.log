@@ -1,0 +1,10 @@
+=== S6-S5 run 1 ===
+host_launch_ts=1788631087.770681000
+Starting: Intent { cmp=com.hymnapp.praise/.MainActivity }
+Status: ok
+LaunchState: COLD
+Activity: com.hymnapp.praise/.MainActivity
+TotalTime: 450
+WaitTime: 452
+Complete
+tap_shuffle_ts=1788631094.302387000

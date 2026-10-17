@@ -1,0 +1,131 @@
+{
+  "scanner": "S4-dependency",
+  "totalDeps": 20,
+  "results": [
+    {
+      "name": "@gorhom/bottom-sheet",
+      "version": "^5.2.14",
+      "classification": "USED_JS_IMPORT",
+      "evidence": "1 file(s), e.g. frontend/hymn-app/App.js"
+    },
+    {
+      "name": "@react-native-async-storage/async-storage",
+      "version": "2.2.0",
+      "classification": "USED_JS_IMPORT",
+      "evidence": "2 file(s), e.g. frontend/hymn-app/src/context/AuthContext.js"
+    },
+    {
+      "name": "expo",
+      "version": "~56.0.19",
+      "classification": "USED_JS_IMPORT",
+      "evidence": "1 file(s), e.g. frontend/hymn-app/index.js"
+    },
+    {
+      "name": "expo-application",
+      "version": "~56.0.3",
+      "classification": "USED_JS_IMPORT",
+      "evidence": "1 file(s), e.g. frontend/hymn-app/App.js"
+    },
+    {
+      "name": "expo-constants",
+      "version": "~56.0.15",
+      "classification": "USED_JS_IMPORT",
+      "evidence": "3 file(s), e.g. frontend/hymn-app/src/screens/AccountScreen.js"
+    },
+    {
+      "name": "expo-file-system",
+      "version": "~56.0.9",
+      "classification": "USED_JS_IMPORT",
+      "evidence": "1 file(s), e.g. frontend/hymn-app/src/audioPrefetch.js"
+    },
+    {
+      "name": "expo-font",
+      "version": "~56.0.7",
+      "classification": "USED_CONFIG_PLUGIN_ONLY",
+      "evidence": "app.json plugins array (config-plugin-only dependency, e.g. expo-font fonts config)"
+    },
+    {
+      "name": "expo-updates",
+      "version": "~56.0.24",
+      "classification": "USED_JS_IMPORT",
+      "evidence": "3 file(s), e.g. frontend/hymn-app/App.js"
+    },
+    {
+      "name": "react",
+      "version": "19.2.3",
+      "classification": "USED_JS_IMPORT",
+      "evidence": "37 file(s), e.g. frontend/hymn-app/tools/react-harness/scenarios/coldBootNoCache.js"
+    },
+    {
+      "name": "react-native",
+      "version": "0.85.3",
+      "classification": "USED_JS_IMPORT",
+      "evidence": "26 file(s), e.g. frontend/hymn-app/App.js"
+    },
+    {
+      "name": "react-native-draggable-flatlist",
+      "version": "^4.0.3",
+      "classification": "USED_JS_IMPORT",
+      "evidence": "1 file(s), e.g. frontend/hymn-app/App.js"
+    },
+    {
+      "name": "react-native-gesture-handler",
+      "version": "^2.31.2",
+      "classification": "USED_JS_IMPORT",
+      "evidence": "2 file(s), e.g. frontend/hymn-app/App.js"
+    },
+    {
+      "name": "react-native-mmkv",
+      "version": "^3.3.3",
+      "classification": "USED_JS_IMPORT",
+      "evidence": "2 file(s), e.g. frontend/hymn-app/tools/react-harness/lib/prepareSource.js"
+    },
+    {
+      "name": "react-native-reanimated",
+      "version": "4.3.1",
+      "classification": "USED_BABEL_CONFIG",
+      "evidence": "babel.config.js"
+    },
+    {
+      "name": "react-native-safe-area-context",
+      "version": "~5.7.0",
+      "classification": "USED_JS_IMPORT",
+      "evidence": "2 file(s), e.g. frontend/hymn-app/App.js"
+    },
+    {
+      "name": "react-native-svg",
+      "version": "15.15.4",
+      "classification": "USED_JS_IMPORT",
+      "evidence": "2 file(s), e.g. frontend/hymn-app/src/icons/odeIcons.js"
+    },
+    {
+      "name": "react-native-track-player",
+      "version": "^4.1.2",
+      "classification": "USED_JS_IMPORT",
+      "evidence": "3 file(s), e.g. frontend/hymn-app/index.js"
+    },
+    {
+      "name": "react-native-worklets",
+      "version": "0.8.3",
+      "classification": "USED_BABEL_CONFIG",
+      "evidence": "babel.config.js"
+    },
+    {
+      "name": "patch-package",
+      "version": "^8.0.1",
+      "classification": "USED_VIA_PLUGIN_FILE",
+      "evidence": "referenced inside plugins/*.js"
+    },
+    {
+      "name": "react-dom",
+      "version": "19.2.3",
+      "classification": "USED_JS_IMPORT",
+      "evidence": "5 file(s), e.g. frontend/hymn-app/tools/react-harness/scenarios/coldBootNoCache.js"
+    }
+  ],
+  "noDirectHitNeedsManualCheck": [],
+  "positiveControl": {
+    "expo-font": "USED_CONFIG_PLUGIN_ONLY",
+    "pass": true
+  }
+}

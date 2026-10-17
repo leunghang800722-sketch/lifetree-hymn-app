@@ -1,0 +1,23 @@
+[slice] server.js lines 37-125 (cors/json/access-log/compression)
+
+=== negative controls (should have ZERO [access] lines) ===
+
+=== positive control /api/version ===
+[access] 2026-09-02T08:37:25.744Z GET /api/version 200 0ms 20b
+
+=== /api/hymns identity (no Accept-Encoding) ===
+
+=== /api/hymns gzip (Accept-Encoding: gzip) ===
+[access] 2026-09-02T08:37:25.785Z GET /api/hymns 200 28ms 24927b
+
+=== abort mid-stream simulation (raw socket, destroy after some bytes) ===
+[access] 2026-09-02T08:37:25.799Z GET /api/hymns 200 54ms 5822155b
+[access] 2026-09-02T08:37:25.807Z GET /api/slow 200 12ms 100000b aborted=1
+
+=== captured [access] lines ===
+[access] 2026-09-02T08:37:25.744Z GET /api/version 200 0ms 20b
+[access] 2026-09-02T08:37:25.785Z GET /api/hymns 200 28ms 24927b
+[access] 2026-09-02T08:37:25.799Z GET /api/hymns 200 54ms 5822155b
+[access] 2026-09-02T08:37:25.807Z GET /api/slow 200 12ms 100000b aborted=1
+
+total [access] lines = 4 (expect 5: version, hymns-identity, hymns-gzip, slow-aborted; stream/hls/client-log = 0)

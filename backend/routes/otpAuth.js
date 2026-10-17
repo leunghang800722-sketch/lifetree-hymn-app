@@ -1,0 +1,556 @@
+// routes/otpAuth.js — 電話號碼 + 驗證碼登入(PHONE-AUTH-PLAN v2)
+//
+// 主通道:WhatsApp OTP(Twilio Verify,channel=whatsapp);冇 WhatsApp 就 SMS 後備。
+// 大陸 +86:唔行 SMS(見 plan §0),回專用錯誤碼俾前端顯示 email 提示。
+//
+// ⚠️ 呢個檔案**唔掂**現有 auth.js 嘅 email/password 登入(過渡期照用)。
+// ⚠️ 冇 TWILIO_* env 嗰陣,endpoint 唔會 crash,只會回 503「未配置」,
+//    前端 PHONE_AUTH_ENABLED flag 預設 false,所以未配置前根本唔會叫到呢度。
+//
+// 用 fetch 直駁 Twilio Verify REST API,前端零 SDK、backend 零新 dependency。
+
+import jwt from 'jsonwebtoken';
+import bcrypt from 'bcryptjs';
+import { JWT_SECRET } from '../lib/authSecret.js';
+import { saveUserDb } from '../lib/userDb.js';
+import { markTokensRevoked } from '../lib/tokenValidity.js';
+import { ipLoginLimiter, phoneLoginLimiter, clientIp } from '../lib/loginRateLimit.js';
+import { REGISTRATION_MODE } from '../lib/registrationMode.js';
+import { redeemInviteAndFriend } from '../lib/inviteRedeem.js';
+import { makeLimiter, sweepOnThreshold } from '../lib/rateLimit.js';
+
+const TOKEN_EXPIRY = '30d';
+const TICKET_EXPIRY = '10m';
+const SALT_ROUNDS = 10;
+const SENTINEL_HASH = 'otp-no-password';
+
+// Twilio 配置(Eric 之後喺 launchd env 補;冇就當「未配置」)
+const TW_SID = process.env.TWILIO_ACCOUNT_SID;
+const TW_TOKEN = process.env.TWILIO_AUTH_TOKEN;
+const TW_SERVICE = process.env.TWILIO_VERIFY_SERVICE_SID;
+// 主 channel:whatsapp / sms。冇 WhatsApp WABA 就先設 sms,將來一個 env 切返 whatsapp。
+const PRIMARY_CHANNEL = process.env.OTP_CHANNEL || 'whatsapp';
+const OTP_DAILY_CAP = Number(process.env.OTP_DAILY_CAP || 100); // 全局熔斷
+const otpConfigured = () => !!(TW_SID && TW_TOKEN && TW_SERVICE);
+
+// 白名單國碼(初期淨係香港)。+86 特別處理(回 email 提示),其他一律拒。
+const ALLOWED_PREFIXES = (process.env.OTP_ALLOWED_PREFIXES || '+852').split(',').map((s) => s.trim());
+
+// ── 防濫用(SMS pumping 係真金白銀)──────────────────────────────
+// in-memory 夠用(單機 backend)。重啟即清,對限速嚟講可接受。
+//
+// DEEP-AUDIT-W2-EXEC-20260906 Commit B(OTP-1/LOGIN-P2 提到嘅「otpAuth.js
+// perIp Map 連 lazy expiry 都冇」缺口):`perPhone`/`perIp` 呢兩個 Map 係
+// day-cap + cooldown 語意(日曆日重置),同 lib/rateLimit.js makeLimiter()
+// 嘅「sliding window count」語意本質上唔同,唔可以逼佢用 check(req)(逼咗
+// 會改行為)。呢度淨係借 rateLimit.js 嘅 sweepOnThreshold() 幫呢兩個 Map
+// 加返「大到某個閾值先掃一次上一個日曆日嘅殘留 entry + 格數硬頂」——
+// PHONE_COOLDOWN_MS/PHONE_DAILY/IP_DAILY/OTP_DAILY_CAP 呢啲數字、`checkRate`
+// 嘅 control flow 逐 bit 冇改;剷走「唔係今日」嘅 entry 唔會影響決策,
+// 因為 `checkRate` 本身見到 `p.day !== d` 就會將 dayCount 歸零,同攞唔到
+// entry(用返 default `{ lastAt: 0, dayCount: 0, day: d }`)嘅結果一樣。
+const perPhone = new Map(); // phone -> { lastAt, dayCount, day }
+const perIp = new Map();    // ip -> { dayCount, day }
+let globalDay = new Date().toDateString();
+let globalCount = 0;
+const PHONE_COOLDOWN_MS = 60 * 1000;
+const PHONE_DAILY = 5;
+const IP_DAILY = 10;
+
+function today() { return new Date().toDateString(); }
+function rollGlobal() { const d = today(); if (d !== globalDay) { globalDay = d; globalCount = 0; } }
+function isStaleDayRec(rec, now) { return rec.day !== new Date(now).toDateString(); }
+
+// 純 export 俾 harness 用(DEEP-AUDIT-W2-EXEC-20260906 Commit B3 對照
+// checkRate() 舊 vs 新布林序列),route handler 自己完全唔用呢個 export
+// (照舊叫返 module 內嘅 checkRate),行為零改動。
+export function checkRate(phone, ip) {
+  rollGlobal();
+  if (globalCount >= OTP_DAILY_CAP) return { ok: false, code: 'global_cap' };
+
+  sweepOnThreshold(perPhone, { isExpired: isStaleDayRec });
+  sweepOnThreshold(perIp, { isExpired: isStaleDayRec });
+
+  const d = today();
+  const p = perPhone.get(phone) || { lastAt: 0, dayCount: 0, day: d };
+  if (p.day !== d) { p.dayCount = 0; p.day = d; }
+  if (Date.now() - p.lastAt < PHONE_COOLDOWN_MS) return { ok: false, code: 'cooldown' };
+  if (p.dayCount >= PHONE_DAILY) return { ok: false, code: 'phone_cap' };
+
+  const ipRec = perIp.get(ip) || { dayCount: 0, day: d };
+  if (ipRec.day !== d) { ipRec.dayCount = 0; ipRec.day = d; }
+  if (ipRec.dayCount >= IP_DAILY) return { ok: false, code: 'ip_cap' };
+
+  return { ok: true, commit: () => {
+    p.lastAt = Date.now(); p.dayCount++; perPhone.set(phone, p);
+    ipRec.dayCount++; perIp.set(ip, ipRec);
+    globalCount++;
+  } };
+}
+
+// E.164 粗略檢查:+ 開頭,8-15 位數字
+function normalizePhone(raw) {
+  if (typeof raw !== 'string') return null;
+  const t = raw.replace(/[\s-()]/g, '');
+  return /^\+\d{8,15}$/.test(t) ? t : null;
+}
+
+const twAuth = () => 'Basic ' + Buffer.from(`${TW_SID}:${TW_TOKEN}`).toString('base64');
+
+async function twilioStart(phone, channel) {
+  const body = new URLSearchParams({ To: phone, Channel: channel });
+  const r = await fetch(`https://verify.twilio.com/v2/Services/${TW_SERVICE}/Verifications`, {
+    method: 'POST',
+    headers: { Authorization: twAuth(), 'Content-Type': 'application/x-www-form-urlencoded' },
+    body,
+  });
+  return { ok: r.ok, status: r.status, data: await r.json().catch(() => ({})) };
+}
+
+async function twilioCheck(phone, code) {
+  const body = new URLSearchParams({ To: phone, Code: code });
+  const r = await fetch(`https://verify.twilio.com/v2/Services/${TW_SERVICE}/VerificationCheck`, {
+    method: 'POST',
+    headers: { Authorization: twAuth(), 'Content-Type': 'application/x-www-form-urlencoded' },
+    body,
+  });
+  return { ok: r.ok, status: r.status, data: await r.json().catch(() => ({})) };
+}
+
+// ── 密碼登入欄位驗證(PHONE-PASSWORD-AUTH-PLAN §3.5)──────────────────
+const CURRENT_YEAR = new Date().getFullYear();
+
+function validatePassword(password) {
+  if (typeof password !== 'string') return false;
+  if (password.length < 6) return false;
+  if (Buffer.byteLength(password, 'utf8') > 72) return false; // bcrypt 截斷位
+  return true;
+}
+function validateUsername(username) {
+  if (typeof username !== 'string') return false;
+  const t = username.trim();
+  return t.length >= 1 && t.length <= 30;
+}
+function validateGender(gender) {
+  return gender === 'male' || gender === 'female';
+}
+function validateBirthYear(birthYear) {
+  const y = Number(birthYear);
+  return Number.isInteger(y) && y >= 1900 && y <= CURRENT_YEAR;
+}
+
+// ── Ticket(「電話已驗證」短期憑證,§3.2)────────────────────────────
+// 用 JWT 自簽,唔使 server-side store。payload 冇 id,攞去撞 requireAuth
+// 會因為 decoded.id undefined 查唔到用戶而 401——但唔靠呢個巧合,
+// register-phone/reset-password 一律顯式驗 purpose claim。
+function signTicket(phone) {
+  return jwt.sign({ phone, purpose: 'phone_verified' }, JWT_SECRET, { expiresIn: TICKET_EXPIRY });
+}
+
+// 回 { error } 俾 route 直接 res.status(401).json(...);冇拋錯,call 位睇返回值。
+function verifyTicket(ticket) {
+  try {
+    const decoded = jwt.verify(ticket, JWT_SECRET);
+    if (decoded?.purpose !== 'phone_verified' || !decoded?.phone) {
+      return { error: 'ticket_invalid' };
+    }
+    return { phone: decoded.phone };
+  } catch (e) {
+    if (e.name === 'TokenExpiredError') return { error: 'ticket_expired' };
+    return { error: 'ticket_invalid' };
+  }
+}
+
+// 統一 user object 形狀(§3.3):{ id, username, phone, email, role, gender, birthYear }
+function toUserObject(row) {
+  return {
+    id: row.id,
+    username: row.username,
+    phone: row.phone,
+    email: row.email,
+    role: row.role || 'member',
+    gender: row.gender || null,
+    birthYear: row.birth_year || null,
+  };
+}
+
+// 邀請碼輸入正規化(同 routes/invites.js normalizeCode 一樣嘅正則,兩個 file
+// 各自一份細 helper——照抄唔抽共用,同 normalizePhone 一致嘅取捨)。
+function normalizeInviteCode(raw) {
+  if (typeof raw !== 'string') return '';
+  return raw.replace(/[\s-]/g, '').toUpperCase();
+}
+
+// ── OTP-1 修復(DEEP-AUDIT-W2-EXEC-20260906 Commit C1)────────────────────
+// `/otp/verify` + `/otp/verify-ticket` 之前完全冇本地 attempt 節流,4-8 位
+// 數字驗證碼淨靠 Twilio Verify 自己(未知配置)嘅節流——可以爆帳戶嘅路。
+// 兩條 route 共用同一份 state(攻擊者交替打兩條 route 唔應該避得開限速,
+// 佢哋針對嘅係同一個 phone/同一個攻擊者)。
+//
+//   per-phone:10 分鐘 5 次錯(淨計 Twilio 話「唔啱」嗰啲,成功一次即清零)。
+//   per-IP  :60 次/10 分鐘保底(用 lib/rateLimit.js makeLimiter(),計全部
+//             attempt,防同一 IP 掃唔同 phone)。
+const VERIFY_PHONE_WINDOW_MS = 10 * 60 * 1000;
+const VERIFY_PHONE_MAX_FAILS = 5;
+const verifyFailsByPhone = new Map(); // phone -> { count, windowStart }
+function verifyIsExpiredRec(rec, now) { return now - rec.windowStart > VERIFY_PHONE_WINDOW_MS; }
+
+function verifyCheckPhoneLock(phone) {
+  sweepOnThreshold(verifyFailsByPhone, { isExpired: verifyIsExpiredRec });
+  const rec = verifyFailsByPhone.get(phone);
+  if (!rec) return { locked: false };
+  if (Date.now() - rec.windowStart > VERIFY_PHONE_WINDOW_MS) {
+    verifyFailsByPhone.delete(phone);
+    return { locked: false };
+  }
+  if (rec.count >= VERIFY_PHONE_MAX_FAILS) {
+    const retryAfterSec = Math.max(1, Math.ceil((rec.windowStart + VERIFY_PHONE_WINDOW_MS - Date.now()) / 1000));
+    return { locked: true, retryAfterSec };
+  }
+  return { locked: false };
+}
+
+function verifyRecordFail(phone) {
+  const now = Date.now();
+  const rec = verifyFailsByPhone.get(phone);
+  if (!rec || now - rec.windowStart > VERIFY_PHONE_WINDOW_MS) {
+    verifyFailsByPhone.set(phone, { count: 1, windowStart: now });
+  } else {
+    rec.count++;
+  }
+}
+
+function verifyClearPhone(phone) {
+  verifyFailsByPhone.delete(phone);
+}
+
+const verifyIpLimiter = makeLimiter({
+  name: 'otp-verify-ip',
+  keyOf: (req) => req, // check() 下面直接傳 ip string
+  max: 60,
+  windowMs: VERIFY_PHONE_WINDOW_MS, // 10 分鐘,同 phone 窗口對齊,方便一齊講「10 分鐘」
+});
+
+// 純 export 俾 harness 用(DEEP-AUDIT-W2-EXEC-20260906 H-C1)——route handler
+// 自己完全唔用呢啲 export,行為零改動。
+export { verifyCheckPhoneLock, verifyRecordFail, verifyClearPhone, verifyIpLimiter };
+
+function findUserByPhone(db, phone) {
+  const stmt = db.prepare('SELECT id, username, email, phone, role, gender, birth_year, password_hash FROM users WHERE phone = ?');
+  stmt.bind([phone]);
+  const found = stmt.step();
+  const row = found ? stmt.getAsObject() : null;
+  stmt.free();
+  return row;
+}
+
+export default function otpAuthRoutes(app, getUserDb) {
+  app.post('/api/auth/otp/request', async (req, res) => {
+    try {
+      const phone = normalizePhone(req.body?.phone);
+      if (!phone) return res.status(400).json({ error: 'bad_phone', message: '電話號碼格式唔啱' });
+
+      // +86:唔行 SMS,俾前端顯示 email 提示
+      if (phone.startsWith('+86')) {
+        return res.status(422).json({ error: 'cn_unsupported', message: '大陸號碼暫時未支援短訊登入,請用電郵驗證碼' });
+      }
+      if (!ALLOWED_PREFIXES.some((p) => phone.startsWith(p))) {
+        return res.status(422).json({ error: 'region_unsupported', message: '呢個地區暫時未開放電話登入' });
+      }
+      if (!otpConfigured()) {
+        return res.status(503).json({ error: 'not_configured', message: '電話登入未配置(等 Twilio key)' });
+      }
+
+      const rate = checkRate(phone, clientIp(req));
+      if (!rate.ok) return res.status(429).json({ error: rate.code, message: '太頻密,唞一唞再試' });
+
+      // 主 channel 試,失敗(例如冇 WhatsApp)自動 fallback SMS
+      let r = await twilioStart(phone, PRIMARY_CHANNEL);
+      if (!r.ok && PRIMARY_CHANNEL !== 'sms') r = await twilioStart(phone, 'sms');
+      if (!r.ok) return res.status(502).json({ error: 'send_failed', message: '發送失敗,請稍後再試' });
+
+      rate.commit();
+      // W2 Opus 驗收 #4:成功攞到新碼 = 自救路,清走 verify 錯誤計數(request 本身另有節流)。
+      verifyClearPhone(phone);
+      res.json({ ok: true, channel: r.data?.channel || PRIMARY_CHANNEL });
+    } catch (e) {
+      console.error('otp/request error:', e?.message);
+      res.status(500).json({ error: 'server_error' });
+    }
+  });
+
+  // ⚠️ 舊 endpoint,PHONE-PASSWORD-AUTH-PLAN §2.4 改行為:唔再 upsert 開新戶。
+  // 已有 phone 嘅存量用戶(舊 client)照樣登入,新 phone 一律引導去新流程。
+  app.post('/api/auth/otp/verify', async (req, res) => {
+    try {
+      const phone = normalizePhone(req.body?.phone);
+      const code = String(req.body?.code || '').trim();
+      if (!phone || !/^\d{4,8}$/.test(code)) return res.status(400).json({ error: 'bad_input' });
+
+      // OTP-1(Commit C1):喺打 Twilio 之前先擋——per-IP 保底 + per-phone 鎖。
+      if (verifyIpLimiter.check(clientIp(req))) return res.status(429).json({ error: 'rate_limited' });
+      const phoneLock = verifyCheckPhoneLock(phone);
+      if (phoneLock.locked) {
+        return res.status(429).json({ error: 'too_many_attempts', retryAfterSec: phoneLock.retryAfterSec, message: '太多次錯誤,請稍後再試' });
+      }
+
+      if (!otpConfigured()) return res.status(503).json({ error: 'not_configured' });
+
+      const chk = await twilioCheck(phone, code);
+      if (!(chk.ok && chk.data?.status === 'approved')) {
+        // W2 Opus 驗收 #4:只有 Twilio 明確話「碼唔啱」(2xx 但 status!=approved)先計入
+        // 5 次鎖;Twilio 網絡錯/5xx/4xx 唔計,否則長輩用戶撞 Twilio 故障都會被鎖 10 分鐘。
+        if (chk.ok) verifyRecordFail(phone);
+        return res.status(401).json({ error: 'bad_code', message: '驗證碼唔啱或者過期' });
+      }
+      verifyClearPhone(phone); // 成功即清零(§C1「只計錯,成功即 reset」)
+
+      const db = await getUserDb();
+      const user = findUserByPhone(db, phone);
+
+      if (!user) {
+        // 唔再 upsert 開新戶(§2.4)——舊 client 嘅新用戶要更新 app 行新註冊流程。
+        return res.status(422).json({ error: 'use_new_flow', message: '請更新 app 再註冊' });
+      }
+
+      const token = jwt.sign({ id: user.id, username: user.username }, JWT_SECRET, { expiresIn: TOKEN_EXPIRY });
+      res.json({ token, user: toUserObject(user), isNew: false });
+    } catch (e) {
+      console.error('otp/verify error:', e?.message);
+      res.status(500).json({ error: 'server_error' });
+    }
+  });
+
+  // ── verify-ticket(新,§3.3)────────────────────────────────────────
+  // 驗完 Twilio code 之後發一個短期 ticket,證明「呢一刻控制住呢個電話」。
+  // 對「已註冊」定「未註冊」嘅 phone 都發 ticket(payload 一樣)——由
+  // register-phone / reset-password 兩個 endpoint 自己分流(§2.3)。
+  app.post('/api/auth/otp/verify-ticket', async (req, res) => {
+    try {
+      const phone = normalizePhone(req.body?.phone);
+      const code = String(req.body?.code || '').trim();
+      if (!phone || !/^\d{4,8}$/.test(code)) return res.status(400).json({ error: 'bad_input' });
+
+      // OTP-1(Commit C1):同 /otp/verify 共用同一份 per-phone/per-IP state
+      // (避免攻擊者交替打兩條 route 避開限速)。
+      if (verifyIpLimiter.check(clientIp(req))) return res.status(429).json({ error: 'rate_limited' });
+      const phoneLock = verifyCheckPhoneLock(phone);
+      if (phoneLock.locked) {
+        return res.status(429).json({ error: 'too_many_attempts', retryAfterSec: phoneLock.retryAfterSec, message: '太多次錯誤,請稍後再試' });
+      }
+
+      if (!otpConfigured()) return res.status(503).json({ error: 'not_configured' });
+
+      const chk = await twilioCheck(phone, code);
+      if (!(chk.ok && chk.data?.status === 'approved')) {
+        // W2 Opus 驗收 #4:只有 Twilio 明確話「碼唔啱」(2xx 但 status!=approved)先計入
+        // 5 次鎖;Twilio 網絡錯/5xx/4xx 唔計,否則長輩用戶撞 Twilio 故障都會被鎖 10 分鐘。
+        if (chk.ok) verifyRecordFail(phone);
+        return res.status(401).json({ error: 'bad_code', message: '驗證碼唔啱或者過期' });
+      }
+      verifyClearPhone(phone); // 成功即清零
+
+      const db = await getUserDb();
+      const user = findUserByPhone(db, phone);
+      const registered = !!user;
+      const profileComplete = registered
+        ? !!(user.username && user.gender && user.birth_year)
+        : false;
+
+      const ticket = signTicket(phone);
+      res.json({ ticket, registered, profileComplete });
+    } catch (e) {
+      console.error('otp/verify-ticket error:', e?.message);
+      res.status(500).json({ error: 'server_error' });
+    }
+  });
+
+  // ── register-phone(新,§2.1/§3.3;MEMBERSHIP-PHASE4 §2.4 加邀請碼閘)──
+  app.post('/api/auth/register-phone', async (req, res) => {
+    try {
+      const { ticket, password, username, gender, birthYear, inviteCode } = req.body || {};
+      if (typeof ticket !== 'string') return res.status(401).json({ error: 'ticket_invalid' });
+
+      const tv = verifyTicket(ticket);
+      if (tv.error) return res.status(401).json({ error: tv.error });
+      const phone = tv.phone; // 一律信 ticket 入面嘅 phone,body 冇送呢個欄
+
+      if (!validatePassword(password)) return res.status(400).json({ error: 'weak_password' });
+      if (!validateUsername(username)) return res.status(400).json({ error: 'bad_username' });
+      if (!validateGender(gender)) return res.status(400).json({ error: 'bad_gender' });
+      if (!validateBirthYear(birthYear)) return res.status(400).json({ error: 'bad_birth_year' });
+
+      const db = await getUserDb();
+      const existing = findUserByPhone(db, phone);
+      if (existing) return res.status(422).json({ error: 'already_registered', message: '呢個號碼已註冊,請直接登入' });
+
+      // ── 邀請碼閘(MEMBERSHIP-PHASE4-FRIENDS-INVITES-PLAN §2.4;open mode
+      // 由必填改做選填——REGISTER-OPTIONAL-INVITE-PLAN §2-B2)────────────
+      // 驗碼(存在、未用、未 revoked)要喺 INSERT user 之前,同開戶做同一個
+      // 邏輯批次(§0.6:預檢喺 invite-check,呢度先係真正消費)。§4 case 9:
+      // 舊 bundle 完全冇送 inviteCode 欄 → 當「請更新 app」處理,唔當「碼錯」。
+      // invite mode:一字不改(保底,隨時切返)。open mode:冇送/空字串照開戶
+      // 唔建 friendship;有送就照同一套驗證——用戶主動入咗碼就要誠實擋,
+      // 唔可以 silent ignore 令佢以為加咗好友其實冇。
+      let inviteRow = null;
+      const normalized = normalizeInviteCode(inviteCode);
+      if (REGISTRATION_MODE === 'invite' && !normalized) {
+        return res.status(422).json({ error: 'invite_required', message: '請更新 app 再註冊' });
+      }
+      if (normalized) {
+        const stmt = db.prepare('SELECT code, created_by, used_by, revoked FROM invites WHERE code = ?');
+        stmt.bind([normalized]);
+        inviteRow = stmt.step() ? stmt.getAsObject() : null;
+        stmt.free();
+        // 唔存在/revoked 一律 invite_invalid(no oracle,同 invite-check 一致);
+        // 存在但已用 → invite_used(§2.4 流程圖,前端跳返⓪嘅分流靠呢個分開嘅碼)。
+        if (!inviteRow || inviteRow.revoked) {
+          return res.status(422).json({ error: 'invite_invalid', message: '邀請碼唔啱,請問返邀請你嗰位朋友' });
+        }
+        if (inviteRow.used_by !== null && inviteRow.used_by !== undefined) {
+          return res.status(422).json({ error: 'invite_used', message: '呢個邀請碼啱啱俾人用咗' });
+        }
+      }
+
+      const hash = await bcrypt.hash(password, SALT_ROUNDS);
+      const trimmedUsername = username.trim();
+      db.run(
+        'INSERT INTO users (username, email, password_hash, phone, gender, birth_year) VALUES (?, ?, ?, ?, ?, ?)',
+        [trimmedUsername, `phone_${phone}@placeholder.local`, hash, phone, gender, Number(birthYear)]
+      );
+
+      const user = findUserByPhone(db, phone);
+
+      if (inviteRow) {
+        // self-check 防手滑(§2-B2):理論上一個啱啱先開嘅新戶唔會撞到自己
+        // 送嘅碼(created_by 一定係已存在嘅另一個用戶)——純防禦性,一旦撞到
+        // 就當冇送碼咁唔 consume 唔建 friendship,戶口已開唔撤銷(避免半吊子
+        // 帳戶好過拒絕註冊)。
+        if (inviteRow.created_by === user.id) {
+          console.warn('register-phone invite self-use guard tripped', inviteRow.code, user.id);
+        } else {
+          // 消費碼 + 自動加好友(§2.6)—— 共用邏輯喺 lib/inviteRedeem.js(同
+          // /api/invites/redeem 一份)。極罕見 race(§4 case 6:兩個人同時撞正用
+          // 同一個碼)已開嘅戶唔回滾,淨係邀請關係冧咗,function 內部有 log。
+          redeemInviteAndFriend(db, inviteRow, user.id);
+        }
+      }
+
+      saveUserDb(db);
+
+      const token = jwt.sign({ id: user.id, username: user.username }, JWT_SECRET, { expiresIn: TOKEN_EXPIRY });
+      res.json({ token, user: toUserObject(user) });
+    } catch (e) {
+      console.error('register-phone error:', e?.message);
+      res.status(500).json({ error: 'server_error' });
+    }
+  });
+
+  // ── login-phone(新,§2.2/§3.4)────────────────────────────────────
+  app.post('/api/auth/login-phone', async (req, res) => {
+    const ip = clientIp(req);
+    try {
+      const phone = normalizePhone(req.body?.phone);
+      const password = req.body?.password;
+      if (!phone || typeof password !== 'string' || !password) {
+        return res.status(400).json({ error: 'bad_input' });
+      }
+
+      if (ipLoginLimiter.isLocked(ip)) {
+        return res.status(429).json({ error: 'too_many_attempts', message: '太多次失敗,請15分鐘後再試' });
+      }
+      if (phoneLoginLimiter.isLocked(phone)) {
+        return res.status(429).json({ error: 'too_many_attempts', message: '太多次失敗,請15分鐘後再試,或者用忘記密碼' });
+      }
+
+      const db = await getUserDb();
+      const user = findUserByPhone(db, phone);
+
+      if (!user) {
+        ipLoginLimiter.recordFail(ip);
+        phoneLoginLimiter.recordFail(phone);
+        return res.status(401).json({ error: 'bad_credentials', message: '電話或密碼唔啱' });
+      }
+
+      // sentinel(§6):冇任何輸入 compare 得過,唔算「密碼估錯」,引導去忘記密碼。
+      if (user.password_hash === SENTINEL_HASH) {
+        return res.status(422).json({ error: 'password_not_set', message: '呢個帳戶未設密碼,請用「忘記密碼」設定' });
+      }
+
+      const valid = await bcrypt.compare(password, user.password_hash);
+      if (!valid) {
+        ipLoginLimiter.recordFail(ip);
+        phoneLoginLimiter.recordFail(phone);
+        return res.status(401).json({ error: 'bad_credentials', message: '電話或密碼唔啱' });
+      }
+
+      ipLoginLimiter.clear(ip);
+      phoneLoginLimiter.clear(phone);
+      const token = jwt.sign({ id: user.id, username: user.username }, JWT_SECRET, { expiresIn: TOKEN_EXPIRY });
+      res.json({ token, user: toUserObject(user) });
+    } catch (e) {
+      console.error('login-phone error:', e?.message);
+      res.status(500).json({ error: 'server_error' });
+    }
+  });
+
+  // ── reset-password(新,§2.3/§3.3)─────────────────────────────────
+  app.post('/api/auth/reset-password', async (req, res) => {
+    try {
+      const { ticket, password, username, gender, birthYear } = req.body || {};
+      if (typeof ticket !== 'string') return res.status(401).json({ error: 'ticket_invalid' });
+
+      const tv = verifyTicket(ticket);
+      if (tv.error) return res.status(401).json({ error: tv.error });
+      const phone = tv.phone;
+
+      if (!validatePassword(password)) return res.status(400).json({ error: 'weak_password' });
+      // 呢三個係 optional 補完欄——冇送就唔驗;有送就要合規,先至寫得入去。
+      if (username !== undefined && username !== null && !validateUsername(username)) {
+        return res.status(400).json({ error: 'bad_username' });
+      }
+      if (gender !== undefined && gender !== null && !validateGender(gender)) {
+        return res.status(400).json({ error: 'bad_gender' });
+      }
+      if (birthYear !== undefined && birthYear !== null && !validateBirthYear(birthYear)) {
+        return res.status(400).json({ error: 'bad_birth_year' });
+      }
+
+      const db = await getUserDb();
+      const existing = findUserByPhone(db, phone);
+      if (!existing) return res.status(422).json({ error: 'no_account', message: '呢個號碼未註冊' });
+
+      const hash = await bcrypt.hash(password, SALT_ROUNDS);
+      db.run('UPDATE users SET password_hash = ? WHERE id = ?', [hash, existing.id]);
+      // 改密碼即令舊 token 失效(TOKEN-REVOKE-DRILL-EXEC-20260929 Part A);
+      // 同一個流程、同一次 saveUserDb 落盤。新 token 喺下面先簽,iat >= 呢個值。
+      markTokensRevoked(db, existing.id);
+
+      // 補完 profile(§2.3):只喺該欄目前係 NULL 先寫入,有值一律唔覆蓋。
+      if (!existing.username && username !== undefined && username !== null && validateUsername(username)) {
+        db.run('UPDATE users SET username = ? WHERE id = ?', [username.trim(), existing.id]);
+      }
+      if (!existing.gender && gender !== undefined && gender !== null && validateGender(gender)) {
+        db.run('UPDATE users SET gender = ? WHERE id = ?', [gender, existing.id]);
+      }
+      if (!existing.birth_year && birthYear !== undefined && birthYear !== null && validateBirthYear(birthYear)) {
+        db.run('UPDATE users SET birth_year = ? WHERE id = ?', [Number(birthYear), existing.id]);
+      }
+      saveUserDb(db);
+
+      const user = findUserByPhone(db, phone);
+      const token = jwt.sign({ id: user.id, username: user.username }, JWT_SECRET, { expiresIn: TOKEN_EXPIRY });
+      res.json({ token, user: toUserObject(user) });
+    } catch (e) {
+      console.error('reset-password error:', e?.message);
+      res.status(500).json({ error: 'server_error' });
+    }
+  });
+
+  // 前端可以問一問電話登入通唔通,決定登入頁預設顯示邊個;registrationMode
+  // (MEMBERSHIP-PHASE4 §2.4)俾前端決定註冊流程使唔使顯示邀請碼步,將來切
+  // open 唔使再 OTA(§4 case 12)。
+  app.get('/api/auth/otp/status', (req, res) => {
+    res.json({ configured: otpConfigured(), channel: PRIMARY_CHANNEL, allowed: ALLOWED_PREFIXES, registrationMode: REGISTRATION_MODE });
+  });
+}

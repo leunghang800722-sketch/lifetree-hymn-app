@@ -1,0 +1,675 @@
+{
+ "status": "暫緩-版權",
+ "decidedBy": "Eric",
+ "decidedAt": "2026-08-19",
+ "note": "Eric 2026-08-19 拍板:呢批在版權英文/兒童敬拜歌暫時唔上歌詞。起因:R3 英文線連續七轉零產出,第七轉靠 trace 逼出真相 —— 唔係 context 爆(我早前三次診斷全部搞錯),而係複核 agent 嘅運作守則唔准重現在版權歌詞正文,而呢個分區 100% 係當代在版權作品(Yancy / Hillsong Kids / CJ and Friends / Listener Kids / Matt Redman / Chris Tomlin / Bethel 等)。處置:draft 保留唔郁(唔 apply、唔判 unusable、唔 delist),lyrics_status 維持 draft 隨時可翻案。lyrics-line-english task 已 disable —— 池入面冇任何非在版權嘅英文歌可以轉做,所以係「暫停」唔係「轉線」。第日如果收錄咗公有領域聖詩(傳統 hymn),就開返個 task 並更新呢個名單。",
+ "draftsHeld": {
+  "count": 66,
+  "items": [
+   {
+    "id": 4521,
+    "title": "LOVE (Dance Along) with Lyrics | CJ and Friends",
+    "artist": "CJ and Friends",
+    "lang": "英文",
+    "source": "ocr"
+   },
+   {
+    "id": 4535,
+    "title": "Arky Arky | Dance A-long with Lyrics | Kids Worship",
+    "artist": "CJ and Friends",
+    "lang": "英文",
+    "source": "ocr"
+   },
+   {
+    "id": 4543,
+    "title": "Put God's Work First - Matthew 6:33 | CJ and Friends & Hillsong Kids Bible Verse Song",
+    "artist": "CJ and Friends",
+    "lang": "英文",
+    "source": "ocr"
+   },
+   {
+    "id": 4544,
+    "title": "We Serve A Mighty God ⚡️ Song & Bible Story Workout for Kids | @CJandFriends and @BoboPE",
+    "artist": "CJ and Friends",
+    "lang": "英文",
+    "source": "ocr"
+   },
+   {
+    "id": 4549,
+    "title": "Go Tell It on the Mountain ❄️CJ and Friends | Christmas Dance-A-Long with Lyrics",
+    "artist": "CJ and Friends",
+    "lang": "英文",
+    "source": "ocr"
+   },
+   {
+    "id": 4550,
+    "title": "I Have Decided | CJ and Friends Dance-A-Long | Listener Kids Music with Lyrics",
+    "artist": "CJ and Friends",
+    "lang": "英文",
+    "source": "ocr"
+   },
+   {
+    "id": 4553,
+    "title": "Tell The World Hillsong | Dance-A-Long with Lyrics | CJ and Friends",
+    "artist": "CJ and Friends",
+    "lang": "英文",
+    "source": "ocr"
+   },
+   {
+    "id": 4555,
+    "title": "Here I Am To Worship | Dance-Along with Lyrics | CJ and Friends ft. PJ",
+    "artist": "CJ and Friends",
+    "lang": "英文",
+    "source": "ocr"
+   },
+   {
+    "id": 4558,
+    "title": "As the Deer Remix | Dance-along with Lyrics | CJ and Friends ft. 2TheHuman",
+    "artist": "CJ and Friends",
+    "lang": "英文",
+    "source": "ocr"
+   },
+   {
+    "id": 4560,
+    "title": "Mighty to Save | Dance-A-Long with Lyrics | CJ and Friends",
+    "artist": "CJ and Friends",
+    "lang": "英文",
+    "source": "ocr"
+   },
+   {
+    "id": 4561,
+    "title": "Happy and You Know It | CJ and Friends Dance-A-Long with @listenerkids",
+    "artist": "CJ and Friends",
+    "lang": "英文",
+    "source": "ocr"
+   },
+   {
+    "id": 4562,
+    "title": "Lord I Lift Your Name On High | Dance-A-Long with Lyrics | Kids Worship",
+    "artist": "CJ and Friends",
+    "lang": "英文",
+    "source": "ocr"
+   },
+   {
+    "id": 4563,
+    "title": "The Bible Song | Dance-Along with Lyrics | Kids Worship",
+    "artist": "CJ and Friends",
+    "lang": "英文",
+    "source": "ocr"
+   },
+   {
+    "id": 4570,
+    "title": "Love the Lord | Kids Worship Motions with Lyrics | CJ and Friends",
+    "artist": "CJ and Friends",
+    "lang": "英文",
+    "source": "ocr"
+   },
+   {
+    "id": 4433,
+    "title": "Books of the Bible - Lyric Video | Hillsong Kids",
+    "artist": "Hillsong Kids",
+    "lang": "英文",
+    "source": "ocr"
+   },
+   {
+    "id": 4437,
+    "title": "Superhero (Billy Davis Remix) - Lyric Video | Hillsong Kids",
+    "artist": "Hillsong Kids",
+    "lang": "英文",
+    "source": "ocr"
+   },
+   {
+    "id": 4446,
+    "title": "Memory Verse Song - Romans 8:28 | Hillsong Kids",
+    "artist": "Hillsong Kids",
+    "lang": "英文",
+    "source": "ocr"
+   },
+   {
+    "id": 4448,
+    "title": "1 Samuel 16:7b (What Is In The Heart) - Memory Verse Song | Hillsong Kids",
+    "artist": "Hillsong Kids",
+    "lang": "英文",
+    "source": "ocr"
+   },
+   {
+    "id": 4449,
+    "title": "Hebrews 10:25 (Meet Together) - Memory Verse Song | Hillsong Kids",
+    "artist": "Hillsong Kids",
+    "lang": "英文",
+    "source": "ocr"
+   },
+   {
+    "id": 4452,
+    "title": "Animal Fun Song for Preschoolers & Little Hearts! 🦁🐰🐢🎵",
+    "artist": "Hillsong Kids",
+    "lang": "英文",
+    "source": "ocr"
+   },
+   {
+    "id": 4454,
+    "title": "Joyful Live Kids Worship 🎤🎉 \"We Came to Meet with You\"",
+    "artist": "Hillsong Kids",
+    "lang": "英文",
+    "source": "ocr"
+   },
+   {
+    "id": 4455,
+    "title": "KIDS HEARTWARMING WORSHIP! 🙌 'What a Beautiful Name' - Live Recording!",
+    "artist": "Hillsong Kids",
+    "lang": "英文",
+    "source": "ocr"
+   },
+   {
+    "id": 4461,
+    "title": "🙌 Live Praise And Worship With Kids! (Ask Seek Knock)",
+    "artist": "Hillsong Kids",
+    "lang": "英文",
+    "source": "ocr"
+   },
+   {
+    "id": 4463,
+    "title": "Not Gonna Stop With Me (Lyric Video) - Hillsong Kids",
+    "artist": "Hillsong Kids",
+    "lang": "英文",
+    "source": "ocr"
+   },
+   {
+    "id": 4464,
+    "title": "Sinking Deep (Hillsong Kids Version) [Lyric Video] | Hillsong Kids",
+    "artist": "Hillsong Kids",
+    "lang": "英文",
+    "source": "ocr"
+   },
+   {
+    "id": 4787,
+    "title": "Let It Shine (This Little Light Of Mine)",
+    "artist": "Hillsong Kids",
+    "lang": "英文",
+    "source": "ocr"
+   },
+   {
+    "id": 4791,
+    "title": "Psalm 92:13 - Planted | Hillsong Kids",
+    "artist": "Hillsong Kids",
+    "lang": "英文",
+    "source": "ocr"
+   },
+   {
+    "id": 4793,
+    "title": "2 Peter 3:18 -  Grow in the Grace and Knowledge",
+    "artist": "Hillsong Kids",
+    "lang": "英文",
+    "source": "ocr"
+   },
+   {
+    "id": 4804,
+    "title": "Jesus Loves Me (This I Know) | Hillsong Kids",
+    "artist": "Hillsong Kids",
+    "lang": "英文",
+    "source": "ocr"
+   },
+   {
+    "id": 4828,
+    "title": "You Are My World - Piano Lullaby | Hillsong Kids",
+    "artist": "Hillsong Kids",
+    "lang": "英文",
+    "source": "whisper"
+   },
+   {
+    "id": 4830,
+    "title": "Give Thanks - Piano Lullaby | Hillsong Kids",
+    "artist": "Hillsong Kids",
+    "lang": "英文",
+    "source": "whisper"
+   },
+   {
+    "id": 4779,
+    "title": "♫ ALWAYS LOVE LYRIC VIDEO ♫ | Kids on the Move",
+    "artist": "Kids on the Move",
+    "lang": "英文",
+    "source": "ocr"
+   },
+   {
+    "id": 4782,
+    "title": "Faithful Friend Lyric Video | Kids on the Move",
+    "artist": "Kids on the Move",
+    "lang": "英文",
+    "source": "ocr"
+   },
+   {
+    "id": 4467,
+    "title": "O Come All Ye Faithful - Christmas song for kids",
+    "artist": "Listener Kids",
+    "lang": "英文",
+    "source": "ocr"
+   },
+   {
+    "id": 4474,
+    "title": "Inright Outright (Happy All the Time) - Dance Along Kids Praise",
+    "artist": "Listener Kids",
+    "lang": "英文",
+    "source": "ocr"
+   },
+   {
+    "id": 4480,
+    "title": "Jack & Scarlett's Joyful Adventure - A Christian Story and Song for Kids - Listener Kids Storytime",
+    "artist": "Listener Kids",
+    "lang": "英文",
+    "source": "ocr"
+   },
+   {
+    "id": 4481,
+    "title": "Walking with Jesus (Listener Kids Version) - Kids Bible Song",
+    "artist": "Listener Kids",
+    "lang": "英文",
+    "source": "ocr"
+   },
+   {
+    "id": 4505,
+    "title": "The B-I-B-L-E, Thats The Book For Me! (Kids Praise and Worship)",
+    "artist": "Listener Kids",
+    "lang": "英文",
+    "source": "ocr"
+   },
+   {
+    "id": 4508,
+    "title": "What A Mighty God We Serve (Kids Praise and Worship)",
+    "artist": "Listener Kids",
+    "lang": "英文",
+    "source": "ocr"
+   },
+   {
+    "id": 4509,
+    "title": "\"The Joy Joy Joy Joy Down in my heart!  (kids praise and worship)",
+    "artist": "Listener Kids",
+    "lang": "英文",
+    "source": "ocr"
+   },
+   {
+    "id": 4807,
+    "title": "Angels We Have Heard on High - Christian Christmas songs for kids!",
+    "artist": "Listener Kids",
+    "lang": "英文",
+    "source": "ocr"
+   },
+   {
+    "id": 4811,
+    "title": "I Am a C-H-R-I-S-T-I-A-N - (SURPRISE ENDING) - Praise fun for Kids",
+    "artist": "Listener Kids",
+    "lang": "英文",
+    "source": "ocr"
+   },
+   {
+    "id": 654,
+    "title": "The Heart of Worship - by Matt Redman",
+    "artist": "Matt Redman",
+    "lang": "英文",
+    "source": "ocr"
+   },
+   {
+    "id": 1492,
+    "title": "How I Love You | Passion Music | Worship Together Session",
+    "artist": "Worship Together",
+    "lang": "英文",
+    "source": "whisper"
+   },
+   {
+    "id": 4575,
+    "title": "Yancy - What An Awesome God [OFFICIAL LYRIC VIDEO] Worship song kids version Phil Wickham R Mullins",
+    "artist": "Yancy",
+    "lang": "英文",
+    "source": "ocr"
+   },
+   {
+    "id": 4576,
+    "title": "Yancy - Merry Christmas Greetings [OFFICIAL LYRIC VIDEO] Fun, happy Christmas Holiday Song",
+    "artist": "Yancy",
+    "lang": "英文",
+    "source": "ocr"
+   },
+   {
+    "id": 4589,
+    "title": "Yancy - Holy Forever [OFFICIAL LYRIC VIDEO] worship song for kids & children (Chris Tomlin, Bethel)",
+    "artist": "Yancy",
+    "lang": "英文",
+    "source": "ocr"
+   },
+   {
+    "id": 4600,
+    "title": "Yancy - O Come O Come Emmanuel [OFFICIAL LYRIC VIDEO] Christmas Kids Worship Song",
+    "artist": "Yancy",
+    "lang": "英文",
+    "source": "ocr"
+   },
+   {
+    "id": 4602,
+    "title": "Yancy - Little Drummer Boy [OFFICIAL LYRIC VIDEO] Kids Christmas Worship Song",
+    "artist": "Yancy",
+    "lang": "英文",
+    "source": "ocr"
+   },
+   {
+    "id": 4606,
+    "title": "Yancy - Holy Spirit Come [OFFICIAL LYRIC VIDEO] Single for Kids Praise and Worship",
+    "artist": "Yancy",
+    "lang": "英文",
+    "source": "ocr"
+   },
+   {
+    "id": 4608,
+    "title": "Yancy & Little Praise Party - This Little Light Of Mine [OFFICIAL KIDS WORSHIP VID] My Best Friend",
+    "artist": "Yancy",
+    "lang": "英文",
+    "source": "ocr"
+   },
+   {
+    "id": 4621,
+    "title": "Yancy - Praise The Lord Every Day [OFFICIAL MUSIC VIDEO] VBS Kids Worship -Little Praise Party",
+    "artist": "Yancy",
+    "lang": "英文",
+    "source": "whisper"
+   },
+   {
+    "id": 4628,
+    "title": "Yancy & Little Praise Party - Choosing Happy [OFFICIAL KIDS MUSIC VIDEO] from Out Of This World",
+    "artist": "Yancy",
+    "lang": "英文",
+    "source": "ocr"
+   },
+   {
+    "id": 4631,
+    "title": "Yancy - Who You Say I Am [OFFICIAL LYRIC VIDEO] Kids Worship",
+    "artist": "Yancy",
+    "lang": "英文",
+    "source": "ocr"
+   },
+   {
+    "id": 4632,
+    "title": "Yancy - There Is Power [OFFICIAL MUSIC VIDEO] from Kidmin Worship Vol. 4",
+    "artist": "Yancy",
+    "lang": "英文",
+    "source": "ocr"
+   },
+   {
+    "id": 4635,
+    "title": "Yancy & Little Praise Party - Whoa, I Have Life [OFFICIAL KIDS WORSHIP MUSIC VDEO] My Best Friend",
+    "artist": "Yancy",
+    "lang": "英文",
+    "source": "ocr"
+   },
+   {
+    "id": 4636,
+    "title": "Yancy & Little Praise Party - How Great Is Our God -[OFFICIAL KIDS WORSHIP MUSIC VIDEO]",
+    "artist": "Yancy",
+    "lang": "英文",
+    "source": "ocr"
+   },
+   {
+    "id": 4640,
+    "title": "Yancy & Little Praise Party - Don't Monkey Around with the Devil [OFFICIAL KIDS MUSIC VIDEO]",
+    "artist": "Yancy",
+    "lang": "英文",
+    "source": "ocr"
+   },
+   {
+    "id": 4642,
+    "title": "Yancy - Every Day & Every Night [OFFICIAL LYRIC VIDEO] from Kidmin Worship Vol. 3",
+    "artist": "Yancy",
+    "lang": "英文",
+    "source": "ocr"
+   },
+   {
+    "id": 4644,
+    "title": "Yancy - All Things [OFFICIAL LYRIC VIDEO] from Jesus Music Box",
+    "artist": "Yancy",
+    "lang": "英文",
+    "source": "ocr"
+   },
+   {
+    "id": 4655,
+    "title": "Yancy & Little Praise Party - Stop and Go [OFFICIAL MUSIC VIDEO]  from Taste and See",
+    "artist": "Yancy",
+    "lang": "英文",
+    "source": "ocr"
+   },
+   {
+    "id": 4656,
+    "title": "Yancy & Little Praise Party - Ready Set Go [OFFICIAL MUSIC VIDEO] from Ready Set Go",
+    "artist": "Yancy",
+    "lang": "英文",
+    "source": "ocr"
+   },
+   {
+    "id": 4662,
+    "title": "Yancy & Little Praise Party - It's A Happy Day- [OFFICIAL MUSIC VIDEO] EASTER KIDS WORSHIP",
+    "artist": "Yancy",
+    "lang": "英文",
+    "source": "ocr"
+   },
+   {
+    "id": 4667,
+    "title": "Yancy - Live Differently [OFFICIAL LYRIC VIDEO] Kidmin Worship Vol. 5 Missions & Serving",
+    "artist": "Yancy",
+    "lang": "英文",
+    "source": "ocr"
+   },
+   {
+    "id": 4674,
+    "title": "Yancy & Little Praise Party - He's Alive, He's Alive [OFFICIAL EASTER KIDS WORSHIP MUSIC VIDEO]",
+    "artist": "Yancy",
+    "lang": "英文",
+    "source": "ocr"
+   },
+   {
+    "id": 4680,
+    "title": "Yancy - Wanna Be Like Jesus [OFFICIAL LYRIC VIDEO] from Kidmin Worship Vol. 3",
+    "artist": "Yancy",
+    "lang": "英文",
+    "source": "ocr"
+   }
+  ]
+ },
+ "poolNotYetDrafted": {
+  "count": 39,
+  "note": "仲未出 draft,但同樣係在版權,出咗都一樣扣起",
+  "items": [
+   {
+    "id": 469,
+    "title": "He Has Done Great Things (Live) - Bethel Music, Jenn Johnson",
+    "artist": "Bethel Music"
+   },
+   {
+    "id": 823,
+    "title": "Brandon Lake & Chandler Moore 2025 🙌 Gospel Worship Songs |",
+    "artist": "Brandon Lake"
+   },
+   {
+    "id": 1056,
+    "title": "Beatbox Pixie",
+    "artist": "Brandon Lake"
+   },
+   {
+    "id": 4512,
+    "title": "Zacchaeus | Dance Along with Lyrics | CJ and Friends",
+    "artist": "CJ and Friends"
+   },
+   {
+    "id": 4514,
+    "title": "Joy to the World | Christmas Dance & Sing Along 🎄✨ CJ and Friends",
+    "artist": "CJ and Friends"
+   },
+   {
+    "id": 4517,
+    "title": "I'm in the Lord's Army, Yes Sir! | Music Video with Motions & Lyrics | CJ and Friends",
+    "artist": "CJ and Friends"
+   },
+   {
+    "id": 4522,
+    "title": "Jesus Is Alive! 🙌 The Easter Story and Worship | Scripture Safari | CJ and Friends",
+    "artist": "CJ and Friends"
+   },
+   {
+    "id": 4523,
+    "title": "The Fruit of the Spirit 🍇 | Scripture Safari Bible Story & Worship | CJ and Friends",
+    "artist": "CJ and Friends"
+   },
+   {
+    "id": 4524,
+    "title": "I WANNA BEAR FRUIT 🍎🍊 | LIVE Worship & Dance | CJ and Friends",
+    "artist": "CJ and Friends"
+   },
+   {
+    "id": 4527,
+    "title": "Peace | Quiet Song | Bedtime Lullaby | CJ & Friends",
+    "artist": "CJ and Friends"
+   },
+   {
+    "id": 4529,
+    "title": "Peace (Acoustic Version) | New Calming Song | CJ and Friends",
+    "artist": "CJ and Friends"
+   },
+   {
+    "id": 4531,
+    "title": "Praise 👏 Elevation Worship | CJ and Friends Dance-Along with Lyrics",
+    "artist": "CJ and Friends"
+   },
+   {
+    "id": 4536,
+    "title": "Stomp (Kirk Franklin) | Worship Motions with Freestyle | CJ & Friends",
+    "artist": "CJ and Friends"
+   },
+   {
+    "id": 4537,
+    "title": "Joyful (Dante Bowe) | CJ & Friends Dance-Along with Lyrics",
+    "artist": "CJ and Friends"
+   },
+   {
+    "id": 4538,
+    "title": "One Way (Acoustic) by CJ & Friends Worship | Sing & dance-along with motions and lyrics",
+    "artist": "CJ and Friends"
+   },
+   {
+    "id": 4539,
+    "title": "Every Move I Make (Acoustic) by CJ & Friends Worship | Sing & dance-along with motions and lyrics",
+    "artist": "CJ and Friends"
+   },
+   {
+    "id": 4540,
+    "title": "Peace Like A River (Acoustic) by CJ & Friends ft. Megan Tibbits | Worship Motions + Lyrics",
+    "artist": "CJ and Friends"
+   },
+   {
+    "id": 4545,
+    "title": "Peace Like a River (Acoustic) | CJ & Friends Song Sessions",
+    "artist": "CJ and Friends"
+   },
+   {
+    "id": 4559,
+    "title": "Brighter Day Kirk Franklin | CJ&Friends Dance-A-Long with Lyrics",
+    "artist": "CJ and Friends"
+   },
+   {
+    "id": 4564,
+    "title": "Shackles (Praise You) | Mary Mary | Dance-A-Long with Lyrics",
+    "artist": "CJ and Friends"
+   },
+   {
+    "id": 4565,
+    "title": "Open the Eyes of My Heart |@CJandFriends Dance-A-Long w/Lyrics |@LocalSound Remix",
+    "artist": "CJ and Friends"
+   },
+   {
+    "id": 4566,
+    "title": "One Way Hillsong | Dance-A-Long with Lyrics | Animated Worship Song",
+    "artist": "CJ and Friends"
+   },
+   {
+    "id": 4567,
+    "title": "“This is Amazing Grace” Phil Wickham Feat. Lecrae | Dance-A-Long with Lyrics",
+    "artist": "CJ and Friends"
+   },
+   {
+    "id": 4568,
+    "title": "Love Theory - Kirk Franklin | Hip-Hop Dance | Praise & Worship",
+    "artist": "CJ and Friends"
+   },
+   {
+    "id": 4572,
+    "title": "Every Move I Make | Dance-A-Long with Lyrics | Kids Worship",
+    "artist": "CJ and Friends"
+   },
+   {
+    "id": 609,
+    "title": "Chris Tomlin Hits I Praise and Worship I Jesus Loves Me",
+    "artist": "Chris Tomlin"
+   },
+   {
+    "id": 627,
+    "title": "Chris Tomlin - Indescribable (Lyrics And Chords)",
+    "artist": "Chris Tomlin"
+   },
+   {
+    "id": 898,
+    "title": "Cody Carnes – Bless God",
+    "artist": "Cody Carnes"
+   },
+   {
+    "id": 4479,
+    "title": "He's Got the Whole World in His Hands - Praise Song for Preschool",
+    "artist": "Listener Kids"
+   },
+   {
+    "id": 4507,
+    "title": "Silent Night - WITH LYRICS - Christmas Song For Kids",
+    "artist": "Listener Kids"
+   },
+   {
+    "id": 645,
+    "title": "Matt Redman - The Praise Is Yours (Live From The Mission)",
+    "artist": "Matt Redman"
+   },
+   {
+    "id": 1475,
+    "title": "Mosaic MSC - Prayer",
+    "artist": "Mosaic MSC"
+   },
+   {
+    "id": 1511,
+    "title": "Gratitude | Spontaneous Worship - Soul City Worship Feat. Matt Sallee",
+    "artist": "Soul City Worship"
+   },
+   {
+    "id": 1513,
+    "title": "I Know A Name - Soul City Worship",
+    "artist": "Soul City Worship"
+   },
+   {
+    "id": 1486,
+    "title": "I Know A Name | Canaan Baca | from Worship Together Conference",
+    "artist": "Worship Together"
+   },
+   {
+    "id": 4577,
+    "title": "Major news for July 16-18, 2025 aka Yancy's Annual Birthday Sale #singer #worshipmusic #livemusic",
+    "artist": "Yancy"
+   },
+   {
+    "id": 4579,
+    "title": "Yancy -That's My King [OFFICIAL LYRIC VIDEO] Praise song kids version originally by CeCe Winans",
+    "artist": "Yancy"
+   },
+   {
+    "id": 4581,
+    "title": "I'm back! Why I'm excited to be at Orange Conference in 2025 - Yancy -Kids Worship",
+    "artist": "Yancy"
+   },
+   {
+    "id": 4582,
+    "title": "Yancy - GoTell It (On the Mountain) [OFFICIAL LYRIC VIDEO] Fun, happy Christmas Carol Worship Song",
+    "artist": "Yancy"
+   }
+  ]
+ },
+ "generatedAt": "2026-08-19T19:30:13"
+}

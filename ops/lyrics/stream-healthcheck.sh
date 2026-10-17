@@ -1,0 +1,356 @@
+#!/usr/bin/env bash
+# 串流健康探測 —— Eric 2026-08-19 拍板;2026-08-22 加 Layer B(見下面)。
+#
+# 背景:2026-08-19 發現 YouTube 8/18 起唔再派 format 18,令 OCR 落載全線 403 燒咗
+# 成晚先俾人發現(靠 Eric 覺得「好似冇乜產出」)。串流播放層今次冇中招(佢用
+# bestaudio 唔係 18),**但同樣風險存在** —— googlevideo 隨時會對舊 client 轉態度。
+# 呢個 script 就係唔好等用戶投訴先知。
+#
+# ⚠️ 2026-08-22 全庫 100% 播歌事故:呢個 script 由 8-21 19:14 到 8-22 13:14 五個 tick
+# 全部 `ok=3 fail=0` 綠燈,但成個庫其實一首都播唔到。原因 = 病係「舊 yt-dlp 簽出嚟
+# 嘅 URL 只開放頭 1MiB,之後全 403」,而舊版呢個 script 淨係攞 `bytes=0-65535`
+# (64KB),**啱啱好落喺仲開放嗰 1MiB 之內**,所以探測同真實負載唔喺同一個象限,
+# 全程假陽性。事故 + 結構性修復:YTDLP-UNIFY-PLAN-20260822.md。
+#
+# 做乜(兩層,兩層都要過先算健康):
+#   Layer A:curl 幾個固定 id 嘅 /api/stream/<id>(頭 64KB)睇係咪 206。
+#            角色 = 驗「backend 生存 + 全鏈路頭段通」。
+#   Layer B:用**同 backend 現役同一隻** yt-dlp binary 行 --get-url,攞到條
+#            googlevideo URL 之後**直接打 CDN**,攞 64KB @ offset 2MiB,睇係咪 206。
+#            角色 = 驗「1MiB 之後仲派唔派貨」,即 8-22 嗰個病灶 range 本身。
+#
+# ⚠️ Layer B 一定要**繞過 backend 直打 googlevideo**,唔可以貪方便經 /api/stream 攞
+# mid-range:backend 個 warm bufferCache 封頂 12MB,絕大部份詩歌成首入晒記憶體,
+# upstream 死咗都可以由 cache 吐返 206 俾你 —— 咁就係補完一個假陽性即刻換第二個。
+#
+# 唔係 206 就寫警報落 docs/SUPERVISION-LOG.md,下次有人查進度就會見到。
+#
+# 點解唔用 launchd 嘅 hymnapp prefix:各班嘅 checkpoint 會核對
+# `launchctl list | grep hymnapp` 要夠 **7 個 job**,加多個 hymnapp job 會令佢哋以為
+# 出事。所以 label 用 com.hymnstream.healthcheck。
+# 點解唔用 Claude scheduled task:呢個純粹係幾個 curl,開成個 session 好嘥資源。
+#
+# 排程:launchd `com.hymnstream.healthcheck`,每 1800s(30 分鐘,STREAM-SELFHEAL-
+# PLAN-20260905 S1 由 3 小時進一步加密——連續 2 次 fail 最遲 1 小時內就會觸發
+# ops/stream/stream-selfheal.sh 自動修復;plist 改完要 bootout + bootstrap 一次)。
+# 手動試:  ops/lyrics/stream-healthcheck.sh --verbose   (STREAM-HARDEN2:喺 Claude 工具 shell 要 HC_MANUAL=1;測試用 STREAM_WATCH_TEST=1 + tmp WATCH_DIR,見 ops/stream/README.md)
+#
+# 2026-09-05:每次判斷完之後,尾段會呼叫 ops/stream/stream-selfheal.sh(傳入
+# healthy_a/healthy_b/mid/midfail/ok/fail/detail),由佢決定要唔要自動修
+# (連續 fail<2 唔會郁手,詳見 STREAM-SELFHEAL-PLAN-20260905.md)。
+
+set -u
+REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+LOG="$REPO/docs/SUPERVISION-LOG.md"
+STATE="$REPO/backend/data/stream-health-state.json"
+HISTORY="$REPO/backend/data/stream-health.log"
+HC_WATCH_LOG="${HC_WATCH_LOG:-/tmp/hymn_stream_watch.log}"   # 路徑:prod 預設同舊寫死值一樣;測試模式強制落 $WATCH_DIR/watch.log(見下)
+
+# ── STREAM-HARDEN2 入口 guard(任何寫入之前;三層防呆同 stream-watch.sh 同款)──────────────────────
+# 真 launchd tick:冇 STREAM_WATCH_TEST、冇 CLAUDECODE ⇒ 下面 if/elif 兩個分支都唔入 ⇒ HC_TEST=0,零改動(短路)。
+# (a) 測試模式 = STREAM_WATCH_TEST=1 + WATCH_DIR 解析 symlink 後喺 tmp;唔合 → REFUSED exit 2 零寫入(連 watch log 都唔寫)。
+#     測試模式下所有寫入路徑強制落 $WATCH_DIR/(STATE/HISTORY/LOG/watch log),Layer A/B 不准打真 backend / 真 YouTube / googlevideo。
+# (b) 非測試模式 + CLAUDECODE 非空(Claude 工具 shell)+ 冇 HC_MANUAL=1 → REFUSED exit 2 零寫入。
+_hc_tmpok() { # 要絕對路徑、無 `..`、解析 symlink 後喺 tmp 下
+  local p="$1" r
+  [[ "$p" == /* ]] || return 1
+  case "$p" in *..*) return 1 ;; esac
+  r="$(/usr/bin/python3 -c 'import os,sys;print(os.path.realpath(sys.argv[1]))' "$p" 2>/dev/null)" || return 1
+  case "$r" in /private/tmp/*|/private/var/folders/*|/tmp/*|/var/folders/*) return 0 ;; esac
+  return 1
+}
+HC_TEST=0
+if [[ "${STREAM_WATCH_TEST:-0}" == "1" ]]; then
+  _hc_bad=""
+  _hc_tmpok "${WATCH_DIR:-}" || _hc_bad="WATCH_DIR"
+  [[ -z "${YTDLP_BIN:-}" ]] || _hc_tmpok "$YTDLP_BIN" || _hc_bad="$_hc_bad YTDLP_BIN"
+  case "${HYMN_STREAM_BASE:-}" in *:3001*) _hc_bad="$_hc_bad HYMN_STREAM_BASE(唔准指真 backend :3001)" ;; esac
+  if [[ -n "$_hc_bad" ]]; then echo "REFUSED: STREAM_WATCH_TEST=1 要求 WATCH_DIR(同已設嘅 YTDLP_BIN)喺 tmp 下(解析 symlink 後)、HYMN_STREAM_BASE 唔係真 backend;不合:$_hc_bad" >&2; exit 2; fi
+  HC_TEST=1
+  # 測試模式路徑強制落 $WATCH_DIR(唔信 caller env)
+  LOG="$WATCH_DIR/SUPERVISION-LOG.md"
+  STATE="$WATCH_DIR/stream-health-state.json"
+  HISTORY="$WATCH_DIR/stream-health.log"
+  HC_WATCH_LOG="$WATCH_DIR/watch.log"
+  export HEALTH_STATE="$STATE" SELFHEAL_STATE="${SELFHEAL_STATE:-$WATCH_DIR/stream-selfheal-state.json}"   # 俾 selfheal 測試模式三 env 齊
+  mkdir -p "$WATCH_DIR" 2>/dev/null
+  # 測試模式 Layer A/B 預設全部 stub:base=死 port;yt-dlp=scratch stub;CDN 直打=固定 206(HC_CDN_FETCH_CMD 可 override)
+  export HYMN_STREAM_BASE="${HYMN_STREAM_BASE:-http://127.0.0.1:9}"
+  if [[ -z "${YTDLP_BIN:-}" ]]; then
+    YTDLP_BIN="$WATCH_DIR/hc-yt-dlp-stub"
+    printf '#!/bin/sh\n[ "$1" = "--version" ] && { echo stub; exit 0; }\necho "http://stub.invalid/audio"\n' > "$YTDLP_BIN"; chmod +x "$YTDLP_BIN"
+  fi
+elif [[ -n "${CLAUDECODE:-}" && "${HC_MANUAL:-0}" != "1" ]]; then
+  echo "REFUSED: stream-healthcheck.sh 只准由 launchd tick 行;喺 Claude 工具 shell 人手行請設 HC_MANUAL=1(測試請用 STREAM_WATCH_TEST=1 + tmp WATCH_DIR)" >&2
+  exit 2
+fi
+_hc_cdn_stub() { echo 206; }   # 測試模式 Layer B 直打 CDN 嘅預設 stub
+
+# ── tick 憑證(selfheal prod 模式靠佢判斷「喺 healthcheck tick 內」)──────────────────────────────
+# $WATCH_DIR/.tick-ctx(pid=<本 pid> ts=<epoch>,umask 077);任何 exit 路徑 trap 刪(只刪內容 pid==自己)。kill -9 會殘留,靠 pid 死 + 30 分鐘期限失效。
+# prod 路徑 = $HOME/.hymn-deploy(同下面 stream-watch.on 一樣由 HOME 計;selfheal 端 prod 用真 home)。
+if [[ $HC_TEST -eq 1 ]]; then HC_CTX="$WATCH_DIR/.tick-ctx"; else HC_CTX="$HOME/.hymn-deploy/.tick-ctx"; fi
+mkdir -p "$(dirname "$HC_CTX")" 2>/dev/null
+# Opus F4:寫憑證唔准跟 symlink(殘留/惡意 symlink 會令我覆寫第三方檔)——係 symlink 就先剷,再寫 tmp 後 mv(原子)
+[[ -L "$HC_CTX" ]] && rm -f "$HC_CTX" 2>/dev/null
+( umask 077; printf 'pid=%s ts=%s\n' "$$" "$(date +%s)" > "$HC_CTX.$$.tmp" && mv -f "$HC_CTX.$$.tmp" "$HC_CTX" ) 2>/dev/null
+_hc_ctx_rm() { [[ "$(sed -n 's/^pid=\([0-9][0-9]*\).*$/\1/p' "$HC_CTX" 2>/dev/null | head -1)" == "$$" ]] && rm -f "$HC_CTX" 2>/dev/null; return 0; }
+trap '_hc_ctx_rm; rm -f "${B_ERRF:-}" 2>/dev/null' EXIT
+trap 'exit 143' TERM INT HUP
+
+# 固定三首(唔同 org / 唔同年代),兩首以上 OK 就當健康。
+# ⚠️ 呢三首 2026-08-22 查實音軌大細 = 5.6MB / 4.4MB / 3.0MB,全部遠過 Layer B 個
+# 2MiB offset。**換 id 之前一定要重新查大細**(`yt-dlp -f "bestaudio[ext=m4a]/bestaudio"
+# --print filesize <url>`),細過 2MiB 嘅歌 Layer B 會收 416,唔係 upstream 壞。
+IDS=(42 77 5431)
+YT_IDS=(PG_J_0gsMXA 7UkwavM5L1E 2GbxXhvdhhA)   # 同上面逐個對應(Layer B 直接用,唔使查 DB)
+
+# base URL 可以用環境變數 override —— 純粹為咗**測得到失敗路徑**(指去一個死 port)。
+# 唔好貪方便改 script 本身再複製去第二度測:咁做 REPO 會解析錯,寫唔到 log,
+# 個測試就會「靜靜哋乜都冇做」而你以為佢過咗(2026-08-19 實測撞過呢個伏)。
+BASE="${HYMN_STREAM_BASE:-http://127.0.0.1:3001}"
+RANGE="0-65535"           # Layer A:只攞 64KB,對 YouTube 嘅負擔可以忽略
+MID_RANGE="2097152-2162687"   # Layer B:64KB @ 2MiB —— 就係 8-22 嗰個病灶 range
+# 全 app 唯一嘅 yt-dlp(同 backend/lib/ytdlpBin.js 同一個路徑;env 可 override 做比對)
+YTDLP="${YTDLP_BIN:-$REPO/backend/tools/yt-dlp}"
+TIMEOUT=45
+RESOLVE_TIMEOUT=45
+VERBOSE=0
+[[ "${1:-}" == "--verbose" ]] && VERBOSE=1
+
+ts() { date '+%Y-%m-%d %H:%M'; }
+say() { [[ $VERBOSE -eq 1 ]] && echo "$@"; return 0; }
+
+# ⚠️ macOS **冇** `timeout`(GNU coreutils 先有,呢部機冇裝 —— 2026-08-22 實測
+# `command not found`)。如果照抄 Linux 寫法用 `timeout`,每次 resolve 都會即刻
+# 127 死 → url 空 → 判做 upstream fail → **每 3 個鐘響一次假警報**,而個 script
+# 自己睇落好似行緊。所以用 perl 嘅 alarm(macOS 一定有 perl)做硬性上限。
+run_capped() {  # run_capped <秒> <cmd...>
+  perl -e 'alarm shift; exec @ARGV or exit 127' "$@" 2>/dev/null
+}
+
+# 第二輪 #8:Layer B 自己 yt-dlp 嘅 stderr 另存暫存檔(唔再 2>/dev/null 吞咗),用嚟數 bot-check/429 證據(backend log 睇唔到 healthcheck 自己嘅 resolve)。
+B_ERRF="$(mktemp "${TMPDIR:-/tmp}/hc-berr.XXXXXX" 2>/dev/null || echo "")"
+run_capped_e() {  # 同 run_capped,但 stderr 落 $B_ERRF(冇暫存檔就丟棄)
+  perl -e 'alarm shift; exec @ARGV or exit 127' "$@" 2>"${B_ERRF:-/dev/null}"
+}
+
+# ── R5(a) 事故期間少探(STREAM-PHONE-NOTIFY-EXEC-20261015)──────────────────────────────
+# 上一 tick 已連續 fail>=2(事故進行中)→ Layer A/B 各先只探 1 首(取 IDS[1]=77 / YT_IDS[1]=7UkwavM5L1E);
+#   · 呢 1 首失敗 ⇒ 該層照舊判 unhealthy(ok>=2 / mid>=2 / b_tested 規則一字未改,只係樣本少),唔再追加探測 ⇒ 少打 YouTube;
+#   · 呢 1 首過 ⇒ 即刻補探其餘(變返標準 3+3)再按原判斷,所以恢復偵測唔會慢一個 tick,亦唔會單憑 1 首宣告健康。
+# 例外(保持 selfheal 修復梯/節流行為不變):selfheal 嘅「due」tick(本 tick 連續 fail 值 = 2、14、26…,即 (n-2)%12==0)照舊全探——
+#   selfheal 形態①判定要 midfail>=2,少探樣本做唔到。
+# 測試/手動覆蓋:HC_LIGHT=0 強制全探、HC_LIGHT=1 強制少探(只供測試)。
+prev_fail0=$(python3 -c "
+import json,sys
+try: print(int(json.load(open('$STATE')).get('consecutiveFail',0)))
+except Exception: print(0)" 2>/dev/null || echo 0)
+[[ "$prev_fail0" =~ ^[0-9]+$ ]] || prev_fail0=0
+LIGHT=0
+if (( prev_fail0 >= 2 )) && (( (prev_fail0 + 1 - 2) % 12 != 0 )); then LIGHT=1; fi
+[[ "${HC_LIGHT:-}" == "0" || "${HC_LIGHT:-}" == "1" ]] && LIGHT="$HC_LIGHT"
+if (( LIGHT == 1 )); then
+  IDS_FIRST=("${IDS[1]}"); IDS_REST=("${IDS[0]}" "${IDS[@]:2}")
+  YT_FIRST=("${YT_IDS[1]}"); YT_REST=("${YT_IDS[0]}" "${YT_IDS[@]:2}")
+else
+  IDS_FIRST=("${IDS[@]}"); IDS_REST=(); YT_FIRST=("${YT_IDS[@]}"); YT_REST=()
+fi
+
+# ── Layer A:經 backend 攞頭 64KB ──────────────────────────────────
+ok=0; fail=0; detail=""
+probe_a() {
+  local id code
+  for id in "$@"; do
+    code=$(curl -s -o /dev/null -w "%{http_code}" --max-time "$TIMEOUT" -r "$RANGE" \
+           "$BASE/api/stream/$id" 2>/dev/null)
+    say "  A id=$id → HTTP ${code:-timeout}"
+    if [[ "$code" == "206" ]]; then ok=$((ok+1)); else fail=$((fail+1)); detail="$detail A:id=$id:${code:-timeout}"; fi
+  done
+}
+probe_a "${IDS_FIRST[@]}"
+(( LIGHT == 1 && fail == 0 )) && probe_a "${IDS_REST[@]}"
+(( LIGHT == 1 )) && say "  (R5a 少探模式:Layer A 先探 ${#IDS_FIRST[@]} 首,fail=$fail 所以$( (( fail == 0 )) && echo 已補探其餘 || echo 唔補探 ))"
+
+# ── Layer B:直打 googlevideo 攞 1MiB 之後嘅 mid-range ─────────────
+# cfgerr = 探測配置本身有問題(binary 唔見咗 / 揀咗首細過 2MiB 嘅歌收 416),
+# 唔算 upstream fail,唔好亂響警報,但要喺 log 見到。
+mid=0; midfail=0; midcfg=0
+botcheckB=0; rfailB=0; b403=0   # 第二輪 #8:Layer B 嘅 bot-check stderr 命中數 / resolve-fail 數 / HTTP 403 數(寫入 state;selfheal/rules 形態④用)
+ytver="?"
+probe_b() {
+  local yid url code
+  for yid in "$@"; do
+    : > "${B_ERRF:-/dev/null}" 2>/dev/null
+    url=$(run_capped_e "$RESOLVE_TIMEOUT" "$YTDLP" -f "bestaudio[ext=m4a]/bestaudio" \
+          --get-url --no-playlist "https://www.youtube.com/watch?v=$yid" | head -1)
+    if [[ "$url" != http* ]]; then
+      midfail=$((midfail+1)); rfailB=$((rfailB+1)); detail="$detail B:$yid:resolve-fail"
+      # 429 要獨立數字(唔好撞 URL/id 入面嘅數字);Sign in to confirm = not a bot;LOGIN_REQUIRED = player 回應
+      if [[ -n "${B_ERRF:-}" && -s "$B_ERRF" ]] && grep -Eq '(^|[^0-9])429([^0-9]|$)|Sign in to confirm|LOGIN_REQUIRED' "$B_ERRF" 2>/dev/null; then
+        botcheckB=$((botcheckB+1)); say "  B $yid → stderr 有 bot-check/429 證據"
+      fi
+      say "  B $yid → resolve FAIL"
+      continue
+    fi
+    if [[ $HC_TEST -eq 1 ]]; then   # 測試模式:唔直打 googlevideo,用 stub(預設固定 206)
+      code=$(${HC_CDN_FETCH_CMD:-_hc_cdn_stub} "$url" "$MID_RANGE" 2>/dev/null)
+    else
+    code=$(curl -s -o /dev/null -w "%{http_code}" --max-time "$TIMEOUT" -r "$MID_RANGE" "$url" 2>/dev/null)
+    fi
+    say "  B $yid → HTTP ${code:-timeout} (mid-range)"
+    case "$code" in
+      206) mid=$((mid+1)) ;;
+      416) midcfg=$((midcfg+1)); detail="$detail B:$yid:416-too-short" ;;   # 條歌細過 2MiB = 探測配置問題
+      *)   midfail=$((midfail+1)); [[ "$code" == "403" ]] && b403=$((b403+1)); detail="$detail B:$yid:${code:-timeout}" ;;
+    esac
+  done
+}
+if [[ -x "$YTDLP" ]]; then
+  ytver=$("$YTDLP" --version 2>/dev/null | tr -d '\n')
+  [[ -z "$ytver" ]] && ytver="?"
+  probe_b "${YT_FIRST[@]}"
+  (( LIGHT == 1 && midfail == 0 )) && probe_b "${YT_REST[@]}"
+else
+  midcfg=${#YT_IDS[@]}
+  detail="$detail B:no-binary($YTDLP)"
+  say "  B 跳過:搵唔到 $YTDLP"
+fi
+
+# ── 判定 ───────────────────────────────────────────────────────────
+# 三首入面兩首以上 206 = 該層健康(容忍單一首歌俾人落架 / 上游壞片,唔想扮警報)。
+# Layer B 全部 cfgerr(binary 唔見 / 全部歌太短)= 探測本身壞咗,唔可以當 upstream
+# 死;呢種情況 B 當「未驗到」(唔擋 healthy),但 log/警報要講明,等人去執探測配置。
+healthy_a=0; (( ok >= 2 )) && healthy_a=1
+healthy_b=0
+b_tested=$(( mid + midfail ))
+if (( b_tested == 0 )); then
+  healthy_b=1          # 一次都驗唔到 → 唔判死,靠 cfgerr tag 提人
+else
+  (( mid >= 2 )) && healthy_b=1
+  # 得一兩首驗到嘅情況(其餘 416):驗到嗰啲全部要過
+  (( b_tested < 2 && midfail == 0 )) && healthy_b=1
+fi
+healthy=0
+(( healthy_a == 1 && healthy_b == 1 )) && healthy=1
+
+prev_fail=$(python3 -c "
+import json,sys
+try: print(json.load(open('$STATE')).get('consecutiveFail',0))
+except Exception: print(0)" 2>/dev/null || echo 0)
+
+if (( healthy == 1 )); then
+  new_fail=0
+else
+  new_fail=$((prev_fail + 1))
+fi
+
+# ── R3 出口 IP(STREAM-PHONE-NOTIFY-EXEC-20261015)────────────────────────────────
+# 每 tick 問一次中立 IP echo(curl -m 5 https://ifconfig.me;失敗/格式唔啱記 `?`),寫入 stream-health.log 尾欄 ip=<x> 同 state.exitIp。
+# exitIp 只存「最後一個成功攞到嘅 IP」(`?` 唔覆蓋)。A→B(兩邊都非 `?` 且唔同)⇒ state.ipChanged={from,to,at}(只喺呢個 tick 有;下個 tick 重寫即消失)
+# + SUPERVISION-LOG 一行 ℹ️;stream-watch 見 ipChanged 旗發手機一句。首次記錄(之前冇 exitIp)唔算變。
+# 測試模式:唔打真網絡,用 HC_IP_CMD(冇設 = `?`)。只讀 echo 服務,唔掂 VPN/路由/網絡設定。
+exit_ip="?"
+if [[ $HC_TEST -eq 1 ]]; then
+  [[ -n "${HC_IP_CMD:-}" ]] && exit_ip="$(${HC_IP_CMD} 2>/dev/null | head -1 | tr -d '[:space:]')"
+else
+  exit_ip="$(curl -4 -s -m 5 https://ifconfig.me 2>/dev/null | head -c 64 | tr -d '[:space:]')"
+fi
+[[ "$exit_ip" =~ ^[0-9A-Fa-f:.]{3,45}$ ]] || exit_ip="?"
+prev_ip=$(python3 -c "
+import json
+try: print(json.load(open('$STATE')).get('exitIp','') or '')
+except Exception: print('')" 2>/dev/null)
+[[ "$prev_ip" =~ ^[0-9A-Fa-f:.]{3,45}$ ]] || prev_ip=""
+ip_from=""; ip_to=""
+if [[ "$exit_ip" != "?" && -n "$prev_ip" && "$exit_ip" != "$prev_ip" ]]; then ip_from="$prev_ip"; ip_to="$exit_ip"; fi
+keep_ip="$prev_ip"; [[ "$exit_ip" != "?" ]] && keep_ip="$exit_ip"
+
+python3 - "$STATE" "$new_fail" "$ok" "$fail" "$mid" "$midfail" "$midcfg" "$ytver" "$keep_ip" "$ip_from" "$ip_to" "$botcheckB" "$rfailB" "$b403" "$healthy_b" <<'PY' 2>/dev/null
+import json,sys,datetime
+now = datetime.datetime.now().isoformat(timespec='seconds')
+d = {'lastCheck': now,
+     'consecutiveFail': int(sys.argv[2]), 'ok': int(sys.argv[3]), 'fail': int(sys.argv[4]),
+     'mid': int(sys.argv[5]), 'midFail': int(sys.argv[6]), 'midCfgErr': int(sys.argv[7]),
+     'ytdlp': sys.argv[8]}
+d['botcheckB'] = int(sys.argv[12]); d['bResolveFail'] = int(sys.argv[13]); d['b403'] = int(sys.argv[14]); d['healthyB'] = int(sys.argv[15])
+if sys.argv[9]: d['exitIp'] = sys.argv[9]
+if sys.argv[10] and sys.argv[11]: d['ipChanged'] = {'from': sys.argv[10], 'to': sys.argv[11], 'at': now}
+json.dump(d, open(sys.argv[1],'w'), indent=1)
+PY
+if [[ -n "$ip_from" ]]; then
+  { echo ""; echo "- ℹ️ **串流:出口 IP 變咗 $(ts)** — \`$ip_from\` → \`$ip_to\`(Mac 重啟 / VPN 重連?)。下個 tick 會驗串流;如果之後 resolve 出現 \`not a bot\`,即係新 IP 被 YouTube 擋,要人手換 VPN server。"; } >> "$LOG"
+  say "  ℹ️ 出口 IP $ip_from → $ip_to,已寫 SUPERVISION-LOG"
+fi
+cfgnote=""; (( midcfg > 0 )) && cfgnote=" mid=cfg-err:$midcfg"
+lightnote=""; (( LIGHT == 1 )) && lightnote=" light=1"
+echo "$(ts) ok=$ok fail=$fail mid=$mid midfail=$midfail$cfgnote ver=$ytver consecutiveFail=$new_fail$detail$lightnote ip=$exit_ip" >> "$HISTORY"
+say "  → A ok=$ok fail=$fail | B mid=$mid midfail=$midfail cfgerr=$midcfg | ver=$ytver | consecutiveFail=$new_fail"
+
+# 寫警報嘅時機:①啱啱由健康變唔健康(第 1 次)②之後每 12 次連續失敗提一次
+#(2026-09-05:改成 30 分鐘一 tick 之後,每 4 次即係 2 個鐘一提,太密——會洗版;
+# 改做每 12 次 = 6 個鐘一提,同加密偵測前嘅節奏相若)③由唔健康返返 healthy 都報一次
+if (( healthy == 0 )) && { (( new_fail == 1 )) || (( new_fail % 12 == 0 )); }; then
+  {
+    echo ""
+    if (( healthy_a == 0 && healthy_b == 0 )); then
+      echo "- 🔴 **串流健康警報 $(ts)** — **兩層都失敗**(連續第 $new_fail 次)。Layer A(經 backend 頭 64KB)${#IDS[@]} 首得 $ok 首 206;Layer B(直打 googlevideo,64KB @ 2MiB)得 $mid 首 206。yt-dlp=$ytver。實際:$detail"
+    elif (( healthy_a == 1 && healthy_b == 0 )) && (( midfail > 0 && rfailB == midfail && mid == 0 )) && (( botcheckB >= 1 )); then
+      # 第二輪 #9:Layer B 全部 resolve-fail 且 stderr 有 bot-check/429 證據 → 唔係 1MiB 病,係出口 IP 被擋(換 yt-dlp 無用)。只改文字,探測判斷不變。
+      echo "- 🔴 **串流健康警報 $(ts)** — ⚠️ 出口 IP 疑被 YouTube bot-check/429(換 yt-dlp 無用,要換 VPN server):Layer A(經 backend)$ok/${#IDS[@]} 首過,但 Layer B 直打 resolve 全部失敗($rfailB/$midfail resolve-fail,其中 $botcheckB 次 stderr 含 bot-check/429;連續第 $new_fail 次)。實際:$detail"
+      echo "  **唔好先查 yt-dlp 版本**;要 Eric 人手換 NordVPN server(唔同城市嘅 US server)。yt-dlp 現役 \`$ytver\`。"
+    elif (( healthy_a == 1 && healthy_b == 0 )); then
+      echo "- 🔴 **串流健康警報 $(ts)** — ⚠️ **典型「1MiB 病」形態**:Layer A(頭 64KB,經 backend)$ok/${#IDS[@]} 首**過**,但 Layer B(直打 googlevideo,64KB @ 2MiB)得 $mid 首 206(連續第 $new_fail 次)。即係頭段派得、1MiB 之後 403 —— 用戶感受係「全庫播得幾秒就死/completely 播唔到」。實際:$detail"
+      echo "  **第一件事查 yt-dlp 版本**(而家現役 \`$ytver\`,路徑 \`backend/tools/yt-dlp\`):2026-08-22 全庫事故就係 binary 太舊,YouTube 新 player 簽出嚟嘅 URL 只開放頭 1MiB。修法見 \`YTDLP-UNIFY-PLAN-20260822.md\`;人手升級:\`ops/ytdlp/update-ytdlp.sh --apply\`(canary 過先換,舊版留 \`backend/tools/yt-dlp.prev\` 可以 \`mv\` 返轉頭)。"
+    else
+      echo "- 🔴 **串流健康警報 $(ts)** — Layer A(經 backend)得 $ok/${#IDS[@]} 首 206,但 Layer B(直打 googlevideo)$mid 首過 —— **upstream 好地地,問題喺 backend 側**(連續第 $new_fail 次)。實際:$detail"
+      echo "  診斷次序:①\`pgrep -f 'node.*server.js'\` backend 生存?②\`launchctl list | grep hymnapp\` 應該 7 個 job ③睇 backend log 有冇 503/crash loop。"
+    fi
+    (( midcfg > 0 )) && echo "  ⚠️ 另外有 $midcfg 首 Layer B 探測返 **cfg-err**(416 = 條歌細過 2MiB,或者搵唔到 binary)—— 呢個係**探測配置**問題唔係 upstream 問題,去 \`ops/lyrics/stream-healthcheck.sh\` 換返啲夠長嘅探測 id。"
+  } >> "$LOG"
+  say "  ⚠ 已寫警報落 SUPERVISION-LOG"
+elif (( healthy == 1 )) && (( prev_fail > 0 )); then
+  echo "" >> "$LOG"
+  echo "- ✅ **串流健康恢復 $(ts)** — 之前連續失敗 $prev_fail 次,今次 Layer A $ok/${#IDS[@]} 首 206、Layer B $mid 首 mid-range 206(yt-dlp $ytver)。" >> "$LOG"
+  say "  ✅ 已寫恢復訊息"
+elif (( midcfg > 0 )) && (( healthy == 1 )); then
+  # 健康但探測配置有問題:唔好靜靜哋當冇事(呢個 script 2026-08-19 就係「靜靜哋
+  # 乜都冇做」而以為過咗),但都唔好當 fail 洗版 —— 每 8 個 tick 提一次。
+  tickcount=$(wc -l < "$HISTORY" 2>/dev/null | tr -d ' ')
+  if (( tickcount % 8 == 0 )); then
+    echo "" >> "$LOG"
+    echo "- ⚠️ **串流探測配置提醒 $(ts)** — 健康檢查過到,但 Layer B 有 $midcfg 首返 cfg-err(416 太短 / 搵唔到 binary),即係 mid-range 盲點冇完全補到。執:\`ops/lyrics/stream-healthcheck.sh\` 換探測 id。實際:$detail" >> "$LOG"
+    say "  ⚠ 已寫 cfg-err 提醒"
+  fi
+fi
+
+# ── 自動修復梯(STREAM-SELFHEAL-PLAN-20260905 S2)──────────────────
+# 淨係喺「而家唔健康」或者「呢個 tick 啱啱由唔健康返返 healthy」先叫
+# stream-selfheal.sh —— 對應返上面 if/elif 兩個分支(唔健康 + 剛恢復),
+# 平時穩定健康嗰陣唔使多開一個 process。連續 fail<2 嗰種情況都會叫到,
+# 但 stream-selfheal.sh 自己會讀返 $STATE 嘅 consecutiveFail,細過 2 就淨係
+# 更新自己嗰份 state,唔會郁手(唔想單次 blip 就觸發自動換 yt-dlp / 重開 backend)。
+SELFHEAL="$REPO/ops/stream/stream-selfheal.sh"
+if [[ -x "$SELFHEAL" ]] && { (( healthy == 0 )) || (( prev_fail > 0 )); }; then
+  if [[ $VERBOSE -eq 1 ]]; then
+    "$SELFHEAL" --healthy-a "$healthy_a" --healthy-b "$healthy_b" \
+      --mid "$mid" --midfail "$midfail" --ok "$ok" --fail "$fail" \
+      --detail "$detail" --verbose
+  else
+    "$SELFHEAL" --healthy-a "$healthy_a" --healthy-b "$healthy_b" \
+      --mid "$mid" --midfail "$midfail" --ok "$ok" --fail "$fail" \
+      --detail "$detail" >/dev/null 2>&1
+  fi
+fi
+
+# ── 串流保護監察(STREAM-WATCH-EXEC-20260929)────────────────────────
+# 喺 selfheal 之後每 tick 行一次(邊緣觸發,健康時零 session/零通知)。預設 OFF:
+# ~/.hymn-deploy/stream-watch.on 存在先接線(啟用/停用 = 建立/刪除呢個檔,唔使 reload plist)。
+# perl alarm 頂硬上限(預設 1500s < 30 分鐘 tick;launchd 冇 AbandonProcessGroup,背景 detach 會被殺,
+# 所以用同步 + 硬上限)。任何失敗一律吞,唔影響本 script 嘅 exit code。
+HC_WATCH_ON="$HOME/.hymn-deploy/stream-watch.on"; [[ $HC_TEST -eq 1 ]] && HC_WATCH_ON="$WATCH_DIR/stream-watch.on"   # 路徑:測試模式落 $WATCH_DIR
+if [[ -f "$HC_WATCH_ON" && -x "$REPO/ops/stream/stream-watch.sh" ]]; then
+  perl -e 'alarm shift; exec @ARGV or exit 127' "${WATCH_HARD_CAP:-1500}" \
+    "$REPO/ops/stream/stream-watch.sh" >> "$HC_WATCH_LOG" 2>&1 || true
+fi
+exit 0

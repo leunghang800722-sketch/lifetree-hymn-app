@@ -1,0 +1,18 @@
+grep getDb() callers ---
+/Users/macbookpro/.openclaw/workspace/hymn-app/backend/routes/hls.js:141:    const db = await getDb();
+/Users/macbookpro/.openclaw/workspace/hymn-app/backend/routes/stream.js:152:      const db = await getDb();
+/Users/macbookpro/.openclaw/workspace/hymn-app/backend/routes/stream.js:215:    const db = await getDb();
+/Users/macbookpro/.openclaw/workspace/hymn-app/backend/routes/me.js:31:    const db = await getDb();
+/Users/macbookpro/.openclaw/workspace/hymn-app/backend/lib/userDb.js:113:// Lazy singleton, 同 server.js 個 getDb() 一樣嘅 pattern。第一次攞就順手
+/Users/macbookpro/.openclaw/workspace/hymn-app/backend/lib/serverDb.js:34:// Lazy-load DB on first request(同舊版 server.js/home.js 個 getDb() 一樣嘅行為)。
+/Users/macbookpro/.openclaw/workspace/hymn-app/backend/lib/serverDb.js:44:// 落地都會令三條 hymns route 一齊 miss 一齊 `getDb()`,fire 嘅機會大咗。
+/Users/macbookpro/.openclaw/workspace/hymn-app/backend/lib/serverDb.js:51:export async function getDb() {
+/Users/macbookpro/.openclaw/workspace/hymn-app/backend/lib/serverDb.js:59:      // 俾落次 `getDb()` 有機會由頭嚟過(同改之前「失敗咗落次自然會
+/Users/macbookpro/.openclaw/workspace/hymn-app/backend/lib/serverDb.js:73:// 清咗,下一個 request 嘅 getDb() 會由碟開新鮮副本;dataVersion 同時重算,
+/Users/macbookpro/.openclaw/workspace/hymn-app/backend/lib/serverDb.js:88:// 有 request 啱啱好 `await getDb()` 攞咗返嚟嘅**係嗰一份**、仲喺度做緊
+/Users/macbookpro/.openclaw/workspace/hymn-app/backend/lib/serverDb.js:92:// **延遲揀 10 秒嘅根據**(唔係亂諗嘅數):grep 晒全 backend 所有 `getDb()`
+/Users/macbookpro/.openclaw/workspace/hymn-app/backend/server.js:355:// Opus 5(`PERF-STAGE2-2C6-OPUS-20260902.md` §3.4)實測:`getDb()` 本身
+/Users/macbookpro/.openclaw/workspace/hymn-app/backend/server.js:500:  const db = await getDb();
+/Users/macbookpro/.openclaw/workspace/hymn-app/backend/server.js:592:  const db = await getDb();
+/Users/macbookpro/.openclaw/workspace/hymn-app/backend/server.js:879:        const db = await getDb();
+/Users/macbookpro/.openclaw/workspace/hymn-app/backend/server.js:947:          const db = await getDb();

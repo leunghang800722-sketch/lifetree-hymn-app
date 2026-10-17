@@ -1,0 +1,284 @@
+// PERF-IMPROVEMENT-PLAN-20260902 Stage 1B —— 極輕量效能儀器。
+//
+// 設計原則(鐵律,唔好加重):
+//   1. 100% try/catch,永遠唔 throw、唔阻塞 render、唔改任何現有邏輯。
+//   2. 淨係喺 index.js 第一行 import(令 T0 盡量貼近 bundle entry 執行時間),
+//      call site 淨係加一行 mark()/note()/useRenderCount() 呼叫。
+//   3. 三種 beacon(perfMarks/perfRenders/perfNav),cadence 見下面
+//      schedulePerfMarksBeacon/scheduleRenderBeacons/recordNavBeacon —— 呢個
+//      係「3 個 beacon 事件類型」嘅上限,唔係「全程序生命週期淨送 3 條」
+//      (perfNav 每次切 tab 都送,封頂 10 次,見 PERF-BASELINE-1B-20260902.md
+//      「限制」一節嘅說明)。
+//
+// 讀 global.performance?.rnStartupTiming(RN 0.74+ ReactNativeStartupTiming)、
+// 包一層 fetch 計首 30 秒 request 數、hymnsMs/mmkvRead/parse 等 span,全部
+// 存喺 module-level Map,15 秒後執行緒閒落嚟先送一次 beacon,唔會影響開機
+// 主線程。
+
+import { useRef } from 'react';
+// DEEP-AUDIT-W1-EXEC-20260906 F3 —— platform 而家由 src/clientLog.js 強制
+// 注入(sendBeacon 改用 sendClientLog()),呢個 module 唔再自己讀
+// Platform.OS,剷走冇用嘅 import。
+
+// E-4(PERF-STAGE2-2E-20260902)—— Fable 5.1 拍板:效能工程期間(Stage 2)
+// 保持開,因為 F-1/A-6 呢類「真機蜂窩網 ttfb/body 分佈、有冇撞到 retry」
+// 嘅嘢淨係真機量得到,模擬器數字唔代表數(PERF-STAGE2-2B-OPUS-
+// 20260902.md §10 P0)。呢個係恆常上行流量(每次開 app 4 條 beacon +
+// 最多 10 條 perfNav)+ backend client-log 量,效能工程收爐之後應該關
+// 返做 false。
+export const PERF_MARKS_ENABLED = true;
+
+const T0 = Date.now();
+
+const marks = new Map();   // name -> elapsed ms since T0(時間戳,首次寫入為準)
+const notes = new Map();   // name -> 任意數值(唔係時間,例如 count/flag)
+const renderCounts = new Map(); // component name -> render 次數
+
+function safe(fn) {
+  try { fn(); } catch (_) {}
+}
+
+export function mark(name) {
+  safe(() => { if (!marks.has(name)) marks.set(name, Date.now() - T0); });
+}
+
+// 直接記一個已知時長(ms),唔使 T0 起計 —— 留俾 call site 自己計咗差再入嚟嘅情況。
+export function span(name, ms) {
+  safe(() => { if (!marks.has(name)) marks.set(name, ms); });
+}
+
+export function note(name, value) {
+  safe(() => { if (!notes.has(name)) notes.set(name, value); });
+}
+
+// F-1/D-1 course-correction(Opus 5 2026-09-02)—— section 計時要用
+// performance.now()(sub-ms、monotonic,唔受掛鐘調整影響),唔用 Date.now()
+// (整數 ms,量幾 ms 級嘅 section compute 會有量化誤差)。有安全 fallback,
+// 唔會因為呢個環境冇 performance.now() 就整個 render 炸咗。
+export function now() {
+  try {
+    if (global.performance && typeof global.performance.now === 'function') {
+      return global.performance.now();
+    }
+  } catch (_) {}
+  return Date.now();
+}
+
+function getMark(name) { return marks.has(name) ? marks.get(name) : '-'; }
+function getNote(name) { return notes.has(name) ? notes.get(name) : '-'; }
+function durMark(a, b) {
+  return (marks.has(a) && marks.has(b)) ? (marks.get(b) - marks.get(a)) : '-';
+}
+
+// ---------------------------------------------------------------------------
+// fetch 請求計數 —— 開機 30 秒內,按 URL path 首兩段聚合。
+// ⚠️ 只計 fetch:<Image> 走 native image loader,唔經呢層,唔會計入。
+// ---------------------------------------------------------------------------
+const fetchCounts = new Map();
+let fetchCounterInstalled = false;
+
+export function installFetchCounter() {
+  if (fetchCounterInstalled) return;
+  fetchCounterInstalled = true;
+  safe(() => {
+    const origFetch = global.fetch;
+    if (typeof origFetch !== 'function') return;
+    global.fetch = function perfPatchedFetch(input, init) {
+      safe(() => {
+        if (Date.now() - T0 <= 30000) {
+          let urlStr = '';
+          try { urlStr = typeof input === 'string' ? input : (input && input.url) || ''; } catch (_) {}
+          let pathKey = 'unknown';
+          try {
+            const u = new URL(urlStr);
+            const segs = u.pathname.split('/').filter(Boolean);
+            pathKey = segs.slice(0, 2).join('/') || 'root';
+          } catch (_) {}
+          fetchCounts.set(pathKey, (fetchCounts.get(pathKey) || 0) + 1);
+        }
+      });
+      return origFetch.apply(this, arguments);
+    };
+  });
+}
+
+function fetchSummary() {
+  let total = 0;
+  const parts = [];
+  try {
+    fetchCounts.forEach((v, k) => { total += v; parts.push(`${k}:${v}`); });
+  } catch (_) {}
+  return `${total}(${parts.join(',')})`;
+}
+
+// ---------------------------------------------------------------------------
+// re-render 次數 —— call site 逐個 component 掛一個 useRenderCount('Name')。
+// ---------------------------------------------------------------------------
+export function useRenderCount(name) {
+  const ref = useRef(0);
+  ref.current += 1;
+  safe(() => renderCounts.set(name, ref.current));
+  return ref.current;
+}
+
+const RENDER_NAMES = ['Home', 'Library', 'Mine', 'Mini', 'TabBar', 'FullPlayer', 'AppContent', 'PlayerProvider'];
+
+function renderSummary() {
+  return RENDER_NAMES.map((n) => `${n}=${renderCounts.get(n) ?? 0}`).join(' ');
+}
+
+// ---------------------------------------------------------------------------
+// beacon 送出 —— DEEP-AUDIT-W1-EXEC-20260906 F3:送信層改用 src/clientLog.js
+// 嘅 sendClientLog()(強制注入 platform/deviceId/appVersion/updateId/
+// sessionId),呢度只保留自己嘅排程/detail 組裝(每種 beacon 幾耐後送一次、
+// detail 字串點砌)。deviceId cache/platform 直接由 clientLog.js 處理,唔使
+// 呢個 module 再自己維護一份。
+// ---------------------------------------------------------------------------
+function sendBeacon(event, detail) {
+  try {
+    // eslint-disable-next-line global-require
+    const { sendClientLog } = require('./clientLog.js');
+    sendClientLog(event, {
+      detail: String(detail).slice(0, 400), // PERF-FINAL-OPUS §A4.3：backend b0f7931 已放寬到 400，client 要同步先唔截尾
+    });
+  } catch (_) {}
+}
+
+function buildRnstSummary() {
+  try {
+    const t = global.performance && global.performance.rnStartupTiming;
+    if (!t) return 'na';
+    const st = t.startTime;
+    const rtS = t.initializeRuntimeStart, rtE = t.initializeRuntimeEnd;
+    const epS = t.executeJavaScriptBundleEntryPointStart, epE = t.executeJavaScriptBundleEntryPointEnd;
+    const rt = (rtS != null && rtE != null) ? (rtE - rtS) : '-';
+    const ep = (epS != null && epE != null) ? (epE - epS) : '-';
+    return `st=${st ?? '-'},rt=${rt},ep=${ep}`;
+  } catch (_) { return 'na'; }
+}
+
+let perfMarksSent = false;
+export function schedulePerfMarksBeacon() {
+  if (perfMarksSent) return;
+  perfMarksSent = true;
+  safe(() => {
+    setTimeout(() => {
+      safe(() => {
+        // D-1(PERF-STAGE2-2B-20260902):dropped `rnst:` summary from this
+        // string to make room — 冇任何比較表格用過呢個欄。
+        // F-1 course-correction(Opus 5 2026-09-02)—— ttfb/body/parse 依家
+        // 逐個 attempt 記(a1_*/a2_*),att=實際做咗幾多次嘗試,ok1=第一次
+        // 嘗試自己攞唔攞到 6405 首(F-1 嘅主要量度指標,改前 1B 基準 0/5)。
+        // C-1 前端(PERF-STAGE2-2D-20260902,A-6 落地)—— a1t/a1b/a1p/att/ok1
+        // 而家量嘅係 `?lite=1` 嗰個 fetch(即 `hymnsMs`,同 2D 原本加嘅
+        // `liteMs` 係同一個 span——E-5(PERF-STAGE2-2E-20260902,Opus 5
+        // 提醒逼近 300 字上限)已剷走 `liteMs` 呢個重複別名)。新欄:
+        // lyrMs(背景 `/api/hymns/lyrics` fetch 耗時,E-5 之後呢個 fetch
+        // 會延遲到 idle+8s 先開始)、lyrBytes(嗰個 response 嘅
+        // text.length)、merged(0/1,合併咗先算真正「呢次開機攞齊晒歌
+        // 詞」)。呢三個欄放喺 `fetch=` 之前——
+        // detail 成句俾 sendBeacon 硬 slice(0,300),`fetch=` 汇总最有彈性
+        // (被切都唔緊要),排喺最後。
+        const detail = [
+          `b0=0`,
+          `app=${getMark('app')}`,
+          `cont=${getMark('cont')}`,
+          `mmkvRead=${durMark('mmkvReadStart', 'mmkvReadEnd')}`,
+          `parse=${durMark('parseStart', 'parseEnd')}`,
+          `n=${getNote('hymnsCount')}`,
+          `cacheReady=${getMark('cacheReady')}`,
+          `home=${getMark('home')}`,
+          `verMs=${durMark('verStart', 'verEnd')}`,
+          `verSkip=${getNote('verSkip')}`,
+          `hymnsMs=${durMark('hymnsStart', 'hymnsEnd')}`,
+          `att=${getNote('hymnsAttempts')}`,
+          `ok1=${getNote('hymnsAtt1Ok')}`,
+          `a1t=${durMark('hymnsStart', 'hTtfb1')}`,
+          `a1b=${durMark('hTtfb1', 'hBody1')}`,
+          `a1p=${durMark('hBody1', 'hPars1')}`,
+          `a2t=${durMark('hymns2Start', 'hTtfb2')}`,
+          `a2b=${durMark('hTtfb2', 'hBody2')}`,
+          `a2p=${durMark('hBody2', 'hPars2')}`,
+          `byt=${getNote('hymnsBytes')}`,
+          `lyrMs=${durMark('lyrStart', 'lyrEnd')}`,
+          `lyrBytes=${getNote('lyrBytes')}`,
+          `merged=${getNote('merged')}`,
+          `fetch=${fetchSummary()}`,
+        ].join(' ');
+        sendBeacon('perfMarks', detail);
+      });
+    }, 25000); // F-1 course-correction —— 15s→25s,俾單次成功嘅 attempt(8s+body)更多機會喺窗口內完成
+  });
+}
+
+// ---------------------------------------------------------------------------
+// D-1(PERF-STAGE2-2B-20260902)—— 首頁各 section 嘅 compute 耗時(span())
+// + 兩個 hidden tab(Library/Mine)首次 render 嘅耗時,獨立一個 beacon,
+// 5 秒後送(首頁 section 嘅 useMemo 同 Library/Mine 嘅 render 都喺開機頭
+// 幾百 ms 內就會發生,5 秒窗口綽綽有餘,唔使等 15 秒個 perfMarks beacon)。
+// ---------------------------------------------------------------------------
+let perfHomeSent = false;
+export function schedulePerfHomeBeacon() {
+  if (perfHomeSent) return;
+  perfHomeSent = true;
+  safe(() => {
+    setTimeout(() => {
+      safe(() => {
+        const detail = [
+          `chips=${getMark('secChips')}`,
+          `pages=${getMark('secPages')}`,
+          `today=${getMark('secToday')}`,
+          `recent=${getMark('secRecent')}`,
+          `lib=${getMark('libraryRenderMs')}`,
+          `lib0=${getMark('libraryRenderMs0')}`,
+          `libIdle=${getMark('libIdleMount')}`, // E-2(PERF-STAGE2-2E-20260902)—— Library idle pre-mount 幾時 fire(見 App.js)
+          `mine=${getMark('mineRenderMs')}`,
+        ].join(' ');
+        sendBeacon('perfHome', detail);
+      });
+    }, 5000);
+  });
+}
+
+let renderBeaconsSent = 0;
+export function scheduleRenderBeacons() {
+  safe(() => {
+    [15000, 60000].forEach((delay) => {
+      setTimeout(() => {
+        safe(() => {
+          if (renderBeaconsSent >= 2) return;
+          renderBeaconsSent += 1;
+          const t = Math.round(delay / 1000);
+          sendBeacon('perfRenders', `t=${t} ${renderSummary()}`);
+        });
+      }, delay);
+    });
+  });
+}
+
+// DEEP-AUDIT-W1-EXEC-20260906 F3 —— 1C 限制#6 實測:15 次 tap 靜靜丟 5 次
+// (舊 cap=10)。cap 提到 40;撞 cap 嗰刻送一次 navBeaconCapped(帶 cap 值),
+// 之後先靜音——唔准好似之前咁完全冇任何訊號。
+const NAV_BEACON_CAP = 40;
+let navBeaconsSent = 0;
+let navBeaconCapReported = false;
+export function recordNavBeacon(tab, tapToMountMs, tapToPaintMs) {
+  safe(() => {
+    if (navBeaconsSent >= NAV_BEACON_CAP) {
+      if (!navBeaconCapReported) {
+        navBeaconCapReported = true;
+        sendBeacon('navBeaconCapped', `cap=${NAV_BEACON_CAP}`);
+      }
+      return;
+    }
+    navBeaconsSent += 1;
+    sendBeacon('perfNav', `tab=${tab} tapToMount=${tapToMountMs}ms tapToPaint=${tapToPaintMs}ms`);
+  });
+}
+
+if (PERF_MARKS_ENABLED) {
+  installFetchCounter();
+  schedulePerfMarksBeacon();
+  scheduleRenderBeacons();
+  schedulePerfHomeBeacon(); // D-1(PERF-STAGE2-2B-20260902)
+}

@@ -1,0 +1,165 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.hymnapp.albumsearch</string>
+
+    <!-- Phase C album web search backfill 夜晚排程(ALBUM-BACKFILL-ACCEL-PLAN.md
+         §3 Phase C,2026-08-04 Eric 拍板方案A):headless `claude -p
+         --allowedTools WebSearch` 逐批搜殘餘歌嘅專輯,有真實出處(source_url)
+         先准填,album_source='search'。
+
+         時間窗(Eric 指定):星期一至六 18:30→翌朝 10:30 先准跑,星期日全日
+         可以——script 內置 isBlockedByOfficeHours guard(同 growLibrary
+         OFFICE_HOURS_BLOCK 同一套語義),launchd 瞓醒 catch-up fire 跌入
+         封鎖窗都會自己收工,唔使靠 plist 排程時間單邊把關。
+
+         ⚠️ 節奏(2026-08-04 Eric 更正):**每 1 小時跑 20 首**,唔係每晚一轆。
+         plist 每小時 :15 fire(24 個觸發點),日頭跌入封鎖窗嗰啲俾 script
+         guard 自動收工——同 growlibrary「高頻 fire + 內部窗口 guard」同一套。
+         揀 :15 係避開 fetchlyrics 嘅 :00/:40 觸發點;18:15 嗰輪俾 guard 擋
+         (窗 18:30 先開),所以平日夜晚實際首輪係 19:15,自然避埋 alignbackfill
+         (18:40)個頭。每輪 20×~80s ≈ 27 分鐘,:15 開 :45 前完場,唔會疊到
+         下一輪(真係拖過鐘,DB 鎖層面互斥 + writeRow re-check,唔會 lost-update,
+         最多重複搜幾首)。fetchlyrics 係 yt-dlp 向、呢個 job 係 claude CLI 向,
+         資源 profile 唔同。
+         候選 last_album_search_attempt 輪換(C5b② 同一個教訓),搜唔到嘅
+         死症 row 唔會塞住隊頭夜夜重搜。
+
+         `--report /tmp/hymn_albumsearch-report.md`(跟 backfillmeta C5c
+         followup① 慣例):排程 report 唔寫落 backend/data/,唔好夜夜污糟
+         working tree;人手審計用嘅試批 report 先留 git。 -->
+    <key>ProgramArguments</key>
+    <array>
+        <string>/opt/homebrew/bin/node</string>
+        <string>/Users/macbookpro/.openclaw/workspace/hymn-app/backend/scripts/backfillAlbumSearch.js</string>
+        <string>--limit</string>
+        <string>20</string>
+        <string>--report</string>
+        <string>/tmp/hymn_albumsearch-report.md</string>
+    </array>
+
+    <key>WorkingDirectory</key>
+    <string>/Users/macbookpro/.openclaw/workspace/hymn-app/backend</string>
+
+    <!-- ⚠️ 一定要 set PATH:launchd 預設冇 /opt/homebrew/bin,呢個 job 要行
+         `claude` CLI(web search 主力)。唔 set 會 command-not-found、
+         checkClaudeCliAvailable() fail 之後靜靜哋收 0 首。 -->
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>PATH</key>
+        <string>/opt/homebrew/bin:/opt/homebrew/sbin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+    </dict>
+
+    <key>StartCalendarInterval</key>
+    <array>
+        <dict>
+            <key>Hour</key><integer>0</integer>
+            <key>Minute</key><integer>15</integer>
+        </dict>
+        <dict>
+            <key>Hour</key><integer>1</integer>
+            <key>Minute</key><integer>15</integer>
+        </dict>
+        <dict>
+            <key>Hour</key><integer>2</integer>
+            <key>Minute</key><integer>15</integer>
+        </dict>
+        <dict>
+            <key>Hour</key><integer>3</integer>
+            <key>Minute</key><integer>15</integer>
+        </dict>
+        <dict>
+            <key>Hour</key><integer>4</integer>
+            <key>Minute</key><integer>15</integer>
+        </dict>
+        <dict>
+            <key>Hour</key><integer>5</integer>
+            <key>Minute</key><integer>15</integer>
+        </dict>
+        <dict>
+            <key>Hour</key><integer>6</integer>
+            <key>Minute</key><integer>15</integer>
+        </dict>
+        <dict>
+            <key>Hour</key><integer>7</integer>
+            <key>Minute</key><integer>15</integer>
+        </dict>
+        <dict>
+            <key>Hour</key><integer>8</integer>
+            <key>Minute</key><integer>15</integer>
+        </dict>
+        <dict>
+            <key>Hour</key><integer>9</integer>
+            <key>Minute</key><integer>15</integer>
+        </dict>
+        <dict>
+            <key>Hour</key><integer>10</integer>
+            <key>Minute</key><integer>15</integer>
+        </dict>
+        <dict>
+            <key>Hour</key><integer>11</integer>
+            <key>Minute</key><integer>15</integer>
+        </dict>
+        <dict>
+            <key>Hour</key><integer>12</integer>
+            <key>Minute</key><integer>15</integer>
+        </dict>
+        <dict>
+            <key>Hour</key><integer>13</integer>
+            <key>Minute</key><integer>15</integer>
+        </dict>
+        <dict>
+            <key>Hour</key><integer>14</integer>
+            <key>Minute</key><integer>15</integer>
+        </dict>
+        <dict>
+            <key>Hour</key><integer>15</integer>
+            <key>Minute</key><integer>15</integer>
+        </dict>
+        <dict>
+            <key>Hour</key><integer>16</integer>
+            <key>Minute</key><integer>15</integer>
+        </dict>
+        <dict>
+            <key>Hour</key><integer>17</integer>
+            <key>Minute</key><integer>15</integer>
+        </dict>
+        <dict>
+            <key>Hour</key><integer>18</integer>
+            <key>Minute</key><integer>15</integer>
+        </dict>
+        <dict>
+            <key>Hour</key><integer>19</integer>
+            <key>Minute</key><integer>15</integer>
+        </dict>
+        <dict>
+            <key>Hour</key><integer>20</integer>
+            <key>Minute</key><integer>15</integer>
+        </dict>
+        <dict>
+            <key>Hour</key><integer>21</integer>
+            <key>Minute</key><integer>15</integer>
+        </dict>
+        <dict>
+            <key>Hour</key><integer>22</integer>
+            <key>Minute</key><integer>15</integer>
+        </dict>
+        <dict>
+            <key>Hour</key><integer>23</integer>
+            <key>Minute</key><integer>15</integer>
+        </dict>
+    </array>
+
+    <key>RunAtLoad</key>
+    <false/>
+    <key>KeepAlive</key>
+    <false/>
+
+    <key>StandardOutPath</key>
+    <string>/tmp/hymn_albumsearch.log</string>
+    <key>StandardErrorPath</key>
+    <string>/tmp/hymn_albumsearch.log</string>
+</dict>
+</plist>

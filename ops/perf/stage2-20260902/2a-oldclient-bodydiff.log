@@ -1,0 +1,6 @@
+# Old-client compatibility: /api/hymns body byte-for-byte, harness (all Stage2 changes) vs live :3001 — 2026-09-02T07:56:39Z
+diff line count (pretty-printed, sorted keys) between live :3001 (untouched process, old code still in memory) and harness (all A-1..A-5 changes applied):        4
+128104c128104
+<     "dataVersion": "1788274394187.32-61054976"
+---
+>     "dataVersion": "1788313502009.5908-61054976"

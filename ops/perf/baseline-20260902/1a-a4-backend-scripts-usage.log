@@ -1,0 +1,94 @@
+2026-09-02T07:30:26Z
+OK: backend/scripts/alignBackfill.js code=0 shell=4 doc=3
+OK: backend/scripts/alignLyrics.js code=0 shell=3 doc=3
+OK: backend/scripts/auditChannel.js code=0 shell=1 doc=4
+OK: backend/scripts/auditLyricsBatch.js code=0 shell=11 doc=7
+OK: backend/scripts/backfillAlbumFromACMCatalog.js code=0 shell=1 doc=0
+OK: backend/scripts/backfillAlbumFromCatalog.js code=0 shell=2 doc=0
+OK: backend/scripts/backfillAlbumFromCobuildCatalog.js code=0 shell=1 doc=1
+OK: backend/scripts/backfillAlbumFromJoshuaCatalog.js code=0 shell=2 doc=1
+OK: backend/scripts/backfillAlbumFromKeenCatalog.js code=0 shell=2 doc=0
+OK: backend/scripts/backfillAlbumFromMusicBrainzCatalog.js code=0 shell=1 doc=0
+OK: backend/scripts/backfillAlbumFromNituCatalog.js code=0 shell=2 doc=0
+OK: backend/scripts/backfillAlbumFromPlaylists.js code=0 shell=1 doc=4
+OK: backend/scripts/backfillAlbumFromSopSiteCatalog.js code=0 shell=2 doc=1
+OK: backend/scripts/backfillAlbumFromTianyunCatalog.js code=0 shell=2 doc=0
+OK: backend/scripts/backfillAlbumFromXiaoyangCatalog.js code=0 shell=2 doc=0
+OK: backend/scripts/backfillAlbumFromXinxinCatalog.js code=0 shell=2 doc=0
+OK: backend/scripts/backfillAlbumHeartProTitle.js code=0 shell=1 doc=1
+OK: backend/scripts/backfillAlbumSearch.js code=0 shell=3 doc=1
+OK: backend/scripts/backfillFromList.js code=0 shell=1 doc=3
+OK: backend/scripts/backfillMeta.js code=0 shell=4 doc=3
+OK: backend/scripts/backupUsersDb.js code=0 shell=5 doc=1
+OK: backend/scripts/cantonhymnLookup.js code=0 shell=9 doc=3
+OK: backend/scripts/checkDeadLinks.js code=0 shell=5 doc=4
+OK: backend/scripts/curateLibrary.js code=0 shell=1 doc=2
+OK: backend/scripts/fetchACMCatalog.js code=0 shell=1 doc=1
+OK: backend/scripts/fetchJoshuaCatalog.js code=0 shell=0 doc=1
+ZERO: backend/scripts/fetchKeenCatalog.js
+OK: backend/scripts/fetchLyrics.js code=0 shell=5 doc=13
+ZERO: backend/scripts/fetchMusicBrainzCatalog.js
+ZERO: backend/scripts/fetchSopCatalog.js
+OK: backend/scripts/fetchSopSiteCatalog.js code=0 shell=0 doc=4
+OK: backend/scripts/fetchTianyunAlbumYears.js code=0 shell=0 doc=1
+ZERO: backend/scripts/fetchTianyunCatalog.js
+ZERO: backend/scripts/fetchXiaoyangCatalog.js
+ZERO: backend/scripts/fetchXinxinCatalog.js
+OK: backend/scripts/finalizeKidsC4.js code=0 shell=2 doc=2
+OK: backend/scripts/growLibrary.js code=0 shell=4 doc=11
+OK: backend/scripts/migrate-add-status.js code=0 shell=1 doc=0
+OK: backend/scripts/migrate-hymns-view.js code=0 shell=1 doc=3
+OK: backend/scripts/migrate-instrumental.js code=0 shell=1 doc=1
+OK: backend/scripts/migrate-lyrics-timeline.js code=0 shell=1 doc=0
+OK: backend/scripts/migrate-lyrics.js code=0 shell=1 doc=2
+OK: backend/scripts/migrateAlbumSource.js code=0 shell=1 doc=0
+OK: backend/scripts/migrateTaxonomy.js code=0 shell=1 doc=4
+OK: backend/scripts/oneoff-backfillYtPlaylistMissing.js code=0 shell=1 doc=0
+OK: backend/scripts/oneoff-cleanLegacyAlbumJunk.js code=0 shell=1 doc=0
+OK: backend/scripts/oneoff-clearAlbum735.js code=0 shell=1 doc=0
+OK: backend/scripts/reconcileChannels.js code=0 shell=1 doc=3
+OK: backend/scripts/reconcileUserRefs.js code=0 shell=1 doc=4
+OK: backend/scripts/refetchKids.js code=0 shell=1 doc=2
+OK: backend/scripts/regenerateDisplayTitles.js code=0 shell=1 doc=5
+OK: backend/scripts/restoreKidsLyricsC4.js code=0 shell=2 doc=2
+OK: backend/scripts/reviewLyrics.js code=0 shell=7 doc=7
+OK: backend/scripts/setAdmin.js code=0 shell=2 doc=2
+OK: backend/scripts/updateCantonhymnIndex.js code=0 shell=0 doc=2
+OK: backend/scripts/applyInstrumentalFlags.mjs code=0 shell=1 doc=2
+OK: backend/scripts/catalogGapApply.mjs code=0 shell=1 doc=0
+OK: backend/scripts/catalogGapDiscover.mjs code=0 shell=1 doc=0
+OK: backend/scripts/catalogGapScan.mjs code=0 shell=1 doc=0
+OK: backend/scripts/discoverInstrumentalPlaylists.mjs code=0 shell=1 doc=1
+OK: backend/scripts/discoverInstrumentalReleases.mjs code=0 shell=1 doc=1
+OK: backend/scripts/ingestInstrumental.mjs code=0 shell=1 doc=1
+OK: backend/scripts/oneoff-clearBiLiveLyrics-20260817.mjs code=0 shell=1 doc=1
+OK: backend/scripts/oneoff-clearBiLiveLyrics-bulk-20260817.mjs code=0 shell=1 doc=1
+OK: backend/scripts/oneoff-delist1722-phonemic-20260825.mjs code=0 shell=1 doc=0
+OK: backend/scripts/oneoff-delistCJTestimony4518.mjs code=0 shell=1 doc=0
+OK: backend/scripts/oneoff-delistCantoneseNonsong1.mjs code=0 shell=1 doc=0
+OK: backend/scripts/oneoff-delistClayMusicNoAlbum.mjs code=0 shell=1 doc=1
+OK: backend/scripts/oneoff-delistInterviewBTS-20260817.mjs code=0 shell=1 doc=1
+OK: backend/scripts/oneoff-delistLingMingSuZao.mjs code=0 shell=1 doc=2
+OK: backend/scripts/oneoff-delistMandarinNonsong.mjs code=0 shell=1 doc=1
+OK: backend/scripts/oneoff-delistMandarinNonsong2.mjs code=0 shell=1 doc=1
+OK: backend/scripts/oneoff-delistMandarinNonsong3.mjs code=0 shell=1 doc=0
+OK: backend/scripts/oneoff-delistMandarinNonsong4.mjs code=0 shell=1 doc=0
+OK: backend/scripts/oneoff-delistMandarinNonsong5.mjs code=0 shell=1 doc=0
+OK: backend/scripts/oneoff-delistMandarinNonsong6.mjs code=0 shell=1 doc=0
+OK: backend/scripts/oneoff-delistMandarinNonsong7.mjs code=0 shell=1 doc=0
+OK: backend/scripts/oneoff-delistPromoTutorial-20260817.mjs code=0 shell=1 doc=1
+OK: backend/scripts/oneoff-delistWorship101.mjs code=0 shell=1 doc=0
+OK: backend/scripts/oneoff-fixKidsCategoryMismatch.mjs code=0 shell=1 doc=0
+OK: backend/scripts/oneoff-fixLang-20260819.mjs code=0 shell=1 doc=0
+OK: backend/scripts/oneoff-fixLangEnglish4-20260816.mjs code=0 shell=1 doc=0
+OK: backend/scripts/oneoff-parkInstrumentals-20260816.mjs code=0 shell=1 doc=0
+OK: backend/scripts/oneoff-requeueBulk416-20260817.mjs code=0 shell=1 doc=1
+OK: backend/scripts/oneoff-requeueCjkRedo-20260816.mjs code=0 shell=1 doc=1
+OK: backend/scripts/oneoff-requeueUnavailable-20260822.mjs code=0 shell=1 doc=0
+OK: backend/scripts/oneoff-resetDlDead403-20260819.mjs code=0 shell=1 doc=2
+OK: backend/scripts/oneoff-resetDlDead403b-20260821.mjs code=0 shell=1 doc=0
+OK: backend/scripts/oneoff-resetDlDead403c-20260822.mjs code=0 shell=1 doc=0
+ZERO: backend/scripts/oneoff-retireParkedInstrumentals-20260823.mjs
+OK: backend/scripts/scanInstrumentalCandidates.mjs code=0 shell=1 doc=2
+OK: backend/scripts/signInstrumentalReleases.mjs code=0 shell=1 doc=0
+TOTAL=92 ZERO=7

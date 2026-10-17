@@ -1,0 +1,22 @@
+=== Build provenance ===
+HEAD: 7a0a96cde5347b5feaf944e86b7f234dca731e3f
+HEAD date: 2026-09-02 14:04:31 +0800
+Build command: xcodebuild -workspace ios/Odely.xcworkspace -scheme Odely -configuration Release -sdk iphonesimulator -destination platform=iOS Simulator,id=E0416618-B662-41D2-A253-5260FA0CF556 -derivedDataPath <scratchpad>/derivedData build
+Build started: 2026-09-02T07:13:03Z (host UTC)
+Build finished (approx, log line): 2026-09-02 15:16:36 local (BUILD SUCCEEDED)
+App path (raw): <scratchpad>/derivedData/Build/Products/Release-iphonesimulator/Odely.app
+main.jsbundle size: n/a
+main.jsbundle size (actual): 3716119 bytes
+Patched copy: <scratchpad>/Odely-patched.app (Expo.plist EXUpdatesCheckOnLaunch ALWAYS -> NEVER)
+
+=== git diff --stat (working tree at build time) ===
+ frontend/hymn-app/App.js                           | 29 +++++++++++++++++++++-
+ frontend/hymn-app/index.js                         |  1 +
+ .../hymn-app/src/components/home/HomeScreen.js     |  8 ++++++
+ frontend/hymn-app/src/hooks/useCachedHymns.js      | 13 ++++++++++
+ frontend/hymn-app/src/screens/LibraryScreen.js     |  3 +++
+ frontend/hymn-app/src/screens/MineScreen.js        |  3 +++
+ 6 files changed, 56 insertions(+), 1 deletion(-)
+
+=== git status ios/ (tracked file changes from build) ===
+(none = clean)

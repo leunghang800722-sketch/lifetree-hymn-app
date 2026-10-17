@@ -1,0 +1,15 @@
+# A-1 after (dataVersion-keyed response cache) — 2026-09-02T07:48:09Z
+run=1 code=200 ttfb=0.130999 total=0.134905 size=5567648
+run=2 code=200 ttfb=0.011069 total=0.014571 size=5567648
+run=3 code=200 ttfb=0.010562 total=0.012486 size=5567648
+run=4 code=200 ttfb=0.010525 total=0.012403 size=5567648
+run=5 code=200 ttfb=0.010324 total=0.012296 size=5567648
+-- positive control: dataVersion before reload --
+{"dataVersion":"1788313502009.5908-61054976"}
+-- 正控 1: 同一 dataVersion 連續 5 次 → harness console 應該淨係第 1 次見 'full fetch' log,之後 4 次唔再 log(cache hit)--
+-- POST /__harness/reload-db (模擬 admin 寫入完 call reloadDb()) --
+{"dataVersion":"1788313502009.5908-61054976"}
+-- dataVersion after reload --
+{"dataVersion":"1788313502009.5908-61054976"}
+-- next /api/hymns hit after reload (should be a cache MISS → new 'full fetch' log line) --
+total=0.012378

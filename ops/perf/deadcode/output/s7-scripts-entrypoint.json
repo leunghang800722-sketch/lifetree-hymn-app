@@ -1,0 +1,5058 @@
+{
+  "scanner": "S7-scripts-entrypoint",
+  "totalScripts": 401,
+  "scheduledCount": 10,
+  "claudeHookCount": 2,
+  "manualCliCount": 129,
+  "zeroEntryCount": 260,
+  "zeroEntry": [
+    {
+      "file": "backend/scripts/backfillAlbumFromACMCatalog.js",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "backend/scripts/backfillAlbumFromCobuildCatalog.js",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "backend/scripts/backfillAlbumFromKeenCatalog.js",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "backend/scripts/backfillAlbumFromMusicBrainzCatalog.js",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "backend/scripts/backfillAlbumFromNituCatalog.js",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "backend/scripts/backfillAlbumFromXinxinCatalog.js",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "backend/scripts/backfillAlbumHeartProTitle.js",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "backend/scripts/catalogGapApply.mjs",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "backend/scripts/catalogGapDiscover.mjs",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "backend/scripts/catalogGapScan.mjs",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "backend/scripts/classifyLangByWhisper.js",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "backend/scripts/fetchChurch611Catalog.mjs",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "backend/scripts/fetchJoshuaCatalog.js",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "backend/scripts/ingestChurch611OrgCatalog.mjs",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "backend/scripts/migrate-add-status.js",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "backend/scripts/migrate-instrumental.js",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "backend/scripts/oneoff-backfillYtPlaylistMissing.js",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "backend/scripts/oneoff-cleanLegacyAlbumJunk.js",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "backend/scripts/oneoff-clearAlbum735.js",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "backend/scripts/oneoff-delist1722-phonemic-20260825.mjs",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "backend/scripts/oneoff-delistCJTestimony4518.mjs",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "backend/scripts/oneoff-delistCantoneseNonsong1.mjs",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "backend/scripts/oneoff-delistClayMusicNoAlbum.mjs",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "backend/scripts/oneoff-delistInterviewBTS-20260817.mjs",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "backend/scripts/oneoff-delistLingMingSuZao.mjs",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "backend/scripts/oneoff-delistMandarinNonsong.mjs",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "backend/scripts/oneoff-delistMandarinNonsong2.mjs",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "backend/scripts/oneoff-delistMandarinNonsong3.mjs",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "backend/scripts/oneoff-delistMandarinNonsong4.mjs",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "backend/scripts/oneoff-delistMandarinNonsong5.mjs",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "backend/scripts/oneoff-delistMandarinNonsong6.mjs",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "backend/scripts/oneoff-delistMandarinNonsong7.mjs",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "backend/scripts/oneoff-delistPromoTutorial-20260817.mjs",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "backend/scripts/oneoff-delistWorship101.mjs",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "backend/scripts/oneoff-fixKidsCategoryMismatch.mjs",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "backend/scripts/oneoff-fixLang-20260819.mjs",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "backend/scripts/oneoff-fixLangEnglish4-20260816.mjs",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "backend/scripts/oneoff-parkInstrumentals-20260816.mjs",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "backend/scripts/oneoff-requeueBulk416-20260817.mjs",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "backend/scripts/oneoff-requeueUnavailable-20260822.mjs",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "backend/scripts/oneoff-resetDlDead403b-20260821.mjs",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "backend/scripts/oneoff-resetDlDead403c-20260822.mjs",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "backend/scripts/oneoff-scan611RAW-20260905.mjs",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "backend/scripts/reconcileUserRefs.js",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "backend/scripts/restoreKidsLyricsC4.js",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "backend/scripts/signInstrumentalReleases.mjs",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/perf/stage2-20260902/2d-harness-3002.mjs",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/perf/stage2-20260902/2e-ab-runner.sh",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/perf/stage2-20260902/2e-e1-harness-server.mjs",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/perf/stage2-20260902/2e-e1-harness-test.mjs",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/perf/stage2-20260902/2e-e5-p0-harness.mjs",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/perf/stage2-20260902/2e-warm-cycle.sh",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/perf/harness/w2/b3-loginratelimit-harness.mjs",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/perf/harness/w2/b3-otp-driver.mjs",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/perf/harness/w2/hc1-otp-verify-harness.mjs",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/perf/harness/w2/hc2-trustproxy-harness.mjs",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/perf/harness/w2/hc3-cors-harness.mjs",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/perf/harness/w2/hc4-internal-activity-harness.mjs",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/perf/harness/w2/hc5-admin-me-driver.mjs",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/perf/harness/w2/hc5-friends-driver.mjs",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/perf/harness/w2/hd-dotenv-harness.mjs",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/perf/harness/w1/frontend-harness.mjs",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/perf/deadcode/s1-import-graph.mjs",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/perf/deadcode/s2-unused-exports.mjs",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/perf/deadcode/s3-icon-asset.mjs",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/perf/deadcode/s4-dependency.mjs",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/perf/deadcode/s5-backend-route.mjs",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/perf/deadcode/s6-backend-lib-exports.mjs",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/perf/deadcode/s7-scripts-entrypoint.mjs",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/perf/deadcode/s8-dead-branch.mjs",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/perf/deadcode/s9-data-artifacts.mjs",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/adjdup.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/alignproof.mjs",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/anwin.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/bgclean.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/bicard.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/bipair.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/blkseq.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/blockgap.mjs",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/bpsift.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/bulkproof.mjs",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/cardanaph.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/cardblk.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/cardflip.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/cardgrow.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/cardhead.mjs",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/cardjudge.mjs",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/cardmid.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/cardmiss.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/cardorph.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/cardrep.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/cardscan.mjs",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/cardtwin.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/charfix.mjs",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/charins.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/charset.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/chcheck.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/chfind.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/chocr.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/chrep.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/chvote.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/chwit.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/chwit2.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/colcard.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/crossblock.mjs",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/crosscontam.mjs",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/csblind.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/csowh.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/cspin.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/cssift.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/cstrunc.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/cswhisper.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/dupanaph.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/dupline.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/dupprobe.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/duprun.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/dupsift.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/enpair.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/fragbag.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/fragglue.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/fragocr.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/framedup.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/framenext.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/framevote.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/gap-align.mjs",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/gapscan.mjs",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/gapscan2.mjs",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/headcut.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/hookpos.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/incomplete-scan.mjs",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/introcard.mjs",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/junkscan.mjs",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/langmismatch-hold-to-apply.mjs",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/langproof.mjs",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/latinline.mjs",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/libcut.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/libend.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/libghost.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/libjunk.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/libnowh.mjs",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/libocr.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/libpairproof.mjs",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/libpeer.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/libself.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/libseq.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/libshort.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/libshow.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/libsplice.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/libtail.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/libtypo.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/linhole.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/lintrunc.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/ocrcut.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/ocrmiss.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/ocrrep.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/ocrseq.mjs",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/ocrseq.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/ocrtail.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/ordwit.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/orphan-scan.mjs",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/orphanline.mjs",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/orphsift.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/outroblk.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/outrocard.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/overdup.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/pagecard.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/pairdrop.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/pairscan.mjs",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/paraline.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/parenin.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/parenline.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/persistbanner.mjs",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/prefixcard.mjs",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/queuecheck.mjs",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/rarechar.mjs",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/rarechar.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/repcheck.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/reverse-scan-missing-lines.mjs",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/rollcard.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/sandfrag.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/sandreplay.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/sandseq.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/sandsift.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/sandwich.mjs",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/scripcard.mjs",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/scripframe2.mjs",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/scripline.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/scripture-card-clean.mjs",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/sectionscan.mjs",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/segdup.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/selfsift.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/seqanaph.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/seqdrift.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/seqgap.mjs",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/seqinv.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/seqself.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/seqstrong.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/seqview.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/shellscan.mjs",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/show-ocr-draft.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/sib-proof.mjs",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/sib-xfill.mjs",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/sibcheck.mjs",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/sibclip.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/sibend.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/sibfix.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/sibgap.mjs",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/sibling.mjs",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/sibocr.mjs",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/sibproof2.mjs",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/sibtrunc.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/sibview.mjs",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/splitscan.mjs",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/stanzacut.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/strip-junk-latin.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/structrep.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/subline.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/subsift.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/sufline.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/tailcut.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/tailnew.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/talkscan.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/thinocr.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/titlescan.mjs",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/titlesib.mjs",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/trunc2.mjs",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/truncscan.mjs",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/unavsib.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/unavsift.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/unavview.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/varhead.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/varmiss.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/verproof.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/verthin.mjs",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/voteview.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/whblind.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/whblk.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/whgarble.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/whgrow.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/whhead.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/whinv.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/whlib.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/whlibsib.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/whmiss.mjs",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/whmiss.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/whorder.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/whpair.mjs",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/whproof.mjs",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/whreliab.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/whrep-selfdbl2.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/whrepgate.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/whsand.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/whtail.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/whview.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/handoff-20260828-r2b-edgefix/shortchk.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/handoff-20260828-r1b-dupanaph/dupchk.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/handoff-20260828-r1b-dupanaph/lsview.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/handoff-20260828-r1b-dupanaph/sandchk.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/handoff-20260827-r2-sufline/stale.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/deploy/apk-publish.sh",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    }
+  ],
+  "results": [
+    {
+      "file": "backend/scripts/alignBackfill.js",
+      "classification": "排程",
+      "scheduledPlist": "com.hymnapp.alignbackfill.plist",
+      "crossRefFiles": [
+        "backend/scripts/alignLyrics.js",
+        "backend/scripts/fetchLyrics.js",
+        "backend/scripts/migrate-lyrics-timeline.js",
+        "backend/lib/whisperTranscribe.js"
+      ],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "backend/scripts/alignLyrics.js",
+      "classification": "人手CLI或被其他script呼叫",
+      "scheduledPlist": null,
+      "crossRefFiles": [
+        "backend/scripts/backfillAlbumFromCatalog.js",
+        "backend/scripts/fetchLyrics.js",
+        "backend/scripts/migrate-lyrics-timeline.js",
+        "backend/lib/textSimilarity.js",
+        "backend/lib/whisperTranscribe.js"
+      ],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "backend/scripts/applyInstrumentalFlags.mjs",
+      "classification": "人手CLI或被其他script呼叫",
+      "scheduledPlist": null,
+      "crossRefFiles": [
+        "backend/scripts/migrate-instrumental.js"
+      ],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "backend/scripts/auditChannel.js",
+      "classification": "人手CLI或被其他script呼叫",
+      "scheduledPlist": null,
+      "crossRefFiles": [
+        "backend/lib/hymnDb.js"
+      ],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "backend/scripts/auditLyricsBatch.js",
+      "classification": "人手CLI或被其他script呼叫",
+      "scheduledPlist": null,
+      "crossRefFiles": [
+        "backend/scripts/scanInstrumentalCandidates.mjs",
+        "ops/lyrics/bi-freeze.mjs",
+        "ops/lyrics/langmismatch-hold-to-apply.mjs",
+        "ops/lyrics/strip-junk-latin.py",
+        "ops/lyrics/verthin.mjs"
+      ],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "backend/scripts/backfillAlbumFromACMCatalog.js",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "backend/scripts/backfillAlbumFromCatalog.js",
+      "classification": "人手CLI或被其他script呼叫",
+      "scheduledPlist": null,
+      "crossRefFiles": [
+        "backend/scripts/backfillAlbumFromJoshuaCatalog.js",
+        "backend/scripts/backfillAlbumFromKeenCatalog.js",
+        "backend/scripts/backfillAlbumFromSopSiteCatalog.js",
+        "backend/scripts/migrateAlbumSource.js"
+      ],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "backend/scripts/backfillAlbumFromCobuildCatalog.js",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "backend/scripts/backfillAlbumFromJoshuaCatalog.js",
+      "classification": "人手CLI或被其他script呼叫",
+      "scheduledPlist": null,
+      "crossRefFiles": [
+        "backend/scripts/backfillAlbumFromACMCatalog.js",
+        "backend/scripts/backfillAlbumFromKeenCatalog.js",
+        "backend/scripts/backfillAlbumFromNituCatalog.js",
+        "backend/scripts/backfillAlbumFromTianyunCatalog.js",
+        "backend/scripts/backfillAlbumFromXiaoyangCatalog.js"
+      ],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "backend/scripts/backfillAlbumFromKeenCatalog.js",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "backend/scripts/backfillAlbumFromMusicBrainzCatalog.js",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "backend/scripts/backfillAlbumFromNituCatalog.js",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "backend/scripts/backfillAlbumFromPlaylists.js",
+      "classification": "人手CLI或被其他script呼叫",
+      "scheduledPlist": null,
+      "crossRefFiles": [
+        "backend/scripts/backfillAlbumFromACMCatalog.js",
+        "backend/scripts/discoverInstrumentalPlaylists.mjs",
+        "backend/scripts/fetchACMCatalog.js",
+        "backend/scripts/ingestInstrumental.mjs",
+        "backend/scripts/migrateAlbumSource.js"
+      ],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "backend/scripts/backfillAlbumFromSopSiteCatalog.js",
+      "classification": "人手CLI或被其他script呼叫",
+      "scheduledPlist": null,
+      "crossRefFiles": [
+        "backend/scripts/fetchSopSiteCatalog.js",
+        "backend/lib/channelScan.js"
+      ],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "backend/scripts/backfillAlbumFromTianyunCatalog.js",
+      "classification": "人手CLI或被其他script呼叫",
+      "scheduledPlist": null,
+      "crossRefFiles": [
+        "backend/scripts/fetchTianyunAlbumYears.js"
+      ],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "backend/scripts/backfillAlbumFromXiaoyangCatalog.js",
+      "classification": "人手CLI或被其他script呼叫",
+      "scheduledPlist": null,
+      "crossRefFiles": [
+        "backend/scripts/backfillAlbumHeartProTitle.js"
+      ],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "backend/scripts/backfillAlbumFromXinxinCatalog.js",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "backend/scripts/backfillAlbumHeartProTitle.js",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "backend/scripts/backfillAlbumSearch.js",
+      "classification": "排程",
+      "scheduledPlist": "com.hymnapp.albumsearch.plist",
+      "crossRefFiles": [
+        "backend/scripts/migrateAlbumSource.js"
+      ],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "backend/scripts/backfillFromList.js",
+      "classification": "人手CLI或被其他script呼叫",
+      "scheduledPlist": null,
+      "crossRefFiles": [
+        "backend/scripts/growLibrary.js",
+        "backend/scripts/ingestChurch611OrgCatalog.mjs",
+        "backend/scripts/reconcileChannels.js",
+        "backend/lib/backfillCore.js",
+        "backend/lib/hymnDb.js"
+      ],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "backend/scripts/backfillMeta.js",
+      "classification": "排程",
+      "scheduledPlist": "com.hymnapp.backfillmeta.plist",
+      "crossRefFiles": [
+        "backend/scripts/backfillAlbumFromPlaylists.js",
+        "backend/scripts/backfillAlbumSearch.js",
+        "backend/scripts/migrateAlbumSource.js"
+      ],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "backend/scripts/backupUsersDb.js",
+      "classification": "排程",
+      "scheduledPlist": "com.hymnapp.usersbackup.plist",
+      "crossRefFiles": [
+        "backend/routes/admin.js",
+        "backend/lib/auditLog.js"
+      ],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "backend/scripts/cantonhymnLookup.js",
+      "classification": "人手CLI或被其他script呼叫",
+      "scheduledPlist": null,
+      "crossRefFiles": [
+        "ops/lyrics/cantonhymn-prescreen.mjs",
+        "ops/lyrics/chgap.py",
+        "ops/lyrics/chwit.py"
+      ],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "backend/scripts/catalogGapApply.mjs",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "backend/scripts/catalogGapDiscover.mjs",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "backend/scripts/catalogGapScan.mjs",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "backend/scripts/checkDeadLinks.js",
+      "classification": "排程",
+      "scheduledPlist": "com.hymnapp.deadlinkcheck.plist",
+      "crossRefFiles": [
+        "backend/scripts/growLibrary.js",
+        "backend/server.js",
+        "backend/lib/hymnDb.js"
+      ],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "backend/scripts/classifyLangByWhisper.js",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "backend/scripts/curateLibrary.js",
+      "classification": "人手CLI或被其他script呼叫",
+      "scheduledPlist": null,
+      "crossRefFiles": [
+        "backend/scripts/growLibrary.js"
+      ],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "backend/scripts/discoverInstrumentalPlaylists.mjs",
+      "classification": "人手CLI或被其他script呼叫",
+      "scheduledPlist": null,
+      "crossRefFiles": [
+        "backend/scripts/discoverInstrumentalReleases.mjs",
+        "backend/scripts/ingestInstrumental.mjs"
+      ],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "backend/scripts/discoverInstrumentalReleases.mjs",
+      "classification": "人手CLI或被其他script呼叫",
+      "scheduledPlist": null,
+      "crossRefFiles": [
+        "backend/scripts/ingestInstrumental.mjs"
+      ],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "backend/scripts/fetchACMCatalog.js",
+      "classification": "人手CLI或被其他script呼叫",
+      "scheduledPlist": null,
+      "crossRefFiles": [
+        "backend/scripts/backfillAlbumFromACMCatalog.js"
+      ],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "backend/scripts/fetchChurch611Catalog.mjs",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "backend/scripts/fetchJoshuaCatalog.js",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "backend/scripts/fetchLyrics.js",
+      "classification": "人手CLI或被其他script呼叫",
+      "scheduledPlist": null,
+      "crossRefFiles": [
+        "backend/scripts/alignBackfill.js",
+        "backend/scripts/alignLyrics.js",
+        "backend/scripts/applyInstrumentalFlags.mjs",
+        "backend/scripts/backfillMeta.js",
+        "backend/scripts/refetchKids.js"
+      ],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "backend/scripts/fetchSopSiteCatalog.js",
+      "classification": "人手CLI或被其他script呼叫",
+      "scheduledPlist": null,
+      "crossRefFiles": [
+        "backend/scripts/backfillAlbumFromSopSiteCatalog.js",
+        "backend/scripts/fetchChurch611Catalog.mjs"
+      ],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "backend/scripts/fetchTianyunAlbumYears.js",
+      "classification": "人手CLI或被其他script呼叫",
+      "scheduledPlist": null,
+      "crossRefFiles": [
+        "backend/scripts/backfillAlbumFromTianyunCatalog.js"
+      ],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "backend/scripts/finalizeKidsC4.js",
+      "classification": "人手CLI或被其他script呼叫",
+      "scheduledPlist": null,
+      "crossRefFiles": [
+        "backend/scripts/restoreKidsLyricsC4.js"
+      ],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "backend/scripts/growLibrary.js",
+      "classification": "排程",
+      "scheduledPlist": "com.hymnapp.growlibrary.plist",
+      "crossRefFiles": [
+        "backend/scripts/backfillAlbumFromCatalog.js",
+        "backend/scripts/backfillAlbumFromPlaylists.js",
+        "backend/scripts/backfillAlbumSearch.js",
+        "backend/scripts/backfillFromList.js",
+        "backend/scripts/catalogGapApply.mjs"
+      ],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "backend/scripts/ingestChurch611OrgCatalog.mjs",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "backend/scripts/ingestInstrumental.mjs",
+      "classification": "人手CLI或被其他script呼叫",
+      "scheduledPlist": null,
+      "crossRefFiles": [
+        "backend/scripts/scanInstrumentalCandidates.mjs",
+        "backend/lib/backfillCore.js",
+        "backend/lib/instrumentalSilence.js"
+      ],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "backend/scripts/migrate-add-status.js",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "backend/scripts/migrate-hymns-view.js",
+      "classification": "人手CLI或被其他script呼叫",
+      "scheduledPlist": null,
+      "crossRefFiles": [
+        "backend/scripts/migrate-instrumental.js"
+      ],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "backend/scripts/migrate-instrumental.js",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "backend/scripts/migrate-lyrics-timeline.js",
+      "classification": "人手CLI或被其他script呼叫",
+      "scheduledPlist": null,
+      "crossRefFiles": [
+        "backend/scripts/alignBackfill.js"
+      ],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "backend/scripts/migrate-lyrics.js",
+      "classification": "人手CLI或被其他script呼叫",
+      "scheduledPlist": null,
+      "crossRefFiles": [
+        "backend/scripts/migrate-instrumental.js"
+      ],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "backend/scripts/migrateAlbumSource.js",
+      "classification": "人手CLI或被其他script呼叫",
+      "scheduledPlist": null,
+      "crossRefFiles": [
+        "backend/scripts/oneoff-cleanLegacyAlbumJunk.js"
+      ],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "backend/scripts/migrateTaxonomy.js",
+      "classification": "人手CLI或被其他script呼叫",
+      "scheduledPlist": null,
+      "crossRefFiles": [
+        "backend/scripts/migrate-instrumental.js",
+        "backend/scripts/migrateAlbumSource.js",
+        "backend/scripts/refetchKids.js"
+      ],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "backend/scripts/oneoff-backfillYtPlaylistMissing.js",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "backend/scripts/oneoff-cleanLegacyAlbumJunk.js",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "backend/scripts/oneoff-clearAlbum735.js",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "backend/scripts/oneoff-clearBiLiveLyrics-20260817.mjs",
+      "classification": "人手CLI或被其他script呼叫",
+      "scheduledPlist": null,
+      "crossRefFiles": [
+        "backend/scripts/oneoff-clearBiLiveLyrics-bulk-20260817.mjs"
+      ],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "backend/scripts/oneoff-clearBiLiveLyrics-bulk-20260817.mjs",
+      "classification": "人手CLI或被其他script呼叫",
+      "scheduledPlist": null,
+      "crossRefFiles": [
+        "backend/scripts/oneoff-requeueBulk416-20260817.mjs"
+      ],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "backend/scripts/oneoff-delist1722-phonemic-20260825.mjs",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "backend/scripts/oneoff-delistCJTestimony4518.mjs",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "backend/scripts/oneoff-delistCantoneseNonsong1.mjs",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "backend/scripts/oneoff-delistClayMusicNoAlbum.mjs",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "backend/scripts/oneoff-delistInterviewBTS-20260817.mjs",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "backend/scripts/oneoff-delistLingMingSuZao.mjs",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "backend/scripts/oneoff-delistMandarinNonsong.mjs",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "backend/scripts/oneoff-delistMandarinNonsong2.mjs",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "backend/scripts/oneoff-delistMandarinNonsong3.mjs",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "backend/scripts/oneoff-delistMandarinNonsong4.mjs",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "backend/scripts/oneoff-delistMandarinNonsong5.mjs",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "backend/scripts/oneoff-delistMandarinNonsong6.mjs",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "backend/scripts/oneoff-delistMandarinNonsong7.mjs",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "backend/scripts/oneoff-delistPromoTutorial-20260817.mjs",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "backend/scripts/oneoff-delistWorship101.mjs",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "backend/scripts/oneoff-fixKidsCategoryMismatch.mjs",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "backend/scripts/oneoff-fixLang-20260819.mjs",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "backend/scripts/oneoff-fixLangEnglish4-20260816.mjs",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "backend/scripts/oneoff-parkInstrumentals-20260816.mjs",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "backend/scripts/oneoff-requeueBulk416-20260817.mjs",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "backend/scripts/oneoff-requeueCjkRedo-20260816.mjs",
+      "classification": "人手CLI或被其他script呼叫",
+      "scheduledPlist": null,
+      "crossRefFiles": [
+        "backend/scripts/oneoff-requeueBulk416-20260817.mjs"
+      ],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "backend/scripts/oneoff-requeueUnavailable-20260822.mjs",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "backend/scripts/oneoff-resetDlDead403-20260819.mjs",
+      "classification": "人手CLI或被其他script呼叫",
+      "scheduledPlist": null,
+      "crossRefFiles": [
+        "backend/scripts/oneoff-resetDlDead403b-20260821.mjs"
+      ],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "backend/scripts/oneoff-resetDlDead403b-20260821.mjs",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "backend/scripts/oneoff-resetDlDead403c-20260822.mjs",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "backend/scripts/oneoff-scan611RAW-20260905.mjs",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "backend/scripts/reconcileChannels.js",
+      "classification": "人手CLI或被其他script呼叫",
+      "scheduledPlist": null,
+      "crossRefFiles": [
+        "backend/scripts/backfillFromList.js",
+        "backend/scripts/growLibrary.js",
+        "backend/lib/backfillCore.js",
+        "backend/lib/hymnDb.js",
+        "backend/lib/reconcileCore.js"
+      ],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "backend/scripts/reconcileUserRefs.js",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "backend/scripts/refetchKids.js",
+      "classification": "人手CLI或被其他script呼叫",
+      "scheduledPlist": null,
+      "crossRefFiles": [
+        "backend/scripts/growLibrary.js",
+        "backend/lib/channelScan.js"
+      ],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "backend/scripts/regenerateDisplayTitles.js",
+      "classification": "人手CLI或被其他script呼叫",
+      "scheduledPlist": null,
+      "crossRefFiles": [
+        "backend/lib/displayTitle.js"
+      ],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "backend/scripts/restoreKidsLyricsC4.js",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "backend/scripts/reviewLyrics.js",
+      "classification": "人手CLI或被其他script呼叫",
+      "scheduledPlist": null,
+      "crossRefFiles": [
+        "backend/scripts/auditLyricsBatch.js",
+        "backend/scripts/fetchLyrics.js",
+        "backend/scripts/migrate-instrumental.js",
+        "ops/lyrics/delist-batch.mjs",
+        "ops/lyrics/langmismatch-hold-to-apply.mjs"
+      ],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "backend/scripts/scanInstrumentalCandidates.mjs",
+      "classification": "人手CLI或被其他script呼叫",
+      "scheduledPlist": null,
+      "crossRefFiles": [
+        "backend/scripts/alignBackfill.js",
+        "backend/scripts/alignLyrics.js",
+        "backend/scripts/applyInstrumentalFlags.mjs",
+        "backend/lib/instrumentalSilence.js"
+      ],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "backend/scripts/setAdmin.js",
+      "classification": "人手CLI或被其他script呼叫",
+      "scheduledPlist": null,
+      "crossRefFiles": [
+        "backend/scripts/finalizeKidsC4.js",
+        "backend/lib/userDb.js"
+      ],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "backend/scripts/signInstrumentalReleases.mjs",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "backend/scripts/updateCantonhymnIndex.js",
+      "classification": "人手CLI或被其他script呼叫",
+      "scheduledPlist": null,
+      "crossRefFiles": [
+        "backend/scripts/cantonhymnLookup.js"
+      ],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/ytdlp/update-ytdlp.sh",
+      "classification": "排程",
+      "scheduledPlist": "com.hymnstream.ytdlpupdate.plist",
+      "crossRefFiles": [
+        "ops/stream/stream-selfheal.sh",
+        "ops/lyrics/stream-healthcheck.sh",
+        "backend/server.js",
+        "backend/lib/ytdlpBin.js"
+      ],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/stream/stream-selfheal.sh",
+      "classification": "人手CLI或被其他script呼叫",
+      "scheduledPlist": null,
+      "crossRefFiles": [
+        "ops/stream/stream-status.sh",
+        "ops/lyrics/stream-healthcheck.sh"
+      ],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/stream/stream-status.sh",
+      "classification": "人手CLI或被其他script呼叫",
+      "scheduledPlist": null,
+      "crossRefFiles": [
+        "ops/stream/stream-selfheal.sh"
+      ],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/perf/classify-devices.mjs",
+      "classification": "人手CLI或被其他script呼叫",
+      "scheduledPlist": null,
+      "crossRefFiles": [
+        "ops/perf/harness/w1/backend-harness.mjs",
+        "ops/perf/harness/w1/backend-http-worker.mjs",
+        "backend/lib/clientLogStore.js"
+      ],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/perf/stage2-20260902/2d-harness-3002.mjs",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/perf/stage2-20260902/2e-ab-runner.sh",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/perf/stage2-20260902/2e-e1-harness-server.mjs",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/perf/stage2-20260902/2e-e1-harness-test.mjs",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/perf/stage2-20260902/2e-e5-p0-harness.mjs",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/perf/stage2-20260902/2e-warm-cycle.sh",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/perf/harness/w2/b3-harness.mjs",
+      "classification": "人手CLI或被其他script呼叫",
+      "scheduledPlist": null,
+      "crossRefFiles": [
+        "ops/perf/harness/w2/b3-loginratelimit-harness.mjs",
+        "ops/perf/harness/w2/hc5-admin-me-driver.mjs",
+        "backend/routes/clientLog.js",
+        "backend/routes/invites.js",
+        "backend/routes/share.js"
+      ],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/perf/harness/w2/b3-loginratelimit-harness.mjs",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/perf/harness/w2/b3-otp-checkrate-new.mjs",
+      "classification": "人手CLI或被其他script呼叫",
+      "scheduledPlist": null,
+      "crossRefFiles": [
+        "ops/perf/harness/w2/b3-otp-driver.mjs"
+      ],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/perf/harness/w2/b3-otp-checkrate-old.mjs",
+      "classification": "人手CLI或被其他script呼叫",
+      "scheduledPlist": null,
+      "crossRefFiles": [
+        "ops/perf/harness/w2/b3-otp-checkrate-new.mjs",
+        "ops/perf/harness/w2/b3-otp-driver.mjs"
+      ],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/perf/harness/w2/b3-otp-driver.mjs",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/perf/harness/w2/hc1-otp-verify-harness.mjs",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/perf/harness/w2/hc2-trustproxy-harness.mjs",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/perf/harness/w2/hc3-cors-harness.mjs",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/perf/harness/w2/hc4-internal-activity-harness.mjs",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/perf/harness/w2/hc5-admin-me-driver.mjs",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/perf/harness/w2/hc5-friends-dailylimiter-new.mjs",
+      "classification": "人手CLI或被其他script呼叫",
+      "scheduledPlist": null,
+      "crossRefFiles": [
+        "ops/perf/harness/w2/hc5-friends-driver.mjs"
+      ],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/perf/harness/w2/hc5-friends-dailylimiter-old.mjs",
+      "classification": "人手CLI或被其他script呼叫",
+      "scheduledPlist": null,
+      "crossRefFiles": [
+        "ops/perf/harness/w2/hc5-friends-driver.mjs"
+      ],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/perf/harness/w2/hc5-friends-driver.mjs",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/perf/harness/w2/hd-dotenv-harness.mjs",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/perf/harness/w1/backend-harness.mjs",
+      "classification": "人手CLI或被其他script呼叫",
+      "scheduledPlist": null,
+      "crossRefFiles": [
+        "ops/perf/harness/w1/backend-store-timing-worker.mjs"
+      ],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/perf/harness/w1/backend-http-worker.mjs",
+      "classification": "人手CLI或被其他script呼叫",
+      "scheduledPlist": null,
+      "crossRefFiles": [
+        "ops/perf/harness/w1/backend-harness.mjs"
+      ],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/perf/harness/w1/backend-store-timing-worker.mjs",
+      "classification": "人手CLI或被其他script呼叫",
+      "scheduledPlist": null,
+      "crossRefFiles": [
+        "ops/perf/harness/w1/backend-harness.mjs"
+      ],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/perf/harness/w1/frontend-harness.mjs",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/perf/deadcode/s1-import-graph.mjs",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/perf/deadcode/s2-unused-exports.mjs",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/perf/deadcode/s3-icon-asset.mjs",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/perf/deadcode/s4-dependency.mjs",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/perf/deadcode/s5-backend-route.mjs",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/perf/deadcode/s6-backend-lib-exports.mjs",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/perf/deadcode/s7-scripts-entrypoint.mjs",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/perf/deadcode/s8-dead-branch.mjs",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/perf/deadcode/s9-data-artifacts.mjs",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/adjdup.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/albumbanner.mjs",
+      "classification": "人手CLI或被其他script呼叫",
+      "scheduledPlist": null,
+      "crossRefFiles": [
+        "ops/lyrics/persistbanner.mjs"
+      ],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/alignproof.mjs",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/anaph.py",
+      "classification": "人手CLI或被其他script呼叫",
+      "scheduledPlist": null,
+      "crossRefFiles": [
+        "ops/lyrics/cardanaph.py",
+        "ops/lyrics/dupanaph.py",
+        "ops/lyrics/seqanaph.py"
+      ],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/anwin.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/basetrunc.py",
+      "classification": "人手CLI或被其他script呼叫",
+      "scheduledPlist": null,
+      "crossRefFiles": [
+        "ops/lyrics/sibtrunc.py"
+      ],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/bgclean.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/bgodd.py",
+      "classification": "人手CLI或被其他script呼叫",
+      "scheduledPlist": null,
+      "crossRefFiles": [
+        "ops/lyrics/rarechar.py"
+      ],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/bgplaus.py",
+      "classification": "人手CLI或被其他script呼叫",
+      "scheduledPlist": null,
+      "crossRefFiles": [
+        "ops/lyrics/linhole.py"
+      ],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/bi-freeze.mjs",
+      "classification": "人手CLI或被其他script呼叫",
+      "scheduledPlist": null,
+      "crossRefFiles": [
+        "backend/scripts/auditLyricsBatch.js",
+        "ops/lyrics/producer-keeper.sh",
+        "ops/lyrics/queuecheck.mjs",
+        "backend/lib/lyricsLangCheck.js"
+      ],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/bicard.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/bilayerscan.mjs",
+      "classification": "人手CLI或被其他script呼叫",
+      "scheduledPlist": null,
+      "crossRefFiles": [
+        "ops/lyrics/headcut.py"
+      ],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/bipair.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/blindch.py",
+      "classification": "人手CLI或被其他script呼叫",
+      "scheduledPlist": null,
+      "crossRefFiles": [
+        "ops/lyrics/csblind.py"
+      ],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/blkasym.py",
+      "classification": "人手CLI或被其他script呼叫",
+      "scheduledPlist": null,
+      "crossRefFiles": [
+        "ops/lyrics/dupwin.py"
+      ],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/blkcnt.py",
+      "classification": "人手CLI或被其他script呼叫",
+      "scheduledPlist": null,
+      "crossRefFiles": [
+        "ops/lyrics/whblk.py"
+      ],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/blkseq.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/blockgap.mjs",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/bpsift.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/brktpair.py",
+      "classification": "人手CLI或被其他script呼叫",
+      "scheduledPlist": null,
+      "crossRefFiles": [
+        "ops/lyrics/bpsift.py"
+      ],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/bulkproof.mjs",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/cantonhymn-prescreen.mjs",
+      "classification": "人手CLI或被其他script呼叫",
+      "scheduledPlist": null,
+      "crossRefFiles": [
+        "backend/scripts/fetchLyrics.js"
+      ],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/cardanaph.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/cardblk.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/cardflip.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/cardgap.mjs",
+      "classification": "人手CLI或被其他script呼叫",
+      "scheduledPlist": null,
+      "crossRefFiles": [
+        "ops/lyrics/hookocr.py",
+        "ops/lyrics/subsift.py"
+      ],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/cardgrow.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/cardhead.mjs",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/cardjudge.mjs",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/cardk.py",
+      "classification": "人手CLI或被其他script呼叫",
+      "scheduledPlist": null,
+      "crossRefFiles": [
+        "ops/lyrics/outrogap.py"
+      ],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/cardlost.mjs",
+      "classification": "人手CLI或被其他script呼叫",
+      "scheduledPlist": null,
+      "crossRefFiles": [
+        "ops/lyrics/cardmiss.py"
+      ],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/cardmid.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/cardmiss.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/cardorph.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/cardpair.py",
+      "classification": "人手CLI或被其他script呼叫",
+      "scheduledPlist": null,
+      "crossRefFiles": [
+        "ops/lyrics/cardrep.py",
+        "ops/lyrics/seqinv.py"
+      ],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/cardrep.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/cardscan.mjs",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/cardseq.py",
+      "classification": "人手CLI或被其他script呼叫",
+      "scheduledPlist": null,
+      "crossRefFiles": [
+        "ops/lyrics/cardpair.py"
+      ],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/cardshort.py",
+      "classification": "人手CLI或被其他script呼叫",
+      "scheduledPlist": null,
+      "crossRefFiles": [
+        "ops/lyrics/cssift.py"
+      ],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/cardtwin.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/charfix.mjs",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/charins.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/charset.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/charvote.py",
+      "classification": "人手CLI或被其他script呼叫",
+      "scheduledPlist": null,
+      "crossRefFiles": [
+        "ops/lyrics/charins.py",
+        "ops/lyrics/votesift.py"
+      ],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/chcheck.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/chdiff.py",
+      "classification": "人手CLI或被其他script呼叫",
+      "scheduledPlist": null,
+      "crossRefFiles": [
+        "ops/lyrics/chcheck.py",
+        "ops/lyrics/chdup.py",
+        "ops/lyrics/chgap.py",
+        "ops/lyrics/chorder.py",
+        "ops/lyrics/chrep.py"
+      ],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/chdup.py",
+      "classification": "人手CLI或被其他script呼叫",
+      "scheduledPlist": null,
+      "crossRefFiles": [
+        "ops/lyrics/chrep.py",
+        "ops/lyrics/whdup.py"
+      ],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/chfind.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/chgap.py",
+      "classification": "人手CLI或被其他script呼叫",
+      "scheduledPlist": null,
+      "crossRefFiles": [
+        "ops/lyrics/cswhisper.py"
+      ],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/chocr.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/chorder.py",
+      "classification": "人手CLI或被其他script呼叫",
+      "scheduledPlist": null,
+      "crossRefFiles": [
+        "ops/lyrics/csorder.py",
+        "ops/lyrics/csowh.py",
+        "ops/lyrics/ordwit.py",
+        "ops/lyrics/seqanaph.py"
+      ],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/chrep.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/chvote.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/chwit.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/chwit2.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/chword.py",
+      "classification": "人手CLI或被其他script呼叫",
+      "scheduledPlist": null,
+      "crossRefFiles": [
+        "ops/lyrics/chvote.py"
+      ],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/colcard.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/crossblock.mjs",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/crosscontam.mjs",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/csblind.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/csdiff.py",
+      "classification": "人手CLI或被其他script呼叫",
+      "scheduledPlist": null,
+      "crossRefFiles": [
+        "ops/lyrics/cardseq.py",
+        "ops/lyrics/charset.py",
+        "ops/lyrics/csorder.py"
+      ],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/csorder.py",
+      "classification": "人手CLI或被其他script呼叫",
+      "scheduledPlist": null,
+      "crossRefFiles": [
+        "ops/lyrics/csowh.py",
+        "ops/lyrics/dupanaph.py",
+        "ops/lyrics/libdup.py"
+      ],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/csowh.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/cspin.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/cssift.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/cstrunc.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/cswhisper.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/dedupe-ocr-draft.py",
+      "classification": "人手CLI或被其他script呼叫",
+      "scheduledPlist": null,
+      "crossRefFiles": [
+        "ops/lyrics/show-ocr-draft.py",
+        "ops/lyrics/strip-junk-latin.py"
+      ],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/delist-batch.mjs",
+      "classification": "人手CLI或被其他script呼叫",
+      "scheduledPlist": null,
+      "crossRefFiles": [
+        "backend/scripts/applyInstrumentalFlags.mjs"
+      ],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/dupanaph.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/dupcard.py",
+      "classification": "人手CLI或被其他script呼叫",
+      "scheduledPlist": null,
+      "crossRefFiles": [
+        "ops/lyrics/chdup.py",
+        "ops/lyrics/framedup.py",
+        "ops/lyrics/whdup.py"
+      ],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/dupline.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/dupprobe.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/duprun.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/dupsift.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/dupwin.py",
+      "classification": "人手CLI或被其他script呼叫",
+      "scheduledPlist": null,
+      "crossRefFiles": [
+        "ops/lyrics/outroblk.py"
+      ],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/edgecard.py",
+      "classification": "人手CLI或被其他script呼叫",
+      "scheduledPlist": null,
+      "crossRefFiles": [
+        "ops/lyrics/outrogap.py"
+      ],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/enpair.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/fragbag.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/fragglue.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/fragocr.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/framedup.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/framenext.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/framevote.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/gap-align.mjs",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/gapscan.mjs",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/gapscan2.mjs",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/headcut.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/hooklost.mjs",
+      "classification": "人手CLI或被其他script呼叫",
+      "scheduledPlist": null,
+      "crossRefFiles": [
+        "ops/lyrics/hookocr.py"
+      ],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/hookocr.py",
+      "classification": "人手CLI或被其他script呼叫",
+      "scheduledPlist": null,
+      "crossRefFiles": [
+        "ops/lyrics/thinocr.py"
+      ],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/hookpos.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/incomplete-scan.mjs",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/introcard.mjs",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/junkscan.mjs",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/langmismatch-hold-to-apply.mjs",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/langproof.mjs",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/latinline.mjs",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/layerscan.mjs",
+      "classification": "人手CLI或被其他script呼叫",
+      "scheduledPlist": null,
+      "crossRefFiles": [
+        "ops/lyrics/bilayerscan.mjs",
+        "ops/lyrics/headcut.py"
+      ],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/libcut.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/libdup.py",
+      "classification": "人手CLI或被其他script呼叫",
+      "scheduledPlist": null,
+      "crossRefFiles": [
+        "ops/lyrics/dupanaph.py"
+      ],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/libend.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/libghost.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/libjunk.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/libnowh.mjs",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/libocr.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/libpair.mjs",
+      "classification": "人手CLI或被其他script呼叫",
+      "scheduledPlist": null,
+      "crossRefFiles": [
+        "ops/lyrics/brktpair.py"
+      ],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/libpairproof.mjs",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/libpeer.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/libsand.py",
+      "classification": "人手CLI或被其他script呼叫",
+      "scheduledPlist": null,
+      "crossRefFiles": [
+        "ops/lyrics/dupwin.py",
+        "ops/lyrics/sandsift.py",
+        "ops/lyrics/whsand.py"
+      ],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/libself.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/libseq.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/libshort.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/libshow.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/libsplice.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/libtail.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/libtrunc.py",
+      "classification": "人手CLI或被其他script呼叫",
+      "scheduledPlist": null,
+      "crossRefFiles": [
+        "ops/lyrics/basetrunc.py"
+      ],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/libtypo.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/libwrong.py",
+      "classification": "人手CLI或被其他script呼叫",
+      "scheduledPlist": null,
+      "crossRefFiles": [
+        "ops/lyrics/charvote.py",
+        "ops/lyrics/libtypo.py"
+      ],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/lineins.py",
+      "classification": "人手CLI或被其他script呼叫",
+      "scheduledPlist": null,
+      "crossRefFiles": [
+        "ops/lyrics/bipair.py",
+        "ops/lyrics/cardmiss.py",
+        "ops/lyrics/cardrep.py",
+        "ops/lyrics/fragglue.py",
+        "ops/lyrics/libtypo.py"
+      ],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/linetail.py",
+      "classification": "人手CLI或被其他script呼叫",
+      "scheduledPlist": null,
+      "crossRefFiles": [
+        "ops/lyrics/basetrunc.py"
+      ],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/linhole.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/lintrunc.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/nolibproof.mjs",
+      "classification": "人手CLI或被其他script呼叫",
+      "scheduledPlist": null,
+      "crossRefFiles": [
+        "ops/lyrics/libnowh.mjs"
+      ],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/ocrcut.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/ocrgap.mjs",
+      "classification": "人手CLI或被其他script呼叫",
+      "scheduledPlist": null,
+      "crossRefFiles": [
+        "ops/lyrics/chwit.py"
+      ],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/ocrmiss.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/ocrrep.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/ocrseq.mjs",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/ocrseq.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/ocrtail.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/ocrtrunc.mjs",
+      "classification": "人手CLI或被其他script呼叫",
+      "scheduledPlist": null,
+      "crossRefFiles": [
+        "ops/lyrics/libtail.py",
+        "ops/lyrics/verthin.mjs"
+      ],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/orderscan.mjs",
+      "classification": "人手CLI或被其他script呼叫",
+      "scheduledPlist": null,
+      "crossRefFiles": [
+        "ops/lyrics/cardpair.py",
+        "ops/lyrics/seqdrift.py",
+        "ops/lyrics/seqinv.py",
+        "ops/lyrics/seqpair.py"
+      ],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/ordwit.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/orphan-scan.mjs",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/orphanline.mjs",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/orphsift.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/outroblk.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/outrocard.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/outrogap.py",
+      "classification": "人手CLI或被其他script呼叫",
+      "scheduledPlist": null,
+      "crossRefFiles": [
+        "ops/lyrics/outrocard.py"
+      ],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/overdup.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/pagecard.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/pairdrop.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/pairscan.mjs",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/paraline.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/parenin.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/parenline.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/persistbanner.mjs",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/prefixcard.mjs",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/prefixdrop.mjs",
+      "classification": "人手CLI或被其他script呼叫",
+      "scheduledPlist": null,
+      "crossRefFiles": [
+        "ops/lyrics/sibhead.py",
+        "ops/lyrics/whhead.py"
+      ],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/producer-keeper.sh",
+      "classification": "人手CLI或被其他script呼叫",
+      "scheduledPlist": null,
+      "crossRefFiles": [
+        "backend/scripts/fetchLyrics.js",
+        "ops/lyrics/requeue-pending-count.mjs"
+      ],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/queuecheck.mjs",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/rarechar.mjs",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/rarechar.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/repcheck.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/repline.py",
+      "classification": "人手CLI或被其他script呼叫",
+      "scheduledPlist": null,
+      "crossRefFiles": [
+        "ops/lyrics/unavsib.py"
+      ],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/requeue-pending-count.mjs",
+      "classification": "人手CLI或被其他script呼叫",
+      "scheduledPlist": null,
+      "crossRefFiles": [
+        "ops/lyrics/producer-keeper.sh"
+      ],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/reverse-scan-missing-lines.mjs",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/rollcard.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/rollseq.mjs",
+      "classification": "人手CLI或被其他script呼叫",
+      "scheduledPlist": null,
+      "crossRefFiles": [
+        "ops/lyrics/rollseq.py"
+      ],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/rollseq.py",
+      "classification": "人手CLI或被其他script呼叫",
+      "scheduledPlist": null,
+      "crossRefFiles": [
+        "ops/lyrics/whseq.py"
+      ],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/s2t.mjs",
+      "classification": "人手CLI或被其他script呼叫",
+      "scheduledPlist": null,
+      "crossRefFiles": [
+        "ops/lyrics/cardlost.mjs",
+        "ops/lyrics/rollseq.mjs"
+      ],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/s2t.py",
+      "classification": "人手CLI或被其他script呼叫",
+      "scheduledPlist": null,
+      "crossRefFiles": [
+        "ops/lyrics/anaph.py",
+        "ops/lyrics/cardlost.mjs",
+        "ops/lyrics/s2t.mjs"
+      ],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/sandfrag.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/sandreplay.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/sandseq.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/sandsift.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/sandview.py",
+      "classification": "人手CLI或被其他script呼叫",
+      "scheduledPlist": null,
+      "crossRefFiles": [
+        "ops/lyrics/whorder.py"
+      ],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/sandwich.mjs",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/scripcard.mjs",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/scripframe.mjs",
+      "classification": "人手CLI或被其他script呼叫",
+      "scheduledPlist": null,
+      "crossRefFiles": [
+        "ops/lyrics/cardjudge.mjs"
+      ],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/scripframe2.mjs",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/scripline.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/scripture-card-clean.mjs",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/sectionscan.mjs",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/segdup.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/selfdup.py",
+      "classification": "人手CLI或被其他script呼叫",
+      "scheduledPlist": null,
+      "crossRefFiles": [
+        "ops/lyrics/selfsift.py"
+      ],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/selfsift.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/seqanaph.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/seqdrift.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/seqgap.mjs",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/seqinv.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/seqnext.py",
+      "classification": "人手CLI或被其他script呼叫",
+      "scheduledPlist": null,
+      "crossRefFiles": [
+        "ops/lyrics/rollseq.py",
+        "ops/lyrics/whseq.py"
+      ],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/seqpair.py",
+      "classification": "人手CLI或被其他script呼叫",
+      "scheduledPlist": null,
+      "crossRefFiles": [
+        "ops/lyrics/seqnext.py"
+      ],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/seqself.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/seqstrong.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/seqview.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/session-reaper.sh",
+      "classification": "排程",
+      "scheduledPlist": "com.hymnops.lyricreaper.plist",
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/shellscan.mjs",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/shortline.mjs",
+      "classification": "人手CLI或被其他script呼叫",
+      "scheduledPlist": null,
+      "crossRefFiles": [
+        "ops/lyrics/cardgap.mjs"
+      ],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/show-ocr-cards.mjs",
+      "classification": "人手CLI或被其他script呼叫",
+      "scheduledPlist": null,
+      "crossRefFiles": [
+        "ops/lyrics/whlast.py",
+        "ops/lyrics/whorder.py"
+      ],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/show-ocr-draft.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/sib-proof.mjs",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/sib-xfill.mjs",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/sibbulk.mjs",
+      "classification": "人手CLI或被其他script呼叫",
+      "scheduledPlist": null,
+      "crossRefFiles": [
+        "ops/lyrics/sibgap.mjs"
+      ],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/sibcheck.mjs",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/sibclip.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/sibend.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/sibfix.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/sibgap.mjs",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/sibhead.py",
+      "classification": "人手CLI或被其他script呼叫",
+      "scheduledPlist": null,
+      "crossRefFiles": [
+        "ops/lyrics/whhead.py"
+      ],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/sibling.mjs",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/sibocr.mjs",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/sibproof2.mjs",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/sibtrunc.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/sibview.mjs",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/splitscan.mjs",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/stanzacut.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/stream-healthcheck.sh",
+      "classification": "排程",
+      "scheduledPlist": "com.hymnstream.healthcheck.plist",
+      "crossRefFiles": [
+        "ops/ytdlp/update-ytdlp.sh",
+        "ops/stream/stream-selfheal.sh",
+        "ops/stream/stream-status.sh",
+        "backend/lib/resolveAudio.js"
+      ],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/strip-junk-latin.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/structrep.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/subline.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/subsift.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/sufline.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/tailcut.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/tailnew.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/talkscan.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/thinocr.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/titlecard.py",
+      "classification": "人手CLI或被其他script呼叫",
+      "scheduledPlist": null,
+      "crossRefFiles": [
+        "ops/lyrics/albumbanner.mjs",
+        "ops/lyrics/hookocr.py"
+      ],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/titlemiss.mjs",
+      "classification": "人手CLI或被其他script呼叫",
+      "scheduledPlist": null,
+      "crossRefFiles": [
+        "ops/lyrics/titlesib.mjs"
+      ],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/titlescan.mjs",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/titlesib.mjs",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/titlewh.mjs",
+      "classification": "人手CLI或被其他script呼叫",
+      "scheduledPlist": null,
+      "crossRefFiles": [
+        "ops/lyrics/hooklost.mjs"
+      ],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/trunc2.mjs",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/truncscan.mjs",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/unavsib.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/unavsift.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/unavview.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/varhead.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/varmiss.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/verproof.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/verthin.mjs",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/votesift.py",
+      "classification": "人手CLI或被其他script呼叫",
+      "scheduledPlist": null,
+      "crossRefFiles": [
+        "ops/lyrics/bgclean.py",
+        "ops/lyrics/bgodd.py",
+        "ops/lyrics/charins.py",
+        "ops/lyrics/rarechar.py"
+      ],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/voteview.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/whblind.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/whblk.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/whdup.py",
+      "classification": "人手CLI或被其他script呼叫",
+      "scheduledPlist": null,
+      "crossRefFiles": [
+        "ops/lyrics/framedup.py",
+        "ops/lyrics/whrep.py",
+        "ops/lyrics/whrepgate.py"
+      ],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/whgarble.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/whgrow.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/whhead.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/whinv.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/whlast.py",
+      "classification": "人手CLI或被其他script呼叫",
+      "scheduledPlist": null,
+      "crossRefFiles": [
+        "ops/lyrics/orphsift.py"
+      ],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/whlib.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/whlibsib.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/whmiss.mjs",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/whmiss.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/whorder.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/whpair.mjs",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/whproof.mjs",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/whreliab.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/whrep-selfdbl.py",
+      "classification": "人手CLI或被其他script呼叫",
+      "scheduledPlist": null,
+      "crossRefFiles": [
+        "ops/lyrics/whrep-selfdbl2.py"
+      ],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/whrep-selfdbl2.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/whrep.py",
+      "classification": "人手CLI或被其他script呼叫",
+      "scheduledPlist": null,
+      "crossRefFiles": [
+        "ops/lyrics/whrepgate.py"
+      ],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/whrepgate.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/whsand.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/whseq.py",
+      "classification": "人手CLI或被其他script呼叫",
+      "scheduledPlist": null,
+      "crossRefFiles": [
+        "ops/lyrics/whorder.py"
+      ],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/whsib.py",
+      "classification": "人手CLI或被其他script呼叫",
+      "scheduledPlist": null,
+      "crossRefFiles": [
+        "ops/lyrics/chword.py",
+        "ops/lyrics/whgarble.py"
+      ],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/whtail.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/whview.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/handoff-20260828-r2b-edgefix/shortchk.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/handoff-20260828-r2-libshort/sift.py",
+      "classification": "人手CLI或被其他script呼叫",
+      "scheduledPlist": null,
+      "crossRefFiles": [
+        "ops/lyrics/bgclean.py",
+        "ops/lyrics/bgodd.py",
+        "ops/lyrics/bpsift.py",
+        "ops/lyrics/charins.py",
+        "ops/lyrics/cssift.py"
+      ],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/handoff-20260828-r1b-dupanaph/dupchk.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/handoff-20260828-r1b-dupanaph/lsview.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/handoff-20260828-r1b-dupanaph/sandchk.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/handoff-20260827-r2-sufline/stale.py",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/handoff-20260827-r2-seqanaph/chk.py",
+      "classification": "人手CLI或被其他script呼叫",
+      "scheduledPlist": null,
+      "crossRefFiles": [
+        "ops/lyrics/handoff-20260828-r2b-edgefix/shortchk.py"
+      ],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/lyrics/handoff-20260827-r1b-seqfilter/chk.py",
+      "classification": "人手CLI或被其他script呼叫",
+      "scheduledPlist": null,
+      "crossRefFiles": [
+        "ops/lyrics/handoff-20260828-r2b-edgefix/shortchk.py"
+      ],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/deploy/apk-publish.sh",
+      "classification": "零入口（未搵到任何a/b/c/hook命中，需人手核實係咪設計為獨立人手工具）",
+      "scheduledPlist": null,
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/deploy/approve.sh",
+      "classification": "人手CLI或被其他script呼叫",
+      "scheduledPlist": null,
+      "crossRefFiles": [
+        "ops/stream/stream-selfheal.sh",
+        "ops/lyrics/session-reaper.sh",
+        "ops/deploy/apk-publish.sh",
+        "ops/deploy/backend-restart.sh",
+        "ops/deploy/ota-publish.sh"
+      ],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/deploy/backend-restart.sh",
+      "classification": "人手CLI或被其他script呼叫",
+      "scheduledPlist": null,
+      "crossRefFiles": [
+        "backend/scripts/reconcileUserRefs.js",
+        "ops/stream/stream-selfheal.sh",
+        "ops/perf/stage2-20260902/2d-harness-3002.mjs",
+        "ops/lyrics/session-reaper.sh",
+        "ops/deploy/apk-publish.sh"
+      ],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/deploy/guard-bash.sh",
+      "classification": "Claude hook（.claude/settings.json）",
+      "scheduledPlist": null,
+      "crossRefFiles": [
+        "ops/stream/stream-status.sh"
+      ],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/deploy/nightly-db-sync.mjs",
+      "classification": "排程",
+      "scheduledPlist": "com.hymnapp.dbautosync.plist",
+      "crossRefFiles": [],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/deploy/ota-publish.sh",
+      "classification": "人手CLI或被其他script呼叫",
+      "scheduledPlist": null,
+      "crossRefFiles": [
+        "ops/deploy/guard-bash.sh",
+        "ops/deploy/ota-rollback.sh"
+      ],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/deploy/ota-rollback.sh",
+      "classification": "人手CLI或被其他script呼叫",
+      "scheduledPlist": null,
+      "crossRefFiles": [
+        "ops/deploy/ota-publish.sh"
+      ],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/deploy/session-cleanup-guard.py",
+      "classification": "人手CLI或被其他script呼叫",
+      "scheduledPlist": null,
+      "crossRefFiles": [
+        "ops/deploy/session-cleanup-ios.sh"
+      ],
+      "inPackageJsonScripts": false
+    },
+    {
+      "file": "ops/deploy/session-cleanup-ios.sh",
+      "classification": "Claude hook（.claude/settings.json）",
+      "scheduledPlist": null,
+      "crossRefFiles": [
+        "ops/perf/deadcode/s7-scripts-entrypoint.mjs"
+      ],
+      "inPackageJsonScripts": false
+    }
+  ],
+  "positiveControl": {
+    "growLibrary": "排程",
+    "pass": true
+  }
+}

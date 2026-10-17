@@ -1,74 +1,86 @@
-// Favorites Context - 收藏詩歌
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import { getStorage } from '../storage';
+import { enqueue, flush } from '../sync/userSync';
 
-const FAVORITES_KEY = '@hymn_app_favorites';
+const FavoritesCtx = createContext();
 
-const FavoritesContext = createContext(null);
+export const FavoritesProvider = ({ children }) => {
+ const [favorites, setFavorites] = useState([]);
+ // ref 鏡像:每個寫 state 嘅位都同步寫呢個,令 toggleFavorite/isFavorite/replaceAllFavorites
+ // 讀嘅永遠係最新值(read-your-writes),同一 tick 連撳兩下唔會撞 stale closure(S1+O9)。
+ const favoritesRef = useRef([]);
 
-export function FavoritesProvider({ children }) {
-  const [favorites, setFavorites] = useState([]);
-  const [loaded, setLoaded] = useState(false);
+ useEffect(() => {
+ const s = getStorage();
+ if (!s) return;
+ const saved = s.getString('favorites');
+ if (saved) {
+   try {
+     const parsed = JSON.parse(saved);
+     favoritesRef.current = parsed;
+     setFavorites(parsed);
+   } catch (e) {}
+ }
+ }, []);
 
-  // Load on mount
-  useEffect(() => {
-    loadFavorites();
-  }, []);
+ const toggleFavorite = useCallback((hymn) => {
+ if (!hymn || hymn.id == null) return;
+ const current = favoritesRef.current;
+ let newFavorites;
+ let added;
+ if (current.some(f => f.id === hymn.id)) {
+ newFavorites = current.filter(f => f.id !== hymn.id);
+ added = false;
+ } else {
+ newFavorites = [...current, hymn];
+ added = true;
+ }
+ // 先更新記憶體 state,個心一定即刻着燈(唔好因為 storage 死咗就靜靜哋 no-op —
+ // 舊版 `if(!s) return` 喺 release JSI 出事嗰陣會令「最愛」掣撳極冇反應)。
+ favoritesRef.current = newFavorites;
+ setFavorites(newFavorites);
+ // 持久化盡力而為:MMKV 掛咗就跳過,唔阻 UI。
+ const s = getStorage();
+ if (s) {
+ try { s.set('favorites', JSON.stringify(newFavorites)); } catch (e) { console.warn('favorites persist:', e); }
+ }
+ // 跨裝置同步(MEMBERSHIP-PHASE1-LOGIN-SYNC §2.2)—— fire-and-forget,唔 block UI,
+ // 離線就留喺 outbox 等下次 flush,對 UI 完全冇分別。
+ enqueue({ op: added ? 'fav_add' : 'fav_remove', hymn_id: hymn.id });
+ flush();
+ }, []);
 
-  async function loadFavorites() {
-    try {
-      const stored = await AsyncStorage.getItem(FAVORITES_KEY);
-      if (stored) {
-        setFavorites(JSON.parse(stored));
-      }
-    } catch (e) {
-      console.log('Load favorites error:', e);
-    }
-    setLoaded(true);
-  }
+ const isFavorite = useCallback((id) => favoritesRef.current.some(f => f.id === id), []);
 
-  async function saveFavorites(list) {
-    try {
-      await AsyncStorage.setItem(FAVORITES_KEY, JSON.stringify(list));
-    } catch (e) {
-      console.log('Save favorites error:', e);
-    }
-  }
+ // 登入合併/pull(§2.3-2.4)用:server 淨係俾 hymn_id list,呢度負責 hydrate 返
+ // full object——優先用現有本地 favorites cache,再用 app 已載入嘅 library,
+ // 兩邊都揾唔到(歌下架咗)就留一個灰態佔位,唔好靜靜哋跌走(用戶心心唔見咗
+ // 會以為係 bug)。
+ const replaceAllFavorites = useCallback((hymnIds, library = []) => {
+ const byLibId = new Map((library || []).map(h => [String(h.id), h]));
+ const byLocalId = new Map(favoritesRef.current.map(f => [String(f.id), f]));
+ const next = (hymnIds || []).map((rawId) => {
+ const key = String(rawId);
+ return byLibId.get(key) || byLocalId.get(key) || { id: rawId, title: '(已下架)', unavailable: true };
+ });
+ favoritesRef.current = next;
+ setFavorites(next);
+ const s = getStorage();
+ if (s) {
+ try { s.set('favorites', JSON.stringify(next)); } catch (e) { console.warn('favorites persist:', e); }
+ }
+ }, []);
 
-  const toggleFavorite = useCallback(async (hymn) => {
-    setFavorites(prev => {
-      const exists = prev.find(h => h.id === hymn.id);
-      let newList;
-      if (exists) {
-        newList = prev.filter(h => h.id !== hymn.id);
-      } else {
-        newList = [...prev, { id: hymn.id, title: hymn.title, artist: hymn.artist, category: hymn.category }];
-      }
-      saveFavorites(newList);
-      return newList;
-    });
-  }, []);
+ const value = useMemo(
+ () => ({ favorites, toggleFavorite, isFavorite, replaceAllFavorites }),
+ [favorites, toggleFavorite, isFavorite, replaceAllFavorites]
+ );
 
-  const isFavorite = useCallback((hymnId) => {
-    return favorites.some(h => h.id === hymnId);
-  }, [favorites]);
+ return (
+ <FavoritesCtx.Provider value={value}>
+ {children}
+ </FavoritesCtx.Provider>
+ );
+};
 
-  return (
-    <FavoritesContext.Provider
-      value={{
-        favorites,
-        loaded,
-        toggleFavorite,
-        isFavorite,
-      }}
-    >
-      {children}
-    </FavoritesContext.Provider>
-  );
-}
-
-export function useFavorites() {
-  const ctx = useContext(FavoritesContext);
-  if (!ctx) throw new Error('useFavorites must be used within FavoritesProvider');
-  return ctx;
-}
+export const useFavorites = () => useContext(FavoritesCtx);

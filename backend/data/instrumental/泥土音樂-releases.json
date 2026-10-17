@@ -1,0 +1,124 @@
+[
+  {
+    "release_id": "OLAK5uy_nYjsAlUC1PV_Yq46QWGTdCAbSV4B-5Qgw",
+    "release_title": "泥土音樂盛曉玫精選 鋼琴輕音樂, Vol. 2",
+    "source": "main/releases",
+    "album_signal": "鋼琴",
+    "itunes_album": null,
+    "itunes_track_count": null,
+    "itunes_release_date": null,
+    "album_evidence": true,
+    "member_count": 10,
+    "pass_pre_count": 8,
+    "members": [
+      {
+        "youtube_id": "MlhVwch9Y3I",
+        "title": "雨後的天空 (feat. Calvin Chang) (鋼琴版)",
+        "duration": 331,
+        "track_suffix": false,
+        "pass_pre": true,
+        "reasons": [],
+        "dup_of": null,
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "vKz1Ie3i3R8",
+        "title": "耶穌在我裡面 (feat. Calvin Chang) (鋼琴版)",
+        "duration": 373,
+        "track_suffix": false,
+        "pass_pre": true,
+        "reasons": [],
+        "dup_of": null,
+        "dup_suspect": null,
+        "dedup_note": "舊 dedup 誤殺(撞人聲原版),2026-08-24 手動翻案"
+      },
+      {
+        "youtube_id": "qRIa_kGbvk0",
+        "title": "想起你 (feat. Calvin Chang) (鋼琴版)",
+        "duration": 223,
+        "track_suffix": false,
+        "pass_pre": true,
+        "reasons": [],
+        "dup_of": null,
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "4DKaRSgqbT4",
+        "title": "愛你到底 (feat. Calvin Chang) (鋼琴版)",
+        "duration": 276,
+        "track_suffix": false,
+        "pass_pre": true,
+        "reasons": [],
+        "dup_of": null,
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "X2Pakya0ZO4",
+        "title": "恩典的記號 (feat. Calvin Chang) (鋼琴版)",
+        "duration": 371,
+        "track_suffix": false,
+        "pass_pre": true,
+        "reasons": [],
+        "dup_of": null,
+        "dup_suspect": null,
+        "dedup_note": "舊 dedup 誤殺(撞人聲原版),2026-08-24 手動翻案"
+      },
+      {
+        "youtube_id": "qUa5kHPdtlg",
+        "title": "因為你 (feat. Calvin Chang) (鋼琴版)",
+        "duration": 273,
+        "track_suffix": false,
+        "pass_pre": true,
+        "reasons": [],
+        "dup_of": null,
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "F86AXBTesj4",
+        "title": "最珍貴的禮物 (feat. Calvin Chang) (鋼琴版)",
+        "duration": 340,
+        "track_suffix": false,
+        "pass_pre": true,
+        "reasons": [],
+        "dup_of": null,
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "VWy3RMRodN4",
+        "title": "恩典夠用 (feat. Calvin Chang) (鋼琴版)",
+        "duration": 354,
+        "track_suffix": false,
+        "pass_pre": true,
+        "reasons": [],
+        "dup_of": null,
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "I4JqypymmfQ",
+        "title": "我是誰 (feat. Calvin Chang) (鋼琴版)",
+        "duration": 316,
+        "track_suffix": false,
+        "pass_pre": true,
+        "reasons": [],
+        "dup_of": null,
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "2OJmnx6ETxo",
+        "title": "依然愛我 (feat. Calvin Chang) (鋼琴版)",
+        "duration": 388,
+        "track_suffix": false,
+        "pass_pre": true,
+        "reasons": [],
+        "dup_of": null,
+        "dup_suspect": null
+      }
+    ],
+    "approved": true,
+    "proposed_album": "泥土音樂盛曉玫精選 鋼琴輕音樂, Vol. 2",
+    "instrumental_signal": "鋼琴",
+    "signed_by": "Claude Opus 5 (MORE-SOURCES N4, P4 拍板由我哋簽 / Eric 事後抽驗)",
+    "signed_at": "2026-08-24T07:08:51.215Z",
+    "sign_note": "iTunes artistName exact-match 專輯「(靠專輯名訊號)」;OLAK member 10 首;淨新增 8 首(扣咗 0 首 org 內已有器樂版)"
+  }
+]

@@ -1,0 +1,10 @@
+=== S1 run 1 (manual, with screenshot positive control) ===
+2026-09-02T07:18:05Z (boot) / install at 07:18:18Z window
+host_launch_ts=1788333498.783039
+pid=89868
+rss_at_launch+117s_kb=338784 (NOTE: not +20s — captured later than planned, see limitations)
+backend_log_lines_before=21156
+[client-log] 2026-09-02T07:18:35.502Z event="perfMarks" clientTs="1788333515304" appState="" hymnId=null position=null duration=null trackState="" repeatMode=null errorSkipCount=null detail="rnst:st=352310831.0135417,rt=-,ep=- b0=0 app=251 cont=313 mmkvRead=0 parse=- n=- cacheReady=- home=378 verMs=1159 verSkip=0 hymnsMs=- fetch=4(api/version:1,api/health:1,api/app-version:1,api/hymns:1) rss=na" platform="ios" deviceId="d7f159e72bc6f462c98f0b1224967f5b"
+[client-log] 2026-09-02T07:18:35.504Z event="perfRenders" clientTs="1788333515306" appState="" hymnId=null position=null duration=null trackState="" repeatMode=null errorSkipCount=null detail="t=15 Home=3 Library=3 Mine=3 Mini=3 TabBar=3 FullPlayer=0 AppContent=3" platform="ios" deviceId="d7f159e72bc6f462c98f0b1224967f5b"
+positive_control_screenshots: ops/perf/baseline-20260902/1b-screens/s1-run1-before-splash-t-0.022s.png (T0-22ms, blank white splash) ; s1-run1-after-loading-t+0.648s.png (T0+648ms, header+tabbar+loading-spinner rendered)
+=== end run 1 ===

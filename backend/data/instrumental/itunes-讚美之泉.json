@@ -1,0 +1,865 @@
+[
+  {
+    "collectionId": 1506960844,
+    "album": "讓讚美飛揚 (敬拜讚美專輯1)",
+    "artist": "讚美之泉",
+    "trackCount": 13,
+    "releaseDate": "1996-06-01T07:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": false
+    }
+  },
+  {
+    "collectionId": 1506978074,
+    "album": "耶和華祝福滿滿 (敬拜讚美專輯2)",
+    "artist": "讚美之泉",
+    "trackCount": 15,
+    "releaseDate": "1997-06-01T07:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": false
+    }
+  },
+  {
+    "collectionId": 1508640782,
+    "album": "生命的凱歌 (演奏專輯1)",
+    "artist": "讚美之泉",
+    "trackCount": 18,
+    "releaseDate": "1997-06-01T07:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": true,
+      "hit": "演奏"
+    }
+  },
+  {
+    "collectionId": 1506968687,
+    "album": "甦醒 (敬拜讚美專輯3)",
+    "artist": "讚美之泉",
+    "trackCount": 16,
+    "releaseDate": "1998-06-01T07:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": false
+    }
+  },
+  {
+    "collectionId": 1506968834,
+    "album": "彩虹下的約定 (敬拜讚美專輯4)",
+    "artist": "讚美之泉",
+    "trackCount": 15,
+    "releaseDate": "1999-06-01T07:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": false
+    }
+  },
+  {
+    "collectionId": 1506961390,
+    "album": "全新的你 (敬拜讚美專輯5)",
+    "artist": "讚美之泉",
+    "trackCount": 17,
+    "releaseDate": "2000-06-01T07:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": false
+    }
+  },
+  {
+    "collectionId": 1507432869,
+    "album": "愛,我願意 (演奏專輯2)",
+    "artist": "讚美之泉",
+    "trackCount": 15,
+    "releaseDate": "2000-06-01T07:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": true,
+      "hit": "演奏"
+    }
+  },
+  {
+    "collectionId": 1506951294,
+    "album": "全能的創造主 (敬拜讚美專輯6)",
+    "artist": "讚美之泉",
+    "trackCount": 17,
+    "releaseDate": "2001-06-01T07:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": false
+    }
+  },
+  {
+    "collectionId": 1508640460,
+    "album": "祢是信實的上帝 (台語敬拜讚美專輯1)",
+    "artist": "讚美之泉",
+    "trackCount": 12,
+    "releaseDate": "2001-06-01T07:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": false
+    }
+  },
+  {
+    "collectionId": 1506965764,
+    "album": "展開清晨的翅膀 (敬拜讚美專輯7)",
+    "artist": "讚美之泉",
+    "trackCount": 15,
+    "releaseDate": "2002-06-01T07:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": false
+    }
+  },
+  {
+    "collectionId": 1507212375,
+    "album": "雲上太陽 (演奏專輯3)",
+    "artist": "讚美之泉",
+    "trackCount": 14,
+    "releaseDate": "2002-06-01T07:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": true,
+      "hit": "演奏"
+    }
+  },
+  {
+    "collectionId": 1507212195,
+    "album": "單單愛慕你 (鋼琴演奏專輯1)",
+    "artist": "讚美之泉",
+    "trackCount": 12,
+    "releaseDate": "2003-06-01T07:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": true,
+      "hit": "演奏"
+    }
+  },
+  {
+    "collectionId": 1506958117,
+    "album": "讓愛走動 (敬拜讚美專輯8)",
+    "artist": "讚美之泉",
+    "trackCount": 17,
+    "releaseDate": "2003-06-01T07:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": false
+    }
+  },
+  {
+    "collectionId": 1506959348,
+    "album": "深觸我心 (敬拜讚美專輯9)",
+    "artist": "讚美之泉",
+    "trackCount": 16,
+    "releaseDate": "2004-06-01T07:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": false
+    }
+  },
+  {
+    "collectionId": 1506956731,
+    "album": "單單只為你 (敬拜讚美專輯10)",
+    "artist": "讚美之泉",
+    "trackCount": 14,
+    "releaseDate": "2005-06-01T07:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": false
+    }
+  },
+  {
+    "collectionId": 1506972352,
+    "album": "差遣我",
+    "artist": "讚美之泉",
+    "trackCount": 17,
+    "releaseDate": "2005-06-01T07:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": false
+    }
+  },
+  {
+    "collectionId": 1506948604,
+    "album": "寶貴十架 (敬拜讚美專輯11)",
+    "artist": "讚美之泉",
+    "trackCount": 14,
+    "releaseDate": "2006-06-01T07:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": false
+    }
+  },
+  {
+    "collectionId": 1506948794,
+    "album": "似乎在天堂 (敬拜赞美专辑11)",
+    "artist": "讚美之泉",
+    "trackCount": 14,
+    "releaseDate": "2006-06-01T07:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": false
+    }
+  },
+  {
+    "collectionId": 1506966683,
+    "album": "最珍貴的角落 (敬拜讚美專輯12)",
+    "artist": "讚美之泉",
+    "trackCount": 14,
+    "releaseDate": "2007-06-01T07:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": false
+    }
+  },
+  {
+    "collectionId": 1506941055,
+    "album": "永遠尊貴 (敬拜讚美專輯12)",
+    "artist": "讚美之泉",
+    "trackCount": 12,
+    "releaseDate": "2007-06-01T07:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": false
+    }
+  },
+  {
+    "collectionId": 1507212254,
+    "album": "一生愛祢 (鋼琴演奏專輯2)",
+    "artist": "讚美之泉",
+    "trackCount": 11,
+    "releaseDate": "2008-06-01T07:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": true,
+      "hit": "演奏"
+    }
+  },
+  {
+    "collectionId": 1506960719,
+    "album": "只願見祢",
+    "artist": "讚美之泉",
+    "trackCount": 15,
+    "releaseDate": "2008-06-01T07:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": false
+    }
+  },
+  {
+    "collectionId": 1507212147,
+    "album": "這一生最美的祝福 (演奏專輯4)",
+    "artist": "讚美之泉",
+    "trackCount": 13,
+    "releaseDate": "2008-06-01T07:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": true,
+      "hit": "演奏"
+    }
+  },
+  {
+    "collectionId": 1506949948,
+    "album": "沙漠中的讚美 (敬拜讚美專輯13)",
+    "artist": "讚美之泉",
+    "trackCount": 15,
+    "releaseDate": "2008-06-15T07:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": false
+    }
+  },
+  {
+    "collectionId": 1506940998,
+    "album": "不要放棄,滿有能力 (敬拜讚美專輯14)",
+    "artist": "讚美之泉",
+    "trackCount": 17,
+    "releaseDate": "2009-06-01T07:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": false
+    }
+  },
+  {
+    "collectionId": 1508640367,
+    "album": "예수 내 모든 것 (찬양과 경배 1집)",
+    "artist": "讚美之泉",
+    "trackCount": 15,
+    "releaseDate": "2009-06-01T07:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": false
+    }
+  },
+  {
+    "collectionId": 1508640798,
+    "album": "小小的夢想 (兒童敬拜讚美專輯1)",
+    "artist": "讚美之泉",
+    "trackCount": 20,
+    "releaseDate": "2010-04-01T07:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": false
+    }
+  },
+  {
+    "collectionId": 1506965386,
+    "album": "愛可以再更多一點點 (敬拜讚美專輯15)",
+    "artist": "讚美之泉",
+    "trackCount": 15,
+    "releaseDate": "2010-06-01T07:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": false
+    }
+  },
+  {
+    "collectionId": 1508640320,
+    "album": "深深愛祢 (演奏專輯5)",
+    "artist": "讚美之泉",
+    "trackCount": 14,
+    "releaseDate": "2010-06-01T07:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": true,
+      "hit": "演奏"
+    }
+  },
+  {
+    "collectionId": 1509110986,
+    "album": "認識祢真好 (兒童敬拜讚美專輯2)",
+    "artist": "讚美之泉",
+    "trackCount": 21,
+    "releaseDate": "2011-04-01T07:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": false
+    }
+  },
+  {
+    "collectionId": 1507212918,
+    "album": "祢恩典不離開 (演奏專輯6)",
+    "artist": "讚美之泉",
+    "trackCount": 14,
+    "releaseDate": "2011-06-01T07:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": true,
+      "hit": "演奏"
+    }
+  },
+  {
+    "collectionId": 1507912886,
+    "album": "相信有愛就有奇蹟 (敬拜讚美專輯16)",
+    "artist": "讚美之泉",
+    "trackCount": 18,
+    "releaseDate": "2011-06-15T07:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": false
+    }
+  },
+  {
+    "collectionId": 1508640548,
+    "album": "有一位神 (兒童敬拜讚美專輯3)",
+    "artist": "讚美之泉",
+    "trackCount": 21,
+    "releaseDate": "2012-04-01T07:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": false
+    }
+  },
+  {
+    "collectionId": 1507212398,
+    "album": "你使我生命美麗 (演奏專輯7)",
+    "artist": "讚美之泉",
+    "trackCount": 13,
+    "releaseDate": "2012-06-01T07:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": true,
+      "hit": "演奏"
+    }
+  },
+  {
+    "collectionId": 1506699409,
+    "album": "將天敞開 (敬拜讚美專輯17)",
+    "artist": "讚美之泉",
+    "trackCount": 14,
+    "releaseDate": "2012-06-30T07:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": false
+    }
+  },
+  {
+    "collectionId": 1508640474,
+    "album": "把冷漠變成愛 (兒童敬拜讚美專輯4)",
+    "artist": "讚美之泉",
+    "trackCount": 20,
+    "releaseDate": "2013-04-01T07:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": false
+    }
+  },
+  {
+    "collectionId": 1506699459,
+    "album": "從心合一 (敬拜讚美專輯18)",
+    "artist": "讚美之泉",
+    "trackCount": 14,
+    "releaseDate": "2013-06-20T07:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": false
+    }
+  },
+  {
+    "collectionId": 1508640523,
+    "album": "新造的人 (兒童敬拜讚美專輯5)",
+    "artist": "讚美之泉",
+    "trackCount": 19,
+    "releaseDate": "2014-04-01T07:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": false
+    }
+  },
+  {
+    "collectionId": 1507211999,
+    "album": "恩典之路 (弦樂演奏專輯1)",
+    "artist": "讚美之泉",
+    "trackCount": 12,
+    "releaseDate": "2014-06-01T07:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": true,
+      "hit": "演奏"
+    }
+  },
+  {
+    "collectionId": 1508640462,
+    "album": "小さな夢 (キッズワーシップ1)",
+    "artist": "讚美之泉",
+    "trackCount": 19,
+    "releaseDate": "2014-06-01T07:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": false
+    }
+  },
+  {
+    "collectionId": 1506699491,
+    "album": "這裡有榮耀 (敬拜讚美專輯19)",
+    "artist": "讚美之泉",
+    "trackCount": 14,
+    "releaseDate": "2014-06-05T07:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": false
+    }
+  },
+  {
+    "collectionId": 1508646959,
+    "album": "讚美的孩子最喜樂 (兒童敬拜讚美專輯6)",
+    "artist": "讚美之泉",
+    "trackCount": 24,
+    "releaseDate": "2015-04-01T07:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": false
+    }
+  },
+  {
+    "collectionId": 1507212061,
+    "album": "賜福與你 (演奏專輯8)",
+    "artist": "讚美之泉",
+    "trackCount": 13,
+    "releaseDate": "2015-06-01T07:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": true,
+      "hit": "演奏"
+    }
+  },
+  {
+    "collectionId": 1506605723,
+    "album": "新的事將要成就 (敬拜讚美專輯20)",
+    "artist": "讚美之泉",
+    "trackCount": 23,
+    "releaseDate": "2015-07-01T07:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": false
+    }
+  },
+  {
+    "collectionId": 1508640631,
+    "album": "彩虹 (兒童敬拜讚美專輯7)",
+    "artist": "讚美之泉",
+    "trackCount": 25,
+    "releaseDate": "2016-04-01T07:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": false
+    }
+  },
+  {
+    "collectionId": 1507212086,
+    "album": "Come Away With Me (安靜演奏專輯1)",
+    "artist": "讚美之泉",
+    "trackCount": 10,
+    "releaseDate": "2016-06-01T07:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": true,
+      "hit": "演奏"
+    }
+  },
+  {
+    "collectionId": 1508655900,
+    "album": "陽はてるよ 雲の上 (キッズワーシップ2)",
+    "artist": "讚美之泉",
+    "trackCount": 22,
+    "releaseDate": "2016-06-01T07:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": false
+    }
+  },
+  {
+    "collectionId": 1506598544,
+    "album": "我要看見 (敬拜讚美專輯21)",
+    "artist": "讚美之泉",
+    "trackCount": 13,
+    "releaseDate": "2016-06-07T07:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": false
+    }
+  },
+  {
+    "collectionId": 1508640562,
+    "album": "一閃一閃亮晶晶 (兒童敬拜讚美專輯8)",
+    "artist": "讚美之泉",
+    "trackCount": 24,
+    "releaseDate": "2017-04-01T07:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": false
+    }
+  },
+  {
+    "collectionId": 1506598552,
+    "album": "從早晨到夜晚 (敬拜讚美專輯22)",
+    "artist": "讚美之泉",
+    "trackCount": 15,
+    "releaseDate": "2017-06-08T07:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": false
+    }
+  },
+  {
+    "collectionId": 1508640614,
+    "album": "High To The Sky (兒童敬拜讚美專輯9)",
+    "artist": "讚美之泉",
+    "trackCount": 24,
+    "releaseDate": "2018-04-01T07:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": false
+    }
+  },
+  {
+    "collectionId": 1507212149,
+    "album": "找一個地方 (安靜演奏專輯2)",
+    "artist": "讚美之泉",
+    "trackCount": 9,
+    "releaseDate": "2018-06-01T07:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": true,
+      "hit": "演奏"
+    }
+  },
+  {
+    "collectionId": 1507217188,
+    "album": "無止境 (兒童敬拜讚美專輯10)",
+    "artist": "讚美之泉",
+    "trackCount": 16,
+    "releaseDate": "2019-04-01T07:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": false
+    }
+  },
+  {
+    "collectionId": 1507212507,
+    "album": "能不能 (鋼琴演奏專輯3)",
+    "artist": "讚美之泉",
+    "trackCount": 8,
+    "releaseDate": "2019-06-01T07:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": true,
+      "hit": "演奏"
+    }
+  },
+  {
+    "collectionId": 1508646878,
+    "album": "天が開き (Pプレイズワーシップ1)",
+    "artist": "讚美之泉",
+    "trackCount": 14,
+    "releaseDate": "2019-06-01T07:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": false
+    }
+  },
+  {
+    "collectionId": 1504621334,
+    "album": "我相信 (敬拜讚美專輯24)",
+    "artist": "讚美之泉",
+    "trackCount": 14,
+    "releaseDate": "2019-06-12T07:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": false
+    }
+  },
+  {
+    "collectionId": 1504607267,
+    "album": "平安 (敬拜讚美專輯23)",
+    "artist": "讚美之泉",
+    "trackCount": 13,
+    "releaseDate": "2019-06-12T07:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": false
+    }
+  },
+  {
+    "collectionId": 1519713275,
+    "album": "我在這裡 (敬拜讚美專輯25)",
+    "artist": "讚美之泉",
+    "trackCount": 13,
+    "releaseDate": "2020-06-24T07:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": false
+    }
+  },
+  {
+    "collectionId": 1547222101,
+    "album": "深愛我的主 (《天堂敬拜 Live》第三季 Ep01) - EP",
+    "artist": "讚美之泉",
+    "trackCount": 5,
+    "releaseDate": "2020-11-07T08:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": false
+    }
+  },
+  {
+    "collectionId": 1547224906,
+    "album": "為愛而生 (《天堂敬拜 Live》第三季 Ep02) - EP",
+    "artist": "讚美之泉",
+    "trackCount": 5,
+    "releaseDate": "2020-11-14T08:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": false
+    }
+  },
+  {
+    "collectionId": 1547222400,
+    "album": "我們呼求祢 (《天堂敬拜 Live》第三季 Ep03 - 粵語敬拜特輯) - EP",
+    "artist": "讚美之泉",
+    "trackCount": 4,
+    "releaseDate": "2020-12-04T08:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": false
+    }
+  },
+  {
+    "collectionId": 1547223708,
+    "album": "是為了愛 (《天堂敬拜 Live》第三季 Ep04 - 聖誕歡慶特輯)",
+    "artist": "讚美之泉",
+    "trackCount": 9,
+    "releaseDate": "2020-12-11T08:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": false
+    }
+  },
+  {
+    "collectionId": 1551899554,
+    "album": "放晴了 (兒童敬拜讚美專輯11)",
+    "artist": "讚美之泉",
+    "trackCount": 13,
+    "releaseDate": "2021-02-04T08:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": false
+    }
+  },
+  {
+    "collectionId": 1571697188,
+    "album": "聽見這世代的呼喚 (敬拜讚美專輯26)",
+    "artist": "讚美之泉",
+    "trackCount": 15,
+    "releaseDate": "2021-06-17T07:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": false
+    }
+  },
+  {
+    "collectionId": 1599483685,
+    "album": "2021聖誕敬拜特輯",
+    "artist": "讚美之泉",
+    "trackCount": 6,
+    "releaseDate": "2021-12-10T08:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": false
+    }
+  },
+  {
+    "collectionId": 1599488463,
+    "album": "愛的約定 (2021聖誕敬拜特輯單曲) - Single",
+    "artist": "讚美之泉",
+    "trackCount": 1,
+    "releaseDate": "2021-12-10T08:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": false
+    }
+  },
+  {
+    "collectionId": 1628971170,
+    "album": "讚美中信心不斷升起 (敬拜讚美專輯27)",
+    "artist": "讚美之泉",
+    "trackCount": 15,
+    "releaseDate": "2022-06-15T07:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": false
+    }
+  },
+  {
+    "collectionId": 1634574777,
+    "album": "住在祢裡面 (安靜演奏專輯3)",
+    "artist": "讚美之泉",
+    "trackCount": 9,
+    "releaseDate": "2022-07-24T07:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": true,
+      "hit": "演奏"
+    }
+  },
+  {
+    "collectionId": 1682147937,
+    "album": "盡情地微笑 (兒童敬拜讚美專輯12)",
+    "artist": "讚美之泉",
+    "trackCount": 11,
+    "releaseDate": "2023-04-14T07:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": false
+    }
+  },
+  {
+    "collectionId": 1693175836,
+    "album": "恢復敬拜 (敬拜讚美專輯28)",
+    "artist": "讚美之泉",
+    "trackCount": 14,
+    "releaseDate": "2023-06-20T07:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": false
+    }
+  },
+  {
+    "collectionId": 1716310050,
+    "album": "每一天我需要祢 (安靜演奏專輯4)",
+    "artist": "讚美之泉",
+    "trackCount": 8,
+    "releaseDate": "2023-11-17T08:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": true,
+      "hit": "演奏"
+    }
+  },
+  {
+    "collectionId": 1750423459,
+    "album": "我能給你什麼 (敬拜讚美專輯29)",
+    "artist": "讚美之泉",
+    "trackCount": 17,
+    "releaseDate": "2024-06-07T07:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": false
+    }
+  },
+  {
+    "collectionId": 1786058121,
+    "album": "2024 聖誕敬拜特輯 - EP",
+    "artist": "讚美之泉",
+    "trackCount": 6,
+    "releaseDate": "2024-12-18T08:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": false
+    }
+  },
+  {
+    "collectionId": 1805738414,
+    "album": "耶穌是我最好的朋友 (兒童敬拜讚美專輯13)",
+    "artist": "讚美之泉",
+    "trackCount": 14,
+    "releaseDate": "2025-04-01T07:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": false
+    }
+  },
+  {
+    "collectionId": 1818308822,
+    "album": "深愛耶穌 (敬拜讚美專輯30)",
+    "artist": "讚美之泉",
+    "trackCount": 15,
+    "releaseDate": "2025-06-06T07:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": false
+    }
+  },
+  {
+    "collectionId": 1889854552,
+    "album": "唱出耶穌的偉大 (兒童敬拜讚美專輯 14) - EP",
+    "artist": "讚美之泉",
+    "trackCount": 6,
+    "releaseDate": "2026-04-04T07:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": false
+    }
+  },
+  {
+    "collectionId": 6775763115,
+    "album": "這是我們的敬拜 (敬拜讚美專輯31)",
+    "artist": "讚美之泉",
+    "trackCount": 18,
+    "releaseDate": "2026-06-05T07:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": false
+    }
+  }
+]

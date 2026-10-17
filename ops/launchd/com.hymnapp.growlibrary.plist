@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.hymnapp.growlibrary</string>
+
+    <!-- 慢速擴充歌庫。2026-07-21 Eric 拍板轉 24 小時運行(之前係 00:00-09:00
+         夜間限定):而家得 Eric 一個人用 App,冇真實用戶撞資源嘅風險,可以
+         進取啲。淨係加密咗「check-in」頻率(StartInterval,見下面),單次
+         請求節奏(concurrency 1、~4 秒帶隨機 jitter、連續 3 次失敗斷路器)
+         完全冇變 —— 唔係「一次過攞多好多」,係「多啲、密啲、每次都一樣咁細」。
+         script 本身有 DB 寫入鎖(hymnDb.js acquireDbLock),同 checkDeadLinks.js
+         唔會再撞埋手寫爛 DB;仲有一個「有真人聽緊就縮」開關(而家未開,
+         見 growLibrary.js 頂部註解),將來有真實用戶就開得返。 -->
+    <key>ProgramArguments</key>
+    <array>
+        <string>/opt/homebrew/bin/node</string>
+        <string>/Users/macbookpro/.openclaw/workspace/hymn-app/backend/scripts/growLibrary.js</string>
+        <string>--mode</string>
+        <string>curate</string>
+        <string>--budget</string>
+        <string>6</string>
+        <string>--delay</string>
+        <string>4000</string>
+    </array>
+
+    <key>WorkingDirectory</key>
+    <string>/Users/macbookpro/.openclaw/workspace/hymn-app/backend</string>
+
+    <!-- Same trap as backend/deadlinkcheck: launchd's default PATH has no
+         /opt/homebrew/bin, and this script shells out to yt-dlp via resolveAudioUrl.
+         Without this every resolve (including the control probe) silently fails,
+         and the circuit breaker wrongly concludes "blocked by YouTube" every run. -->
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>PATH</key>
+        <string>/opt/homebrew/bin:/opt/homebrew/sbin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+    </dict>
+
+    <!-- 每 900 秒(15 分鐘)一次,24 小時全日。2026-07-21 由 8 個固定
+         StartCalendarInterval 時段(00:00-09:00 夜間限定)改用 StartInterval,
+         唔再限時段。之前特登跳過 04:00(避開 checkDeadLinks)嗰招而家唔使
+         再靠 —— 兩個 job 加密之後實在避唔晒撞期,改為靠 DB 寫入鎖
+         (hymnDb.js acquireDbLock)互斥,邊個攞唔到鎖就今次唔做、留返下次。 -->
+    <key>StartInterval</key>
+    <integer>900</integer>
+
+    <!-- 一次性 job:唔准 KeepAlive,否則 launchd 會不停重開。 -->
+    <key>RunAtLoad</key>
+    <false/>
+    <key>KeepAlive</key>
+    <false/>
+
+    <key>StandardOutPath</key>
+    <string>/tmp/hymn_growlibrary.log</string>
+    <key>StandardErrorPath</key>
+    <string>/tmp/hymn_growlibrary.log</string>
+</dict>
+</plist>

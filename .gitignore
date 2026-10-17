@@ -28,14 +28,34 @@ Thumbs.db
 *.swp
 *.swo
 
+# 歌詞 OCR/whisper pipeline —— 大檔案唔入 repo(LYRICS-PIPELINE-PLAN §2④⑤)
+backend/models/*.bin
+backend/tools/ocrframe
+backend/tools/*.o
+
 # Logs
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
+# admin audit log(MEMBERSHIP-PHASE2-ADMIN-PLAN §3.5)—— 產物,唔係 code
+backend/logs/
+
 # Environment
+.env
 .env.local
 .env.*.local
+# DEEP-AUDIT-W2-EXEC-20260906 D-10 D2:明文加返 backend/.env(已經俾上面
+# 通用 `.env` pattern 冚住,`git check-ignore -v backend/.env` 命中嗰行係
+# `.gitignore:45:.env`——呢句純粹俾之後睇呢個檔嘅人一眼睇到「backend 呢個
+# 密鑰檔特登有喺度」,唔靠人記得通用 pattern 有覆蓋)。
+backend/.env
+
+# 會員系統獨立 DB(MEMBERSHIP-PLAN §2.1)—— 含密碼 hash/電話/email,唔可以入 repo
+backend/users.db
+backend/users.db.tmp
+backend/users.db.lock
+backend/backups/
 
 # Backend specific
 backend/node_modules/
@@ -47,3 +67,53 @@ backend/node_modules/
 *.mp3
 *.m4a
 *.wav
+*.part
+
+# DB backups from migrations
+backend/hymns.db.bak*
+backend/hymns.db.tmp
+
+# resolve URL cache (URLs only, not audio) — PERF-FAST-START-PLAN §1a
+backend/cache/
+
+# yt-dlp cookies — 之前 commit 咗落 git 但 resolveAudio.js 完全冇用,純風險
+# 冇好處(STREAM-403-FGS-CRASH-PLAN §1.2/§1.4)。舊 commit 仲留住呢個檔案,
+# 當佢已經洩露處理。
+backend/cookies.txt
+
+# Claude agent auto-memory — belongs to the local session, not the project repo
+memory/
+
+# 歌詞複核用嘅第三方來源 cache(cantonhymn.net sitemap + API JSON):
+# 體積大、隨時可以用 scripts/updateCantonhymnIndex.js 重建,而且入面係第三方歌詞全文,
+# 版權紀律上唔應該 commit 入 repo(HANDOFF.md §2.0)
+backend/data/lyrics-verify-cache/
+
+# ── 2026-08-25 備份整理(GitHub 同步)──────────────────────────────
+# APK 舊版備份 —— 每個 79-105MB,唔可以入 repo(*.apk 規則接唔到 .apk.bak-* 尾綴)
+*.apk.bak*
+
+# users.db 備份快照 —— 同 backend/users.db 一樣含密碼 hash/電話/email
+backend/users.db.bak*
+
+# DB lock 檔嘅事故備份 + 舊 .mjs 備份 —— 純現場快照,唔係 code
+backend/hymns.db.lock*
+*.mjs.bak-*
+
+# backend 執行時狀態/日誌 —— server 一路寫緊,commit 咗只會日日 dirty
+backend/data/stream-health-state.json
+backend/data/stream-health.log
+backend/data/stream-selfheal-state.json
+backend/data/stream-selfheal.log
+backend/data/warm-daily.json
+backend/data/ytdlp-update.log
+backend/data/**/*.log
+
+# 歌詞殭屍session reaper armed flag(LYRICS-ZOMBIE-REAPER-EXEC-20260830.md T1)——
+# 存在=armed(真殺)、唔存在=dry-run,純本機運行時開關,唔准入repo。
+ops/lyrics/.reaper-armed
+
+# FIRST-TRACK-STEP01-EXEC-20260907 §3 H1/H2 harness 隔離 cache scratch(每次
+# 行 harness 都會重新起,唔准入repo)。
+ops/perf/first-track/.scratch-n1/
+ops/perf/first-track/.scratch-n3/

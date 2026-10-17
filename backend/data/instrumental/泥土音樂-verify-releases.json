@@ -1,0 +1,506 @@
+{
+  "generated": "2026-08-24T09:59:04.558Z",
+  "org": "泥土音樂",
+  "band": [
+    120,
+    600
+  ],
+  "staleSkips": [],
+  "results": [
+    {
+      "youtube_id": "MlhVwch9Y3I",
+      "raw_title": "雨後的天空 (feat. Calvin Chang) (鋼琴版)",
+      "flat_duration": 331,
+      "playlist_id": "OLAK5uy_nYjsAlUC1PV_Yq46QWGTdCAbSV4B-5Qgw",
+      "playlist_title": "泥土音樂盛曉玫精選 鋼琴輕音樂, Vol. 2",
+      "instrumental_signal": "鋼琴",
+      "proposed_album": "泥土音樂盛曉玫精選 鋼琴輕音樂, Vol. 2",
+      "verdict": "instrumental",
+      "gate": null,
+      "why": "五重閘全過(rejudge:指紋庫更新後零網絡重判)",
+      "meta": {
+        "id": "MlhVwch9Y3I",
+        "title": "雨後的天空 (feat. Calvin Chang) (鋼琴版)",
+        "duration": 331,
+        "channel": "泥土音樂Clay Music",
+        "upload_date": "20230815",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": false,
+          "reasons": [
+            "剩餘文字 1 行:我只想跟你說一句話,我愛你,我愛你…"
+          ],
+          "uniq": [
+            "詞曲:李宗盛 編曲:李宗盛",
+            "詞曲:李宗盛",
+            "我只想跟你說一句話,我愛你,我愛你…"
+          ],
+          "uniqCount": 3,
+          "coverage": 1.0151057401812689,
+          "lastT1": 336,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        },
+        "en": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "[MUSIC]"
+          ],
+          "uniqCount": 1,
+          "coverage": 0.9667673716012085,
+          "lastT1": 320,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    },
+    {
+      "youtube_id": "vKz1Ie3i3R8",
+      "raw_title": "耶穌在我裡面 (feat. Calvin Chang) (鋼琴版)",
+      "flat_duration": 373,
+      "playlist_id": "OLAK5uy_nYjsAlUC1PV_Yq46QWGTdCAbSV4B-5Qgw",
+      "playlist_title": "泥土音樂盛曉玫精選 鋼琴輕音樂, Vol. 2",
+      "instrumental_signal": "鋼琴",
+      "proposed_album": "泥土音樂盛曉玫精選 鋼琴輕音樂, Vol. 2",
+      "verdict": "instrumental",
+      "gate": null,
+      "why": "五重閘全過",
+      "meta": {
+        "id": "vKz1Ie3i3R8",
+        "title": "耶穌在我裡面 (feat. Calvin Chang) (鋼琴版)",
+        "duration": 373,
+        "channel": "泥土音樂Clay Music",
+        "upload_date": "20230815",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "詞曲:李宗盛 編曲:李宗盛",
+            "詞曲:李宗盛"
+          ],
+          "uniqCount": 2,
+          "coverage": 0.9839142091152815,
+          "lastT1": 367,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        },
+        "en": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "[MUSIC]"
+          ],
+          "uniqCount": 1,
+          "coverage": 1.0053619302949062,
+          "lastT1": 375,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    },
+    {
+      "youtube_id": "qRIa_kGbvk0",
+      "raw_title": "想起你 (feat. Calvin Chang) (鋼琴版)",
+      "flat_duration": 223,
+      "playlist_id": "OLAK5uy_nYjsAlUC1PV_Yq46QWGTdCAbSV4B-5Qgw",
+      "playlist_title": "泥土音樂盛曉玫精選 鋼琴輕音樂, Vol. 2",
+      "instrumental_signal": "鋼琴",
+      "proposed_album": "泥土音樂盛曉玫精選 鋼琴輕音樂, Vol. 2",
+      "verdict": "instrumental",
+      "gate": null,
+      "why": "五重閘全過(rejudge:指紋庫更新後零網絡重判)",
+      "meta": {
+        "id": "qRIa_kGbvk0",
+        "title": "想起你 (feat. Calvin Chang) (鋼琴版)",
+        "duration": 223,
+        "channel": "泥土音樂Clay Music",
+        "upload_date": "20230815",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": false,
+          "reasons": [
+            "剩餘文字 1 行:MING PAO CANADA | MING PAO TOR"
+          ],
+          "uniq": [
+            "詞:李宗盛 曲:李宗盛",
+            "詞:李宗盛",
+            "MING PAO CANADA | MING PAO TORONTO"
+          ],
+          "uniqCount": 3,
+          "coverage": 0.9955156950672646,
+          "lastT1": 222,
+          "whisperFailed": false,
+          "garbageDropped": 1
+        },
+        "en": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "[MUSIC]"
+          ],
+          "uniqCount": 1,
+          "coverage": 0.9865470852017937,
+          "lastT1": 220,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    },
+    {
+      "youtube_id": "4DKaRSgqbT4",
+      "raw_title": "愛你到底 (feat. Calvin Chang) (鋼琴版)",
+      "flat_duration": 276,
+      "playlist_id": "OLAK5uy_nYjsAlUC1PV_Yq46QWGTdCAbSV4B-5Qgw",
+      "playlist_title": "泥土音樂盛曉玫精選 鋼琴輕音樂, Vol. 2",
+      "instrumental_signal": "鋼琴",
+      "proposed_album": "泥土音樂盛曉玫精選 鋼琴輕音樂, Vol. 2",
+      "verdict": "instrumental",
+      "gate": null,
+      "why": "五重閘全過",
+      "meta": {
+        "id": "4DKaRSgqbT4",
+        "title": "愛你到底 (feat. Calvin Chang) (鋼琴版)",
+        "duration": 275,
+        "channel": "泥土音樂Clay Music",
+        "upload_date": "20230815",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "詞:李宗盛 曲:李宗盛",
+            "詞:李宗盛"
+          ],
+          "uniqCount": 2,
+          "coverage": 0.9854545454545455,
+          "lastT1": 271,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        },
+        "en": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "[MUSIC]"
+          ],
+          "uniqCount": 1,
+          "coverage": 1,
+          "lastT1": 275,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    },
+    {
+      "youtube_id": "X2Pakya0ZO4",
+      "raw_title": "恩典的記號 (feat. Calvin Chang) (鋼琴版)",
+      "flat_duration": 371,
+      "playlist_id": "OLAK5uy_nYjsAlUC1PV_Yq46QWGTdCAbSV4B-5Qgw",
+      "playlist_title": "泥土音樂盛曉玫精選 鋼琴輕音樂, Vol. 2",
+      "instrumental_signal": "鋼琴",
+      "proposed_album": "泥土音樂盛曉玫精選 鋼琴輕音樂, Vol. 2",
+      "verdict": "instrumental",
+      "gate": null,
+      "why": "五重閘全過",
+      "meta": {
+        "id": "X2Pakya0ZO4",
+        "title": "恩典的記號 (feat. Calvin Chang) (鋼琴版)",
+        "duration": 371,
+        "channel": "泥土音樂Clay Music",
+        "upload_date": "20230815",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "詞曲:李宗盛 編曲:李宗盛",
+            "詞曲:李宗盛"
+          ],
+          "uniqCount": 2,
+          "coverage": 0.9838274932614556,
+          "lastT1": 365,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        },
+        "en": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "[MUSIC]"
+          ],
+          "uniqCount": 1,
+          "coverage": 1.0107816711590296,
+          "lastT1": 375,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    },
+    {
+      "youtube_id": "qUa5kHPdtlg",
+      "raw_title": "因為你 (feat. Calvin Chang) (鋼琴版)",
+      "flat_duration": 273,
+      "playlist_id": "OLAK5uy_nYjsAlUC1PV_Yq46QWGTdCAbSV4B-5Qgw",
+      "playlist_title": "泥土音樂盛曉玫精選 鋼琴輕音樂, Vol. 2",
+      "instrumental_signal": "鋼琴",
+      "proposed_album": "泥土音樂盛曉玫精選 鋼琴輕音樂, Vol. 2",
+      "verdict": "instrumental",
+      "gate": null,
+      "why": "五重閘全過(rejudge:指紋庫更新後零網絡重判)",
+      "meta": {
+        "id": "qUa5kHPdtlg",
+        "title": "因為你 (feat. Calvin Chang) (鋼琴版)",
+        "duration": 273,
+        "channel": "泥土音樂Clay Music",
+        "upload_date": "20230815",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": false,
+          "reasons": [
+            "剩餘文字 1 行:欢迎订阅我的频道,请不吝点赞,订阅、转发、打赏支持明镜与点点"
+          ],
+          "uniq": [
+            "詞曲:李宗盛 編曲:李宗盛",
+            "詞曲:李宗盛",
+            "欢迎订阅我的频道,请不吝点赞,订阅、转发、打赏支持明镜与点点栏目。"
+          ],
+          "uniqCount": 3,
+          "coverage": 1.0257875457875458,
+          "lastT1": 280.04,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        },
+        "en": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "[MUSIC]"
+          ],
+          "uniqCount": 1,
+          "coverage": 1.0073260073260073,
+          "lastT1": 275,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    },
+    {
+      "youtube_id": "F86AXBTesj4",
+      "raw_title": "最珍貴的禮物 (feat. Calvin Chang) (鋼琴版)",
+      "flat_duration": 340,
+      "playlist_id": "OLAK5uy_nYjsAlUC1PV_Yq46QWGTdCAbSV4B-5Qgw",
+      "playlist_title": "泥土音樂盛曉玫精選 鋼琴輕音樂, Vol. 2",
+      "instrumental_signal": "鋼琴",
+      "proposed_album": "泥土音樂盛曉玫精選 鋼琴輕音樂, Vol. 2",
+      "verdict": "instrumental",
+      "gate": null,
+      "why": "五重閘全過",
+      "meta": {
+        "id": "F86AXBTesj4",
+        "title": "最珍貴的禮物 (feat. Calvin Chang) (鋼琴版)",
+        "duration": 339,
+        "channel": "泥土音樂Clay Music",
+        "upload_date": "20230815",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "詞曲:李宗盛 編曲:李宗盛",
+            "詞曲:李宗盛"
+          ],
+          "uniqCount": 2,
+          "coverage": 0.9587020648967551,
+          "lastT1": 325,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        },
+        "en": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "[MUSIC]"
+          ],
+          "uniqCount": 1,
+          "coverage": 0.9587020648967551,
+          "lastT1": 325,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    },
+    {
+      "youtube_id": "VWy3RMRodN4",
+      "raw_title": "恩典夠用 (feat. Calvin Chang) (鋼琴版)",
+      "flat_duration": 354,
+      "playlist_id": "OLAK5uy_nYjsAlUC1PV_Yq46QWGTdCAbSV4B-5Qgw",
+      "playlist_title": "泥土音樂盛曉玫精選 鋼琴輕音樂, Vol. 2",
+      "instrumental_signal": "鋼琴",
+      "proposed_album": "泥土音樂盛曉玫精選 鋼琴輕音樂, Vol. 2",
+      "verdict": "instrumental",
+      "gate": null,
+      "why": "五重閘全過",
+      "meta": {
+        "id": "VWy3RMRodN4",
+        "title": "恩典夠用 (feat. Calvin Chang) (鋼琴版)",
+        "duration": 353,
+        "channel": "泥土音樂Clay Music",
+        "upload_date": "20230815",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "詞:李宗盛 曲:李宗盛",
+            "詞:李宗盛"
+          ],
+          "uniqCount": 2,
+          "coverage": 0.9773371104815864,
+          "lastT1": 345,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        },
+        "en": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "[MUSIC]"
+          ],
+          "uniqCount": 1,
+          "coverage": 0.9915014164305949,
+          "lastT1": 350,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    },
+    {
+      "youtube_id": "I4JqypymmfQ",
+      "raw_title": "我是誰 (feat. Calvin Chang) (鋼琴版)",
+      "flat_duration": 316,
+      "playlist_id": "OLAK5uy_nYjsAlUC1PV_Yq46QWGTdCAbSV4B-5Qgw",
+      "playlist_title": "泥土音樂盛曉玫精選 鋼琴輕音樂, Vol. 2",
+      "instrumental_signal": "鋼琴",
+      "proposed_album": "泥土音樂盛曉玫精選 鋼琴輕音樂, Vol. 2",
+      "verdict": "reject",
+      "gate": 4,
+      "why": "兩 pass 結論唔一致(zh 過 / en 唔過:剩餘文字 1 行:you)",
+      "meta": {
+        "id": "I4JqypymmfQ",
+        "title": "我是誰 (feat. Calvin Chang) (鋼琴版)",
+        "duration": 316,
+        "channel": "泥土音樂Clay Music",
+        "upload_date": "20230815",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "詞曲:李宗盛 編曲:李宗盛",
+            "詞曲:李宗盛"
+          ],
+          "uniqCount": 2,
+          "coverage": 0.9651898734177216,
+          "lastT1": 305,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        },
+        "en": {
+          "pass": false,
+          "reasons": [
+            "剩餘文字 1 行:you"
+          ],
+          "uniq": [
+            "[MUSIC]",
+            "you"
+          ],
+          "uniqCount": 2,
+          "coverage": 1.0033544303797468,
+          "lastT1": 317.06,
+          "whisperFailed": false,
+          "garbageDropped": 0,
+          "rejudge_reasons": [
+            "剩餘文字:you"
+          ]
+        }
+      }
+    },
+    {
+      "youtube_id": "2OJmnx6ETxo",
+      "raw_title": "依然愛我 (feat. Calvin Chang) (鋼琴版)",
+      "flat_duration": 388,
+      "playlist_id": "OLAK5uy_nYjsAlUC1PV_Yq46QWGTdCAbSV4B-5Qgw",
+      "playlist_title": "泥土音樂盛曉玫精選 鋼琴輕音樂, Vol. 2",
+      "instrumental_signal": "鋼琴",
+      "proposed_album": "泥土音樂盛曉玫精選 鋼琴輕音樂, Vol. 2",
+      "verdict": "instrumental",
+      "gate": null,
+      "why": "五重閘全過",
+      "meta": {
+        "id": "2OJmnx6ETxo",
+        "title": "依然愛我 (feat. Calvin Chang) (鋼琴版)",
+        "duration": 388,
+        "channel": "泥土音樂Clay Music",
+        "upload_date": "20230815",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "詞曲:李宗盛 編曲:李宗盛",
+            "詞曲:李宗盛"
+          ],
+          "uniqCount": 2,
+          "coverage": 0.9458762886597938,
+          "lastT1": 367,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        },
+        "en": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "[MUSIC]"
+          ],
+          "uniqCount": 1,
+          "coverage": 0.9664948453608248,
+          "lastT1": 375,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    }
+  ]
+}

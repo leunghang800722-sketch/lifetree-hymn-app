@@ -1,0 +1,2411 @@
+[
+  {
+    "release_id": "OLAK5uy_lVRMl-CabRvCnPn8Wc0OYAzPN4h8Hb_to",
+    "release_title": "每一天我需要祢 I Need You (安靜演奏專輯4)",
+    "source": "main/releases",
+    "album_signal": "演奏",
+    "itunes_album": "每一天我需要祢 (安靜演奏專輯4)",
+    "itunes_track_count": 8,
+    "itunes_release_date": "2023-11-17T08:00:00Z",
+    "album_evidence": true,
+    "member_count": 8,
+    "pass_pre_count": 8,
+    "members": [
+      {
+        "youtube_id": "ewGg7R4vUHE",
+        "title": "每一天我需要祢 I Need You",
+        "duration": 504,
+        "track_suffix": false,
+        "pass_pre": true,
+        "reasons": [],
+        "dup_of": null,
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "wlxOUQJnOqA",
+        "title": "盡情地微笑 Smile",
+        "duration": 409,
+        "track_suffix": false,
+        "pass_pre": true,
+        "reasons": [],
+        "dup_of": null,
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "eoXWiyts_jE",
+        "title": "天父 My Abba Father",
+        "duration": 403,
+        "track_suffix": false,
+        "pass_pre": true,
+        "reasons": [],
+        "dup_of": null,
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "nFFrX_3jhOg",
+        "title": "祢是聖潔 You Are Holy",
+        "duration": 400,
+        "track_suffix": false,
+        "pass_pre": true,
+        "reasons": [],
+        "dup_of": null,
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "nynnRHl9wCU",
+        "title": "在至高之處 In the Highest",
+        "duration": 391,
+        "track_suffix": false,
+        "pass_pre": true,
+        "reasons": [],
+        "dup_of": null,
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "-d86wKmdxKQ",
+        "title": "榮耀的呼召 Glorious Calling",
+        "duration": 488,
+        "track_suffix": false,
+        "pass_pre": true,
+        "reasons": [],
+        "dup_of": null,
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "OT5muxYM3og",
+        "title": "君王就在這裡 Worthy Is the King",
+        "duration": 400,
+        "track_suffix": false,
+        "pass_pre": true,
+        "reasons": [],
+        "dup_of": null,
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "f-La6A3k7Qw",
+        "title": "讚美中信心不斷升起 Let Faith Arise In Our Praises",
+        "duration": 363,
+        "track_suffix": false,
+        "pass_pre": true,
+        "reasons": [],
+        "dup_of": null,
+        "dup_suspect": null
+      }
+    ],
+    "approved": true,
+    "proposed_album": "每一天我需要祢 (安靜演奏專輯4)",
+    "instrumental_signal": "演奏",
+    "signed_by": "Claude Opus 5 (MORE-SOURCES N4, P4 拍板由我哋簽 / Eric 事後抽驗)",
+    "signed_at": "2026-08-24T07:08:51.216Z",
+    "sign_note": "iTunes artistName exact-match 專輯「每一天我需要祢 (安靜演奏專輯4)」8 首;OLAK member 8 首;淨新增 8 首(扣咗 0 首 org 內已有器樂版)"
+  },
+  {
+    "release_id": "OLAK5uy_kMXi4loVXHI_tsxP6MzWCUAmtJwLF9_sE",
+    "release_title": "住在祢裡面 Abiding In You",
+    "source": "main/releases",
+    "album_signal": null,
+    "itunes_album": "住在祢裡面 (安靜演奏專輯3)",
+    "itunes_track_count": 9,
+    "itunes_release_date": "2022-07-24T07:00:00Z",
+    "album_evidence": true,
+    "member_count": 9,
+    "pass_pre_count": 8,
+    "members": [
+      {
+        "youtube_id": "D9t7YBBbOX0",
+        "title": "一閃一閃亮晶晶 Twinkle, Twinkle Medley (一閃一閃亮晶晶 / 聖靈的果子 /...",
+        "duration": 611,
+        "track_suffix": false,
+        "pass_pre": false,
+        "reasons": [
+          "isCompilation",
+          "片長 611s 唔喺 120-600"
+        ],
+        "dup_of": null,
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "EuuKnpMkz70",
+        "title": "所有的榮耀歸於祢 All The Glory",
+        "duration": 346,
+        "track_suffix": false,
+        "pass_pre": true,
+        "reasons": [],
+        "dup_of": null,
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "9HgDAm4UHZE",
+        "title": "愛祢，是我一生的呼召 I Live My Life To Love You",
+        "duration": 348,
+        "track_suffix": false,
+        "pass_pre": true,
+        "reasons": [],
+        "dup_of": null,
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "Lt6Bcd5uD1o",
+        "title": "祢是何等榮美 Jesus, My Everything",
+        "duration": 430,
+        "track_suffix": false,
+        "pass_pre": true,
+        "reasons": [],
+        "dup_of": null,
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "vX1QybdLgRY",
+        "title": "How Awesome You Are [主祢真偉大]",
+        "duration": 407,
+        "track_suffix": false,
+        "pass_pre": true,
+        "reasons": [],
+        "dup_of": null,
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "-xGK-xCRM7s",
+        "title": "住在祢裡面 Abiding In You",
+        "duration": 404,
+        "track_suffix": false,
+        "pass_pre": true,
+        "reasons": [],
+        "dup_of": null,
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "NGcSYEysv-M",
+        "title": "更像祢 More Like You",
+        "duration": 441,
+        "track_suffix": false,
+        "pass_pre": true,
+        "reasons": [],
+        "dup_of": null,
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "gn8IGysQlk8",
+        "title": "最好的朋友 My Savior And My Friend",
+        "duration": 385,
+        "track_suffix": false,
+        "pass_pre": true,
+        "reasons": [],
+        "dup_of": null,
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "QMKdRtRkGJQ",
+        "title": "煉淨我 Cleanse Me, Lord",
+        "duration": 425,
+        "track_suffix": false,
+        "pass_pre": true,
+        "reasons": [],
+        "dup_of": null,
+        "dup_suspect": null
+      }
+    ],
+    "approved": true,
+    "proposed_album": "住在祢裡面 (安靜演奏專輯3)",
+    "instrumental_signal": "iTunes 器樂專輯「住在祢裡面 (安靜演奏專輯3)」",
+    "signed_by": "Claude Opus 5 (MORE-SOURCES N4, P4 拍板由我哋簽 / Eric 事後抽驗)",
+    "signed_at": "2026-08-24T07:08:51.216Z",
+    "sign_note": "iTunes artistName exact-match 專輯「住在祢裡面 (安靜演奏專輯3)」9 首;OLAK member 9 首;淨新增 8 首(扣咗 0 首 org 內已有器樂版)"
+  },
+  {
+    "release_id": "OLAK5uy_k4wn5WpczFpXTg01w9TdAzxwFiUaFKJiU",
+    "release_title": "能不能 Let Me Stay",
+    "source": "main/releases",
+    "album_signal": null,
+    "itunes_album": "能不能 (鋼琴演奏專輯3)",
+    "itunes_track_count": 8,
+    "itunes_release_date": "2019-06-01T07:00:00Z",
+    "album_evidence": true,
+    "member_count": 8,
+    "pass_pre_count": 0,
+    "members": [
+      {
+        "youtube_id": "tA9nPGyPDNE",
+        "title": "俯伏 Bow Down",
+        "duration": 612,
+        "track_suffix": false,
+        "pass_pre": false,
+        "reasons": [
+          "片長 612s 唔喺 120-600"
+        ],
+        "dup_of": null,
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "gLBULMuTnn8",
+        "title": "【能不能 Let Me Stay】- 讚美之泉鋼琴演奏系列 (3) by 游智婷 Sandy Yu",
+        "duration": 471,
+        "track_suffix": false,
+        "pass_pre": false,
+        "reasons": [
+          "youtube_id 已喺庫"
+        ],
+        "dup_of": "same-youtube-id",
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "RRt5D3ZHO30",
+        "title": "【在祢同在裡 In Your Presence】- 讚美之泉鋼琴演奏系列 (3) by 游智婷 Sandy Yu",
+        "duration": 497,
+        "track_suffix": false,
+        "pass_pre": false,
+        "reasons": [
+          "youtube_id 已喺庫"
+        ],
+        "dup_of": "same-youtube-id",
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "h0K9P_Y-m60",
+        "title": "【安靜 Be Still】- 讚美之泉鋼琴演奏系列 (3) by 游智婷 Sandy Yu",
+        "duration": 458,
+        "track_suffix": false,
+        "pass_pre": false,
+        "reasons": [
+          "youtube_id 已喺庫"
+        ],
+        "dup_of": "same-youtube-id",
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "LdgDI21Rg6o",
+        "title": "【謝謝祢 Thank You Lord / 十架為我榮耀 Jesus Keep Me Near the Cross】- 讚美之泉鋼琴演奏系列 (3) by 游智婷 Sandy Yu",
+        "duration": 520,
+        "track_suffix": false,
+        "pass_pre": false,
+        "reasons": [
+          "youtube_id 已喺庫"
+        ],
+        "dup_of": "same-youtube-id",
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "tqIoX3Etnck",
+        "title": "【我在這裡敬拜 Here to Worship】- 讚美之泉鋼琴演奏系列 (3) by 游智婷 Sandy Yu",
+        "duration": 567,
+        "track_suffix": false,
+        "pass_pre": false,
+        "reasons": [
+          "youtube_id 已喺庫"
+        ],
+        "dup_of": "same-youtube-id",
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "v8gdn-IeJWg",
+        "title": "你若不壓橄欖成渣 / 有一血泉 Olives That Have Known No Pressure / There Is A Fountain...",
+        "duration": 700,
+        "track_suffix": false,
+        "pass_pre": false,
+        "reasons": [
+          "片長 700s 唔喺 120-600"
+        ],
+        "dup_of": null,
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "i_kD9XIKUx0",
+        "title": "【天上的家 My Heavenly Home】- 讚美之泉鋼琴演奏系列 (3) by 游智婷 Sandy Yu",
+        "duration": 292,
+        "track_suffix": false,
+        "pass_pre": false,
+        "reasons": [
+          "youtube_id 已喺庫"
+        ],
+        "dup_of": "same-youtube-id",
+        "dup_suspect": null
+      }
+    ],
+    "approved": false,
+    "proposed_album": "能不能 (鋼琴演奏專輯3)",
+    "instrumental_signal": "iTunes 器樂專輯「能不能 (鋼琴演奏專輯3)」",
+    "signed_by": null,
+    "signed_at": null,
+    "sign_note": null
+  },
+  {
+    "release_id": "OLAK5uy_nidKOwLd0_vP8jW7p3dxJqoUVupoFRncA",
+    "release_title": "找一個地方 I Want To Go To A Place",
+    "source": "main/releases",
+    "album_signal": null,
+    "itunes_album": "找一個地方 (安靜演奏專輯2)",
+    "itunes_track_count": 9,
+    "itunes_release_date": "2018-06-01T07:00:00Z",
+    "album_evidence": true,
+    "member_count": 9,
+    "pass_pre_count": 0,
+    "members": [
+      {
+        "youtube_id": "YOkIYKNGSTg",
+        "title": "【全然向祢 All for You】- 讚美之泉安靜系列 (2) 找一個地方 I Want to Go to a Place",
+        "duration": 377,
+        "track_suffix": false,
+        "pass_pre": false,
+        "reasons": [
+          "youtube_id 已喺庫"
+        ],
+        "dup_of": "same-youtube-id",
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "h0K9P_Y-m60",
+        "title": "【安靜 Be Still】- 讚美之泉鋼琴演奏系列 (3) by 游智婷 Sandy Yu",
+        "duration": 458,
+        "track_suffix": false,
+        "pass_pre": false,
+        "reasons": [
+          "youtube_id 已喺庫"
+        ],
+        "dup_of": "same-youtube-id",
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "BboegJU1hBo",
+        "title": "【醫治我 Heal Me Lord】- 讚美之泉安靜系列 (2) 找一個地方 I Want to Go to a Place",
+        "duration": 531,
+        "track_suffix": false,
+        "pass_pre": false,
+        "reasons": [
+          "youtube_id 已喺庫"
+        ],
+        "dup_of": "same-youtube-id",
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "6alX-FJmiQs",
+        "title": "【更深之處 Take Me Deeper】- 讚美之泉安靜系列 (2) 找一個地方 I Want to Go to a Place",
+        "duration": 348,
+        "track_suffix": false,
+        "pass_pre": false,
+        "reasons": [
+          "youtube_id 已喺庫"
+        ],
+        "dup_of": "same-youtube-id",
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "_FGuUMZxqdw",
+        "title": "【在耶穌的腳前 At Your Feet】- 讚美之泉安靜系列 (2) 找一個地方 I Want to Go to a Place",
+        "duration": 430,
+        "track_suffix": false,
+        "pass_pre": false,
+        "reasons": [
+          "youtube_id 已喺庫"
+        ],
+        "dup_of": "same-youtube-id",
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "6SfAnIz0wT8",
+        "title": "【找一個地方 I Want to Go to a Place】- 讚美之泉安靜系列 (2) 找一個地方 I Want to Go to a Place",
+        "duration": 406,
+        "track_suffix": false,
+        "pass_pre": false,
+        "reasons": [
+          "youtube_id 已喺庫"
+        ],
+        "dup_of": "same-youtube-id",
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "zh6JH57uZsU",
+        "title": "【展開清晨的翅膀 Wings of the Dawn】- 讚美之泉安靜系列 (2) 找一個地方 I Want to Go to a Place",
+        "duration": 299,
+        "track_suffix": false,
+        "pass_pre": false,
+        "reasons": [
+          "youtube_id 已喺庫"
+        ],
+        "dup_of": "same-youtube-id",
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "-iKWHl6mH-Q",
+        "title": "【祢的同在 Your Presence】- 讚美之泉安靜系列 (2) 找一個地方 I Want to Go to a Place",
+        "duration": 459,
+        "track_suffix": false,
+        "pass_pre": false,
+        "reasons": [
+          "youtube_id 已喺庫"
+        ],
+        "dup_of": "same-youtube-id",
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "8sTedh3jdwg",
+        "title": "【更多充滿 Come Overflow】- 讚美之泉安靜系列 (2) 找一個地方 I Want to Go to a Place",
+        "duration": 280,
+        "track_suffix": false,
+        "pass_pre": false,
+        "reasons": [
+          "youtube_id 已喺庫"
+        ],
+        "dup_of": "same-youtube-id",
+        "dup_suspect": null
+      }
+    ],
+    "approved": false,
+    "proposed_album": "找一個地方 (安靜演奏專輯2)",
+    "instrumental_signal": "iTunes 器樂專輯「找一個地方 (安靜演奏專輯2)」",
+    "signed_by": null,
+    "signed_at": null,
+    "sign_note": null
+  },
+  {
+    "release_id": "OLAK5uy_mQSzTyMVGbgwj9cMzOkUfaM1D5Lb6tE_Q",
+    "release_title": "Come Away With Me",
+    "source": "main/releases",
+    "album_signal": null,
+    "itunes_album": "Come Away With Me (安靜演奏專輯1)",
+    "itunes_track_count": 10,
+    "itunes_release_date": "2016-06-01T07:00:00Z",
+    "album_evidence": true,
+    "member_count": 10,
+    "pass_pre_count": 0,
+    "members": [
+      {
+        "youtube_id": "c2JzLLZ5ePM",
+        "title": "【Come Away with Me】- 讚美之泉安靜系列 (1) Come Away With Me",
+        "duration": 378,
+        "track_suffix": false,
+        "pass_pre": false,
+        "reasons": [
+          "youtube_id 已喺庫"
+        ],
+        "dup_of": "same-youtube-id",
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "Ot7Denvy0no",
+        "title": "【單單愛祢 I Love You, Lord】- 讚美之泉安靜系列 (1) Come Away With Me",
+        "duration": 357,
+        "track_suffix": false,
+        "pass_pre": false,
+        "reasons": [
+          "youtube_id 已喺庫"
+        ],
+        "dup_of": "same-youtube-id",
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "HjO9fBhjj1I",
+        "title": "【深深愛祢 Deeper in Love】- 讚美之泉安靜系列 (1) Come Away With Me",
+        "duration": 321,
+        "track_suffix": false,
+        "pass_pre": false,
+        "reasons": [
+          "youtube_id 已喺庫"
+        ],
+        "dup_of": "same-youtube-id",
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "kWOi_MBltls",
+        "title": "【謝謝祢 Thank You, Lord】- 讚美之泉安靜系列 (1) Come Away With Me",
+        "duration": 325,
+        "track_suffix": false,
+        "pass_pre": false,
+        "reasons": [
+          "youtube_id 已喺庫"
+        ],
+        "dup_of": "same-youtube-id",
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "gyOfP7PtbBc",
+        "title": "【讚美之泉 Stream of Praise】- 讚美之泉安靜系列 (1) Come Away With Me",
+        "duration": 312,
+        "track_suffix": false,
+        "pass_pre": false,
+        "reasons": [
+          "youtube_id 已喺庫"
+        ],
+        "dup_of": "same-youtube-id",
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "etU8c4dwRzQ",
+        "title": "【以馬內利 Emmanuel】- 讚美之泉安靜系列 (1) Come Away With Me",
+        "duration": 395,
+        "track_suffix": false,
+        "pass_pre": false,
+        "reasons": [
+          "youtube_id 已喺庫"
+        ],
+        "dup_of": "same-youtube-id",
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "v9CtyAruWU4",
+        "title": "【一同起舞 We’ll Dance】- 讚美之泉安靜系列 (1) Come Away With Me",
+        "duration": 303,
+        "track_suffix": false,
+        "pass_pre": false,
+        "reasons": [
+          "youtube_id 已喺庫"
+        ],
+        "dup_of": "same-youtube-id",
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "Pnshrii8XVQ",
+        "title": "【救贖的恩典 The Grace of Redemption】- 讚美之泉安靜系列 (1) Come Away With Me",
+        "duration": 352,
+        "track_suffix": false,
+        "pass_pre": false,
+        "reasons": [
+          "youtube_id 已喺庫"
+        ],
+        "dup_of": "same-youtube-id",
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "WpDxf2xY-ms",
+        "title": "【寶貴十架 Precious Cross】- 讚美之泉安靜系列 (1) Come Away With Me",
+        "duration": 446,
+        "track_suffix": false,
+        "pass_pre": false,
+        "reasons": [
+          "youtube_id 已喺庫"
+        ],
+        "dup_of": "same-youtube-id",
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "fVbbLA0UZMg",
+        "title": "【注目看耶穌 Look Upon Jesus】- 讚美之泉安靜系列 (1) Come Away With Me",
+        "duration": 340,
+        "track_suffix": false,
+        "pass_pre": false,
+        "reasons": [
+          "youtube_id 已喺庫"
+        ],
+        "dup_of": "same-youtube-id",
+        "dup_suspect": null
+      }
+    ],
+    "approved": false,
+    "proposed_album": "Come Away With Me (安靜演奏專輯1)",
+    "instrumental_signal": "iTunes 器樂專輯「Come Away With Me (安靜演奏專輯1)」",
+    "signed_by": null,
+    "signed_at": null,
+    "sign_note": null
+  },
+  {
+    "release_id": "OLAK5uy_mLoq4E2Qb3lQWAD5pNxkppV0Nq1PZnxho",
+    "release_title": "賜福與你 Blessings Of God Be Upon You",
+    "source": "main/releases",
+    "album_signal": null,
+    "itunes_album": "賜福與你 (演奏專輯8)",
+    "itunes_track_count": 13,
+    "itunes_release_date": "2015-06-01T07:00:00Z",
+    "album_evidence": true,
+    "member_count": 13,
+    "pass_pre_count": 13,
+    "members": [
+      {
+        "youtube_id": "tJRBF-Tf49M",
+        "title": "賜福與你 Blessings Of God Be Upon You",
+        "duration": 211,
+        "track_suffix": false,
+        "pass_pre": true,
+        "reasons": [],
+        "dup_of": null,
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "3NVTa81UTho",
+        "title": "歌頌 Sing And Praise",
+        "duration": 216,
+        "track_suffix": false,
+        "pass_pre": true,
+        "reasons": [],
+        "dup_of": null,
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "XiJCDvemw-A",
+        "title": "我的天堂 My Heaven",
+        "duration": 315,
+        "track_suffix": false,
+        "pass_pre": false,
+        "reasons": [
+          "org 內已有同名器樂版 #5922"
+        ],
+        "dup_of": "#5922",
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "GHTTx8bx0Us",
+        "title": "耶和華靠近傷心的人 The Lord Is Close To The Broken",
+        "duration": 269,
+        "track_suffix": false,
+        "pass_pre": true,
+        "reasons": [],
+        "dup_of": null,
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "vXhWhOuBGzo",
+        "title": "我高舉雙手 I Give You My All",
+        "duration": 200,
+        "track_suffix": false,
+        "pass_pre": true,
+        "reasons": [],
+        "dup_of": null,
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "dPUpQ5ZmOEg",
+        "title": "祢的最愛 Your Beloved",
+        "duration": 285,
+        "track_suffix": false,
+        "pass_pre": true,
+        "reasons": [],
+        "dup_of": null,
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "oMyU-0SqT8A",
+        "title": "這是聖潔之地 This Is Holy Ground",
+        "duration": 418,
+        "track_suffix": false,
+        "pass_pre": true,
+        "reasons": [],
+        "dup_of": null,
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "NvIEUKCCGLE",
+        "title": "煉淨我 Cleanse Me, Lord",
+        "duration": 262,
+        "track_suffix": false,
+        "pass_pre": true,
+        "reasons": [],
+        "dup_of": null,
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "Fhu5HdQNU5M",
+        "title": "天父的花園 The Father's Garden",
+        "duration": 168,
+        "track_suffix": false,
+        "pass_pre": true,
+        "reasons": [],
+        "dup_of": null,
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "v6PK5CLZhPA",
+        "title": "我要歌唱 I Will Sing",
+        "duration": 207,
+        "track_suffix": false,
+        "pass_pre": true,
+        "reasons": [],
+        "dup_of": null,
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "SEk3xtQdV78",
+        "title": "喜樂泉源 Fountain Of Joy",
+        "duration": 232,
+        "track_suffix": false,
+        "pass_pre": true,
+        "reasons": [],
+        "dup_of": null,
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "qkGLTwyV0U4",
+        "title": "滿有能力 I Am Strengthened In Him",
+        "duration": 235,
+        "track_suffix": false,
+        "pass_pre": true,
+        "reasons": [],
+        "dup_of": null,
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "ez_PrJNVjbw",
+        "title": "最美的禮物 The Most Precious Gift",
+        "duration": 264,
+        "track_suffix": false,
+        "pass_pre": true,
+        "reasons": [],
+        "dup_of": null,
+        "dup_suspect": null
+      }
+    ],
+    "approved": true,
+    "proposed_album": "賜福與你 (演奏專輯8)",
+    "instrumental_signal": "iTunes 器樂專輯「賜福與你 (演奏專輯8)」",
+    "signed_by": "Claude Opus 5 (MORE-SOURCES N4, P4 拍板由我哋簽 / Eric 事後抽驗)",
+    "signed_at": "2026-08-24T07:08:51.216Z",
+    "sign_note": "iTunes artistName exact-match 專輯「賜福與你 (演奏專輯8)」13 首;OLAK member 13 首;淨新增 12 首(扣咗 1 首 org 內已有器樂版)"
+  },
+  {
+    "release_id": "OLAK5uy_nc3MrlhNY4mKjIsnXqkYjw-NoA43LrvFQ",
+    "release_title": "恩典之路 The Path Of Grace",
+    "source": "main/releases",
+    "album_signal": null,
+    "itunes_album": "恩典之路 (弦樂演奏專輯1)",
+    "itunes_track_count": 12,
+    "itunes_release_date": "2014-06-01T07:00:00Z",
+    "album_evidence": true,
+    "member_count": 12,
+    "pass_pre_count": 0,
+    "members": [
+      {
+        "youtube_id": "_4GkyDHjRX8",
+        "title": "【親近祢 Close to You】 - 讚美之泉弦樂四重奏 (1) String Quartet",
+        "duration": 316,
+        "track_suffix": false,
+        "pass_pre": false,
+        "reasons": [
+          "youtube_id 已喺庫"
+        ],
+        "dup_of": "same-youtube-id",
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "I7vCbaVbhO8",
+        "title": "【這一生最美的祝福 The Gift of Knowing You】 - 讚美之泉弦樂四重奏 (1) String Quartet",
+        "duration": 259,
+        "track_suffix": false,
+        "pass_pre": false,
+        "reasons": [
+          "youtube_id 已喺庫"
+        ],
+        "dup_of": "same-youtube-id",
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "njzQz7ZvQu4",
+        "title": "【有一位神 There Is A God】 - 讚美之泉弦樂四重奏 (1) String Quartet",
+        "duration": 243,
+        "track_suffix": false,
+        "pass_pre": false,
+        "reasons": [
+          "youtube_id 已喺庫"
+        ],
+        "dup_of": "same-youtube-id",
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "rBEAp-FKS-o",
+        "title": "【展開清晨的翅膀 Wings of the Dawn】 - 讚美之泉弦樂四重奏 (1) String Quartet",
+        "duration": 375,
+        "track_suffix": false,
+        "pass_pre": false,
+        "reasons": [
+          "youtube_id 已喺庫"
+        ],
+        "dup_of": "same-youtube-id",
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "-B3I15--NmI",
+        "title": "【平安的七月夜 Peaceful July】 - 讚美之泉弦樂四重奏 (1) String Quartet",
+        "duration": 300,
+        "track_suffix": false,
+        "pass_pre": false,
+        "reasons": [
+          "youtube_id 已喺庫"
+        ],
+        "dup_of": "same-youtube-id",
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "Kqtam8pb2oc",
+        "title": "【耶和華祝福滿滿 Jehovah's Blessings Abound】 - 讚美之泉弦樂四重奏 (1) String Quartet",
+        "duration": 343,
+        "track_suffix": false,
+        "pass_pre": false,
+        "reasons": [
+          "youtube_id 已喺庫"
+        ],
+        "dup_of": "same-youtube-id",
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "Ejt8DhCKk0Y",
+        "title": "【恩典之路 The Path of Grace】 - 讚美之泉弦樂四重奏 (1) String Quartet",
+        "duration": 257,
+        "track_suffix": false,
+        "pass_pre": false,
+        "reasons": [
+          "youtube_id 已喺庫"
+        ],
+        "dup_of": "same-youtube-id",
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "lAPxa-npdGg",
+        "title": "【我親愛的耶穌 My Sweet Jesus】 - 讚美之泉弦樂四重奏 (1) String Quartet",
+        "duration": 200,
+        "track_suffix": false,
+        "pass_pre": false,
+        "reasons": [
+          "youtube_id 已喺庫"
+        ],
+        "dup_of": "same-youtube-id",
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "B1AFZPvuYUM",
+        "title": "【寶貴十架 Precious Cross】 - 讚美之泉弦樂四重奏 (1) String Quartet",
+        "duration": 275,
+        "track_suffix": false,
+        "pass_pre": false,
+        "reasons": [
+          "youtube_id 已喺庫"
+        ],
+        "dup_of": "same-youtube-id",
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "8sXaizhxRoA",
+        "title": "【我要歡唱 Lord, I Will Sing】 - 讚美之泉弦樂四重奏 (1) String Quartet",
+        "duration": 235,
+        "track_suffix": false,
+        "pass_pre": false,
+        "reasons": [
+          "youtube_id 已喺庫"
+        ],
+        "dup_of": "same-youtube-id",
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "-bu5uvnd4ts",
+        "title": "【一生愛祢 With All My Love】 - 讚美之泉弦樂四重奏 (1) String Quartet",
+        "duration": 265,
+        "track_suffix": false,
+        "pass_pre": false,
+        "reasons": [
+          "youtube_id 已喺庫"
+        ],
+        "dup_of": "same-youtube-id",
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "TmGPBjJw35U",
+        "title": "【我的天堂  My Heaven】 - 讚美之泉弦樂四重奏 (1) String Quartet",
+        "duration": 310,
+        "track_suffix": false,
+        "pass_pre": false,
+        "reasons": [
+          "youtube_id 已喺庫"
+        ],
+        "dup_of": "same-youtube-id",
+        "dup_suspect": null
+      }
+    ],
+    "approved": false,
+    "proposed_album": "恩典之路 (弦樂演奏專輯1)",
+    "instrumental_signal": "iTunes 器樂專輯「恩典之路 (弦樂演奏專輯1)」",
+    "signed_by": null,
+    "signed_at": null,
+    "sign_note": null
+  },
+  {
+    "release_id": "OLAK5uy_l6IN-usV9SQohmBdDLzGYeNZTtj-IY_nY",
+    "release_title": "你使我生命美麗 You Have Made My Life Beautiful",
+    "source": "main/releases",
+    "album_signal": null,
+    "itunes_album": "你使我生命美麗 (演奏專輯7)",
+    "itunes_track_count": 13,
+    "itunes_release_date": "2012-06-01T07:00:00Z",
+    "album_evidence": true,
+    "member_count": 13,
+    "pass_pre_count": 13,
+    "members": [
+      {
+        "youtube_id": "8Dkn5M57BnY",
+        "title": "祢是何等榮美 Jesus, My Everything",
+        "duration": 284,
+        "track_suffix": false,
+        "pass_pre": true,
+        "reasons": [],
+        "dup_of": null,
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "iIEO8mEZEy4",
+        "title": "我要歡唱 Lord, I Will Sing",
+        "duration": 238,
+        "track_suffix": false,
+        "pass_pre": false,
+        "reasons": [
+          "org 內已有同名器樂版 #5796"
+        ],
+        "dup_of": "#5796",
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "V20uWvq1Tdo",
+        "title": "哀哭變為跳舞 Mourning Into Dancing",
+        "duration": 224,
+        "track_suffix": false,
+        "pass_pre": true,
+        "reasons": [],
+        "dup_of": null,
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "ufiew-E-ejU",
+        "title": "祢使我生命美麗 You Have Made My Life Beautiful",
+        "duration": 280,
+        "track_suffix": false,
+        "pass_pre": true,
+        "reasons": [],
+        "dup_of": null,
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "9hCGbtxBPmM",
+        "title": "生命的話語 Speak To Me",
+        "duration": 292,
+        "track_suffix": false,
+        "pass_pre": false,
+        "reasons": [
+          "org 內已有同名器樂版 #5795"
+        ],
+        "dup_of": "#5795",
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "Eff2m4JR3NU",
+        "title": "耶穌我愛祢 Jesus, I Love You",
+        "duration": 281,
+        "track_suffix": false,
+        "pass_pre": true,
+        "reasons": [],
+        "dup_of": null,
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "hsPdMRgpFCc",
+        "title": "我敬拜祢 I Worship You",
+        "duration": 268,
+        "track_suffix": false,
+        "pass_pre": true,
+        "reasons": [],
+        "dup_of": null,
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "r3QTbJrebbY",
+        "title": "因著十架 By The Cross",
+        "duration": 255,
+        "track_suffix": false,
+        "pass_pre": true,
+        "reasons": [],
+        "dup_of": null,
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "1X1RAi4OFiY",
+        "title": "永遠尊貴 All Honor To You",
+        "duration": 340,
+        "track_suffix": false,
+        "pass_pre": true,
+        "reasons": [],
+        "dup_of": null,
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "RK57fCMi6yM",
+        "title": "祢的愛 Your Love",
+        "duration": 285,
+        "track_suffix": false,
+        "pass_pre": true,
+        "reasons": [],
+        "dup_of": null,
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "FLmU0hM28pI",
+        "title": "最珍貴的角落 Precious Corner",
+        "duration": 251,
+        "track_suffix": false,
+        "pass_pre": true,
+        "reasons": [],
+        "dup_of": null,
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "qFDFQSphTPg",
+        "title": "再一次 Once Again",
+        "duration": 258,
+        "track_suffix": false,
+        "pass_pre": true,
+        "reasons": [],
+        "dup_of": null,
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "aTHOP8F1IoI",
+        "title": "震動天地 Shake The Heaven And Earth",
+        "duration": 233,
+        "track_suffix": false,
+        "pass_pre": true,
+        "reasons": [],
+        "dup_of": null,
+        "dup_suspect": null
+      }
+    ],
+    "approved": true,
+    "proposed_album": "你使我生命美麗 (演奏專輯7)",
+    "instrumental_signal": "iTunes 器樂專輯「你使我生命美麗 (演奏專輯7)」",
+    "signed_by": "Claude Opus 5 (MORE-SOURCES N4, P4 拍板由我哋簽 / Eric 事後抽驗)",
+    "signed_at": "2026-08-24T07:08:51.217Z",
+    "sign_note": "iTunes artistName exact-match 專輯「你使我生命美麗 (演奏專輯7)」13 首;OLAK member 13 首;淨新增 11 首(扣咗 2 首 org 內已有器樂版)"
+  },
+  {
+    "release_id": "OLAK5uy_nfsP8-uIqbzLYvLNv-3cpBH1LE1IFhcAU",
+    "release_title": "祢恩典不離開 Your Grace",
+    "source": "main/releases",
+    "album_signal": null,
+    "itunes_album": "祢恩典不離開 (演奏專輯6)",
+    "itunes_track_count": 14,
+    "itunes_release_date": "2011-06-01T07:00:00Z",
+    "album_evidence": true,
+    "member_count": 14,
+    "pass_pre_count": 14,
+    "members": [
+      {
+        "youtube_id": "mXR8VH3mfWg",
+        "title": "似乎在天堂 Just Like Heaven",
+        "duration": 321,
+        "track_suffix": false,
+        "pass_pre": true,
+        "reasons": [],
+        "dup_of": null,
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "SCCJXqHFblM",
+        "title": "寶貴十架 Precious Cross",
+        "duration": 258,
+        "track_suffix": false,
+        "pass_pre": false,
+        "reasons": [
+          "org 內已有同名器樂版 #5911"
+        ],
+        "dup_of": "#5911",
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "wa1COMamgXw",
+        "title": "祢的慈愛 Unfailing Love",
+        "duration": 231,
+        "track_suffix": false,
+        "pass_pre": true,
+        "reasons": [],
+        "dup_of": null,
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "o4WOuJrdHeQ",
+        "title": "Come Away With Me",
+        "duration": 290,
+        "track_suffix": false,
+        "pass_pre": true,
+        "reasons": [],
+        "dup_of": null,
+        "dup_suspect": "#5619 【Come Away with Me】官方歌詞版MV (Official Lyrics MV) - "
+      },
+      {
+        "youtube_id": "YB1FYNscV34",
+        "title": "我要常常喜樂 I Will Always Rejoice",
+        "duration": 260,
+        "track_suffix": false,
+        "pass_pre": true,
+        "reasons": [],
+        "dup_of": null,
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "tpeVbXsgKZE",
+        "title": "聖靈降下恩雨 Holy Spirit Rain Down",
+        "duration": 325,
+        "track_suffix": false,
+        "pass_pre": true,
+        "reasons": [],
+        "dup_of": null,
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "6zNr6nf0bPI",
+        "title": "敬拜祢 We Worship You",
+        "duration": 311,
+        "track_suffix": false,
+        "pass_pre": true,
+        "reasons": [],
+        "dup_of": null,
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "z1rxwmRTos8",
+        "title": "求聽我呼求 Hear My Voice",
+        "duration": 236,
+        "track_suffix": false,
+        "pass_pre": true,
+        "reasons": [],
+        "dup_of": null,
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "TLMUlXr6wks",
+        "title": "祢恩典不離開 Your Grace",
+        "duration": 219,
+        "track_suffix": false,
+        "pass_pre": false,
+        "reasons": [
+          "org 內已有同名器樂版 #5797"
+        ],
+        "dup_of": "#5797",
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "a3kby45nhAs",
+        "title": "我相信 I Believe",
+        "duration": 281,
+        "track_suffix": false,
+        "pass_pre": true,
+        "reasons": [],
+        "dup_of": null,
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "QUppHvQlsKY",
+        "title": "祢是我的一切 You Are Everything To Me",
+        "duration": 307,
+        "track_suffix": false,
+        "pass_pre": true,
+        "reasons": [],
+        "dup_of": null,
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "Buq5qybjHDk",
+        "title": "喔！十字架 In The Cross",
+        "duration": 251,
+        "track_suffix": false,
+        "pass_pre": true,
+        "reasons": [],
+        "dup_of": null,
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "QPsG5BayMSk",
+        "title": "揀選 Chosen",
+        "duration": 207,
+        "track_suffix": false,
+        "pass_pre": true,
+        "reasons": [],
+        "dup_of": null,
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "jOlmWRJ3anM",
+        "title": "聖誕之願 A Wish For Christmas",
+        "duration": 258,
+        "track_suffix": false,
+        "pass_pre": true,
+        "reasons": [],
+        "dup_of": null,
+        "dup_suspect": null
+      }
+    ],
+    "approved": true,
+    "proposed_album": "祢恩典不離開 (演奏專輯6)",
+    "instrumental_signal": "iTunes 器樂專輯「祢恩典不離開 (演奏專輯6)」",
+    "signed_by": "Claude Opus 5 (MORE-SOURCES N4, P4 拍板由我哋簽 / Eric 事後抽驗)",
+    "signed_at": "2026-08-24T07:08:51.217Z",
+    "sign_note": "iTunes artistName exact-match 專輯「祢恩典不離開 (演奏專輯6)」14 首;OLAK member 14 首;淨新增 12 首(扣咗 2 首 org 內已有器樂版)"
+  },
+  {
+    "release_id": "OLAK5uy_nTE68KV2r_tsKPctJT61DabAIHy93uetI",
+    "release_title": "深深愛祢 Deeper In Love",
+    "source": "main/releases",
+    "album_signal": null,
+    "itunes_album": "深深愛祢 (演奏專輯5)",
+    "itunes_track_count": 14,
+    "itunes_release_date": "2010-06-01T07:00:00Z",
+    "album_evidence": true,
+    "member_count": 14,
+    "pass_pre_count": 14,
+    "members": [
+      {
+        "youtube_id": "-KfEY4ZLVvY",
+        "title": "親近祢 Close To You",
+        "duration": 347,
+        "track_suffix": false,
+        "pass_pre": false,
+        "reasons": [
+          "org 內已有同名器樂版 #5904"
+        ],
+        "dup_of": "#5904",
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "EcXcTtzSxYE",
+        "title": "深深愛祢 Deeper In Love",
+        "duration": 241,
+        "track_suffix": false,
+        "pass_pre": true,
+        "reasons": [],
+        "dup_of": null,
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "OZvihnMEsDI",
+        "title": "祢的同在 Your Presence",
+        "duration": 314,
+        "track_suffix": false,
+        "pass_pre": false,
+        "reasons": [
+          "org 內已有同名器樂版 #5812"
+        ],
+        "dup_of": "#5812",
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "NMEslRwVeDE",
+        "title": "我心切切渴慕祢 My Heart Shall Long For You",
+        "duration": 297,
+        "track_suffix": false,
+        "pass_pre": false,
+        "reasons": [
+          "org 內已有同名器樂版 #5800"
+        ],
+        "dup_of": "#5800",
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "shtW8ChJRU4",
+        "title": "主的喜樂是我力量 The Joy Of The Lord Is My Strength",
+        "duration": 259,
+        "track_suffix": false,
+        "pass_pre": false,
+        "reasons": [
+          "org 內已有同名器樂版 #5801"
+        ],
+        "dup_of": "#5801",
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "0EaSM5TDQps",
+        "title": "全地當讚美 The Whole Earth Will Sing",
+        "duration": 208,
+        "track_suffix": false,
+        "pass_pre": true,
+        "reasons": [],
+        "dup_of": null,
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "urYUqrDf5kE",
+        "title": "耶穌，耶穌 Jesus, Jesus",
+        "duration": 319,
+        "track_suffix": false,
+        "pass_pre": true,
+        "reasons": [],
+        "dup_of": null,
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "BWHIXylSYOo",
+        "title": "深觸我心 How Precious You Are To Me",
+        "duration": 278,
+        "track_suffix": false,
+        "pass_pre": true,
+        "reasons": [],
+        "dup_of": null,
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "Czs2xIsV9vM",
+        "title": "慈愛天父 God Of Mercy",
+        "duration": 280,
+        "track_suffix": false,
+        "pass_pre": true,
+        "reasons": [],
+        "dup_of": null,
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "KMUiGND9zW4",
+        "title": "求主充滿我 Come And Fill Me Up",
+        "duration": 259,
+        "track_suffix": false,
+        "pass_pre": true,
+        "reasons": [],
+        "dup_of": null,
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "OInhvdDxT7s",
+        "title": "禱告 I Pray",
+        "duration": 390,
+        "track_suffix": false,
+        "pass_pre": true,
+        "reasons": [],
+        "dup_of": null,
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "8T-cYIdpg7E",
+        "title": "主我跟祢走 Lord, I Walk With You",
+        "duration": 252,
+        "track_suffix": false,
+        "pass_pre": true,
+        "reasons": [],
+        "dup_of": null,
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "WxTOO0PWXi0",
+        "title": "祢美好應許 Your Promise",
+        "duration": 217,
+        "track_suffix": false,
+        "pass_pre": true,
+        "reasons": [],
+        "dup_of": null,
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "kcVlZ-9LkJ0",
+        "title": "耶和華是我牧者 Lord, You Are My Shepherd",
+        "duration": 289,
+        "track_suffix": false,
+        "pass_pre": true,
+        "reasons": [],
+        "dup_of": null,
+        "dup_suspect": null
+      }
+    ],
+    "approved": true,
+    "proposed_album": "深深愛祢 (演奏專輯5)",
+    "instrumental_signal": "iTunes 器樂專輯「深深愛祢 (演奏專輯5)」",
+    "signed_by": "Claude Opus 5 (MORE-SOURCES N4, P4 拍板由我哋簽 / Eric 事後抽驗)",
+    "signed_at": "2026-08-24T07:08:51.217Z",
+    "sign_note": "iTunes artistName exact-match 專輯「深深愛祢 (演奏專輯5)」14 首;OLAK member 14 首;淨新增 10 首(扣咗 4 首 org 內已有器樂版)"
+  },
+  {
+    "release_id": "OLAK5uy_mjxnpsOC1bwEl3sFIb08inBuCX4_0qhWE",
+    "release_title": "一生愛祢 With All My Love",
+    "source": "main/releases",
+    "album_signal": null,
+    "itunes_album": "一生愛祢 (鋼琴演奏專輯2)",
+    "itunes_track_count": 11,
+    "itunes_release_date": "2008-06-01T07:00:00Z",
+    "album_evidence": true,
+    "member_count": 11,
+    "pass_pre_count": 0,
+    "members": [
+      {
+        "youtube_id": "bJBLpULHxdI",
+        "title": "【晨光 Morning Light】- 讚美之泉鋼琴演奏系列 (2) by 曾祥怡 Grace Tseng",
+        "duration": 368,
+        "track_suffix": false,
+        "pass_pre": false,
+        "reasons": [
+          "youtube_id 已喺庫"
+        ],
+        "dup_of": "same-youtube-id",
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "PCTALw0SuEA",
+        "title": "【生命的話語 Speak to Met】- 讚美之泉鋼琴演奏系列 (2) by 曾祥怡 Grace Tseng",
+        "duration": 382,
+        "track_suffix": false,
+        "pass_pre": false,
+        "reasons": [
+          "youtube_id 已喺庫"
+        ],
+        "dup_of": "same-youtube-id",
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "W_eJXpeEKew",
+        "title": "【主祢是我力量 You Are My Strength】- 讚美之泉鋼琴演奏系列 (2) by 曾祥怡 Grace Tseng",
+        "duration": 422,
+        "track_suffix": false,
+        "pass_pre": false,
+        "reasons": [
+          "youtube_id 已喺庫"
+        ],
+        "dup_of": "same-youtube-id",
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "rGo1dy-hDsc",
+        "title": "【一生愛祢 With All My Love】- 讚美之泉鋼琴演奏系列 (2) by 曾祥怡 Grace Tseng",
+        "duration": 368,
+        "track_suffix": false,
+        "pass_pre": false,
+        "reasons": [
+          "youtube_id 已喺庫"
+        ],
+        "dup_of": "same-youtube-id",
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "PYew_fNUwCQ",
+        "title": "【我心切切渴慕祢 My Heart Shall Long For You】- 讚美之泉鋼琴演奏系列 (2) by 曾祥怡 Grace Tseng",
+        "duration": 439,
+        "track_suffix": false,
+        "pass_pre": false,
+        "reasons": [
+          "youtube_id 已喺庫"
+        ],
+        "dup_of": "same-youtube-id",
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "k89H6rHszYQ",
+        "title": "【我要歡唱 Lord, I Will Sing】- 讚美之泉鋼琴演奏系列 (2) by 曾祥怡 Grace Tseng",
+        "duration": 412,
+        "track_suffix": false,
+        "pass_pre": false,
+        "reasons": [
+          "youtube_id 已喺庫"
+        ],
+        "dup_of": "same-youtube-id",
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "JFAru9M-O_M",
+        "title": "【祢恩典不離開 Your Grace】- 讚美之泉鋼琴演奏系列 (2) by 曾祥怡 Grace Tseng",
+        "duration": 502,
+        "track_suffix": false,
+        "pass_pre": false,
+        "reasons": [
+          "youtube_id 已喺庫"
+        ],
+        "dup_of": "same-youtube-id",
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "2W8FATB9cQ0",
+        "title": "【與父同行 The Time With My Father】- 讚美之泉鋼琴演奏系列 (2) by 曾祥怡 Grace Tseng",
+        "duration": 232,
+        "track_suffix": false,
+        "pass_pre": false,
+        "reasons": [
+          "youtube_id 已喺庫"
+        ],
+        "dup_of": "same-youtube-id",
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "Fj3s4Gh7JQ4",
+        "title": "【生命活水充滿我 Living Water】- 讚美之泉鋼琴演奏系列 (2) by 曾祥怡 Grace Tseng",
+        "duration": 303,
+        "track_suffix": false,
+        "pass_pre": false,
+        "reasons": [
+          "youtube_id 已喺庫"
+        ],
+        "dup_of": "same-youtube-id",
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "3VDZdt5DfzE",
+        "title": "【愛與擁抱 Love and Embrace】- 讚美之泉鋼琴演奏系列 (2) by 曾祥怡 Grace Tseng",
+        "duration": 220,
+        "track_suffix": false,
+        "pass_pre": false,
+        "reasons": [
+          "youtube_id 已喺庫"
+        ],
+        "dup_of": "same-youtube-id",
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "MKjY1ZmjFTc",
+        "title": "【主的喜樂是我力量 The Joy of the Lord Is My Strength】- 讚美之泉鋼琴演奏系列 (2) by 曾祥怡 Grace Tseng",
+        "duration": 242,
+        "track_suffix": false,
+        "pass_pre": false,
+        "reasons": [
+          "youtube_id 已喺庫"
+        ],
+        "dup_of": "same-youtube-id",
+        "dup_suspect": null
+      }
+    ],
+    "approved": false,
+    "proposed_album": "一生愛祢 (鋼琴演奏專輯2)",
+    "instrumental_signal": "iTunes 器樂專輯「一生愛祢 (鋼琴演奏專輯2)」",
+    "signed_by": null,
+    "signed_at": null,
+    "sign_note": null
+  },
+  {
+    "release_id": "OLAK5uy_n5mAnRtzrwbZDRI_ROP0H8VOtD-e1UrGM",
+    "release_title": "這一生最美的祝福 The Gift Of Knowing You",
+    "source": "main/releases",
+    "album_signal": null,
+    "itunes_album": "這一生最美的祝福 (演奏專輯4)",
+    "itunes_track_count": 13,
+    "itunes_release_date": "2008-06-01T07:00:00Z",
+    "album_evidence": true,
+    "member_count": 13,
+    "pass_pre_count": 13,
+    "members": [
+      {
+        "youtube_id": "IDS63eHYNQ8",
+        "title": "展開清晨的翅膀 Wings Of The Dawn",
+        "duration": 318,
+        "track_suffix": false,
+        "pass_pre": false,
+        "reasons": [
+          "org 內已有同名器樂版 #5804"
+        ],
+        "dup_of": "#5804",
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "wmwm36KPwC4",
+        "title": "祢使我雙腳跳舞 Set My Feet To Dancing",
+        "duration": 254,
+        "track_suffix": false,
+        "pass_pre": true,
+        "reasons": [],
+        "dup_of": null,
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "ALEcmXcBqiQ",
+        "title": "奇妙的愛 Amazing Love",
+        "duration": 284,
+        "track_suffix": false,
+        "pass_pre": true,
+        "reasons": [],
+        "dup_of": null,
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "A7H-h4Dibjg",
+        "title": "在祢手中 In Your Hands",
+        "duration": 231,
+        "track_suffix": false,
+        "pass_pre": true,
+        "reasons": [],
+        "dup_of": null,
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "EoGi8beTSNs",
+        "title": "在主愛中 In God's Love",
+        "duration": 231,
+        "track_suffix": false,
+        "pass_pre": true,
+        "reasons": [],
+        "dup_of": null,
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "y5TCp3dDMF4",
+        "title": "這一生最美的祝福 The Gift Of Knowing You",
+        "duration": 271,
+        "track_suffix": false,
+        "pass_pre": true,
+        "reasons": [],
+        "dup_of": null,
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "gMaxn6giQo4",
+        "title": "萬物充滿祢的恩典 All Creation Filled By Your Love",
+        "duration": 304,
+        "track_suffix": false,
+        "pass_pre": true,
+        "reasons": [],
+        "dup_of": null,
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "xMVKsXbnjKU",
+        "title": "主禱文 The Lord's Prayer",
+        "duration": 322,
+        "track_suffix": false,
+        "pass_pre": true,
+        "reasons": [],
+        "dup_of": null,
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "DMPSaAealfE",
+        "title": "我願觸動祢心弦 Lord, I Want To Touch Your Heart",
+        "duration": 344,
+        "track_suffix": false,
+        "pass_pre": true,
+        "reasons": [],
+        "dup_of": null,
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "uuGUCIZ-bzU",
+        "title": "更深渴慕祢 Deeper Longing",
+        "duration": 303,
+        "track_suffix": false,
+        "pass_pre": true,
+        "reasons": [],
+        "dup_of": null,
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "2Te7PvlbIkM",
+        "title": "主的恩典乃是一生之久 The Light Of Your Grace",
+        "duration": 336,
+        "track_suffix": false,
+        "pass_pre": false,
+        "reasons": [
+          "org 內已有同名器樂版 #8655"
+        ],
+        "dup_of": "#8655",
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "pLg3GSlEvEA",
+        "title": "願為主閃亮 Shine For The Lord",
+        "duration": 290,
+        "track_suffix": false,
+        "pass_pre": true,
+        "reasons": [],
+        "dup_of": null,
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "gFCFR0TU6fY",
+        "title": "仰望恩典 Upon Your Grace",
+        "duration": 360,
+        "track_suffix": false,
+        "pass_pre": true,
+        "reasons": [],
+        "dup_of": null,
+        "dup_suspect": null
+      }
+    ],
+    "approved": true,
+    "proposed_album": "這一生最美的祝福 (演奏專輯4)",
+    "instrumental_signal": "iTunes 器樂專輯「這一生最美的祝福 (演奏專輯4)」",
+    "signed_by": "Claude Opus 5 (MORE-SOURCES N4, P4 拍板由我哋簽 / Eric 事後抽驗)",
+    "signed_at": "2026-08-24T07:08:51.217Z",
+    "sign_note": "iTunes artistName exact-match 專輯「這一生最美的祝福 (演奏專輯4)」13 首;OLAK member 13 首;淨新增 11 首(扣咗 2 首 org 內已有器樂版)"
+  },
+  {
+    "release_id": "OLAK5uy_n6dUL5R9nbWhUS-H3vYOs0267yEuQuWdQ",
+    "release_title": "單單愛慕你 Simply Loving You",
+    "source": "main/releases",
+    "album_signal": null,
+    "itunes_album": "單單愛慕你 (鋼琴演奏專輯1)",
+    "itunes_track_count": 12,
+    "itunes_release_date": "2003-06-01T07:00:00Z",
+    "album_evidence": true,
+    "member_count": 12,
+    "pass_pre_count": 12,
+    "members": [
+      {
+        "youtube_id": "84BD85hLVII",
+        "title": "單單愛慕你 Simply Loving You",
+        "duration": 293,
+        "track_suffix": false,
+        "pass_pre": false,
+        "reasons": [
+          "org 內已有同名器樂版 #8659"
+        ],
+        "dup_of": "#8659",
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "V3HbbhWr9Ig",
+        "title": "復興聖潔 Revive Holiness",
+        "duration": 342,
+        "track_suffix": false,
+        "pass_pre": false,
+        "reasons": [
+          "org 內已有同名器樂版 #8652"
+        ],
+        "dup_of": "#8652",
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "HwF0zemuYGE",
+        "title": "我親愛的耶穌 My Sweet Jesus",
+        "duration": 230,
+        "track_suffix": false,
+        "pass_pre": false,
+        "reasons": [
+          "org 內已有同名器樂版 #5916"
+        ],
+        "dup_of": "#5916",
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "7X_nDp1uzaw",
+        "title": "展開清晨的翅膀 Wings Of The Dawn",
+        "duration": 343,
+        "track_suffix": false,
+        "pass_pre": false,
+        "reasons": [
+          "org 內已有同名器樂版 #5804"
+        ],
+        "dup_of": "#5804",
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "2nXQ_y1SVBM",
+        "title": "主的恩典乃是一生之久 The Light Of Your Grace",
+        "duration": 412,
+        "track_suffix": false,
+        "pass_pre": false,
+        "reasons": [
+          "org 內已有同名器樂版 #8655"
+        ],
+        "dup_of": "#8655",
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "nRLNFvceRKA",
+        "title": "耶穌，我的耶穌 Jesus, My Jesus",
+        "duration": 402,
+        "track_suffix": false,
+        "pass_pre": false,
+        "reasons": [
+          "org 內已有同名器樂版 #8656"
+        ],
+        "dup_of": "#8656",
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "HAPM5NOZTcU",
+        "title": "讚美之泉 Stream Of Praise",
+        "duration": 276,
+        "track_suffix": false,
+        "pass_pre": false,
+        "reasons": [
+          "org 內已有同名器樂版 #4160"
+        ],
+        "dup_of": "#4160",
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "DmdkUf6if_w",
+        "title": "我愛祢，我主 I Love You, My Lord",
+        "duration": 225,
+        "track_suffix": false,
+        "pass_pre": false,
+        "reasons": [
+          "org 內已有同名器樂版 #8658"
+        ],
+        "dup_of": "#8658",
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "9yYd0baf2go",
+        "title": "求告祢名 Call On Your Name",
+        "duration": 331,
+        "track_suffix": false,
+        "pass_pre": true,
+        "reasons": [],
+        "dup_of": null,
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "UTCfFQxxFBo",
+        "title": "被愛 Loved",
+        "duration": 274,
+        "track_suffix": false,
+        "pass_pre": true,
+        "reasons": [],
+        "dup_of": null,
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "3Cob27fGadg",
+        "title": "秋雨之福 Autumn Blessings",
+        "duration": 336,
+        "track_suffix": false,
+        "pass_pre": true,
+        "reasons": [],
+        "dup_of": null,
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "cd4pzIy2CjI",
+        "title": "單單愛慕你 Simply Loving You (二重奏 Duet)",
+        "duration": 292,
+        "track_suffix": false,
+        "pass_pre": false,
+        "reasons": [
+          "org 內已有同名器樂版 #8659"
+        ],
+        "dup_of": "#8659",
+        "dup_suspect": null
+      }
+    ],
+    "approved": true,
+    "proposed_album": "單單愛慕你 (鋼琴演奏專輯1)",
+    "instrumental_signal": "iTunes 器樂專輯「單單愛慕你 (鋼琴演奏專輯1)」",
+    "signed_by": "Claude Opus 5 (MORE-SOURCES N4, P4 拍板由我哋簽 / Eric 事後抽驗)",
+    "signed_at": "2026-08-24T07:08:51.217Z",
+    "sign_note": "iTunes artistName exact-match 專輯「單單愛慕你 (鋼琴演奏專輯1)」12 首;OLAK member 12 首;淨新增 3 首(扣咗 9 首 org 內已有器樂版)"
+  },
+  {
+    "release_id": "OLAK5uy_lmODbeyV_bIRmSXjDKwvNU-UDwaQax2m8",
+    "release_title": "雲上太陽 The Sun Above The Clouds",
+    "source": "main/releases",
+    "album_signal": null,
+    "itunes_album": "雲上太陽 (演奏專輯3)",
+    "itunes_track_count": 14,
+    "itunes_release_date": "2002-06-01T07:00:00Z",
+    "album_evidence": true,
+    "member_count": 14,
+    "pass_pre_count": 14,
+    "members": [
+      {
+        "youtube_id": "mipDs1GUbT8",
+        "title": "雲上太陽 The Sun Above The Clouds",
+        "duration": 285,
+        "track_suffix": false,
+        "pass_pre": true,
+        "reasons": [],
+        "dup_of": null,
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "vIatuUn0EP8",
+        "title": "我心要稱謝耶和華 My Heart Will Praise The Lord",
+        "duration": 290,
+        "track_suffix": false,
+        "pass_pre": true,
+        "reasons": [],
+        "dup_of": null,
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "hLowln_1VkM",
+        "title": "主，懇求祢 Lord, Guide Me",
+        "duration": 299,
+        "track_suffix": false,
+        "pass_pre": true,
+        "reasons": [],
+        "dup_of": null,
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "PYXxl1K4rXY",
+        "title": "天堂在我心 Heaven Is In My Heart",
+        "duration": 213,
+        "track_suffix": false,
+        "pass_pre": true,
+        "reasons": [],
+        "dup_of": null,
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "looBGr3uz8M",
+        "title": "讚美耶和華 Praise Jehovah",
+        "duration": 324,
+        "track_suffix": false,
+        "pass_pre": true,
+        "reasons": [],
+        "dup_of": null,
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "eWW2oi4Kc2k",
+        "title": "全新的你 A New You",
+        "duration": 343,
+        "track_suffix": false,
+        "pass_pre": true,
+        "reasons": [],
+        "dup_of": null,
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "RQ4M2BODNSg",
+        "title": "我一生要讚美祢 I Will Praise You All My Life",
+        "duration": 291,
+        "track_suffix": false,
+        "pass_pre": true,
+        "reasons": [],
+        "dup_of": null,
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "ZKZLEaCtCnY",
+        "title": "主啊，我要跟隨祢 Lord, I Want To Follow You",
+        "duration": 368,
+        "track_suffix": false,
+        "pass_pre": true,
+        "reasons": [],
+        "dup_of": null,
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "B2Yp3krW3lI",
+        "title": "全能的創造主 Wonderful Creator",
+        "duration": 302,
+        "track_suffix": false,
+        "pass_pre": true,
+        "reasons": [],
+        "dup_of": null,
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "x9hyX-Ze2H8",
+        "title": "我和我的家 As For Me And My House",
+        "duration": 272,
+        "track_suffix": false,
+        "pass_pre": true,
+        "reasons": [],
+        "dup_of": null,
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "gspTLpN3Pxw",
+        "title": "我主我的神 My Lord, My God",
+        "duration": 281,
+        "track_suffix": false,
+        "pass_pre": true,
+        "reasons": [],
+        "dup_of": null,
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "6LLoFJ0CzxI",
+        "title": "專心仰望耶穌 Focus On Jesus",
+        "duration": 244,
+        "track_suffix": false,
+        "pass_pre": true,
+        "reasons": [],
+        "dup_of": null,
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "o_mY9-W6a2k",
+        "title": "傾聽我的心 Listen To My Heart",
+        "duration": 401,
+        "track_suffix": false,
+        "pass_pre": true,
+        "reasons": [],
+        "dup_of": null,
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "bGXhmaDAjOA",
+        "title": "把冷漠變成愛 Fill Our Heart With Love",
+        "duration": 253,
+        "track_suffix": false,
+        "pass_pre": true,
+        "reasons": [],
+        "dup_of": null,
+        "dup_suspect": null
+      }
+    ],
+    "approved": true,
+    "proposed_album": "雲上太陽 (演奏專輯3)",
+    "instrumental_signal": "iTunes 器樂專輯「雲上太陽 (演奏專輯3)」",
+    "signed_by": "Claude Opus 5 (MORE-SOURCES N4, P4 拍板由我哋簽 / Eric 事後抽驗)",
+    "signed_at": "2026-08-24T07:08:51.218Z",
+    "sign_note": "iTunes artistName exact-match 專輯「雲上太陽 (演奏專輯3)」14 首;OLAK member 14 首;淨新增 14 首(扣咗 0 首 org 內已有器樂版)"
+  },
+  {
+    "release_id": "OLAK5uy_l6uB9pF7xLn5g1Sa2C0v1-T3k3r0v6qvk",
+    "release_title": "愛，我願意 I Receive Your Love",
+    "source": "main/releases",
+    "album_signal": null,
+    "itunes_album": "愛,我願意 (演奏專輯2)",
+    "itunes_track_count": 15,
+    "itunes_release_date": "2000-06-01T07:00:00Z",
+    "album_evidence": true,
+    "member_count": 15,
+    "pass_pre_count": 15,
+    "members": [
+      {
+        "youtube_id": "_XKsiAU7ZdY",
+        "title": "愛，我願意 I Receive Your Love",
+        "duration": 375,
+        "track_suffix": false,
+        "pass_pre": true,
+        "reasons": [],
+        "dup_of": null,
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "ZY2Bw6nchLg",
+        "title": "注目看耶穌 Look Upon Jesus",
+        "duration": 329,
+        "track_suffix": false,
+        "pass_pre": false,
+        "reasons": [
+          "org 內已有同名器樂版 #5988"
+        ],
+        "dup_of": "#5988",
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "vCybaxnnx0g",
+        "title": "給我清潔的心 Create In Me A Clean Heart",
+        "duration": 307,
+        "track_suffix": false,
+        "pass_pre": true,
+        "reasons": [],
+        "dup_of": null,
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "AqR9nQS5qlo",
+        "title": "一世人跟隨祢 I Will Follow You All My Life",
+        "duration": 285,
+        "track_suffix": false,
+        "pass_pre": true,
+        "reasons": [],
+        "dup_of": null,
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "CIpM8aOx2lE",
+        "title": "平安的七月夜 Peaceful July",
+        "duration": 269,
+        "track_suffix": false,
+        "pass_pre": false,
+        "reasons": [
+          "org 內已有同名器樂版 #5913"
+        ],
+        "dup_of": "#5913",
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "fJEMjJ1eZ2A",
+        "title": "與祢有約 The Promise",
+        "duration": 204,
+        "track_suffix": false,
+        "pass_pre": true,
+        "reasons": [],
+        "dup_of": null,
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "a4UvtNwPLA8",
+        "title": "彩虹下的約定 The Covenant Under The Rainbow",
+        "duration": 239,
+        "track_suffix": false,
+        "pass_pre": true,
+        "reasons": [],
+        "dup_of": null,
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "xvZxgV4kTsA",
+        "title": "尋找 Searching",
+        "duration": 218,
+        "track_suffix": false,
+        "pass_pre": true,
+        "reasons": [],
+        "dup_of": null,
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "2sqeQnCXDSg",
+        "title": "這是耶和華所定的日子 This Is The Day",
+        "duration": 179,
+        "track_suffix": false,
+        "pass_pre": true,
+        "reasons": [],
+        "dup_of": null,
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "eiEE9rYm33M",
+        "title": "一切歌頌讚美 Praise The Lord",
+        "duration": 211,
+        "track_suffix": false,
+        "pass_pre": true,
+        "reasons": [],
+        "dup_of": null,
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "mKPXp0gfd0M",
+        "title": "我的心，你要稱頌耶和華 Praise The Lord All My Soul",
+        "duration": 307,
+        "track_suffix": false,
+        "pass_pre": true,
+        "reasons": [],
+        "dup_of": null,
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "6rC6CYtbBZA",
+        "title": "馨香晚祭 The Evening Sacrifice",
+        "duration": 371,
+        "track_suffix": false,
+        "pass_pre": true,
+        "reasons": [],
+        "dup_of": null,
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "B2LgWWoWtng",
+        "title": "起來吧! Arise!",
+        "duration": 265,
+        "track_suffix": false,
+        "pass_pre": true,
+        "reasons": [],
+        "dup_of": null,
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "zvhK84GlsrQ",
+        "title": "賜我自由 Grant Me Freedom",
+        "duration": 337,
+        "track_suffix": false,
+        "pass_pre": true,
+        "reasons": [],
+        "dup_of": null,
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "Z9m63_o6aVw",
+        "title": "我對祢的愛永不變 My Love For You Will Never Change",
+        "duration": 304,
+        "track_suffix": false,
+        "pass_pre": true,
+        "reasons": [],
+        "dup_of": null,
+        "dup_suspect": null
+      }
+    ],
+    "approved": true,
+    "proposed_album": "愛,我願意 (演奏專輯2)",
+    "instrumental_signal": "iTunes 器樂專輯「愛,我願意 (演奏專輯2)」",
+    "signed_by": "Claude Opus 5 (MORE-SOURCES N4, P4 拍板由我哋簽 / Eric 事後抽驗)",
+    "signed_at": "2026-08-24T07:08:51.218Z",
+    "sign_note": "iTunes artistName exact-match 專輯「愛,我願意 (演奏專輯2)」15 首;OLAK member 15 首;淨新增 13 首(扣咗 2 首 org 內已有器樂版)"
+  },
+  {
+    "release_id": "OLAK5uy_nnjWafEc-GvrixXCEehfFs5jKuGKut6Ww",
+    "release_title": "生命的凱歌 Victorious Life",
+    "source": "main/releases",
+    "album_signal": null,
+    "itunes_album": "生命的凱歌 (演奏專輯1)",
+    "itunes_track_count": 18,
+    "itunes_release_date": "1997-06-01T07:00:00Z",
+    "album_evidence": true,
+    "member_count": 18,
+    "pass_pre_count": 13,
+    "members": [
+      {
+        "youtube_id": "OzT01t0O_lA",
+        "title": "你們要讚美耶和華 Praise The Lord All Ye People",
+        "duration": 118,
+        "track_suffix": false,
+        "pass_pre": false,
+        "reasons": [
+          "片長 118s 唔喺 120-600"
+        ],
+        "dup_of": null,
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "9Lh9GQUdU8w",
+        "title": "快樂頌 Joyful, Joyful, We Adore Thee",
+        "duration": 82,
+        "track_suffix": false,
+        "pass_pre": false,
+        "reasons": [
+          "片長 82s 唔喺 120-600"
+        ],
+        "dup_of": null,
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "h_o0qVny4TE",
+        "title": "你們要讚美耶和華 Praise The Lord All Ye People (Reprise)",
+        "duration": 83,
+        "track_suffix": false,
+        "pass_pre": false,
+        "reasons": [
+          "片長 83s 唔喺 120-600"
+        ],
+        "dup_of": null,
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "uVE7eOzPjGU",
+        "title": "讓讚美飛揚 Let Praise Arise",
+        "duration": 123,
+        "track_suffix": false,
+        "pass_pre": true,
+        "reasons": [],
+        "dup_of": null,
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "5hQOOXGFwf4",
+        "title": "新造的人 A New Creation",
+        "duration": 153,
+        "track_suffix": false,
+        "pass_pre": true,
+        "reasons": [],
+        "dup_of": null,
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "bx9XXdpk7W8",
+        "title": "唯有主耶穌的寶血 Only The Blood",
+        "duration": 91,
+        "track_suffix": false,
+        "pass_pre": false,
+        "reasons": [
+          "片長 91s 唔喺 120-600"
+        ],
+        "dup_of": null,
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "lyAgcXhyn5M",
+        "title": "認識祢真好 It'S Good To Know You",
+        "duration": 258,
+        "track_suffix": false,
+        "pass_pre": true,
+        "reasons": [],
+        "dup_of": null,
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "103leEpsj2Y",
+        "title": "有一位神 There Is A God",
+        "duration": 317,
+        "track_suffix": false,
+        "pass_pre": false,
+        "reasons": [
+          "org 內已有同名器樂版 #5915"
+        ],
+        "dup_of": "#5915",
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "l20XgdDPpuA",
+        "title": "【全然向祢 All For You】官方敬拜卡拉OK版MV (無人聲 純樂器伴奏 / 伴唱 Instrumental) - 讚美之泉敬拜讚美 (1)",
+        "duration": 284,
+        "track_suffix": false,
+        "pass_pre": false,
+        "reasons": [
+          "isNonWorship(器樂線)"
+        ],
+        "dup_of": null,
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "pbm0B6Kwga0",
+        "title": "愛喜樂生命 Love, Joy, And Life",
+        "duration": 272,
+        "track_suffix": false,
+        "pass_pre": true,
+        "reasons": [],
+        "dup_of": null,
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "q5PzljzaGl0",
+        "title": "序曲 Prelude",
+        "duration": 128,
+        "track_suffix": false,
+        "pass_pre": true,
+        "reasons": [],
+        "dup_of": null,
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "eAxE8J9_bZ4",
+        "title": "舉目向山 I Lift Up My Eyes To The Mountains",
+        "duration": 287,
+        "track_suffix": false,
+        "pass_pre": true,
+        "reasons": [],
+        "dup_of": null,
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "5IBh6bKEvrc",
+        "title": "主賜福如春雨 Rain Of Blessings",
+        "duration": 188,
+        "track_suffix": false,
+        "pass_pre": true,
+        "reasons": [],
+        "dup_of": null,
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "qUMxOZnL3nA",
+        "title": "從今天起 From This Day On",
+        "duration": 258,
+        "track_suffix": false,
+        "pass_pre": true,
+        "reasons": [],
+        "dup_of": null,
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "Db0h2sOWXOE",
+        "title": "除祢以外 Whom Have I But You?",
+        "duration": 279,
+        "track_suffix": false,
+        "pass_pre": true,
+        "reasons": [],
+        "dup_of": null,
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "rLv9tQ2DBcQ",
+        "title": "光明之子 Children Of Light",
+        "duration": 223,
+        "track_suffix": false,
+        "pass_pre": true,
+        "reasons": [],
+        "dup_of": null,
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "oroyVlScdT4",
+        "title": "犧牲的愛 The Sacrificial Love",
+        "duration": 280,
+        "track_suffix": false,
+        "pass_pre": true,
+        "reasons": [],
+        "dup_of": null,
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "NWzCza75uD8",
+        "title": "生命的凱歌 Victorious Life",
+        "duration": 303,
+        "track_suffix": false,
+        "pass_pre": true,
+        "reasons": [],
+        "dup_of": null,
+        "dup_suspect": null
+      }
+    ],
+    "approved": true,
+    "proposed_album": "生命的凱歌 (演奏專輯1)",
+    "instrumental_signal": "iTunes 器樂專輯「生命的凱歌 (演奏專輯1)」",
+    "signed_by": "Claude Opus 5 (MORE-SOURCES N4, P4 拍板由我哋簽 / Eric 事後抽驗)",
+    "signed_at": "2026-08-24T07:08:51.218Z",
+    "sign_note": "iTunes artistName exact-match 專輯「生命的凱歌 (演奏專輯1)」18 首;OLAK member 18 首;淨新增 12 首(扣咗 1 首 org 內已有器樂版)"
+  }
+]

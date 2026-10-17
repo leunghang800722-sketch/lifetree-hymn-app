@@ -1,0 +1,14 @@
+--- r1 (V1, 冷) ---
+📚 /api/hymns full fetch → 6405 hymns, dataVersion=V1
+📚 /api/hymns lite fetch → 6405 hymns, dataVersion=V1
+📚 /api/hymns/lyrics fetch → 5387 hymns, dataVersion=V1
+computeCount after r1: {"full":1,"lite":1,"lyrics":1}
+--- r2 (V1, 應該全部 hit) ---
+computeCount after r2 (should be unchanged): {"full":1,"lite":1,"lyrics":1}
+--- r3 (dataVersion 變 V2, 應該全部 miss 一次) ---
+📚 /api/hymns full fetch → 6405 hymns, dataVersion=V2
+📚 /api/hymns lite fetch → 6405 hymns, dataVersion=V2
+📚 /api/hymns/lyrics fetch → 5387 hymns, dataVersion=V2
+computeCount after r3: {"full":2,"lite":2,"lyrics":2}
+--- r4 (V2, 應該全部 hit) ---
+computeCount after r4 (should be unchanged from r3): {"full":2,"lite":2,"lyrics":2}

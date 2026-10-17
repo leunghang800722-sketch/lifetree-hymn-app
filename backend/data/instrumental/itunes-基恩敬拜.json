@@ -1,0 +1,715 @@
+[
+  {
+    "collectionId": 1767737967,
+    "album": "惟獨祢 Only You",
+    "artist": "基恩敬拜 Amazing Grace Worship",
+    "trackCount": 10,
+    "releaseDate": "2006-10-01T07:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": false
+    }
+  },
+  {
+    "collectionId": 1768138226,
+    "album": "Amazing Guitar (Guitar Version)",
+    "artist": "基恩敬拜 Amazing Grace Worship",
+    "trackCount": 7,
+    "releaseDate": "2007-04-01T07:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": true,
+      "hit": "Guitar"
+    }
+  },
+  {
+    "collectionId": 1767754890,
+    "album": "神大愛 God's Magnificent Love",
+    "artist": "基恩敬拜 Amazing Grace Worship",
+    "trackCount": 13,
+    "releaseDate": "2007-08-01T07:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": false
+    }
+  },
+  {
+    "collectionId": 1768005582,
+    "album": "永不疲乏 Never Grew Weary",
+    "artist": "基恩敬拜 Amazing Grace Worship",
+    "trackCount": 10,
+    "releaseDate": "2008-05-01T07:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": false
+    }
+  },
+  {
+    "collectionId": 1767755928,
+    "album": "我是泥土 Made Of Clay",
+    "artist": "基恩敬拜 Amazing Grace Worship",
+    "trackCount": 13,
+    "releaseDate": "2008-11-01T07:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": false
+    }
+  },
+  {
+    "collectionId": 6776697034,
+    "album": "我是泥土 Made Of Clay",
+    "artist": "基恩敬拜 Amazing Grace Worship",
+    "trackCount": 12,
+    "releaseDate": "2008-11-01T07:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": false
+    }
+  },
+  {
+    "collectionId": 1767524540,
+    "album": "放開雙手 Out Stretch Your Arms - EP",
+    "artist": "基恩敬拜 Amazing Grace Worship",
+    "trackCount": 6,
+    "releaseDate": "2009-04-01T07:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": false
+    }
+  },
+  {
+    "collectionId": 1768281267,
+    "album": "不要怕 Fear Not",
+    "artist": "基恩敬拜 Amazing Grace Worship",
+    "trackCount": 14,
+    "releaseDate": "2009-06-01T07:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": false
+    }
+  },
+  {
+    "collectionId": 1767938469,
+    "album": "在祢寶座前 Before Your Throne",
+    "artist": "基恩敬拜 Amazing Grace Worship",
+    "trackCount": 15,
+    "releaseDate": "2009-12-01T08:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": false
+    }
+  },
+  {
+    "collectionId": 1768476070,
+    "album": "靜默有時 A Time To Be Silent (Instrumental Version)",
+    "artist": "基恩敬拜 Amazing Grace Worship",
+    "trackCount": 15,
+    "releaseDate": "2010-04-01T07:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": true,
+      "hit": "靜默"
+    }
+  },
+  {
+    "collectionId": 1767995334,
+    "album": "當讚美進入祂的院 Enter His Courts With Praise",
+    "artist": "基恩敬拜 Amazing Grace Worship",
+    "trackCount": 15,
+    "releaseDate": "2010-07-01T07:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": false
+    }
+  },
+  {
+    "collectionId": 1767912781,
+    "album": "繼續向前行 Going Forth",
+    "artist": "基恩敬拜 Amazing Grace Worship",
+    "trackCount": 14,
+    "releaseDate": "2010-12-01T08:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": false
+    }
+  },
+  {
+    "collectionId": 1773589123,
+    "album": "Amazing Guitar 2 (Guitar Version)",
+    "artist": "基恩敬拜 Amazing Grace Worship",
+    "trackCount": 13,
+    "releaseDate": "2011-10-01T07:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": true,
+      "hit": "Guitar"
+    }
+  },
+  {
+    "collectionId": 1767272188,
+    "album": "我們愛因為神先愛 We Love Because God First Loved Us",
+    "artist": "基恩敬拜 Amazing Grace Worship",
+    "trackCount": 14,
+    "releaseDate": "2011-12-01T08:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": false
+    }
+  },
+  {
+    "collectionId": 1769899656,
+    "album": "祈禱仔唱詩歌 3 Praying Kids Sing Praise 3",
+    "artist": "基恩敬拜 Amazing Grace Worship",
+    "trackCount": 16,
+    "releaseDate": "2011-12-01T08:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": false
+    }
+  },
+  {
+    "collectionId": 1768242799,
+    "album": "靜默有時 2 A Time To Be Silent Vol.2 (Instrumental Version)",
+    "artist": "基恩敬拜 Amazing Grace Worship",
+    "trackCount": 13,
+    "releaseDate": "2012-07-01T07:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": true,
+      "hit": "靜默"
+    }
+  },
+  {
+    "collectionId": 1767124262,
+    "album": "平安的路 Path Of Peace",
+    "artist": "基恩敬拜 Amazing Grace Worship",
+    "trackCount": 14,
+    "releaseDate": "2012-12-01T08:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": false
+    }
+  },
+  {
+    "collectionId": 1768525625,
+    "album": "祈禱仔唱詩歌 4 Praying Kids Sing Praise 4",
+    "artist": "基恩敬拜 Amazing Grace Worship",
+    "trackCount": 13,
+    "releaseDate": "2013-03-01T08:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": false
+    }
+  },
+  {
+    "collectionId": 1767993172,
+    "album": "愛是永不止息 Love Never Fails",
+    "artist": "基恩敬拜 Amazing Grace Worship",
+    "trackCount": 15,
+    "releaseDate": "2013-07-01T07:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": false
+    }
+  },
+  {
+    "collectionId": 6776763277,
+    "album": "愛是永不止息 Love Never Fails",
+    "artist": "基恩敬拜 Amazing Grace Worship",
+    "trackCount": 14,
+    "releaseDate": "2013-07-01T07:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": false
+    }
+  },
+  {
+    "collectionId": 1767128619,
+    "album": "恩典充滿這地 Fill This Land With Grace",
+    "artist": "基恩敬拜 Amazing Grace Worship",
+    "trackCount": 14,
+    "releaseDate": "2013-12-01T08:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": false
+    }
+  },
+  {
+    "collectionId": 6776755170,
+    "album": "恩典充滿這地 Fill This Land With Grace",
+    "artist": "基恩敬拜 Amazing Grace Worship",
+    "trackCount": 13,
+    "releaseDate": "2013-12-01T08:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": false
+    }
+  },
+  {
+    "collectionId": 1768525511,
+    "album": "祈禱仔唱詩歌 5 Praying Kids Sing Praise 5",
+    "artist": "基恩敬拜 Amazing Grace Worship",
+    "trackCount": 13,
+    "releaseDate": "2014-04-01T07:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": false
+    }
+  },
+  {
+    "collectionId": 1767019253,
+    "album": "靠主愛誇勝 With The Love Of Christ, We Triumph",
+    "artist": "基恩敬拜 Amazing Grace Worship",
+    "trackCount": 15,
+    "releaseDate": "2014-12-01T08:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": false
+    }
+  },
+  {
+    "collectionId": 1767107743,
+    "album": "再次站起來 Standing Up Again",
+    "artist": "基恩敬拜 Amazing Grace Worship",
+    "trackCount": 14,
+    "releaseDate": "2015-12-01T08:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": false
+    }
+  },
+  {
+    "collectionId": 1766664449,
+    "album": "回到家裡 Home Again",
+    "artist": "基恩敬拜 Amazing Grace Worship",
+    "trackCount": 14,
+    "releaseDate": "2017-01-01T08:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": false
+    }
+  },
+  {
+    "collectionId": 1778482351,
+    "album": "回到家裡 Home Again",
+    "artist": "基恩敬拜 Amazing Grace Worship",
+    "trackCount": 13,
+    "releaseDate": "2017-01-01T08:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": false
+    }
+  },
+  {
+    "collectionId": 1768370336,
+    "album": "祈禱仔唱詩歌 6 Praying Kids Sing Praise 6",
+    "artist": "基恩敬拜 Amazing Grace Worship",
+    "trackCount": 13,
+    "releaseDate": "2017-04-01T07:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": false
+    }
+  },
+  {
+    "collectionId": 1768038179,
+    "album": "靜默有時 3 A Time To Be Silent Vol.3 (Instrumental Version)",
+    "artist": "基恩敬拜 Amazing Grace Worship",
+    "trackCount": 12,
+    "releaseDate": "2018-04-01T07:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": true,
+      "hit": "靜默"
+    }
+  },
+  {
+    "collectionId": 1767204189,
+    "album": "明天祢為我掌舵 You take the helm of my future",
+    "artist": "基恩敬拜 Amazing Grace Worship",
+    "trackCount": 13,
+    "releaseDate": "2018-06-01T07:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": false
+    }
+  },
+  {
+    "collectionId": 1766661165,
+    "album": "我能痊癒 I will be Healed",
+    "artist": "基恩敬拜 Amazing Grace Worship",
+    "trackCount": 11,
+    "releaseDate": "2019-07-01T07:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": false
+    }
+  },
+  {
+    "collectionId": 1768513218,
+    "album": "祈禱仔尋找耶穌Baby的腳蹤 Praying Kids Search For Baby Jesus",
+    "artist": "基恩敬拜 Amazing Grace Worship",
+    "trackCount": 8,
+    "releaseDate": "2020-07-01T07:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": false
+    }
+  },
+  {
+    "collectionId": 1773241049,
+    "album": "主賜平安 Grant Us Peace",
+    "artist": "基恩敬拜 Amazing Grace Worship",
+    "trackCount": 16,
+    "releaseDate": "2020-12-01T08:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": false
+    }
+  },
+  {
+    "collectionId": 1768254483,
+    "album": "Amazing Guitar 3 (Guitar Version)",
+    "artist": "基恩敬拜 Amazing Grace Worship",
+    "trackCount": 13,
+    "releaseDate": "2020-12-01T08:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": true,
+      "hit": "Guitar"
+    }
+  },
+  {
+    "collectionId": 1772985902,
+    "album": "Amazing Piano 1 (Piano Version)",
+    "artist": "基恩敬拜 Amazing Grace Worship",
+    "trackCount": 12,
+    "releaseDate": "2021-01-01T08:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": true,
+      "hit": "Piano"
+    }
+  },
+  {
+    "collectionId": 1768260320,
+    "album": "晚安禱告 Bedtime Prayer - Single",
+    "artist": "基恩敬拜 Amazing Grace Worship",
+    "trackCount": 1,
+    "releaseDate": "2021-04-01T07:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": false
+    }
+  },
+  {
+    "collectionId": 1767895023,
+    "album": "和平之子 Sons Of Peace - Single",
+    "artist": "基恩敬拜 Amazing Grace Worship",
+    "trackCount": 1,
+    "releaseDate": "2021-04-01T07:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": false
+    }
+  },
+  {
+    "collectionId": 1768001369,
+    "album": "願祢旨意成就 Thy Will Be Done - Single",
+    "artist": "基恩敬拜 Amazing Grace Worship",
+    "trackCount": 1,
+    "releaseDate": "2021-04-01T07:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": false
+    }
+  },
+  {
+    "collectionId": 1767887718,
+    "album": "渴慕主的靈 Thirst For The Spirit Of The Lord - Single",
+    "artist": "基恩敬拜 Amazing Grace Worship",
+    "trackCount": 1,
+    "releaseDate": "2021-04-01T07:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": false
+    }
+  },
+  {
+    "collectionId": 1767894883,
+    "album": "神的眷佑 God's Blessings - Single",
+    "artist": "基恩敬拜 Amazing Grace Worship",
+    "trackCount": 1,
+    "releaseDate": "2021-04-01T07:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": false
+    }
+  },
+  {
+    "collectionId": 1767994962,
+    "album": "將我的救恩顯明給你 Show You My Salvation - Single",
+    "artist": "基恩敬拜 Amazing Grace Worship",
+    "trackCount": 1,
+    "releaseDate": "2021-04-01T07:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": false
+    }
+  },
+  {
+    "collectionId": 1767887146,
+    "album": "晨禱 (華語版) Morning Prayer [Mandarin Version] - Single",
+    "artist": "基恩敬拜 Amazing Grace Worship",
+    "trackCount": 1,
+    "releaseDate": "2021-04-01T07:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": false
+    }
+  },
+  {
+    "collectionId": 1768156854,
+    "album": "Amazing Piano 2 (Piano Version)",
+    "artist": "基恩敬拜 Amazing Grace Worship",
+    "trackCount": 10,
+    "releaseDate": "2021-06-01T07:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": true,
+      "hit": "Piano"
+    }
+  },
+  {
+    "collectionId": 1766909655,
+    "album": "信心的宣告 Confession Of Faith",
+    "artist": "基恩敬拜 Amazing Grace Worship",
+    "trackCount": 10,
+    "releaseDate": "2022-02-01T08:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": false
+    }
+  },
+  {
+    "collectionId": 1773037400,
+    "album": "晨禱 Morning Prayer",
+    "artist": "基恩敬拜 Amazing Grace Worship",
+    "trackCount": 10,
+    "releaseDate": "2022-02-01T08:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": false
+    }
+  },
+  {
+    "collectionId": 1766404904,
+    "album": "感恩的祭 A Thank Offering - EP",
+    "artist": "基恩敬拜 Amazing Grace Worship",
+    "trackCount": 5,
+    "releaseDate": "2023-04-01T07:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": false
+    }
+  },
+  {
+    "collectionId": 1768217692,
+    "album": "基恩敬拜 Live Worship 2023 (Live 2023)",
+    "artist": "基恩敬拜 Amazing Grace Worship",
+    "trackCount": 8,
+    "releaseDate": "2023-08-01T07:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": false
+    }
+  },
+  {
+    "collectionId": 1787938652,
+    "album": "復活的盼望 Resurrection Brings Hope",
+    "artist": "基恩敬拜 Amazing Grace Worship",
+    "trackCount": 11,
+    "releaseDate": "2024-01-31T08:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": false
+    }
+  },
+  {
+    "collectionId": 1785110186,
+    "album": "復活的盼望 Resurrection Brings Hope",
+    "artist": "基恩敬拜 Amazing Grace Worship",
+    "trackCount": 8,
+    "releaseDate": "2024-01-31T08:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": false
+    }
+  },
+  {
+    "collectionId": 1767033739,
+    "album": "復活的盼望 Resurrection Brings Hope",
+    "artist": "基恩敬拜 Amazing Grace Worship",
+    "trackCount": 6,
+    "releaseDate": "2024-02-01T08:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": false
+    }
+  },
+  {
+    "collectionId": 1779265963,
+    "album": "復活的盼望 Resurrection Brings Hope",
+    "artist": "基恩敬拜 Amazing Grace Worship",
+    "trackCount": 7,
+    "releaseDate": "2024-02-01T08:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": false
+    }
+  },
+  {
+    "collectionId": 1773580936,
+    "album": "基恩敬拜 Live Worship 2024 (Live 2024)",
+    "artist": "基恩敬拜 Amazing Grace Worship",
+    "trackCount": 8,
+    "releaseDate": "2024-05-01T07:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": false
+    }
+  },
+  {
+    "collectionId": 1773583539,
+    "album": "Amazing Guitar 4 (Guitar Version)",
+    "artist": "基恩敬拜 Amazing Grace Worship",
+    "trackCount": 14,
+    "releaseDate": "2024-06-21T07:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": true,
+      "hit": "Guitar"
+    }
+  },
+  {
+    "collectionId": 1790032317,
+    "album": "祈禱仔唱詩歌 7 Praying Kids Sing Praise 7",
+    "artist": "基恩敬拜 Amazing Grace Worship",
+    "trackCount": 8,
+    "releaseDate": "2024-09-30T07:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": false
+    }
+  },
+  {
+    "collectionId": 1774827114,
+    "album": "祈禱仔唱詩歌 7 Praying Kids Sing Praise 7",
+    "artist": "基恩敬拜 Amazing Grace Worship",
+    "trackCount": 7,
+    "releaseDate": "2024-10-01T07:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": false
+    }
+  },
+  {
+    "collectionId": 1796637260,
+    "album": "復活的盼望 Resurrection Brings Hope",
+    "artist": "基恩敬拜 Amazing Grace Worship",
+    "trackCount": 10,
+    "releaseDate": "2024-12-01T08:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": false
+    }
+  },
+  {
+    "collectionId": 6787048522,
+    "album": "復活的盼望 Resurrection Brings Hope",
+    "artist": "基恩敬拜 Amazing Grace Worship",
+    "trackCount": 9,
+    "releaseDate": "2024-12-01T08:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": false
+    }
+  },
+  {
+    "collectionId": 1801717401,
+    "album": "繼續禱告 Keep On Praying - Single",
+    "artist": "基恩敬拜 Amazing Grace Worship",
+    "trackCount": 1,
+    "releaseDate": "2025-03-01T08:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": false
+    }
+  },
+  {
+    "collectionId": 1821168608,
+    "album": "基恩敬拜 Live Worship 2025",
+    "artist": "基恩敬拜 Amazing Grace Worship",
+    "trackCount": 12,
+    "releaseDate": "2025-06-01T07:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": false
+    }
+  },
+  {
+    "collectionId": 1890760216,
+    "album": "除祢以外別無拯救 No One Can Save But You Alone - Single",
+    "artist": "基恩敬拜 Amazing Grace Worship",
+    "trackCount": 1,
+    "releaseDate": "2026-04-04T07:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": false
+    }
+  },
+  {
+    "collectionId": 1894370537,
+    "album": "赴水深處 Approaching The Deep Waters - Single",
+    "artist": "基恩敬拜 Amazing Grace Worship",
+    "trackCount": 1,
+    "releaseDate": "2026-04-17T07:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": false
+    }
+  },
+  {
+    "collectionId": 1896174043,
+    "album": "海極之處 Far Side Of The Sea - Single",
+    "artist": "基恩敬拜 Amazing Grace Worship",
+    "trackCount": 1,
+    "releaseDate": "2026-04-30T07:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": false
+    }
+  },
+  {
+    "collectionId": 6766613049,
+    "album": "放心,是我,不要怕 It Is I;Be Not Afraid - Single",
+    "artist": "基恩敬拜 Amazing Grace Worship",
+    "trackCount": 1,
+    "releaseDate": "2026-05-06T07:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": false
+    }
+  },
+  {
+    "collectionId": 6779580061,
+    "album": "乾旱盼雨的清晨 Thirst For Rain In The Desert Morning - Single",
+    "artist": "基恩敬拜 Amazing Grace Worship",
+    "trackCount": 1,
+    "releaseDate": "2026-06-08T07:00:00Z",
+    "country": "HK",
+    "signal": {
+      "ok": false
+    }
+  }
+]

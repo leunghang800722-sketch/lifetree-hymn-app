@@ -1,0 +1,4196 @@
+{
+ "hits": {
+  "19": {
+   "slug": "%e5%ae%89%e9%9d%9c",
+   "type": "child",
+   "chTitle": "安靜",
+   "via": "安靜"
+  },
+  "30": {
+   "slug": "%e6%81%a9%e5%85%b8%e5%a4%a0%e7%94%a8",
+   "type": "child",
+   "chTitle": "恩典夠用",
+   "via": "恩典夠用"
+  },
+  "31": {
+   "slug": "%e8%ac%9d%e8%ac%9d%e7%a5%a2%e7%9a%84%e6%84%9b",
+   "type": "parent",
+   "chTitle": "謝謝祢的愛",
+   "via": "謝謝祢的愛"
+  },
+  "65": {
+   "slug": "%e6%88%91%e7%a5%9e%e7%9c%9f%e5%81%89%e5%a4%a7",
+   "type": "child",
+   "chTitle": "我神真偉大",
+   "via": "我神真偉大"
+  },
+  "86": {
+   "slug": "%e6%88%91%e6%b8%b4%e6%83%b3%e8%80%b6%e7%a9%8c",
+   "type": "child",
+   "chTitle": "我渴想耶穌",
+   "via": "我渴想"
+  },
+  "97": {
+   "slug": "%e4%b8%80%e9%a6%96%e8%ae%9a%e7%be%8e%e7%9a%84%e8%a9%a9%e6%ad%8c",
+   "type": "parent",
+   "chTitle": "一首讚美的詩歌",
+   "via": "一首讚美的詩歌"
+  },
+  "100": {
+   "slug": "%e4%bb%8d%e8%83%bd%e8%ae%9a%e7%be%8e",
+   "type": "parent",
+   "chTitle": "仍能讚美",
+   "via": "仍能讚美"
+  },
+  "116": {
+   "slug": "%e6%88%91%e8%a6%81%e4%b8%80%e7%94%9f%e4%b8%80%e4%b8%96%e4%bd%8f%e5%9c%a8%e4%bd%a0%e8%81%96%e6%ae%bf",
+   "type": "child",
+   "chTitle": "我要一生一世住在你聖殿",
+   "via": "我要一生一世住在你聖殿"
+  },
+  "135": {
+   "slug": "%e6%81%a9%e5%85%b8%e5%a4%aa%e7%be%8e%e9%ba%97",
+   "type": "parent",
+   "chTitle": "恩典太美麗",
+   "via": "恩典太美麗"
+  },
+  "164": {
+   "slug": "holy-ground",
+   "type": "parent",
+   "chTitle": "Holy Ground",
+   "via": "GROUND"
+  },
+  "178": {
+   "slug": "%e5%8f%af%e4%bb%a5%e9%ba%bc",
+   "type": "child",
+   "chTitle": "可以麼",
+   "via": "可以麼"
+  },
+  "180": {
+   "slug": "%e6%88%91%e5%80%91%e7%9a%84%e7%a5%9e",
+   "type": "child",
+   "chTitle": "我們的神",
+   "via": "我們的神"
+  },
+  "187": {
+   "slug": "%e5%a0%85%e5%ae%9a%e7%9b%b8%e4%bf%a1",
+   "type": "child",
+   "chTitle": "堅定相信",
+   "via": "堅定相信"
+  },
+  "196": {
+   "slug": "%e7%94%9f%e5%91%bd%e6%b4%bb%e6%b0%b4%e5%85%85%e6%bb%bf%e6%88%91",
+   "type": "child",
+   "chTitle": "生命活水充滿我",
+   "via": "生命活水充滿我"
+  },
+  "200": {
+   "slug": "%e4%bd%a0%e5%9d%90%e8%91%97%e7%82%ba%e7%8e%8b",
+   "type": "parent",
+   "chTitle": "你坐著為王",
+   "via": "你坐著為王"
+  },
+  "763": {
+   "slug": "%e9%a1%98%e4%bd%a0%e5%85%ac%e7%be%a9%e9%99%8d%e8%87%a8",
+   "type": "parent",
+   "chTitle": "願你公義降臨",
+   "via": "願你公義降臨"
+  },
+  "764": {
+   "slug": "%e6%b8%b4%e6%85%95%e8%81%96%e6%bd%94",
+   "type": "parent",
+   "chTitle": "渴慕聖潔",
+   "via": "渴慕聖潔"
+  },
+  "1524": {
+   "slug": "%e5%a4%a9%e5%ae%b6%e5%86%8d%e8%a6%8b",
+   "type": "parent",
+   "chTitle": "天家再見",
+   "via": "天家再見"
+  },
+  "1547": {
+   "slug": "%e5%a5%87%e5%a6%99%e5%8f%af%e7%95%8f",
+   "type": "parent",
+   "chTitle": "奇妙可畏",
+   "via": "奇妙可畏"
+  },
+  "1549": {
+   "slug": "%e6%99%a8%e6%98%9f",
+   "type": "parent",
+   "chTitle": "晨星",
+   "via": "晨星"
+  },
+  "1589": {
+   "slug": "%e4%b8%bb%e7%9a%84%e5%96%9c%e6%a8%82%e6%98%af%e6%88%91%e5%8a%9b%e9%87%8f",
+   "type": "child",
+   "chTitle": "主的喜樂是我力量",
+   "via": "主的喜樂是我力量"
+  },
+  "1632": {
+   "slug": "%e8%bd%89%e5%9b%9e",
+   "type": "child",
+   "chTitle": "轉回",
+   "via": "轉回"
+  },
+  "1691": {
+   "slug": "%e5%8e%9f%e8%ab%92%e6%88%91",
+   "type": "parent",
+   "chTitle": "原諒我",
+   "via": "原諒我"
+  },
+  "1720": {
+   "slug": "%e5%a5%bd%e7%89%a7%e4%ba%ba",
+   "type": "child",
+   "chTitle": "好牧人",
+   "via": "好牧人"
+  },
+  "1758": {
+   "slug": "%e4%ba%82%e4%b8%96%e4%b8%ad%e7%9a%84%e7%a6%b1%e5%91%8a",
+   "type": "parent",
+   "chTitle": "亂世中的禱告",
+   "via": "亂世中的禱告"
+  },
+  "1772": {
+   "slug": "what-a-beautiful-name",
+   "type": "parent",
+   "chTitle": "What a Beautiful Name",
+   "via": "What a Beautiful Name"
+  },
+  "1774": {
+   "slug": "%e9%9b%85%e6%ad%8c",
+   "type": "child",
+   "chTitle": "雅歌",
+   "via": "雅歌"
+  },
+  "1775": {
+   "slug": "%e8%a2%ab%e6%84%9b",
+   "type": "parent",
+   "chTitle": "被愛",
+   "via": "被愛"
+  },
+  "1784": {
+   "slug": "%e8%a6%aa%e6%84%9b%e4%b8%bb",
+   "type": "child",
+   "chTitle": "親愛主",
+   "via": "親愛主"
+  },
+  "1793": {
+   "slug": "%e9%82%84%e6%9c%89%e8%aa%b0%e5%8f%af%e5%83%8f%e7%a5%a2",
+   "type": "parent",
+   "chTitle": "還有誰可像祢",
+   "via": "誰可像祢"
+  },
+  "1795": {
+   "slug": "%e9%a1%98%e7%a5%a2%e5%9c%8b%e5%ba%a6%e9%99%8d%e8%87%a8",
+   "type": "parent",
+   "chTitle": "願祢國度降臨",
+   "via": "願祢國度降臨"
+  },
+  "1796": {
+   "slug": "%e4%bd%95%e7%ad%89%e6%a6%ae%e8%80%80%e7%be%8e%e9%ba%97%e7%9a%84%e4%b8%bb",
+   "type": "child",
+   "chTitle": "何等榮耀美麗的主",
+   "via": "何等榮耀"
+  },
+  "1838": {
+   "slug": "this-i-believe-the-creed",
+   "type": "parent",
+   "chTitle": "This I Believe (The Creed)",
+   "via": "This I Believe (The Creed"
+  },
+  "1839": {
+   "slug": "%e4%b8%bb%e5%bf%83%e6%84%8f",
+   "type": "child",
+   "chTitle": "主心意",
+   "via": "主心意"
+  },
+  "1848": {
+   "slug": "%e7%a5%a2%e6%98%af%e6%88%91%e7%a5%9e-%e5%90%8c%e5%bf%83%e5%9c%93",
+   "type": "parent",
+   "chTitle": "祢是我神",
+   "via": "同心圓"
+  },
+  "1865": {
+   "slug": "%e7%a5%a2%e6%98%af%e5%94%af%e4%b8%80",
+   "type": "child",
+   "chTitle": "祢是唯一",
+   "via": "祢是唯一"
+  },
+  "1866": {
+   "slug": "%e5%94%af%e7%8d%a8%e8%80%b6%e7%a9%8c",
+   "type": "child",
+   "chTitle": "唯獨耶穌",
+   "via": "唯獨耶穌"
+  },
+  "1883": {
+   "slug": "%e5%a5%bd%e7%89%a7%e4%ba%ba",
+   "type": "child",
+   "chTitle": "好牧人",
+   "via": "好牧人"
+  },
+  "1892": {
+   "slug": "%e9%9b%a3%e6%88%90%e7%9a%84%e4%ba%8b",
+   "type": "parent",
+   "chTitle": "難成的事",
+   "via": "難成的事"
+  },
+  "1901": {
+   "slug": "%e6%86%82%e5%82%b7%e7%97%9b%e6%82%94%e7%9a%84%e9%9d%88",
+   "type": "parent",
+   "chTitle": "憂傷痛悔的靈",
+   "via": "憂傷痛悔的靈"
+  },
+  "1902": {
+   "slug": "%e6%86%82%e5%82%b7%e7%97%9b%e6%82%94%e7%9a%84%e9%9d%88",
+   "type": "parent",
+   "chTitle": "憂傷痛悔的靈",
+   "via": "憂傷痛悔的靈"
+  },
+  "1919": {
+   "slug": "%e6%88%91%e8%a6%81%e5%90%91%e4%b8%96%e7%95%8c%e5%ae%a3%e5%91%8a",
+   "type": "child",
+   "chTitle": "我要向世界宣告",
+   "via": "我要向世界宣告"
+  },
+  "1964": {
+   "slug": "%e9%96%8b%e5%be%80%e6%b0%b4%e6%b7%b1%e8%99%95",
+   "type": "parent",
+   "chTitle": "開往水深處",
+   "via": "開往水深處"
+  },
+  "1972": {
+   "slug": "%e6%81%a9%e5%85%b8",
+   "type": "child",
+   "chTitle": "恩典",
+   "via": "恩典"
+  },
+  "1990": {
+   "slug": "%e6%b8%b4%e6%83%b3%e7%a5%a2",
+   "type": "child",
+   "chTitle": "渴想祢",
+   "via": "渴想祢"
+  },
+  "1998": {
+   "slug": "%e8%b7%9f%e7%a5%a2",
+   "type": "parent",
+   "chTitle": "跟祢",
+   "via": "跟祢"
+  },
+  "2000": {
+   "slug": "%e6%98%af%e7%82%ba%e7%a5%a2%e9%a0%90%e5%82%99",
+   "type": "parent",
+   "chTitle": "是為祢預備",
+   "via": "是為祢預備"
+  },
+  "2054": {
+   "slug": "%e7%9c%8b%e4%b8%8d%e8%a6%8b%e7%9a%84%e6%9b%99%e5%85%89",
+   "type": "parent",
+   "chTitle": "看不見的曙光",
+   "via": "看不見的曙光"
+  },
+  "2148": {
+   "slug": "we-are-one",
+   "type": "parent",
+   "chTitle": "We Are One",
+   "via": "We Are One"
+  },
+  "2157": {
+   "slug": "%e8%80%b6%e5%92%8c%e8%8f%af%e4%bb%a5%e5%8b%92",
+   "type": "parent",
+   "chTitle": "耶和華以勒",
+   "via": "耶和華以勒"
+  },
+  "2158": {
+   "slug": "%e9%9d%a2%e5%b0%8d",
+   "type": "parent",
+   "chTitle": "面對",
+   "via": "面對"
+  },
+  "2193": {
+   "slug": "%e6%88%91%e9%a1%98%e6%84%8f",
+   "type": "child",
+   "chTitle": "我願意",
+   "via": "我願意"
+  },
+  "2245": {
+   "slug": "%e6%96%b0%e5%91%bd%e8%a8%98",
+   "type": "parent",
+   "chTitle": "新命記",
+   "via": "新命記"
+  },
+  "2349": {
+   "slug": "%e6%88%91%e5%90%91%e7%a5%a2%e7%a6%b1%e5%91%8a",
+   "type": "parent",
+   "chTitle": "我向祢禱告",
+   "via": "我向祢禱告"
+  },
+  "2404": {
+   "slug": "%e7%9b%b8%e6%89%a3",
+   "type": "parent",
+   "chTitle": "相扣",
+   "via": "相扣"
+  },
+  "2405": {
+   "slug": "%e7%9c%8b%e4%b8%8d%e8%a6%8b%e7%9a%84%e6%9b%99%e5%85%89",
+   "type": "parent",
+   "chTitle": "看不見的曙光",
+   "via": "看不見的曙光"
+  },
+  "2422": {
+   "slug": "%e5%a4%a7%e5%af%b5%e6%84%9b",
+   "type": "parent",
+   "chTitle": "大寵愛",
+   "via": "大寵愛"
+  },
+  "2423": {
+   "slug": "%e8%80%b6%e5%92%8c%e8%8f%af%e4%bb%a5%e5%8b%92",
+   "type": "parent",
+   "chTitle": "耶和華以勒",
+   "via": "耶和華以勒"
+  },
+  "2428": {
+   "slug": "%e6%88%91%e5%9c%a8%e9%80%99%e8%a3%8f%e6%95%ac%e6%8b%9c",
+   "type": "child",
+   "chTitle": "我在這裏敬拜",
+   "via": "我在這裏"
+  },
+  "2429": {
+   "slug": "%e7%a5%a2%e5%9d%90%e8%91%97%e7%82%ba%e7%8e%8b",
+   "type": "parent",
+   "chTitle": "祢坐著為王",
+   "via": "祢坐著為王"
+  },
+  "2430": {
+   "slug": "%e6%b0%b8%e9%81%a0%e6%b4%bb%e8%91%97",
+   "type": "child",
+   "chTitle": "永遠活著",
+   "via": "永遠活著"
+  },
+  "2441": {
+   "slug": "%e6%96%b0%e5%91%bd%e8%a8%98",
+   "type": "parent",
+   "chTitle": "新命記",
+   "via": "新命記"
+  },
+  "2446": {
+   "slug": "%e5%93%80%e6%ad%8c",
+   "type": "parent",
+   "chTitle": "哀歌",
+   "via": "哀歌"
+  },
+  "2458": {
+   "slug": "%e4%ba%a4%e8%a8%97",
+   "type": "parent",
+   "chTitle": "交託",
+   "via": "交託"
+  },
+  "2495": {
+   "slug": "%e5%a4%a7%e5%af%b5%e6%84%9b",
+   "type": "parent",
+   "chTitle": "大寵愛",
+   "via": "大寵愛"
+  },
+  "2525": {
+   "slug": "%e5%9b%a0%e6%84%9b%e4%b8%8d%e6%80%95%e9%bb%91",
+   "type": "parent",
+   "chTitle": "因愛不怕黑",
+   "via": "因愛不怕黑"
+  },
+  "2542": {
+   "slug": "%e5%ae%8c%e4%ba%86",
+   "type": "parent",
+   "chTitle": "完了",
+   "via": "完了"
+  },
+  "2561": {
+   "slug": "%e6%b8%b4%e6%85%95%e4%b8%bb%e9%99%8d%e8%87%a8",
+   "type": "parent",
+   "chTitle": "渴慕主降臨",
+   "via": "渴慕主降臨"
+  },
+  "2567": {
+   "slug": "%e5%82%be%e5%80%92",
+   "type": "child",
+   "chTitle": "傾倒",
+   "via": "傾倒"
+  },
+  "2579": {
+   "slug": "%e7%a5%a2%e7%9c%9f%e5%81%89%e5%a4%a7",
+   "type": "child",
+   "chTitle": "祢真偉大",
+   "via": "祢真偉大"
+  },
+  "2585": {
+   "slug": "%e5%ae%8c%e4%ba%86",
+   "type": "parent",
+   "chTitle": "完了",
+   "via": "完了"
+  },
+  "2586": {
+   "slug": "%e6%84%9f%e6%81%a9%e6%9c%89%e7%a5%a2",
+   "type": "parent",
+   "chTitle": "感恩有祢",
+   "via": "感恩有祢"
+  },
+  "2594": {
+   "slug": "%e8%80%b6%e5%92%8c%e8%8f%af%e6%98%af%e6%88%91%e7%89%a7%e8%80%85",
+   "type": "child",
+   "chTitle": "耶和華是我牧者",
+   "via": "耶和華是我牧者"
+  },
+  "2595": {
+   "slug": "%e5%a5%bd%e7%89%a7%e4%ba%ba",
+   "type": "child",
+   "chTitle": "好牧人",
+   "via": "好牧人"
+  },
+  "2606": {
+   "slug": "%e6%8a%95%e9%9d%a0%e5%85%a8%e8%83%bd%e8%80%85%e8%94%ad%e5%ba%87%e4%b8%8b",
+   "type": "parent",
+   "chTitle": "投靠全能者蔭庇下",
+   "via": "投靠全能者蔭庇下"
+  },
+  "2607": {
+   "slug": "%e5%a5%bd%e7%89%a7%e4%ba%ba",
+   "type": "child",
+   "chTitle": "好牧人",
+   "via": "好牧人"
+  },
+  "2613": {
+   "slug": "%e5%90%84%e5%90%84%e4%bb%96",
+   "type": "child",
+   "chTitle": "各各他",
+   "via": "各各他"
+  },
+  "2618": {
+   "slug": "%e8%80%b6%e5%92%8c%e8%8f%af%e4%bb%a5%e5%8b%92",
+   "type": "parent",
+   "chTitle": "耶和華以勒",
+   "via": "耶和華以勒"
+  },
+  "2620": {
+   "slug": "%e5%9b%a0%e6%84%9b%e4%b8%8d%e6%80%95%e9%bb%91",
+   "type": "parent",
+   "chTitle": "因愛不怕黑",
+   "via": "因愛不怕黑"
+  },
+  "2630": {
+   "slug": "%e8%80%b6%e7%a9%8c%e6%88%91%e4%b8%bb",
+   "type": "child",
+   "chTitle": "耶穌我主",
+   "via": "耶穌我主"
+  },
+  "2631": {
+   "slug": "%e6%b8%b4%e6%85%95%e4%b8%bb%e9%99%8d%e8%87%a8",
+   "type": "parent",
+   "chTitle": "渴慕主降臨",
+   "via": "渴慕主降臨"
+  },
+  "2637": {
+   "slug": "%e4%b8%80%e9%a6%96%e9%97%9c%e6%96%bc%e4%bd%a0%e7%9a%84%e6%ad%8c",
+   "type": "parent",
+   "chTitle": "一首關於你的歌",
+   "via": "一首關於你的歌"
+  },
+  "2638": {
+   "slug": "%e5%85%8c%e6%8f%9b%e5%bf%ab%e6%a8%82",
+   "type": "parent",
+   "chTitle": "兌換快樂",
+   "via": "兌換快樂"
+  },
+  "2642": {
+   "slug": "%e4%ba%82%e4%b8%96",
+   "type": "parent",
+   "chTitle": "亂世",
+   "via": "亂世"
+  },
+  "2644": {
+   "slug": "%e7%8d%a8%e7%a5%a2%e9%85%8d%e5%be%97",
+   "type": "parent",
+   "chTitle": "獨祢配得",
+   "via": "獨祢配得"
+  },
+  "2650": {
+   "slug": "%e5%9f%ba%e7%9d%a3%e7%a5%82%e6%84%9b%e6%88%91",
+   "type": "child",
+   "chTitle": "基督祂愛我",
+   "via": "基督祂愛我"
+  },
+  "2662": {
+   "slug": "%e7%a0%b4%e9%99%a3",
+   "type": "parent",
+   "chTitle": "破陣",
+   "via": "破陣"
+  },
+  "2683": {
+   "slug": "%e7%9b%b8%e6%89%a3",
+   "type": "parent",
+   "chTitle": "相扣",
+   "via": "相扣"
+  },
+  "2689": {
+   "slug": "%e9%82%84%e6%9c%89%e8%aa%b0%e5%8f%af%e5%83%8f%e7%a5%a2",
+   "type": "parent",
+   "chTitle": "還有誰可像祢",
+   "via": "誰可像祢"
+  },
+  "2695": {
+   "slug": "%e8%80%b6%e5%92%8c%e8%8f%af%e4%bb%a5%e5%8b%92",
+   "type": "parent",
+   "chTitle": "耶和華以勒",
+   "via": "耶和華以勒"
+  },
+  "2702": {
+   "slug": "%e4%b8%80%e7%94%9f%e5%a5%89%e7%8d%bb",
+   "type": "parent",
+   "chTitle": "一生奉獻",
+   "via": "一生奉獻"
+  },
+  "2705": {
+   "slug": "%e7%9c%8b%e4%b8%8d%e8%a6%8b%e7%9a%84%e6%9b%99%e5%85%89",
+   "type": "parent",
+   "chTitle": "看不見的曙光",
+   "via": "看不見的曙光"
+  },
+  "2711": {
+   "slug": "%e9%9d%a0%e8%91%97%e6%84%9b%e6%88%91%e5%80%91%e7%9a%84%e4%b8%bb",
+   "type": "parent",
+   "chTitle": "靠著愛我們的主",
+   "via": "靠著愛我們的主"
+  },
+  "2719": {
+   "slug": "%e5%9b%9e%e8%bd%89",
+   "type": "parent",
+   "chTitle": "回轉",
+   "via": "回轉"
+  },
+  "2721": {
+   "slug": "%e4%bf%a1%e9%9d%a0",
+   "type": "child",
+   "chTitle": "信靠",
+   "via": "信靠"
+  },
+  "2725": {
+   "slug": "%e7%9f%b3%e5%8d%b0",
+   "type": "parent",
+   "chTitle": "石印",
+   "via": "石印"
+  },
+  "2733": {
+   "slug": "%e7%9c%8b%e4%b8%8d%e8%a6%8b%e7%9a%84%e6%9b%99%e5%85%89",
+   "type": "parent",
+   "chTitle": "看不見的曙光",
+   "via": "看不見的曙光"
+  },
+  "2751": {
+   "slug": "%e6%84%9f%e6%81%a9%e6%9c%89%e7%a5%a2",
+   "type": "parent",
+   "chTitle": "感恩有祢",
+   "via": "感恩有祢"
+  },
+  "2762": {
+   "slug": "%e6%ae%bf%e5%be%8c",
+   "type": "parent",
+   "chTitle": "殿後",
+   "via": "殿後"
+  },
+  "2768": {
+   "slug": "%e9%80%99%e6%98%af%e4%bb%80%e9%ba%bc%e9%81%93%e7%90%86",
+   "type": "parent",
+   "chTitle": "這是什麼道理",
+   "via": "這是什麼道理"
+  },
+  "2773": {
+   "slug": "%e5%a4%a7%e5%af%b5%e6%84%9b",
+   "type": "parent",
+   "chTitle": "大寵愛",
+   "via": "大寵愛"
+  },
+  "2780": {
+   "slug": "%e5%9b%9e%e8%bd%89",
+   "type": "parent",
+   "chTitle": "回轉",
+   "via": "回轉"
+  },
+  "2785": {
+   "slug": "%e6%88%91%e6%84%9b%e4%bd%a0",
+   "type": "child",
+   "chTitle": "我愛你",
+   "via": "我愛你"
+  },
+  "2786": {
+   "slug": "%e8%b5%b0%e5%87%ba%e5%b9%bd%e8%b0%b7",
+   "type": "parent",
+   "chTitle": "走出幽谷",
+   "via": "走出幽谷"
+  },
+  "2887": {
+   "slug": "%e8%b8%8f%e9%80%b2%e5%85%89%e6%98%8e%e4%b9%8b%e9%84%89",
+   "type": "parent",
+   "chTitle": "踏進光明之鄉",
+   "via": "踏進光明之鄉"
+  },
+  "2889": {
+   "slug": "%e8%b3%9c%e6%88%91%e9%9d%88%e5%b7%a7%e7%9a%84%e6%99%ba%e6%85%a7",
+   "type": "parent",
+   "chTitle": "賜我靈巧的智慧",
+   "via": "賜我靈巧的智慧"
+  },
+  "2903": {
+   "slug": "%e6%88%91%e9%9c%80%e8%a6%81%e6%9c%89%e7%a5%a2%e5%9c%a8%e6%88%91%e7%94%9f%e5%91%bd%e4%b8%ad",
+   "type": "child",
+   "chTitle": "我需要有祢在我生命中",
+   "via": "我需要有祢在我生命中"
+  },
+  "2916": {
+   "slug": "%e9%96%8b%e8%b7%af%e8%80%85",
+   "type": "child",
+   "chTitle": "開路者",
+   "via": "開路者"
+  },
+  "2923": {
+   "slug": "%e5%a5%87%e5%a6%99%e9%9b%99%e6%89%8b%e6%93%81%e6%8a%b1%e6%88%91",
+   "type": "child",
+   "chTitle": "奇妙雙手擁抱我",
+   "via": "奇妙雙手擁抱我"
+  },
+  "2924": {
+   "slug": "%e6%99%9d%e8%88%87%e5%a4%9c",
+   "type": "child",
+   "chTitle": "晝與夜",
+   "via": "晝與夜"
+  },
+  "2928": {
+   "slug": "here-i-bow",
+   "type": "parent",
+   "chTitle": "Here I Bow",
+   "via": "Here I Bow"
+  },
+  "2935": {
+   "slug": "%e4%b8%bb%e7%9a%84%e6%84%9b",
+   "type": "child",
+   "chTitle": "主的愛",
+   "via": "主的愛"
+  },
+  "2980": {
+   "slug": "%e8%80%b6%e7%a9%8c%e5%9f%ba%e7%9d%a3%e6%98%af%e4%b8%bb-%e5%b0%8f%e7%be%8a%e8%a9%a9%e6%ad%8c",
+   "type": "parent",
+   "chTitle": "耶穌基督是主",
+   "via": "耶穌基督是主 - 小羊詩歌"
+  },
+  "2982": {
+   "slug": "%e9%80%99%e5%ae%b6",
+   "type": "parent",
+   "chTitle": "這家",
+   "via": "這家"
+  },
+  "2983": {
+   "slug": "%e5%a4%a9%e9%9b%a2%e5%9c%b0%e4%bd%95%e7%ad%89%e7%9a%84%e9%ab%98",
+   "type": "child",
+   "chTitle": "天離地何等的高",
+   "via": "天離地何等的高"
+  },
+  "2985": {
+   "slug": "%e5%95%9f%e7%a4%ba%e9%8c%84%e4%b9%8b%e6%ad%8c",
+   "type": "child",
+   "chTitle": "啟示錄之歌",
+   "via": "啟示錄之歌"
+  },
+  "2992": {
+   "slug": "%e4%b8%bb%e7%9a%84%e8%bb%8d%e9%9a%8a",
+   "type": "child",
+   "chTitle": "主的軍隊",
+   "via": "主的軍隊"
+  },
+  "2993": {
+   "slug": "%e5%b9%b3%e9%9d%9c%e8%81%96%e8%aa%95%e5%a4%9c",
+   "type": "child",
+   "chTitle": "平靜聖誕夜",
+   "via": "平靜聖誕夜"
+  },
+  "2995": {
+   "slug": "%e7%a5%a2%e4%bd%8f%e5%9c%a8%e6%88%91%e5%bf%83",
+   "type": "child",
+   "chTitle": "祢住在我心",
+   "via": "祢住在我心"
+  },
+  "2997": {
+   "slug": "%e5%a6%82%e8%8b%a5",
+   "type": "child",
+   "chTitle": "如若",
+   "via": "如若"
+  },
+  "3000": {
+   "slug": "%e7%84%a1%e5%83%b9%e8%87%b3%e5%af%b6",
+   "type": "child",
+   "chTitle": "無價至寶",
+   "via": "無價至寶"
+  },
+  "3001": {
+   "slug": "%e6%b4%bb%e7%a5%ad",
+   "type": "child",
+   "chTitle": "活祭",
+   "via": "活祭"
+  },
+  "3003": {
+   "slug": "%e7%9b%bc%e5%86%8d%e5%85%b1%e7%a5%a2%e7%89%bd%e6%89%8b",
+   "type": "child",
+   "chTitle": "盼再共祢牽手",
+   "via": "盼再共祢牽手"
+  },
+  "3007": {
+   "slug": "%e4%be%9d%e9%9d%a0",
+   "type": "child",
+   "chTitle": "依靠",
+   "via": "依靠"
+  },
+  "3008": {
+   "slug": "%e8%ae%93%e6%88%91%e8%a6%aa%e8%bf%91%e7%a5%a2",
+   "type": "child",
+   "chTitle": "讓我親近祢",
+   "via": "讓我親近祢"
+  },
+  "3009": {
+   "slug": "%e6%9b%b4%e8%a6%aa%e8%bf%91",
+   "type": "child",
+   "chTitle": "更親近",
+   "via": "更親近"
+  },
+  "3010": {
+   "slug": "%e6%b0%b8%e4%bc%b4%e6%88%91",
+   "type": "child",
+   "chTitle": "永伴我",
+   "via": "永伴我"
+  },
+  "3011": {
+   "slug": "%e5%a4%a7%e6%84%9b%e4%bb%8a%e8%87%a8%e5%9c%a8",
+   "type": "child",
+   "chTitle": "大愛今臨在",
+   "via": "大愛今臨在"
+  },
+  "3013": {
+   "slug": "%e4%b8%96%e7%95%8c%e4%b9%8b%e5%85%89",
+   "type": "child",
+   "chTitle": "世界之光",
+   "via": "世界之光"
+  },
+  "3014": {
+   "slug": "%e5%8f%aa%e7%ad%89%e4%bd%a0%e9%a1%98%e6%84%8f",
+   "type": "child",
+   "chTitle": "只等你願意",
+   "via": "只等你願意"
+  },
+  "3020": {
+   "slug": "%e7%a5%9e%e5%ae%9a%e6%9c%83%e4%b8%bb%e5%ae%b0%e6%88%b0%e7%88%ad",
+   "type": "child",
+   "chTitle": "神定會主宰戰爭",
+   "via": "神定會主宰戰爭"
+  },
+  "3021": {
+   "slug": "%e7%a5%9e%e5%ae%9a%e6%9c%83%e4%b8%bb%e5%ae%b0%e6%88%b0%e7%88%ad",
+   "type": "child",
+   "chTitle": "神定會主宰戰爭",
+   "via": "神定會主宰戰爭"
+  },
+  "3025": {
+   "slug": "%e9%a6%ac%e6%a7%bd%e4%b8%80%e6%9e%9d%e6%9d%89",
+   "type": "child",
+   "chTitle": "馬槽一枝杉",
+   "via": "馬槽一枝杉"
+  },
+  "3028": {
+   "slug": "%e8%81%96%e8%aa%95%e7%8d%bb%e7%a5%ad",
+   "type": "child",
+   "chTitle": "聖誕獻祭",
+   "via": "聖誕獻祭"
+  },
+  "3029": {
+   "slug": "%e4%b8%80%e7%94%9f%e5%82%b3%e6%8f%9a",
+   "type": "child",
+   "chTitle": "一生傳揚",
+   "via": "一生傳揚"
+  },
+  "3030": {
+   "slug": "%e4%b8%80%e7%94%9f%e4%b8%ad%e4%b8%bb%e7%89%bd%e5%bc%95%e7%84%a1%e9%96%93",
+   "type": "child",
+   "chTitle": "一生中主牽引無間",
+   "via": "一生中主牽引無間"
+  },
+  "3031": {
+   "slug": "%e7%a5%a2%e6%98%af%e5%ae%8c%e5%85%a8%e7%9a%84%e4%bd%b3%e7%be%8e",
+   "type": "child",
+   "chTitle": "祢是完全的佳美",
+   "via": "祢是完全的佳美"
+  },
+  "3032": {
+   "slug": "%e4%b8%80%e7%94%9f%e9%9d%a0%e7%b7%8a%e7%a5%a2",
+   "type": "child",
+   "chTitle": "一生靠緊祢",
+   "via": "一生靠緊祢"
+  },
+  "3036": {
+   "slug": "%e4%b8%bb%e5%af%b6%e8%a1%80",
+   "type": "child",
+   "chTitle": "主寶血",
+   "via": "主寶血"
+  },
+  "3038": {
+   "slug": "%e8%ae%9a%e7%be%8e%e6%95%91%e4%b8%bb",
+   "type": "child",
+   "chTitle": "讚美救主",
+   "via": "讚美救主"
+  },
+  "3044": {
+   "slug": "crown-him-majesty",
+   "type": "parent",
+   "chTitle": "Crown Him (Majesty)",
+   "via": "Crown Him (Majesty"
+  },
+  "3045": {
+   "slug": "%e8%ae%9a%e7%be%8e%e4%b9%8b%e6%b3%89",
+   "type": "child",
+   "chTitle": "讚美之泉",
+   "via": "讚美之泉"
+  },
+  "3046": {
+   "slug": "%e4%bd%bf%e5%be%92%e4%bf%a1%e7%b6%93",
+   "type": "parent",
+   "chTitle": "使徒信經",
+   "via": "使徒信經"
+  },
+  "3051": {
+   "slug": "%e5%bf%ab%e8%b7%91%e5%a5%94%e5%90%91%e7%a5%a2",
+   "type": "child",
+   "chTitle": "快跑奔向祢",
+   "via": "快跑奔向祢"
+  },
+  "3056": {
+   "slug": "%e7%a5%a2%e6%98%af%e6%88%91%e7%a5%9e-%e5%90%8c%e5%bf%83%e5%9c%93",
+   "type": "parent",
+   "chTitle": "祢是我神",
+   "via": "同心圓"
+  },
+  "3063": {
+   "slug": "%e5%a4%a9%e5%9c%8b%e8%bf%91%e4%ba%86",
+   "type": "child",
+   "chTitle": "天國近了 ",
+   "via": "天國近了"
+  },
+  "3067": {
+   "slug": "%e5%92%8c%e6%92%92%e9%82%a3",
+   "type": "child",
+   "chTitle": "和撒那",
+   "via": "和撒那"
+  },
+  "3068": {
+   "slug": "%e7%99%bb%e8%80%b6%e5%92%8c%e8%8f%af%e7%9a%84%e5%b1%b1",
+   "type": "child",
+   "chTitle": "登耶和華的山",
+   "via": "登耶和華的山"
+  },
+  "3076": {
+   "slug": "%e8%b5%b7%e5%88%9d%e7%9a%84%e6%84%9b",
+   "type": "parent",
+   "chTitle": "起初的愛",
+   "via": "起初的愛"
+  },
+  "3084": {
+   "slug": "%e7%a5%a2%e6%98%af%e6%88%91%e7%a5%9e-%e5%90%8c%e5%bf%83%e5%9c%93",
+   "type": "parent",
+   "chTitle": "祢是我神",
+   "via": "同心圓"
+  },
+  "3085": {
+   "slug": "%e7%a5%a2%e6%98%af%e6%88%91%e7%a5%9e-%e5%90%8c%e5%bf%83%e5%9c%93",
+   "type": "parent",
+   "chTitle": "祢是我神",
+   "via": "同心圓"
+  },
+  "3088": {
+   "slug": "%e4%bf%a1%e5%b0%b1%e6%9c%89%e5%b8%8c%e6%9c%9b",
+   "type": "parent",
+   "chTitle": "信就有希望",
+   "via": "信就有希望"
+  },
+  "3092": {
+   "slug": "%e7%a5%a2%e6%98%af%e6%88%91%e7%a5%9e-%e5%90%8c%e5%bf%83%e5%9c%93",
+   "type": "parent",
+   "chTitle": "祢是我神",
+   "via": "同心圓"
+  },
+  "3096": {
+   "slug": "%e7%a5%a2%e6%98%af%e6%88%91%e7%a5%9e-%e5%90%8c%e5%bf%83%e5%9c%93",
+   "type": "parent",
+   "chTitle": "祢是我神",
+   "via": "同心圓"
+  },
+  "3097": {
+   "slug": "%e7%a5%a2%e6%98%af%e6%88%91%e7%a5%9e-%e5%90%8c%e5%bf%83%e5%9c%93",
+   "type": "parent",
+   "chTitle": "祢是我神",
+   "via": "同心圓"
+  },
+  "3098": {
+   "slug": "%e7%a5%a2%e6%98%af%e6%88%91%e7%a5%9e-%e5%90%8c%e5%bf%83%e5%9c%93",
+   "type": "parent",
+   "chTitle": "祢是我神",
+   "via": "同心圓"
+  },
+  "3099": {
+   "slug": "%e7%a5%a2%e6%98%af%e6%88%91%e7%a5%9e-%e5%90%8c%e5%bf%83%e5%9c%93",
+   "type": "parent",
+   "chTitle": "祢是我神",
+   "via": "同心圓"
+  },
+  "3100": {
+   "slug": "%e7%a5%a2%e6%98%af%e6%88%91%e7%a5%9e-%e5%90%8c%e5%bf%83%e5%9c%93",
+   "type": "parent",
+   "chTitle": "祢是我神",
+   "via": "同心圓"
+  },
+  "3101": {
+   "slug": "%e7%a5%a2%e6%98%af%e6%88%91%e7%a5%9e-%e5%90%8c%e5%bf%83%e5%9c%93",
+   "type": "parent",
+   "chTitle": "祢是我神",
+   "via": "同心圓"
+  },
+  "3104": {
+   "slug": "%e7%a5%a2%e6%98%af%e6%88%91%e7%a5%9e-%e5%90%8c%e5%bf%83%e5%9c%93",
+   "type": "parent",
+   "chTitle": "祢是我神",
+   "via": "同心圓"
+  },
+  "3107": {
+   "slug": "%e7%a5%a2%e6%98%af%e6%88%91%e7%a5%9e-%e5%90%8c%e5%bf%83%e5%9c%93",
+   "type": "parent",
+   "chTitle": "祢是我神",
+   "via": "同心圓"
+  },
+  "3109": {
+   "slug": "%e7%a5%a2%e6%98%af%e6%88%91%e7%a5%9e-%e5%90%8c%e5%bf%83%e5%9c%93",
+   "type": "parent",
+   "chTitle": "祢是我神",
+   "via": "同心圓"
+  },
+  "3112": {
+   "slug": "%e8%bf%8e%e9%9b%a3",
+   "type": "parent",
+   "chTitle": "迎難",
+   "via": "迎難"
+  },
+  "3116": {
+   "slug": "%e8%87%b3%e6%96%bc%e6%88%91%e5%92%8c%e6%88%91%e5%ae%b6",
+   "type": "parent",
+   "chTitle": "至於我和我家",
+   "via": "至於我和我家"
+  },
+  "3118": {
+   "slug": "%e5%9c%a8%e7%a5%a2%e9%9d%a2%e5%89%8d%e8%92%99%e6%82%85%e7%b4%8d",
+   "type": "parent",
+   "chTitle": "在祢面前蒙悅納",
+   "via": "在祢面前蒙悅納"
+  },
+  "3119": {
+   "slug": "%e7%a5%a2%e6%98%af%e6%88%91%e7%a5%9e-%e5%90%8c%e5%bf%83%e5%9c%93",
+   "type": "parent",
+   "chTitle": "祢是我神",
+   "via": "同心圓"
+  },
+  "3122": {
+   "slug": "%e4%b8%80%e7%94%9f%e4%b8%80%e4%b8%96%e5%90%8c%e5%9c%a8",
+   "type": "parent",
+   "chTitle": "一生一世同在",
+   "via": "一生一世同在"
+  },
+  "3123": {
+   "slug": "%e5%94%af%e6%9c%89%e7%a5%a2%e6%98%af%e8%81%96%e6%bd%94%e7%9a%84",
+   "type": "parent",
+   "chTitle": "唯有祢是聖潔的",
+   "via": "唯有祢是聖潔的"
+  },
+  "3124": {
+   "slug": "%e9%bb%98%e9%bb%98%e7%84%a1%e8%81%b2%e7%ad%89%e5%80%99%e7%a5%9e",
+   "type": "parent",
+   "chTitle": "默默無聲等候神",
+   "via": "默默無聲等候神"
+  },
+  "3125": {
+   "slug": "%e8%ab%8b%e6%8a%8a%e9%80%99%e6%b0%b4%e8%b3%9c%e7%b5%a6%e6%88%91",
+   "type": "parent",
+   "chTitle": "請把這水賜給我",
+   "via": "請把這水賜給我"
+  },
+  "3224": {
+   "slug": "%e5%9f%b7%e5%ad%90%e4%b9%8b%e6%89%8b",
+   "type": "parent",
+   "chTitle": "執子之手",
+   "via": "執子之手"
+  },
+  "3225": {
+   "slug": "%e6%81%a9%e5%85%b8%e4%b9%8b%e8%b7%af",
+   "type": "child",
+   "chTitle": "恩典之路",
+   "via": "恩典之路"
+  },
+  "3228": {
+   "slug": "%e5%a5%bd%e5%a5%bd%e6%88%80%e6%84%9b%e5%88%b0%e4%b8%80%e7%94%9f%e4%b8%80%e4%b8%96",
+   "type": "parent",
+   "chTitle": "好好戀愛到一生一世",
+   "via": "好好戀愛"
+  },
+  "3229": {
+   "slug": "%e5%a4%a9%e6%84%9b",
+   "type": "parent",
+   "chTitle": "天愛",
+   "via": "天愛"
+  },
+  "3231": {
+   "slug": "%e5%a9%9a%e7%b4%84",
+   "type": "parent",
+   "chTitle": "婚約",
+   "via": "婚約"
+  },
+  "3240": {
+   "slug": "%e4%b8%8d%e8%ae%8a%e7%9a%84%e6%87%89%e8%a8%b1",
+   "type": "child",
+   "chTitle": "永遠不缺",
+   "via": "不變的應許"
+  },
+  "3246": {
+   "slug": "%e6%8e%8c%e4%b8%8a%e6%98%8e%e7%8f%a0",
+   "type": "child",
+   "chTitle": "掌上明珠",
+   "via": "掌上明珠"
+  },
+  "3253": {
+   "slug": "%e6%94%be%e9%96%8b%e4%b8%80%e5%88%87%e6%ad%8c%e5%94%b1",
+   "type": "child",
+   "chTitle": "放開一切歌唱",
+   "via": "放開一切歌唱"
+  },
+  "3254": {
+   "slug": "%e6%b8%b4%e6%83%b3%e7%a5%a2",
+   "type": "child",
+   "chTitle": "渴想祢",
+   "via": "渴想祢"
+  },
+  "3261": {
+   "slug": "%e6%9c%89%e8%aa%b0",
+   "type": "child",
+   "chTitle": "有誰",
+   "via": "有誰"
+  },
+  "3293": {
+   "slug": "%e6%8b%9a%e5%91%bd%e7%82%ba%e4%ba%86%e8%aa%b0%ef%bc%9f",
+   "type": "parent",
+   "chTitle": "拚命為了誰？",
+   "via": "拚命為了誰?"
+  },
+  "3329": {
+   "slug": "%e6%9c%89%e7%a5%a2%e6%84%9b%e6%88%91",
+   "type": "parent",
+   "chTitle": "有祢愛我",
+   "via": "有祢愛我"
+  },
+  "3330": {
+   "slug": "%e6%84%9b%e8%88%87%e8%a2%ab%e6%84%9b",
+   "type": "parent",
+   "chTitle": "愛與被愛",
+   "via": "愛與被愛"
+  },
+  "3338": {
+   "slug": "%e5%a5%89%e7%8d%bb%e4%bb%80%e9%ba%bc",
+   "type": "parent",
+   "chTitle": "奉獻什麼",
+   "via": "奉獻什麼"
+  },
+  "3352": {
+   "slug": "%e7%a5%a2%e6%98%af%e7%a5%9e%e8%81%96",
+   "type": "child",
+   "chTitle": "祢是神聖",
+   "via": "祢是神聖"
+  },
+  "3354": {
+   "slug": "%e9%95%b7%e5%ad%98%e8%90%ac%e4%b8%96",
+   "type": "child",
+   "chTitle": "長存萬世",
+   "via": "長存萬世"
+  },
+  "3355": {
+   "slug": "%e5%8f%88%e5%88%b0%e6%96%b0%e6%98%a5-%e8%b3%80%e5%b9%b4",
+   "type": "child",
+   "chTitle": "又到新春 (賀年)",
+   "via": "又到新春"
+  },
+  "3359": {
+   "slug": "%e4%b8%bb%e5%bf%85%e6%8b%af%e6%95%91",
+   "type": "child",
+   "chTitle": "主必拯救",
+   "via": "主必拯救"
+  },
+  "3362": {
+   "slug": "%e7%84%a1%e8%ab%96%e4%bd%a0%e4%bd%9c%e4%b8%80%e5%88%87%e7%b5%a6%e4%ba%88%e6%9c%80%e6%b8%ba%e5%b0%8f%e5%85%84%e5%bc%9f",
+   "type": "child",
+   "chTitle": "無論你作一切給予最渺小兄弟",
+   "via": "無論你作一切給予最渺小兄弟"
+  },
+  "3364": {
+   "slug": "%e7%9b%b8%e4%bf%a1%e4%b8%80%e5%a4%a9%e5%b9%b4%e6%9c%88%e9%a3%9b",
+   "type": "child",
+   "chTitle": "相信一天年月飛",
+   "via": "相信一天年月飛"
+  },
+  "3367": {
+   "slug": "hosanna",
+   "type": "child",
+   "chTitle": "Hosanna",
+   "via": "Hosanna"
+  },
+  "3370": {
+   "slug": "%e8%80%b6%e7%a9%8c%e6%b0%b8%e6%b4%bb%e7%a5%9e",
+   "type": "child",
+   "chTitle": "耶穌永活神",
+   "via": "耶穌永活神"
+  },
+  "3371": {
+   "slug": "%e6%88%91%e9%ab%98%e5%91%bc",
+   "type": "child",
+   "chTitle": "我高呼",
+   "via": "我高呼"
+  },
+  "3372": {
+   "slug": "%e5%85%b6%e5%af%a6%e5%a6%b3%e5%8f%af%e7%9f%a5",
+   "type": "child",
+   "chTitle": "其實妳可知?",
+   "via": "其實妳可知"
+  },
+  "3375": {
+   "slug": "%e6%af%94%e6%98%9f%e5%85%89%e7%92%80%e7%92%a8",
+   "type": "child",
+   "chTitle": "比星光璀璨",
+   "via": "比星光璀璨"
+  },
+  "3376": {
+   "slug": "%e6%a6%ae%e8%80%80%e7%a5%a2%e7%9a%84%e9%83%bd%e5%b8%82",
+   "type": "child",
+   "chTitle": "榮耀祢的都市",
+   "via": "榮耀祢的都市"
+  },
+  "3377": {
+   "slug": "%e6%bb%bf%e6%9c%89%e8%83%bd%e5%8a%9b",
+   "type": "child",
+   "chTitle": "滿有能力",
+   "via": "滿有能力"
+  },
+  "3379": {
+   "slug": "%e4%b8%bb%e7%9a%84%e7%81%ab",
+   "type": "child",
+   "chTitle": "主的火",
+   "via": "主的火"
+  },
+  "3380": {
+   "slug": "%e5%96%84%e7%be%8e%e7%9a%84%e6%81%a9%e4%b8%bb",
+   "type": "child",
+   "chTitle": "善美的恩主",
+   "via": "善美的恩主"
+  },
+  "3382": {
+   "slug": "%e5%85%85%e6%bb%bf%e6%a6%ae%e8%80%80",
+   "type": "child",
+   "chTitle": "充滿榮耀",
+   "via": "充滿榮耀"
+  },
+  "3384": {
+   "slug": "%e8%88%87%e7%a5%a2%e4%b8%80%e8%b5%b7",
+   "type": "child",
+   "chTitle": "與祢一起",
+   "via": "與祢一起"
+  },
+  "3386": {
+   "slug": "%e6%8b%86%e7%a2%8e%e5%9c%8d%e7%89%86",
+   "type": "child",
+   "chTitle": "拆碎圍牆",
+   "via": "拆碎圍牆"
+  },
+  "3387": {
+   "slug": "%e9%9d%a0%e8%bf%91",
+   "type": "child",
+   "chTitle": "靠近",
+   "via": "靠近"
+  },
+  "3388": {
+   "slug": "%e8%ae%9a%e7%be%8e%e4%b8%bb%e5%a4%a7%e6%84%9b",
+   "type": "child",
+   "chTitle": "讚美主大愛",
+   "via": "讚美主大愛"
+  },
+  "3389": {
+   "slug": "%e8%aa%b0%e5%83%8f%e7%a5%a2",
+   "type": "child",
+   "chTitle": "誰像祢",
+   "via": "誰像祢"
+  },
+  "3391": {
+   "slug": "%e5%8f%af%e7%95%8f%e3%80%81%e7%be%8e%e9%ba%97",
+   "type": "child",
+   "chTitle": "可畏、美麗",
+   "via": "可畏、美麗"
+  },
+  "3392": {
+   "slug": "%e5%85%a8%e7%84%b6%e5%82%be%e4%b8%80%e7%94%9f",
+   "type": "child",
+   "chTitle": "全然傾一生",
+   "via": "全然傾一生"
+  },
+  "3393": {
+   "slug": "here-i-am",
+   "type": "parent",
+   "chTitle": "Here I Am",
+   "via": "Here I Am"
+  },
+  "3394": {
+   "slug": "immortal-invisible",
+   "type": "parent",
+   "chTitle": "Immortal, Invisible",
+   "via": "InVisible"
+  },
+  "3395": {
+   "slug": "immortal-invisible",
+   "type": "parent",
+   "chTitle": "Immortal, Invisible",
+   "via": "InVisible"
+  },
+  "3396": {
+   "slug": "%e6%88%91%e8%a6%81%e5%94%b1%e6%96%b0%e6%ad%8c",
+   "type": "parent",
+   "chTitle": "我要唱新歌",
+   "via": "我要唱新歌"
+  },
+  "3397": {
+   "slug": "%e5%9c%a8%e9%82%a3%e5%a4%a9",
+   "type": "parent",
+   "chTitle": "在那天",
+   "via": "在那天"
+  },
+  "3398": {
+   "slug": "%e9%a1%98%e4%b8%bb%e6%96%bd%e6%81%a9%e6%86%90%e6%86%ab",
+   "type": "parent",
+   "chTitle": "願主施恩憐憫",
+   "via": "願主施恩憐憫"
+  },
+  "3400": {
+   "slug": "%e5%91%bc%e5%96%8a%e6%88%91%e7%9a%84%e5%90%8d%e5%ad%97",
+   "type": "parent",
+   "chTitle": "呼喊我的名字",
+   "via": "呼喊我的名字"
+  },
+  "3401": {
+   "slug": "%e7%a5%a2%e6%98%af%e6%88%91%e7%a5%9e-%e5%90%8c%e5%bf%83%e5%9c%93",
+   "type": "parent",
+   "chTitle": "祢是我神",
+   "via": "同心圓"
+  },
+  "3402": {
+   "slug": "%e7%a5%a2%e6%98%af%e6%88%91%e7%a5%9e-%e5%90%8c%e5%bf%83%e5%9c%93",
+   "type": "parent",
+   "chTitle": "祢是我神",
+   "via": "同心圓"
+  },
+  "3406": {
+   "slug": "%e7%a5%a2%e6%98%af%e6%88%91%e7%a5%9e-%e5%90%8c%e5%bf%83%e5%9c%93",
+   "type": "parent",
+   "chTitle": "祢是我神",
+   "via": "同心圓"
+  },
+  "3409": {
+   "slug": "%e7%a5%a2%e6%98%af%e6%88%91%e7%a5%9e-%e5%90%8c%e5%bf%83%e5%9c%93",
+   "type": "parent",
+   "chTitle": "祢是我神",
+   "via": "同心圓"
+  },
+  "3413": {
+   "slug": "%e8%80%b6%e5%92%8c%e8%8f%af%e4%bb%a5%e5%8b%92",
+   "type": "parent",
+   "chTitle": "耶和華以勒",
+   "via": "耶和華以勒"
+  },
+  "3416": {
+   "slug": "%e4%b8%96%e4%bb%a3%e7%9a%84%e7%a6%b1%e5%91%8a",
+   "type": "parent",
+   "chTitle": "世代的禱告",
+   "via": "世代的禱告"
+  },
+  "3418": {
+   "slug": "%e5%85%89%e5%92%8c%e9%b9%bd",
+   "type": "parent",
+   "chTitle": "光和鹽",
+   "via": "光和鹽"
+  },
+  "3419": {
+   "slug": "%e8%ae%9a%e7%be%8e%e4%b8%89%e4%b8%80%e4%b8%8a%e5%b8%9d",
+   "type": "parent",
+   "chTitle": "讚美三一上帝",
+   "via": "讚美三一上帝"
+  },
+  "3420": {
+   "slug": "%e7%a5%a2%e6%98%af%e6%88%91%e7%a5%9e-%e5%90%8c%e5%bf%83%e5%9c%93",
+   "type": "parent",
+   "chTitle": "祢是我神",
+   "via": "同心圓"
+  },
+  "3422": {
+   "slug": "%e6%88%91%e5%bf%83%e4%b8%ad%e6%af%8f%e4%b8%80%e6%84%8f%e5%bf%b5",
+   "type": "parent",
+   "chTitle": "我心中每一意念",
+   "via": "我心中每一意念"
+  },
+  "3423": {
+   "slug": "%e7%a5%a2%e6%98%af%e6%88%91%e7%a5%9e-%e5%90%8c%e5%bf%83%e5%9c%93",
+   "type": "parent",
+   "chTitle": "祢是我神",
+   "via": "同心圓"
+  },
+  "3425": {
+   "slug": "%e7%a5%a2%e6%98%af%e6%88%91%e7%a5%9e-%e5%90%8c%e5%bf%83%e5%9c%93",
+   "type": "parent",
+   "chTitle": "祢是我神",
+   "via": "同心圓"
+  },
+  "3426": {
+   "slug": "%e7%a5%a2%e6%98%af%e6%88%91%e7%a5%9e-%e5%90%8c%e5%bf%83%e5%9c%93",
+   "type": "parent",
+   "chTitle": "祢是我神",
+   "via": "同心圓"
+  },
+  "3427": {
+   "slug": "%e7%a5%a2%e6%98%af%e6%88%91%e7%a5%9e-%e5%90%8c%e5%bf%83%e5%9c%93",
+   "type": "parent",
+   "chTitle": "祢是我神",
+   "via": "同心圓"
+  },
+  "3429": {
+   "slug": "%e7%a5%a2%e6%98%af%e6%88%91%e7%a5%9e-%e5%90%8c%e5%bf%83%e5%9c%93",
+   "type": "parent",
+   "chTitle": "祢是我神",
+   "via": "同心圓"
+  },
+  "3433": {
+   "slug": "%e6%88%91%e8%a9%b2%e6%8b%bf%e7%94%9a%e9%ba%bc%e5%a0%b1%e7%ad%94%e7%a5%a2",
+   "type": "parent",
+   "chTitle": "我該拿甚麼報答祢",
+   "via": "我該拿甚麼報答祢"
+  },
+  "3437": {
+   "slug": "%e5%93%80%e6%ad%8c",
+   "type": "parent",
+   "chTitle": "哀歌",
+   "via": "哀歌"
+  },
+  "3438": {
+   "slug": "%e4%b8%96%e7%95%8c%e6%9c%80%e7%be%8e%e7%9a%84%e8%81%b2%e9%9f%b3",
+   "type": "parent",
+   "chTitle": "世界最美的聲音",
+   "via": "世界最美的聲音"
+  },
+  "3440": {
+   "slug": "%e7%a5%a2%e6%98%af%e6%88%91%e7%a5%9e-%e5%90%8c%e5%bf%83%e5%9c%93",
+   "type": "parent",
+   "chTitle": "祢是我神",
+   "via": "同心圓"
+  },
+  "3441": {
+   "slug": "%e9%80%b2%e5%85%a5%e9%80%99%e5%9c%b0",
+   "type": "parent",
+   "chTitle": "進入這地",
+   "via": "進入這地"
+  },
+  "3537": {
+   "slug": "%e9%87%8b%e6%94%be%e6%88%91",
+   "type": "child",
+   "chTitle": "釋放我",
+   "via": "釋放我"
+  },
+  "3541": {
+   "slug": "%e8%9e%8d%e5%85%a5%e4%bd%a0%e6%b7%b1%e6%84%9b",
+   "type": "parent",
+   "chTitle": "融入你深愛",
+   "via": "融入你深愛"
+  },
+  "3545": {
+   "slug": "%e6%88%91%e9%81%b8%e6%93%87%e4%bf%a1",
+   "type": "parent",
+   "chTitle": "我選擇信",
+   "via": "我選擇信"
+  },
+  "3547": {
+   "slug": "%e4%b8%8a%e5%b8%9d%e6%97%a9%e5%b7%b2%e9%a0%90%e5%82%99",
+   "type": "parent",
+   "chTitle": "上帝早已預備",
+   "via": "上帝早已預備"
+  },
+  "3550": {
+   "slug": "%e8%96%aa%e7%81%ab%e7%9b%b8%e5%82%b3",
+   "type": "parent",
+   "chTitle": "薪火相傳",
+   "via": "薪火相傳"
+  },
+  "3551": {
+   "slug": "%e6%88%91%e6%84%9b%e4%b8%8a%e8%ae%9a%e7%be%8e%e4%bd%a0",
+   "type": "parent",
+   "chTitle": "我愛上讚美你",
+   "via": "我愛上讚美你"
+  },
+  "3553": {
+   "slug": "%e6%84%9b%e7%a5%9e%e6%84%9b%e4%ba%ba",
+   "type": "parent",
+   "chTitle": "愛神愛人",
+   "via": "愛神愛人"
+  },
+  "3554": {
+   "slug": "%e6%b0%a3%e6%81%af",
+   "type": "child",
+   "chTitle": "氣息",
+   "via": "氣息"
+  },
+  "3555": {
+   "slug": "%e6%88%91%e8%a6%81%e9%a0%8c%e8%ae%9a",
+   "type": "child",
+   "chTitle": "我要頌讚",
+   "via": "我要頌讚"
+  },
+  "3557": {
+   "slug": "%e5%96%ae%e5%96%ae%e7%82%ba%e7%a5%a2%e8%80%8c%e6%b4%bb",
+   "type": "child",
+   "chTitle": "單單為祢而活",
+   "via": "單單為祢而活"
+  },
+  "3559": {
+   "slug": "%e5%90%91%e4%b8%bb%e6%ad%8c%e5%94%b1",
+   "type": "child",
+   "chTitle": "向主歌唱",
+   "via": "向主歌唱"
+  },
+  "3562": {
+   "slug": "%e6%9b%b4%e5%a4%9a%e5%b0%8b%e6%b1%82%e4%bd%a0",
+   "type": "child",
+   "chTitle": "更多尋求祢",
+   "via": "更多尋求你"
+  },
+  "3566": {
+   "slug": "%e6%9c%89%e4%ba%86%e7%a5%a2",
+   "type": "parent",
+   "chTitle": "有了祢",
+   "via": "有了祢"
+  },
+  "3567": {
+   "slug": "immortal-invisible",
+   "type": "parent",
+   "chTitle": "Immortal, Invisible",
+   "via": "InVisible"
+  },
+  "3568": {
+   "slug": "%e5%8f%97%e9%9b%a3%e6%9b%b2",
+   "type": "child",
+   "chTitle": "受難曲",
+   "via": "受難曲"
+  },
+  "3569": {
+   "slug": "%e5%a4%a9%e5%9c%8b%e5%85%ab%e7%a6%8f",
+   "type": "parent",
+   "chTitle": "天國八福",
+   "via": "天國八福"
+  },
+  "3570": {
+   "slug": "holy-holy",
+   "type": "parent",
+   "chTitle": "Holy Holy",
+   "via": "Holy Holy"
+  },
+  "3575": {
+   "slug": "%e4%b8%8d%e8%a6%81%e5%86%8d%e7%ad%89",
+   "type": "parent",
+   "chTitle": "不要再等",
+   "via": "不要再等"
+  },
+  "3576": {
+   "slug": "%e7%94%9c%e5%91%b3",
+   "type": "child",
+   "chTitle": "甜味",
+   "via": "甜味"
+  },
+  "3583": {
+   "slug": "%e5%ae%89%e9%9d%9c",
+   "type": "child",
+   "chTitle": "安靜",
+   "via": "安靜"
+  },
+  "3586": {
+   "slug": "%e8%ae%9a%e7%be%8e%e4%b9%8b%e6%b3%89",
+   "type": "child",
+   "chTitle": "讚美之泉",
+   "via": "讚美之泉"
+  },
+  "3587": {
+   "slug": "%e5%85%a8%e5%9c%b0%e7%9a%84%e4%b8%bb",
+   "type": "child",
+   "chTitle": "全地的主",
+   "via": "全地的主"
+  },
+  "3588": {
+   "slug": "%e5%a0%85%e5%a3%af%e9%9d%a0%e4%b8%bb%e8%80%b6%e7%a9%8c",
+   "type": "child",
+   "chTitle": "堅壯靠主耶穌",
+   "via": "堅壯靠主耶穌"
+  },
+  "3591": {
+   "slug": "%e7%a5%a2%e6%98%af%e5%ae%8c%e5%85%a8%e7%9a%84%e4%bd%b3%e7%be%8e",
+   "type": "child",
+   "chTitle": "祢是完全的佳美",
+   "via": "祢是完全的佳美"
+  },
+  "3592": {
+   "slug": "%e7%b5%90%e4%bc%b4",
+   "type": "parent",
+   "chTitle": "結伴",
+   "via": "結伴"
+  },
+  "3593": {
+   "slug": "u-the-legend",
+   "type": "parent",
+   "chTitle": "U! The Legend",
+   "via": "U! The Legend"
+  },
+  "3594": {
+   "slug": "%e6%b0%b8%e6%b4%bb%e7%9c%9f%e7%a5%9e",
+   "type": "parent",
+   "chTitle": "永活真神 ",
+   "via": "永活真神"
+  },
+  "3596": {
+   "slug": "%e6%b8%b4%e6%85%95%e7%a5%a2",
+   "type": "child",
+   "chTitle": "渴慕祢",
+   "via": "渴慕祢"
+  },
+  "3600": {
+   "slug": "%e5%91%bc%e6%b1%82%e5%90%88%e4%b8%80",
+   "type": "parent",
+   "chTitle": "呼求合一",
+   "via": "呼求合一"
+  },
+  "3601": {
+   "slug": "%e6%ad%b8%e5%90%91%e7%a5%a2",
+   "type": "parent",
+   "chTitle": "歸向祢",
+   "via": "歸向祢"
+  },
+  "3603": {
+   "slug": "%e8%87%b3%e6%96%bc%e6%88%91%e5%92%8c%e6%88%91%e5%ae%b6",
+   "type": "parent",
+   "chTitle": "至於我和我家",
+   "via": "至於我和我家"
+  },
+  "3604": {
+   "slug": "%e4%b8%8d%e6%98%af%e5%80%9a%e9%9d%a0%e5%8b%a2%e5%8a%9b",
+   "type": "parent",
+   "chTitle": "不是倚靠勢力",
+   "via": "不是倚靠勢力"
+  },
+  "3605": {
+   "slug": "%e6%84%9b%e4%bb%87%e6%95%b5",
+   "type": "parent",
+   "chTitle": "愛仇敵",
+   "via": "愛仇敵"
+  },
+  "3606": {
+   "slug": "%e6%84%9b%e6%98%af",
+   "type": "parent",
+   "chTitle": "愛是…",
+   "via": "愛是..."
+  },
+  "3607": {
+   "slug": "to-love",
+   "type": "parent",
+   "chTitle": "To Love",
+   "via": "To Love"
+  },
+  "3608": {
+   "slug": "%e9%a0%8c%e8%81%b2%e9%9f%bf%e6%87%89",
+   "type": "parent",
+   "chTitle": "頌聲響應",
+   "via": "頌聲響應"
+  },
+  "3609": {
+   "slug": "%e8%b5%b7%e5%88%9d%e7%9a%84%e6%84%9b",
+   "type": "parent",
+   "chTitle": "起初的愛",
+   "via": "起初的愛"
+  },
+  "3616": {
+   "slug": "%e8%b5%b7%e5%88%9d%e7%9a%84%e6%84%9b",
+   "type": "parent",
+   "chTitle": "起初的愛",
+   "via": "起初的愛"
+  },
+  "3619": {
+   "slug": "%e7%a5%a2%e6%98%af%e6%88%91%e7%a5%9e-%e5%90%8c%e5%bf%83%e5%9c%93",
+   "type": "parent",
+   "chTitle": "祢是我神",
+   "via": "同心圓"
+  },
+  "3622": {
+   "slug": "%e8%90%ac%e6%9c%89%e9%83%bd%e6%ad%b8%e7%a5%a2",
+   "type": "parent",
+   "chTitle": "萬有都歸祢",
+   "via": "萬有都歸祢"
+  },
+  "3623": {
+   "slug": "%e8%80%b6%e5%92%8c%e8%8f%af%e6%98%af%e6%88%91%e7%94%a2%e6%a5%ad",
+   "type": "parent",
+   "chTitle": "耶和華是我產業",
+   "via": "耶和華是我產業"
+  },
+  "3626": {
+   "slug": "%e4%b8%8d%e6%98%af%e5%80%9a%e9%9d%a0%e5%8b%a2%e5%8a%9b",
+   "type": "parent",
+   "chTitle": "不是倚靠勢力",
+   "via": "不是倚靠勢力"
+  },
+  "3627": {
+   "slug": "%e7%9c%9f%e6%84%9b",
+   "type": "child",
+   "chTitle": "真愛",
+   "via": "真愛"
+  },
+  "3628": {
+   "slug": "%e7%a5%a2%e6%98%af%e6%88%91%e7%a5%9e-%e5%90%8c%e5%bf%83%e5%9c%93",
+   "type": "parent",
+   "chTitle": "祢是我神",
+   "via": "同心圓"
+  },
+  "3632": {
+   "slug": "%e6%84%9b%e4%bb%87%e6%95%b5",
+   "type": "parent",
+   "chTitle": "愛仇敵",
+   "via": "愛仇敵"
+  },
+  "3634": {
+   "slug": "to-love",
+   "type": "parent",
+   "chTitle": "To Love",
+   "via": "To Love"
+  },
+  "3635": {
+   "slug": "%e6%84%9b%e6%98%af",
+   "type": "parent",
+   "chTitle": "愛是…",
+   "via": "愛是..."
+  },
+  "3636": {
+   "slug": "%e6%b0%b8%e9%81%a0%e7%9a%84%e7%b4%84",
+   "type": "parent",
+   "chTitle": "永遠的約",
+   "via": "永遠的約"
+  },
+  "3638": {
+   "slug": "%e4%b8%8d%e5%86%8d%e4%b8%80%e6%a8%a3",
+   "type": "child",
+   "chTitle": "不再一樣",
+   "via": "不再一樣"
+  },
+  "3644": {
+   "slug": "%e4%b8%8d%e6%80%95%e9%81%ad%e5%ae%b3",
+   "type": "parent",
+   "chTitle": "不怕遭害",
+   "via": "不怕遭害"
+  },
+  "3645": {
+   "slug": "%e7%a5%a2%e6%98%af%e6%88%91%e7%89%a7%e4%ba%ba",
+   "type": "parent",
+   "chTitle": "祢是我牧人",
+   "via": "祢是我牧人"
+  },
+  "3648": {
+   "slug": "%e7%8d%bb%e7%b5%a6%e7%a5%a2",
+   "type": "child",
+   "chTitle": "獻給祢",
+   "via": "獻給祢"
+  },
+  "3649": {
+   "slug": "%e5%9c%a8%e6%84%9b%e5%be%a9%e5%8e%9f",
+   "type": "parent",
+   "chTitle": "在愛復原",
+   "via": "在愛復原"
+  },
+  "3651": {
+   "slug": "%e7%a5%9e%e6%81%a9%e5%85%b8%e5%a4%a0%e6%88%91%e7%94%a8",
+   "type": "parent",
+   "chTitle": "神恩典夠我用",
+   "via": "神恩典夠我用"
+  },
+  "3654": {
+   "slug": "%e6%a6%ae%e7%be%8e%e5%86%a0%e5%86%95",
+   "type": "parent",
+   "chTitle": "榮美冠冕",
+   "via": "榮美冠冕"
+  },
+  "3656": {
+   "slug": "%e5%9c%a8%e7%a5%a2%e9%9d%a2%e5%89%8d%e8%92%99%e6%82%85%e7%b4%8d",
+   "type": "parent",
+   "chTitle": "在祢面前蒙悅納",
+   "via": "在祢面前蒙悅納"
+  },
+  "3777": {
+   "slug": "the-god-i-know",
+   "type": "child",
+   "chTitle": "The God I Know",
+   "via": "The God I Know"
+  },
+  "3778": {
+   "slug": "whats-greater-4",
+   "type": "child",
+   "chTitle": "What's Greater",
+   "via": "What's Greater"
+  },
+  "3781": {
+   "slug": "%e5%bf%ab%e5%b0%87%e7%94%a6%e9%86%92",
+   "type": "child",
+   "chTitle": "快將甦醒",
+   "via": "快將甦醒"
+  },
+  "3786": {
+   "slug": "%e5%85%85%e6%bb%bf%e6%a6%ae%e8%80%80",
+   "type": "child",
+   "chTitle": "充滿榮耀",
+   "via": "充滿榮耀"
+  },
+  "3788": {
+   "slug": "%e4%b8%bb%e6%81%a9%e5%85%b8%e4%b8%8d%e9%96%93%e6%96%b7",
+   "type": "child",
+   "chTitle": "主恩典不間斷",
+   "via": "主恩典不間斷"
+  },
+  "3790": {
+   "slug": "%e6%88%90%e5%85%a8",
+   "type": "child",
+   "chTitle": "成全",
+   "via": "成全"
+  },
+  "3791": {
+   "slug": "%e5%85%b1%e7%a5%a2%e7%9b%b8%e8%a6%8b",
+   "type": "child",
+   "chTitle": "共祢相見",
+   "via": "共祢相見"
+  },
+  "3796": {
+   "slug": "%e6%88%91%e6%b7%b1%e7%9b%b8%e4%bf%a1",
+   "type": "child",
+   "chTitle": "我深相信",
+   "via": "我深相信"
+  },
+  "3799": {
+   "slug": "%e9%9b%a8%e9%99%8d%e4%b8%8b",
+   "type": "child",
+   "chTitle": "雨降下",
+   "via": "雨降下"
+  },
+  "3800": {
+   "slug": "%e5%ae%89%e6%81%af%e4%b9%8b%e6%89%80",
+   "type": "child",
+   "chTitle": "安息之所",
+   "via": "安息之所"
+  },
+  "3801": {
+   "slug": "%e4%bd%a0%e7%9a%84%e6%84%9b",
+   "type": "child",
+   "chTitle": "你的愛",
+   "via": "你的愛"
+  },
+  "3802": {
+   "slug": "%e5%a5%87%e8%b9%9f%e5%bf%85%e5%8f%af%e7%9c%8b%e8%a6%8b",
+   "type": "child",
+   "chTitle": "奇蹟必可看見",
+   "via": "奇蹟必可看見"
+  },
+  "3803": {
+   "slug": "%e8%88%87%e4%bd%a0%e4%b8%80%e8%b5%b7",
+   "type": "child",
+   "chTitle": "與你一起",
+   "via": "與你一起"
+  },
+  "3805": {
+   "slug": "%e7%a5%a2%e6%84%9b%e6%9b%b4%e5%a4%9a",
+   "type": "child",
+   "chTitle": "祢愛更多",
+   "via": "祢愛更多"
+  },
+  "3806": {
+   "slug": "%e4%b8%80%e5%a4%a9",
+   "type": "child",
+   "chTitle": "一天",
+   "via": "一天"
+  },
+  "3809": {
+   "slug": "%e7%8d%bb%e7%b5%a6%e7%a5%a2",
+   "type": "child",
+   "chTitle": "獻給祢",
+   "via": "獻給祢"
+  },
+  "3812": {
+   "slug": "%e7%8d%bb%e7%b5%a6%e7%a5%a2",
+   "type": "child",
+   "chTitle": "獻給祢",
+   "via": "獻給祢"
+  },
+  "3818": {
+   "slug": "%e7%84%a1%e8%a8%80%e7%84%a1%e8%aa%9e",
+   "type": "parent",
+   "chTitle": "無言無語",
+   "via": "無言無語"
+  },
+  "3819": {
+   "slug": "%e7%88%b8%e7%88%b8%e5%a4%a9%e4%b8%8a%e7%88%b8%e7%88%b8",
+   "type": "parent",
+   "chTitle": "爸爸天上爸爸",
+   "via": "爸爸天上爸爸"
+  },
+  "3820": {
+   "slug": "%e7%a5%a2%e6%98%af%e7%a5%9e",
+   "type": "child",
+   "chTitle": "祢是神",
+   "via": "祢是神"
+  },
+  "3824": {
+   "slug": "%e6%b8%b4%e6%85%95%e7%a5%a2",
+   "type": "child",
+   "chTitle": "渴慕祢",
+   "via": "渴慕祢"
+  },
+  "3828": {
+   "slug": "%e5%89%b5%e9%80%a0%e5%9c%b0%e6%a5%b5%e7%9a%84%e4%b8%bb",
+   "type": "parent",
+   "chTitle": "創造地極的主",
+   "via": "創造地極的主"
+  },
+  "3830": {
+   "slug": "%e7%a5%9d%e7%a6%8f%e8%87%aa%e5%b7%b1",
+   "type": "parent",
+   "chTitle": "祝福自己",
+   "via": "祝福自己"
+  },
+  "3831": {
+   "slug": "%e4%b8%bb%e6%84%9b%e9%82%a3%e5%8f%af%e6%af%94",
+   "type": "parent",
+   "chTitle": "主愛那可比",
+   "via": "主愛那可比"
+  },
+  "3832": {
+   "slug": "%e9%a1%98%e4%b8%bb%e6%96%bd%e6%81%a9%e6%86%90%e6%86%ab",
+   "type": "parent",
+   "chTitle": "願主施恩憐憫",
+   "via": "願主施恩憐憫"
+  },
+  "3867": {
+   "slug": "%e6%a6%ae%e7%be%8e%e8%87%b3%e5%b0%8a%e4%b8%bb",
+   "type": "child",
+   "chTitle": "榮美至尊主",
+   "via": "榮美至尊主"
+  },
+  "3881": {
+   "slug": "%e5%be%97%e8%91%97%e8%87%aa%e7%94%b1",
+   "type": "parent",
+   "chTitle": "得著自由",
+   "via": "得著自由"
+  },
+  "3882": {
+   "slug": "%e8%aa%8d%e4%bf%a1%e4%b9%8b%e5%be%8c",
+   "type": "parent",
+   "chTitle": "認信之後",
+   "via": "認信之後"
+  },
+  "3884": {
+   "slug": "%e8%ab%8b%e4%b8%bb%e5%b9%ab%e6%88%91%e5%b0%87%e5%bf%83%e7%9c%bc%e6%89%93%e9%96%8b",
+   "type": "parent",
+   "chTitle": "請主幫我將心眼打開",
+   "via": "請主幫我將心眼打開"
+  },
+  "3889": {
+   "slug": "%e6%94%be%e4%b8%8b%e8%87%aa%e5%b7%b1",
+   "type": "parent",
+   "chTitle": "放下自己",
+   "via": "放下自己"
+  },
+  "3892": {
+   "slug": "%e5%b0%8b%e6%b1%82%e7%a5%a2",
+   "type": "parent",
+   "chTitle": "尋求祢",
+   "via": "尋求祢"
+  },
+  "3899": {
+   "slug": "%e6%86%82%e5%82%b7%e7%97%9b%e6%82%94%e7%9a%84%e9%9d%88",
+   "type": "parent",
+   "chTitle": "憂傷痛悔的靈",
+   "via": "憂傷痛悔的靈"
+  },
+  "3900": {
+   "slug": "%e5%be%97%e8%91%97%e8%87%aa%e7%94%b1",
+   "type": "parent",
+   "chTitle": "得著自由",
+   "via": "得著自由"
+  },
+  "3905": {
+   "slug": "%e9%81%ae%e8%93%8b%e6%88%91",
+   "type": "parent",
+   "chTitle": "遮蓋我",
+   "via": "遮蓋我"
+  },
+  "3914": {
+   "slug": "%e6%88%91%e7%8f%be%e5%b7%b2%e9%87%8d%e7%94%9f",
+   "type": "child",
+   "chTitle": "我現已重生",
+   "via": "我現已重生"
+  },
+  "3915": {
+   "slug": "facing-a-task-unfinished",
+   "type": "parent",
+   "chTitle": "Facing a Task Unfinished",
+   "via": "Facing a Task Unfinished"
+  },
+  "3921": {
+   "slug": "set-apart",
+   "type": "parent",
+   "chTitle": "Set Apart",
+   "via": "Set Apart"
+  },
+  "3923": {
+   "slug": "%e9%99%80%e9%a3%9b%e8%bc%aa",
+   "type": "parent",
+   "chTitle": "陀飛輪",
+   "via": "陀飛輪"
+  },
+  "3929": {
+   "slug": "%e9%81%87%e8%a6%8b%e7%a5%9e",
+   "type": "parent",
+   "chTitle": "遇見神",
+   "via": "遇見神"
+  },
+  "3939": {
+   "slug": "jesus-fashion",
+   "type": "child",
+   "chTitle": "Jesus Fashion",
+   "via": "Jesus Fashion"
+  },
+  "3946": {
+   "slug": "%e6%b7%b1%e6%b7%b1%e6%84%9b%e7%a5%a2",
+   "type": "child",
+   "chTitle": "深深愛祢",
+   "via": "深深愛祢"
+  },
+  "3947": {
+   "slug": "%e6%88%91%e6%9c%89%e4%b8%80%e5%80%8b%e5%a4%a2",
+   "type": "parent",
+   "chTitle": "我有一個夢",
+   "via": "我有一個夢"
+  },
+  "3953": {
+   "slug": "%e6%88%91%e6%9c%89%e4%b8%80%e5%80%8b%e5%a4%a2",
+   "type": "parent",
+   "chTitle": "我有一個夢",
+   "via": "我有一個夢"
+  },
+  "4086": {
+   "slug": "%e6%9b%b4%e6%96%b0%e6%88%91%e5%bf%83",
+   "type": "parent",
+   "chTitle": "更新我心",
+   "via": "更新我心"
+  },
+  "4093": {
+   "slug": "%e6%b0%b8%e6%81%86%e7%9a%84%e4%b8%bb",
+   "type": "parent",
+   "chTitle": "永恆的主",
+   "via": "永恆的主"
+  },
+  "4105": {
+   "slug": "%e4%bb%b0%e6%9c%9b%e5%8d%81%e6%9e%b6",
+   "type": "child",
+   "chTitle": "仰望十架",
+   "via": "仰望十架"
+  },
+  "4106": {
+   "slug": "%e7%84%a1%e4%ba%ba%e5%83%8f%e7%a5%a2%e9%80%99%e8%88%ac%e6%84%9b%e6%88%91",
+   "type": "parent",
+   "chTitle": "無人像祢這般愛我",
+   "via": "無人像祢"
+  },
+  "4110": {
+   "slug": "%e6%b8%85%e5%bf%83%e5%83%8f%e5%b0%8f%e5%ad%a9",
+   "type": "parent",
+   "chTitle": "清心像小孩",
+   "via": "清心像小孩"
+  },
+  "4120": {
+   "slug": "%e8%ab%8b%e5%a0%85%e5%9b%ba%e6%88%91",
+   "type": "parent",
+   "chTitle": "請堅固我",
+   "via": "請堅固我"
+  },
+  "4121": {
+   "slug": "%e5%b9%b3%e5%ae%89%e7%9a%84%e8%b7%af",
+   "type": "parent",
+   "chTitle": "平安的路",
+   "via": "平安的路"
+  },
+  "4122": {
+   "slug": "%e6%94%be%e4%b8%8b%e6%93%94%e5%ad%90",
+   "type": "parent",
+   "chTitle": "放下擔子",
+   "via": "放下擔子"
+  },
+  "4129": {
+   "slug": "%e6%99%ae%e5%a4%a9%e9%a0%8c%e8%ae%9a",
+   "type": "child",
+   "chTitle": "普天頌讚",
+   "via": "普天頌讚"
+  },
+  "4130": {
+   "slug": "%e4%b8%bb%e7%a5%a2%e6%87%89%e8%a8%b1%e8%88%87%e6%88%91%e5%90%8c%e5%9c%a8",
+   "type": "child",
+   "chTitle": "主祢應許與我同在",
+   "via": "應許與我同在"
+  },
+  "4131": {
+   "slug": "%e8%b3%9c%e6%88%91%e5%8a%9b%e9%87%8f",
+   "type": "parent",
+   "chTitle": "賜我力量",
+   "via": "賜我力量"
+  },
+  "4133": {
+   "slug": "%e7%a5%a2%e6%98%af%e6%88%91%e6%83%9f%e4%b8%80%e7%9a%84%e5%80%9a%e9%9d%a0",
+   "type": "parent",
+   "chTitle": "祢是我惟一的倚靠",
+   "via": "祢是我惟一的倚靠"
+  },
+  "4142": {
+   "slug": "%e8%b3%9c%e7%a6%8f%e7%b5%a6%e4%bd%a0",
+   "type": "child",
+   "chTitle": "賜福給你",
+   "via": "賜福給你"
+  },
+  "4158": {
+   "slug": "%e6%85%88%e7%b9%a9%e6%84%9b%e7%b4%a2",
+   "type": "parent",
+   "chTitle": "慈繩愛索",
+   "via": "慈繩愛索"
+  },
+  "4165": {
+   "slug": "%e8%ab%b8%e5%a4%a9%e8%ae%9a%e7%be%8e",
+   "type": "parent",
+   "chTitle": "諸天讚美",
+   "via": "諸天讚美"
+  },
+  "4167": {
+   "slug": "%e4%ba%92%e7%9b%b8%e5%ae%88%e6%9c%9b",
+   "type": "parent",
+   "chTitle": "互相守望",
+   "via": "互相守望"
+  },
+  "4168": {
+   "slug": "%e8%a6%aa%e7%9c%bc%e7%9c%8b%e8%a6%8b%e7%a5%a2",
+   "type": "child",
+   "chTitle": "親眼看見祢",
+   "via": "親眼看見祢"
+  },
+  "4169": {
+   "slug": "%e8%ac%9d%e8%ac%9d%e7%a5%a2%e7%9a%84%e6%84%9b",
+   "type": "parent",
+   "chTitle": "謝謝祢的愛",
+   "via": "謝謝祢的愛"
+  },
+  "4177": {
+   "slug": "%e4%bf%a1%e5%bf%83%e7%9a%84%e7%ad%89%e5%be%85",
+   "type": "parent",
+   "chTitle": "信心的等待",
+   "via": "信心的等待"
+  },
+  "4178": {
+   "slug": "%e8%80%b6%e7%a9%8c%ef%bc%8c%e8%80%b6%e7%a9%8c%e7%9c%9f%e6%84%9b%e6%88%91",
+   "type": "parent",
+   "chTitle": "耶穌，耶穌真愛我",
+   "via": "耶穌，耶穌真愛我"
+  },
+  "4179": {
+   "slug": "%e7%a5%9e%e8%b9%9f%e8%99%95%e8%99%95",
+   "type": "parent",
+   "chTitle": "神蹟處處",
+   "via": "神蹟處處"
+  },
+  "4180": {
+   "slug": "%e5%81%9a%e5%80%8b%e5%a4%a9%e7%88%b6%e7%9a%84%e5%b0%8f%e7%b2%be%e5%85%b5",
+   "type": "parent",
+   "chTitle": "做個天父的小精兵",
+   "via": "做個天父的小精兵"
+  },
+  "4181": {
+   "slug": "%e6%93%8a%e9%bc%93%e8%b7%b3%e8%88%9e%e8%ae%9a%e7%be%8e%e7%a5%9e",
+   "type": "parent",
+   "chTitle": "擊鼓跳舞讚美神",
+   "via": "擊鼓跳舞讚美神"
+  },
+  "4182": {
+   "slug": "%e5%a4%a9%e7%88%b6%e5%bf%85%e4%bf%9d%e5%ae%88%e4%bd%a0",
+   "type": "parent",
+   "chTitle": "天父必保守你",
+   "via": "天父必保守你"
+  },
+  "4189": {
+   "slug": "%e6%89%93%e9%82%a3%e7%be%8e%e5%a5%bd%e7%9a%84%e4%bb%97",
+   "type": "parent",
+   "chTitle": "打那美好的仗",
+   "via": "打那美好的仗"
+  },
+  "4354": {
+   "slug": "%e9%a2%a8%e5%90%b9%e9%9b%a8%e6%89%93%e4%b8%8d%e7%94%a8%e6%80%95",
+   "type": "parent",
+   "chTitle": "風吹雨打不用怕",
+   "via": "風吹雨打不用怕"
+  },
+  "4360": {
+   "slug": "%e8%b7%9f%e4%b8%bb%e5%a4%a9%e9%9a%9b%e9%a3%9b",
+   "type": "parent",
+   "chTitle": "跟主天際飛",
+   "via": "跟主天際飛"
+  },
+  "4361": {
+   "slug": "%e5%b0%87%e6%ba%ab%e6%9a%96%e8%b4%88%e9%80%81",
+   "type": "parent",
+   "chTitle": "將溫暖贈送",
+   "via": "將溫暖贈送"
+  },
+  "4368": {
+   "slug": "%e7%84%a1%e7%9b%a1%e7%9a%84%e6%84%9b",
+   "type": "child",
+   "chTitle": "無盡的愛",
+   "via": "無盡的愛"
+  },
+  "4370": {
+   "slug": "%e8%85%b3%e5%8d%b0",
+   "type": "parent",
+   "chTitle": "腳印",
+   "via": "腳印"
+  },
+  "4377": {
+   "slug": "%e6%ad%a1%e7%ac%91%e6%84%9f%e6%81%a9",
+   "type": "parent",
+   "chTitle": "歡笑感恩",
+   "via": "歡笑感恩"
+  },
+  "4378": {
+   "slug": "%e6%8a%b1%e6%8a%b1mammy%e8%a6%aa%e8%a6%aadaddy",
+   "type": "parent",
+   "chTitle": "抱抱Mammy親親Daddy",
+   "via": "抱抱Mammy親親Daddy"
+  },
+  "4383": {
+   "slug": "%e6%9c%89%e9%9a%bb%e8%9f%bb",
+   "type": "parent",
+   "chTitle": "有隻蟻",
+   "via": "有隻蟻"
+  },
+  "4385": {
+   "slug": "%e7%8f%8d%e6%83%9c",
+   "type": "parent",
+   "chTitle": "珍惜",
+   "via": "珍惜"
+  },
+  "4387": {
+   "slug": "%e7%b9%bd%e7%b4%9b%e5%8f%af%e6%84%9b%e6%a8%82%e5%9c%92",
+   "type": "parent",
+   "chTitle": "繽紛可愛樂園",
+   "via": "繽紛可愛樂園"
+  },
+  "4388": {
+   "slug": "%e6%98%af%e7%a5%a2%e6%98%af%e7%a5%a2",
+   "type": "parent",
+   "chTitle": "是祢是祢",
+   "via": "是祢是祢"
+  },
+  "4393": {
+   "slug": "%e4%ba%94%e9%a4%85%e5%b0%8f%e9%ad%9a-srb-%e7%9b%a1%e6%84%8f%e7%8d%bb%e4%b8%8a-erb",
+   "type": "parent",
+   "chTitle": "五餅小魚（盡意獻上）",
+   "via": "五餅小魚"
+  },
+  "4396": {
+   "slug": "%e7%84%a1%e6%af%94%e5%bf%a0%e5%bf%83",
+   "type": "parent",
+   "chTitle": "無比忠心",
+   "via": "無比忠心"
+  },
+  "4410": {
+   "slug": "%e6%88%91%e4%b8%bb%e7%9c%9f%e5%a5%87%e5%a6%99",
+   "type": "parent",
+   "chTitle": "我主真奇妙",
+   "via": "我主真奇妙"
+  },
+  "4417": {
+   "slug": "%e9%a3%9b%e5%be%97%e6%9b%b4%e9%ab%98",
+   "type": "parent",
+   "chTitle": "飛得更高",
+   "via": "飛得更高"
+  },
+  "4687": {
+   "slug": "%e7%be%8e%e9%ba%97%e4%b8%96%e7%95%8c",
+   "type": "parent",
+   "chTitle": "美麗世界",
+   "via": "美麗世界"
+  },
+  "4688": {
+   "slug": "%e5%85%ab%e7%a6%8f",
+   "type": "child",
+   "chTitle": "八福",
+   "via": "八福"
+  },
+  "4691": {
+   "slug": "%e5%8f%ab%e3%80%81%e6%8b%8d%e3%80%81%e5%92%8c",
+   "type": "parent",
+   "chTitle": "叫、拍、和",
+   "via": "叫、拍、和"
+  },
+  "4692": {
+   "slug": "%e4%b8%bb%e7%a6%b1%e6%96%87",
+   "type": "child",
+   "chTitle": "主禱文",
+   "via": "主禱文"
+  },
+  "4694": {
+   "slug": "%e8%a6%aa%e7%9c%bc%e7%9c%8b%e8%a6%8b%e7%a5%a2",
+   "type": "child",
+   "chTitle": "親眼看見祢",
+   "via": "親眼看見祢"
+  },
+  "4696": {
+   "slug": "%e7%a5%a2%e7%9a%84%e5%90%8d%e5%9c%a8%e5%85%a8%e5%9c%b0%e4%bd%95%e5%85%b6%e7%be%8e",
+   "type": "parent",
+   "chTitle": "祢的名在全地何其美",
+   "via": "祢的名在全地何其美"
+  },
+  "4697": {
+   "slug": "%e6%88%91%e5%80%91%e8%a6%81%e5%8e%bb",
+   "type": "parent",
+   "chTitle": "我們要去",
+   "via": "我們要去"
+  },
+  "4699": {
+   "slug": "%e9%ab%98%e8%81%b2%e9%a0%8c%e6%8f%9a",
+   "type": "child",
+   "chTitle": "高聲頌揚",
+   "via": "高聲頌揚"
+  },
+  "4702": {
+   "slug": "%e5%a5%89%e7%8d%bb%e8%ba%ab%e5%bf%83%e7%82%ba%e4%b8%bb",
+   "type": "child",
+   "chTitle": "奉獻身心為主",
+   "via": "奉獻身心"
+  },
+  "4708": {
+   "slug": "%e7%a6%b1%e5%91%8a%e5%be%97%e5%8a%9b",
+   "type": "parent",
+   "chTitle": "禱告得力",
+   "via": "禱告得力"
+  },
+  "4713": {
+   "slug": "%e8%90%ac%e7%89%a9%e9%ab%98%e6%ad%8c%e8%ae%9a%e7%be%8e%e7%a5%a2",
+   "type": "parent",
+   "chTitle": "萬物高歌讚美祢",
+   "via": "萬物高歌讚美祢"
+  },
+  "4716": {
+   "slug": "%e6%88%91%e8%a6%81%e5%81%9a%e5%80%8b%e5%b0%8f%e5%a4%a9%e4%bd%bf",
+   "type": "parent",
+   "chTitle": "我要做個小天使",
+   "via": "我要做個小天使"
+  },
+  "4717": {
+   "slug": "%e6%89%93%e9%82%a3%e7%be%8e%e5%a5%bd%e7%9a%84%e4%bb%97",
+   "type": "parent",
+   "chTitle": "打那美好的仗",
+   "via": "打那美好的仗"
+  },
+  "4718": {
+   "slug": "%e8%ae%9a%e7%be%8e%e8%81%b2%e4%b8%8d%e5%81%9c",
+   "type": "parent",
+   "chTitle": "讚美聲不停",
+   "via": "讚美聲不停"
+  },
+  "4719": {
+   "slug": "%e9%a1%98%e4%b8%bb%e6%84%9b%e5%9c%8d%e7%b9%9e%e6%82%a8",
+   "type": "parent",
+   "chTitle": "願主愛圍繞您",
+   "via": "願主愛圍繞您"
+  },
+  "4720": {
+   "slug": "%e6%95%b8%e7%ae%97%e6%81%a9%e5%85%b8",
+   "type": "child",
+   "chTitle": "數算恩典",
+   "via": "數算恩典"
+  },
+  "4721": {
+   "slug": "%e8%ae%9a%e7%be%8e%e8%81%b2%e4%b8%8d%e5%81%9c",
+   "type": "parent",
+   "chTitle": "讚美聲不停",
+   "via": "讚美聲不停"
+  },
+  "4725": {
+   "slug": "%e8%88%87%e7%a5%9e%e5%90%8c%e8%a1%8c",
+   "type": "child",
+   "chTitle": "與神同行",
+   "via": "與神同行"
+  },
+  "4734": {
+   "slug": "%e6%84%9b%e7%9a%84%e5%89%b5%e9%80%a0",
+   "type": "child",
+   "chTitle": "愛的創造",
+   "via": "愛的創造"
+  },
+  "4740": {
+   "slug": "%e7%a5%9e%e9%80%a0%e4%ba%86%e9%80%99%e4%b8%80%e5%88%87",
+   "type": "child",
+   "chTitle": "神造了這一切",
+   "via": "神造了"
+  },
+  "4745": {
+   "slug": "%e8%a6%aa%e6%84%9b%e8%80%b6%e7%a9%8c",
+   "type": "child",
+   "chTitle": "親愛耶穌",
+   "via": "愛耶穌"
+  },
+  "4749": {
+   "slug": "%e4%bc%b4%e6%88%91%e6%88%90%e9%95%b7",
+   "type": "parent",
+   "chTitle": "伴我成長",
+   "via": "伴我成長"
+  },
+  "4750": {
+   "slug": "%e7%a5%9e%e6%98%af%e6%84%9b",
+   "type": "child",
+   "chTitle": "神是愛",
+   "via": "神是愛"
+  },
+  "4767": {
+   "slug": "%e7%a5%9e%e6%98%af%e5%85%89",
+   "type": "child",
+   "chTitle": "神是光",
+   "via": "神是光"
+  },
+  "4770": {
+   "slug": "%e7%a5%9e%e9%80%a0%e4%ba%86%e9%80%99%e4%b8%80%e5%88%87",
+   "type": "child",
+   "chTitle": "神造了這一切",
+   "via": "神造了"
+  },
+  "4771": {
+   "slug": "%e7%a5%9e%e9%80%a0%e4%ba%86%e9%80%99%e4%b8%80%e5%88%87",
+   "type": "child",
+   "chTitle": "神造了這一切",
+   "via": "神造了"
+  },
+  "4778": {
+   "slug": "1",
+   "type": "parent",
+   "chTitle": "看哪，你是羊的門",
+   "via": "1-3"
+  },
+  "4836": {
+   "slug": "%e5%af%b6%e8%b2%b4%e6%81%a9%e5%85%b8",
+   "type": "parent",
+   "chTitle": "寶貴恩典",
+   "via": "寶貴恩典"
+  },
+  "4837": {
+   "slug": "%e4%bb%a5%e8%80%b6%e5%92%8c%e8%8f%af%e7%82%ba%e6%a8%82",
+   "type": "parent",
+   "chTitle": "以耶和華為樂",
+   "via": "以耶和華為樂"
+  },
+  "4873": {
+   "slug": "%e9%a1%98%e4%b8%bb%e6%84%9b%e5%9c%8d%e7%b9%9e%e6%82%a8",
+   "type": "parent",
+   "chTitle": "願主愛圍繞您",
+   "via": "願主愛圍繞您"
+  },
+  "4881": {
+   "slug": "%e6%88%91%e4%be%86%e6%9c%9d%e8%a6%8b%e7%a5%a2",
+   "type": "parent",
+   "chTitle": "我來朝見祢",
+   "via": "我來朝見祢"
+  },
+  "4883": {
+   "slug": "%e6%94%b9%e5%af%ab%e6%88%91%e5%be%9e%e5%89%8d",
+   "type": "parent",
+   "chTitle": "改寫我從前",
+   "via": "改寫我從前"
+  },
+  "4884": {
+   "slug": "%e4%b8%bb%e7%9a%84%e6%81%a9%e5%85%b8",
+   "type": "parent",
+   "chTitle": "主的恩典",
+   "via": "主的恩典"
+  },
+  "4885": {
+   "slug": "%e6%94%be%e4%b8%8b%e6%93%94%e5%ad%90",
+   "type": "parent",
+   "chTitle": "放下擔子",
+   "via": "放下擔子"
+  },
+  "4886": {
+   "slug": "%e7%89%bd%e5%bc%95",
+   "type": "child",
+   "chTitle": "牽引",
+   "via": "牽引"
+  },
+  "4896": {
+   "slug": "%e8%80%b6%e5%92%8c%e8%8f%af%e6%98%af%e6%88%91%e7%9a%84%e7%89%a7%e8%80%85",
+   "type": "child",
+   "chTitle": "耶和華是我的牧者",
+   "via": "耶和華是我的牧者"
+  },
+  "4905": {
+   "slug": "%e8%80%b6%e7%a9%8c%e6%98%af%e4%b8%bb",
+   "type": "parent",
+   "chTitle": "耶穌是主",
+   "via": "耶穌是主"
+  },
+  "4906": {
+   "slug": "%e7%a5%a2%e7%9a%84%e5%90%8d%e5%9c%a8%e5%85%a8%e5%9c%b0%e4%bd%95%e5%85%b6%e7%be%8e",
+   "type": "parent",
+   "chTitle": "祢的名在全地何其美",
+   "via": "祢的名在全地何其美"
+  },
+  "4910": {
+   "slug": "%e6%99%a8%e7%a6%b1",
+   "type": "child",
+   "chTitle": "晨禱",
+   "via": "晨禱"
+  },
+  "4921": {
+   "slug": "%e9%a1%98%e8%90%ac%e6%b0%91%e7%a8%b1%e8%ac%9d%e7%a5%a2",
+   "type": "parent",
+   "chTitle": "願萬民稱謝祢",
+   "via": "願萬民稱謝祢"
+  },
+  "4922": {
+   "slug": "%e7%95%b6%e8%ae%9a%e7%be%8e%e9%80%b2%e5%85%a5%e7%a5%82%e7%9a%84%e9%99%a2",
+   "type": "parent",
+   "chTitle": "當讚美進入祂的院",
+   "via": "當讚美進入祂的院"
+  },
+  "4930": {
+   "slug": "%e5%9b%9e%e5%88%b0%e5%ae%b6%e8%a3%a1",
+   "type": "parent",
+   "chTitle": "回到家裡",
+   "via": "回到家裡"
+  },
+  "4933": {
+   "slug": "%e6%81%a9%e5%85%b8%e5%85%85%e6%bb%bf%e9%80%99%e5%9c%b0",
+   "type": "parent",
+   "chTitle": "恩典充滿這地",
+   "via": "恩典充滿這地"
+  },
+  "4934": {
+   "slug": "%e4%be%86%e6%8a%95%e9%9d%a0%e8%80%b6%e7%a9%8c",
+   "type": "parent",
+   "chTitle": "來投靠耶穌",
+   "via": "來投靠耶穌"
+  },
+  "4941": {
+   "slug": "%e9%99%aa%e6%88%91%e6%b8%a1%e9%81%8e",
+   "type": "parent",
+   "chTitle": "陪我渡過",
+   "via": "陪我渡過"
+  },
+  "4942": {
+   "slug": "%e8%87%aa%e7%94%b1%e9%a3%9b%e7%bf%94",
+   "type": "parent",
+   "chTitle": "自由飛翔",
+   "via": "自由飛翔"
+  },
+  "4944": {
+   "slug": "%e6%98%8e%e5%a4%a9%e7%a5%a2%e7%82%ba%e6%88%91%e6%8e%8c%e8%88%b5",
+   "type": "parent",
+   "chTitle": "明天祢為我掌舵",
+   "via": "明天祢為我掌舵"
+  },
+  "4945": {
+   "slug": "%e6%99%a8%e7%a6%b1",
+   "type": "child",
+   "chTitle": "晨禱",
+   "via": "晨禱"
+  },
+  "4946": {
+   "slug": "%e6%95%b8%e7%ae%97%e6%81%a9%e5%85%b8",
+   "type": "child",
+   "chTitle": "數算恩典",
+   "via": "數算恩典"
+  },
+  "4954": {
+   "slug": "%e6%85%88%e7%b9%a9%e6%84%9b%e7%b4%a2",
+   "type": "parent",
+   "chTitle": "慈繩愛索",
+   "via": "慈繩愛索"
+  },
+  "4955": {
+   "slug": "%e5%be%9e%e4%b8%8d%e4%b8%9f%e6%a3%84%e6%88%91",
+   "type": "parent",
+   "chTitle": "從不丟棄我",
+   "via": "從不丟棄我"
+  },
+  "4956": {
+   "slug": "%e8%ab%8b%e8%81%bd%e6%88%91%e5%82%be%e8%a8%b4",
+   "type": "parent",
+   "chTitle": "請聽我傾訴",
+   "via": "請聽我傾訴"
+  },
+  "4962": {
+   "slug": "%e5%b0%8b%e5%9b%9e",
+   "type": "parent",
+   "chTitle": "尋回",
+   "via": "尋回"
+  },
+  "4964": {
+   "slug": "%e4%b8%bb%e8%b3%9c%e5%b9%b3%e5%ae%89",
+   "type": "parent",
+   "chTitle": "主賜平安",
+   "via": "主賜平安"
+  },
+  "4966": {
+   "slug": "%e9%9d%a0%e4%b8%bb%e6%84%9b%e8%aa%87%e5%8b%9d",
+   "type": "parent",
+   "chTitle": "靠主愛誇勝",
+   "via": "靠主愛誇勝"
+  },
+  "4973": {
+   "slug": "%e5%bd%bc%e6%ad%a4%e7%9b%b8%e6%84%9b",
+   "type": "child",
+   "chTitle": "彼此相愛",
+   "via": "彼此相愛"
+  },
+  "4974": {
+   "slug": "%e6%96%b0%e7%94%9f%e5%91%bd",
+   "type": "parent",
+   "chTitle": "新生命",
+   "via": "新生命"
+  },
+  "4976": {
+   "slug": "%e8%ae%93%e6%88%91%e5%80%91%e5%bd%bc%e6%ad%a4%e7%9b%b8%e6%84%9b",
+   "type": "parent",
+   "chTitle": "讓我們彼此相愛",
+   "via": "讓我們彼此相愛"
+  },
+  "4977": {
+   "slug": "%e6%98%8e%e5%a4%a9%e7%a5%a2%e7%82%ba%e6%88%91%e6%8e%8c%e8%88%b5",
+   "type": "parent",
+   "chTitle": "明天祢為我掌舵",
+   "via": "明天祢為我掌舵"
+  },
+  "4978": {
+   "slug": "%e8%ac%9d%e8%ac%9d%e7%a5%a2%e7%9a%84%e6%84%9b",
+   "type": "parent",
+   "chTitle": "謝謝祢的愛",
+   "via": "謝謝祢的愛"
+  },
+  "4985": {
+   "slug": "%e4%b8%80%e7%94%9f%e5%9c%a8%e7%a5%9e%e6%89%8b%e8%a3%a1",
+   "type": "parent",
+   "chTitle": "一生在神手裡",
+   "via": "一生在神手裡"
+  },
+  "4986": {
+   "slug": "%e5%be%a9%e8%88%88%e6%88%91",
+   "type": "parent",
+   "chTitle": "復興我",
+   "via": "復興我"
+  },
+  "4987": {
+   "slug": "%e4%b8%bb%e8%b3%9c%e5%b9%b3%e5%ae%89",
+   "type": "parent",
+   "chTitle": "主賜平安",
+   "via": "主賜平安"
+  },
+  "4994": {
+   "slug": "%e6%9b%b4%e6%96%b0%e6%88%91%e5%bf%83",
+   "type": "parent",
+   "chTitle": "更新我心",
+   "via": "更新我心"
+  },
+  "4995": {
+   "slug": "%e6%84%9b%e8%a3%a1%e6%b2%92%e6%9c%89%e6%87%bc%e6%80%95",
+   "type": "parent",
+   "chTitle": "愛裡沒有懼怕",
+   "via": "愛裡沒有懼怕"
+  },
+  "4996": {
+   "slug": "%e6%88%91%e8%83%bd%e7%97%8a%e7%99%92",
+   "type": "parent",
+   "chTitle": "我能痊癒",
+   "via": "我能痊癒"
+  },
+  "4997": {
+   "slug": "%e7%a5%9e%e5%a4%a7%e6%84%9b",
+   "type": "child",
+   "chTitle": "神大愛",
+   "via": "神大愛"
+  },
+  "5002": {
+   "slug": "%e6%a6%ae%e5%85%89%e5%85%85%e6%bb%bf%e5%85%a8%e5%9c%b0",
+   "type": "parent",
+   "chTitle": "榮光充滿全地",
+   "via": "榮光充滿全地"
+  },
+  "5003": {
+   "slug": "%e6%b0%b8%e6%81%86%e7%9a%84%e4%b8%bb",
+   "type": "parent",
+   "chTitle": "永恆的主",
+   "via": "永恆的主"
+  },
+  "5004": {
+   "slug": "%e9%9d%a0%e4%b8%bb%e8%aa%87%e5%8b%9d",
+   "type": "parent",
+   "chTitle": "靠主誇勝",
+   "via": "靠主誇勝"
+  },
+  "5005": {
+   "slug": "%e5%a4%a9%e7%88%b6%e7%9f%a5%e9%81%93",
+   "type": "child",
+   "chTitle": "天父知道",
+   "via": "天父知道"
+  },
+  "5010": {
+   "slug": "%e4%bf%a1%e5%bf%83%e7%9a%84%e7%ad%89%e5%be%85",
+   "type": "parent",
+   "chTitle": "信心的等待",
+   "via": "信心的等待"
+  },
+  "5012": {
+   "slug": "%e6%88%91%e5%be%97%e8%87%aa%e7%94%b1",
+   "type": "child",
+   "chTitle": "我得自由",
+   "via": "我得自由"
+  },
+  "5013": {
+   "slug": "%e7%a5%a2%e6%98%af%e6%88%91%e6%83%9f%e4%b8%80%e7%9a%84%e5%80%9a%e9%9d%a0",
+   "type": "parent",
+   "chTitle": "祢是我惟一的倚靠",
+   "via": "祢是我惟一的倚靠"
+  },
+  "5018": {
+   "slug": "%e8%88%89%e6%89%8b%e8%ae%9a%e9%a0%8c",
+   "type": "parent",
+   "chTitle": "舉手讚頌",
+   "via": "舉手讚頌"
+  },
+  "5020": {
+   "slug": "%e4%b8%80%e5%bf%83%e7%a8%b1%e8%ac%9d%e7%a5%a2",
+   "type": "parent",
+   "chTitle": "一心稱謝祢",
+   "via": "一心稱謝祢"
+  },
+  "5021": {
+   "slug": "%e7%9b%b8%e4%bf%a1%e7%a5%a2%e6%87%89%e8%a8%b1",
+   "type": "child",
+   "chTitle": "相信祢應許",
+   "via": "相信祢應許"
+  },
+  "5026": {
+   "slug": "%e5%b9%b3%e5%ae%89%e7%9a%84%e8%b7%af",
+   "type": "parent",
+   "chTitle": "平安的路",
+   "via": "平安的路"
+  },
+  "5027": {
+   "slug": "%e6%9c%89%e7%a5%a2%e5%90%8c%e8%a1%8c",
+   "type": "parent",
+   "chTitle": "有祢同行",
+   "via": "有祢同行"
+  },
+  "5053": {
+   "slug": "%e5%9b%a0%e7%82%ba%e7%a5%a2%e5%85%88%e6%84%9b%e6%88%91%e5%80%91",
+   "type": "child",
+   "chTitle": "因為祢先愛我們 ",
+   "via": "因為祢先愛我們"
+  },
+  "5060": {
+   "slug": "%e4%bc%b4%e6%88%91%e8%b7%a8%e9%81%8e",
+   "type": "parent",
+   "chTitle": "伴我跨過",
+   "via": "伴我跨過"
+  },
+  "5061": {
+   "slug": "%e5%ae%89%e6%81%af",
+   "type": "parent",
+   "chTitle": "安息",
+   "via": "安息"
+  },
+  "5062": {
+   "slug": "%e6%89%be%e5%88%b0%e6%96%b9%e5%90%91",
+   "type": "parent",
+   "chTitle": "找到方向",
+   "via": "找到方向"
+  },
+  "5071": {
+   "slug": "%e4%b8%8d%e8%a6%81%e6%80%95",
+   "type": "child",
+   "chTitle": "不要怕",
+   "via": "不要怕"
+  },
+  "5074": {
+   "slug": "%e9%87%8d%e6%96%b0%e5%be%97%e5%8a%9b",
+   "type": "parent",
+   "chTitle": "重新得力",
+   "via": "重新得力"
+  },
+  "5075": {
+   "slug": "%e7%9b%b8%e4%bf%a1%e7%a5%a2%e6%87%89%e8%a8%b1",
+   "type": "child",
+   "chTitle": "相信祢應許",
+   "via": "相信祢應許"
+  },
+  "5086": {
+   "slug": "%e5%b0%8f%e9%b3%a5%e5%86%8d%e9%a3%9b",
+   "type": "parent",
+   "chTitle": "小鳥再飛",
+   "via": "小鳥再飛"
+  },
+  "5087": {
+   "slug": "%e6%88%91%e8%83%bd%e7%97%8a%e7%99%92",
+   "type": "parent",
+   "chTitle": "我能痊癒",
+   "via": "我能痊癒"
+  },
+  "5094": {
+   "slug": "%e7%b5%a6%e7%88%b8%e7%88%b8%e7%9a%84%e4%bf%a1",
+   "type": "parent",
+   "chTitle": "給爸爸的信",
+   "via": "給爸爸的信"
+  },
+  "5098": {
+   "slug": "%e5%82%b3%e8%87%b3%e5%9c%b0%e6%a5%b5",
+   "type": "parent",
+   "chTitle": "傳至地極",
+   "via": "傳至地極"
+  },
+  "5106": {
+   "slug": "%e6%b1%82%e4%b8%bb%e7%94%a8%e6%88%91",
+   "type": "parent",
+   "chTitle": "求主用我",
+   "via": "求主用我"
+  },
+  "5110": {
+   "slug": "%e5%90%88%e4%b8%80%e7%9a%84%e5%bf%83",
+   "type": "child",
+   "chTitle": "合一的心",
+   "via": "合一的心"
+  },
+  "5119": {
+   "slug": "%e4%be%86%e4%b8%80%e8%b5%b7%e6%ad%a1%e5%91%bc",
+   "type": "parent",
+   "chTitle": "來一起歡呼",
+   "via": "來一起歡呼"
+  },
+  "5120": {
+   "slug": "%e8%b3%9c%e6%88%91%e5%8a%9b%e9%87%8f",
+   "type": "parent",
+   "chTitle": "賜我力量",
+   "via": "賜我力量"
+  },
+  "5121": {
+   "slug": "%e5%be%97%e5%8a%9b%e5%9c%a8%e4%b9%8e%e7%a5%a2",
+   "type": "parent",
+   "chTitle": "得力在乎祢 ",
+   "via": "得力在乎祢"
+  },
+  "5123": {
+   "slug": "%e6%88%91%e5%bf%83%e5%88%87%e6%85%95%e7%a5%a2",
+   "type": "child",
+   "chTitle": "我心切慕祢",
+   "via": "我心切慕祢"
+  },
+  "5130": {
+   "slug": "%e7%a5%a2%e6%98%af%e6%88%91%e6%83%9f%e4%b8%80%e7%9a%84%e5%80%9a%e9%9d%a0",
+   "type": "parent",
+   "chTitle": "祢是我惟一的倚靠",
+   "via": "祢是我惟一的倚靠"
+  },
+  "5131": {
+   "slug": "%e8%aa%b0%e8%83%bd%e5%83%8f%e7%a5%a2",
+   "type": "child",
+   "chTitle": "誰能像祢",
+   "via": "誰能像祢"
+  },
+  "5134": {
+   "slug": "%e6%81%a9%e5%85%b8%e7%aa%84%e8%b7%af",
+   "type": "parent",
+   "chTitle": "恩典窄路",
+   "via": "恩典窄路"
+  },
+  "5146": {
+   "slug": "%e7%b5%90%e4%bc%b4%e5%90%8c%e8%a1%8c",
+   "type": "parent",
+   "chTitle": "結伴同行",
+   "via": "結伴同行"
+  },
+  "5172": {
+   "slug": "%e8%a6%aa%e7%9c%bc%e7%9c%8b%e8%a6%8b%e7%a5%a2",
+   "type": "child",
+   "chTitle": "親眼看見祢",
+   "via": "親眼看見祢"
+  },
+  "5180": {
+   "slug": "%e6%8f%9a%e8%81%b2%e5%a4%a7%e5%90%88%e5%a5%8f",
+   "type": "parent",
+   "chTitle": "揚聲大合奏",
+   "via": "揚聲大合奏"
+  },
+  "5240": {
+   "slug": "%e8%80%b6%e7%a9%8c%e4%be%86%e5%88%b0",
+   "type": "child",
+   "chTitle": "耶穌來到",
+   "via": "耶穌來"
+  },
+  "5243": {
+   "slug": "%e7%a5%9e%e6%98%af%e6%84%9b",
+   "type": "child",
+   "chTitle": "神是愛",
+   "via": "神是愛"
+  },
+  "5252": {
+   "slug": "jesus-jesus",
+   "type": "parent",
+   "chTitle": "Jesus Jesus",
+   "via": "J-E-S-U-S Jesus"
+  },
+  "5254": {
+   "slug": "%e8%ae%9a%e9%a0%8c%e7%88%b6%e6%ac%8a%e8%83%bd",
+   "type": "parent",
+   "chTitle": "讚頌父權能",
+   "via": "讚頌父權能"
+  },
+  "5255": {
+   "slug": "%e7%8d%a8%e6%9c%89%e4%b8%bb%e6%94%af%e6%8c%81%e6%88%91",
+   "type": "parent",
+   "chTitle": "獨有主支持我",
+   "via": "獨有主支持我"
+  },
+  "5257": {
+   "slug": "%e8%a8%98%e8%99%9f",
+   "type": "parent",
+   "chTitle": "記號",
+   "via": "記號"
+  },
+  "5268": {
+   "slug": "holy-holy-holy",
+   "type": "child",
+   "chTitle": "Holy Holy Holy",
+   "via": "Holy Holy Holy"
+  },
+  "5288": {
+   "slug": "%e5%bf%83%e4%b8%ad%e7%9a%84%e7%9c%bc%e7%9d%9b",
+   "type": "parent",
+   "chTitle": "心中的眼睛",
+   "via": "心中的眼睛"
+  },
+  "5289": {
+   "slug": "%e6%9c%80%e7%be%8e%e5%a5%bd%e7%9a%84%e4%bb%97",
+   "type": "parent",
+   "chTitle": "最美好的仗",
+   "via": "最美好的仗"
+  },
+  "5290": {
+   "slug": "%e6%84%9f%e6%bf%80%e6%95%91%e4%b8%bb",
+   "type": "child",
+   "chTitle": "感激救主",
+   "via": "感激救主"
+  },
+  "5292": {
+   "slug": "%e7%a5%a2%e8%ae%93%e6%88%91%e7%94%9f%e5%91%bd%e6%94%b9%e8%ae%8a",
+   "type": "parent",
+   "chTitle": "祢讓我生命改變",
+   "via": "祢讓我生命改變"
+  },
+  "5293": {
+   "slug": "%e8%ae%9a%e9%a0%8c%e7%a5%a2%e7%9a%84%e6%84%9b",
+   "type": "parent",
+   "chTitle": "讚頌祢的愛",
+   "via": "讚頌祢的愛"
+  },
+  "5300": {
+   "slug": "%e8%81%96%e6%bd%94%e7%9a%84%e7%a5%a2",
+   "type": "parent",
+   "chTitle": "聖潔的祢",
+   "via": "聖潔的祢"
+  },
+  "5301": {
+   "slug": "%e9%9d%a0%e7%a5%a2%e8%b7%a8%e6%af%8f%e6%ad%a5",
+   "type": "parent",
+   "chTitle": "靠祢跨每步",
+   "via": "靠祢跨每步"
+  },
+  "5328": {
+   "slug": "%e8%80%b6%e7%a9%8c%e6%81%a9%e5%85%89",
+   "type": "parent",
+   "chTitle": "耶穌恩光",
+   "via": "耶穌恩光"
+  },
+  "5329": {
+   "slug": "%e4%bd%a0%e6%98%af%e7%82%ba%e6%84%9b%e8%80%8c%e7%94%9f",
+   "type": "child",
+   "chTitle": "你是為愛而生",
+   "via": "你是為愛而生"
+  },
+  "5336": {
+   "slug": "%e6%83%9f%e6%9c%89%e7%a5%a2",
+   "type": "child",
+   "chTitle": "惟有祢",
+   "via": "惟有祢"
+  },
+  "5350": {
+   "slug": "%e9%80%99%e5%80%8b%e5%ae%b6",
+   "type": "parent",
+   "chTitle": "這個家",
+   "via": "這個家"
+  },
+  "5389": {
+   "slug": "%e7%a5%9e%e4%bc%b4%e4%bd%a0%e6%af%8f%e5%a4%a9",
+   "type": "parent",
+   "chTitle": "神伴你每天",
+   "via": "神伴你每天"
+  },
+  "5399": {
+   "slug": "%e7%84%a1%e6%a2%9d%e4%bb%b6%e7%9a%84%e6%84%9b",
+   "type": "parent",
+   "chTitle": "無條件的愛",
+   "via": "無條件的愛"
+  },
+  "5409": {
+   "slug": "%e6%89%8b%e4%b8%ad%e7%9a%84%e7%a6%8f%e9%9f%b3",
+   "type": "parent",
+   "chTitle": "手中的福音",
+   "via": "手中的福音"
+  },
+  "5411": {
+   "slug": "%e7%8d%bb%e5%91%88%e6%88%91%e9%9d%88",
+   "type": "parent",
+   "chTitle": "獻呈我靈",
+   "via": "獻呈我靈"
+  },
+  "5413": {
+   "slug": "%e7%a5%a2%e6%88%90%e5%b0%b1%e6%95%91%e6%81%a9",
+   "type": "child",
+   "chTitle": "祢成就救恩",
+   "via": "祢成就救恩"
+  },
+  "5433": {
+   "slug": "%e8%ae%93%e4%b8%bb%e7%89%bd%e5%bc%95",
+   "type": "parent",
+   "chTitle": "讓主牽引",
+   "via": "讓主牽引"
+  },
+  "5444": {
+   "slug": "%e6%a6%ae%e5%85%89%e6%99%ae%e7%85%a7",
+   "type": "parent",
+   "chTitle": "榮光普照",
+   "via": "榮光普照"
+  },
+  "5445": {
+   "slug": "%e6%98%af%e7%82%ba%e4%ba%86%e6%88%91%e7%bd%aa",
+   "type": "parent",
+   "chTitle": "是為了我罪",
+   "via": "是為了我罪"
+  },
+  "5446": {
+   "slug": "%e6%b0%b8%e6%b4%bb%e7%9c%9f%e7%a5%9e",
+   "type": "parent",
+   "chTitle": "永活真神 ",
+   "via": "永活真神"
+  },
+  "5447": {
+   "slug": "%e7%a5%a2%e6%88%90%e5%b0%b1%e6%95%91%e6%81%a9",
+   "type": "child",
+   "chTitle": "祢成就救恩",
+   "via": "祢成就救恩"
+  },
+  "5449": {
+   "slug": "%e6%a6%ae%e8%80%80%e9%87%8c%e7%a8%8b",
+   "type": "parent",
+   "chTitle": "榮耀里程",
+   "via": "榮耀里程"
+  },
+  "5456": {
+   "slug": "%e9%a0%8c%e8%ae%9a%e4%b8%bb%e8%81%96%e5%90%8d",
+   "type": "child",
+   "chTitle": "頌讚主聖名",
+   "via": "頌讚主聖名"
+  },
+  "5458": {
+   "slug": "%e7%a5%9e%e6%98%af%e6%88%91%e9%80%99%e7%94%9f%e4%be%9b%e6%87%89%e8%80%85",
+   "type": "parent",
+   "chTitle": "神是我這生供應者",
+   "via": "神是我這生供應者"
+  },
+  "5459": {
+   "slug": "%e6%b0%b8%e6%81%86%e5%9c%8b%e5%ba%a6",
+   "type": "parent",
+   "chTitle": "永恆國度",
+   "via": "永恆國度"
+  },
+  "5460": {
+   "slug": "%e6%88%91%e5%80%91%e5%9c%a8%e5%a4%a9%e4%b8%8a%e7%9a%84%e7%88%b6",
+   "type": "child",
+   "chTitle": "我們在天上的父",
+   "via": "我們在天上的父"
+  },
+  "5468": {
+   "slug": "%e7%a5%a2%e6%98%af%e8%aa%b0",
+   "type": "parent",
+   "chTitle": "祢是誰",
+   "via": "祢是誰"
+  },
+  "5470": {
+   "slug": "%e5%82%b3%e9%a0%8c%e5%8d%83%e9%87%8c",
+   "type": "parent",
+   "chTitle": "傳頌千里",
+   "via": "傳頌千里"
+  },
+  "5471": {
+   "slug": "%e5%82%b3%e6%89%bf%e4%bd%bf%e5%91%bd",
+   "type": "parent",
+   "chTitle": "傳承使命",
+   "via": "傳承使命"
+  },
+  "5473": {
+   "slug": "%e7%9b%b8%e4%bf%a1%e7%a5%a2",
+   "type": "parent",
+   "chTitle": "相信祢",
+   "via": "相信祢"
+  },
+  "5481": {
+   "slug": "%e6%86%91%e4%bf%a1%e7%9c%8b%e8%a6%8b",
+   "type": "parent",
+   "chTitle": "憑信看見",
+   "via": "憑信看見"
+  },
+  "5482": {
+   "slug": "%e7%a5%a2%e6%98%af%e8%aa%b0",
+   "type": "parent",
+   "chTitle": "祢是誰",
+   "via": "祢是誰"
+  },
+  "5483": {
+   "slug": "%e5%82%be%e5%80%92%e7%9a%84%e6%84%9b",
+   "type": "parent",
+   "chTitle": "傾倒的愛",
+   "via": "傾倒的愛"
+  },
+  "5505": {
+   "slug": "%e8%ae%93%e7%a5%a2%e6%84%9b%e5%85%85%e6%bb%bf%e6%88%91",
+   "type": "parent",
+   "chTitle": "讓祢愛充滿我",
+   "via": "讓祢愛充滿我"
+  },
+  "5507": {
+   "slug": "%e8%aa%b0%e6%98%af%e4%bd%a0%e4%b8%bb",
+   "type": "parent",
+   "chTitle": "誰是你主",
+   "via": "誰是你主"
+  },
+  "5516": {
+   "slug": "%e7%a5%a2%e6%98%af%e6%88%91%e7%9a%84%e7%a5%9e",
+   "type": "parent",
+   "chTitle": "祢是我的神",
+   "via": "祢是我的神"
+  },
+  "5518": {
+   "slug": "%e6%88%91%e9%a1%98%e6%84%8f",
+   "type": "child",
+   "chTitle": "我願意",
+   "via": "我願意"
+  },
+  "5519": {
+   "slug": "%e8%a9%a9%e7%af%87145",
+   "type": "parent",
+   "chTitle": "詩篇145",
+   "via": "詩篇145"
+  },
+  "5530": {
+   "slug": "sing-a-new-song",
+   "type": "parent",
+   "chTitle": "Sing a New Song",
+   "via": "Sing A New Song"
+  },
+  "5542": {
+   "slug": "%e6%ad%b8%e5%90%91%e9%8c%ab%e5%ae%89%e5%b1%b1",
+   "type": "parent",
+   "chTitle": "歸向錫安山",
+   "via": "歸向錫安山"
+  },
+  "5545": {
+   "slug": "%e9%87%8b%e6%94%be",
+   "type": "child",
+   "chTitle": "釋放",
+   "via": "釋放"
+  },
+  "5553": {
+   "slug": "put-my-eyes-on-you",
+   "type": "parent",
+   "chTitle": "Put My Eyes on You",
+   "via": "Put My Eyes On You"
+  },
+  "5557": {
+   "slug": "%e8%90%ac%e6%9c%89%e4%b8%bb",
+   "type": "parent",
+   "chTitle": "萬有主",
+   "via": "萬有主"
+  },
+  "5576": {
+   "slug": "%e5%b0%87%e5%bf%83%e7%b5%a6%e6%88%91",
+   "type": "parent",
+   "chTitle": "將心給我",
+   "via": "將心給我"
+  },
+  "5579": {
+   "slug": "%e8%80%b6%e7%a9%8c%e8%b1%88%e6%98%af%e5%87%a1%e4%ba%ba",
+   "type": "parent",
+   "chTitle": "耶穌豈是凡人",
+   "via": "耶穌豈是凡人"
+  },
+  "5581": {
+   "slug": "%e7%a5%9e%e6%98%af%e6%84%9b",
+   "type": "child",
+   "chTitle": "神是愛",
+   "via": "神是愛"
+  },
+  "5588": {
+   "slug": "%e4%b8%bb%e4%bf%a1%e5%af%a6%e7%84%a1%e8%ae%8a",
+   "type": "parent",
+   "chTitle": "主信實無變",
+   "via": "主信實無變"
+  },
+  "5592": {
+   "slug": "%e6%83%9f%e6%9c%89%e7%a5%a2",
+   "type": "child",
+   "chTitle": "惟有祢",
+   "via": "惟有祢"
+  },
+  "5629": {
+   "slug": "%e4%b8%80%e7%94%9f%e9%83%bd%e8%b6%b3%e5%a4%a0",
+   "type": "parent",
+   "chTitle": "一生都足夠",
+   "via": "一生都足夠"
+  },
+  "5636": {
+   "slug": "%e5%be%9e%e4%bb%8a%e7%9b%b8%e4%bf%a1",
+   "type": "parent",
+   "chTitle": "從今相信",
+   "via": "從今相信"
+  },
+  "5639": {
+   "slug": "%e7%84%a1%e5%8f%af%e7%9b%b8%e6%af%94",
+   "type": "parent",
+   "chTitle": "無可相比",
+   "via": "無可相比"
+  },
+  "5640": {
+   "slug": "%e7%89%a7%e6%88%91%e4%b8%80%e7%94%9f",
+   "type": "parent",
+   "chTitle": "牧我一生",
+   "via": "牧我一生"
+  },
+  "5649": {
+   "slug": "%e7%89%a7%e6%88%91%e4%b8%80%e7%94%9f",
+   "type": "parent",
+   "chTitle": "牧我一生",
+   "via": "牧我一生"
+  },
+  "5652": {
+   "slug": "%e7%89%a7%e6%88%91%e4%b8%80%e7%94%9f",
+   "type": "parent",
+   "chTitle": "牧我一生",
+   "via": "牧我一生"
+  },
+  "5662": {
+   "slug": "hosanna",
+   "type": "child",
+   "chTitle": "Hosanna",
+   "via": "Hosanna"
+  },
+  "5663": {
+   "slug": "%e7%ab%8b%e5%bf%97%e6%93%ba%e4%b8%8a",
+   "type": "child",
+   "chTitle": "立志擺上",
+   "via": "立志擺上"
+  },
+  "5664": {
+   "slug": "%e5%90%8c%e8%ad%89%e7%a6%8f%e9%9f%b3",
+   "type": "parent",
+   "chTitle": "同證福音",
+   "via": "同證福音"
+  },
+  "5674": {
+   "slug": "%e6%89%8b%e4%b8%ad%e7%9a%84%e7%a6%8f%e9%9f%b3",
+   "type": "parent",
+   "chTitle": "手中的福音",
+   "via": "手中的福音"
+  },
+  "5675": {
+   "slug": "%e9%81%ae%e8%93%8b%e6%88%91",
+   "type": "parent",
+   "chTitle": "遮蓋我",
+   "via": "遮蓋我"
+  },
+  "5684": {
+   "slug": "%e9%96%8b%e5%bf%83%e5%b0%8f%e9%96%80%e5%be%92",
+   "type": "parent",
+   "chTitle": "開心小門徒",
+   "via": "開心小門徒"
+  },
+  "5686": {
+   "slug": "%e8%b5%b0%e5%87%ba%e5%b9%bd%e8%b0%b7",
+   "type": "parent",
+   "chTitle": "走出幽谷",
+   "via": "走出幽谷"
+  },
+  "5697": {
+   "slug": "%e5%be%a9%e6%b4%bb%e7%9a%84%e4%b8%bb%e9%a1%8c%e6%9b%b2",
+   "type": "child",
+   "chTitle": "復活的主題曲",
+   "via": "主題曲"
+  },
+  "5704": {
+   "slug": "%e7%a5%82%e7%9a%84%e4%b8%80%e7%94%9f",
+   "type": "parent",
+   "chTitle": "祂的一生",
+   "via": "祂的一生"
+  },
+  "5707": {
+   "slug": "%e6%a6%ae%e8%80%80%e5%85%a8%e6%98%af%e7%a5%a2%e7%9a%84",
+   "type": "parent",
+   "chTitle": "榮耀全是祢的",
+   "via": "全是祢的"
+  },
+  "5731": {
+   "slug": "%e5%a4%a9%e9%bb%91%e9%bb%91",
+   "type": "parent",
+   "chTitle": "天黑黑",
+   "via": "天黑黑"
+  },
+  "5732": {
+   "slug": "%e8%ae%9a%e7%be%8e%e7%a5%a2%e5%8d%83%e8%90%ac%e5%8f%a5",
+   "type": "parent",
+   "chTitle": "讚美祢千萬句",
+   "via": "讚美祢千萬句"
+  },
+  "5733": {
+   "slug": "%e9%8c%ab%e5%ae%89%e4%b9%8b%e4%b8%bb",
+   "type": "parent",
+   "chTitle": "錫安之主",
+   "via": "錫安之主"
+  },
+  "5855": {
+   "slug": "%e5%90%8c%e8%bc%89%e5%90%8c%e5%9c%a8",
+   "type": "parent",
+   "chTitle": "同載同在",
+   "via": "同載同在"
+  },
+  "5864": {
+   "slug": "%e6%95%ac%e6%8b%9ccrossover",
+   "type": "parent",
+   "chTitle": "敬拜Crossover",
+   "via": "Crossover"
+  },
+  "5865": {
+   "slug": "%e7%a5%ad%e5%8f%b8%e7%9a%84%e6%96%b0%e8%a1%a3",
+   "type": "parent",
+   "chTitle": "祭司的新衣",
+   "via": "祭司的新衣"
+  },
+  "5870": {
+   "slug": "%e9%a1%98%e7%a5%a2%e5%bf%ab%e4%be%86",
+   "type": "child",
+   "chTitle": "願祢快來",
+   "via": "願祢快來"
+  },
+  "5873": {
+   "slug": "%e4%bd%8f%e5%9c%a8%e7%a5%a2%e7%9a%84%e6%84%9b",
+   "type": "parent",
+   "chTitle": "住在祢的愛",
+   "via": "住在祢的愛"
+  },
+  "5874": {
+   "slug": "on-and-on",
+   "type": "parent",
+   "chTitle": "On and On",
+   "via": "ON AND ON"
+  },
+  "5882": {
+   "slug": "%e7%9b%bc%e6%9c%9b%e7%9a%84%e5%ad%a3%e7%af%80",
+   "type": "parent",
+   "chTitle": "盼望的季節",
+   "via": "盼望的季節"
+  },
+  "5884": {
+   "slug": "%e7%99%bb%e6%88%91%e4%b8%bb%e7%9a%84%e8%81%96%e5%b1%b1",
+   "type": "parent",
+   "chTitle": "登我主的聖山",
+   "via": "登我主的聖山"
+  },
+  "5886": {
+   "slug": "%e5%be%9e%e6%ad%b2%e9%a6%96%e5%88%b0%e5%b9%b4%e7%b5%82",
+   "type": "parent",
+   "chTitle": "從歲首到年終",
+   "via": "從歲首到年終"
+  },
+  "5887": {
+   "slug": "%e7%ad%94%e6%a1%88",
+   "type": "child",
+   "chTitle": "答案",
+   "via": "答案"
+  },
+  "5896": {
+   "slug": "%e5%90%8c%e8%bc%89%e5%90%8c%e5%9c%a8",
+   "type": "parent",
+   "chTitle": "同載同在",
+   "via": "同載同在"
+  },
+  "5898": {
+   "slug": "%e5%b1%a5%e6%b5%b7",
+   "type": "parent",
+   "chTitle": "履海",
+   "via": "履海"
+  },
+  "5899": {
+   "slug": "reckless-love",
+   "type": "parent",
+   "chTitle": "Reckless Love",
+   "via": "RECKLESS LOVE"
+  },
+  "5906": {
+   "slug": "%e8%b5%b7%e5%88%9d%e6%9c%80%e5%8e%9f%e9%bb%9e",
+   "type": "parent",
+   "chTitle": "起初最原點",
+   "via": "起初最原點"
+  },
+  "5918": {
+   "slug": "%e9%82%a3%e5%b9%b4%e9%82%a3%e6%97%a5",
+   "type": "parent",
+   "chTitle": "那年那日",
+   "via": "那年那日"
+  },
+  "5920": {
+   "slug": "this-is-me",
+   "type": "parent",
+   "chTitle": "This Is Me",
+   "via": "This Is Me"
+  },
+  "5921": {
+   "slug": "life-is-like-a-song",
+   "type": "parent",
+   "chTitle": "Life Is Like a Song",
+   "via": "Life Is Like A Song"
+  },
+  "5928": {
+   "slug": "%e6%88%91%e7%9a%84%e6%b8%b4%e6%83%b3",
+   "type": "parent",
+   "chTitle": "我的渴想",
+   "via": "我的渴想"
+  },
+  "5929": {
+   "slug": "%e6%ad%8c%e4%b8%ad%e4%b9%8b%e6%ad%8c",
+   "type": "parent",
+   "chTitle": "歌中之歌",
+   "via": "歌中之歌"
+  },
+  "5930": {
+   "slug": "%e7%b4%84%e6%9b%b8%e4%ba%9e",
+   "type": "parent",
+   "chTitle": "約書亞",
+   "via": "約書亞"
+  },
+  "5931": {
+   "slug": "%e9%81%bf%e9%9b%a3%e6%89%80",
+   "type": "child",
+   "chTitle": "避難所",
+   "via": "避難所"
+  },
+  "5932": {
+   "slug": "%e5%b8%b6%e6%88%91%e9%a3%9b",
+   "type": "parent",
+   "chTitle": "帶我飛",
+   "via": "帶我飛"
+  },
+  "5940": {
+   "slug": "%e6%88%91%e5%9c%a8%e5%b0%8b%e6%89%be%e4%b8%80%e7%a8%ae%e7%be%8e%e9%ba%97",
+   "type": "parent",
+   "chTitle": "我在尋找一種美麗",
+   "via": "我在尋找一種美麗"
+  },
+  "5941": {
+   "slug": "%e7%94%a6%e9%86%92%e6%84%9b",
+   "type": "parent",
+   "chTitle": "甦醒愛",
+   "via": "甦醒愛"
+  },
+  "5944": {
+   "slug": "%e5%a0%85%e7%a9%a9%e7%9a%84%e6%84%9b",
+   "type": "parent",
+   "chTitle": "堅穩的愛",
+   "via": "堅穩的愛"
+  },
+  "5952": {
+   "slug": "%e4%b8%8a%e8%a1%8c%e4%b9%8b%e8%a9%a9",
+   "type": "child",
+   "chTitle": "上行之詩",
+   "via": "上行之詩"
+  },
+  "5953": {
+   "slug": "%e5%b1%a5%e6%b5%b7",
+   "type": "parent",
+   "chTitle": "履海",
+   "via": "履海"
+  },
+  "5960": {
+   "slug": "%e7%ad%94%e6%a1%88",
+   "type": "child",
+   "chTitle": "答案",
+   "via": "答案"
+  },
+  "5974": {
+   "slug": "%e5%9b%a0%e8%91%97%e4%bf%a1",
+   "type": "parent",
+   "chTitle": "因著信",
+   "via": "因著信"
+  },
+  "5975": {
+   "slug": "%e5%85%a8%e5%9c%b0%e8%87%b3%e9%ab%98%e6%98%af%e6%88%91%e4%b8%bb",
+   "type": "parent",
+   "chTitle": "全地至高是我主",
+   "via": "全地至高是我主"
+  },
+  "5976": {
+   "slug": "%e5%85%a8%e5%9b%a0%e5%9f%ba%e7%9d%a3",
+   "type": "parent",
+   "chTitle": "全因基督",
+   "via": "全因基督"
+  },
+  "5977": {
+   "slug": "%e5%8e%9f%e6%98%af%e7%a5%a2%e6%81%a9%e6%83%a0",
+   "type": "parent",
+   "chTitle": "原是祢恩惠",
+   "via": "原是祢"
+  },
+  "5987": {
+   "slug": "%e5%8e%9f%e4%be%86%e6%9c%89%e7%a5%a2",
+   "type": "parent",
+   "chTitle": "原來有祢",
+   "via": "原來有祢"
+  },
+  "5992": {
+   "slug": "%e5%82%b2%e7%84%b6%e5%89%8d%e5%a5%94",
+   "type": "parent",
+   "chTitle": "傲然前奔",
+   "via": "傲然前奔"
+  },
+  "5993": {
+   "slug": "%e6%b1%82%e4%b8%bb%e5%8a%a9%e6%88%91%e6%95%b8%e7%ae%97",
+   "type": "parent",
+   "chTitle": "求主助我數算",
+   "via": "求主助我數算"
+  },
+  "5995": {
+   "slug": "%e5%b9%bd%e8%b0%b7%e4%b8%ad%e7%9a%84%e7%9b%bc%e6%9c%9b",
+   "type": "parent",
+   "chTitle": "幽谷中的盼望",
+   "via": "幽谷中的盼望"
+  },
+  "5996": {
+   "slug": "%e6%b5%b7%e9%82%8a%e7%9a%84%e7%a0%b4%e6%9b%89",
+   "type": "parent",
+   "chTitle": "海邊的破曉",
+   "via": "海邊的破曉"
+  },
+  "6004": {
+   "slug": "%e8%87%b3%e9%ab%98%e5%b0%8a%e8%b2%b4%e7%9a%84%e7%a5%a2",
+   "type": "parent",
+   "chTitle": "至高尊貴的祢",
+   "via": "至高尊貴的祢"
+  },
+  "6005": {
+   "slug": "%e7%b9%bc%e7%ba%8c%e7%9b%b8%e4%bf%a1",
+   "type": "parent",
+   "chTitle": "繼續相信",
+   "via": "繼續相信"
+  },
+  "6008": {
+   "slug": "immanuel",
+   "type": "parent",
+   "chTitle": "Immanuel",
+   "via": "Immanuel"
+  },
+  "6009": {
+   "slug": "%e6%9c%80%e5%a5%bd%e7%9a%84%e7%a6%8f%e6%b0%a3",
+   "type": "parent",
+   "chTitle": "最好的福氣",
+   "via": "最好的福氣"
+  },
+  "6016": {
+   "slug": "%e6%9c%80%e5%a5%bd%e7%9a%84%e7%a6%8f%e6%b0%a3",
+   "type": "parent",
+   "chTitle": "最好的福氣",
+   "via": "最好的福氣"
+  },
+  "6017": {
+   "slug": "%e5%a6%82%e6%ad%a4%e8%aa%8d%e8%ad%98%e6%88%91",
+   "type": "parent",
+   "chTitle": "如此認識我",
+   "via": "如此認識我"
+  },
+  "6019": {
+   "slug": "%e6%88%91%e9%81%87%e8%a6%8b%e7%a5%9e",
+   "type": "parent",
+   "chTitle": "我遇見神",
+   "via": "我遇見神"
+  },
+  "6028": {
+   "slug": "%e5%93%80%e7%a6%b1",
+   "type": "parent",
+   "chTitle": "哀禱",
+   "via": "哀禱"
+  },
+  "6029": {
+   "slug": "%e8%87%b3%e8%81%96%e8%80%85%e5%86%8d%e8%87%a8",
+   "type": "parent",
+   "chTitle": "至聖者再臨",
+   "via": "至聖者再臨"
+  },
+  "6030": {
+   "slug": "%e5%85%a8%e5%9b%a0%e5%9f%ba%e7%9d%a3",
+   "type": "parent",
+   "chTitle": "全因基督",
+   "via": "全因基督"
+  },
+  "6031": {
+   "slug": "%e7%9c%9f%e6%84%9b%e7%83%99%e5%8d%b0",
+   "type": "parent",
+   "chTitle": "真愛烙印",
+   "via": "真愛烙印"
+  },
+  "6032": {
+   "slug": "%e6%84%9b%e7%9a%84%e5%8d%b0%e8%a8%98",
+   "type": "parent",
+   "chTitle": "愛的印記",
+   "via": "愛的印記"
+  },
+  "6040": {
+   "slug": "%e8%80%b6%e5%92%8c%e8%8f%af%e6%88%91%e7%9a%84%e7%a5%9e%e5%93%aa",
+   "type": "child",
+   "chTitle": "耶和華我的神哪",
+   "via": "耶和華我的神哪"
+  },
+  "6041": {
+   "slug": "immanuel",
+   "type": "parent",
+   "chTitle": "Immanuel",
+   "via": "Immanuel"
+  },
+  "6042": {
+   "slug": "%e6%84%9b%e7%9a%84%e4%bf%9d%e8%ad%89",
+   "type": "parent",
+   "chTitle": "愛的保證",
+   "via": "愛的保證"
+  },
+  "6044": {
+   "slug": "%e7%a5%a2%e6%81%a9%e6%89%8b%e6%b0%b8%e5%9c%a8",
+   "type": "parent",
+   "chTitle": "祢恩手永在",
+   "via": "祢恩手永在"
+  },
+  "6052": {
+   "slug": "%e5%9b%a0%e7%a5%a2%e8%80%8c%e8%b5%b7",
+   "type": "parent",
+   "chTitle": "因祢而起",
+   "via": "因祢而起"
+  },
+  "6054": {
+   "slug": "%e8%ae%9a%e7%be%8e%e6%b0%b8%e4%b8%8d%e6%81%af",
+   "type": "child",
+   "chTitle": "讚美永不息",
+   "via": "讚美永不息"
+  },
+  "6057": {
+   "slug": "%e5%a6%82%e6%ad%a4%e8%aa%8d%e8%ad%98%e6%88%91",
+   "type": "parent",
+   "chTitle": "如此認識我",
+   "via": "如此認識我"
+  },
+  "6077": {
+   "slug": "%e9%87%8d%e6%8a%95%e8%b1%90%e7%9b%9b",
+   "type": "parent",
+   "chTitle": "重投豐盛",
+   "via": "重投豐盛"
+  },
+  "6080": {
+   "slug": "%e7%87%83%e5%8b%95%e7%94%9f%e5%91%bd",
+   "type": "parent",
+   "chTitle": "燃動生命",
+   "via": "燃動生命"
+  },
+  "6089": {
+   "slug": "%e5%9b%a0%e8%91%97%e4%bf%a1",
+   "type": "parent",
+   "chTitle": "因著信",
+   "via": "因著信"
+  },
+  "6134": {
+   "slug": "%e6%8c%aa%e4%ba%9e%e6%96%b9%e8%88%9f",
+   "type": "parent",
+   "chTitle": "挪亞方舟",
+   "via": "挪亞方舟"
+  },
+  "6137": {
+   "slug": "%e6%84%9f%e8%ac%9d%e5%a4%a9%e7%88%b6%e2%80%ad",
+   "type": "parent",
+   "chTitle": "感謝天父‭",
+   "via": "感謝天父"
+  },
+  "6144": {
+   "slug": "%e6%84%9b%e8%88%87%e5%a4%a2%e9%a3%9b%e7%bf%94",
+   "type": "parent",
+   "chTitle": "愛與夢飛翔",
+   "via": "愛與夢飛翔"
+  },
+  "6147": {
+   "slug": "%e9%a6%ac%e6%a7%bd%e6%ad%8c",
+   "type": "child",
+   "chTitle": "馬槽歌",
+   "via": "馬槽歌"
+  },
+  "6149": {
+   "slug": "%e8%80%b6%e7%a9%8c%e5%96%9c%e6%84%9b%e5%b0%8f%e5%ad%a9",
+   "type": "child",
+   "chTitle": "耶穌喜愛小孩",
+   "via": "耶穌喜愛小孩"
+  },
+  "6150": {
+   "slug": "%e4%b8%bb%e4%bf%a1%e5%af%a6%e7%84%a1%e8%ae%8a",
+   "type": "parent",
+   "chTitle": "主信實無變",
+   "via": "主信實無變"
+  },
+  "6154": {
+   "slug": "%e5%b0%8f%e5%b0%8f%e7%9a%84%e5%ae%87%e5%ae%99",
+   "type": "child",
+   "chTitle": "小小的宇宙",
+   "via": "小小的宇宙"
+  },
+  "6174": {
+   "slug": "%e7%a5%9e%e7%9a%84%e5%ad%a9%e5%ad%90",
+   "type": "parent",
+   "chTitle": "神的孩子",
+   "via": "神的孩子"
+  },
+  "6179": {
+   "slug": "%e8%81%96%e9%9d%88%e6%9e%9c%e5%ad%90",
+   "type": "parent",
+   "chTitle": "聖靈果子",
+   "via": "聖靈果子"
+  },
+  "6181": {
+   "slug": "%e4%ba%94%e9%a4%85%e4%ba%8c%e9%ad%9a",
+   "type": "child",
+   "chTitle": "五餅二魚",
+   "via": "五餅二魚"
+  },
+  "8153": {
+   "slug": "%e7%a5%a2%e6%98%af%e6%88%91%e7%a5%9e-%e5%90%8c%e5%bf%83%e5%9c%93",
+   "type": "parent",
+   "chTitle": "祢是我神",
+   "via": "同心圓"
+  },
+  "8630": {
+   "slug": "%e8%ac%9d%e8%ac%9d%e7%a5%a2%e7%9a%84%e6%84%9b",
+   "type": "parent",
+   "chTitle": "謝謝祢的愛",
+   "via": "謝謝祢的愛"
+  },
+  "8634": {
+   "slug": "%e4%b8%8a%e5%b8%9d%e7%9a%84%e7%a6%ae%e7%89%a9",
+   "type": "parent",
+   "chTitle": "上帝的禮物",
+   "via": "上帝的禮物"
+  }
+ },
+ "misses": [
+  71,
+  72,
+  75,
+  77,
+  82,
+  84,
+  87,
+  96,
+  108,
+  114,
+  119,
+  123,
+  127,
+  149,
+  153,
+  155,
+  158,
+  159,
+  160,
+  162,
+  163,
+  167,
+  169,
+  181,
+  183,
+  184,
+  191,
+  192,
+  197,
+  208,
+  735,
+  740,
+  741,
+  745,
+  748,
+  1531,
+  1537,
+  1541,
+  1542,
+  1543,
+  1548,
+  1565,
+  1570,
+  1615,
+  1616,
+  1648,
+  1661,
+  1673,
+  1674,
+  1678,
+  1684,
+  1686,
+  1690,
+  1697,
+  1703,
+  1714,
+  1721,
+  1726,
+  1728,
+  1746,
+  1751,
+  1761,
+  1764,
+  1768,
+  1769,
+  1771,
+  1780,
+  1789,
+  1800,
+  1805,
+  1806,
+  1808,
+  1809,
+  1814,
+  1816,
+  1818,
+  1831,
+  1840,
+  1849,
+  1856,
+  1909,
+  1927,
+  1936,
+  1945,
+  1954,
+  1962,
+  1973,
+  1981,
+  2007,
+  2009,
+  2025,
+  2035,
+  2036,
+  2044,
+  2053,
+  2061,
+  2062,
+  2063,
+  2079,
+  2121,
+  2122,
+  2149,
+  2166,
+  2219,
+  2227,
+  2237,
+  2244,
+  2246,
+  2255,
+  2271,
+  2279,
+  2298,
+  2305,
+  2314,
+  2322,
+  2324,
+  2333,
+  2342,
+  2356,
+  2363,
+  2378,
+  2385,
+  2411,
+  2412,
+  2435,
+  2436,
+  2442,
+  2452,
+  2460,
+  2483,
+  2494,
+  2506,
+  2519,
+  2536,
+  2549,
+  2556,
+  2572,
+  2573,
+  2578,
+  2626,
+  2654,
+  2667,
+  2700,
+  2720,
+  2726,
+  2745,
+  2750,
+  2761,
+  2769,
+  2774,
+  2781,
+  2896,
+  2897,
+  2898,
+  2900,
+  2901,
+  2902,
+  2904,
+  2905,
+  2906,
+  2908,
+  2910,
+  2911,
+  2914,
+  2915,
+  2918,
+  2973,
+  2989,
+  2990,
+  2998,
+  3004,
+  3023,
+  3024,
+  3026,
+  3043,
+  3049,
+  3050,
+  3058,
+  3059,
+  3065,
+  3074,
+  3079,
+  3086,
+  3089,
+  3090,
+  3091,
+  3212,
+  3214,
+  3216,
+  3219,
+  3221,
+  3222,
+  3223,
+  3227,
+  3232,
+  3233,
+  3242,
+  3249,
+  3250,
+  3251,
+  3252,
+  3255,
+  3256,
+  3262,
+  3264,
+  3266,
+  3267,
+  3269,
+  3277,
+  3278,
+  3279,
+  3280,
+  3281,
+  3282,
+  3283,
+  3286,
+  3287,
+  3288,
+  3290,
+  3325,
+  3327,
+  3335,
+  3336,
+  3344,
+  3356,
+  3357,
+  3365,
+  3385,
+  3540,
+  3542,
+  3561,
+  3574,
+  3577,
+  3578,
+  3580,
+  3584,
+  3598,
+  3611,
+  3612,
+  3613,
+  3617,
+  3620,
+  3642,
+  3783,
+  3785,
+  3795,
+  3798,
+  3810,
+  3811,
+  3813,
+  3815,
+  3826,
+  3827,
+  3890,
+  3907,
+  3908,
+  3922,
+  3924,
+  3931,
+  3945,
+  4081,
+  4085,
+  4095,
+  4096,
+  4097,
+  4134,
+  4143,
+  4144,
+  4145,
+  4146,
+  4154,
+  4190,
+  4191,
+  4204,
+  4205,
+  4206,
+  4215,
+  4217,
+  4356,
+  4357,
+  4359,
+  4362,
+  4365,
+  4372,
+  4382,
+  4398,
+  4420,
+  4700,
+  4703,
+  4706,
+  4723,
+  4724,
+  4726,
+  4727,
+  4728,
+  4730,
+  4731,
+  4733,
+  4736,
+  4737,
+  4739,
+  4742,
+  4743,
+  4746,
+  4751,
+  4752,
+  4753,
+  4755,
+  4762,
+  4764,
+  4765,
+  4768,
+  4772,
+  4773,
+  4774,
+  4775,
+  4776,
+  4777,
+  4833,
+  4834,
+  4835,
+  4850,
+  4858,
+  4862,
+  4869,
+  4870,
+  4893,
+  4894,
+  4898,
+  4909,
+  4917,
+  4975,
+  5028,
+  5036,
+  5037,
+  5042,
+  5043,
+  5044,
+  5050,
+  5051,
+  5058,
+  5072,
+  5073,
+  5118,
+  5185,
+  5241,
+  5253,
+  5256,
+  5269,
+  5276,
+  5277,
+  5280,
+  5281,
+  5291,
+  5304,
+  5305,
+  5313,
+  5317,
+  5324,
+  5327,
+  5337,
+  5338,
+  5352,
+  5360,
+  5362,
+  5363,
+  5365,
+  5372,
+  5373,
+  5375,
+  5376,
+  5385,
+  5386,
+  5387,
+  5421,
+  5448,
+  5493,
+  5494,
+  5495,
+  5496,
+  5497,
+  5504,
+  5508,
+  5529,
+  5531,
+  5532,
+  5533,
+  5543,
+  5552,
+  5564,
+  5565,
+  5578,
+  5580,
+  5589,
+  5590,
+  5650,
+  5665,
+  5676,
+  5687,
+  5705,
+  5709,
+  5719,
+  5728,
+  5729,
+  5730,
+  5742,
+  5744,
+  5752,
+  5773,
+  5774,
+  5811,
+  5854,
+  5872,
+  5894,
+  5908,
+  5909,
+  5917,
+  5962,
+  5963,
+  5964,
+  5972,
+  5997,
+  6033,
+  6043,
+  6053,
+  6056,
+  6067,
+  6076,
+  6079,
+  6088,
+  6127,
+  6128,
+  6129,
+  6131,
+  6133,
+  6135,
+  6138,
+  6139,
+  6143,
+  6148,
+  6151,
+  6152,
+  6156,
+  6157,
+  6158,
+  6159,
+  6161,
+  6166,
+  6167,
+  6168,
+  6169,
+  6170,
+  6171,
+  6175,
+  6176,
+  6177,
+  6178,
+  6180
+ ],
+ "generatedAt": "2026-08-15T04:18:19.311Z",
+ "stats": {
+  "probed": 1079,
+  "hits": 621,
+  "misses": 458
+ }
+}

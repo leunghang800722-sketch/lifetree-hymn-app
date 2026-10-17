@@ -1,0 +1,50 @@
+{
+  "scanner": "S1-import-graph",
+  "reachableCount": 53,
+  "candidateFileCount": 63,
+  "unreachableCount": 12,
+  "unreachable": [
+    "frontend/hymn-app/assets/android-icon-background.png",
+    "frontend/hymn-app/assets/android-icon-foreground.png",
+    "frontend/hymn-app/assets/android-icon-monochrome.png",
+    "frontend/hymn-app/assets/favicon.png",
+    "frontend/hymn-app/assets/fonts/NotoSerifTC-Regular.ttf",
+    "frontend/hymn-app/assets/fonts/Sora-ExtraLight.ttf",
+    "frontend/hymn-app/assets/icon.png",
+    "frontend/hymn-app/assets/logo-ring@2x.png",
+    "frontend/hymn-app/assets/logo-ring@3x.png",
+    "frontend/hymn-app/assets/splash-icon.png",
+    "frontend/hymn-app/plugins/withSwiftAudioExStallFix.js",
+    "frontend/hymn-app/plugins/withSwiftAudioExStallWatchdog.js"
+  ],
+  "dynamicRequireWarnings": [
+    {
+      "file": "frontend/hymn-app/src/audioPrefetch.js",
+      "snippet": "require()`,而 `getFS()"
+    },
+    {
+      "file": "frontend/hymn-app/src/clientLog.js",
+      "snippet": "require(唔用 top-level import)"
+    }
+  ],
+  "positiveControl": {
+    "files": [
+      {
+        "file": "frontend/hymn-app/src/context/AuthContext.js",
+        "exists": true,
+        "reachable": true
+      },
+      {
+        "file": "frontend/hymn-app/src/components/LogoRing.js",
+        "exists": true,
+        "reachable": true
+      },
+      {
+        "file": "frontend/hymn-app/src/icons/OdeIcon.js",
+        "exists": true,
+        "reachable": true
+      }
+    ],
+    "pass": true
+  }
+}

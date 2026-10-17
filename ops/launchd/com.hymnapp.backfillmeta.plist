@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.hymnapp.backfillmeta</string>
+
+    <!-- performer(歌手)+ album(專輯) backfill 夜晚排程(TAXONOMY-5D-PLAN.md
+         §3.2/§3.3/§8 C5+C5b+C5c)。掃全庫 `performer_source=''`(冇 --org 限制,
+         C5 pilot 89 首泥土音樂通過 Opus 5 抽查後開全庫),waterfall
+         Layer M(結構化metadata)→ D(description)→ T(title)→ A(claude -p AI,
+         呢部機未登入,暫時 stub,留返 D/T/M 三層先行)。
+         每晚一轆 `--limit 300`(C5c followup③調高,Opus 實測評估安全:
+         16-21 分鐘完場仍有 30 分鐘水位先到 18:40 alignBackfill;候選
+         last_meta_attempt 輪換排序,未試過先行,死症 row 唔會塞住隊頭),
+         一晚處理唔晒嘅下晚自動接續。全庫 4096 條未掃,300/晚 ≈ 14 晚一轉,
+         覆蓋率過半 ≈ 7 晚。
+         `--report /tmp/hymn_backfillmeta-report.md`(C5c followup①):排程
+         report 唔准寫落 `backend/data/backfill-meta-pilot.md`——嗰個係
+         C5 pilot 嘅審計檔案(git 版本控制),排程每晚全檔覆寫會夜夜整污糟
+         working tree,改寫去 /tmp。
+
+         ⚠️ 時段刻意揀 17:30(同 fetchLyrics 8 輪 19:00-08:40 錯開)——
+         17:30 跌喺 growLibrary 辦公封鎖窗(平日/星期一至六 10:30-18:30)
+         入面,呢段時間 growLibrary 本身冇喺度 discover,撞期風險最細。
+         ⚠️ C5c followup⑤:星期日 growLibrary 唔封(`blockedDays` 只 1-6),
+         17:30 兩個 job 會同時醒——但寫 DB 都經 hymnDb.js acquireDbLock
+         互斥,攞唔到鎖就今次跳過留返下次,唔會 lost-update,安全。
+         離 alignBackfill(18:40)有 ~30 分鐘水位、離 fetchLyrics 首輪
+         (19:00)有緩衝。
+         寫 DB 用 hymnDb.js acquireDbLock(fetchLyrics/growLibrary 同一套鎖),
+         同其他排程互斥,唔會出現 lost-update。 -->
+    <key>ProgramArguments</key>
+    <array>
+        <string>/opt/homebrew/bin/node</string>
+        <string>/Users/macbookpro/.openclaw/workspace/hymn-app/backend/scripts/backfillMeta.js</string>
+        <string>--limit</string>
+        <string>300</string>
+        <string>--report</string>
+        <string>/tmp/hymn_backfillmeta-report.md</string>
+    </array>
+
+    <key>WorkingDirectory</key>
+    <string>/Users/macbookpro/.openclaw/workspace/hymn-app/backend</string>
+
+    <!-- ⚠️ 一定要 set PATH:launchd 預設冇 /opt/homebrew/bin,backfillMeta 行
+         yt-dlp 呢個 homebrew 裝嘅工具、亦要行 `claude` CLI(Layer A,PATH
+         入面搵)。唔 set 嘅話會 command-not-found、靜靜哋收 0 首。 -->
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>PATH</key>
+        <string>/opt/homebrew/bin:/opt/homebrew/sbin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+    </dict>
+
+    <key>StartCalendarInterval</key>
+    <dict>
+        <key>Hour</key><integer>17</integer>
+        <key>Minute</key><integer>30</integer>
+    </dict>
+
+    <key>RunAtLoad</key>
+    <false/>
+    <key>KeepAlive</key>
+    <false/>
+
+    <key>StandardOutPath</key>
+    <string>/tmp/hymn_backfillmeta.log</string>
+    <key>StandardErrorPath</key>
+    <string>/tmp/hymn_backfillmeta.log</string>
+</dict>
+</plist>

@@ -1,0 +1,23 @@
+# A-2 after (compression middleware, filtered) — 2026-09-02T07:50:24Z
+-- /api/hymns WITH Accept-Encoding: gzip --
+Content-Type: application/json; charset=utf-8
+Content-Encoding: gzip
+run=1 code=200 total=0.232776 size_download=1474227
+Content-Type: application/json; charset=utf-8
+Content-Encoding: gzip
+run=2 code=200 total=0.108825 size_download=1474227
+Content-Type: application/json; charset=utf-8
+Content-Encoding: gzip
+run=3 code=200 total=0.108539 size_download=1474227
+Content-Type: application/json; charset=utf-8
+Content-Encoding: gzip
+run=4 code=200 total=0.107694 size_download=1474227
+Content-Type: application/json; charset=utf-8
+Content-Encoding: gzip
+run=5 code=200 total=0.113820 size_download=1474227
+-- /api/hymns WITHOUT Accept-Encoding (curl default sends none unless --compressed) --
+Content-Type: application/json; charset=utf-8
+code=200 total=0.014025 size=5567648
+-- /api/health (small, <1KB, threshold should skip gzip) --
+Content-Length: 15
+(no Content-Encoding line above = correctly under 1KB threshold, not gzipped)

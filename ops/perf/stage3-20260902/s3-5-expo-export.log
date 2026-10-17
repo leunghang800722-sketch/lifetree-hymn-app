@@ -1,0 +1,15 @@
+Starting Metro Bundler
+
+iOS Bundled 7099ms index.js (1407 modules)
+
+› Assets (4):
+assets/logo-ring.png (3 variations | 63KB)
+assets/notification-icon.png (9KB)
+
+› ios bundles (1):
+_expo/static/js/ios/index-d9669ea48a996a8db21de3e947645f7e.hbc (3.7MB)
+
+› Files (1):
+metadata.json (393B)
+
+Exported: /private/tmp/claude-501/-Users-macbookpro--openclaw-workspace-hymn-app/dbef9ccd-547a-4212-8309-0735348d98c1/scratchpad/s3-export

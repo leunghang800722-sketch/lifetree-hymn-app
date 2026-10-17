@@ -1,0 +1,47 @@
+[
+  {
+    "playlist_id": "PLj-Kuc40oOv0e9OGBzhPfEq1jqRBAe387",
+    "playlist_title": "《復活的盼望》粵語敬拜讚美專輯",
+    "proposed_album": "復活的盼望",
+    "member_count": 8,
+    "matched_in_db": 8,
+    "approved": true,
+    "member_count_warning": false
+  },
+  {
+    "playlist_id": "PLj-Kuc40oOv0e6i7b5h78hLp12h26O6hX",
+    "playlist_title": "《感恩的祭》粵語敬拜讚美專輯",
+    "proposed_album": "感恩的祭",
+    "member_count": 5,
+    "matched_in_db": 5,
+    "approved": true,
+    "member_count_warning": false
+  },
+  {
+    "playlist_id": "PLj-Kuc40oOv0alDlCeChHUAN-9GSvXT9d",
+    "playlist_title": "《晨禱》粵語敬拜讚美專輯",
+    "proposed_album": "晨禱",
+    "member_count": 9,
+    "matched_in_db": 9,
+    "approved": true,
+    "member_count_warning": false
+  },
+  {
+    "playlist_id": "PLj-Kuc40oOv2HXZWEzg6fRDf5owolNDTH",
+    "playlist_title": "《信心的宣告》粵語敬拜讚美專輯",
+    "proposed_album": "信心的宣告",
+    "member_count": 9,
+    "matched_in_db": 9,
+    "approved": true,
+    "member_count_warning": false
+  },
+  {
+    "playlist_id": "PLj-Kuc40oOv2z-ekt1oEgDwteQ06DqOPZ",
+    "playlist_title": "專輯介紹 💽",
+    "proposed_album": "專輯介紹 💽",
+    "member_count": 41,
+    "matched_in_db": 0,
+    "approved": false,
+    "member_count_warning": true
+  }
+]

@@ -1,0 +1,5442 @@
+{
+  "generated": "2026-08-24T09:57:52.775Z",
+  "org": "基恩敬拜",
+  "band": [
+    120,
+    600
+  ],
+  "staleSkips": [],
+  "results": [
+    {
+      "youtube_id": "wqGvC752UQ8",
+      "raw_title": "更新我心 Renew My Heart (Guitar Version)",
+      "flat_duration": 395,
+      "playlist_id": "OLAK5uy_mh4FTST3U-YHkChGkWL_qxd5lN32NYRjI",
+      "playlist_title": "Amazing Guitar 4",
+      "instrumental_signal": "Guitar",
+      "proposed_album": "Amazing Guitar 4 (Guitar Version)",
+      "verdict": "instrumental",
+      "gate": null,
+      "why": "五重閘全過(rejudge:指紋庫更新後零網絡重判)",
+      "meta": {
+        "id": "wqGvC752UQ8",
+        "title": "更新我心 Renew My Heart (Guitar Version)",
+        "duration": 395,
+        "channel": "基恩敬拜 Amazing Grace Worship",
+        "upload_date": "20240624",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": false,
+          "reasons": [
+            "剩餘文字 1 行:中文字幕:IYUNO Media Group"
+          ],
+          "uniq": [
+            "詩歌歌曲,詩歌歌曲。",
+            "中文字幕:IYUNO Media Group"
+          ],
+          "uniqCount": 2,
+          "coverage": 0.9924050632911392,
+          "lastT1": 392,
+          "whisperFailed": false,
+          "garbageDropped": 1,
+          "rejudge_reasons": [
+            "剩餘文字:中文字幕:IYUNO Media Group"
+          ]
+        },
+        "en": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "[MUSIC]",
+            "[BLANK_AUDIO]"
+          ],
+          "uniqCount": 2,
+          "coverage": 1.0126582278481013,
+          "lastT1": 400,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    },
+    {
+      "youtube_id": "pvWK1YQJSZw",
+      "raw_title": "永恆的主 Everlasting God (Guitar Version)",
+      "flat_duration": 269,
+      "playlist_id": "OLAK5uy_mh4FTST3U-YHkChGkWL_qxd5lN32NYRjI",
+      "playlist_title": "Amazing Guitar 4",
+      "instrumental_signal": "Guitar",
+      "proposed_album": "Amazing Guitar 4 (Guitar Version)",
+      "verdict": "instrumental",
+      "gate": null,
+      "why": "五重閘全過",
+      "meta": {
+        "id": "pvWK1YQJSZw",
+        "title": "永恆的主 Everlasting God (Guitar Version)",
+        "duration": 269,
+        "channel": "基恩敬拜 Amazing Grace Worship",
+        "upload_date": "20240624",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "詩歌歌曲, 詩歌歌曲, 詩歌歌曲,詩歌歌曲。",
+            "詩歌歌曲, 詩歌歌曲,詩歌歌曲,詩歌歌曲。",
+            "詩歌歌曲,詩歌歌曲,詩歌歌曲,詩歌歌曲。",
+            "詩歌歌曲, 詩歌歌曲,詩歌歌曲。",
+            "詩歌歌曲,詩歌歌曲,詩歌歌曲,詩歌歌曲,詩歌歌曲。"
+          ],
+          "uniqCount": 5,
+          "coverage": 0.9219330855018587,
+          "lastT1": 248,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        },
+        "en": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "[MUSIC]"
+          ],
+          "uniqCount": 1,
+          "coverage": 1.003717472118959,
+          "lastT1": 270,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    },
+    {
+      "youtube_id": "E7MhbQDGXnU",
+      "raw_title": "良牧 The Good Shepherd (Guitar Version)",
+      "flat_duration": 370,
+      "playlist_id": "OLAK5uy_mh4FTST3U-YHkChGkWL_qxd5lN32NYRjI",
+      "playlist_title": "Amazing Guitar 4",
+      "instrumental_signal": "Guitar",
+      "proposed_album": "Amazing Guitar 4 (Guitar Version)",
+      "verdict": "instrumental",
+      "gate": null,
+      "why": "五重閘全過",
+      "meta": {
+        "id": "E7MhbQDGXnU",
+        "title": "良牧 The Good Shepherd (Guitar Version)",
+        "duration": 369,
+        "channel": "基恩敬拜 Amazing Grace Worship",
+        "upload_date": "20240624",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "詞曲:李宗盛 詞:李宗盛 編曲:李宗盛",
+            "詞曲:李宗盛 監製:李宗盛",
+            "詞曲:李宗盛 編曲:李宗盛",
+            "編曲:李宗盛 編曲:李宗盛"
+          ],
+          "uniqCount": 4,
+          "coverage": 0.994579945799458,
+          "lastT1": 367,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        },
+        "en": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "[MUSIC]"
+          ],
+          "uniqCount": 1,
+          "coverage": 1.002710027100271,
+          "lastT1": 370,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    },
+    {
+      "youtube_id": "hPtsn8oebV0",
+      "raw_title": "謝謝祢的愛 Thank You For Your Love (Guitar Version)",
+      "flat_duration": 263,
+      "playlist_id": "OLAK5uy_mh4FTST3U-YHkChGkWL_qxd5lN32NYRjI",
+      "playlist_title": "Amazing Guitar 4",
+      "instrumental_signal": "Guitar",
+      "proposed_album": "Amazing Guitar 4 (Guitar Version)",
+      "verdict": "instrumental",
+      "gate": null,
+      "why": "五重閘全過",
+      "meta": {
+        "id": "hPtsn8oebV0",
+        "title": "謝謝祢的愛 Thank You For Your Love (Guitar Version)",
+        "duration": 262,
+        "channel": "基恩敬拜 Amazing Grace Worship",
+        "upload_date": "20240624",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "詩歌歌曲,詩歌歌曲。"
+          ],
+          "uniqCount": 1,
+          "coverage": 0.9236641221374046,
+          "lastT1": 242,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        },
+        "en": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "[MUSIC]"
+          ],
+          "uniqCount": 1,
+          "coverage": 0.950381679389313,
+          "lastT1": 249,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    },
+    {
+      "youtube_id": "GI3C6Y3f6JU",
+      "raw_title": "晨禱 Morning Prayer (Guitar Version)",
+      "flat_duration": 373,
+      "playlist_id": "OLAK5uy_mh4FTST3U-YHkChGkWL_qxd5lN32NYRjI",
+      "playlist_title": "Amazing Guitar 4",
+      "instrumental_signal": "Guitar",
+      "proposed_album": "Amazing Guitar 4 (Guitar Version)",
+      "verdict": "instrumental",
+      "gate": null,
+      "why": "五重閘全過",
+      "meta": {
+        "id": "GI3C6Y3f6JU",
+        "title": "晨禱 Morning Prayer (Guitar Version)",
+        "duration": 373,
+        "channel": "基恩敬拜 Amazing Grace Worship",
+        "upload_date": "20240624",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "詞曲:李宗盛"
+          ],
+          "uniqCount": 1,
+          "coverage": 0.9651474530831099,
+          "lastT1": 360,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        },
+        "en": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "[MUSIC]"
+          ],
+          "uniqCount": 1,
+          "coverage": 1.0053619302949062,
+          "lastT1": 375,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    },
+    {
+      "youtube_id": "yiAQPZvSXcA",
+      "raw_title": "我們愛因為神先愛 We Love Because God First Loved Us (Guitar Version)",
+      "flat_duration": 340,
+      "playlist_id": "OLAK5uy_mh4FTST3U-YHkChGkWL_qxd5lN32NYRjI",
+      "playlist_title": "Amazing Guitar 4",
+      "instrumental_signal": "Guitar",
+      "proposed_album": "Amazing Guitar 4 (Guitar Version)",
+      "verdict": "instrumental",
+      "gate": null,
+      "why": "五重閘全過",
+      "meta": {
+        "id": "yiAQPZvSXcA",
+        "title": "我們愛因為神先愛 We Love Because God First Loved Us (Guitar Version)",
+        "duration": 340,
+        "channel": "基恩敬拜 Amazing Grace Worship",
+        "upload_date": "20240624",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "詞曲:陳鋒鋒"
+          ],
+          "uniqCount": 1,
+          "coverage": 1,
+          "lastT1": 340,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        },
+        "en": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "[MUSIC]"
+          ],
+          "uniqCount": 1,
+          "coverage": 0.9558823529411765,
+          "lastT1": 325,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    },
+    {
+      "youtube_id": "xuJwt-Cv0fs",
+      "raw_title": "親眼看見祢 My Eyes Have Seen You (Guitar Version)",
+      "flat_duration": 292,
+      "playlist_id": "OLAK5uy_mh4FTST3U-YHkChGkWL_qxd5lN32NYRjI",
+      "playlist_title": "Amazing Guitar 4",
+      "instrumental_signal": "Guitar",
+      "proposed_album": "Amazing Guitar 4 (Guitar Version)",
+      "verdict": "instrumental",
+      "gate": null,
+      "why": "五重閘全過",
+      "meta": {
+        "id": "xuJwt-Cv0fs",
+        "title": "親眼看見祢 My Eyes Have Seen You (Guitar Version)",
+        "duration": 291,
+        "channel": "基恩敬拜 Amazing Grace Worship",
+        "upload_date": "20240624",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "詩歌歌曲、詩歌歌曲、詩歌歌曲。",
+            "詩歌曲,詩歌歌曲。",
+            "詩歌歌曲、詩歌歌曲、詩歌歌曲.",
+            "(音樂播放中)"
+          ],
+          "uniqCount": 4,
+          "coverage": 0.9381443298969072,
+          "lastT1": 273,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        },
+        "en": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "[MUSIC]",
+            "[ Silence ]"
+          ],
+          "uniqCount": 2,
+          "coverage": 1.0996563573883162,
+          "lastT1": 320,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    },
+    {
+      "youtube_id": "8xh71YrN4lw",
+      "raw_title": "平安的路 Path Of Peace (Guitar Version)",
+      "flat_duration": 364,
+      "playlist_id": "OLAK5uy_mh4FTST3U-YHkChGkWL_qxd5lN32NYRjI",
+      "playlist_title": "Amazing Guitar 4",
+      "instrumental_signal": "Guitar",
+      "proposed_album": "Amazing Guitar 4 (Guitar Version)",
+      "verdict": "instrumental",
+      "gate": null,
+      "why": "五重閘全過(rejudge:指紋庫更新後零網絡重判)",
+      "meta": {
+        "id": "8xh71YrN4lw",
+        "title": "平安的路 Path Of Peace (Guitar Version)",
+        "duration": 363,
+        "channel": "基恩敬拜 Amazing Grace Worship",
+        "upload_date": "20240624",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": false,
+          "reasons": [
+            "剩餘文字 1 行:字幕:J Chong"
+          ],
+          "uniq": [
+            "詞曲:李宗盛 編曲:李宗盛",
+            "詞曲:李宗盛",
+            "字幕:J Chong"
+          ],
+          "uniqCount": 3,
+          "coverage": 0.9944903581267218,
+          "lastT1": 361,
+          "whisperFailed": false,
+          "garbageDropped": 1,
+          "rejudge_reasons": [
+            "剩餘文字:字幕:J Chong"
+          ]
+        },
+        "en": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "[MUSIC]"
+          ],
+          "uniqCount": 1,
+          "coverage": 0.977961432506887,
+          "lastT1": 355,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    },
+    {
+      "youtube_id": "6mZNZoETPhY",
+      "raw_title": "信心的等待 Wait With Faith (Guitar Version)",
+      "flat_duration": 305,
+      "playlist_id": "OLAK5uy_mh4FTST3U-YHkChGkWL_qxd5lN32NYRjI",
+      "playlist_title": "Amazing Guitar 4",
+      "instrumental_signal": "Guitar",
+      "proposed_album": "Amazing Guitar 4 (Guitar Version)",
+      "verdict": "instrumental",
+      "gate": null,
+      "why": "五重閘全過(rejudge:指紋庫更新後零網絡重判)",
+      "meta": {
+        "id": "6mZNZoETPhY",
+        "title": "信心的等待 Wait With Faith (Guitar Version)",
+        "duration": 304,
+        "channel": "基恩敬拜 Amazing Grace Worship",
+        "upload_date": "20240624",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": false,
+          "reasons": [
+            "剩餘文字 1 行:优优独播剧场——YoYo Television Series"
+          ],
+          "uniq": [
+            "詞曲:李宗盛 編曲:李宗盛",
+            "詞曲:李宗盛",
+            "优优独播剧场——YoYo Television Series Exclusive"
+          ],
+          "uniqCount": 3,
+          "coverage": 1.013157894736842,
+          "lastT1": 308,
+          "whisperFailed": false,
+          "garbageDropped": 1,
+          "rejudge_reasons": [
+            "剩餘文字:优优独播剧场——YoYo Television Series"
+          ]
+        },
+        "en": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "[MUSIC]"
+          ],
+          "uniqCount": 1,
+          "coverage": 0.9671052631578947,
+          "lastT1": 294,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    },
+    {
+      "youtube_id": "edSQwdWONLY",
+      "raw_title": "請堅固我 Lord, Please Strengthen Me (Guitar Version)",
+      "flat_duration": 305,
+      "playlist_id": "OLAK5uy_mh4FTST3U-YHkChGkWL_qxd5lN32NYRjI",
+      "playlist_title": "Amazing Guitar 4",
+      "instrumental_signal": "Guitar",
+      "proposed_album": "Amazing Guitar 4 (Guitar Version)",
+      "verdict": "reject",
+      "gate": 4,
+      "why": "兩 pass 結論唔一致(zh 唔過:剩餘文字 5 行:詩歌歌曲、詩歌歌曲、詩歌歌曲,與詩歌歌曲有關。 / 詩歌歌曲是一首歌曲,是一首歌曲,是一首歌曲,是一首歌曲。 / 詩歌歌曲,是一首歌曲,是一首歌曲,是一首歌曲。 / en 過)",
+      "meta": {
+        "id": "edSQwdWONLY",
+        "title": "請堅固我 Lord, Please Strengthen Me (Guitar Version)",
+        "duration": 305,
+        "channel": "基恩敬拜 Amazing Grace Worship",
+        "upload_date": "20240624",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": false,
+          "reasons": [
+            "剩餘文字 5 行:詩歌歌曲、詩歌歌曲、詩歌歌曲,與詩歌歌曲有關。 / 詩歌歌曲是一首歌曲,是一首歌曲,是一首歌曲,是一首歌曲。 / 詩歌歌曲,是一首歌曲,是一首歌曲,是一首歌曲。"
+          ],
+          "uniq": [
+            "詩歌歌曲、詩歌歌曲、詩歌歌曲,與詩歌歌曲有關。",
+            "詩歌歌曲是一首歌曲,是一首歌曲,是一首歌曲,是一首歌曲。",
+            "詩歌歌曲,是一首歌曲,是一首歌曲,是一首歌曲。",
+            "詩歌歌曲,是一首歌曲,是一首歌曲,是一首歌曲,是一首歌曲。",
+            "MING PAO CANADA | MING PAO TORONTO"
+          ],
+          "uniqCount": 5,
+          "coverage": 0.9901639344262295,
+          "lastT1": 302,
+          "whisperFailed": false,
+          "garbageDropped": 1,
+          "rejudge_reasons": [
+            "剩餘文字:詩歌歌曲、詩歌歌曲、詩歌歌曲,與詩歌歌曲有關。 / 詩歌歌曲是一首歌曲,是一首歌曲,是一首歌曲,是一首歌曲。 / 詩歌歌曲,是一首歌曲,是一首歌曲,是一首歌曲。 / 詩歌歌曲,是一首歌曲,是一首歌曲,是一首歌曲,是一首歌曲。"
+          ]
+        },
+        "en": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "[MUSIC]"
+          ],
+          "uniqCount": 1,
+          "coverage": 1,
+          "lastT1": 305,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    },
+    {
+      "youtube_id": "ussxoLnmR7I",
+      "raw_title": "寶貴恩典 Precious Grace Of God (Guitar Version)",
+      "flat_duration": 304,
+      "playlist_id": "OLAK5uy_mh4FTST3U-YHkChGkWL_qxd5lN32NYRjI",
+      "playlist_title": "Amazing Guitar 4",
+      "instrumental_signal": "Guitar",
+      "proposed_album": "Amazing Guitar 4 (Guitar Version)",
+      "verdict": "instrumental",
+      "gate": null,
+      "why": "五重閘全過(rejudge:指紋庫更新後零網絡重判)",
+      "meta": {
+        "id": "ussxoLnmR7I",
+        "title": "寶貴恩典 Precious Grace Of God (Guitar Version)",
+        "duration": 303,
+        "channel": "基恩敬拜 Amazing Grace Worship",
+        "upload_date": "20240624",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": false,
+          "reasons": [
+            "剩餘文字 1 行:请不吝点赞 订阅 转发 打赏支持明镜与点点栏目"
+          ],
+          "uniq": [
+            "詞曲:李宗盛 編曲:李宗盛",
+            "詞曲:李宗盛",
+            "请不吝点赞 订阅 转发 打赏支持明镜与点点栏目"
+          ],
+          "uniqCount": 3,
+          "coverage": 1.0414521452145216,
+          "lastT1": 315.56,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        },
+        "en": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "[MUSIC]"
+          ],
+          "uniqCount": 1,
+          "coverage": 0.9900990099009901,
+          "lastT1": 300,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    },
+    {
+      "youtube_id": "qMdO9kjG0ls",
+      "raw_title": "有祢同行 With You By My Side (Guitar Version)",
+      "flat_duration": 366,
+      "playlist_id": "OLAK5uy_mh4FTST3U-YHkChGkWL_qxd5lN32NYRjI",
+      "playlist_title": "Amazing Guitar 4",
+      "instrumental_signal": "Guitar",
+      "proposed_album": "Amazing Guitar 4 (Guitar Version)",
+      "verdict": "instrumental",
+      "gate": null,
+      "why": "五重閘全過",
+      "meta": {
+        "id": "qMdO9kjG0ls",
+        "title": "有祢同行 With You By My Side (Guitar Version)",
+        "duration": 365,
+        "channel": "基恩敬拜 Amazing Grace Worship",
+        "upload_date": "20240624",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "詞曲:李宗盛 編曲:李宗盛",
+            "詞曲:李宗盛"
+          ],
+          "uniqCount": 2,
+          "coverage": 1.0136986301369864,
+          "lastT1": 370,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        },
+        "en": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "[MUSIC]"
+          ],
+          "uniqCount": 1,
+          "coverage": 0.9726027397260274,
+          "lastT1": 355,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    },
+    {
+      "youtube_id": "11EBkLx5Vvw",
+      "raw_title": "恩典窄路 Narrow Path Of Grace (Guitar Version)",
+      "flat_duration": 327,
+      "playlist_id": "OLAK5uy_mh4FTST3U-YHkChGkWL_qxd5lN32NYRjI",
+      "playlist_title": "Amazing Guitar 4",
+      "instrumental_signal": "Guitar",
+      "proposed_album": "Amazing Guitar 4 (Guitar Version)",
+      "verdict": "instrumental",
+      "gate": null,
+      "why": "五重閘全過",
+      "meta": {
+        "id": "11EBkLx5Vvw",
+        "title": "恩典窄路 Narrow Path Of Grace (Guitar Version)",
+        "duration": 326,
+        "channel": "基恩敬拜 Amazing Grace Worship",
+        "upload_date": "20240624",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "詞曲:陳鋒鋒"
+          ],
+          "uniqCount": 1,
+          "coverage": 0.950920245398773,
+          "lastT1": 310,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        },
+        "en": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "[MUSIC]"
+          ],
+          "uniqCount": 1,
+          "coverage": 0.9969325153374233,
+          "lastT1": 325,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    },
+    {
+      "youtube_id": "dJUp9mXzxOU",
+      "raw_title": "陪我渡過 You Were With Me (Guitar Version)",
+      "flat_duration": 356,
+      "playlist_id": "OLAK5uy_mh4FTST3U-YHkChGkWL_qxd5lN32NYRjI",
+      "playlist_title": "Amazing Guitar 4",
+      "instrumental_signal": "Guitar",
+      "proposed_album": "Amazing Guitar 4 (Guitar Version)",
+      "verdict": "instrumental",
+      "gate": null,
+      "why": "五重閘全過",
+      "meta": {
+        "id": "dJUp9mXzxOU",
+        "title": "陪我渡過 You Were With Me (Guitar Version)",
+        "duration": 355,
+        "channel": "基恩敬拜 Amazing Grace Worship",
+        "upload_date": "20240624",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "詞曲:陳鋒鋒"
+          ],
+          "uniqCount": 1,
+          "coverage": 0.9577464788732394,
+          "lastT1": 340,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        },
+        "en": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "[MUSIC]"
+          ],
+          "uniqCount": 1,
+          "coverage": 0.971830985915493,
+          "lastT1": 345,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    },
+    {
+      "youtube_id": "bvt2uPoasvI",
+      "raw_title": "我們愛因為神先愛 We Love Because God First Loved Us (Piano Version)",
+      "flat_duration": 365,
+      "playlist_id": "OLAK5uy_lni21cs5uHhgCOjiuNXko2tFct9X3qAvI",
+      "playlist_title": "Amazing Piano 2",
+      "instrumental_signal": "Piano",
+      "proposed_album": "Amazing Piano 2 (Piano Version)",
+      "verdict": "instrumental",
+      "gate": null,
+      "why": "五重閘全過",
+      "meta": {
+        "id": "bvt2uPoasvI",
+        "title": "我們愛因為神先愛 We Love Because God First Loved Us (Piano Version)",
+        "duration": 364,
+        "channel": "基恩敬拜 Amazing Grace Worship",
+        "upload_date": "20211030",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "詞曲:李宗盛 編曲:李宗盛",
+            "詞曲:李宗盛"
+          ],
+          "uniqCount": 2,
+          "coverage": 0.9587912087912088,
+          "lastT1": 349,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        },
+        "en": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "[MUSIC]"
+          ],
+          "uniqCount": 1,
+          "coverage": 1.0164835164835164,
+          "lastT1": 370,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    },
+    {
+      "youtube_id": "BFBORrua1IU",
+      "raw_title": "繼續向前行 Going Forth (Piano Version)",
+      "flat_duration": 341,
+      "playlist_id": "OLAK5uy_lni21cs5uHhgCOjiuNXko2tFct9X3qAvI",
+      "playlist_title": "Amazing Piano 2",
+      "instrumental_signal": "Piano",
+      "proposed_album": "Amazing Piano 2 (Piano Version)",
+      "verdict": "instrumental",
+      "gate": null,
+      "why": "五重閘全過",
+      "meta": {
+        "id": "BFBORrua1IU",
+        "title": "繼續向前行 Going Forth (Piano Version)",
+        "duration": 340,
+        "channel": "基恩敬拜 Amazing Grace Worship",
+        "upload_date": "20211030",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "詞曲:李宗盛 編曲:李宗盛",
+            "詞曲:李宗盛"
+          ],
+          "uniqCount": 2,
+          "coverage": 0.9852941176470589,
+          "lastT1": 335,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        },
+        "en": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "[MUSIC]",
+            "[BLANK_AUDIO]"
+          ],
+          "uniqCount": 2,
+          "coverage": 1.0294117647058822,
+          "lastT1": 350,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    },
+    {
+      "youtube_id": "2OVRrkMQbp0",
+      "raw_title": "再次站起來 Standing Up Again (Piano Version)",
+      "flat_duration": 358,
+      "playlist_id": "OLAK5uy_lni21cs5uHhgCOjiuNXko2tFct9X3qAvI",
+      "playlist_title": "Amazing Piano 2",
+      "instrumental_signal": "Piano",
+      "proposed_album": "Amazing Piano 2 (Piano Version)",
+      "verdict": "instrumental",
+      "gate": null,
+      "why": "五重閘全過",
+      "meta": {
+        "id": "2OVRrkMQbp0",
+        "title": "再次站起來 Standing Up Again (Piano Version)",
+        "duration": 358,
+        "channel": "基恩敬拜 Amazing Grace Worship",
+        "upload_date": "20211030",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "詞曲:李宗盛 編曲:李宗盛",
+            "詞曲:李宗盛"
+          ],
+          "uniqCount": 2,
+          "coverage": 0.9776536312849162,
+          "lastT1": 350,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        },
+        "en": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "[MUSIC]"
+          ],
+          "uniqCount": 1,
+          "coverage": 0.9636871508379888,
+          "lastT1": 345,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    },
+    {
+      "youtube_id": "kEoXqi9ZnPs",
+      "raw_title": "我的哀哭變為跳舞 My Wailing Into Dancing (Piano Version)",
+      "flat_duration": 375,
+      "playlist_id": "OLAK5uy_lni21cs5uHhgCOjiuNXko2tFct9X3qAvI",
+      "playlist_title": "Amazing Piano 2",
+      "instrumental_signal": "Piano",
+      "proposed_album": "Amazing Piano 2 (Piano Version)",
+      "verdict": "instrumental",
+      "gate": null,
+      "why": "五重閘全過",
+      "meta": {
+        "id": "kEoXqi9ZnPs",
+        "title": "我的哀哭變為跳舞 My Wailing Into Dancing (Piano Version)",
+        "duration": 374,
+        "channel": "基恩敬拜 Amazing Grace Worship",
+        "upload_date": "20211030",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "詞曲:李宗盛 編曲:李宗盛",
+            "詞曲:李宗盛"
+          ],
+          "uniqCount": 2,
+          "coverage": 0.9625668449197861,
+          "lastT1": 360,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        },
+        "en": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "[MUSIC]"
+          ],
+          "uniqCount": 1,
+          "coverage": 1.0026737967914439,
+          "lastT1": 375,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    },
+    {
+      "youtube_id": "0K7gaZWFTo0",
+      "raw_title": "放下擔子 Lay Down The Burden (Piano Version)",
+      "flat_duration": 316,
+      "playlist_id": "OLAK5uy_lni21cs5uHhgCOjiuNXko2tFct9X3qAvI",
+      "playlist_title": "Amazing Piano 2",
+      "instrumental_signal": "Piano",
+      "proposed_album": "Amazing Piano 2 (Piano Version)",
+      "verdict": "instrumental",
+      "gate": null,
+      "why": "五重閘全過",
+      "meta": {
+        "id": "0K7gaZWFTo0",
+        "title": "放下擔子 Lay Down The Burden (Piano Version)",
+        "duration": 316,
+        "channel": "基恩敬拜 Amazing Grace Worship",
+        "upload_date": "20211030",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "詞曲:李宗盛 編曲:李宗盛",
+            "詞曲:李宗盛"
+          ],
+          "uniqCount": 2,
+          "coverage": 0.9651898734177216,
+          "lastT1": 305,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        },
+        "en": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "[MUSIC]"
+          ],
+          "uniqCount": 1,
+          "coverage": 1.0126582278481013,
+          "lastT1": 320,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    },
+    {
+      "youtube_id": "d15DKuzGfF4",
+      "raw_title": "慈繩愛索 The Rein Of Love The Rope Of Grace (Piano Version)",
+      "flat_duration": 370,
+      "playlist_id": "OLAK5uy_lni21cs5uHhgCOjiuNXko2tFct9X3qAvI",
+      "playlist_title": "Amazing Piano 2",
+      "instrumental_signal": "Piano",
+      "proposed_album": "Amazing Piano 2 (Piano Version)",
+      "verdict": "instrumental",
+      "gate": null,
+      "why": "五重閘全過",
+      "meta": {
+        "id": "d15DKuzGfF4",
+        "title": "慈繩愛索 The Rein Of Love The Rope Of Grace (Piano Version)",
+        "duration": 370,
+        "channel": "基恩敬拜 Amazing Grace Worship",
+        "upload_date": "20211030",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "詞曲:李宗盛 編曲:李宗盛",
+            "詞曲:李宗盛",
+            "詞:李宗盛"
+          ],
+          "uniqCount": 3,
+          "coverage": 0.9972972972972973,
+          "lastT1": 369,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        },
+        "en": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "[MUSIC]"
+          ],
+          "uniqCount": 1,
+          "coverage": 1,
+          "lastT1": 370,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    },
+    {
+      "youtube_id": "qdY5jhwX7gg",
+      "raw_title": "陪我渡過 You Were With Me (Piano Version)",
+      "flat_duration": 317,
+      "playlist_id": "OLAK5uy_lni21cs5uHhgCOjiuNXko2tFct9X3qAvI",
+      "playlist_title": "Amazing Piano 2",
+      "instrumental_signal": "Piano",
+      "proposed_album": "Amazing Piano 2 (Piano Version)",
+      "verdict": "instrumental",
+      "gate": null,
+      "why": "五重閘全過",
+      "meta": {
+        "id": "qdY5jhwX7gg",
+        "title": "陪我渡過 You Were With Me (Piano Version)",
+        "duration": 316,
+        "channel": "基恩敬拜 Amazing Grace Worship",
+        "upload_date": "20211030",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "詞曲:李宗盛 編曲:李宗盛",
+            "詞曲:李宗盛"
+          ],
+          "uniqCount": 2,
+          "coverage": 0.9715189873417721,
+          "lastT1": 307,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        },
+        "en": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "[MUSIC]"
+          ],
+          "uniqCount": 1,
+          "coverage": 1.0126582278481013,
+          "lastT1": 320,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    },
+    {
+      "youtube_id": "S2wwZ2nMFa0",
+      "raw_title": "求天父悅納我的讚美 May My Praise Be Accepted By The Father (Piano Version)",
+      "flat_duration": 339,
+      "playlist_id": "OLAK5uy_lni21cs5uHhgCOjiuNXko2tFct9X3qAvI",
+      "playlist_title": "Amazing Piano 2",
+      "instrumental_signal": "Piano",
+      "proposed_album": "Amazing Piano 2 (Piano Version)",
+      "verdict": "instrumental",
+      "gate": null,
+      "why": "五重閘全過",
+      "meta": {
+        "id": "S2wwZ2nMFa0",
+        "title": "求天父悅納我的讚美 May My Praise Be Accepted By The Father (Piano Version)",
+        "duration": 339,
+        "channel": "基恩敬拜 Amazing Grace Worship",
+        "upload_date": "20211030",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "詞曲:李宗盛 編曲:李宗盛",
+            "詞曲:李宗盛"
+          ],
+          "uniqCount": 2,
+          "coverage": 0.9882005899705014,
+          "lastT1": 335,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        },
+        "en": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "[MUSIC]"
+          ],
+          "uniqCount": 1,
+          "coverage": 0.9587020648967551,
+          "lastT1": 325,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    },
+    {
+      "youtube_id": "THJBIVgg_uo",
+      "raw_title": "一生讚美祢 Praise You All My Life (Piano Version)",
+      "flat_duration": 374,
+      "playlist_id": "OLAK5uy_lni21cs5uHhgCOjiuNXko2tFct9X3qAvI",
+      "playlist_title": "Amazing Piano 2",
+      "instrumental_signal": "Piano",
+      "proposed_album": "Amazing Piano 2 (Piano Version)",
+      "verdict": "instrumental",
+      "gate": null,
+      "why": "五重閘全過",
+      "meta": {
+        "id": "THJBIVgg_uo",
+        "title": "一生讚美祢 Praise You All My Life (Piano Version)",
+        "duration": 374,
+        "channel": "基恩敬拜 Amazing Grace Worship",
+        "upload_date": "20211030",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "詞曲:李宗盛 編曲:李宗盛",
+            "詞曲:李宗盛"
+          ],
+          "uniqCount": 2,
+          "coverage": 0.9812834224598931,
+          "lastT1": 367,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        },
+        "en": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "[MUSIC]"
+          ],
+          "uniqCount": 1,
+          "coverage": 1.0026737967914439,
+          "lastT1": 375,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    },
+    {
+      "youtube_id": "2OlMLrFXLQ0",
+      "raw_title": "親眼看見祢 My Eyes Have Seen You (Piano Version)",
+      "flat_duration": 325,
+      "playlist_id": "OLAK5uy_lni21cs5uHhgCOjiuNXko2tFct9X3qAvI",
+      "playlist_title": "Amazing Piano 2",
+      "instrumental_signal": "Piano",
+      "proposed_album": "Amazing Piano 2 (Piano Version)",
+      "verdict": "instrumental",
+      "gate": null,
+      "why": "五重閘全過(rejudge:指紋庫更新後零網絡重判)",
+      "meta": {
+        "id": "2OlMLrFXLQ0",
+        "title": "親眼看見祢 My Eyes Have Seen You (Piano Version)",
+        "duration": 324,
+        "channel": "基恩敬拜 Amazing Grace Worship",
+        "upload_date": "20211030",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": false,
+          "reasons": [
+            "剩餘文字 1 行:MING PAO CANADA | MING PAO TOR"
+          ],
+          "uniq": [
+            "詞曲:李宗盛 編曲:李宗盛",
+            "詞曲:李宗盛",
+            "MING PAO CANADA | MING PAO TORONTO"
+          ],
+          "uniqCount": 3,
+          "coverage": 1,
+          "lastT1": 324,
+          "whisperFailed": false,
+          "garbageDropped": 1
+        },
+        "en": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "[MUSIC]"
+          ],
+          "uniqCount": 1,
+          "coverage": 1.0030864197530864,
+          "lastT1": 325,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    },
+    {
+      "youtube_id": "pEAJXqie1UA",
+      "raw_title": "【靈命塑造系列】當你失去信心時 - 基恩敬拜 AGWMM",
+      "flat_duration": 587,
+      "playlist_id": "OLAK5uy_kgI2xLBKNRMLMdDkWwreJjtjb96wxO-rM",
+      "playlist_title": "Amazing Piano 1",
+      "instrumental_signal": "Piano",
+      "proposed_album": "Amazing Piano 1 (Piano Version)",
+      "verdict": "skip",
+      "why": "已經喺庫"
+    },
+    {
+      "youtube_id": "7R5h8lZXn9s",
+      "raw_title": "有祢同行 With You By My Side (Piano Version)",
+      "flat_duration": 308,
+      "playlist_id": "OLAK5uy_kgI2xLBKNRMLMdDkWwreJjtjb96wxO-rM",
+      "playlist_title": "Amazing Piano 1",
+      "instrumental_signal": "Piano",
+      "proposed_album": "Amazing Piano 1 (Piano Version)",
+      "verdict": "instrumental",
+      "gate": null,
+      "why": "五重閘全過",
+      "meta": {
+        "id": "7R5h8lZXn9s",
+        "title": "有祢同行 With You By My Side (Piano Version)",
+        "duration": 308,
+        "channel": "基恩敬拜 Amazing Grace Worship",
+        "upload_date": "20241008",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "詩歌歌曲、詩歌歌曲、詩歌歌曲。",
+            "詩歌歌曲,詩歌歌曲,詩歌歌曲。",
+            "詩歌歌曲,詩歌歌曲,詩歌歌曲,詩歌歌曲。",
+            "詩歌歌曲,詩歌歌曲,詩歌歌曲,詩歌歌曲,詩歌歌曲。",
+            "詩歌歌曲。"
+          ],
+          "uniqCount": 5,
+          "coverage": 1,
+          "lastT1": 308,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        },
+        "en": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "[MUSIC]"
+          ],
+          "uniqCount": 1,
+          "coverage": 0.974025974025974,
+          "lastT1": 300,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    },
+    {
+      "youtube_id": "Y3eZ2VxaLjo",
+      "raw_title": "主賜平安 Grant Us Peace (Piano Version)",
+      "flat_duration": 273,
+      "playlist_id": "OLAK5uy_kgI2xLBKNRMLMdDkWwreJjtjb96wxO-rM",
+      "playlist_title": "Amazing Piano 1",
+      "instrumental_signal": "Piano",
+      "proposed_album": "Amazing Piano 1 (Piano Version)",
+      "verdict": "instrumental",
+      "gate": null,
+      "why": "五重閘全過(rejudge:指紋庫更新後零網絡重判)",
+      "meta": {
+        "id": "Y3eZ2VxaLjo",
+        "title": "主賜平安 Grant Us Peace (Piano Version)",
+        "duration": 272,
+        "channel": "基恩敬拜 Amazing Grace Worship",
+        "upload_date": "20241008",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": false,
+          "reasons": [
+            "剩餘文字 1 行:中文字幕:J Chong"
+          ],
+          "uniq": [
+            "詞曲:李宗盛 編曲:李宗盛",
+            "詞曲:李宗盛",
+            "中文字幕:J Chong"
+          ],
+          "uniqCount": 3,
+          "coverage": 1,
+          "lastT1": 272,
+          "whisperFailed": false,
+          "garbageDropped": 0,
+          "rejudge_reasons": [
+            "剩餘文字:中文字幕:J Chong"
+          ]
+        },
+        "en": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "[MUSIC]"
+          ],
+          "uniqCount": 1,
+          "coverage": 1.0036764705882353,
+          "lastT1": 273,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    },
+    {
+      "youtube_id": "WFRMEwcY9kg",
+      "raw_title": "平安的路 Path Of Peace (Piano Version)",
+      "flat_duration": 358,
+      "playlist_id": "OLAK5uy_kgI2xLBKNRMLMdDkWwreJjtjb96wxO-rM",
+      "playlist_title": "Amazing Piano 1",
+      "instrumental_signal": "Piano",
+      "proposed_album": "Amazing Piano 1 (Piano Version)",
+      "verdict": "instrumental",
+      "gate": null,
+      "why": "五重閘全過",
+      "meta": {
+        "id": "WFRMEwcY9kg",
+        "title": "平安的路 Path Of Peace (Piano Version)",
+        "duration": 358,
+        "channel": "基恩敬拜 Amazing Grace Worship",
+        "upload_date": "20241008",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "詞曲:李宗盛"
+          ],
+          "uniqCount": 1,
+          "coverage": 1.0139664804469273,
+          "lastT1": 363,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        },
+        "en": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "[MUSIC]"
+          ],
+          "uniqCount": 1,
+          "coverage": 0.9636871508379888,
+          "lastT1": 345,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    },
+    {
+      "youtube_id": "s668kNhyN1c",
+      "raw_title": "小鳥再飛 Little Bird Soars (Piano Version)",
+      "flat_duration": 304,
+      "playlist_id": "OLAK5uy_kgI2xLBKNRMLMdDkWwreJjtjb96wxO-rM",
+      "playlist_title": "Amazing Piano 1",
+      "instrumental_signal": "Piano",
+      "proposed_album": "Amazing Piano 1 (Piano Version)",
+      "verdict": "instrumental",
+      "gate": null,
+      "why": "五重閘全過(rejudge:指紋庫更新後零網絡重判)",
+      "meta": {
+        "id": "s668kNhyN1c",
+        "title": "小鳥再飛 Little Bird Soars (Piano Version)",
+        "duration": 303,
+        "channel": "基恩敬拜 Amazing Grace Worship",
+        "upload_date": "20241008",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": false,
+          "reasons": [
+            "剩餘文字 1 行:MING PAO CANADA | MING PAO TOR"
+          ],
+          "uniq": [
+            "詞曲:李宗盛 編曲:李宗盛",
+            "詞曲:李宗盛",
+            "MING PAO CANADA | MING PAO TORONTO"
+          ],
+          "uniqCount": 3,
+          "coverage": 1,
+          "lastT1": 303,
+          "whisperFailed": false,
+          "garbageDropped": 1
+        },
+        "en": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "[MUSIC]"
+          ],
+          "uniqCount": 1,
+          "coverage": 0.9900990099009901,
+          "lastT1": 300,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    },
+    {
+      "youtube_id": "rMY2xtCEbZc",
+      "raw_title": "《Amazing Piano 1》基恩敬拜鋼琴靈修音樂 - 明天祢為我掌舵",
+      "flat_duration": 303,
+      "playlist_id": "OLAK5uy_kgI2xLBKNRMLMdDkWwreJjtjb96wxO-rM",
+      "playlist_title": "Amazing Piano 1",
+      "instrumental_signal": "Piano",
+      "proposed_album": "Amazing Piano 1 (Piano Version)",
+      "verdict": "skip",
+      "why": "已經喺庫"
+    },
+    {
+      "youtube_id": "fym5iuZpz6M",
+      "raw_title": "求主用我 May God Use Me (Piano Version)",
+      "flat_duration": 272,
+      "playlist_id": "OLAK5uy_kgI2xLBKNRMLMdDkWwreJjtjb96wxO-rM",
+      "playlist_title": "Amazing Piano 1",
+      "instrumental_signal": "Piano",
+      "proposed_album": "Amazing Piano 1 (Piano Version)",
+      "verdict": "instrumental",
+      "gate": null,
+      "why": "五重閘全過(rejudge:指紋庫更新後零網絡重判)",
+      "meta": {
+        "id": "fym5iuZpz6M",
+        "title": "求主用我 May God Use Me (Piano Version)",
+        "duration": 271,
+        "channel": "基恩敬拜 Amazing Grace Worship",
+        "upload_date": "20241008",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": false,
+          "reasons": [
+            "剩餘文字 1 行:MING PAO CANADA | MING PAO TOR"
+          ],
+          "uniq": [
+            "詩歌歌曲、詩歌歌曲、詩歌歌曲。",
+            "詩歌歌曲,詩歌歌曲、詩歌歌曲。",
+            "詩歌歌曲,詩歌歌曲,詩歌歌曲,詩歌歌曲。",
+            "MING PAO CANADA | MING PAO TORONTO"
+          ],
+          "uniqCount": 4,
+          "coverage": 1.0053136531365314,
+          "lastT1": 272.44,
+          "whisperFailed": false,
+          "garbageDropped": 1
+        },
+        "en": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "[MUSIC]"
+          ],
+          "uniqCount": 1,
+          "coverage": 0.996309963099631,
+          "lastT1": 270,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    },
+    {
+      "youtube_id": "Vcm5sPmmSgI",
+      "raw_title": "【靈命塑造系列】當你感到生氣時 - 基恩敬拜 AGWMM",
+      "flat_duration": 597,
+      "playlist_id": "OLAK5uy_kgI2xLBKNRMLMdDkWwreJjtjb96wxO-rM",
+      "playlist_title": "Amazing Piano 1",
+      "instrumental_signal": "Piano",
+      "proposed_album": "Amazing Piano 1 (Piano Version)",
+      "verdict": "skip",
+      "why": "已經喺庫"
+    },
+    {
+      "youtube_id": "hdZ5XtN5EfE",
+      "raw_title": "恩典窄路 Narrow Path Of Grace (Piano Version)",
+      "flat_duration": 279,
+      "playlist_id": "OLAK5uy_kgI2xLBKNRMLMdDkWwreJjtjb96wxO-rM",
+      "playlist_title": "Amazing Piano 1",
+      "instrumental_signal": "Piano",
+      "proposed_album": "Amazing Piano 1 (Piano Version)",
+      "verdict": "instrumental",
+      "gate": null,
+      "why": "五重閘全過",
+      "meta": {
+        "id": "hdZ5XtN5EfE",
+        "title": "恩典窄路 Narrow Path Of Grace (Piano Version)",
+        "duration": 279,
+        "channel": "基恩敬拜 Amazing Grace Worship",
+        "upload_date": "20241008",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "詞曲:李宗盛 編曲:李宗盛",
+            "詞:李宗盛 編曲:李宗盛",
+            "編曲:李宗盛 編曲:李宗盛"
+          ],
+          "uniqCount": 3,
+          "coverage": 0.985663082437276,
+          "lastT1": 275,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        },
+        "en": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "[MUSIC]"
+          ],
+          "uniqCount": 1,
+          "coverage": 0.985663082437276,
+          "lastT1": 275,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    },
+    {
+      "youtube_id": "zt-xTvw0y-E",
+      "raw_title": "靠主愛誇勝 With The Love Of Christ, We Triumph (Piano Version)",
+      "flat_duration": 349,
+      "playlist_id": "OLAK5uy_kgI2xLBKNRMLMdDkWwreJjtjb96wxO-rM",
+      "playlist_title": "Amazing Piano 1",
+      "instrumental_signal": "Piano",
+      "proposed_album": "Amazing Piano 1 (Piano Version)",
+      "verdict": "instrumental",
+      "gate": null,
+      "why": "五重閘全過",
+      "meta": {
+        "id": "zt-xTvw0y-E",
+        "title": "靠主愛誇勝 With The Love Of Christ, We Triumph (Piano Version)",
+        "duration": 349,
+        "channel": "基恩敬拜 Amazing Grace Worship",
+        "upload_date": "20241008",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "詞曲:李宗盛 詞:李宗盛 編曲:李宗盛",
+            "詞:李宗盛 編曲:李宗盛",
+            "詞曲:李宗盛 編曲:李宗盛",
+            "編曲:李宗盛 編曲:李宗盛"
+          ],
+          "uniqCount": 4,
+          "coverage": 0.9598853868194842,
+          "lastT1": 335,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        },
+        "en": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "[MUSIC]"
+          ],
+          "uniqCount": 1,
+          "coverage": 1.002865329512894,
+          "lastT1": 350,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    },
+    {
+      "youtube_id": "e7Pv3qIqt_Y",
+      "raw_title": "因為祢先愛我們 As You First Loved Us (Piano Version)",
+      "flat_duration": 354,
+      "playlist_id": "OLAK5uy_kgI2xLBKNRMLMdDkWwreJjtjb96wxO-rM",
+      "playlist_title": "Amazing Piano 1",
+      "instrumental_signal": "Piano",
+      "proposed_album": "Amazing Piano 1 (Piano Version)",
+      "verdict": "instrumental",
+      "gate": null,
+      "why": "五重閘全過",
+      "meta": {
+        "id": "e7Pv3qIqt_Y",
+        "title": "因為祢先愛我們 As You First Loved Us (Piano Version)",
+        "duration": 353,
+        "channel": "基恩敬拜 Amazing Grace Worship",
+        "upload_date": "20241008",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "詞曲:李宗盛 編曲:李宗盛",
+            "詞曲:李宗盛"
+          ],
+          "uniqCount": 2,
+          "coverage": 0.9546742209631728,
+          "lastT1": 337,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        },
+        "en": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "[MUSIC]"
+          ],
+          "uniqCount": 1,
+          "coverage": 0.9915014164305949,
+          "lastT1": 350,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    },
+    {
+      "youtube_id": "xgMuVUJUbis",
+      "raw_title": "牽引 Lead Me (Piano Version)",
+      "flat_duration": 306,
+      "playlist_id": "OLAK5uy_kgI2xLBKNRMLMdDkWwreJjtjb96wxO-rM",
+      "playlist_title": "Amazing Piano 1",
+      "instrumental_signal": "Piano",
+      "proposed_album": "Amazing Piano 1 (Piano Version)",
+      "verdict": "instrumental",
+      "gate": null,
+      "why": "五重閘全過",
+      "meta": {
+        "id": "xgMuVUJUbis",
+        "title": "牽引 Lead Me (Piano Version)",
+        "duration": 305,
+        "channel": "基恩敬拜 Amazing Grace Worship",
+        "upload_date": "20241008",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "詞曲:李宗盛 編曲:李宗盛",
+            "詞曲:李宗盛",
+            "詞:李宗盛"
+          ],
+          "uniqCount": 3,
+          "coverage": 1,
+          "lastT1": 305,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        },
+        "en": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "[MUSIC]"
+          ],
+          "uniqCount": 1,
+          "coverage": 0.9672131147540983,
+          "lastT1": 295,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    },
+    {
+      "youtube_id": "Wos3TcBPkOw",
+      "raw_title": "再次站起來 Standing Up Again (Guitar Version)",
+      "flat_duration": 293,
+      "playlist_id": "OLAK5uy_ltc2v06cZRQlAx7q4NE_sWOo3K5gcV_kI",
+      "playlist_title": "Amazing Guitar 3",
+      "instrumental_signal": "Guitar",
+      "proposed_album": "Amazing Guitar 3 (Guitar Version)",
+      "verdict": "instrumental",
+      "gate": null,
+      "why": "五重閘全過",
+      "meta": {
+        "id": "Wos3TcBPkOw",
+        "title": "再次站起來 Standing Up Again (Guitar Version)",
+        "duration": 293,
+        "channel": "基恩敬拜 Amazing Grace Worship",
+        "upload_date": "20211102",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "詞曲:陳鋒鋒"
+          ],
+          "uniqCount": 1,
+          "coverage": 0.9556313993174061,
+          "lastT1": 280,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        },
+        "en": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "[MUSIC]",
+            "[ Silence ]"
+          ],
+          "uniqCount": 2,
+          "coverage": 1.0067576791808874,
+          "lastT1": 294.98,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    },
+    {
+      "youtube_id": "aTMuP-vNoN4",
+      "raw_title": "一生在神手裡 My Life Is In Your Hand (Guitar Version)",
+      "flat_duration": 163,
+      "playlist_id": "OLAK5uy_ltc2v06cZRQlAx7q4NE_sWOo3K5gcV_kI",
+      "playlist_title": "Amazing Guitar 3",
+      "instrumental_signal": "Guitar",
+      "proposed_album": "Amazing Guitar 3 (Guitar Version)",
+      "verdict": "instrumental",
+      "gate": null,
+      "why": "五重閘全過",
+      "meta": {
+        "id": "aTMuP-vNoN4",
+        "title": "一生在神手裡 My Life Is In Your Hand (Guitar Version)",
+        "duration": 163,
+        "channel": "基恩敬拜 Amazing Grace Worship",
+        "upload_date": "20211102",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "詞曲:張宇辰"
+          ],
+          "uniqCount": 1,
+          "coverage": 0.9325153374233128,
+          "lastT1": 152,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        },
+        "en": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "[MUSIC]"
+          ],
+          "uniqCount": 1,
+          "coverage": 0.9202453987730062,
+          "lastT1": 150,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    },
+    {
+      "youtube_id": "X6-lQ9hs2cc",
+      "raw_title": "我得自由 I Have Been Set Free (Guitar Version)",
+      "flat_duration": 191,
+      "playlist_id": "OLAK5uy_ltc2v06cZRQlAx7q4NE_sWOo3K5gcV_kI",
+      "playlist_title": "Amazing Guitar 3",
+      "instrumental_signal": "Guitar",
+      "proposed_album": "Amazing Guitar 3 (Guitar Version)",
+      "verdict": "instrumental",
+      "gate": null,
+      "why": "五重閘全過",
+      "meta": {
+        "id": "X6-lQ9hs2cc",
+        "title": "我得自由 I Have Been Set Free (Guitar Version)",
+        "duration": 190,
+        "channel": "基恩敬拜 Amazing Grace Worship",
+        "upload_date": "20211102",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "詞曲:陳鋒鋒"
+          ],
+          "uniqCount": 1,
+          "coverage": 1,
+          "lastT1": 190,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        },
+        "en": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "[MUSIC]"
+          ],
+          "uniqCount": 1,
+          "coverage": 0.9473684210526315,
+          "lastT1": 180,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    },
+    {
+      "youtube_id": "Nh8VzvbcIC8",
+      "raw_title": "我能痊癒 I Will Be Healed (Guitar Version)",
+      "flat_duration": 275,
+      "playlist_id": "OLAK5uy_ltc2v06cZRQlAx7q4NE_sWOo3K5gcV_kI",
+      "playlist_title": "Amazing Guitar 3",
+      "instrumental_signal": "Guitar",
+      "proposed_album": "Amazing Guitar 3 (Guitar Version)",
+      "verdict": "instrumental",
+      "gate": null,
+      "why": "五重閘全過",
+      "meta": {
+        "id": "Nh8VzvbcIC8",
+        "title": "我能痊癒 I Will Be Healed (Guitar Version)",
+        "duration": 275,
+        "channel": "基恩敬拜 Amazing Grace Worship",
+        "upload_date": "20211102",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "詞曲:李宗盛"
+          ],
+          "uniqCount": 1,
+          "coverage": 0.9709090909090909,
+          "lastT1": 267,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        },
+        "en": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "[MUSIC]"
+          ],
+          "uniqCount": 1,
+          "coverage": 1,
+          "lastT1": 275,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    },
+    {
+      "youtube_id": "lMdBxHUi5q8",
+      "raw_title": "我信 I Believe (Guitar Version)",
+      "flat_duration": 258,
+      "playlist_id": "OLAK5uy_ltc2v06cZRQlAx7q4NE_sWOo3K5gcV_kI",
+      "playlist_title": "Amazing Guitar 3",
+      "instrumental_signal": "Guitar",
+      "proposed_album": "Amazing Guitar 3 (Guitar Version)",
+      "verdict": "instrumental",
+      "gate": null,
+      "why": "五重閘全過",
+      "meta": {
+        "id": "lMdBxHUi5q8",
+        "title": "我信 I Believe (Guitar Version)",
+        "duration": 257,
+        "channel": "基恩敬拜 Amazing Grace Worship",
+        "upload_date": "20211102",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "詞曲:陳鋒鋒"
+          ],
+          "uniqCount": 1,
+          "coverage": 0.9727626459143969,
+          "lastT1": 250,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        },
+        "en": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "[MUSIC]"
+          ],
+          "uniqCount": 1,
+          "coverage": 0.9727626459143969,
+          "lastT1": 250,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    },
+    {
+      "youtube_id": "4yvrCTXbaaY",
+      "raw_title": "靠主愛誇勝 With The Love Of Christ, We Triumph (Guitar Version)",
+      "flat_duration": 312,
+      "playlist_id": "OLAK5uy_ltc2v06cZRQlAx7q4NE_sWOo3K5gcV_kI",
+      "playlist_title": "Amazing Guitar 3",
+      "instrumental_signal": "Guitar",
+      "proposed_album": "Amazing Guitar 3 (Guitar Version)",
+      "verdict": "reject",
+      "gate": 4,
+      "why": "兩 pass 都唔過(zh: 剩餘文字 1 行:MING PAO CANADA | MING PAO TOR | en: 剩餘文字 1 行:you)",
+      "meta": {
+        "id": "4yvrCTXbaaY",
+        "title": "靠主愛誇勝 With The Love Of Christ, We Triumph (Guitar Version)",
+        "duration": 312,
+        "channel": "基恩敬拜 Amazing Grace Worship",
+        "upload_date": "20211102",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": false,
+          "reasons": [
+            "剩餘文字 1 行:MING PAO CANADA | MING PAO TOR"
+          ],
+          "uniq": [
+            "詞曲:李宗盛 詞:李宗盛 編曲:李宗盛",
+            "詞曲:李宗盛 監製:李宗盛",
+            "詞曲:李宗盛 編曲:李宗盛",
+            "MING PAO CANADA | MING PAO TORONTO"
+          ],
+          "uniqCount": 4,
+          "coverage": 0.9839743589743589,
+          "lastT1": 307,
+          "whisperFailed": false,
+          "garbageDropped": 1
+        },
+        "en": {
+          "pass": false,
+          "reasons": [
+            "剩餘文字 1 行:you"
+          ],
+          "uniq": [
+            "[MUSIC]",
+            "you"
+          ],
+          "uniqCount": 2,
+          "coverage": 1.0001923076923076,
+          "lastT1": 312.06,
+          "whisperFailed": false,
+          "garbageDropped": 0,
+          "rejudge_reasons": [
+            "剩餘文字:you"
+          ]
+        }
+      }
+    },
+    {
+      "youtube_id": "F51MgSBpcrA",
+      "raw_title": "一心稱謝祢 Praise You With All My Heart (Guitar Version)",
+      "flat_duration": 228,
+      "playlist_id": "OLAK5uy_ltc2v06cZRQlAx7q4NE_sWOo3K5gcV_kI",
+      "playlist_title": "Amazing Guitar 3",
+      "instrumental_signal": "Guitar",
+      "proposed_album": "Amazing Guitar 3 (Guitar Version)",
+      "verdict": "instrumental",
+      "gate": null,
+      "why": "五重閘全過",
+      "meta": {
+        "id": "F51MgSBpcrA",
+        "title": "一心稱謝祢 Praise You With All My Heart (Guitar Version)",
+        "duration": 228,
+        "channel": "基恩敬拜 Amazing Grace Worship",
+        "upload_date": "20211102",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "詞曲:張宇文 詞:張宇文 編曲:張宇文",
+            "詞曲:張宇文 詞曲:張宇文"
+          ],
+          "uniqCount": 2,
+          "coverage": 0.9649122807017544,
+          "lastT1": 220,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        },
+        "en": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "[MUSIC]"
+          ],
+          "uniqCount": 1,
+          "coverage": 0.9868421052631579,
+          "lastT1": 225,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    },
+    {
+      "youtube_id": "rBcpEhD-E4Q",
+      "raw_title": "祢是我惟一的倚靠 I Put My Trust In You (Guitar Version)",
+      "flat_duration": 265,
+      "playlist_id": "OLAK5uy_ltc2v06cZRQlAx7q4NE_sWOo3K5gcV_kI",
+      "playlist_title": "Amazing Guitar 3",
+      "instrumental_signal": "Guitar",
+      "proposed_album": "Amazing Guitar 3 (Guitar Version)",
+      "verdict": "instrumental",
+      "gate": null,
+      "why": "五重閘全過",
+      "meta": {
+        "id": "rBcpEhD-E4Q",
+        "title": "祢是我惟一的倚靠 I Put My Trust In You (Guitar Version)",
+        "duration": 265,
+        "channel": "基恩敬拜 Amazing Grace Worship",
+        "upload_date": "20211102",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "詞曲:陳鋒鋒"
+          ],
+          "uniqCount": 1,
+          "coverage": 0.9433962264150944,
+          "lastT1": 250,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        },
+        "en": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "[MUSIC]"
+          ],
+          "uniqCount": 1,
+          "coverage": 0.9433962264150944,
+          "lastT1": 250,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    },
+    {
+      "youtube_id": "hyujZwDqW8M",
+      "raw_title": "《Amazing Guitar 3》基恩敬拜純音樂專輯 - 恩典窄路",
+      "flat_duration": 236,
+      "playlist_id": "OLAK5uy_ltc2v06cZRQlAx7q4NE_sWOo3K5gcV_kI",
+      "playlist_title": "Amazing Guitar 3",
+      "instrumental_signal": "Guitar",
+      "proposed_album": "Amazing Guitar 3 (Guitar Version)",
+      "verdict": "reject",
+      "gate": 3,
+      "why": "YouTube auto-caption 存在(157 種語言)—— 獨立引擎聽到人聲",
+      "meta": {
+        "id": "hyujZwDqW8M",
+        "title": "《Amazing Guitar 3》基恩敬拜純音樂專輯 - 恩典窄路",
+        "duration": 235,
+        "channel": "基恩敬拜 Amazing Grace Worship",
+        "upload_date": "20210113",
+        "auto_captions": [
+          "ab",
+          "aa",
+          "af",
+          "ak",
+          "sq",
+          "am",
+          "ar",
+          "hy",
+          "as",
+          "ay",
+          "az",
+          "bn",
+          "ba",
+          "eu",
+          "be",
+          "bho",
+          "bs",
+          "br",
+          "bg",
+          "my",
+          "ca",
+          "ceb",
+          "zh-Hans",
+          "zh-Hant",
+          "co",
+          "hr",
+          "cs",
+          "da",
+          "dv",
+          "nl",
+          "dz",
+          "en",
+          "eo",
+          "et",
+          "ee",
+          "fo",
+          "fj",
+          "fil",
+          "fi",
+          "fr",
+          "gaa",
+          "gl",
+          "lg",
+          "ka",
+          "de",
+          "el",
+          "gn",
+          "gu",
+          "ht",
+          "ha",
+          "haw",
+          "iw",
+          "hi",
+          "hmn",
+          "hu",
+          "is",
+          "ig",
+          "id",
+          "iu",
+          "ga",
+          "it",
+          "ja",
+          "jv",
+          "kl",
+          "kn",
+          "kk",
+          "kha",
+          "km",
+          "rw",
+          "ko",
+          "kri",
+          "ku",
+          "ky",
+          "lo",
+          "la",
+          "lv",
+          "ln",
+          "lt",
+          "lua",
+          "luo",
+          "lb",
+          "mk",
+          "mg",
+          "ms",
+          "ml",
+          "mt",
+          "gv",
+          "mi",
+          "mr",
+          "mn",
+          "mfe",
+          "ne",
+          "new",
+          "nso",
+          "no",
+          "ny",
+          "oc",
+          "or",
+          "om",
+          "os",
+          "pam",
+          "ps",
+          "fa",
+          "pl",
+          "pt",
+          "pt-PT",
+          "pa",
+          "qu",
+          "ro",
+          "rn",
+          "ru",
+          "sm",
+          "sg",
+          "sa",
+          "gd",
+          "sr",
+          "crs",
+          "sn",
+          "sd",
+          "si",
+          "sk",
+          "sl",
+          "so",
+          "st",
+          "es",
+          "su",
+          "sw",
+          "ss",
+          "sv",
+          "tg",
+          "ta",
+          "tt",
+          "te",
+          "th-orig",
+          "th",
+          "bo",
+          "ti",
+          "to",
+          "ts",
+          "tn",
+          "tum",
+          "tr",
+          "tk",
+          "uk",
+          "ur",
+          "ug",
+          "uz",
+          "ve",
+          "vi",
+          "war",
+          "cy",
+          "fy",
+          "wo",
+          "xh",
+          "yi",
+          "yo",
+          "zu"
+        ],
+        "manual_subs": []
+      }
+    },
+    {
+      "youtube_id": "FAZZDeWZIQw",
+      "raw_title": "永恆的主 Everlasting God (Guitar Version)",
+      "flat_duration": 249,
+      "playlist_id": "OLAK5uy_ltc2v06cZRQlAx7q4NE_sWOo3K5gcV_kI",
+      "playlist_title": "Amazing Guitar 3",
+      "instrumental_signal": "Guitar",
+      "proposed_album": "Amazing Guitar 3 (Guitar Version)",
+      "verdict": "instrumental",
+      "gate": null,
+      "why": "五重閘全過",
+      "meta": {
+        "id": "FAZZDeWZIQw",
+        "title": "永恆的主 Everlasting God (Guitar Version)",
+        "duration": 248,
+        "channel": "基恩敬拜 Amazing Grace Worship",
+        "upload_date": "20211102",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "詞曲:李宗盛 編曲:李宗盛",
+            "詞曲:李宗盛"
+          ],
+          "uniqCount": 2,
+          "coverage": 0.967741935483871,
+          "lastT1": 240,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        },
+        "en": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "[MUSIC]"
+          ],
+          "uniqCount": 1,
+          "coverage": 0.9879032258064516,
+          "lastT1": 245,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    },
+    {
+      "youtube_id": "qchKRHqz7v4",
+      "raw_title": "《Amazing Guitar 3》基恩敬拜純音樂專輯 - 小鳥再飛",
+      "flat_duration": 262,
+      "playlist_id": "OLAK5uy_ltc2v06cZRQlAx7q4NE_sWOo3K5gcV_kI",
+      "playlist_title": "Amazing Guitar 3",
+      "instrumental_signal": "Guitar",
+      "proposed_album": "Amazing Guitar 3 (Guitar Version)",
+      "verdict": "reject",
+      "gate": 4,
+      "why": "兩 pass 結論唔一致(zh 過 / en 唔過:剩餘文字 1 行:you)",
+      "meta": {
+        "id": "qchKRHqz7v4",
+        "title": "《Amazing Guitar 3》基恩敬拜純音樂專輯 - 小鳥再飛",
+        "duration": 261,
+        "channel": "基恩敬拜 Amazing Grace Worship",
+        "upload_date": "20210111",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "詞曲:李宗盛"
+          ],
+          "uniqCount": 1,
+          "coverage": 0.9770114942528736,
+          "lastT1": 255,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        },
+        "en": {
+          "pass": false,
+          "reasons": [
+            "剩餘文字 1 行:you"
+          ],
+          "uniq": [
+            "[MUSIC]",
+            "you"
+          ],
+          "uniqCount": 2,
+          "coverage": 1.0040613026819925,
+          "lastT1": 262.06,
+          "whisperFailed": false,
+          "garbageDropped": 0,
+          "rejudge_reasons": [
+            "剩餘文字:you"
+          ]
+        }
+      }
+    },
+    {
+      "youtube_id": "rKHKzwjL8bc",
+      "raw_title": "相信祢應許 Believe In Your Promise (Guitar Version)",
+      "flat_duration": 160,
+      "playlist_id": "OLAK5uy_ltc2v06cZRQlAx7q4NE_sWOo3K5gcV_kI",
+      "playlist_title": "Amazing Guitar 3",
+      "instrumental_signal": "Guitar",
+      "proposed_album": "Amazing Guitar 3 (Guitar Version)",
+      "verdict": "reject",
+      "gate": 4,
+      "why": "兩 pass 結論唔一致(zh 唔過:剩餘文字 1 行:混音:李宗盛 音樂:李宗盛 / en 過)",
+      "meta": {
+        "id": "rKHKzwjL8bc",
+        "title": "相信祢應許 Believe In Your Promise (Guitar Version)",
+        "duration": 159,
+        "channel": "基恩敬拜 Amazing Grace Worship",
+        "upload_date": "20211102",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": false,
+          "reasons": [
+            "剩餘文字 1 行:混音:李宗盛 音樂:李宗盛"
+          ],
+          "uniq": [
+            "詞曲:李宗盛 詞:李宗盛 編曲:李宗盛",
+            "詞曲:李宗盛 監製:李宗盛",
+            "詞曲:李宗盛 編曲:李宗盛",
+            "混音:李宗盛 音樂:李宗盛"
+          ],
+          "uniqCount": 4,
+          "coverage": 0.9874213836477987,
+          "lastT1": 157,
+          "whisperFailed": false,
+          "garbageDropped": 0,
+          "rejudge_reasons": [
+            "剩餘文字:混音:李宗盛 音樂:李宗盛"
+          ]
+        },
+        "en": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "[MUSIC]"
+          ],
+          "uniqCount": 1,
+          "coverage": 0.9433962264150944,
+          "lastT1": 150,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    },
+    {
+      "youtube_id": "kRK88dkcHUo",
+      "raw_title": "愛是永不止息 Love Never Fails (Guitar Version)",
+      "flat_duration": 226,
+      "playlist_id": "OLAK5uy_ltc2v06cZRQlAx7q4NE_sWOo3K5gcV_kI",
+      "playlist_title": "Amazing Guitar 3",
+      "instrumental_signal": "Guitar",
+      "proposed_album": "Amazing Guitar 3 (Guitar Version)",
+      "verdict": "instrumental",
+      "gate": null,
+      "why": "五重閘全過",
+      "meta": {
+        "id": "kRK88dkcHUo",
+        "title": "愛是永不止息 Love Never Fails (Guitar Version)",
+        "duration": 225,
+        "channel": "基恩敬拜 Amazing Grace Worship",
+        "upload_date": "20211102",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "詞曲:陳鋒鋒"
+          ],
+          "uniqCount": 1,
+          "coverage": 0.9777777777777777,
+          "lastT1": 220,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        },
+        "en": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "[MUSIC]"
+          ],
+          "uniqCount": 1,
+          "coverage": 0.9777777777777777,
+          "lastT1": 220,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    },
+    {
+      "youtube_id": "2EzkveskHPw",
+      "raw_title": "求天父悅納我的讚美 May My Praise Be Accepted By The Father (Instrumental Version)",
+      "flat_duration": 274,
+      "playlist_id": "OLAK5uy_mQq_bGlb3-X5KWjTAkRn2RkkRBGAqI-Pw",
+      "playlist_title": "靜默有時 3 A Time To Be Silent Vol.3",
+      "instrumental_signal": "靜默",
+      "proposed_album": "靜默有時 3 A Time To Be Silent Vol.3 (Instrumental Version)",
+      "verdict": "instrumental",
+      "gate": null,
+      "why": "五重閘全過(rejudge:指紋庫更新後零網絡重判)",
+      "meta": {
+        "id": "2EzkveskHPw",
+        "title": "求天父悅納我的讚美 May My Praise Be Accepted By The Father (Instrumental Version)",
+        "duration": 273,
+        "channel": "基恩敬拜 Amazing Grace Worship",
+        "upload_date": "20211103",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": false,
+          "reasons": [
+            "剩餘文字 1 行:MING PAO CANADA | MING PAO TOR"
+          ],
+          "uniq": [
+            "詞曲:李宗盛 編曲:李宗盛",
+            "詞曲:李宗盛",
+            "MING PAO CANADA | MING PAO TORONTO"
+          ],
+          "uniqCount": 3,
+          "coverage": 0.9963369963369964,
+          "lastT1": 272,
+          "whisperFailed": false,
+          "garbageDropped": 1
+        },
+        "en": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "[MUSIC]"
+          ],
+          "uniqCount": 1,
+          "coverage": 0.989010989010989,
+          "lastT1": 270,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    },
+    {
+      "youtube_id": "zqE_JxYREbk",
+      "raw_title": "歌唱耶和華慈愛 Sing Of The Lord's Unfailing Love (Instrumental Version)",
+      "flat_duration": 204,
+      "playlist_id": "OLAK5uy_mQq_bGlb3-X5KWjTAkRn2RkkRBGAqI-Pw",
+      "playlist_title": "靜默有時 3 A Time To Be Silent Vol.3",
+      "instrumental_signal": "靜默",
+      "proposed_album": "靜默有時 3 A Time To Be Silent Vol.3 (Instrumental Version)",
+      "verdict": "instrumental",
+      "gate": null,
+      "why": "五重閘全過",
+      "meta": {
+        "id": "zqE_JxYREbk",
+        "title": "歌唱耶和華慈愛 Sing Of The Lord's Unfailing Love (Instrumental Version)",
+        "duration": 203,
+        "channel": "基恩敬拜 Amazing Grace Worship",
+        "upload_date": "20211103",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "詞曲:李宗盛 編曲:李宗盛",
+            "詞曲:李宗盛"
+          ],
+          "uniqCount": 2,
+          "coverage": 0.9113300492610837,
+          "lastT1": 185,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        },
+        "en": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "[MUSIC]"
+          ],
+          "uniqCount": 1,
+          "coverage": 0.9852216748768473,
+          "lastT1": 200,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    },
+    {
+      "youtube_id": "KnFnEDW9kCk",
+      "raw_title": "再次站起來 Standing Up Again (Instrumental Version)",
+      "flat_duration": 276,
+      "playlist_id": "OLAK5uy_mQq_bGlb3-X5KWjTAkRn2RkkRBGAqI-Pw",
+      "playlist_title": "靜默有時 3 A Time To Be Silent Vol.3",
+      "instrumental_signal": "靜默",
+      "proposed_album": "靜默有時 3 A Time To Be Silent Vol.3 (Instrumental Version)",
+      "verdict": "instrumental",
+      "gate": null,
+      "why": "五重閘全過",
+      "meta": {
+        "id": "KnFnEDW9kCk",
+        "title": "再次站起來 Standing Up Again (Instrumental Version)",
+        "duration": 275,
+        "channel": "基恩敬拜 Amazing Grace Worship",
+        "upload_date": "20211103",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "詞曲:李宗盛 編曲:李宗盛",
+            "詞曲:李宗盛",
+            "編曲:李宗盛"
+          ],
+          "uniqCount": 3,
+          "coverage": 1,
+          "lastT1": 275,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        },
+        "en": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "[MUSIC]"
+          ],
+          "uniqCount": 1,
+          "coverage": 0.9818181818181818,
+          "lastT1": 270,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    },
+    {
+      "youtube_id": "la48qQfeS28",
+      "raw_title": "【靜默有時靈修】不能阻隔的愛",
+      "flat_duration": 313,
+      "playlist_id": "OLAK5uy_mQq_bGlb3-X5KWjTAkRn2RkkRBGAqI-Pw",
+      "playlist_title": "靜默有時 3 A Time To Be Silent Vol.3",
+      "instrumental_signal": "靜默",
+      "proposed_album": "靜默有時 3 A Time To Be Silent Vol.3 (Instrumental Version)",
+      "verdict": "skip",
+      "why": "已經喺庫"
+    },
+    {
+      "youtube_id": "_kw__y_WE-o",
+      "raw_title": "願平安充滿你 May You Be Filled With Peace (Instrumental Version)",
+      "flat_duration": 228,
+      "playlist_id": "OLAK5uy_mQq_bGlb3-X5KWjTAkRn2RkkRBGAqI-Pw",
+      "playlist_title": "靜默有時 3 A Time To Be Silent Vol.3",
+      "instrumental_signal": "靜默",
+      "proposed_album": "靜默有時 3 A Time To Be Silent Vol.3 (Instrumental Version)",
+      "verdict": "instrumental",
+      "gate": null,
+      "why": "五重閘全過",
+      "meta": {
+        "id": "_kw__y_WE-o",
+        "title": "願平安充滿你 May You Be Filled With Peace (Instrumental Version)",
+        "duration": 228,
+        "channel": "基恩敬拜 Amazing Grace Worship",
+        "upload_date": "20211103",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "詞曲:李宗盛 編曲:李宗盛",
+            "詞曲:李宗盛"
+          ],
+          "uniqCount": 2,
+          "coverage": 0.9517543859649122,
+          "lastT1": 217,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        },
+        "en": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "[MUSIC]"
+          ],
+          "uniqCount": 1,
+          "coverage": 0.9868421052631579,
+          "lastT1": 225,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    },
+    {
+      "youtube_id": "fhn344Wu26A",
+      "raw_title": "回到家裡 Home Again (Instrumental Version)",
+      "flat_duration": 278,
+      "playlist_id": "OLAK5uy_mQq_bGlb3-X5KWjTAkRn2RkkRBGAqI-Pw",
+      "playlist_title": "靜默有時 3 A Time To Be Silent Vol.3",
+      "instrumental_signal": "靜默",
+      "proposed_album": "靜默有時 3 A Time To Be Silent Vol.3 (Instrumental Version)",
+      "verdict": "instrumental",
+      "gate": null,
+      "why": "五重閘全過",
+      "meta": {
+        "id": "fhn344Wu26A",
+        "title": "回到家裡 Home Again (Instrumental Version)",
+        "duration": 277,
+        "channel": "基恩敬拜 Amazing Grace Worship",
+        "upload_date": "20211103",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "詞曲:李宗盛 編曲:李宗盛",
+            "詞曲:李宗盛",
+            "詞:李宗盛"
+          ],
+          "uniqCount": 3,
+          "coverage": 0.9855595667870036,
+          "lastT1": 273,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        },
+        "en": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "[MUSIC]"
+          ],
+          "uniqCount": 1,
+          "coverage": 0.9747292418772563,
+          "lastT1": 270,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    },
+    {
+      "youtube_id": "C6tYrh9ew64",
+      "raw_title": "蒙恩的人 Blessed (Instrumental Version)",
+      "flat_duration": 260,
+      "playlist_id": "OLAK5uy_mQq_bGlb3-X5KWjTAkRn2RkkRBGAqI-Pw",
+      "playlist_title": "靜默有時 3 A Time To Be Silent Vol.3",
+      "instrumental_signal": "靜默",
+      "proposed_album": "靜默有時 3 A Time To Be Silent Vol.3 (Instrumental Version)",
+      "verdict": "instrumental",
+      "gate": null,
+      "why": "五重閘全過",
+      "meta": {
+        "id": "C6tYrh9ew64",
+        "title": "蒙恩的人 Blessed (Instrumental Version)",
+        "duration": 260,
+        "channel": "基恩敬拜 Amazing Grace Worship",
+        "upload_date": "20211103",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "詞曲:李宗盛 編曲:李宗盛",
+            "詞曲:李宗盛"
+          ],
+          "uniqCount": 2,
+          "coverage": 0.9423076923076923,
+          "lastT1": 245,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        },
+        "en": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "[MUSIC]"
+          ],
+          "uniqCount": 1,
+          "coverage": 0.9423076923076923,
+          "lastT1": 245,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    },
+    {
+      "youtube_id": "d1tSvKmReSU",
+      "raw_title": "謝謝祢的愛 Thank You For Your Love (Instrumental Version)",
+      "flat_duration": 212,
+      "playlist_id": "OLAK5uy_mQq_bGlb3-X5KWjTAkRn2RkkRBGAqI-Pw",
+      "playlist_title": "靜默有時 3 A Time To Be Silent Vol.3",
+      "instrumental_signal": "靜默",
+      "proposed_album": "靜默有時 3 A Time To Be Silent Vol.3 (Instrumental Version)",
+      "verdict": "instrumental",
+      "gate": null,
+      "why": "五重閘全過(rejudge:指紋庫更新後零網絡重判)",
+      "meta": {
+        "id": "d1tSvKmReSU",
+        "title": "謝謝祢的愛 Thank You For Your Love (Instrumental Version)",
+        "duration": 212,
+        "channel": "基恩敬拜 Amazing Grace Worship",
+        "upload_date": "20211103",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": false,
+          "reasons": [
+            "剩餘文字 1 行:优优独播剧场——YoYo Television Series"
+          ],
+          "uniq": [
+            "詞曲:李宗盛 編曲:李宗盛",
+            "詞曲:李宗盛",
+            "优优独播剧场——YoYo Television Series Exclusive"
+          ],
+          "uniqCount": 3,
+          "coverage": 1.0140566037735848,
+          "lastT1": 214.98,
+          "whisperFailed": false,
+          "garbageDropped": 1,
+          "rejudge_reasons": [
+            "剩餘文字:优优独播剧场——YoYo Television Series"
+          ]
+        },
+        "en": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "[MUSIC]",
+            "[BLANK_AUDIO]"
+          ],
+          "uniqCount": 2,
+          "coverage": 1.0377358490566038,
+          "lastT1": 220,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    },
+    {
+      "youtube_id": "kBtdAzP1ga0",
+      "raw_title": "讚美造物主 Praise Our Creator (Instrumental Version)",
+      "flat_duration": 283,
+      "playlist_id": "OLAK5uy_mQq_bGlb3-X5KWjTAkRn2RkkRBGAqI-Pw",
+      "playlist_title": "靜默有時 3 A Time To Be Silent Vol.3",
+      "instrumental_signal": "靜默",
+      "proposed_album": "靜默有時 3 A Time To Be Silent Vol.3 (Instrumental Version)",
+      "verdict": "instrumental",
+      "gate": null,
+      "why": "五重閘全過",
+      "meta": {
+        "id": "kBtdAzP1ga0",
+        "title": "讚美造物主 Praise Our Creator (Instrumental Version)",
+        "duration": 283,
+        "channel": "基恩敬拜 Amazing Grace Worship",
+        "upload_date": "20211103",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "詩歌歌曲 詞曲 李宗盛",
+            "詞曲 李宗盛"
+          ],
+          "uniqCount": 2,
+          "coverage": 0.9717314487632509,
+          "lastT1": 275,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        },
+        "en": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "[MUSIC]"
+          ],
+          "uniqCount": 1,
+          "coverage": 0.9540636042402827,
+          "lastT1": 270,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    },
+    {
+      "youtube_id": "fMpZ3dqO57U",
+      "raw_title": "神愛我 God Loves Me (Instrumental Version)",
+      "flat_duration": 307,
+      "playlist_id": "OLAK5uy_mQq_bGlb3-X5KWjTAkRn2RkkRBGAqI-Pw",
+      "playlist_title": "靜默有時 3 A Time To Be Silent Vol.3",
+      "instrumental_signal": "靜默",
+      "proposed_album": "靜默有時 3 A Time To Be Silent Vol.3 (Instrumental Version)",
+      "verdict": "instrumental",
+      "gate": null,
+      "why": "五重閘全過(rejudge:指紋庫更新後零網絡重判)",
+      "meta": {
+        "id": "fMpZ3dqO57U",
+        "title": "神愛我 God Loves Me (Instrumental Version)",
+        "duration": 307,
+        "channel": "基恩敬拜 Amazing Grace Worship",
+        "upload_date": "20211103",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": false,
+          "reasons": [
+            "剩餘文字 1 行:編曲:李宗盛 製作人:李宗盛"
+          ],
+          "uniq": [
+            "詞曲:李宗盛 編曲:李宗盛",
+            "詞:李宗盛 曲:李宗盛",
+            "編曲:李宗盛 製作人:李宗盛"
+          ],
+          "uniqCount": 3,
+          "coverage": 1,
+          "lastT1": 307,
+          "whisperFailed": false,
+          "garbageDropped": 0,
+          "rejudge_reasons": [
+            "剩餘文字:編曲:李宗盛 製作人:李宗盛"
+          ]
+        },
+        "en": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "[MUSIC]"
+          ],
+          "uniqCount": 1,
+          "coverage": 0.9771986970684039,
+          "lastT1": 300,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    },
+    {
+      "youtube_id": "55xCJwBEoyw",
+      "raw_title": "有祢同行 With You By My Side (Instrumental Version)",
+      "flat_duration": 293,
+      "playlist_id": "OLAK5uy_mQq_bGlb3-X5KWjTAkRn2RkkRBGAqI-Pw",
+      "playlist_title": "靜默有時 3 A Time To Be Silent Vol.3",
+      "instrumental_signal": "靜默",
+      "proposed_album": "靜默有時 3 A Time To Be Silent Vol.3 (Instrumental Version)",
+      "verdict": "reject",
+      "gate": 4,
+      "why": "兩 pass 都唔過(zh: 剩餘文字 1 行:* 鸡蛋 - 1 颗 | en: 剩餘文字 1 行:you)",
+      "meta": {
+        "id": "55xCJwBEoyw",
+        "title": "有祢同行 With You By My Side (Instrumental Version)",
+        "duration": 293,
+        "channel": "基恩敬拜 Amazing Grace Worship",
+        "upload_date": "20211103",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": false,
+          "reasons": [
+            "剩餘文字 1 行:* 鸡蛋 - 1 颗"
+          ],
+          "uniq": [
+            "詩歌歌曲、詩歌歌曲、詩歌歌曲。",
+            "* 鸡蛋 - 1 颗"
+          ],
+          "uniqCount": 2,
+          "coverage": 1.0034129692832765,
+          "lastT1": 294,
+          "whisperFailed": false,
+          "garbageDropped": 0,
+          "rejudge_reasons": [
+            "剩餘文字:* 鸡蛋 - 1 颗"
+          ]
+        },
+        "en": {
+          "pass": false,
+          "reasons": [
+            "剩餘文字 1 行:you"
+          ],
+          "uniq": [
+            "[MUSIC]",
+            "you"
+          ],
+          "uniqCount": 2,
+          "coverage": 0.9967918088737201,
+          "lastT1": 292.06,
+          "whisperFailed": false,
+          "garbageDropped": 0,
+          "rejudge_reasons": [
+            "剩餘文字:you"
+          ]
+        }
+      }
+    },
+    {
+      "youtube_id": "_OmDSoMEOo0",
+      "raw_title": "平安的路 Path Of Peace (Instrumental Version)",
+      "flat_duration": 304,
+      "playlist_id": "OLAK5uy_mQq_bGlb3-X5KWjTAkRn2RkkRBGAqI-Pw",
+      "playlist_title": "靜默有時 3 A Time To Be Silent Vol.3",
+      "instrumental_signal": "靜默",
+      "proposed_album": "靜默有時 3 A Time To Be Silent Vol.3 (Instrumental Version)",
+      "verdict": "instrumental",
+      "gate": null,
+      "why": "五重閘全過(rejudge:指紋庫更新後零網絡重判)",
+      "meta": {
+        "id": "_OmDSoMEOo0",
+        "title": "平安的路 Path Of Peace (Instrumental Version)",
+        "duration": 303,
+        "channel": "基恩敬拜 Amazing Grace Worship",
+        "upload_date": "20211103",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": false,
+          "reasons": [
+            "剩餘文字 1 行:MING PAO CANADA | MING PAO TOR"
+          ],
+          "uniq": [
+            "詞:李宗盛 曲:李宗盛",
+            "詞:李宗盛",
+            "MING PAO CANADA | MING PAO TORONTO"
+          ],
+          "uniqCount": 3,
+          "coverage": 1.0033003300330032,
+          "lastT1": 304,
+          "whisperFailed": false,
+          "garbageDropped": 1
+        },
+        "en": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "[MUSIC]"
+          ],
+          "uniqCount": 1,
+          "coverage": 0.9570957095709571,
+          "lastT1": 290,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    },
+    {
+      "youtube_id": "H25nJOxh9P8",
+      "raw_title": "一生獻上 My Life, My All (Instrumental Version)",
+      "flat_duration": 212,
+      "playlist_id": "OLAK5uy_mADLfrnlWaVWzcEycuiKOFJ7yUzYO2bdw",
+      "playlist_title": "靜默有時 2 A Time To Be Silent Vol.2",
+      "instrumental_signal": "靜默",
+      "proposed_album": "靜默有時 2 A Time To Be Silent Vol.2 (Instrumental Version)",
+      "verdict": "reject",
+      "gate": 4,
+      "why": "兩 pass 結論唔一致(zh 過 / en 唔過:vocalMark:(woman vocalizing); 剩餘文字 1 行:(woman vocalizing))",
+      "meta": {
+        "id": "H25nJOxh9P8",
+        "title": "一生獻上 My Life, My All (Instrumental Version)",
+        "duration": 212,
+        "channel": "基恩敬拜 Amazing Grace Worship",
+        "upload_date": "20211029",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "詞曲:李宗盛 編曲:李宗盛",
+            "詞曲:李宗盛",
+            "我就是想要你做我的朋友, 知道嗎?"
+          ],
+          "uniqCount": 3,
+          "coverage": 1.0047169811320755,
+          "lastT1": 213,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        },
+        "en": {
+          "pass": false,
+          "reasons": [
+            "vocalMark:(woman vocalizing)",
+            "剩餘文字 1 行:(woman vocalizing)"
+          ],
+          "uniq": [
+            "(water trickling)",
+            "(gentle piano music)",
+            "(birds chirping)",
+            "(woman vocalizing)",
+            "[BLANK_AUDIO]"
+          ],
+          "uniqCount": 5,
+          "coverage": 1.028301886792453,
+          "lastT1": 218,
+          "whisperFailed": false,
+          "garbageDropped": 0,
+          "rejudge_reasons": [
+            "vocalMark:(woman vocalizing)",
+            "剩餘文字:(woman vocalizing)"
+          ]
+        }
+      }
+    },
+    {
+      "youtube_id": "DCqRor3GGi8",
+      "raw_title": "同心走天路 United In Pilgrimage (Instrumental Version)",
+      "flat_duration": 179,
+      "playlist_id": "OLAK5uy_mADLfrnlWaVWzcEycuiKOFJ7yUzYO2bdw",
+      "playlist_title": "靜默有時 2 A Time To Be Silent Vol.2",
+      "instrumental_signal": "靜默",
+      "proposed_album": "靜默有時 2 A Time To Be Silent Vol.2 (Instrumental Version)",
+      "verdict": "instrumental",
+      "gate": null,
+      "why": "五重閘全過",
+      "meta": {
+        "id": "DCqRor3GGi8",
+        "title": "同心走天路 United In Pilgrimage (Instrumental Version)",
+        "duration": 178,
+        "channel": "基恩敬拜 Amazing Grace Worship",
+        "upload_date": "20211029",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "詞:李宗盛 曲:李宗盛",
+            "詞:李宗盛",
+            "我就是想要你做我的朋友, 知道嗎?"
+          ],
+          "uniqCount": 3,
+          "coverage": 0.9943820224719101,
+          "lastT1": 177,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        },
+        "en": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "[MUSIC]"
+          ],
+          "uniqCount": 1,
+          "coverage": 0.9831460674157303,
+          "lastT1": 175,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    },
+    {
+      "youtube_id": "_5FJORHGfJ8",
+      "raw_title": "天父知道 Heavenly Father Knows (Instrumental Version)",
+      "flat_duration": 203,
+      "playlist_id": "OLAK5uy_mADLfrnlWaVWzcEycuiKOFJ7yUzYO2bdw",
+      "playlist_title": "靜默有時 2 A Time To Be Silent Vol.2",
+      "instrumental_signal": "靜默",
+      "proposed_album": "靜默有時 2 A Time To Be Silent Vol.2 (Instrumental Version)",
+      "verdict": "reject",
+      "gate": 4,
+      "why": "兩 pass 結論唔一致(zh 唔過:剩餘文字 1 行:詩歌歌曲. 詩歌歌作詞:陳零九 / en 過)",
+      "meta": {
+        "id": "_5FJORHGfJ8",
+        "title": "天父知道 Heavenly Father Knows (Instrumental Version)",
+        "duration": 202,
+        "channel": "基恩敬拜 Amazing Grace Worship",
+        "upload_date": "20211029",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": false,
+          "reasons": [
+            "剩餘文字 1 行:詩歌歌曲. 詩歌歌作詞:陳零九"
+          ],
+          "uniq": [
+            "詩歌歌曲. 詩歌歌作詞:陳零九",
+            "作曲:陳零九",
+            "編曲:陳零九"
+          ],
+          "uniqCount": 3,
+          "coverage": 0.9752475247524752,
+          "lastT1": 197,
+          "whisperFailed": false,
+          "garbageDropped": 0,
+          "rejudge_reasons": [
+            "剩餘文字:詩歌歌曲. 詩歌歌作詞:陳零九"
+          ]
+        },
+        "en": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "[MUSIC]"
+          ],
+          "uniqCount": 1,
+          "coverage": 0.9900990099009901,
+          "lastT1": 200,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    },
+    {
+      "youtube_id": "JJ8EnIkPymI",
+      "raw_title": "在祢寶座前 Before Your Throne (Instrumental Version)",
+      "flat_duration": 335,
+      "playlist_id": "OLAK5uy_mADLfrnlWaVWzcEycuiKOFJ7yUzYO2bdw",
+      "playlist_title": "靜默有時 2 A Time To Be Silent Vol.2",
+      "instrumental_signal": "靜默",
+      "proposed_album": "靜默有時 2 A Time To Be Silent Vol.2 (Instrumental Version)",
+      "verdict": "reject",
+      "gate": 4,
+      "why": "兩 pass 結論唔一致(zh 唔過:剩餘文字 1 行:多謝您收睇時局新聞,再會! / en 過)",
+      "meta": {
+        "id": "JJ8EnIkPymI",
+        "title": "在祢寶座前 Before Your Throne (Instrumental Version)",
+        "duration": 334,
+        "channel": "基恩敬拜 Amazing Grace Worship",
+        "upload_date": "20211029",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": false,
+          "reasons": [
+            "剩餘文字 1 行:多謝您收睇時局新聞,再會!"
+          ],
+          "uniq": [
+            "詞曲:李宗盛 編曲:李宗盛",
+            "詞曲:李宗盛",
+            "多謝您收睇時局新聞,再會!"
+          ],
+          "uniqCount": 3,
+          "coverage": 1,
+          "lastT1": 334,
+          "whisperFailed": false,
+          "garbageDropped": 0,
+          "rejudge_reasons": [
+            "剩餘文字:多謝您收睇時局新聞,再會!"
+          ]
+        },
+        "en": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "[MUSIC]"
+          ],
+          "uniqCount": 1,
+          "coverage": 0.9850299401197605,
+          "lastT1": 329,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    },
+    {
+      "youtube_id": "sa1QFktZY84",
+      "raw_title": "來投靠耶穌 Come Seek Refuge In Jesus (Instrumental Version)",
+      "flat_duration": 218,
+      "playlist_id": "OLAK5uy_mADLfrnlWaVWzcEycuiKOFJ7yUzYO2bdw",
+      "playlist_title": "靜默有時 2 A Time To Be Silent Vol.2",
+      "instrumental_signal": "靜默",
+      "proposed_album": "靜默有時 2 A Time To Be Silent Vol.2 (Instrumental Version)",
+      "verdict": "instrumental",
+      "gate": null,
+      "why": "五重閘全過",
+      "meta": {
+        "id": "sa1QFktZY84",
+        "title": "來投靠耶穌 Come Seek Refuge In Jesus (Instrumental Version)",
+        "duration": 217,
+        "channel": "基恩敬拜 Amazing Grace Worship",
+        "upload_date": "20211029",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "詞曲:李宗盛 編曲:李宗盛",
+            "詞曲:李宗盛"
+          ],
+          "uniqCount": 2,
+          "coverage": 0.9907834101382489,
+          "lastT1": 215,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        },
+        "en": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "[rain]",
+            "[music]"
+          ],
+          "uniqCount": 2,
+          "coverage": 0.9907834101382489,
+          "lastT1": 215,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    },
+    {
+      "youtube_id": "dmhtM-Z25P8",
+      "raw_title": "我的哀哭變為跳舞 My Wailing Into Dancing (Instrumental Version)",
+      "flat_duration": 156,
+      "playlist_id": "OLAK5uy_mADLfrnlWaVWzcEycuiKOFJ7yUzYO2bdw",
+      "playlist_title": "靜默有時 2 A Time To Be Silent Vol.2",
+      "instrumental_signal": "靜默",
+      "proposed_album": "靜默有時 2 A Time To Be Silent Vol.2 (Instrumental Version)",
+      "verdict": "instrumental",
+      "gate": null,
+      "why": "五重閘全過",
+      "meta": {
+        "id": "dmhtM-Z25P8",
+        "title": "我的哀哭變為跳舞 My Wailing Into Dancing (Instrumental Version)",
+        "duration": 155,
+        "channel": "基恩敬拜 Amazing Grace Worship",
+        "upload_date": "20211029",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "詞曲:陳零九"
+          ],
+          "uniqCount": 1,
+          "coverage": 0.9806451612903225,
+          "lastT1": 152,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        },
+        "en": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "[MUSIC]"
+          ],
+          "uniqCount": 1,
+          "coverage": 0.9354838709677419,
+          "lastT1": 145,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    },
+    {
+      "youtube_id": "P61d9a2WGKw",
+      "raw_title": "繼續向前行 Going Forth (Instrumental Version)",
+      "flat_duration": 207,
+      "playlist_id": "OLAK5uy_mADLfrnlWaVWzcEycuiKOFJ7yUzYO2bdw",
+      "playlist_title": "靜默有時 2 A Time To Be Silent Vol.2",
+      "instrumental_signal": "靜默",
+      "proposed_album": "靜默有時 2 A Time To Be Silent Vol.2 (Instrumental Version)",
+      "verdict": "instrumental",
+      "gate": null,
+      "why": "五重閘全過",
+      "meta": {
+        "id": "P61d9a2WGKw",
+        "title": "繼續向前行 Going Forth (Instrumental Version)",
+        "duration": 206,
+        "channel": "基恩敬拜 Amazing Grace Worship",
+        "upload_date": "20211029",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "詞曲:李宗盛"
+          ],
+          "uniqCount": 1,
+          "coverage": 0.883495145631068,
+          "lastT1": 182,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        },
+        "en": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "(soft piano music)"
+          ],
+          "uniqCount": 1,
+          "coverage": 0.8879611650485436,
+          "lastT1": 182.92,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    },
+    {
+      "youtube_id": "b5-jQZbt1q4",
+      "raw_title": "當讚美進入祂的院 Enter His Courts With Praise (Instrumental Version)",
+      "flat_duration": 233,
+      "playlist_id": "OLAK5uy_mADLfrnlWaVWzcEycuiKOFJ7yUzYO2bdw",
+      "playlist_title": "靜默有時 2 A Time To Be Silent Vol.2",
+      "instrumental_signal": "靜默",
+      "proposed_album": "靜默有時 2 A Time To Be Silent Vol.2 (Instrumental Version)",
+      "verdict": "instrumental",
+      "gate": null,
+      "why": "五重閘全過",
+      "meta": {
+        "id": "b5-jQZbt1q4",
+        "title": "當讚美進入祂的院 Enter His Courts With Praise (Instrumental Version)",
+        "duration": 232,
+        "channel": "基恩敬拜 Amazing Grace Worship",
+        "upload_date": "20211029",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "詩歌歌曲,詩歌歌曲。"
+          ],
+          "uniqCount": 1,
+          "coverage": 0.9137931034482759,
+          "lastT1": 212,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        },
+        "en": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "[MUSIC]"
+          ],
+          "uniqCount": 1,
+          "coverage": 0.9698275862068966,
+          "lastT1": 225,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    },
+    {
+      "youtube_id": "NTcPwG4SnfQ",
+      "raw_title": "願萬民稱謝祢 Let All The People Praise (Instrumental Version)",
+      "flat_duration": 248,
+      "playlist_id": "OLAK5uy_mADLfrnlWaVWzcEycuiKOFJ7yUzYO2bdw",
+      "playlist_title": "靜默有時 2 A Time To Be Silent Vol.2",
+      "instrumental_signal": "靜默",
+      "proposed_album": "靜默有時 2 A Time To Be Silent Vol.2 (Instrumental Version)",
+      "verdict": "instrumental",
+      "gate": null,
+      "why": "五重閘全過",
+      "meta": {
+        "id": "NTcPwG4SnfQ",
+        "title": "願萬民稱謝祢 Let All The People Praise (Instrumental Version)",
+        "duration": 247,
+        "channel": "基恩敬拜 Amazing Grace Worship",
+        "upload_date": "20211029",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "詩歌歌曲,詩歌歌曲。"
+          ],
+          "uniqCount": 1,
+          "coverage": 0.979757085020243,
+          "lastT1": 242,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        },
+        "en": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "[MUSIC]"
+          ],
+          "uniqCount": 1,
+          "coverage": 0.9919028340080972,
+          "lastT1": 245,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    },
+    {
+      "youtube_id": "4xv3ACzPWxI",
+      "raw_title": "必得見光 Thy Light Be Shown (Instrumental Version)",
+      "flat_duration": 282,
+      "playlist_id": "OLAK5uy_mADLfrnlWaVWzcEycuiKOFJ7yUzYO2bdw",
+      "playlist_title": "靜默有時 2 A Time To Be Silent Vol.2",
+      "instrumental_signal": "靜默",
+      "proposed_album": "靜默有時 2 A Time To Be Silent Vol.2 (Instrumental Version)",
+      "verdict": "instrumental",
+      "gate": null,
+      "why": "五重閘全過(rejudge:指紋庫更新後零網絡重判)",
+      "meta": {
+        "id": "4xv3ACzPWxI",
+        "title": "必得見光 Thy Light Be Shown (Instrumental Version)",
+        "duration": 281,
+        "channel": "基恩敬拜 Amazing Grace Worship",
+        "upload_date": "20211029",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": false,
+          "reasons": [
+            "剩餘文字 1 行:吉他:張震嶽 混音:張震嶽"
+          ],
+          "uniq": [
+            "詞曲:張震嶽 詞:張震嶽 編曲:張震嶽",
+            "詞:張震嶽 編曲:張震嶽",
+            "詞曲:張震嶽 編曲:張震嶽",
+            "吉他:張震嶽 混音:張震嶽"
+          ],
+          "uniqCount": 4,
+          "coverage": 0.9857651245551602,
+          "lastT1": 277,
+          "whisperFailed": false,
+          "garbageDropped": 0,
+          "rejudge_reasons": [
+            "剩餘文字:吉他:張震嶽 混音:張震嶽"
+          ]
+        },
+        "en": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "[MUSIC]"
+          ],
+          "uniqCount": 1,
+          "coverage": 0.9786476868327402,
+          "lastT1": 275,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    },
+    {
+      "youtube_id": "hq2dX5oDTTE",
+      "raw_title": "我們愛因為神先愛 We Love Because God First Loved Us (Instrumental Version)",
+      "flat_duration": 250,
+      "playlist_id": "OLAK5uy_mADLfrnlWaVWzcEycuiKOFJ7yUzYO2bdw",
+      "playlist_title": "靜默有時 2 A Time To Be Silent Vol.2",
+      "instrumental_signal": "靜默",
+      "proposed_album": "靜默有時 2 A Time To Be Silent Vol.2 (Instrumental Version)",
+      "verdict": "instrumental",
+      "gate": null,
+      "why": "五重閘全過",
+      "meta": {
+        "id": "hq2dX5oDTTE",
+        "title": "我們愛因為神先愛 We Love Because God First Loved Us (Instrumental Version)",
+        "duration": 249,
+        "channel": "基恩敬拜 Amazing Grace Worship",
+        "upload_date": "20211029",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "詩歌歌曲 詩歌歌曲",
+            "詩歌歌曲"
+          ],
+          "uniqCount": 2,
+          "coverage": 1.0040160642570282,
+          "lastT1": 250,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        },
+        "en": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "(waves crashing)",
+            "(soft guitar music)"
+          ],
+          "uniqCount": 2,
+          "coverage": 0.9759036144578314,
+          "lastT1": 243,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    },
+    {
+      "youtube_id": "-qjdgSIKHPw",
+      "raw_title": "主禱文 The Lord’s Prayer (Instrumental Version)",
+      "flat_duration": 271,
+      "playlist_id": "OLAK5uy_mADLfrnlWaVWzcEycuiKOFJ7yUzYO2bdw",
+      "playlist_title": "靜默有時 2 A Time To Be Silent Vol.2",
+      "instrumental_signal": "靜默",
+      "proposed_album": "靜默有時 2 A Time To Be Silent Vol.2 (Instrumental Version)",
+      "verdict": "instrumental",
+      "gate": null,
+      "why": "五重閘全過",
+      "meta": {
+        "id": "-qjdgSIKHPw",
+        "title": "主禱文 The Lord’s Prayer (Instrumental Version)",
+        "duration": 270,
+        "channel": "基恩敬拜 Amazing Grace Worship",
+        "upload_date": "20211029",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "詞曲:李宗盛 編曲:李宗盛",
+            "詞曲:李宗盛",
+            "(字幕製作:貝爾)"
+          ],
+          "uniqCount": 3,
+          "coverage": 1.0074074074074073,
+          "lastT1": 272,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        },
+        "en": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "[MUSIC]"
+          ],
+          "uniqCount": 1,
+          "coverage": 1,
+          "lastT1": 270,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    },
+    {
+      "youtube_id": "yGBrsGc4PSk",
+      "raw_title": "牽引 Lead Me (Instrumental Version)",
+      "flat_duration": 185,
+      "playlist_id": "OLAK5uy_mADLfrnlWaVWzcEycuiKOFJ7yUzYO2bdw",
+      "playlist_title": "靜默有時 2 A Time To Be Silent Vol.2",
+      "instrumental_signal": "靜默",
+      "proposed_album": "靜默有時 2 A Time To Be Silent Vol.2 (Instrumental Version)",
+      "verdict": "instrumental",
+      "gate": null,
+      "why": "五重閘全過(rejudge:指紋庫更新後零網絡重判)",
+      "meta": {
+        "id": "yGBrsGc4PSk",
+        "title": "牽引 Lead Me (Instrumental Version)",
+        "duration": 184,
+        "channel": "基恩敬拜 Amazing Grace Worship",
+        "upload_date": "20211029",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": false,
+          "reasons": [
+            "剩餘文字 1 行:MING PAO CANADA | MING PAO TOR"
+          ],
+          "uniq": [
+            "詩歌歌曲、詩歌歌曲、詩歌歌曲。",
+            "MING PAO CANADA | MING PAO TORONTO"
+          ],
+          "uniqCount": 2,
+          "coverage": 0.9957608695652174,
+          "lastT1": 183.22,
+          "whisperFailed": false,
+          "garbageDropped": 1
+        },
+        "en": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "(soft piano music)",
+            "[MUSIC]"
+          ],
+          "uniqCount": 2,
+          "coverage": 1.0326086956521738,
+          "lastT1": 190,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    },
+    {
+      "youtube_id": "rp_slGxKKMc",
+      "raw_title": "下雨天的平安 Peace In Rainy Days (Guitar Version)",
+      "flat_duration": 233,
+      "playlist_id": "OLAK5uy_m85EPCFxSJ0f0cs2e26P1AL4812NmxuWU",
+      "playlist_title": "Amazing Guitar 2",
+      "instrumental_signal": "Guitar",
+      "proposed_album": "Amazing Guitar 2 (Guitar Version)",
+      "verdict": "instrumental",
+      "gate": null,
+      "why": "五重閘全過",
+      "meta": {
+        "id": "rp_slGxKKMc",
+        "title": "下雨天的平安 Peace In Rainy Days (Guitar Version)",
+        "duration": 233,
+        "channel": "基恩敬拜 Amazing Grace Worship",
+        "upload_date": "20241011",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "詞曲:張宇文 詞:張宇文 編曲:張宇文",
+            "詞曲:張宇文 詞曲:張宇文"
+          ],
+          "uniqCount": 2,
+          "coverage": 0.944206008583691,
+          "lastT1": 220,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        },
+        "en": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "[MUSIC]"
+          ],
+          "uniqCount": 1,
+          "coverage": 0.944206008583691,
+          "lastT1": 220,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    },
+    {
+      "youtube_id": "PLy0quB2Lmw",
+      "raw_title": "願您平安 May Peace Be With You (Guitar Version)",
+      "flat_duration": 201,
+      "playlist_id": "OLAK5uy_m85EPCFxSJ0f0cs2e26P1AL4812NmxuWU",
+      "playlist_title": "Amazing Guitar 2",
+      "instrumental_signal": "Guitar",
+      "proposed_album": "Amazing Guitar 2 (Guitar Version)",
+      "verdict": "instrumental",
+      "gate": null,
+      "why": "五重閘全過",
+      "meta": {
+        "id": "PLy0quB2Lmw",
+        "title": "願您平安 May Peace Be With You (Guitar Version)",
+        "duration": 201,
+        "channel": "基恩敬拜 Amazing Grace Worship",
+        "upload_date": "20241011",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "詞曲:李宗盛 詞:李宗盛 編曲:李宗盛",
+            "詞曲:李宗盛 監製:李宗盛",
+            "詞曲:李宗盛 編曲:李宗盛"
+          ],
+          "uniqCount": 3,
+          "coverage": 0.9303482587064676,
+          "lastT1": 187,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        },
+        "en": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "[MUSIC]",
+            "[BLANK_AUDIO]"
+          ],
+          "uniqCount": 2,
+          "coverage": 1.0199004975124377,
+          "lastT1": 205,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    },
+    {
+      "youtube_id": "dk3DhlP5Bh0",
+      "raw_title": "安穩主翅膀 Safe Under Lord’s Wing (Guitar Version)",
+      "flat_duration": 223,
+      "playlist_id": "OLAK5uy_m85EPCFxSJ0f0cs2e26P1AL4812NmxuWU",
+      "playlist_title": "Amazing Guitar 2",
+      "instrumental_signal": "Guitar",
+      "proposed_album": "Amazing Guitar 2 (Guitar Version)",
+      "verdict": "reject",
+      "gate": 4,
+      "why": "兩 pass 結論唔一致(zh 唔過:剩餘文字 1 行:詩歌歌曲、詩歌歌曲、詩歌歌歌曲。 / en 過)",
+      "meta": {
+        "id": "dk3DhlP5Bh0",
+        "title": "安穩主翅膀 Safe Under Lord’s Wing (Guitar Version)",
+        "duration": 222,
+        "channel": "基恩敬拜 Amazing Grace Worship",
+        "upload_date": "20241011",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": false,
+          "reasons": [
+            "剩餘文字 1 行:詩歌歌曲、詩歌歌曲、詩歌歌歌曲。"
+          ],
+          "uniq": [
+            "詩歌歌曲、詩歌歌曲、詩歌歌歌曲。",
+            "詩歌歌曲、詩歌歌曲、詩歌歌曲。"
+          ],
+          "uniqCount": 2,
+          "coverage": 0.9684684684684685,
+          "lastT1": 215,
+          "whisperFailed": false,
+          "garbageDropped": 0,
+          "rejudge_reasons": [
+            "剩餘文字:詩歌歌曲、詩歌歌曲、詩歌歌歌曲。"
+          ]
+        },
+        "en": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "[MUSIC]"
+          ],
+          "uniqCount": 1,
+          "coverage": 0.990990990990991,
+          "lastT1": 220,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    },
+    {
+      "youtube_id": "tBUzjVbPb64",
+      "raw_title": "慈繩愛索 The Rein Of Love, The Rope Of Grace (Guitar Version)",
+      "flat_duration": 210,
+      "playlist_id": "OLAK5uy_m85EPCFxSJ0f0cs2e26P1AL4812NmxuWU",
+      "playlist_title": "Amazing Guitar 2",
+      "instrumental_signal": "Guitar",
+      "proposed_album": "Amazing Guitar 2 (Guitar Version)",
+      "verdict": "instrumental",
+      "gate": null,
+      "why": "五重閘全過",
+      "meta": {
+        "id": "tBUzjVbPb64",
+        "title": "慈繩愛索 The Rein Of Love, The Rope Of Grace (Guitar Version)",
+        "duration": 209,
+        "channel": "基恩敬拜 Amazing Grace Worship",
+        "upload_date": "20241011",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "詞曲:張宇文 詞:張宇文 編曲:張宇文",
+            "詞曲:張宇文 詞曲:張宇文"
+          ],
+          "uniqCount": 2,
+          "coverage": 0.9090909090909091,
+          "lastT1": 190,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        },
+        "en": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "[MUSIC]"
+          ],
+          "uniqCount": 1,
+          "coverage": 0.9330143540669856,
+          "lastT1": 195,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    },
+    {
+      "youtube_id": "iWTS7S7Wo-E",
+      "raw_title": "耶和華祢配得稱頌 Lord You Are Worthy Of Our Praises (Guitar Version)",
+      "flat_duration": 232,
+      "playlist_id": "OLAK5uy_m85EPCFxSJ0f0cs2e26P1AL4812NmxuWU",
+      "playlist_title": "Amazing Guitar 2",
+      "instrumental_signal": "Guitar",
+      "proposed_album": "Amazing Guitar 2 (Guitar Version)",
+      "verdict": "instrumental",
+      "gate": null,
+      "why": "五重閘全過",
+      "meta": {
+        "id": "iWTS7S7Wo-E",
+        "title": "耶和華祢配得稱頌 Lord You Are Worthy Of Our Praises (Guitar Version)",
+        "duration": 231,
+        "channel": "基恩敬拜 Amazing Grace Worship",
+        "upload_date": "20241011",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "詞曲:張宇文 詞:張宇文 編曲:張宇文",
+            "詞曲:張宇文 詞曲:張宇文"
+          ],
+          "uniqCount": 2,
+          "coverage": 0.9523809523809523,
+          "lastT1": 220,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        },
+        "en": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "[MUSIC]"
+          ],
+          "uniqCount": 1,
+          "coverage": 0.974025974025974,
+          "lastT1": 225,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    },
+    {
+      "youtube_id": "hQ6Hdx6CdRY",
+      "raw_title": "神大愛 God’s Magnificent Love (Guitar Version)",
+      "flat_duration": 232,
+      "playlist_id": "OLAK5uy_m85EPCFxSJ0f0cs2e26P1AL4812NmxuWU",
+      "playlist_title": "Amazing Guitar 2",
+      "instrumental_signal": "Guitar",
+      "proposed_album": "Amazing Guitar 2 (Guitar Version)",
+      "verdict": "instrumental",
+      "gate": null,
+      "why": "五重閘全過",
+      "meta": {
+        "id": "hQ6Hdx6CdRY",
+        "title": "神大愛 God’s Magnificent Love (Guitar Version)",
+        "duration": 231,
+        "channel": "基恩敬拜 Amazing Grace Worship",
+        "upload_date": "20241011",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "詞曲:張宇文 詞:張宇文 編曲:張宇文",
+            "詞曲:張宇文 詞曲:張宇文",
+            "詞:張宇文 詞曲:張宇文"
+          ],
+          "uniqCount": 3,
+          "coverage": 0.9523809523809523,
+          "lastT1": 220,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        },
+        "en": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "[MUSIC PLAYING]"
+          ],
+          "uniqCount": 1,
+          "coverage": 0.923982683982684,
+          "lastT1": 213.44,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    },
+    {
+      "youtube_id": "9BPQy4oilg8",
+      "raw_title": "在祢寶座前 Before Your Throne (Guitar Version)",
+      "flat_duration": 223,
+      "playlist_id": "OLAK5uy_m85EPCFxSJ0f0cs2e26P1AL4812NmxuWU",
+      "playlist_title": "Amazing Guitar 2",
+      "instrumental_signal": "Guitar",
+      "proposed_album": "Amazing Guitar 2 (Guitar Version)",
+      "verdict": "instrumental",
+      "gate": null,
+      "why": "五重閘全過",
+      "meta": {
+        "id": "9BPQy4oilg8",
+        "title": "在祢寶座前 Before Your Throne (Guitar Version)",
+        "duration": 223,
+        "channel": "基恩敬拜 Amazing Grace Worship",
+        "upload_date": "20241011",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "詞曲:陳鋒鋒"
+          ],
+          "uniqCount": 1,
+          "coverage": 0.9865470852017937,
+          "lastT1": 220,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        },
+        "en": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "[MUSIC]"
+          ],
+          "uniqCount": 1,
+          "coverage": 0.9910313901345291,
+          "lastT1": 221,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    },
+    {
+      "youtube_id": "tmgkQ-ae-aM",
+      "raw_title": "我心切慕祢 My Soul Longs For You (Guitar Version)",
+      "flat_duration": 192,
+      "playlist_id": "OLAK5uy_m85EPCFxSJ0f0cs2e26P1AL4812NmxuWU",
+      "playlist_title": "Amazing Guitar 2",
+      "instrumental_signal": "Guitar",
+      "proposed_album": "Amazing Guitar 2 (Guitar Version)",
+      "verdict": "instrumental",
+      "gate": null,
+      "why": "五重閘全過",
+      "meta": {
+        "id": "tmgkQ-ae-aM",
+        "title": "我心切慕祢 My Soul Longs For You (Guitar Version)",
+        "duration": 191,
+        "channel": "基恩敬拜 Amazing Grace Worship",
+        "upload_date": "20241011",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "詩歌歌曲,詩歌歌曲。",
+            "詩歌歌曲,詩歌歌曲."
+          ],
+          "uniqCount": 2,
+          "coverage": 0.9528795811518325,
+          "lastT1": 182,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        },
+        "en": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "[MUSIC]"
+          ],
+          "uniqCount": 1,
+          "coverage": 1.0209424083769634,
+          "lastT1": 195,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    },
+    {
+      "youtube_id": "knwt7W1sGx4",
+      "raw_title": "來投靠耶穌 Come Seek Refuge In Jesus (Guitar Version)",
+      "flat_duration": 189,
+      "playlist_id": "OLAK5uy_m85EPCFxSJ0f0cs2e26P1AL4812NmxuWU",
+      "playlist_title": "Amazing Guitar 2",
+      "instrumental_signal": "Guitar",
+      "proposed_album": "Amazing Guitar 2 (Guitar Version)",
+      "verdict": "reject",
+      "gate": 4,
+      "why": "兩 pass 結論唔一致(zh 過 / en 唔過:剩餘文字 1 行:you)",
+      "meta": {
+        "id": "knwt7W1sGx4",
+        "title": "來投靠耶穌 Come Seek Refuge In Jesus (Guitar Version)",
+        "duration": 188,
+        "channel": "基恩敬拜 Amazing Grace Worship",
+        "upload_date": "20241011",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "詞曲:張宇文 詞:張宇文 編曲:張宇文",
+            "詞曲:張宇文 詞曲:張宇文",
+            "詞:張宇文 詞曲:張宇文"
+          ],
+          "uniqCount": 3,
+          "coverage": 1.0106382978723405,
+          "lastT1": 190,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        },
+        "en": {
+          "pass": false,
+          "reasons": [
+            "剩餘文字 1 行:you"
+          ],
+          "uniq": [
+            "[MUSIC]",
+            "you"
+          ],
+          "uniqCount": 2,
+          "coverage": 0.995,
+          "lastT1": 187.06,
+          "whisperFailed": false,
+          "garbageDropped": 0,
+          "rejudge_reasons": [
+            "剩餘文字:you"
+          ]
+        }
+      }
+    },
+    {
+      "youtube_id": "VXJnadlTLBM",
+      "raw_title": "我是泥土 Made Of Clay (Guitar Version)",
+      "flat_duration": 260,
+      "playlist_id": "OLAK5uy_m85EPCFxSJ0f0cs2e26P1AL4812NmxuWU",
+      "playlist_title": "Amazing Guitar 2",
+      "instrumental_signal": "Guitar",
+      "proposed_album": "Amazing Guitar 2 (Guitar Version)",
+      "verdict": "instrumental",
+      "gate": null,
+      "why": "五重閘全過",
+      "meta": {
+        "id": "VXJnadlTLBM",
+        "title": "我是泥土 Made Of Clay (Guitar Version)",
+        "duration": 259,
+        "channel": "基恩敬拜 Amazing Grace Worship",
+        "upload_date": "20241011",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "詞:黃鴻升 曲:黃鴻升"
+          ],
+          "uniqCount": 1,
+          "coverage": 0.9420849420849421,
+          "lastT1": 244,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        },
+        "en": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "[MUSIC]"
+          ],
+          "uniqCount": 1,
+          "coverage": 0.9459459459459459,
+          "lastT1": 245,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    },
+    {
+      "youtube_id": "HdMZ7KP-2BQ",
+      "raw_title": "牽引 Lead Me (Guitar Version)",
+      "flat_duration": 186,
+      "playlist_id": "OLAK5uy_m85EPCFxSJ0f0cs2e26P1AL4812NmxuWU",
+      "playlist_title": "Amazing Guitar 2",
+      "instrumental_signal": "Guitar",
+      "proposed_album": "Amazing Guitar 2 (Guitar Version)",
+      "verdict": "reject",
+      "gate": 4,
+      "why": "兩 pass 結論唔一致(zh 過 / en 唔過:剩餘文字 1 行:you)",
+      "meta": {
+        "id": "HdMZ7KP-2BQ",
+        "title": "牽引 Lead Me (Guitar Version)",
+        "duration": 186,
+        "channel": "基恩敬拜 Amazing Grace Worship",
+        "upload_date": "20241011",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "詞曲:張宇文 詞:張宇文 編曲:張宇文",
+            "詞曲:張宇文 詞曲:張宇文",
+            "詞:張宇文 詞曲:張宇文"
+          ],
+          "uniqCount": 3,
+          "coverage": 1.021505376344086,
+          "lastT1": 190,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        },
+        "en": {
+          "pass": false,
+          "reasons": [
+            "剩餘文字 1 行:you"
+          ],
+          "uniq": [
+            "[MUSIC]",
+            "you"
+          ],
+          "uniqCount": 2,
+          "coverage": 1.0056989247311827,
+          "lastT1": 187.06,
+          "whisperFailed": false,
+          "garbageDropped": 0,
+          "rejudge_reasons": [
+            "剩餘文字:you"
+          ]
+        }
+      }
+    },
+    {
+      "youtube_id": "blUm3VG9L-c",
+      "raw_title": "不要怕 Fear Not (Guitar Version)",
+      "flat_duration": 242,
+      "playlist_id": "OLAK5uy_m85EPCFxSJ0f0cs2e26P1AL4812NmxuWU",
+      "playlist_title": "Amazing Guitar 2",
+      "instrumental_signal": "Guitar",
+      "proposed_album": "Amazing Guitar 2 (Guitar Version)",
+      "verdict": "instrumental",
+      "gate": null,
+      "why": "五重閘全過(rejudge:指紋庫更新後零網絡重判)",
+      "meta": {
+        "id": "blUm3VG9L-c",
+        "title": "不要怕 Fear Not (Guitar Version)",
+        "duration": 242,
+        "channel": "基恩敬拜 Amazing Grace Worship",
+        "upload_date": "20241011",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": false,
+          "reasons": [
+            "剩餘文字 1 行:字幕:J Chong"
+          ],
+          "uniq": [
+            "詞曲:李宗盛 詞:李宗盛 編曲:李宗盛",
+            "詞曲:李宗盛 監製:李宗盛",
+            "詞曲:李宗盛 編曲:李宗盛",
+            "字幕:J Chong"
+          ],
+          "uniqCount": 4,
+          "coverage": 0.9958677685950413,
+          "lastT1": 241,
+          "whisperFailed": false,
+          "garbageDropped": 1,
+          "rejudge_reasons": [
+            "剩餘文字:字幕:J Chong"
+          ]
+        },
+        "en": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "[MUSIC]",
+            "[BLANK_AUDIO]"
+          ],
+          "uniqCount": 2,
+          "coverage": 1.0330578512396693,
+          "lastT1": 250,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    },
+    {
+      "youtube_id": "Y4sCAByQNGY",
+      "raw_title": "永不疲乏 Never Grew Weary (Guitar Version)",
+      "flat_duration": 230,
+      "playlist_id": "OLAK5uy_m85EPCFxSJ0f0cs2e26P1AL4812NmxuWU",
+      "playlist_title": "Amazing Guitar 2",
+      "instrumental_signal": "Guitar",
+      "proposed_album": "Amazing Guitar 2 (Guitar Version)",
+      "verdict": "instrumental",
+      "gate": null,
+      "why": "五重閘全過",
+      "meta": {
+        "id": "Y4sCAByQNGY",
+        "title": "永不疲乏 Never Grew Weary (Guitar Version)",
+        "duration": 230,
+        "channel": "基恩敬拜 Amazing Grace Worship",
+        "upload_date": "20241011",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "詩歌歌曲,詩歌歌曲。"
+          ],
+          "uniqCount": 1,
+          "coverage": 0.9217391304347826,
+          "lastT1": 212,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        },
+        "en": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "[MUSIC]"
+          ],
+          "uniqCount": 1,
+          "coverage": 0.9782608695652174,
+          "lastT1": 225,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    },
+    {
+      "youtube_id": "7swJ33lwnmE",
+      "raw_title": "一生獻作活祭 Our Life As Offering (Instrumental Version)",
+      "flat_duration": 351,
+      "playlist_id": "OLAK5uy_mu8kr5l8SiPWZD8SIl3YYeXuvsz5HLWwU",
+      "playlist_title": "靜默有時 A Time To Be Silent",
+      "instrumental_signal": "靜默",
+      "proposed_album": "靜默有時 A Time To Be Silent (Instrumental Version)",
+      "verdict": "reject",
+      "gate": 4,
+      "why": "兩 pass 結論唔一致(zh 唔過:剩餘文字 2 行:我只想在你身边,我只想在你身边,我只想在你身边。 / 在你身边,我只想在你身边,我只想在你身边。 / en 過)",
+      "meta": {
+        "id": "7swJ33lwnmE",
+        "title": "一生獻作活祭 Our Life As Offering (Instrumental Version)",
+        "duration": 351,
+        "channel": "基恩敬拜 Amazing Grace Worship",
+        "upload_date": "20211031",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": false,
+          "reasons": [
+            "剩餘文字 2 行:我只想在你身边,我只想在你身边,我只想在你身边。 / 在你身边,我只想在你身边,我只想在你身边。"
+          ],
+          "uniq": [
+            "詩歌歌曲",
+            "我只想在你身边,我只想在你身边,我只想在你身边。",
+            "在你身边,我只想在你身边,我只想在你身边。"
+          ],
+          "uniqCount": 3,
+          "coverage": 0.9686609686609686,
+          "lastT1": 340,
+          "whisperFailed": false,
+          "garbageDropped": 0,
+          "rejudge_reasons": [
+            "剩餘文字:我只想在你身边,我只想在你身边,我只想在你身边。 / 在你身边,我只想在你身边,我只想在你身边。"
+          ]
+        },
+        "en": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "[MUSIC]"
+          ],
+          "uniqCount": 1,
+          "coverage": 0.9829059829059829,
+          "lastT1": 345,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    },
+    {
+      "youtube_id": "cPnJTv0VoMo",
+      "raw_title": "下雨天的平安 Peace In Rainy Days (Instrumental Version)",
+      "flat_duration": 278,
+      "playlist_id": "OLAK5uy_mu8kr5l8SiPWZD8SIl3YYeXuvsz5HLWwU",
+      "playlist_title": "靜默有時 A Time To Be Silent",
+      "instrumental_signal": "靜默",
+      "proposed_album": "靜默有時 A Time To Be Silent (Instrumental Version)",
+      "verdict": "instrumental",
+      "gate": null,
+      "why": "五重閘全過",
+      "meta": {
+        "id": "cPnJTv0VoMo",
+        "title": "下雨天的平安 Peace In Rainy Days (Instrumental Version)",
+        "duration": 278,
+        "channel": "基恩敬拜 Amazing Grace Worship",
+        "upload_date": "20211031",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "詞曲:李宗盛 編曲:李宗盛",
+            "詞曲:李宗盛"
+          ],
+          "uniqCount": 2,
+          "coverage": 0.9964028776978417,
+          "lastT1": 277,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        },
+        "en": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "[MUSIC]"
+          ],
+          "uniqCount": 1,
+          "coverage": 0.9712230215827338,
+          "lastT1": 270,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    },
+    {
+      "youtube_id": "o__lznq_99M",
+      "raw_title": "祢的名在全地何其美 How Beautiful Art Thou Name (Instrumental Version)",
+      "flat_duration": 300,
+      "playlist_id": "OLAK5uy_mu8kr5l8SiPWZD8SIl3YYeXuvsz5HLWwU",
+      "playlist_title": "靜默有時 A Time To Be Silent",
+      "instrumental_signal": "靜默",
+      "proposed_album": "靜默有時 A Time To Be Silent (Instrumental Version)",
+      "verdict": "instrumental",
+      "gate": null,
+      "why": "五重閘全過",
+      "meta": {
+        "id": "o__lznq_99M",
+        "title": "祢的名在全地何其美 How Beautiful Art Thou Name (Instrumental Version)",
+        "duration": 299,
+        "channel": "基恩敬拜 Amazing Grace Worship",
+        "upload_date": "20211031",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "詞曲:李宗盛 編曲:李宗盛",
+            "詞曲:李宗盛"
+          ],
+          "uniqCount": 2,
+          "coverage": 0.9264214046822743,
+          "lastT1": 277,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        },
+        "en": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "[water running]",
+            "[music]"
+          ],
+          "uniqCount": 2,
+          "coverage": 0.9899665551839465,
+          "lastT1": 296,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    },
+    {
+      "youtube_id": "u7N_MEdzuiI",
+      "raw_title": "永不疲乏 Never Grew Weary (Instrumental Version)",
+      "flat_duration": 276,
+      "playlist_id": "OLAK5uy_mu8kr5l8SiPWZD8SIl3YYeXuvsz5HLWwU",
+      "playlist_title": "靜默有時 A Time To Be Silent",
+      "instrumental_signal": "靜默",
+      "proposed_album": "靜默有時 A Time To Be Silent (Instrumental Version)",
+      "verdict": "instrumental",
+      "gate": null,
+      "why": "五重閘全過",
+      "meta": {
+        "id": "u7N_MEdzuiI",
+        "title": "永不疲乏 Never Grew Weary (Instrumental Version)",
+        "duration": 275,
+        "channel": "基恩敬拜 Amazing Grace Worship",
+        "upload_date": "20211031",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "詞曲:李宗盛 編曲:李宗盛",
+            "詞曲:李宗盛"
+          ],
+          "uniqCount": 2,
+          "coverage": 0.9636363636363636,
+          "lastT1": 265,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        },
+        "en": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "[MUSIC]"
+          ],
+          "uniqCount": 1,
+          "coverage": 1,
+          "lastT1": 275,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    },
+    {
+      "youtube_id": "u0NMtVaU0nI",
+      "raw_title": "耶穌，我愛祢 Jesus, I Love You (Instrumental Version)",
+      "flat_duration": 234,
+      "playlist_id": "OLAK5uy_mu8kr5l8SiPWZD8SIl3YYeXuvsz5HLWwU",
+      "playlist_title": "靜默有時 A Time To Be Silent",
+      "instrumental_signal": "靜默",
+      "proposed_album": "靜默有時 A Time To Be Silent (Instrumental Version)",
+      "verdict": "instrumental",
+      "gate": null,
+      "why": "五重閘全過(rejudge:指紋庫更新後零網絡重判)",
+      "meta": {
+        "id": "u0NMtVaU0nI",
+        "title": "耶穌，我愛祢 Jesus, I Love You (Instrumental Version)",
+        "duration": 234,
+        "channel": "基恩敬拜 Amazing Grace Worship",
+        "upload_date": "20211031",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": false,
+          "reasons": [
+            "剩餘文字 1 行:混音:李宗盛 母帶:李宗盛"
+          ],
+          "uniq": [
+            "詞曲:李宗盛 編曲:李宗盛",
+            "詞:李宗盛 編曲:李宗盛",
+            "混音:李宗盛 母帶:李宗盛"
+          ],
+          "uniqCount": 3,
+          "coverage": 0.9273504273504274,
+          "lastT1": 217,
+          "whisperFailed": false,
+          "garbageDropped": 0,
+          "rejudge_reasons": [
+            "剩餘文字:混音:李宗盛 母帶:李宗盛"
+          ]
+        },
+        "en": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "[MUSIC]"
+          ],
+          "uniqCount": 1,
+          "coverage": 0.9401709401709402,
+          "lastT1": 220,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    },
+    {
+      "youtube_id": "OenTItJJn1g",
+      "raw_title": "請堅固我 Lord Please Strengthen Me (Instrumental Version)",
+      "flat_duration": 177,
+      "playlist_id": "OLAK5uy_mu8kr5l8SiPWZD8SIl3YYeXuvsz5HLWwU",
+      "playlist_title": "靜默有時 A Time To Be Silent",
+      "instrumental_signal": "靜默",
+      "proposed_album": "靜默有時 A Time To Be Silent (Instrumental Version)",
+      "verdict": "instrumental",
+      "gate": null,
+      "why": "五重閘全過(rejudge:指紋庫更新後零網絡重判)",
+      "meta": {
+        "id": "OenTItJJn1g",
+        "title": "請堅固我 Lord Please Strengthen Me (Instrumental Version)",
+        "duration": 177,
+        "channel": "基恩敬拜 Amazing Grace Worship",
+        "upload_date": "20211031",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": false,
+          "reasons": [
+            "剩餘文字 3 行:混音:張博强 / 製作人:張博强 / MING PAO CANADA | MING PAO TOR"
+          ],
+          "uniq": [
+            "詞曲:張博强",
+            "編曲:張博强",
+            "混音:張博强",
+            "製作人:張博强",
+            "MING PAO CANADA | MING PAO TORONTO"
+          ],
+          "uniqCount": 5,
+          "coverage": 0.96045197740113,
+          "lastT1": 170,
+          "whisperFailed": false,
+          "garbageDropped": 1,
+          "rejudge_reasons": [
+            "剩餘文字:混音:張博强 / 製作人:張博强"
+          ]
+        },
+        "en": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "[MUSIC]"
+          ],
+          "uniqCount": 1,
+          "coverage": 0.9322033898305084,
+          "lastT1": 165,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    },
+    {
+      "youtube_id": "-4nXW4pWWvQ",
+      "raw_title": "我是泥土 Made Of Clay (Instrumental Version)",
+      "flat_duration": 273,
+      "playlist_id": "OLAK5uy_mu8kr5l8SiPWZD8SIl3YYeXuvsz5HLWwU",
+      "playlist_title": "靜默有時 A Time To Be Silent",
+      "instrumental_signal": "靜默",
+      "proposed_album": "靜默有時 A Time To Be Silent (Instrumental Version)",
+      "verdict": "instrumental",
+      "gate": null,
+      "why": "五重閘全過",
+      "meta": {
+        "id": "-4nXW4pWWvQ",
+        "title": "我是泥土 Made Of Clay (Instrumental Version)",
+        "duration": 273,
+        "channel": "基恩敬拜 Amazing Grace Worship",
+        "upload_date": "20211031",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "詩歌歌曲,詩歌歌曲。",
+            "我就是想要你做我的朋友, 知道嗎?"
+          ],
+          "uniqCount": 2,
+          "coverage": 1,
+          "lastT1": 273,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        },
+        "en": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "(soft piano music)",
+            "[BLANK_AUDIO]"
+          ],
+          "uniqCount": 2,
+          "coverage": 1.0256410256410255,
+          "lastT1": 280,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    },
+    {
+      "youtube_id": "Jx-C33RoG7A",
+      "raw_title": "神大愛 God’s Magnificent Love (Instrumental Version)",
+      "flat_duration": 247,
+      "playlist_id": "OLAK5uy_mu8kr5l8SiPWZD8SIl3YYeXuvsz5HLWwU",
+      "playlist_title": "靜默有時 A Time To Be Silent",
+      "instrumental_signal": "靜默",
+      "proposed_album": "靜默有時 A Time To Be Silent (Instrumental Version)",
+      "verdict": "instrumental",
+      "gate": null,
+      "why": "五重閘全過",
+      "meta": {
+        "id": "Jx-C33RoG7A",
+        "title": "神大愛 God’s Magnificent Love (Instrumental Version)",
+        "duration": 247,
+        "channel": "基恩敬拜 Amazing Grace Worship",
+        "upload_date": "20211031",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "詞曲:李宗盛 編曲:李宗盛",
+            "詞曲:李宗盛",
+            "詞:李宗盛"
+          ],
+          "uniqCount": 3,
+          "coverage": 0.9838056680161943,
+          "lastT1": 243,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        },
+        "en": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "[MUSIC]"
+          ],
+          "uniqCount": 1,
+          "coverage": 0.9919028340080972,
+          "lastT1": 245,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    },
+    {
+      "youtube_id": "UqA2IohIVzI",
+      "raw_title": "親眼看見祢 My Eyes Have Seen You (Instrumental Version)",
+      "flat_duration": 218,
+      "playlist_id": "OLAK5uy_mu8kr5l8SiPWZD8SIl3YYeXuvsz5HLWwU",
+      "playlist_title": "靜默有時 A Time To Be Silent",
+      "instrumental_signal": "靜默",
+      "proposed_album": "靜默有時 A Time To Be Silent (Instrumental Version)",
+      "verdict": "reject",
+      "gate": 4,
+      "why": "兩 pass 結論唔一致(zh 過 / en 唔過:剩餘文字 1 行:you)",
+      "meta": {
+        "id": "UqA2IohIVzI",
+        "title": "親眼看見祢 My Eyes Have Seen You (Instrumental Version)",
+        "duration": 217,
+        "channel": "基恩敬拜 Amazing Grace Worship",
+        "upload_date": "20211031",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "詞曲:李宗盛 編曲:李宗盛",
+            "詞曲:李宗盛"
+          ],
+          "uniqCount": 2,
+          "coverage": 1,
+          "lastT1": 217,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        },
+        "en": {
+          "pass": false,
+          "reasons": [
+            "剩餘文字 1 行:you"
+          ],
+          "uniq": [
+            "[MUSIC]",
+            "you"
+          ],
+          "uniqCount": 2,
+          "coverage": 1.0002764976958525,
+          "lastT1": 217.06,
+          "whisperFailed": false,
+          "garbageDropped": 0,
+          "rejudge_reasons": [
+            "剩餘文字:you"
+          ]
+        }
+      }
+    },
+    {
+      "youtube_id": "SipQTlMFhdY",
+      "raw_title": "慈繩愛索 The Rein Of Love, The Rope Of Grace (Instrumental Version)",
+      "flat_duration": 284,
+      "playlist_id": "OLAK5uy_mu8kr5l8SiPWZD8SIl3YYeXuvsz5HLWwU",
+      "playlist_title": "靜默有時 A Time To Be Silent",
+      "instrumental_signal": "靜默",
+      "proposed_album": "靜默有時 A Time To Be Silent (Instrumental Version)",
+      "verdict": "instrumental",
+      "gate": null,
+      "why": "五重閘全過",
+      "meta": {
+        "id": "SipQTlMFhdY",
+        "title": "慈繩愛索 The Rein Of Love, The Rope Of Grace (Instrumental Version)",
+        "duration": 283,
+        "channel": "基恩敬拜 Amazing Grace Worship",
+        "upload_date": "20211031",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "詞曲:李宗盛"
+          ],
+          "uniqCount": 1,
+          "coverage": 0.9540636042402827,
+          "lastT1": 270,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        },
+        "en": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "[MUSIC]"
+          ],
+          "uniqCount": 1,
+          "coverage": 0.9717314487632509,
+          "lastT1": 275,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    },
+    {
+      "youtube_id": "1BrvCsDX0V8",
+      "raw_title": "因為祢先愛我們 As You First Loved Us (Instrumental Version)",
+      "flat_duration": 349,
+      "playlist_id": "OLAK5uy_mu8kr5l8SiPWZD8SIl3YYeXuvsz5HLWwU",
+      "playlist_title": "靜默有時 A Time To Be Silent",
+      "instrumental_signal": "靜默",
+      "proposed_album": "靜默有時 A Time To Be Silent (Instrumental Version)",
+      "verdict": "reject",
+      "gate": 4,
+      "why": "兩 pass 結論唔一致(zh 唔過:剩餘文字 3 行:詩歌歌詩歌詩歌詩歌 詩歌歌詩歌 / 詩歌歌詩歌詩歌詩歌 / * 鸡蛋 - 1 颗 / en 過)",
+      "meta": {
+        "id": "1BrvCsDX0V8",
+        "title": "因為祢先愛我們 As You First Loved Us (Instrumental Version)",
+        "duration": 348,
+        "channel": "基恩敬拜 Amazing Grace Worship",
+        "upload_date": "20211031",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": false,
+          "reasons": [
+            "剩餘文字 3 行:詩歌歌詩歌詩歌詩歌 詩歌歌詩歌 / 詩歌歌詩歌詩歌詩歌 / * 鸡蛋 - 1 颗"
+          ],
+          "uniq": [
+            "詩歌歌詩歌詩歌詩歌 詩歌歌詩歌",
+            "詩歌詩歌詩歌詩歌 詩歌詩歌詩歌",
+            "詩歌詩歌詩歌詩歌詩歌 詩歌詩歌詩歌",
+            "詩歌詩歌詩歌詩歌詩歌詩歌詩歌",
+            "詩歌詩歌詩歌詩歌詩歌",
+            "詩歌歌詩歌詩歌詩歌",
+            "* 鸡蛋 - 1 颗"
+          ],
+          "uniqCount": 7,
+          "coverage": 1.0057471264367817,
+          "lastT1": 350,
+          "whisperFailed": false,
+          "garbageDropped": 0,
+          "rejudge_reasons": [
+            "剩餘文字:詩歌歌詩歌詩歌詩歌 詩歌歌詩歌 / 詩歌歌詩歌詩歌詩歌 / * 鸡蛋 - 1 颗"
+          ]
+        },
+        "en": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "(soft piano music)"
+          ],
+          "uniqCount": 1,
+          "coverage": 0.9480459770114943,
+          "lastT1": 329.92,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    },
+    {
+      "youtube_id": "rG7yQ2WQLmM",
+      "raw_title": "從不丟棄我 Never Forsake Me (Instrumental Version)",
+      "flat_duration": 266,
+      "playlist_id": "OLAK5uy_mu8kr5l8SiPWZD8SIl3YYeXuvsz5HLWwU",
+      "playlist_title": "靜默有時 A Time To Be Silent",
+      "instrumental_signal": "靜默",
+      "proposed_album": "靜默有時 A Time To Be Silent (Instrumental Version)",
+      "verdict": "instrumental",
+      "gate": null,
+      "why": "五重閘全過",
+      "meta": {
+        "id": "rG7yQ2WQLmM",
+        "title": "從不丟棄我 Never Forsake Me (Instrumental Version)",
+        "duration": 265,
+        "channel": "基恩敬拜 Amazing Grace Worship",
+        "upload_date": "20211031",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "詞曲:李宗盛 詞:李宗盛 編曲:李宗盛",
+            "詞曲:李宗盛 監製:李宗盛",
+            "詞曲:李宗盛 編曲:李宗盛"
+          ],
+          "uniqCount": 3,
+          "coverage": 0.9245283018867925,
+          "lastT1": 245,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        },
+        "en": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "[MUSIC]",
+            "[BLANK_AUDIO]"
+          ],
+          "uniqCount": 2,
+          "coverage": 1.0377358490566038,
+          "lastT1": 275,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    },
+    {
+      "youtube_id": "GThvBT1bw88",
+      "raw_title": "不要怕 Fear Not (Instrumental Version)",
+      "flat_duration": 367,
+      "playlist_id": "OLAK5uy_mu8kr5l8SiPWZD8SIl3YYeXuvsz5HLWwU",
+      "playlist_title": "靜默有時 A Time To Be Silent",
+      "instrumental_signal": "靜默",
+      "proposed_album": "靜默有時 A Time To Be Silent (Instrumental Version)",
+      "verdict": "instrumental",
+      "gate": null,
+      "why": "五重閘全過",
+      "meta": {
+        "id": "GThvBT1bw88",
+        "title": "不要怕 Fear Not (Instrumental Version)",
+        "duration": 367,
+        "channel": "基恩敬拜 Amazing Grace Worship",
+        "upload_date": "20211031",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "詞曲:李宗盛 編曲:李宗盛",
+            "演唱:李宗盛",
+            "詞曲:李宗盛"
+          ],
+          "uniqCount": 3,
+          "coverage": 1,
+          "lastT1": 367,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        },
+        "en": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "[MUSIC]",
+            "[BLANK_AUDIO]"
+          ],
+          "uniqCount": 2,
+          "coverage": 1.021798365122616,
+          "lastT1": 375,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    },
+    {
+      "youtube_id": "aojfAaHYRtg",
+      "raw_title": "愛裡沒有懼怕 No Fear In Love (Instrumental Version)",
+      "flat_duration": 264,
+      "playlist_id": "OLAK5uy_mu8kr5l8SiPWZD8SIl3YYeXuvsz5HLWwU",
+      "playlist_title": "靜默有時 A Time To Be Silent",
+      "instrumental_signal": "靜默",
+      "proposed_album": "靜默有時 A Time To Be Silent (Instrumental Version)",
+      "verdict": "instrumental",
+      "gate": null,
+      "why": "五重閘全過",
+      "meta": {
+        "id": "aojfAaHYRtg",
+        "title": "愛裡沒有懼怕 No Fear In Love (Instrumental Version)",
+        "duration": 263,
+        "channel": "基恩敬拜 Amazing Grace Worship",
+        "upload_date": "20211031",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "詞曲:李宗盛 編曲:李宗盛",
+            "詞曲:李宗盛"
+          ],
+          "uniqCount": 2,
+          "coverage": 0.9391634980988594,
+          "lastT1": 247,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        },
+        "en": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "[MUSIC]"
+          ],
+          "uniqCount": 1,
+          "coverage": 1.0076045627376427,
+          "lastT1": 265,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    },
+    {
+      "youtube_id": "XUL9dxe6pyY",
+      "raw_title": "主的恩典 Lord’s Grace (Instrumental Version)",
+      "flat_duration": 328,
+      "playlist_id": "OLAK5uy_mu8kr5l8SiPWZD8SIl3YYeXuvsz5HLWwU",
+      "playlist_title": "靜默有時 A Time To Be Silent",
+      "instrumental_signal": "靜默",
+      "proposed_album": "靜默有時 A Time To Be Silent (Instrumental Version)",
+      "verdict": "instrumental",
+      "gate": null,
+      "why": "五重閘全過",
+      "meta": {
+        "id": "XUL9dxe6pyY",
+        "title": "主的恩典 Lord’s Grace (Instrumental Version)",
+        "duration": 327,
+        "channel": "基恩敬拜 Amazing Grace Worship",
+        "upload_date": "20211031",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "詩歌歌曲,詩歌歌曲。"
+          ],
+          "uniqCount": 1,
+          "coverage": 0.9235474006116208,
+          "lastT1": 302,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        },
+        "en": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "[MUSIC]"
+          ],
+          "uniqCount": 1,
+          "coverage": 0.9938837920489296,
+          "lastT1": 325,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    },
+    {
+      "youtube_id": "0y4iAsso7WA",
+      "raw_title": "惟獨祢 Only You (Guitar Version)",
+      "flat_duration": 224,
+      "playlist_id": "OLAK5uy_my4YcWeHxKWh87OkTI0GWxDg3cx91ABeg",
+      "playlist_title": "Amazing Grace Amazing Guitar",
+      "instrumental_signal": "Guitar",
+      "proposed_album": "Amazing Guitar (Guitar Version)",
+      "verdict": "reject",
+      "gate": 4,
+      "why": "兩 pass 結論唔一致(zh 過 / en 唔過:剩餘文字 1 行:you)",
+      "meta": {
+        "id": "0y4iAsso7WA",
+        "title": "惟獨祢 Only You (Guitar Version)",
+        "duration": 224,
+        "channel": "基恩敬拜 Amazing Grace Worship",
+        "upload_date": "20211102",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "詩歌歌詞的錄音。"
+          ],
+          "uniqCount": 1,
+          "coverage": 0.9642857142857143,
+          "lastT1": 216,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        },
+        "en": {
+          "pass": false,
+          "reasons": [
+            "剩餘文字 1 行:you"
+          ],
+          "uniq": [
+            "[MUSIC]",
+            "you"
+          ],
+          "uniqCount": 2,
+          "coverage": 0.9913392857142858,
+          "lastT1": 222.06,
+          "whisperFailed": false,
+          "garbageDropped": 0,
+          "rejudge_reasons": [
+            "剩餘文字:you"
+          ]
+        }
+      }
+    },
+    {
+      "youtube_id": "njdCiXnLtpg",
+      "raw_title": "親眼看見祢 My Eyes Have Seen You (Guitar Version)",
+      "flat_duration": 258,
+      "playlist_id": "OLAK5uy_my4YcWeHxKWh87OkTI0GWxDg3cx91ABeg",
+      "playlist_title": "Amazing Grace Amazing Guitar",
+      "instrumental_signal": "Guitar",
+      "proposed_album": "Amazing Guitar (Guitar Version)",
+      "verdict": "reject",
+      "gate": 4,
+      "why": "兩 pass 結論唔一致(zh 過 / en 唔過:剩餘文字 1 行:you)",
+      "meta": {
+        "id": "njdCiXnLtpg",
+        "title": "親眼看見祢 My Eyes Have Seen You (Guitar Version)",
+        "duration": 258,
+        "channel": "基恩敬拜 Amazing Grace Worship",
+        "upload_date": "20211102",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "詩歌歌曲、詩歌歌曲、詩歌歌曲。",
+            "詩歌歌曲、詩歌歌曲、詩歌歌曲、詩歌歌曲。"
+          ],
+          "uniqCount": 2,
+          "coverage": 0.9689922480620154,
+          "lastT1": 250,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        },
+        "en": {
+          "pass": false,
+          "reasons": [
+            "剩餘文字 1 行:you"
+          ],
+          "uniq": [
+            "[MUSIC]",
+            "you"
+          ],
+          "uniqCount": 2,
+          "coverage": 0.9963565891472869,
+          "lastT1": 257.06,
+          "whisperFailed": false,
+          "garbageDropped": 0,
+          "rejudge_reasons": [
+            "剩餘文字:you"
+          ]
+        }
+      }
+    },
+    {
+      "youtube_id": "Hzd4Xrz9ywQ",
+      "raw_title": "我的牧者 The Lord Is My Shepherd (Guitar Version)",
+      "flat_duration": 307,
+      "playlist_id": "OLAK5uy_my4YcWeHxKWh87OkTI0GWxDg3cx91ABeg",
+      "playlist_title": "Amazing Grace Amazing Guitar",
+      "instrumental_signal": "Guitar",
+      "proposed_album": "Amazing Guitar (Guitar Version)",
+      "verdict": "instrumental",
+      "gate": null,
+      "why": "五重閘全過",
+      "meta": {
+        "id": "Hzd4Xrz9ywQ",
+        "title": "我的牧者 The Lord Is My Shepherd (Guitar Version)",
+        "duration": 306,
+        "channel": "基恩敬拜 Amazing Grace Worship",
+        "upload_date": "20211102",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "詞曲:李宗盛",
+            "詞:李宗盛"
+          ],
+          "uniqCount": 2,
+          "coverage": 0.9705882352941176,
+          "lastT1": 297,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        },
+        "en": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "[MUSIC]"
+          ],
+          "uniqCount": 1,
+          "coverage": 0.9967320261437909,
+          "lastT1": 305,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    },
+    {
+      "youtube_id": "lZkN9bn7ogo",
+      "raw_title": "如果我沒有遇見祢 If I've Never Met You (Guitar Version)",
+      "flat_duration": 176,
+      "playlist_id": "OLAK5uy_my4YcWeHxKWh87OkTI0GWxDg3cx91ABeg",
+      "playlist_title": "Amazing Grace Amazing Guitar",
+      "instrumental_signal": "Guitar",
+      "proposed_album": "Amazing Guitar (Guitar Version)",
+      "verdict": "instrumental",
+      "gate": null,
+      "why": "五重閘全過",
+      "meta": {
+        "id": "lZkN9bn7ogo",
+        "title": "如果我沒有遇見祢 If I've Never Met You (Guitar Version)",
+        "duration": 176,
+        "channel": "基恩敬拜 Amazing Grace Worship",
+        "upload_date": "20211102",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "詩歌歌曲,詩歌歌曲。"
+          ],
+          "uniqCount": 1,
+          "coverage": 0.9090909090909091,
+          "lastT1": 160,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        },
+        "en": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "[MUSIC]"
+          ],
+          "uniqCount": 1,
+          "coverage": 0.9943181818181818,
+          "lastT1": 175,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    },
+    {
+      "youtube_id": "pUIt5eDwo3g",
+      "raw_title": "耶穌, 我愛祢 (幻想曲) Jesus, I Love You (Fantasia) (Guitar Version)",
+      "flat_duration": 343,
+      "playlist_id": "OLAK5uy_my4YcWeHxKWh87OkTI0GWxDg3cx91ABeg",
+      "playlist_title": "Amazing Grace Amazing Guitar",
+      "instrumental_signal": "Guitar",
+      "proposed_album": "Amazing Guitar (Guitar Version)",
+      "verdict": "instrumental",
+      "gate": null,
+      "why": "五重閘全過",
+      "meta": {
+        "id": "pUIt5eDwo3g",
+        "title": "耶穌, 我愛祢 (幻想曲) Jesus, I Love You (Fantasia) (Guitar Version)",
+        "duration": 342,
+        "channel": "基恩敬拜 Amazing Grace Worship",
+        "upload_date": "20211102",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "詩歌歌曲,詩歌歌曲。"
+          ],
+          "uniqCount": 1,
+          "coverage": 0.9707602339181286,
+          "lastT1": 332,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        },
+        "en": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "[MUSIC]",
+            "[BLANK_AUDIO]"
+          ],
+          "uniqCount": 2,
+          "coverage": 1.0175438596491229,
+          "lastT1": 348,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    },
+    {
+      "youtube_id": "cc3ep79wIz8",
+      "raw_title": "因為祢先愛我們 Because You first Love Us (Guitar Version)",
+      "flat_duration": 279,
+      "playlist_id": "OLAK5uy_my4YcWeHxKWh87OkTI0GWxDg3cx91ABeg",
+      "playlist_title": "Amazing Grace Amazing Guitar",
+      "instrumental_signal": "Guitar",
+      "proposed_album": "Amazing Guitar (Guitar Version)",
+      "verdict": "instrumental",
+      "gate": null,
+      "why": "五重閘全過",
+      "meta": {
+        "id": "cc3ep79wIz8",
+        "title": "因為祢先愛我們 Because You first Love Us (Guitar Version)",
+        "duration": 279,
+        "channel": "基恩敬拜 Amazing Grace Worship",
+        "upload_date": "20211102",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "詩歌歌曲,詩歌歌曲。"
+          ],
+          "uniqCount": 1,
+          "coverage": 0.974910394265233,
+          "lastT1": 272,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        },
+        "en": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "[MUSIC]",
+            "[BLANK_AUDIO]"
+          ],
+          "uniqCount": 2,
+          "coverage": 1.014336917562724,
+          "lastT1": 283,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    },
+    {
+      "youtube_id": "NV0elnXCnBA",
+      "raw_title": "星火飛騰 You Are The Only One (Guitar Version)",
+      "flat_duration": 222,
+      "playlist_id": "OLAK5uy_my4YcWeHxKWh87OkTI0GWxDg3cx91ABeg",
+      "playlist_title": "Amazing Grace Amazing Guitar",
+      "instrumental_signal": "Guitar",
+      "proposed_album": "Amazing Guitar (Guitar Version)",
+      "verdict": "instrumental",
+      "gate": null,
+      "why": "五重閘全過",
+      "meta": {
+        "id": "NV0elnXCnBA",
+        "title": "星火飛騰 You Are The Only One (Guitar Version)",
+        "duration": 221,
+        "channel": "基恩敬拜 Amazing Grace Worship",
+        "upload_date": "20211102",
+        "auto_captions": [],
+        "manual_subs": []
+      },
+      "whisper": {
+        "zh": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "詩歌歌詞的錄音。"
+          ],
+          "uniqCount": 1,
+          "coverage": 0.995475113122172,
+          "lastT1": 220,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        },
+        "en": {
+          "pass": true,
+          "reasons": [],
+          "uniq": [
+            "[MUSIC]",
+            "[BLANK_AUDIO]"
+          ],
+          "uniqCount": 2,
+          "coverage": 1.0316742081447965,
+          "lastT1": 228,
+          "whisperFailed": false,
+          "garbageDropped": 0
+        }
+      }
+    }
+  ]
+}

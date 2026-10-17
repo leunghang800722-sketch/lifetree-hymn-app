@@ -1,0 +1,834 @@
+// routes/stream.js — stable stream proxy, keyed by DB hymn id (not youtube_id)
+// so a future non-YouTube source (e.g. user uploads) can slot in later
+// without the app changing its playback URL scheme.
+
+import { Router } from 'express';
+import { Readable } from 'stream';
+import { resolveAudioUrl, bustCache, preVerifyUrl, markStreaming, unmarkStreaming, cache, warmBuffer, getBufferedChunk, evictBufferedChunk, anyStreaming, adoptStreamedHead, WARM_CAP_BYTES, parseDurationSec } from '../lib/resolveAudio.js';
+import { zeroFragmentedMp4Durations } from '../lib/fixFragmentedMp4Duration.js';
+import { recordWarmIds } from '../lib/warmLog.js';
+import { recordStreamRequest, recordBufferCacheHit, recordUpstream403 } from '../lib/opsMetrics.js';
+import { recordStreamHit, getHotIds } from '../lib/hotIds.js';
+import { extractItagClen } from '../lib/urlItagClen.js';
+import { clientIp } from '../lib/loginRateLimit.js';
+
+// BG-PLAYBACK-STOPS-PLAN Fix D:純 observability helper,唔改任何 proxy 行為。
+// 一行 log,帶 ISO timestamp,用嚟診斷背景播放 3-4 首自動停個 bug(client abort
+// 之前完全冇 log,飛盲)。
+function logLine(fields) {
+  console.log(`[stream] ${new Date().toISOString()} ${Object.entries(fields).map(([k, v]) => `${k}=${v}`).join(' ')}`);
+}
+
+// NATIVE-STALL-ROOTFIX-PLAN-20260830 §6 Phase A:純 log 補完,零行為改動。
+// `[stream]` 個 log line 係空格分隔嘅 `k=v`——Range/UA header 理論上唔會帶
+// 空格或者控制字元(`bytes=0-` 呢類值本身安全),但保險起見,凡係塞入呢個
+// helper 嘅字串一律淨係保留 printable ASCII(0x21-0x7e,即冇空格嘅可見字
+// 符),其餘(空格/控制字元/非 ASCII)一律換做 `_`,防止整亂 log 格式或者
+// 拆 log 嘅工具。
+function sanitizeLogToken(s, maxLen) {
+  if (s == null || s === '') return '-';
+  let out = String(s);
+  if (maxLen) out = out.slice(0, maxLen);
+  return out.replace(/[^\x21-\x7e]/g, '_');
+}
+
+// NATIVE-STALL-ROOTFIX-PLAN-20260830 §5 H2:由 resolveAudioUrl() 攞返嚟嗰條
+// googlevideo URL 嘅 query string 攞 itag/clen——答「今日 resolve 出嚟嗰個
+// format variant 係咪有問題」。url 未 resolve/resolve 失敗/parse 唔到就
+// 一律 `-`,唔會拋錯累到成個 request 死。
+// FIRST-TRACK-STEP01-FIX-20260907 #2:呢個函式而家搬咗去 lib/urlItagClen.js
+// (上面 import),俾 routes/hls.js 都可以攞嚟做免費(零上游請求)嘅 playlist
+// cache 命中校驗,唔使兩份幾乎一樣嘅 parse 邏輯分喺兩個檔案。行為冇變。
+
+// NATIVE-STALL-ROOTFIX-PLAN-20260830 §6 Phase A:「呢條 request 真係寫咗幾多
+// body bytes 俾 client」用 socket.bytesWritten 喺 request 開始/結束嗰陣嘅
+// 差值嚟估。語義聲明:呢個數包埋 HTTP header bytes(唔淨係 body)——單一
+// request 嘅 header 通常得幾百 bytes,對分辨「load storm 入面條片攞幾多
+// KB 就俾 client abort」呢個問題嚟講唔傷大雅;keep-alive 令同一條 socket
+// 服務多個 request 時,呢個差值淨係計返「呢個 request 生命週期入面」嘅嗰
+// 段(即係 request 開始嗰刻嘅 bytesWritten 做 baseline,喺 finishLog 嗰刻
+// 再讀一次計差),唔會同同一 socket 上其他 request 嘅 bytes 混埋。
+//
+// 2026-08-30 Fable5 真機驗收揪出嘅 bug 修正:原本呢度傳緊 `res` 入嚟、喺
+// call 嗰刻先讀 `res.socket`——但 response 完成/close 之後 Node 會將
+// `res.socket` detach 做 null(呢個係新版 Node 嘅正常行為,唔係邊度整
+// 錯),即係「正路」(送完/送咗一截先俾 client abort)嘅 request 反而
+// 100% 量唔到,得返 `-`,同呢個 field 存在嘅目的(答§5 H3「storm 請求送
+// 咗幾多 bytes 先俾 abort」)完全相反。修法:call site 喺 request 一開始
+// (baseline 嗰刻,`res.socket` 實在生)就將 socket **object reference**
+// 揸實(唔淨係讀個數),之後成程都用返呢個揸實嘅 reference 讀
+// `.bytesWritten`——socket object 就算之後俾 res detach(`res.socket`
+// 變 null),呢個 reference 本身仲喺度、`.bytesWritten` 依然讀得到(佢淨
+// 係一個計數器 property,唔會因為 detach 而清零/消失)。防禦性 null check
+// 保留:sock 本身喺極端情況(例如 request 開始嗰刻已經冇 socket)都可能
+// 係 null。
+function computeSentBytes(sock, bytesWrittenStart) {
+  try {
+    if (!sock) return '-';
+    return Math.max(0, sock.bytesWritten - bytesWrittenStart);
+  } catch (_) {
+    return '-';
+  }
+}
+
+// STREAM-MIDTRACK-SILENCE-ROOTCAUSE-2026-08-12 §5.2:兩條 googlevideo URL 係咪
+// 同一個 itag/檔案大細(即係「換條 URL 但唔係換咗 format」)。攞唔到 itag 就保守
+// 放行(true),唔好阻住現有 retry 行為——呢個 check 淨係用嚟攔「肯定唔同」嘅情況。
+function sameFormat(urlA, urlB) {
+  try {
+    const a = new URL(urlA);
+    const b = new URL(urlB);
+    const itagA = a.searchParams.get('itag');
+    const itagB = b.searchParams.get('itag');
+    if (!itagA || !itagB) return true;
+    if (itagA !== itagB) return false;
+    const clenA = a.searchParams.get('clen');
+    const clenB = b.searchParams.get('clen');
+    if (clenA && clenB && clenA !== clenB) return false;
+    return true;
+  } catch (_) {
+    return true;
+  }
+}
+
+// LOCKSCREEN-FREEZE-LOAD-STALL-HARDENING(2026-08-13)—— id=6事件(見
+// STREAM-LOCKSCREEN-FREEZE-OPUS5-2026-08-13.md §3.1)實測:轉歌後撞403,
+// 原本嘅固定 2 秒 backoff 先 bust+重 resolve,呢 2 秒本身就係計落用戶感知
+// 嘅斷聲時間入面。但固定 2 秒係為咗頂「即刻重試好大機會撞返同一個節流窗口」
+// (2026-07-29 STREAM-403-FGS-CRASH-PLAN §1.4 嘅實測數字)——唔可以盲目縮短,
+// 唔係會重新引入嗰個問題。做法:淨係「呢個 youtubeId 最近未撞過失敗」嘅單次
+// 偶發情況先用短 backoff(800ms),如果短時間內同一條片再撞多次,升級返做
+// 完整 2 秒(保住原本已經用真實 incident 數據調教過嘅保護)。
+const RECENT_FAIL_WINDOW_MS = 30 * 1000;
+const recentUpstreamFail = new Map(); // youtubeId -> last-fail timestamp(ms)
+function backoffMsFor(youtubeId) {
+  const now = Date.now();
+  const last = recentUpstreamFail.get(youtubeId);
+  recentUpstreamFail.set(youtubeId, now);
+  // 順手清舊 entry,唔畀個 Map 長期accumulate(呢類失敗罕見,唔使掃描門檻)。
+  if (recentUpstreamFail.size > 200) {
+    for (const [k, ts] of recentUpstreamFail) {
+      if (now - ts > RECENT_FAIL_WINDOW_MS) recentUpstreamFail.delete(k);
+    }
+  }
+  if (last && now - last < RECENT_FAIL_WINDOW_MS) return 2000; // 30秒內第二次—當係持續節流,用返原本嘅2秒
+  return 800; // 30秒內第一次——當係偶發,短backoff
+}
+
+// BATCH5 §7.3-A:冷路徑 tee 收集門檻——細過呢個就算(client 極早 abort),
+// 連 moov probe 都唔夠幫,唔值得叫多一次 adoptStreamedHead。
+const MIN_TEE_BYTES = 256 * 1024;
+
+// FIRST-TRACK-STEP01-EXEC-20260907 §2 N3 —— `/warm` 總數上限(client 名單
+// + backend 熱門補位),env 可覆蓋(純測試用途,production 用返呢個預設)。
+// FIRST-TRACK-STEP01-OPUS-20260907 P2-6:16 個 id 每個最壞 12MB(WARM_CAP_
+// BYTES)= 192MB upstream fetch,遠超 128MB bufferCache 閘,而排喺頭嗰批
+// (client 名單、非 pinned)反而會俾之後 hot 補位嗰批擠走。第一波收窄做
+// 10,降低單次 `/warm` 嘅 upstream 流量峰值同埋自己人打交嘅風險。
+const WARM_TOTAL_CAP = Number(process.env.WARM_TOTAL_CAP) > 0 ? Number(process.env.WARM_TOTAL_CAP) : 10;
+
+// W4(BACKEND-CACHE-FIX-EXEC-20260831 §2.2 Design B)dedup 守衛——見下面
+// `!startsAtZero` 分支嘅完整解釋。呢個 Set 只有兩條 mutation 路:排隊前
+// `.add()`,`warmBuffer()` 個 promise 落地(唔理成定敗)喺 `.finally()` 度
+// `.delete()`。兩條路都喺同一個函數入面,冇第三條分支可以漏——2026-08-31
+// 覆查過(對應紅線 §4-7 逐條 mutation 路徑要求)。
+const w4RescueInFlight = new Set(); // youtubeId 現正排緊/跑緊背景 rescue warm
+
+export default function streamRoutes(getDb) {
+  const router = Router();
+
+  // §3b PERF-FAST-START-PLAN:預熱端點。App 開機(繼續收聽 + 今日為你預備)同
+  // 每次起播後(隊列下 3 首)會 POST 呢度,令自動接續/撳「下一首」永遠 warm。
+  // ⚠️ 純附加路由,冇掂下面 GET /:hymnId 個 proxy(嗰個 Range 語義係 load-bearing)。
+  // 即回 202,resolve 喺背景單線程行,唔阻 response。
+  router.post('/warm', async (req, res) => {
+    const clientIds = Array.isArray(req.body?.ids) ? req.body.ids.slice(0, 10) : [];
+    // FIRST-TRACK-STEP01-EXEC-20260907 §2 N3 —— 「今日為你預備 6 首」名單
+    // 同真實起播入口(隨心聽/chip/最近加入)幾乎完全脫靶(1E 實測 92.6%)。
+    // 呢度喺 client 名單(≤10)之後,補返 backend 側量到嘅「最近 24h 真.
+    // 熱門」id,總數封頂 `WARM_TOTAL_CAP`(預設 10)。純加法:client 名單
+    // 一個字冇改、次序唔變(佢哋照舊行先),`anyStreaming()` 讓路邏輯喺
+    // 下面 for-loop 完全照舊,補位嘅 id 同 client id 用同一條 warm 邏輯,
+    // 冇開後門。
+    const clientCount = clientIds.length;
+    const seen = new Set(clientIds.map((x) => Number(x)));
+    const ids = [...clientIds];
+    if (ids.length < WARM_TOTAL_CAP) {
+      const hotCandidates = getHotIds(WARM_TOTAL_CAP);
+      for (const raw of hotCandidates) {
+        if (ids.length >= WARM_TOTAL_CAP) break;
+        const n = Number(raw);
+        if (!Number.isInteger(n) || n <= 0 || seen.has(n)) continue;
+        seen.add(n);
+        ids.push(n);
+      }
+    }
+    const hotAdded = ids.length - clientCount;
+    res.status(202).json({ warming: ids.length });
+    console.log(`[warm] ${new Date().toISOString()} client=${clientCount} hot=${hotAdded} total=${ids.length}`);
+    // BATCH5 §7.3-C:記低邊啲 id 俾 /warm 摸過,俾 daily cron(server.js
+    // startDailyWarmCron)揀「噚日+今日」精選預 resolve 用。fire-and-forget,
+    // recordWarmIds 內部 best-effort try/catch,唔會影響返上面已經 send 咗
+    // 嘅 202 response。⚠️ 淨係記 client 原裝名單(唔記 hot 補位嗰啲)——
+    // daily cron 揀嘅係「App 開機/換歌摸過乜嘢」,同 hotIds.js 自己嗰個
+    // 獨立 24h 滾動窗口係兩件事,唔應該互相污染。
+    recordWarmIds(clientIds);
+    if (!ids.length) return;
+    try {
+      const db = await getDb();
+      // INSTRUMENTAL-CATEGORY-PLAN §9 Phase 3b:順手攞埋 duration(呢個 SELECT
+      // 本來就逐個 id 打緊,加一欄零額外 query),parse 做秒傳落 warmBuffer(),
+      // 等佢可以對長檔行細 head cap。parse 唔到就傳 null = 「唔知」,warmBuffer
+      // 收到 null 會照行返 12MB 舊路。
+      const warmTargets = [];
+      for (const raw of ids) {
+        const id = Number(raw);
+        if (!Number.isInteger(id) || id <= 0) continue;
+        const stmt = db.prepare('SELECT youtube_id, duration FROM hymns WHERE id = ?');
+        stmt.bind([id]);
+        if (stmt.step()) {
+          const r = stmt.getAsObject();
+          if (r.youtube_id) warmTargets.push({ yt: r.youtube_id, durationSec: parseDurationSec(r.duration) });
+        }
+        stmt.free();
+      }
+      for (const { yt, durationSec } of warmTargets) {
+        try {
+          const url = await resolveAudioUrl(yt);
+          const verifiedUrl = await preVerifyUrl(yt, url);
+          // BATCH5 §7.3-B:有人聽緊:resolve+preVerify(平)已經做完落 cache,
+          // 貴嘅 warmBuffer 讓路,唔同正播嗰條 stream 爭 VPN 頻寬。每個
+          // iteration 即場 check,唔係入 loop 前check一次——中途開始播都讓。
+          // BATCH7 B7-9:isStreaming(yt) 被 anyStreaming() 完全包含(yt 播緊
+          // 即係 streaming map size>=1),舊寫法係死 code(SECOND-PASS-REVIEW-
+          // 20260820.md b3)。
+          if (anyStreaming()) continue;
+          await warmBuffer(yt, verifiedUrl, durationSec);
+        } catch (_) {}
+      }
+    } catch (_) { /* 背景嘢,靜靜哋收工就得 */ }
+  });
+
+  router.get('/:hymnId', async (req, res) => {
+    // BG-PLAYBACK-STOPS-PLAN Fix D:純 observability,零行為改動。
+    const reqStart = Date.now();
+    // NATIVE-STALL-ROOTFIX-PLAN-20260830 §6 Phase A:baseline 要喺呢個
+    // request 一開始就攞(喺任何 write 之前),先可以喺 finishLog 嗰刻計到
+    // 「呢個 request 自己」寫咗幾多 bytes。純讀,零行為改動。
+    //
+    // 2026-08-30 Fable5 真機驗收 bug fix:呢度一定要揸實 `res.socket`
+    // 個 **object reference**(`sock`),唔可以淨係讀個 bytesWritten 數字
+    // 就算數——response 完成/close 之後 Node 會將 `res.socket` 本身
+    // detach 做 null,如果 finishLog 嗰刻先再問 `res.socket`,好多時已經
+    // 攞唔返個 socket、成個 sent 就報 `-`(呢個 request 生命週期入面
+    // `res.socket` 一定生,喺呢度攞落嚟嘅 reference 之後點都仲讀到
+    // `.bytesWritten`)。
+    const sock = res.socket;
+    const bytesWrittenStart = (() => {
+      try { return sock ? sock.bytesWritten : 0; } catch (_) { return 0; }
+    })();
+    // NATIVE-STALL-ROOTFIX-PLAN-20260830 §6 Phase A:呢個 field 全程用嚟答
+    // 「呢條係咪 Phase B native rescue(`?swr=`)打嚟嘅請求」,喺 server side
+    // 令 rescue 請求現形,唔使淨係靠 client log。
+    const wd = (req.query && req.query.swr !== undefined) ? 1 : 0;
+    const uaShort = sanitizeLogToken(req.headers['user-agent'], 20);
+    const id = Number(req.params.hymnId);
+    if (!Number.isInteger(id) || id <= 0) {
+      logLine({ id: req.params.hymnId, yt: '-', mode: '-', resolve_ms: 0, ttfb_ms: Date.now() - reqStart, total_ms: Date.now() - reqStart, status: 400, aborted: false, retried: false, range: sanitizeLogToken(req.headers.range), sent: computeSentBytes(sock, bytesWrittenStart), itag: '-', clen: '-', wd, ua: uaShort });
+      return res.status(400).json({ error: 'bad id' });
+    }
+
+    const db = await getDb();
+    // W4(BACKEND-CACHE-FIX-EXEC-20260831 §2.2 Design B):加返 `duration` 呢一
+    // 欄——下面嘅背景 rescue warm 要用嚟揀 warmBuffer() 嘅 capBytes(長檔 4MB
+    // vs 普通 12MB,同 /warm 路由 §520 個判斷一致),同一條 query 順手攞埋,
+    // 唔使加多一次 DB round-trip。
+    const stmt = db.prepare('SELECT youtube_id, duration FROM hymns WHERE id = ?');
+    stmt.bind([id]);
+    const found = stmt.step();
+    const hymn = found ? stmt.getAsObject() : null;
+    stmt.free();
+
+    if (!hymn?.youtube_id) {
+      logLine({ id, yt: '-', mode: '-', resolve_ms: 0, ttfb_ms: Date.now() - reqStart, total_ms: Date.now() - reqStart, status: 404, aborted: false, retried: false, range: sanitizeLogToken(req.headers.range), sent: computeSentBytes(sock, bytesWrittenStart), itag: '-', clen: '-', wd, ua: uaShort });
+      return res.status(404).json({ error: 'not found' });
+    }
+    // W4:同 /warm 路由(§162 一帶)一樣嘅 parse,俾下面背景 rescue warm 用。
+    const durationSec = parseDurationSec(hymn.duration);
+
+    // warm|cold 係「行呢個 request 之前」個 cache 狀態(唔改 resolveAudio.js
+    // 任何行為,只係讀返佢已經 export 咗嘅 cache Map)。
+    const warm = (() => {
+      const c = cache.get(hymn.youtube_id);
+      return !!(c && c.expiresAt > Date.now());
+    })();
+    // ⚠️ 2026-08-23 THIRD-PASS-REVIEW §5 Batch D-2:同一個 warm 判斷順手記落
+    // opsMetrics,等 warm hit rate 有得統計(下面條 [stream] log 行本來已經寫緊
+    // mode=warm|cold,但 log 檔會輪替/清走,又冚唔到「一首歌開咗幾多條 range
+    // 連線」呢個高估問題 —— opsMetrics 會分開數 track start)。純觀測,零行為改動。
+    recordStreamRequest(hymn.youtube_id, warm);
+    // FIRST-TRACK-STEP01-EXEC-20260907 §2 N3 —— 記低「呢個 DB hymn id 而家
+    // 有真人播緊」,俾 `/warm` 補位用。純觀測(hotIds.js 內部自己做 UA 過濾
+    // + 去重),唔改呢條 route 任何行為/timing。
+    // FIRST-TRACK-STEP01-FIX-20260907 #5(Opus P2-5 修正)——舊版每個 request
+    // 過咗去重窗口都計一次,變咗「串流分鐘數」(一首 40 分鐘純音樂 ≈ 40 分,
+    // 一首 4 分鐘詩歌得 4 分,長檔洗版熱門榜)。而家淨係「呢個 request 係
+    // 起播」(冇 Range,或者 Range 由 byte 0 開始——AVFoundation/ExoPlayer
+    // 一首歌一定有一個呢種請求打頭陣,中段續播 range 唔算)先計一次「開歌」。
+    // 呢度要喺 `clientRange`/`parsedRange`(下面 §372 先聲明)之前提早重複
+    // 判斷一次同一條件,避免將呢兩個 local 變數嘅聲明搬前(改咗會動落 fMP4
+    // duration 修補嗰段嘅變數次序,唔值得為呢個純觀測 helper 冒呢個風險)。
+    // `clientKey` = ip+ua(呢條 route 冇 deviceId,App 一個字冇改前提下攞
+    // 唔到——同一 id 同一 client 5 分鐘內再嚟(例如 native reload/seek 返
+    // byte 0)唔應該計多次「開歌」)。
+    const isStreamStartReq = !req.headers.range || /^bytes=0-/.test(req.headers.range);
+    recordStreamHit(id, uaShort, { isStart: isStreamStartReq, clientKey: `${clientIp(req)}|${uaShort}` });
+    let resolveMs = 0;
+    let retried = false;
+    let logged = false;
+    // Opus 5 驗收修正:原本 ttfb_ms 係喺 res 'close' 度先量,即係「成個 request
+    // 由頭到尾嘅時間」——一首正常播完嘅歌會報幾分鐘,根本唔係 time-to-first-byte。
+    // 而 §1.5 要對比嘅正正係「冷歌 TTFB vs ExoPlayer 8s budget」,讀錯呢個數
+    // 就會誤判。而家喺攞到 upstream response header 嗰刻定格真 TTFB,另外用
+    // total_ms 保留返舊嗰個「成個 request 用咗幾耐」。純 log,零行為改動。
+    let ttfbMs = null;
+    // 收工一定 log 一行,唔會重覆:正常/錯誤路徑同 res 'close' 都可能行到,
+    // 用 logged flag 防重覆(參考 doUnmark 個寫法)。
+    const finishLog = (status, extra = {}) => {
+      if (logged) return;
+      logged = true;
+      // NATIVE-STALL-ROOTFIX-PLAN-20260830 §6 Phase A:`url` 係外層 `let`
+      // (下面先聲明/賦值),但 finishLog 呢個 closure 一定要等到 `let url;`
+      // 個聲明語句行完之後先會被 call 到(所有 call site 都喺嗰句之後),
+      // 所以呢度讀 `url` 唔會撞 TDZ——會攞返 retry 之後最新嗰條 URL。
+      const { itag, clen } = extractItagClen(url);
+      logLine({
+        id,
+        yt: hymn.youtube_id,
+        mode: warm ? 'warm' : 'cold',
+        resolve_ms: resolveMs,
+        ttfb_ms: extra.ttfbMs != null ? extra.ttfbMs : (ttfbMs != null ? ttfbMs : (Date.now() - reqStart)),
+        total_ms: Date.now() - reqStart,
+        status,
+        aborted: extra.aborted ?? false,
+        retried,
+        range: sanitizeLogToken(req.headers.range),
+        sent: computeSentBytes(sock, bytesWrittenStart),
+        itag,
+        clen,
+        wd,
+        ua: uaShort,
+      });
+    };
+
+    // Fix D coverage gap: if the client aborts *while resolveAudioUrl() is
+    // still running* (before the proxy's own res.on('close') below gets
+    // registered), that 'close' event would otherwise fire with zero
+    // listeners attached and be lost forever — silently unlogged, which is
+    // exactly the ExoPlayer-timeout fingerprint this fix exists to catch.
+    // This listener is purely additive (logging only) — it does NOT touch
+    // doUnmark/controller/markStreaming, those stay exactly where they were.
+    res.on('close', () => {
+      finishLog(res.headersSent ? res.statusCode : 0, { aborted: !res.writableFinished });
+    });
+
+    let url;
+    const resolveStart1 = Date.now();
+    try {
+      // APP-HANG-2026-08-17 —— playbackRetry:真人等緊出聲,唔好俾一個由
+      // speculative 預取 arm 落嚟嘅舊 failCache entry 死擋(見 resolveAudio.js
+      // FAIL_TTL_PLAYBACK_MS)。
+      url = await resolveAudioUrl(hymn.youtube_id, { playbackRetry: true });
+    } catch (e) {
+      resolveMs += Date.now() - resolveStart1;
+      console.warn(`[${new Date().toISOString()}] ⚠️ stream resolve failed: id=${id} yt=${hymn.youtube_id} err=${e?.message || e}`);
+      finishLog(502);
+      return res.status(502).json({ error: 'resolve failed' });
+    }
+    resolveMs += Date.now() - resolveStart1;
+
+    // 止血:登記「呢首歌播緊」,keep-warm 就唔會中途換佢個 URL / 唔會同串流爭資源。
+    // 純附加,唔改下面 proxy 邏輯。refcount 應付 ExoPlayer 嘅多個 range 連線。
+    markStreaming(hymn.youtube_id);
+    let unmarked = false;
+    const doUnmark = () => { if (!unmarked) { unmarked = true; unmarkStreaming(hymn.youtube_id); } };
+
+    const controller = new AbortController();
+    // Abort the upstream fetch only if the client bailed before we finished
+    // sending (ExoPlayer closes+reopens range connections constantly while
+    // streaming). res 'close' fires on normal completion too, so gate on
+    // writableFinished to avoid aborting a request that already succeeded.
+    res.on('close', () => {
+      doUnmark();
+      const clientAborted = !res.writableFinished;
+      if (clientAborted) controller.abort();
+      // Fallback log for the streaming-success path (no explicit `return`
+      // after body.pipe(res)) and for any mid-stream abort. No-op if an
+      // explicit finishLog() below already fired. Express defaults
+      // statusCode to 200 even when nothing was ever sent — only trust it
+      // once headers actually went out, otherwise report 0 (client left
+      // before we responded at all).
+      finishLog(res.headersSent ? res.statusCode : 0, { aborted: clientAborted });
+    });
+    // Opus 5 驗收揪出嘅舊 bug(唔關 Fix D 事,但呢單背景播放 bug 直接撞到佢):
+    // 如果 client 喺上面 resolveAudioUrl() 仲跑緊嗰陣就已經走人(= ExoPlayer 8s
+    // timeout 撞冷歌,正正係呢單嘢嘅場景),個 'close' event 喺呢個 listener
+    // 註冊之前就已經 fire 咗,doUnmark 永遠唔會行 → markStreaming refcount
+    // 永久卡住 1 → anyStreaming() 永遠 true → 兩個 keep-warm timer 永久熄火
+    // 直到 backend 重啟。呢句補漏:listener 啱啱先註冊完,如果個 socket 已經
+    // 閂咗(res.destroyed),即刻補做一次 doUnmark()。doUnmark 本身有
+    // unmarked flag 防重覆,呢句絕對唔會 double-unmark。
+    if (res.destroyed) doUnmark();
+
+    const isHead = req.method === 'HEAD';
+    const clientRange = req.headers.range;
+
+    // NEXT-TRACK-LATENCY 2026-08-12:原本呢度淨係處理「冇 clientRange」(見
+    // STREAM-MIDTRACK-SILENCE-ROOTCAUSE-2026-08-12 §5.3)——但實測(真 AVFoundation
+    // probe 打真 backend)證實 AVFoundation *每一個* request 都帶 Range header,
+    // 一次都冇例外(即使係啱啱 warm 完嘅 track),所以舊嘅 `!clientRange` 閘
+    // 對 iOS 係死碼:warmBuffer() 攞埋落嚟嘅頭 256KB 一直冇被 iOS 用過,佢每次
+    // 都要重新開條新連線去 googlevideo(經 VPN,呢段先係 8-10s delay 嘅主因)。
+    // 而家改成:只要 client 個 range 嘅起始 offset 落喺已 buffer 嗰截之內
+    // (包括冇 Range 嘅舊case,起始offset當0),就用返嗰截記憶體數據應付,
+    // 唔使等新連線。呢個係 IOS-NEXT-TRACK-PRELOAD-PLAN 方向3嘅完整實現。
+    const parsedRange = (() => {
+      const m = clientRange && /^bytes=(\d+)-(\d*)$/.exec(clientRange);
+      if (!m) return null;
+      return { start: Number(m[1]), end: m[2] ? Number(m[2]) : null };
+    })();
+    // clientRange 有值但格式古怪(multi-range 之類)—— parsedRange 會係 null,
+    // rangeStart 跟住都係 null,下面 buffered 判斷自然跳過,行返原本冷路徑。
+    const rangeStart = !isHead ? (clientRange ? (parsedRange ? parsedRange.start : null) : 0) : null;
+    const bufferedChunk = (rangeStart != null) ? getBufferedChunk(hymn.youtube_id, url) : null;
+    // clientRange 分支要寫 Content-Range,冇 totalLength(googlevideo 冇俾 content-range/
+    // content-length,理論上唔會發生但要防)就唔知真正檔案總長,寧願行返冷路徑都好過
+    // 報錯個 total(會累到 AVFoundation 以為成首歌得 256KB 長)。!clientRange 分支
+    // 本身冇 Content-Range 呢個風險,維持原本行為。
+    // NEXT-TRACK-LATENCY 2026-08-12 追加:bufferCache 而家除咗頭截(buf)仲可能有
+    // 尾截(tailBuf/tailOffset,見 resolveAudio.js warmBuffer)——AVFoundation
+    // 一定會另開一條尾巴 range 連線讀 duration/index,舊代碼淨係識睇頭截,呢類
+    // 請求次次都跌落冷路徑。呢度揀返「呢個 rangeStart 落喺邊一截」,揀到用揀到
+    // 嗰截嘅記憶體數據,兩截都冚唔到先真係行冷路徑(例如大過 12MB cap 嘅檔,
+    // 中段嗰截冇快取,屬已知可接受嘅缺口)。
+    const bufSource = (() => {
+      if (!bufferedChunk || (clientRange && !bufferedChunk.totalLength)) return null;
+      if (rangeStart < bufferedChunk.buf.length) return { arr: bufferedChunk.buf, base: 0 };
+      if (bufferedChunk.tailBuf && bufferedChunk.tailOffset != null &&
+          rangeStart >= bufferedChunk.tailOffset && rangeStart < bufferedChunk.tailOffset + bufferedChunk.tailBuf.length) {
+        return { arr: bufferedChunk.tailBuf, base: bufferedChunk.tailOffset };
+      }
+      return null;
+    })();
+    const buffered = bufSource ? bufferedChunk : null;
+    // W1(STARTUP-ROOTFIX-EXEC-BC-20260831 §1.2.4):bufferCache 命中率,獨立
+    // 於上面 `warm`(URL resolve cache)嘅另一層觀測。淨係喺真係做咗查詢
+    // (rangeStart != null,即 getBufferedChunk 有被 call 到)先計一次。
+    if (rangeStart != null) recordBufferCacheHit(!!buffered);
+    if (buffered) {
+      const { totalLength, contentType } = buffered;
+      const { arr, base } = bufSource;
+      const total = totalLength || (base + arr.length);
+      // ⚠️ sliceEnd 淨係「呢刻由記憶體即寫幾多」嘅邊界(俾 subarray 用)。
+      // Content-Range 一定要報成個 response *最終*會送嘅範圍(buffered prefix +
+      // 之後 pipe 落嚟嘅 live 續集),唔可以淨係報 buffered 嗰截——如果得
+      // sliceEnd-1 就報做 range 上限,但之後仲有 wantsBeyondBuffer 續 pipe
+      // 多啲 bytes 落同一個 response,個 header 應承嘅長度就會同實際 body
+      // 長度對唔上,AVFoundation 會即刻拒收(實測:error -12935,幾百 ms
+      // 內就 fail,唔使等到成個 response 派完)。
+      const declaredEnd = (parsedRange && parsedRange.end != null)
+        ? Math.min(parsedRange.end, total - 1)
+        : total - 1;
+      const sliceEndAbs = Math.min(declaredEnd + 1, base + arr.length);
+      const chunk = arr.subarray(rangeStart - base, sliceEndAbs - base);
+
+      res.setHeader('Content-Type', contentType || 'audio/mp4');
+      res.setHeader('Accept-Ranges', 'bytes');
+      if (clientRange) {
+        res.setHeader('Content-Range', `bytes ${rangeStart}-${declaredEnd}/${total}`);
+        res.status(206);
+      } else {
+        if (totalLength) res.setHeader('Content-Length', String(totalLength));
+        res.status(200);
+      }
+      ttfbMs = Date.now() - reqStart;
+      res.write(chunk);
+
+      // 呢個 range 想要嘅嘢係咪已經全部喺 buffer 入面?(例如 AVFoundation
+      // 成日發嘅細 range,好似 bytes=49152-65535,成個 request 都喺 buffer
+      // 之內)——係就唔使開任何新連線,直接收工。
+      const wantsBeyondBuffer = clientRange
+        ? (parsedRange.end == null || parsedRange.end + 1 > base + arr.length) && (base + arr.length) < total
+        : (totalLength && (base + arr.length) < totalLength);
+      if (wantsBeyondBuffer) {
+        try {
+          const restRangeEnd = (parsedRange && parsedRange.end != null) ? `${parsedRange.end}` : '';
+          const rest = await fetch(url, { method: 'GET', headers: { Range: `bytes=${base + arr.length}-${restRangeEnd}` }, signal: controller.signal });
+          if ((rest.status === 200 || rest.status === 206) && rest.body) {
+            const restBody = Readable.fromWeb(rest.body);
+            restBody.on('error', () => { if (!res.writableEnded) res.destroy(); });
+            restBody.pipe(res);
+            return;
+          }
+          try { await rest.body?.cancel?.(); } catch (_) {}
+        } catch (_) { /* 落返去下面 —— header 應承咗嘅 bytes 送唔齊,要硬斷 */ }
+        // BATCH5 §7.5:行到呢度 = 續播 fetch 失敗(catch 或非 200/206)——
+        // header 已經應承咗 Content-Range/Content-Length 嘅完整長度,但淨係
+        // send 咗 buffered 嗰截,大過實際 body。以前呢度落返去下面
+        // finishLog(res.statusCode)+res.end(),AVFoundation 當錯誤(-12935
+        // 同源),但 log 仲報成功。硬斷條線,俾 client 見到係傳輸中斷(佢識
+        // 自己 retry),唔好扮完整收工兼 log 成功。
+        // BATCH7 B7-3:踢走呢個 buffered entry——唔係 client 個 retry 會一直
+        // 命中同一截 buffered head 先 206、再喺 buffer 之外撞返同一條死 URL,
+        // 永遠跌唔落冷路徑嘅 backoff→bustCache→re-resolve 自癒鏈。
+        // 但淨係喺呢條 fetch 真係壞咗先評:如果係 client 自己斷線觸發
+        // controller.abort()(signal.aborted),個 buffered chunk 本身健康,
+        // evict 只會令下個用戶白白錯過本來可以命中嘅 warm buffer。
+        if (!controller.signal.aborted) evictBufferedChunk(hymn.youtube_id);
+        finishLog(res.statusCode, { aborted: true });
+        return res.destroy();
+      }
+      // 2026-08-12 覆查 STREAM-LOCKSCREEN-STOP 事件時揪出:呢度一直硬寫死
+      // finishLog(200),但 clientRange 分支上面明明 `res.status(206)`——即係
+      // 90% 嘅正常 iOS ranged 請求全部俾呢個 fast-path 錯 log 做「200」。
+      // 診斷嗰輪一度誤導咗自己(以為撞到「AVFoundation 唔帶 Range」嘅離奇案
+      // 例,其實淨係 log 講大話,實際response一直都啱)。改用返 res.statusCode
+      // 真實反映出去嗰個 status,唔好再靠估。
+      finishLog(res.statusCode);
+      return res.end();
+    }
+
+    // Always send a Range upstream. googlevideo throttles range-less (full-file)
+    // GETs to ~17KB/s but serves ranged requests at ~1.5MB/s. ExoPlayer's first
+    // request usually has NO Range header — forwarding that as-is throttled
+    // playback into an infinite buffer (the "正在載入" hang). When the client
+    // didn't ask for a range we request the whole thing as `bytes=0-` purely to
+    // dodge the throttle, then present the result to the client as a plain 200.
+    const doFetch = (u) => fetch(u, {
+      method: isHead ? 'HEAD' : 'GET',
+      headers: { Range: clientRange || 'bytes=0-' },
+      signal: controller.signal,
+    });
+
+    // ⚠️ 2026-07-29 Eric「新歌十幾秒」診斷(Opus 5 覆核揪出):真正撞 ExoPlayer 8s
+    // timeout 嘅位唔係 resolve 慢(嗰截通常 2-6s),係呢度——冷歌第一次連去
+    // googlevideo 個 CDN edge,實測有時會頂唔順、成 10s 先 502(冷 edge 冇做過
+    // TLS/未定位過檔案)。舊碼淨係 403/410(URL 過期)先會 bust+重試,呢種「連線
+    // 本身失敗/其他壞 status」一律直接 502,冇得救,亦冇 log,完全飛盲。而家
+    // 統一晒:唔理邊種失敗,一律 log(先至知係邊個 branch 中招)+ bust cache +
+    // 重新 resolve + 再試一次先死心——換條新 URL 好多時等於換咗個 CDN edge,
+    // 好返嘅機會好高。
+    // HLS-PREFLIGHT-EXEC-20260907 §2.2 —— 純記帳,唔改任何重試決策/timing:
+    // 記低 attemptFetch() 頭一次(§508 嗰個 `!upstream` 分支)撞到嘅 bad
+    // status,俾嗰處 call recordUpstream403() 答「呢次係咪 403」。
+    let lastBadStatus = null;
+    async function attemptFetch(u) {
+      try {
+        const r = await doFetch(u);
+        if (r.status === 200 || r.status === 206) return r;
+        lastBadStatus = r.status;
+        console.warn(`[${new Date().toISOString()}] ⚠️ stream upstream bad status: id=${id} yt=${hymn.youtube_id} status=${r.status}`);
+        // 唔consume嘅 body 喺 undici 底下會揸住個連線直到 GC——呢個分支而家
+        // 觸發得比之前(淨係 403/410)密好多,要即刻放手,唔留手尾。
+        try { r.body?.cancel(); } catch (_) {}
+        return null;
+      } catch (e) {
+        if (controller.signal.aborted) throw e; // 客戶端自己走咗,唔使 retry(但 Fix D:要 log)
+        console.warn(`[${new Date().toISOString()}] ⚠️ stream upstream fetch threw: id=${id} yt=${hymn.youtube_id} err=${e?.message || e}`);
+        return null;
+      }
+    }
+
+    // 分開兩個 try/catch:attemptFetch 拋出嘅淨係「客戶端自己 abort 咗」(見上面
+    // 個判斷),retry 路徑嘅 resolveAudioUrl 拋出就係另一回事(死鏈/resolve
+    // 失敗)——之前混埋一個 catch 會將後者都當做「upstream fetch aborted」,
+    // 唔止個錯誤訊息報錯,仲完全冇 log,同「呢次改動係為咗唔再飛盲」自相矛盾。
+    let upstream;
+    try {
+      upstream = await attemptFetch(url);
+    } catch (_) {
+      // Fix D: 呢個係 ExoPlayer 8s timeout 嘅指紋分支,一定要 log。
+      finishLog(502, { aborted: true });
+      return res.status(502).json({ error: 'upstream fetch aborted' });
+    }
+
+    if (!upstream) {
+      // HLS-PREFLIGHT-EXEC-20260907 §2.2 —— 純記帳,喺呢個「值得改」路徑決定
+      // 之前記(唔改下面 backoff/bust/重試 任何一行邏輯或 timing)。
+      recordUpstream403('stream', lastBadStatus === 403);
+      // 2026-07-29 STREAM-403-FGS-CRASH-PLAN §1.4:即刻重試好大機會撞返同一個
+      // 節流窗口(prod log 7 次失敗 5 次都係 403 retry 中招)。加 backoff 先至
+      // bust+重 resolve,等節流窗口過返先。已經 abort 咗嘅客戶端唔使陪佢等,
+      // 但 bust+resolve 本身唔可以因為 abort 而唔做——resolveAudioUrl 唔綁
+      // controller,resolve 完結果照落 cache,app 端嗰下 TrackPlayer.retry()
+      // 返嚟就食到 warm cache,呢個接力係而家架構本身嘅優點,唔好破壞(即係:
+      // client abort 之後唔好 short-circuit 個 resolve)。
+      //
+      // LOCKSCREEN-FREEZE-LOAD-STALL-HARDENING(2026-08-13)—— backoffMsFor()
+      // 淨係喺呢首片30秒內未撞過失敗(偶發403)先用短嘅800ms,收窄用戶感知
+      // 嘅斷聲時間;30秒內第二次先升級返完整2秒(保住原本用真實incident
+      // 數據調教過嘅anti-storm保護,唔盲目縮短)。
+      if (!controller.signal.aborted) {
+        const backoffMs = backoffMsFor(hymn.youtube_id);
+        await new Promise((resolve) => {
+          const t = setTimeout(resolve, backoffMs);
+          controller.signal.addEventListener('abort', () => { clearTimeout(t); resolve(); }, { once: true });
+        });
+      }
+      retried = true;
+      const preRetryUrl = url;
+      bustCache(hymn.youtube_id);
+      const resolveStart2 = Date.now();
+      try {
+        // APP-HANG-2026-08-17 —— 同上。呢條路徑本來就係「頭一次 fetch 唔得,幫
+        // 用戶再試」,俾 failCache 擋死等於白行咗個 backoff。
+        url = await resolveAudioUrl(hymn.youtube_id, { playbackRetry: true });
+      } catch (e) {
+        resolveMs += Date.now() - resolveStart2;
+        console.warn(`[${new Date().toISOString()}] ⚠️ stream retry resolve failed: id=${id} yt=${hymn.youtube_id} err=${e?.message || e}`);
+        finishLog(502);
+        return res.status(502).json({ error: 'resolve failed (retry)' });
+      }
+      resolveMs += Date.now() - resolveStart2;
+
+      // STREAM-MIDTRACK-SILENCE-ROOTCAUSE-2026-08-12 §5.2:resolveAudio.js 自己
+      // 講明「唔同時間 resolve 可能出唔同 format,byte offset 會對唔上」,但呢個
+      // retry 路徑漏咗防護。中段 seek(clientRange 唔係由 byte 0 開始)嘅 offset
+      // 係跟舊 format 嘅檔案大細計出嚟——換咗 itag 就完全對唔上另一個檔案,會
+      // 餵到損毀 bytes。寧願 502 逼 client 由頭嚟過(App 側已有
+      // TrackPlayer.retry()+skip 接得住),都好過靜靜哋餵爛檔。
+      const midFileSeek = !!clientRange && !/^bytes=0-/.test(clientRange);
+      if (midFileSeek && !sameFormat(preRetryUrl, url)) {
+        console.warn(`[${new Date().toISOString()}] ⚠️ stream retry format mismatch: id=${id} yt=${hymn.youtube_id} — refusing to reuse mid-file range against a different format`);
+        finishLog(502);
+        return res.status(502).json({ error: 'format changed on retry' });
+      }
+
+      try {
+        upstream = await attemptFetch(url);
+      } catch (_) {
+        finishLog(502, { aborted: true });
+        return res.status(502).json({ error: 'upstream fetch aborted' });
+      }
+    }
+
+    if (!upstream) {
+      finishLog(502, { aborted: controller.signal.aborted });
+      return res.status(502).json({ error: 'upstream fetch failed after retry' });
+    }
+
+    // STREAM-MIDTRACK-SILENCE-ROOTCAUSE-2026-08-12 §5.1:AVFoundation(iOS)完全
+    // 播唔到 webm/opus——resolveAudio.js 嘅 format selector 喺搵唔到 m4a/mp4a
+    // 嘅片會 fallback 去 webm(itag 251/249,例如 hymn 7511)。呢個 fmt selector
+    // 係 resolveAudioUrl() 共用嘅(冇 platform 分支,cache key 亦冇分 platform),
+    // 唔可以喺呢層淨係為 iOS 改埋 Android 嘅 format 選擇——改咗會令「而家 Android
+    // 播得好地地」嘅 opus-only 片喺兩邊都變播唔到。所以只喺呢度做最小風險嘅
+    // 攔截:淨係 iOS UA + webm content-type 先 502,即刻俾 App 現有
+    // PlaybackError retry→skip 邏輯接手,好過畀 AVFoundation 拋一個 native
+    // decode error、有機會冇俾 JS 層接到就靜靜哋卡住。Android 完全唔受影響
+    // (呢個 if 淨係喺 UA 含 AppleCoreMedia 先入到)。
+    const upstreamContentType = upstream.headers.get('content-type') || '';
+    const isAppleClient = /AppleCoreMedia/i.test(req.headers['user-agent'] || '');
+    if (isAppleClient && /webm|opus/i.test(upstreamContentType)) {
+      try { await upstream.body?.cancel?.(); } catch (_) {}
+      console.warn(`[${new Date().toISOString()}] ⚠️ stream iOS webm/opus unsupported: id=${id} yt=${hymn.youtube_id} content-type=${upstreamContentType}`);
+      finishLog(502);
+      return res.status(502).json({ error: 'format not supported on iOS' });
+    }
+
+    // 真 TTFB 定格位:upstream response header 已經到手,再落去就係寫 header
+    // + pipe body。純賦值,唔會拋、唔會改任何 proxy 行為。
+    ttfbMs = Date.now() - reqStart;
+
+    // Forward pass-through headers. content-range is only meaningful when the
+    // client actually asked for a range — we may have added `bytes=0-` upstream
+    // purely to dodge throttling, so suppress it (and the 206) in that case and
+    // hand the client a normal full 200.
+    for (const h of ['content-type', 'content-length', 'accept-ranges']) {
+      const v = upstream.headers.get(h);
+      if (v) res.setHeader(h, v);
+    }
+    if (clientRange) {
+      const cr = upstream.headers.get('content-range');
+      if (cr) res.setHeader('content-range', cr);
+      res.status(upstream.status);
+    } else {
+      res.status(200);
+    }
+    if (!upstream.headers.get('accept-ranges')) res.setHeader('Accept-Ranges', 'bytes');
+    if (!upstream.headers.get('content-type')) res.setHeader('Content-Type', 'audio/mp4');
+
+    if (isHead || !upstream.body) {
+      return res.end();
+    }
+
+    // Pipe the upstream body to the client. The 'error' handler is essential:
+    // when the client disconnects mid-stream, controller.abort() errors this
+    // web-stream, and without a handler that surfaces as a process-level
+    // 'uncaughtException' and leaves the client connection half-broken (which
+    // is exactly what made ExoPlayer hang on "loading" forever).
+    const body = Readable.fromWeb(upstream.body);
+    body.on('error', () => { if (!res.writableEnded) res.destroy(); });
+
+    // STREAM-MIDTRACK-SILENCE-ROOTCAUSE-2026-08-12:iOS fMP4 duration-doubling
+    // 修補。moov(mvhd/tkhd/mdhd)實測一定喺檔頭 632 bytes 之內,而 AVFoundation
+    // 嘅第一個內容請求一定係由 byte 0 開始 —— 所以只要處理「呢個 range 由 byte 0
+    // 開始」嘅回應就 100% 覆蓋到。其餘 range(中段 seek)冇 moov,原封不動 pipe,
+    // 零行為改動。
+    const startsAtZero = !clientRange || /^bytes=0-/.test(clientRange);
+
+    // BATCH5 §7.3-A:冷路徑 pipe 俾 client 嗰陣,順手將頭 N MB tee 埋落
+    // bufferCache + 背景補尾巴,令 AVFoundation 第 2/3/4 條 probe 好似 warm
+    // 歌咁秒答。只喺 startsAtZero(中段 range 唔係由 0 開始,砌唔成頭截,
+    // 直接唔郁佢)。額外呢個 'data' listener 只旁聽,唔碰 pause/resume/pipe
+    // backpressure——下面 fMP4 startsAtZero 分支本身嗰個 'data' handler 照舊
+    // (tee 收 raw bytes,adoptStreamedHead 入面自己重跑 zeroFix,同
+    // warmBuffer 語義一致);bufferCache 嘅 url-match(getBufferedChunk 核對
+    // `c.url !== url`)已經防咗 format 錯配。記憶體:峰值多咗 ≤12MB × 並發
+    // 冷 stream 數;MAX_BUFFER_ENTRIES=8 嘅 LRU 照頂住 cache 本身。
+    if (startsAtZero) {
+      const teeChunks = [];
+      let teeBytes = 0;
+      let teeDone = false;
+      const teeTotalLength = (() => {
+        const cr = upstream.headers.get('content-range');
+        const m = cr && /\/(\d+)$/.exec(cr);
+        if (m) return Number(m[1]);
+        const cl = upstream.headers.get('content-length');
+        return cl ? Number(cl) : null;
+      })();
+      const teeContentType = upstream.headers.get('content-type') || null;
+      const finishTee = () => {
+        if (teeDone) return;
+        teeDone = true;
+        if (teeBytes < MIN_TEE_BYTES) { teeChunks.length = 0; return; } // 太少唔入 cache,但都要放走啲 chunk
+        const headBuf = Buffer.concat(teeChunks);
+        teeChunks.length = 0; // BATCH6 C2:concat 完即放,唔好等 response 完先由 closure 鬆手(大檔中途 cap 到會吊住 ~12MB)
+        adoptStreamedHead(hymn.youtube_id, url, headBuf, teeTotalLength, teeContentType).catch(() => {});
+      };
+      body.on('data', (chunk) => {
+        if (teeDone) return;
+        teeChunks.push(chunk);
+        teeBytes += chunk.length;
+        if (teeBytes >= WARM_CAP_BYTES) finishTee(); // 夠 cap 就收皮,唔好無上限食記憶體
+      });
+      body.on('end', finishTee);
+      body.on('error', finishTee);   // abort 前收埋幾 MB 一樣有用——下條 probe 就係要呢啲
+      res.on('close', finishTee);
+    } else if (!buffered) {
+      // W4(BACKEND-CACHE-FIX-EXEC-20260831 §2.2)——`startsAtZero` 呢個閘令
+      // 中段 range(clientRange 唔係由 byte 0 開始)完全冇 tee:實測 id=795
+      // 一條 `bytes=131072-10542852` 送咗 7.68MB,一個 byte 都冇入過
+      // bufferCache(見上面派工單原文)。呢種情況會出現通常係因為之前一條
+      // byte-0 probe 收得太少(細過 MIN_TEE_BYTES 就直接棄),之後嚟緊嗰條
+      // 續播 range 就注定行冷路徑,永遠冚唔到。
+      //
+      // 揀 Design B(平行開一條 byte-0 warm),棄 Design A(cache entry 加
+      // `bufOffset`)嘅原因:Design A 要幫 `getBufferedChunk`/`buf`/`tailBuf`
+      // 呢套已經驗過嘅語義加多一種 offset 算術,一錯就可能撞到紅線
+      // 「zeroFragmentedMp4Durations() 只准對 offset-0 buffer 用」(檔中間
+      // 冇 moov,盲改會爛 bytes)。Design B 完全重用 warmBuffer() 呢條已經
+      // 驗過嘅 byte-0 head fetch,零 offset 算術、零 zeroFix 風險。
+      //
+      // 冇跟派工單字面「即刻平行開」:呢一刻 `anyStreaming()` 一定係 true
+      // (呢個 handler 頭先自己 markStreaming() 咗呢首歌),字面「即刻」= 呢
+      // 條 path 會撞正自己個「有人聽緊就讓路」guard,永遠 fire 唔到,變咗
+      // dead code(違反 §4-8 紅線)。改成:等呢個 response 完(`res` 'close',
+      // 呢一刻上面嘅 `doUnmark()` 應該已經行咗,呢個 request 自己嘅
+      // streaming 登記已經甩咗),先照 adoptStreamedHead 個 `!anyStreaming()`
+      // 讓路慣例再 check 一次——先真正拉 warm:唔會同呢條自己嘅 live pipe
+      // 爭緊嘅頻寬打交(唔係「即刻平行」,而係「呢炮播完先追」),亦唔會同
+      // 其他 track 嘅串流爭。`w4RescueInFlight` dedup:AVFoundation 冷播一
+      // 首歌成日會開多過一條非零 offset range 連線,每條都會行到呢個分支,
+      // 唔應該逐條都各自排一次 warmBuffer。
+      const rescueYt = hymn.youtube_id;
+      const rescueUrl = url;
+      const rescueDurationSec = durationSec;
+      const rescueId = id;
+      // BUILD17-FIX-EXEC-20260831 §1:拆走咗「!writableFinished 就唔追」個
+      // guard(BUILD17-PREP §2 P2 嗰版)——真機 log 實測 288 條非零起點 range
+      // 入面 193 條(67%)`aborted=true`,而派工單立案嘅 id=190/id=795 兩單
+      // mid-file range **全部**都係 `aborted=true`,即係嗰版 guard 對呢兩單
+      // 根本 fire 唔到(0 次),仲要令 log 喺最需要嘅場景全盲。真正嘅
+      // 「用戶 skip 走人」已經由下面 `anyStreaming()`(下一首開始咗串流)擋
+      // 緊,唔使呢句幫手。留返 `!writableFinished` 做遙測欄 `clientAborted`
+      // (0/1),等日後有數據分析「aborted 之後 fire 到底幫定害」,唔再靠估。
+      res.on('close', () => {
+        // §2 P2 hardening(保留):呢個 handler 冇被上面任何 try/catch 包住,靠
+        // server.js:241 個 global uncaughtException 兜底(只 log 唔死進程)
+        // ——拋錯機會極低但屬於缺口,補齊 try/catch。
+        try {
+          const clientAborted = !res.writableFinished ? 1 : 0;
+          // BUILD17-PREP-EXEC-20260831 §1 P1:純 observability——分清三個
+          // guard 邊個 skip 咗,同「真係 fire 咗」嘅耗時/成效,答返派工單
+          // 「W4 起飛係幫緊定害緊」嗰條問題。
+          if (w4RescueInFlight.has(rescueYt)) { // 另一條 range 請求已經排緊
+            console.log(`[w4rescue] ${new Date().toISOString()} id=${rescueId} yt=${rescueYt} fired=0 skipped=inFlight clientAborted=${clientAborted}`);
+            return;
+          }
+          if (anyStreaming()) { // 呢一刻仲有嘢播緊(自己另一條連線,或者第二首)——讓路
+            console.log(`[w4rescue] ${new Date().toISOString()} id=${rescueId} yt=${rescueYt} fired=0 skipped=anyStreaming clientAborted=${clientAborted}`);
+            return;
+          }
+          if (getBufferedChunk(rescueYt, rescueUrl)) { // 已經有人 warm 咗(順帶 touch TTL,唔緊要)
+            console.log(`[w4rescue] ${new Date().toISOString()} id=${rescueId} yt=${rescueYt} fired=0 skipped=alreadyBuffered clientAborted=${clientAborted}`);
+            return;
+          }
+          w4RescueInFlight.add(rescueYt);
+          const rescueStart = Date.now();
+          let dequeueAt = null; // BUILD17-FIX §2-1:withWarmLock 真正拎到隊嗰刻先賦值
+          warmBuffer(rescueYt, rescueUrl, rescueDurationSec, () => { dequeueAt = Date.now(); }).finally(() => {
+            w4RescueInFlight.delete(rescueYt);
+            try {
+              const finishedAt = Date.now();
+              // BUILD17-FIX §2-1:舊版 `ms=` 混咗 withWarmLock 嘅排隊等待時間
+              // (可以俾前面一個 15s timeout 嘅 warm 拖到 15000)同真正 fetch
+              // 耗時,兩樣意義完全唔同——一個答「爭緊頻寬」,一個答「今次
+              // fetch 快唔快」。拆開兩欄,`dequeueAt` 冇賦值(理論上唔會,
+              // withWarmLock 一定會執行 callback)就當全程都算 queueMs,
+              // fetchMs=0,唔好整咗個 NaN。
+              const queueMs = (dequeueAt != null ? dequeueAt : finishedAt) - rescueStart;
+              const fetchMs = dequeueAt != null ? (finishedAt - dequeueAt) : 0;
+              // warmBuffer() 本身吞晒錯誤(冇 return 值分成敗),用返
+              // getBufferedChunk() 讀完之後嘅 cache 狀態做 `ok` 嘅依據——
+              // 答嘅係「呢首歌而家暖唔暖」(而唔係「呢次 warmBuffer() call
+              // 本身成唔成功」,兩者好多情況一致但唔係定義相同)。
+              // BUILD17-FIX §2-2:`bytes=` 補返 `tailBuf`——之前淨計
+              // `c.buf.length`,>cap 檔實際多扯咗嘅尾截(最多 512KB)冇報。
+              const c = getBufferedChunk(rescueYt, rescueUrl);
+              const bytes = c ? (c.buf.length + (c.tailBuf ? c.tailBuf.length : 0)) : 0;
+              console.log(`[w4rescue] ${new Date().toISOString()} id=${rescueId} yt=${rescueYt} fired=1 queueMs=${queueMs} fetchMs=${fetchMs} bytes=${bytes} ok=${c ? 1 : 0} clientAborted=${clientAborted}`);
+            } catch (_) {}
+          });
+        } catch (_) {}
+      });
+    }
+
+    if (startsAtZero) {
+      const HEAD_BYTES = 4096;
+      let head = Buffer.alloc(0);
+      let done = false;
+      body.on('data', (chunk) => {
+        if (done) return;
+        head = Buffer.concat([head, chunk]);
+        if (head.length < HEAD_BYTES) return;
+        done = true;
+        body.pause();
+        try { zeroFragmentedMp4Durations(head); } catch (_) {}
+        res.write(head);
+        body.resume();
+        body.pipe(res);
+      });
+      body.on('end', () => {
+        if (!done) { // 成個檔案細過 HEAD_BYTES(理論上唔會,音訊檔一定大過 4KB)
+          try { zeroFragmentedMp4Durations(head); } catch (_) {}
+          res.end(head);
+        }
+      });
+      return;
+    }
+    body.pipe(res);
+  });
+
+  return router;
+}

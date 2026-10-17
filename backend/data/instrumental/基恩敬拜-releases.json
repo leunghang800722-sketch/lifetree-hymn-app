@@ -1,0 +1,1283 @@
+[
+  {
+    "release_id": "OLAK5uy_mh4FTST3U-YHkChGkWL_qxd5lN32NYRjI",
+    "release_title": "Amazing Guitar 4",
+    "source": "main/releases",
+    "album_signal": "Guitar",
+    "itunes_album": "Amazing Guitar 4 (Guitar Version)",
+    "itunes_track_count": 14,
+    "itunes_release_date": "2024-06-21T07:00:00Z",
+    "album_evidence": true,
+    "member_count": 14,
+    "pass_pre_count": 12,
+    "members": [
+      {
+        "youtube_id": "wqGvC752UQ8",
+        "title": "更新我心 Renew My Heart (Guitar Version)",
+        "duration": 395,
+        "track_suffix": true,
+        "pass_pre": true,
+        "reasons": [],
+        "dup_of": null,
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "pvWK1YQJSZw",
+        "title": "永恆的主 Everlasting God (Guitar Version)",
+        "duration": 269,
+        "track_suffix": true,
+        "pass_pre": true,
+        "reasons": [],
+        "dup_of": null,
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "E7MhbQDGXnU",
+        "title": "良牧 The Good Shepherd (Guitar Version)",
+        "duration": 370,
+        "track_suffix": true,
+        "pass_pre": true,
+        "reasons": [],
+        "dup_of": null,
+        "dup_suspect": null,
+        "dedup_note": "舊 dedup 誤殺(撞人聲原版),2026-08-24 手動翻案"
+      },
+      {
+        "youtube_id": "hPtsn8oebV0",
+        "title": "謝謝祢的愛 Thank You For Your Love (Guitar Version)",
+        "duration": 263,
+        "track_suffix": true,
+        "pass_pre": true,
+        "reasons": [],
+        "dup_of": null,
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "GI3C6Y3f6JU",
+        "title": "晨禱 Morning Prayer (Guitar Version)",
+        "duration": 373,
+        "track_suffix": true,
+        "pass_pre": true,
+        "reasons": [],
+        "dup_of": null,
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "yiAQPZvSXcA",
+        "title": "我們愛因為神先愛 We Love Because God First Loved Us (Guitar Version)",
+        "duration": 340,
+        "track_suffix": true,
+        "pass_pre": true,
+        "reasons": [],
+        "dup_of": null,
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "xuJwt-Cv0fs",
+        "title": "親眼看見祢 My Eyes Have Seen You (Guitar Version)",
+        "duration": 292,
+        "track_suffix": true,
+        "pass_pre": true,
+        "reasons": [],
+        "dup_of": null,
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "8xh71YrN4lw",
+        "title": "平安的路 Path Of Peace (Guitar Version)",
+        "duration": 364,
+        "track_suffix": true,
+        "pass_pre": true,
+        "reasons": [],
+        "dup_of": null,
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "6mZNZoETPhY",
+        "title": "信心的等待 Wait With Faith (Guitar Version)",
+        "duration": 305,
+        "track_suffix": true,
+        "pass_pre": true,
+        "reasons": [],
+        "dup_of": null,
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "edSQwdWONLY",
+        "title": "請堅固我 Lord, Please Strengthen Me (Guitar Version)",
+        "duration": 305,
+        "track_suffix": true,
+        "pass_pre": true,
+        "reasons": [],
+        "dup_of": null,
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "ussxoLnmR7I",
+        "title": "寶貴恩典 Precious Grace Of God (Guitar Version)",
+        "duration": 304,
+        "track_suffix": true,
+        "pass_pre": true,
+        "reasons": [],
+        "dup_of": null,
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "qMdO9kjG0ls",
+        "title": "有祢同行 With You By My Side (Guitar Version)",
+        "duration": 366,
+        "track_suffix": true,
+        "pass_pre": true,
+        "reasons": [],
+        "dup_of": null,
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "11EBkLx5Vvw",
+        "title": "恩典窄路 Narrow Path Of Grace (Guitar Version)",
+        "duration": 327,
+        "track_suffix": true,
+        "pass_pre": true,
+        "reasons": [],
+        "dup_of": null,
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "dJUp9mXzxOU",
+        "title": "陪我渡過 You Were With Me (Guitar Version)",
+        "duration": 356,
+        "track_suffix": true,
+        "pass_pre": true,
+        "reasons": [],
+        "dup_of": null,
+        "dup_suspect": null,
+        "dedup_note": "舊 dedup 誤殺(撞人聲原版),2026-08-24 手動翻案"
+      }
+    ],
+    "approved": true,
+    "proposed_album": "Amazing Guitar 4 (Guitar Version)",
+    "instrumental_signal": "Guitar",
+    "signed_by": "Claude Opus 5 (MORE-SOURCES N4, P4 拍板由我哋簽 / Eric 事後抽驗)",
+    "signed_at": "2026-08-24T07:08:51.214Z",
+    "sign_note": "iTunes artistName exact-match 專輯「Amazing Guitar 4 (Guitar Version)」14 首;OLAK member 14 首;淨新增 12 首(扣咗 0 首 org 內已有器樂版)"
+  },
+  {
+    "release_id": "OLAK5uy_lni21cs5uHhgCOjiuNXko2tFct9X3qAvI",
+    "release_title": "Amazing Piano 2",
+    "source": "main/releases",
+    "album_signal": "Piano",
+    "itunes_album": "Amazing Piano 2 (Piano Version)",
+    "itunes_track_count": 10,
+    "itunes_release_date": "2021-06-01T07:00:00Z",
+    "album_evidence": true,
+    "member_count": 10,
+    "pass_pre_count": 9,
+    "members": [
+      {
+        "youtube_id": "bvt2uPoasvI",
+        "title": "我們愛因為神先愛 We Love Because God First Loved Us (Piano Version)",
+        "duration": 365,
+        "track_suffix": true,
+        "pass_pre": true,
+        "reasons": [],
+        "dup_of": null,
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "BFBORrua1IU",
+        "title": "繼續向前行 Going Forth (Piano Version)",
+        "duration": 341,
+        "track_suffix": true,
+        "pass_pre": true,
+        "reasons": [],
+        "dup_of": null,
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "2OVRrkMQbp0",
+        "title": "再次站起來 Standing Up Again (Piano Version)",
+        "duration": 358,
+        "track_suffix": true,
+        "pass_pre": true,
+        "reasons": [],
+        "dup_of": null,
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "kEoXqi9ZnPs",
+        "title": "我的哀哭變為跳舞 My Wailing Into Dancing (Piano Version)",
+        "duration": 375,
+        "track_suffix": true,
+        "pass_pre": true,
+        "reasons": [],
+        "dup_of": null,
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "0K7gaZWFTo0",
+        "title": "放下擔子 Lay Down The Burden (Piano Version)",
+        "duration": 316,
+        "track_suffix": true,
+        "pass_pre": true,
+        "reasons": [],
+        "dup_of": null,
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "d15DKuzGfF4",
+        "title": "慈繩愛索 The Rein Of Love The Rope Of Grace (Piano Version)",
+        "duration": 370,
+        "track_suffix": true,
+        "pass_pre": true,
+        "reasons": [],
+        "dup_of": null,
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "qdY5jhwX7gg",
+        "title": "陪我渡過 You Were With Me (Piano Version)",
+        "duration": 317,
+        "track_suffix": true,
+        "pass_pre": true,
+        "reasons": [],
+        "dup_of": null,
+        "dup_suspect": null,
+        "dedup_note": "舊 dedup 誤殺(撞人聲原版),2026-08-24 手動翻案"
+      },
+      {
+        "youtube_id": "S2wwZ2nMFa0",
+        "title": "求天父悅納我的讚美 May My Praise Be Accepted By The Father (Piano Version)",
+        "duration": 339,
+        "track_suffix": true,
+        "pass_pre": true,
+        "reasons": [],
+        "dup_of": null,
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "THJBIVgg_uo",
+        "title": "一生讚美祢 Praise You All My Life (Piano Version)",
+        "duration": 374,
+        "track_suffix": true,
+        "pass_pre": true,
+        "reasons": [],
+        "dup_of": null,
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "2OlMLrFXLQ0",
+        "title": "親眼看見祢 My Eyes Have Seen You (Piano Version)",
+        "duration": 325,
+        "track_suffix": true,
+        "pass_pre": true,
+        "reasons": [],
+        "dup_of": null,
+        "dup_suspect": null
+      }
+    ],
+    "approved": true,
+    "proposed_album": "Amazing Piano 2 (Piano Version)",
+    "instrumental_signal": "Piano",
+    "signed_by": "Claude Opus 5 (MORE-SOURCES N4, P4 拍板由我哋簽 / Eric 事後抽驗)",
+    "signed_at": "2026-08-24T07:08:51.214Z",
+    "sign_note": "iTunes artistName exact-match 專輯「Amazing Piano 2 (Piano Version)」10 首;OLAK member 10 首;淨新增 9 首(扣咗 0 首 org 內已有器樂版)"
+  },
+  {
+    "release_id": "OLAK5uy_kgI2xLBKNRMLMdDkWwreJjtjb96wxO-rM",
+    "release_title": "Amazing Piano 1",
+    "source": "main/releases",
+    "album_signal": "Piano",
+    "itunes_album": "Amazing Piano 1 (Piano Version)",
+    "itunes_track_count": 12,
+    "itunes_release_date": "2021-01-01T08:00:00Z",
+    "album_evidence": true,
+    "member_count": 12,
+    "pass_pre_count": 9,
+    "members": [
+      {
+        "youtube_id": "pEAJXqie1UA",
+        "title": "【靈命塑造系列】當你失去信心時 - 基恩敬拜 AGWMM",
+        "duration": 587,
+        "track_suffix": false,
+        "pass_pre": false,
+        "reasons": [
+          "youtube_id 已喺庫"
+        ],
+        "dup_of": "same-youtube-id",
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "7R5h8lZXn9s",
+        "title": "有祢同行 With You By My Side (Piano Version)",
+        "duration": 308,
+        "track_suffix": true,
+        "pass_pre": true,
+        "reasons": [],
+        "dup_of": null,
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "Y3eZ2VxaLjo",
+        "title": "主賜平安 Grant Us Peace (Piano Version)",
+        "duration": 273,
+        "track_suffix": true,
+        "pass_pre": true,
+        "reasons": [],
+        "dup_of": null,
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "WFRMEwcY9kg",
+        "title": "平安的路 Path Of Peace (Piano Version)",
+        "duration": 358,
+        "track_suffix": true,
+        "pass_pre": true,
+        "reasons": [],
+        "dup_of": null,
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "s668kNhyN1c",
+        "title": "小鳥再飛 Little Bird Soars (Piano Version)",
+        "duration": 304,
+        "track_suffix": true,
+        "pass_pre": true,
+        "reasons": [],
+        "dup_of": null,
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "rMY2xtCEbZc",
+        "title": "《Amazing Piano 1》基恩敬拜鋼琴靈修音樂 - 明天祢為我掌舵",
+        "duration": 303,
+        "track_suffix": false,
+        "pass_pre": false,
+        "reasons": [
+          "youtube_id 已喺庫"
+        ],
+        "dup_of": "same-youtube-id",
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "fym5iuZpz6M",
+        "title": "求主用我 May God Use Me (Piano Version)",
+        "duration": 272,
+        "track_suffix": true,
+        "pass_pre": true,
+        "reasons": [],
+        "dup_of": null,
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "Vcm5sPmmSgI",
+        "title": "【靈命塑造系列】當你感到生氣時 - 基恩敬拜 AGWMM",
+        "duration": 597,
+        "track_suffix": false,
+        "pass_pre": false,
+        "reasons": [
+          "youtube_id 已喺庫"
+        ],
+        "dup_of": "same-youtube-id",
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "hdZ5XtN5EfE",
+        "title": "恩典窄路 Narrow Path Of Grace (Piano Version)",
+        "duration": 279,
+        "track_suffix": true,
+        "pass_pre": true,
+        "reasons": [],
+        "dup_of": null,
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "zt-xTvw0y-E",
+        "title": "靠主愛誇勝 With The Love Of Christ, We Triumph (Piano Version)",
+        "duration": 349,
+        "track_suffix": true,
+        "pass_pre": true,
+        "reasons": [],
+        "dup_of": null,
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "e7Pv3qIqt_Y",
+        "title": "因為祢先愛我們 As You First Loved Us (Piano Version)",
+        "duration": 354,
+        "track_suffix": true,
+        "pass_pre": true,
+        "reasons": [],
+        "dup_of": null,
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "xgMuVUJUbis",
+        "title": "牽引 Lead Me (Piano Version)",
+        "duration": 306,
+        "track_suffix": true,
+        "pass_pre": true,
+        "reasons": [],
+        "dup_of": null,
+        "dup_suspect": null
+      }
+    ],
+    "approved": true,
+    "proposed_album": "Amazing Piano 1 (Piano Version)",
+    "instrumental_signal": "Piano",
+    "signed_by": "Claude Opus 5 (MORE-SOURCES N4, P4 拍板由我哋簽 / Eric 事後抽驗)",
+    "signed_at": "2026-08-24T07:08:51.214Z",
+    "sign_note": "iTunes artistName exact-match 專輯「Amazing Piano 1 (Piano Version)」12 首;OLAK member 12 首;淨新增 9 首(扣咗 0 首 org 內已有器樂版)"
+  },
+  {
+    "release_id": "OLAK5uy_ltc2v06cZRQlAx7q4NE_sWOo3K5gcV_kI",
+    "release_title": "Amazing Guitar 3",
+    "source": "main/releases",
+    "album_signal": "Guitar",
+    "itunes_album": "Amazing Guitar 3 (Guitar Version)",
+    "itunes_track_count": 13,
+    "itunes_release_date": "2020-12-01T08:00:00Z",
+    "album_evidence": true,
+    "member_count": 13,
+    "pass_pre_count": 13,
+    "members": [
+      {
+        "youtube_id": "Wos3TcBPkOw",
+        "title": "再次站起來 Standing Up Again (Guitar Version)",
+        "duration": 293,
+        "track_suffix": true,
+        "pass_pre": true,
+        "reasons": [],
+        "dup_of": null,
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "aTMuP-vNoN4",
+        "title": "一生在神手裡 My Life Is In Your Hand (Guitar Version)",
+        "duration": 163,
+        "track_suffix": true,
+        "pass_pre": true,
+        "reasons": [],
+        "dup_of": null,
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "X6-lQ9hs2cc",
+        "title": "我得自由 I Have Been Set Free (Guitar Version)",
+        "duration": 191,
+        "track_suffix": true,
+        "pass_pre": true,
+        "reasons": [],
+        "dup_of": null,
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "Nh8VzvbcIC8",
+        "title": "我能痊癒 I Will Be Healed (Guitar Version)",
+        "duration": 275,
+        "track_suffix": true,
+        "pass_pre": true,
+        "reasons": [],
+        "dup_of": null,
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "lMdBxHUi5q8",
+        "title": "我信 I Believe (Guitar Version)",
+        "duration": 258,
+        "track_suffix": true,
+        "pass_pre": true,
+        "reasons": [],
+        "dup_of": null,
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "4yvrCTXbaaY",
+        "title": "靠主愛誇勝 With The Love Of Christ, We Triumph (Guitar Version)",
+        "duration": 312,
+        "track_suffix": true,
+        "pass_pre": true,
+        "reasons": [],
+        "dup_of": null,
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "F51MgSBpcrA",
+        "title": "一心稱謝祢 Praise You With All My Heart (Guitar Version)",
+        "duration": 228,
+        "track_suffix": true,
+        "pass_pre": true,
+        "reasons": [],
+        "dup_of": null,
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "rBcpEhD-E4Q",
+        "title": "祢是我惟一的倚靠 I Put My Trust In You (Guitar Version)",
+        "duration": 265,
+        "track_suffix": true,
+        "pass_pre": true,
+        "reasons": [],
+        "dup_of": null,
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "hyujZwDqW8M",
+        "title": "《Amazing Guitar 3》基恩敬拜純音樂專輯 - 恩典窄路",
+        "duration": 236,
+        "track_suffix": false,
+        "pass_pre": true,
+        "reasons": [],
+        "dup_of": null,
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "FAZZDeWZIQw",
+        "title": "永恆的主 Everlasting God (Guitar Version)",
+        "duration": 249,
+        "track_suffix": true,
+        "pass_pre": true,
+        "reasons": [],
+        "dup_of": null,
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "qchKRHqz7v4",
+        "title": "《Amazing Guitar 3》基恩敬拜純音樂專輯 - 小鳥再飛",
+        "duration": 262,
+        "track_suffix": false,
+        "pass_pre": true,
+        "reasons": [],
+        "dup_of": null,
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "rKHKzwjL8bc",
+        "title": "相信祢應許 Believe In Your Promise (Guitar Version)",
+        "duration": 160,
+        "track_suffix": true,
+        "pass_pre": true,
+        "reasons": [],
+        "dup_of": null,
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "kRK88dkcHUo",
+        "title": "愛是永不止息 Love Never Fails (Guitar Version)",
+        "duration": 226,
+        "track_suffix": true,
+        "pass_pre": true,
+        "reasons": [],
+        "dup_of": null,
+        "dup_suspect": null
+      }
+    ],
+    "approved": true,
+    "proposed_album": "Amazing Guitar 3 (Guitar Version)",
+    "instrumental_signal": "Guitar",
+    "signed_by": "Claude Opus 5 (MORE-SOURCES N4, P4 拍板由我哋簽 / Eric 事後抽驗)",
+    "signed_at": "2026-08-24T07:08:51.214Z",
+    "sign_note": "iTunes artistName exact-match 專輯「Amazing Guitar 3 (Guitar Version)」13 首;OLAK member 13 首;淨新增 13 首(扣咗 0 首 org 內已有器樂版)"
+  },
+  {
+    "release_id": "OLAK5uy_mQq_bGlb3-X5KWjTAkRn2RkkRBGAqI-Pw",
+    "release_title": "靜默有時 3 A Time To Be Silent Vol.3",
+    "source": "main/releases",
+    "album_signal": "靜默",
+    "itunes_album": "靜默有時 3 A Time To Be Silent Vol.3 (Instrumental Version)",
+    "itunes_track_count": 12,
+    "itunes_release_date": "2018-04-01T07:00:00Z",
+    "album_evidence": true,
+    "member_count": 12,
+    "pass_pre_count": 11,
+    "members": [
+      {
+        "youtube_id": "2EzkveskHPw",
+        "title": "求天父悅納我的讚美 May My Praise Be Accepted By The Father (Instrumental Version)",
+        "duration": 274,
+        "track_suffix": true,
+        "pass_pre": true,
+        "reasons": [],
+        "dup_of": null,
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "zqE_JxYREbk",
+        "title": "歌唱耶和華慈愛 Sing Of The Lord's Unfailing Love (Instrumental Version)",
+        "duration": 204,
+        "track_suffix": true,
+        "pass_pre": true,
+        "reasons": [],
+        "dup_of": null,
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "KnFnEDW9kCk",
+        "title": "再次站起來 Standing Up Again (Instrumental Version)",
+        "duration": 276,
+        "track_suffix": true,
+        "pass_pre": true,
+        "reasons": [],
+        "dup_of": null,
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "la48qQfeS28",
+        "title": "【靜默有時靈修】不能阻隔的愛",
+        "duration": 313,
+        "track_suffix": false,
+        "pass_pre": false,
+        "reasons": [
+          "youtube_id 已喺庫"
+        ],
+        "dup_of": "same-youtube-id",
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "_kw__y_WE-o",
+        "title": "願平安充滿你 May You Be Filled With Peace (Instrumental Version)",
+        "duration": 228,
+        "track_suffix": true,
+        "pass_pre": true,
+        "reasons": [],
+        "dup_of": null,
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "fhn344Wu26A",
+        "title": "回到家裡 Home Again (Instrumental Version)",
+        "duration": 278,
+        "track_suffix": true,
+        "pass_pre": true,
+        "reasons": [],
+        "dup_of": null,
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "C6tYrh9ew64",
+        "title": "蒙恩的人 Blessed (Instrumental Version)",
+        "duration": 260,
+        "track_suffix": true,
+        "pass_pre": true,
+        "reasons": [],
+        "dup_of": null,
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "d1tSvKmReSU",
+        "title": "謝謝祢的愛 Thank You For Your Love (Instrumental Version)",
+        "duration": 212,
+        "track_suffix": true,
+        "pass_pre": true,
+        "reasons": [],
+        "dup_of": null,
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "kBtdAzP1ga0",
+        "title": "讚美造物主 Praise Our Creator (Instrumental Version)",
+        "duration": 283,
+        "track_suffix": true,
+        "pass_pre": true,
+        "reasons": [],
+        "dup_of": null,
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "fMpZ3dqO57U",
+        "title": "神愛我 God Loves Me (Instrumental Version)",
+        "duration": 307,
+        "track_suffix": true,
+        "pass_pre": true,
+        "reasons": [],
+        "dup_of": null,
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "55xCJwBEoyw",
+        "title": "有祢同行 With You By My Side (Instrumental Version)",
+        "duration": 293,
+        "track_suffix": true,
+        "pass_pre": true,
+        "reasons": [],
+        "dup_of": null,
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "_OmDSoMEOo0",
+        "title": "平安的路 Path Of Peace (Instrumental Version)",
+        "duration": 304,
+        "track_suffix": true,
+        "pass_pre": true,
+        "reasons": [],
+        "dup_of": null,
+        "dup_suspect": null
+      }
+    ],
+    "approved": true,
+    "proposed_album": "靜默有時 3 A Time To Be Silent Vol.3 (Instrumental Version)",
+    "instrumental_signal": "靜默",
+    "signed_by": "Claude Opus 5 (MORE-SOURCES N4, P4 拍板由我哋簽 / Eric 事後抽驗)",
+    "signed_at": "2026-08-24T07:08:51.214Z",
+    "sign_note": "iTunes artistName exact-match 專輯「靜默有時 3 A Time To Be Silent Vol.3 (Instrumental Version)」12 首;OLAK member 12 首;淨新增 11 首(扣咗 0 首 org 內已有器樂版)"
+  },
+  {
+    "release_id": "OLAK5uy_mADLfrnlWaVWzcEycuiKOFJ7yUzYO2bdw",
+    "release_title": "靜默有時 2 A Time To Be Silent Vol.2",
+    "source": "main/releases",
+    "album_signal": "靜默",
+    "itunes_album": "靜默有時 2 A Time To Be Silent Vol.2 (Instrumental Version)",
+    "itunes_track_count": 13,
+    "itunes_release_date": "2012-07-01T07:00:00Z",
+    "album_evidence": true,
+    "member_count": 13,
+    "pass_pre_count": 13,
+    "members": [
+      {
+        "youtube_id": "H25nJOxh9P8",
+        "title": "一生獻上 My Life, My All (Instrumental Version)",
+        "duration": 212,
+        "track_suffix": true,
+        "pass_pre": true,
+        "reasons": [],
+        "dup_of": null,
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "DCqRor3GGi8",
+        "title": "同心走天路 United In Pilgrimage (Instrumental Version)",
+        "duration": 179,
+        "track_suffix": true,
+        "pass_pre": true,
+        "reasons": [],
+        "dup_of": null,
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "_5FJORHGfJ8",
+        "title": "天父知道 Heavenly Father Knows (Instrumental Version)",
+        "duration": 203,
+        "track_suffix": true,
+        "pass_pre": true,
+        "reasons": [],
+        "dup_of": null,
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "JJ8EnIkPymI",
+        "title": "在祢寶座前 Before Your Throne (Instrumental Version)",
+        "duration": 335,
+        "track_suffix": true,
+        "pass_pre": true,
+        "reasons": [],
+        "dup_of": null,
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "sa1QFktZY84",
+        "title": "來投靠耶穌 Come Seek Refuge In Jesus (Instrumental Version)",
+        "duration": 218,
+        "track_suffix": true,
+        "pass_pre": true,
+        "reasons": [],
+        "dup_of": null,
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "dmhtM-Z25P8",
+        "title": "我的哀哭變為跳舞 My Wailing Into Dancing (Instrumental Version)",
+        "duration": 156,
+        "track_suffix": true,
+        "pass_pre": true,
+        "reasons": [],
+        "dup_of": null,
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "P61d9a2WGKw",
+        "title": "繼續向前行 Going Forth (Instrumental Version)",
+        "duration": 207,
+        "track_suffix": true,
+        "pass_pre": true,
+        "reasons": [],
+        "dup_of": null,
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "b5-jQZbt1q4",
+        "title": "當讚美進入祂的院 Enter His Courts With Praise (Instrumental Version)",
+        "duration": 233,
+        "track_suffix": true,
+        "pass_pre": true,
+        "reasons": [],
+        "dup_of": null,
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "NTcPwG4SnfQ",
+        "title": "願萬民稱謝祢 Let All The People Praise (Instrumental Version)",
+        "duration": 248,
+        "track_suffix": true,
+        "pass_pre": true,
+        "reasons": [],
+        "dup_of": null,
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "4xv3ACzPWxI",
+        "title": "必得見光 Thy Light Be Shown (Instrumental Version)",
+        "duration": 282,
+        "track_suffix": true,
+        "pass_pre": true,
+        "reasons": [],
+        "dup_of": null,
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "hq2dX5oDTTE",
+        "title": "我們愛因為神先愛 We Love Because God First Loved Us (Instrumental Version)",
+        "duration": 250,
+        "track_suffix": true,
+        "pass_pre": true,
+        "reasons": [],
+        "dup_of": null,
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "-qjdgSIKHPw",
+        "title": "主禱文 The Lord’s Prayer (Instrumental Version)",
+        "duration": 271,
+        "track_suffix": true,
+        "pass_pre": true,
+        "reasons": [],
+        "dup_of": null,
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "yGBrsGc4PSk",
+        "title": "牽引 Lead Me (Instrumental Version)",
+        "duration": 185,
+        "track_suffix": true,
+        "pass_pre": true,
+        "reasons": [],
+        "dup_of": null,
+        "dup_suspect": null
+      }
+    ],
+    "approved": true,
+    "proposed_album": "靜默有時 2 A Time To Be Silent Vol.2 (Instrumental Version)",
+    "instrumental_signal": "靜默",
+    "signed_by": "Claude Opus 5 (MORE-SOURCES N4, P4 拍板由我哋簽 / Eric 事後抽驗)",
+    "signed_at": "2026-08-24T07:08:51.214Z",
+    "sign_note": "iTunes artistName exact-match 專輯「靜默有時 2 A Time To Be Silent Vol.2 (Instrumental Version)」13 首;OLAK member 13 首;淨新增 13 首(扣咗 0 首 org 內已有器樂版)"
+  },
+  {
+    "release_id": "OLAK5uy_m85EPCFxSJ0f0cs2e26P1AL4812NmxuWU",
+    "release_title": "Amazing Guitar 2",
+    "source": "main/releases",
+    "album_signal": "Guitar",
+    "itunes_album": "Amazing Guitar 2 (Guitar Version)",
+    "itunes_track_count": 13,
+    "itunes_release_date": "2011-10-01T07:00:00Z",
+    "album_evidence": true,
+    "member_count": 13,
+    "pass_pre_count": 13,
+    "members": [
+      {
+        "youtube_id": "rp_slGxKKMc",
+        "title": "下雨天的平安 Peace In Rainy Days (Guitar Version)",
+        "duration": 233,
+        "track_suffix": true,
+        "pass_pre": true,
+        "reasons": [],
+        "dup_of": null,
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "PLy0quB2Lmw",
+        "title": "願您平安 May Peace Be With You (Guitar Version)",
+        "duration": 201,
+        "track_suffix": true,
+        "pass_pre": true,
+        "reasons": [],
+        "dup_of": null,
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "dk3DhlP5Bh0",
+        "title": "安穩主翅膀 Safe Under Lord’s Wing (Guitar Version)",
+        "duration": 223,
+        "track_suffix": true,
+        "pass_pre": true,
+        "reasons": [],
+        "dup_of": null,
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "tBUzjVbPb64",
+        "title": "慈繩愛索 The Rein Of Love, The Rope Of Grace (Guitar Version)",
+        "duration": 210,
+        "track_suffix": true,
+        "pass_pre": true,
+        "reasons": [],
+        "dup_of": null,
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "iWTS7S7Wo-E",
+        "title": "耶和華祢配得稱頌 Lord You Are Worthy Of Our Praises (Guitar Version)",
+        "duration": 232,
+        "track_suffix": true,
+        "pass_pre": true,
+        "reasons": [],
+        "dup_of": null,
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "hQ6Hdx6CdRY",
+        "title": "神大愛 God’s Magnificent Love (Guitar Version)",
+        "duration": 232,
+        "track_suffix": true,
+        "pass_pre": true,
+        "reasons": [],
+        "dup_of": null,
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "9BPQy4oilg8",
+        "title": "在祢寶座前 Before Your Throne (Guitar Version)",
+        "duration": 223,
+        "track_suffix": true,
+        "pass_pre": true,
+        "reasons": [],
+        "dup_of": null,
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "tmgkQ-ae-aM",
+        "title": "我心切慕祢 My Soul Longs For You (Guitar Version)",
+        "duration": 192,
+        "track_suffix": true,
+        "pass_pre": true,
+        "reasons": [],
+        "dup_of": null,
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "knwt7W1sGx4",
+        "title": "來投靠耶穌 Come Seek Refuge In Jesus (Guitar Version)",
+        "duration": 189,
+        "track_suffix": true,
+        "pass_pre": true,
+        "reasons": [],
+        "dup_of": null,
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "VXJnadlTLBM",
+        "title": "我是泥土 Made Of Clay (Guitar Version)",
+        "duration": 260,
+        "track_suffix": true,
+        "pass_pre": true,
+        "reasons": [],
+        "dup_of": null,
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "HdMZ7KP-2BQ",
+        "title": "牽引 Lead Me (Guitar Version)",
+        "duration": 186,
+        "track_suffix": true,
+        "pass_pre": true,
+        "reasons": [],
+        "dup_of": null,
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "blUm3VG9L-c",
+        "title": "不要怕 Fear Not (Guitar Version)",
+        "duration": 242,
+        "track_suffix": true,
+        "pass_pre": true,
+        "reasons": [],
+        "dup_of": null,
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "Y4sCAByQNGY",
+        "title": "永不疲乏 Never Grew Weary (Guitar Version)",
+        "duration": 230,
+        "track_suffix": true,
+        "pass_pre": true,
+        "reasons": [],
+        "dup_of": null,
+        "dup_suspect": null
+      }
+    ],
+    "approved": true,
+    "proposed_album": "Amazing Guitar 2 (Guitar Version)",
+    "instrumental_signal": "Guitar",
+    "signed_by": "Claude Opus 5 (MORE-SOURCES N4, P4 拍板由我哋簽 / Eric 事後抽驗)",
+    "signed_at": "2026-08-24T07:08:51.214Z",
+    "sign_note": "iTunes artistName exact-match 專輯「Amazing Guitar 2 (Guitar Version)」13 首;OLAK member 13 首;淨新增 13 首(扣咗 0 首 org 內已有器樂版)"
+  },
+  {
+    "release_id": "OLAK5uy_mu8kr5l8SiPWZD8SIl3YYeXuvsz5HLWwU",
+    "release_title": "靜默有時 A Time To Be Silent",
+    "source": "main/releases",
+    "album_signal": "靜默",
+    "itunes_album": "靜默有時 A Time To Be Silent (Instrumental Version)",
+    "itunes_track_count": 15,
+    "itunes_release_date": "2010-04-01T07:00:00Z",
+    "album_evidence": true,
+    "member_count": 15,
+    "pass_pre_count": 15,
+    "members": [
+      {
+        "youtube_id": "7swJ33lwnmE",
+        "title": "一生獻作活祭 Our Life As Offering (Instrumental Version)",
+        "duration": 351,
+        "track_suffix": true,
+        "pass_pre": true,
+        "reasons": [],
+        "dup_of": null,
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "cPnJTv0VoMo",
+        "title": "下雨天的平安 Peace In Rainy Days (Instrumental Version)",
+        "duration": 278,
+        "track_suffix": true,
+        "pass_pre": true,
+        "reasons": [],
+        "dup_of": null,
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "o__lznq_99M",
+        "title": "祢的名在全地何其美 How Beautiful Art Thou Name (Instrumental Version)",
+        "duration": 300,
+        "track_suffix": true,
+        "pass_pre": true,
+        "reasons": [],
+        "dup_of": null,
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "u7N_MEdzuiI",
+        "title": "永不疲乏 Never Grew Weary (Instrumental Version)",
+        "duration": 276,
+        "track_suffix": true,
+        "pass_pre": true,
+        "reasons": [],
+        "dup_of": null,
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "u0NMtVaU0nI",
+        "title": "耶穌，我愛祢 Jesus, I Love You (Instrumental Version)",
+        "duration": 234,
+        "track_suffix": true,
+        "pass_pre": true,
+        "reasons": [],
+        "dup_of": null,
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "OenTItJJn1g",
+        "title": "請堅固我 Lord Please Strengthen Me (Instrumental Version)",
+        "duration": 177,
+        "track_suffix": true,
+        "pass_pre": true,
+        "reasons": [],
+        "dup_of": null,
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "-4nXW4pWWvQ",
+        "title": "我是泥土 Made Of Clay (Instrumental Version)",
+        "duration": 273,
+        "track_suffix": true,
+        "pass_pre": true,
+        "reasons": [],
+        "dup_of": null,
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "Jx-C33RoG7A",
+        "title": "神大愛 God’s Magnificent Love (Instrumental Version)",
+        "duration": 247,
+        "track_suffix": true,
+        "pass_pre": true,
+        "reasons": [],
+        "dup_of": null,
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "UqA2IohIVzI",
+        "title": "親眼看見祢 My Eyes Have Seen You (Instrumental Version)",
+        "duration": 218,
+        "track_suffix": true,
+        "pass_pre": true,
+        "reasons": [],
+        "dup_of": null,
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "SipQTlMFhdY",
+        "title": "慈繩愛索 The Rein Of Love, The Rope Of Grace (Instrumental Version)",
+        "duration": 284,
+        "track_suffix": true,
+        "pass_pre": true,
+        "reasons": [],
+        "dup_of": null,
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "1BrvCsDX0V8",
+        "title": "因為祢先愛我們 As You First Loved Us (Instrumental Version)",
+        "duration": 349,
+        "track_suffix": true,
+        "pass_pre": true,
+        "reasons": [],
+        "dup_of": null,
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "rG7yQ2WQLmM",
+        "title": "從不丟棄我 Never Forsake Me (Instrumental Version)",
+        "duration": 266,
+        "track_suffix": true,
+        "pass_pre": true,
+        "reasons": [],
+        "dup_of": null,
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "GThvBT1bw88",
+        "title": "不要怕 Fear Not (Instrumental Version)",
+        "duration": 367,
+        "track_suffix": true,
+        "pass_pre": true,
+        "reasons": [],
+        "dup_of": null,
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "aojfAaHYRtg",
+        "title": "愛裡沒有懼怕 No Fear In Love (Instrumental Version)",
+        "duration": 264,
+        "track_suffix": true,
+        "pass_pre": true,
+        "reasons": [],
+        "dup_of": null,
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "XUL9dxe6pyY",
+        "title": "主的恩典 Lord’s Grace (Instrumental Version)",
+        "duration": 328,
+        "track_suffix": true,
+        "pass_pre": true,
+        "reasons": [],
+        "dup_of": null,
+        "dup_suspect": null
+      }
+    ],
+    "approved": true,
+    "proposed_album": "靜默有時 A Time To Be Silent (Instrumental Version)",
+    "instrumental_signal": "靜默",
+    "signed_by": "Claude Opus 5 (MORE-SOURCES N4, P4 拍板由我哋簽 / Eric 事後抽驗)",
+    "signed_at": "2026-08-24T07:08:51.214Z",
+    "sign_note": "iTunes artistName exact-match 專輯「靜默有時 A Time To Be Silent (Instrumental Version)」15 首;OLAK member 15 首;淨新增 15 首(扣咗 0 首 org 內已有器樂版)"
+  },
+  {
+    "release_id": "OLAK5uy_my4YcWeHxKWh87OkTI0GWxDg3cx91ABeg",
+    "release_title": "Amazing Grace Amazing Guitar",
+    "source": "main/releases",
+    "album_signal": "Guitar",
+    "itunes_album": "Amazing Guitar (Guitar Version)",
+    "itunes_track_count": 7,
+    "itunes_release_date": "2007-04-01T07:00:00Z",
+    "album_evidence": true,
+    "member_count": 7,
+    "pass_pre_count": 7,
+    "members": [
+      {
+        "youtube_id": "0y4iAsso7WA",
+        "title": "惟獨祢 Only You (Guitar Version)",
+        "duration": 224,
+        "track_suffix": true,
+        "pass_pre": true,
+        "reasons": [],
+        "dup_of": null,
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "njdCiXnLtpg",
+        "title": "親眼看見祢 My Eyes Have Seen You (Guitar Version)",
+        "duration": 258,
+        "track_suffix": true,
+        "pass_pre": true,
+        "reasons": [],
+        "dup_of": null,
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "Hzd4Xrz9ywQ",
+        "title": "我的牧者 The Lord Is My Shepherd (Guitar Version)",
+        "duration": 307,
+        "track_suffix": true,
+        "pass_pre": true,
+        "reasons": [],
+        "dup_of": null,
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "lZkN9bn7ogo",
+        "title": "如果我沒有遇見祢 If I've Never Met You (Guitar Version)",
+        "duration": 176,
+        "track_suffix": true,
+        "pass_pre": true,
+        "reasons": [],
+        "dup_of": null,
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "pUIt5eDwo3g",
+        "title": "耶穌, 我愛祢 (幻想曲) Jesus, I Love You (Fantasia) (Guitar Version)",
+        "duration": 343,
+        "track_suffix": true,
+        "pass_pre": true,
+        "reasons": [],
+        "dup_of": null,
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "cc3ep79wIz8",
+        "title": "因為祢先愛我們 Because You first Love Us (Guitar Version)",
+        "duration": 279,
+        "track_suffix": true,
+        "pass_pre": true,
+        "reasons": [],
+        "dup_of": null,
+        "dup_suspect": null
+      },
+      {
+        "youtube_id": "NV0elnXCnBA",
+        "title": "星火飛騰 You Are The Only One (Guitar Version)",
+        "duration": 222,
+        "track_suffix": true,
+        "pass_pre": true,
+        "reasons": [],
+        "dup_of": null,
+        "dup_suspect": null
+      }
+    ],
+    "approved": true,
+    "proposed_album": "Amazing Guitar (Guitar Version)",
+    "instrumental_signal": "Guitar",
+    "signed_by": "Claude Opus 5 (MORE-SOURCES N4, P4 拍板由我哋簽 / Eric 事後抽驗)",
+    "signed_at": "2026-08-24T07:08:51.215Z",
+    "sign_note": "iTunes artistName exact-match 專輯「Amazing Guitar (Guitar Version)」7 首;OLAK member 7 首;淨新增 7 首(扣咗 0 首 org 內已有器樂版)"
+  }
+]

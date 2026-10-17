@@ -1,0 +1,6 @@
+=== label=A mode=cold run=1 app=/private/tmp/claude-501/-Users-macbookpro--openclaw-workspace-hymn-app/dbef9ccd-547a-4212-8309-0735348d98c1/scratchpad/AFTER.app ===
+verify: expect=3725276 actual=3725276 match=YES
+com.hymnapp.praise: 51883
+launched at host_ts=17883394673N
+host_launch_ts=17883394673N
+=== done A cold 1 ===

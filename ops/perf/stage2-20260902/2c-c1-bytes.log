@@ -1,0 +1,25 @@
+endpoint,phase,accept-encoding,status,bytes(client-side after auto-decode),ms,manual_gzip_bytes
+📚 /api/hymns full fetch → 6405 hymns, dataVersion=1788313502009.5908-61054976
+/api/hymns,miss,identity,200,5567648,178,1474227
+/api/hymns,hit1,identity,200,5567648,18,
+/api/hymns,hit2,identity,200,5567648,18,
+/api/hymns,hit3,identity,200,5567648,16,
+/api/hymns,gzip-hit1,gzip,200,5567648(decoded),118,content-encoding=gzip
+/api/hymns,gzip-hit2,gzip,200,5567648(decoded),115,content-encoding=gzip
+/api/hymns,gzip-hit3,gzip,200,5567648(decoded),119,content-encoding=gzip
+📚 /api/hymns lite fetch → 6405 hymns, dataVersion=1788313502009.5908-61054976
+/api/hymns?lite=1,miss,identity,200,2839533,79,371984
+/api/hymns?lite=1,hit1,identity,200,2839533,9,
+/api/hymns?lite=1,hit2,identity,200,2839533,9,
+/api/hymns?lite=1,hit3,identity,200,2839533,7,
+/api/hymns?lite=1,gzip-hit1,gzip,200,2839533(decoded),30,content-encoding=gzip
+/api/hymns?lite=1,gzip-hit2,gzip,200,2839533(decoded),31,content-encoding=gzip
+/api/hymns?lite=1,gzip-hit3,gzip,200,2839533(decoded),29,content-encoding=gzip
+📚 /api/hymns/lyrics fetch → 5387 hymns, dataVersion=1788313502009.5908-61054976
+/api/hymns/lyrics,miss,identity,200,2702660,25,992859
+/api/hymns/lyrics,hit1,identity,200,2702660,7,
+/api/hymns/lyrics,hit2,identity,200,2702660,8,
+/api/hymns/lyrics,hit3,identity,200,2702660,6,
+/api/hymns/lyrics,gzip-hit1,gzip,200,2702660(decoded),87,content-encoding=gzip
+/api/hymns/lyrics,gzip-hit2,gzip,200,2702660(decoded),85,content-encoding=gzip
+/api/hymns/lyrics,gzip-hit3,gzip,200,2702660(decoded),86,content-encoding=gzip

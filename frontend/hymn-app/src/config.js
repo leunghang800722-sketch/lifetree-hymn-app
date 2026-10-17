@@ -1,3 +1,24 @@
 // App 設定
-// 用手機試用時，要改做你電腦嘅 IP
-export const API_BASE = 'http://192.168.30.45:3000';
+//
+// 固定 URL — 行緊 Cloudflare named tunnel（tunnel 名：hymn-api）。
+// 呢條 URL 唔會再變，所以 tunnel 重開／電腦重啟之後都唔使改呢度、唔使 rebuild APK。
+// （以前用臨時 trycloudflare tunnel，每次重開都係一條新 random URL，
+//   搞到每次都要改 config + rebuild + 重裝，好折磨。）
+//
+// 要跑起個 backend 要開兩樣嘢：
+//   1. cd backend && node server.js          （行喺 localhost:3001）
+//   2. cloudflared tunnel run hymn-api       （config 喺 ~/.cloudflared/config.yml）
+//
+// ⚠️ backend 仍然係跑喺開發者部 Mac 度，部機要開住 + 有網，App 先用到。
+export const API_BASE = 'https://api.odemusics.com';
+
+// 電話 OTP 登入(PHONE-AUTH-PLAN)。2026-07-29 三條 Twilio key 已齊,
+// `/api/auth/otp/status` 確認 configured:true 先開(MEMBERSHIP-PHASE1-LOGIN-SYNC.md W3)。
+export const PHONE_AUTH_ENABLED = true;
+
+// FRONTEND-CODE-REVIEW-20260819 O12 — App.js 個 logDiag() 高頻診斷 beacon
+// (stateChange/trackChanged/nextTrackMs/playWhenReadyChanged)開關,鎖屏/
+// 中途冇聲一批根因已查完,平時毋須再打去 backend 同 OCR 爭資源。低頻高價值
+// 嗰批(PlaybackError、watchdog giveup、wallClockDrift)唔受呢個 flag 管,
+// 永遠會送。查緊新一輪 bug 先臨時開返 true。
+export const DIAG_ENABLED = false;

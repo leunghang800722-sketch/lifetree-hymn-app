@@ -1,0 +1,141 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.hymnapp.fetchlyrics</string>
+
+    <!-- 歌詞入庫夜晚隊列(LYRICS-PIPELINE-PLAN)。2026-07-24 STAGE 2 起:每晚一次過
+         行兩層 —— CC 字幕層(平,處理新收錄嘅歌)先,跟住 OCR 層(主力,
+         落片+抽frame+Vision OCR+需要時 whisper 後備,一首幾分鐘)。
+         CC 揾唔到嘅歌(source='cc:miss')先會入 OCR 隊,唔會夜夜重 CC。
+         2026-07-27 Eric 拍板加速:每晚 80 首草稿,拆兩個時段(01:00 + 05:00)
+         各 CC 50 + OCR 40。
+         2026-08-01 Eric 再拍板:8 輪 × 20 首 OCR(CC 25,維持 5:4 餵飽比例,
+         cc:miss 存貨要夠 OCR 食),每晚合共 CC 200 / OCR 160,拆做 19:00 /
+         21:00 / 23:00 / 01:00 / 03:00 / 05:00 / 07:00 / 08:40 八個時間點——
+         梅花間竹噉分佈成晚(每兩個鐘一輪),攤薄同一個住宅 IP 嘅流量
+         pattern,唔好一口氣連續狂撞 YouTube。尾輪擺 08:40(唔擺 09:00 正)
+         係刻意避開 09:00 呢個窗口牆——inWindow() 用 h<9 判斷,09:00 開波
+         嗰刻已經係 h=9,唔准行;08:40 開波 h=8,啱啱好喺窗入面,跑足
+         20 分鐘都仲喺窗內。
+         ⚠️ CC budget 一定要 ≥ OCR budget:cc:miss 存貨係 OCR 嘅糧,CC 實測
+         命中率 ~0%,即係每晚 OCR 食幾多就要 CC 產幾多,細過佢 OCR 會斷糧。
+         每輪 20 首 OCR 預計 ~25-30 分鐘(OCR 平均 ~57 秒/首 + 落載失敗每次
+         最多蝕 3 分鐘 timeout),輪與輪之間相隔至少 1 個鐘,唔會撞埋。 -->
+    <key>ProgramArguments</key>
+    <array>
+        <string>/opt/homebrew/bin/node</string>
+        <string>/Users/macbookpro/.openclaw/workspace/hymn-app/backend/scripts/fetchLyrics.js</string>
+        <string>--cc-budget</string>
+        <string>25</string>
+        <string>--ocr-budget</string>
+        <string>20</string>
+        <string>--delay</string>
+        <string>4000</string>
+    </array>
+
+    <key>WorkingDirectory</key>
+    <string>/Users/macbookpro/.openclaw/workspace/hymn-app/backend</string>
+
+    <!-- ⚠️ 一定要 set PATH:launchd 預設冇 /opt/homebrew/bin,fetchLyrics 行 yt-dlp/
+         ffmpeg/whisper-cli 呢啲 homebrew 裝嘅工具。唔 set 嘅話每首都
+         command-not-found、成個 job 靜靜哋收 0 首(growlibrary 踩過)。 -->
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>PATH</key>
+        <string>/opt/homebrew/bin:/opt/homebrew/sbin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+    </dict>
+
+    <!-- 2026-08-01 八輪時序(Eric 拍板,取代舊版 01:00/05:00 兩輪):
+         19:00 —— 辦公封鎖窗(平日 10:30-18:30,growLibrary 專用)一早解封
+                  咗成粒鐘,首輪開波。
+         21:00 / 23:00 —— 夜晚中段,同上一輪相隔 2 個鐘,跑完(~25-30分鐘)
+                  離下一輪仲有大把緩衝。
+         01:00 —— 深宵輪,離 checkDeadLinks 04:00 開波仲有 3 個鐘,冇機會撞。
+         03:00 —— 跑完(~03:30 完)離 checkDeadLinks 04:00 開波仲有半個鐘
+                  以上緩衝,04:00-04:25 個鎖期都冇撞正。
+         05:00 —— checkDeadLinks 04:00-04:25 一早做完、鎖一早放咗,唔使等。
+         07:00 —— 朝早輪,跑完仲有成粒鐘先到 08:40 尾輪。
+         08:40 —— 尾輪,刻意唔擺 09:00 正(inWindow() h<9,09:00 已經係
+                  窗口牆嗰刻),20 首跑足都仲喺 09:00 前收工。
+         時段唔係封鎖因素(見底下 fetchLyrics.js inWindow() 註解:growLibrary
+         已經 24 小時行咗十日零事,封鎖跟總量唔跟時鐘),八個時段全部都
+         已經避開咗 growLibrary 專用嘅辦公封鎖窗(平日 10:30-18:30)。
+         deadlink 04:00-04:25 同 03:00 呢輪(~03:30 完)冇碰撞。
+         growLibrary 每 15 分鐘一個 slot 照行,靠 hymnDb.js 嘅 DB 鎖互斥
+         (fetchLyrics 每首歌只喺寫入嗰一刻揸鎖,毫秒級,已實戰驗證)。
+         launchd 嘅 StartCalendarInterval 可以係 array,每個 dict = 一個時間點。 -->
+    <!-- 2026-08-02 Eric 追加:星期日(Weekday=0)加四班日間場——10:40/12:40/
+         14:40/16:40,維持夜間嗰種兩小時一班節奏。分鐘揀 :40 係錯開 growLibrary
+         (每15分鐘,分鐘用:07系)嘅慣性位;16:40 班 ~17:10 收工,避開 17:30
+         taxonomy 連轆同 18:40 alignBackfill。冇 Weekday key 嘅八班照舊每日行
+         (包括星期日,即係星期日全日共 12 班)。fetchLyrics.js inWindow() 已
+         同步改(星期日全日放行),兩邊一齊改先行得通。 -->
+    <key>StartCalendarInterval</key>
+    <array>
+        <dict>
+            <key>Weekday</key><integer>0</integer>
+            <key>Hour</key><integer>10</integer>
+            <key>Minute</key><integer>40</integer>
+        </dict>
+        <dict>
+            <key>Weekday</key><integer>0</integer>
+            <key>Hour</key><integer>12</integer>
+            <key>Minute</key><integer>40</integer>
+        </dict>
+        <dict>
+            <key>Weekday</key><integer>0</integer>
+            <key>Hour</key><integer>14</integer>
+            <key>Minute</key><integer>40</integer>
+        </dict>
+        <dict>
+            <key>Weekday</key><integer>0</integer>
+            <key>Hour</key><integer>16</integer>
+            <key>Minute</key><integer>40</integer>
+        </dict>
+        <dict>
+            <key>Hour</key><integer>19</integer>
+            <key>Minute</key><integer>0</integer>
+        </dict>
+        <dict>
+            <key>Hour</key><integer>21</integer>
+            <key>Minute</key><integer>0</integer>
+        </dict>
+        <dict>
+            <key>Hour</key><integer>23</integer>
+            <key>Minute</key><integer>0</integer>
+        </dict>
+        <dict>
+            <key>Hour</key><integer>1</integer>
+            <key>Minute</key><integer>0</integer>
+        </dict>
+        <dict>
+            <key>Hour</key><integer>3</integer>
+            <key>Minute</key><integer>0</integer>
+        </dict>
+        <dict>
+            <key>Hour</key><integer>5</integer>
+            <key>Minute</key><integer>0</integer>
+        </dict>
+        <dict>
+            <key>Hour</key><integer>7</integer>
+            <key>Minute</key><integer>0</integer>
+        </dict>
+        <dict>
+            <key>Hour</key><integer>8</integer>
+            <key>Minute</key><integer>40</integer>
+        </dict>
+    </array>
+
+    <key>RunAtLoad</key>
+    <false/>
+    <key>KeepAlive</key>
+    <false/>
+
+    <key>StandardOutPath</key>
+    <string>/tmp/hymn_fetchlyrics.log</string>
+    <key>StandardErrorPath</key>
+    <string>/tmp/hymn_fetchlyrics.log</string>
+</dict>
+</plist>

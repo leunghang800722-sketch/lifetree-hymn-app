@@ -1,0 +1,16 @@
+{
+  "withFix_hang": {
+    "ok": false,
+    "reason": "AbortError",
+    "ms": 2059
+  },
+  "withoutFix_hang": {
+    "settled": false,
+    "ms": 6003
+  },
+  "withFix_normal": {
+    "ok": true,
+    "text": "{\"data\":[{\"id\":1,\"title\":\"ok\"}],\"dataVersion\":\"v1\"}",
+    "ms": 10
+  }
+}

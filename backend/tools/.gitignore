@@ -1,0 +1,8 @@
+paddle-venv/
+
+# yt-dlp:全 app 唯一嘅 canonical path 係 `yt-dlp`(一條 symlink),真嘢喺
+# ytdlp-venv-a / ytdlp-venv-b 兩個 slot 入面(見 ops/ytdlp/update-ytdlp.sh)。
+# 全部唔准入 git —— repo 冇嘅時候點 bootstrap 見 ops/launchd/README.md。
+yt-dlp
+yt-dlp.*
+ytdlp-venv-*/

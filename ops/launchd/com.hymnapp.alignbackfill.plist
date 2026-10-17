@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.hymnapp.alignbackfill</string>
+
+    <!-- 歌詞 STAGE 3「音訊次序驗證層」backfill(scripts/alignBackfill.js)。補返
+         2026-07-24~27(STAGE 3 上線之前)已經跑出嚟嘅 draft/verified 舊歌冇
+         whisper timeline 呢個缺口(而家約 59 首)——淨係落 bestaudio(唔使成條
+         片,輕好多)→ whisper 轉錄(帶 timestamp)→ 存 lyrics_timeline.whisper →
+         即刪 audio。純寫 timeline 元資料,唔郁 `lyrics`/`lyrics_status`,已出街
+         verified 歌詞內容完全唔受影響。budget 預設 60,59 首存貨一晚做晒有突;
+         做完之後(候選清空)呢個 job 之後每晚都係幾秒鐘 no-op,唔使停用佢。
+         2026-08-01 加咗「死片放棄」機制(見 alignBackfill.js 頭註解):落載連續
+         失敗 ≥3 次嘅片(例如俾 YouTube 403 嘅舊片)會永久標走,唔會夜夜留喺
+         隊入面白試蝕晒 budget。 -->
+    <key>ProgramArguments</key>
+    <array>
+        <string>/opt/homebrew/bin/node</string>
+        <string>/Users/macbookpro/.openclaw/workspace/hymn-app/backend/scripts/alignBackfill.js</string>
+        <string>--budget</string>
+        <string>60</string>
+        <string>--delay</string>
+        <string>5000</string>
+    </array>
+
+    <key>WorkingDirectory</key>
+    <string>/Users/macbookpro/.openclaw/workspace/hymn-app/backend</string>
+
+    <!-- ⚠️ 一定要 set PATH:launchd 預設冇 /opt/homebrew/bin,呢個 script 行
+         yt-dlp/ffmpeg/whisper-cli 呢啲 homebrew 裝嘅工具(見 ops/launchd/README.md
+         嘅「一定要知嘅坑」第1條 —— growlibrary 漏咗呢段連續9次 0 收錄嘅教訓)。 -->
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>PATH</key>
+        <string>/opt/homebrew/bin:/opt/homebrew/sbin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+    </dict>
+
+    <!-- 2026-08-01 由 06:50 改做 18:40(Eric 拍板,配合 fetchLyrics 8 輪新排程
+         挪位):
+         · 18:40 擺喺 fetchLyrics 首輪 19:00 之前、growLibrary 辦公封鎖窗
+           (平日 10:30-18:30)完結之後 10 分鐘 —— 呢個 job 一路揸 hymnDb.js
+           嘅 acquireDbLock/releaseDbLock 即攞即放,同 growLibrary/fetchLyrics
+           理論上唔會撞崩,但擺喺呢個窗一早就冇人爭鎖,乾淨企埋一邊。
+         · 呢條隊而家好細(候選幾乎清晒,2026-08-01 實測淨返 1 首死片候選),
+           ~15 分鐘內做完,18:40 到 19:00 fetchLyrics 開波仲有 20 分鐘緩衝,
+           唔會撞埋。
+         · budget=60,每首 bestaudio(冇video,輕)+whisper(medium model)實測
+           ~15-25 秒(small model)/~20-25 秒(medium),存貨清咗之後每晚都係
+           幾秒 no-op,唔使停用。 -->
+    <key>StartCalendarInterval</key>
+    <dict>
+        <key>Hour</key>
+        <integer>18</integer>
+        <key>Minute</key>
+        <integer>40</integer>
+    </dict>
+
+    <key>RunAtLoad</key>
+    <false/>
+    <key>KeepAlive</key>
+    <false/>
+
+    <key>StandardOutPath</key>
+    <string>/tmp/hymn_alignbackfill.log</string>
+    <key>StandardErrorPath</key>
+    <string>/tmp/hymn_alignbackfill.log</string>
+</dict>
+</plist>

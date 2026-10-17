@@ -1,0 +1,9 @@
+# A-3 after (access log middleware, path-capture bug fixed) — 2026-09-02T07:53:18Z
+-- expect [access] lines for /api/version, /api/home/daily-verse, /api/category/cantonese; NONE for /api/stream/42 or /api/hls/42.m3u8 --
+🗃️  resolve-cache:由碟載返 410 條未過期 URL
+[harness] listening on :3002 pid=13492 HYMNSCACHE=1 COMPRESSION=1 ACCESSLOG=1 CACHECONTROL=0 STREAMHLS=1
+[access] 2026-09-02T07:53:18.174Z GET /api/version 200 3ms 45b
+[access] 2026-09-02T07:53:18.183Z GET /api/home/daily-verse 200 1ms 185b
+[access] 2026-09-02T07:53:18.402Z GET /api/category/cantonese 200 211ms 15971383b
+[stream] 2026-09-02T07:53:19.044Z id=42 yt=PG_J_0gsMXA mode=warm resolve_ms=0 ttfb_ms=624 total_ms=631 status=206 aborted=false retried=false range=bytes=0-1023 sent=1301 itag=140 clen=5646616 wd=0 ua=curl/8.7.1
+[hls] 2026-09-02T07:53:19.270Z id=42 yt=PG_J_0gsMXA result=ok initSize=723 refs=35 segBytes=5645441

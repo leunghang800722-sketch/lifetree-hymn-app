@@ -1,0 +1,154 @@
+// routes/presence.js — Admin「在線」頁(ADMIN-PRESENCE-EXEC-20260905 §2)
+//
+//   POST /api/presence/heartbeat  —— 冇強制 auth:有 Bearer token 就當會員
+//                                     (順手更新 last_seen_at,同 requireAuth
+//                                     一致做法),token 冇/invalid 就當訪客
+//                                     (要有 deviceId 先計數)。永遠回 204——
+//                                     心跳係 fire-and-forget,唔應該因為
+//                                     壞 body 拖累 app(同 clientLog.js 一致
+//                                     嘅診斷 beacon 態度)。
+//   GET  /api/admin/presence      —— 靠 server.js `app.use('/api/admin',
+//                                     requireAuth, requireAdmin, ...)` 掛載
+//                                     層做 auth(P7,唔喺呢度再包一次,見
+//                                     下面 presenceRoutes() 入面嗰段註解),
+//                                     回在線快照。
+import jwt from 'jsonwebtoken';
+import { JWT_SECRET } from '../lib/authSecret.js';
+import { getUserDb, recordUserDevice } from '../lib/userDb.js';
+import { clientIp } from '../lib/loginRateLimit.js';
+import { isTokenRevoked } from '../lib/tokenValidity.js';
+import { recordHeartbeat, getPresenceSnapshot } from '../lib/presence.js';
+import { makeLimiter } from '../lib/rateLimit.js';
+
+// deviceId 白名單(P5,Opus 5 驗收 1b 保留已修):真 deviceId 係
+// `getOrCreateDeviceId()`(src/deviceId.js)產生嘅 32 hex,呢度容許
+// 8-40 hex 留少少彈性但拒晒任何非 hex 字元。唔啱 pattern 就當冇帶
+// deviceId(訪客冇 deviceId 就記唔到,會員唔受影響——佢用 userId 做 key)。
+const DEVICE_ID_RE = /^[0-9a-f]{8,40}$/;
+
+// per-IP 節流(P5,Opus 5 驗收 1a 保留已修,手法照 lib/loginRateLimit.js):
+// 60 秒 300 次(Opus2 N1:同一 IP 後面可以係成間教會 WiFi / CGNAT,60 秒心跳一部機 1 次,300 = 撐 300 部機),超過就 429、唔再入 presence Map(唔算入 recordHeartbeat)。
+// heartbeat 冇 auth,呢個係唯一擋濫用嘅第一層(第二層係 presence.js 嘅
+// MAX_ENTRIES + 訪客優先剷)。
+// DEEP-AUDIT-W2-EXEC-20260906 Commit B:純機械抽取去 lib/rateLimit.js
+// makeLimiter()——HEARTBEAT_RATE_WINDOW_MS(60秒)/HEARTBEAT_RATE_MAX(300)/
+// HEARTBEAT_RATE_MAP_MAX(5000)一個數字都冇變,makeLimiter 嘅 maxEntries
+// 參數直接食返呢個 5000,eviction 語意(掃完仲爆就踢最舊)同舊版一致。
+const HEARTBEAT_RATE_WINDOW_MS = 60 * 1000;
+const HEARTBEAT_RATE_MAX = 300;
+const HEARTBEAT_RATE_MAP_MAX = 5000; // Opus2 N4:Map 有上限,超過就剷最舊 window
+const heartbeatLimiter = makeLimiter({
+  name: 'presence-heartbeat',
+  keyOf: (req) => req, // check() 下面直接傳 ip string
+  max: HEARTBEAT_RATE_MAX,
+  windowMs: HEARTBEAT_RATE_WINDOW_MS,
+  maxEntries: HEARTBEAT_RATE_MAP_MAX,
+});
+function isHeartbeatRateLimited(ip) {
+  return heartbeatLimiter.check(ip);
+}
+
+// 電話遮中間四位(§3「name:users 表有名就用名,冇就電話遮中間四位」)。
+// 例:+85261234567(12 字)→ mid=6,start=4,end=8 → +852**** 4567 遮法為
+// 保留頭尾、剷走中間 4 個字符。字太短(<8)就淨係遮晒,唔強行對出 4 個字。
+function maskPhoneMiddle(phone) {
+  if (!phone || typeof phone !== 'string') return null;
+  if (phone.length < 8) return '*'.repeat(phone.length);
+  const mid = Math.floor(phone.length / 2);
+  const start = Math.max(mid - 2, 0);
+  const end = Math.min(start + 4, phone.length);
+  return phone.slice(0, start) + '****' + phone.slice(end);
+}
+
+// 有 token 就經 requireAuth 嗰套邏輯驗(decode → DB 核實 → 更新
+// last_seen_at),但唔可以用 requireAuth 個 middleware 本身——佢冇 token/
+// invalid 會直接 401,呢度要求嘅係「當訪客繼續行落去」,唔係拒絕請求。
+async function tryAuthenticate(req) {
+  try {
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) return null;
+    const token = authHeader.slice(7);
+    const decoded = jwt.verify(token, JWT_SECRET);
+    const db = await getUserDb();
+    const stmt = db.prepare('SELECT id, username, email, phone, role, token_valid_after FROM users WHERE id = ?');
+    stmt.bind([decoded.id]);
+    if (!stmt.step()) {
+      stmt.free();
+      return null;
+    }
+    const user = stmt.getAsObject();
+    stmt.free();
+    if (isTokenRevoked(decoded, user)) return null; // 已撤銷 → 當訪客,同無效 token 一樣
+    try {
+      db.run('UPDATE users SET last_seen_at = ? WHERE id = ?', [new Date().toISOString(), user.id]);
+    } catch (_) {}
+    return user;
+  } catch (_) {
+    return null; // token 冇效 —— 當訪客,唔 401
+  }
+}
+
+export default function presenceRoutes(app) {
+  app.post('/api/presence/heartbeat', async (req, res) => {
+    // P5:per-IP 節流行喺最前面,超過就即刻 429、唔行 tryAuthenticate/
+    // recordHeartbeat(唔入 presence Map)。
+    if (isHeartbeatRateLimited(clientIp(req))) {
+      return res.status(429).json({ error: 'rate_limited' });
+    }
+    try {
+      const b = req.body || {};
+      const rawDeviceId = String(b.deviceId || '').slice(0, 40);
+      const deviceId = DEVICE_ID_RE.test(rawDeviceId) ? rawDeviceId : null;
+      const state = String(b.state || '').slice(0, 20);
+      const user = await tryAuthenticate(req);
+      recordHeartbeat({ userId: user ? user.id : null, deviceId, state });
+      // 2026-09-06:會員 + 有 deviceId → 記入 users.last_device_id(變咗先寫碟)。
+      if (user && deviceId) {
+        try { recordUserDevice(await getUserDb(), user.id, deviceId); } catch (_) {}
+      }
+    } catch (_) {
+      // fire-and-forget beacon,壞咗靜靜算,唔拖累 app。
+    }
+    res.status(204).end();
+  });
+
+  // P7(Opus 5 驗收 1e 保留已修):唔喺呢度再包一次 requireAuth/requireAdmin。
+  // server.js `adminRoutes(app)`(routes/admin.js:394 `app.use('/api/admin',
+  // requireAuth, requireAdmin, router)`)一定排喺 `presenceRoutes(app)` 之前
+  // 掛載,`/api/admin/presence` 呢條 path 會先經嗰層 middleware(admin.js
+  // 個 router 冇呢條 route,fall through 落嚟先撞到呢度)。再包一次會令
+  // requireAuth(兩次 DB SELECT + UPDATE)同 requireAdmin(佢個 60/min
+  // per-user 節流)每個 request 跑兩次,節流上限實際變咗 30/min——實測
+  // (harness 連打 40 次)第 31 次就 429。淨係補一個 req.user sanity guard
+  // (唔係再跑一次 middleware),防將來掛載次序被人調亂令呢條 route 冇
+  // auth 保護。
+  app.get('/api/admin/presence', async (req, res) => {
+    if (!req.user || req.user.role !== 'admin') {
+      return res.status(401).json({ error: 'unauthorized' });
+    }
+    try {
+      const db = await getUserDb();
+      const nameCache = new Map();
+      const resolveMemberName = (userId) => {
+        if (nameCache.has(userId)) return nameCache.get(userId);
+        let name = null;
+        try {
+          const stmt = db.prepare('SELECT username, phone FROM users WHERE id = ?');
+          stmt.bind([userId]);
+          if (stmt.step()) {
+            const row = stmt.getAsObject();
+            name = row.username || maskPhoneMiddle(row.phone) || null;
+          }
+          stmt.free();
+        } catch (_) {}
+        nameCache.set(userId, name);
+        return name;
+      };
+      const snapshot = getPresenceSnapshot(resolveMemberName);
+      res.json(snapshot);
+    } catch (err) {
+      console.error('admin presence error:', err.message);
+      res.status(500).json({ error: 'server_error' });
+    }
+  });
+}

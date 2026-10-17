@@ -1,0 +1,37 @@
+
+============ (a) route-scoped ETag ============
+📚 /api/hymns full fetch → 6405 hymns, dataVersion=1788341216528.777-61054976
+🗜️ /api/hymns full async compress → gz=1474227B br=1083708B
+📚 /api/hymns lite fetch → 6405 hymns, dataVersion=1788341216528.777-61054976
+🗜️ /api/hymns lite async compress → gz=371984B br=295297B
+📚 /api/hymns/lyrics fetch → 5387 hymns, dataVersion=1788341216528.777-61054976
+🗜️ /api/hymns/lyrics async compress → gz=992858B br=752611B
+etag full  = W/"1788341216528.777-61054976"
+etag lite  = W/"1788341216528.777-61054976-lite"
+etag lyrics= W/"1788341216528.777-61054976-lyrics"
+full===lite ? false (expect false)
+full===lyrics ? false (expect false)
+lite===lyrics ? false (expect false)
+
+-- 正控:用 full 嘅 tag 打 ?lite=1,要 200 唔係 304 --
+cross-route conditional GET status = 200 (expect 200, NOT 304)
+-- 對照:用自己嘅 tag 打返自己,要 304 --
+self conditional GET status = 304 (expect 304)
+full self conditional GET status = 304 (expect 304)
+lyrics self conditional GET status = 304 (expect 304)
+
+============ (b) brotli ============
+AE: br only -> content-encoding= br content-length= 1083708
+br decoded len= 5567647 raw len= 5567647 byte-for-byte identical= true
+AE: gzip, deflate, br -> content-encoding= br (expect br, array-order preference)
+AE: Apple NSURLSession header -> content-encoding= br size= 1083708 (expect br)
+AE: gzip only -> content-encoding= gzip size= 1474227
+gz size= 1474227 br size= 1083708 br saves vs gz = 26.489746830033635%
+(Opus 5 reference: gzip=1,474,223 brotli(q4 default)=1,198,686 -> -18.7%)
+
+============ (c) miss 路徑唔准同步阻塞 ============
+📚 /api/hymns full fetch → 6405 hymns, dataVersion=1788341222639-61054976
+🗜️ /api/hymns full async compress → gz=1474223B br=1083704B
+miss request wall time = 220 ms; max setImmediate lag observed during window = 112 ms (samples= 7252 )
+(改前 Opus 5 實測同步阻塞 233.9ms 單條 full miss;而家應該 lag 遠細過嗰個,因為 gzipSync 移咗去 async)
+post-miss gzip hit (after async compress should have landed) content-encoding= gzip ms= 32

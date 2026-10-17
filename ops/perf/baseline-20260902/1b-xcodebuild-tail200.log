@@ -1,0 +1,200 @@
+RNSVGFilters.bundle/RNSVGArithmeticFilter.iphoneos.metallib
+RNSVGFilters.bundle/RNSVGCompositeXor.iphoneos.metallib
+ReachabilitySwift.bundle/
+ReachabilitySwift.bundle/Info.plist
+ReachabilitySwift.bundle/PrivacyInfo.xcprivacy
+React-Core_privacy.bundle/
+React-Core_privacy.bundle/Info.plist
+React-Core_privacy.bundle/PrivacyInfo.xcprivacy
+React-cxxreact_privacy.bundle/
+React-cxxreact_privacy.bundle/Info.plist
+React-cxxreact_privacy.bundle/PrivacyInfo.xcprivacy
+
+sent 23547 bytes  received 520 bytes  3945409 bytes/sec
+total size is 20691  speedup is 0.86
+
+PhaseScriptExecution [CP]\ Embed\ Pods\ Frameworks /tmp/claude-501/-Users-macbookpro--openclaw-workspace-hymn-app/dbef9ccd-547a-4212-8309-0735348d98c1/scratchpad/derivedData/Build/Intermediates.noindex/Odely.build/Release-iphonesimulator/Odely.build/Script-CECC9205A850FE3CD1CF84A0.sh (in target 'Odely' from project 'Odely')
+    cd /Users/macbookpro/.openclaw/workspace/hymn-app/frontend/hymn-app/ios
+    /bin/sh -c /tmp/claude-501/-Users-macbookpro--openclaw-workspace-hymn-app/dbef9ccd-547a-4212-8309-0735348d98c1/scratchpad/derivedData/Build/Intermediates.noindex/Odely.build/Release-iphonesimulator/Odely.build/Script-CECC9205A850FE3CD1CF84A0.sh
+mkdir -p /tmp/claude-501/-Users-macbookpro--openclaw-workspace-hymn-app/dbef9ccd-547a-4212-8309-0735348d98c1/scratchpad/derivedData/Build/Products/Release-iphonesimulator/Odely.app/Frameworks
+rsync --delete -av --filter P .*.?????? --links --filter "- CVS/" --filter "- .svn/" --filter "- .git/" --filter "- .hg/" --filter "- Headers" --filter "- PrivateHeaders" --filter "- Modules" "/tmp/claude-501/-Users-macbookpro--openclaw-workspace-hymn-app/dbef9ccd-547a-4212-8309-0735348d98c1/scratchpad/derivedData/Build/Products/Release-iphonesimulator/XCFrameworkIntermediates/ExpoFileSystem/ExpoFileSystem.framework" "/tmp/claude-501/-Users-macbookpro--openclaw-workspace-hymn-app/dbef9ccd-547a-4212-8309-0735348d98c1/scratchpad/derivedData/Build/Products/Release-iphonesimulator/Odely.app/Frameworks"
+Transfer starting: 5 files
+ExpoFileSystem.framework/
+ExpoFileSystem.framework/ExpoFileSystem
+ExpoFileSystem.framework/Info.plist
+ExpoFileSystem.framework/_CodeSignature/
+ExpoFileSystem.framework/_CodeSignature/CodeResources
+
+sent 2059770 bytes  received 98 bytes  185573693 bytes/sec
+total size is 2058896  speedup is 1.00
+Code Signing /tmp/claude-501/-Users-macbookpro--openclaw-workspace-hymn-app/dbef9ccd-547a-4212-8309-0735348d98c1/scratchpad/derivedData/Build/Products/Release-iphonesimulator/Odely.app/Frameworks/ExpoFileSystem.framework with Identity Sign to Run Locally
+/usr/bin/codesign --force --sign -  --preserve-metadata=identifier,entitlements '/tmp/claude-501/-Users-macbookpro--openclaw-workspace-hymn-app/dbef9ccd-547a-4212-8309-0735348d98c1/scratchpad/derivedData/Build/Products/Release-iphonesimulator/Odely.app/Frameworks/ExpoFileSystem.framework'
+/tmp/claude-501/-Users-macbookpro--openclaw-workspace-hymn-app/dbef9ccd-547a-4212-8309-0735348d98c1/scratchpad/derivedData/Build/Products/Release-iphonesimulator/Odely.app/Frameworks/ExpoFileSystem.framework: replacing existing signature
+rsync --delete -av --filter P .*.?????? --links --filter "- CVS/" --filter "- .svn/" --filter "- .git/" --filter "- .hg/" --filter "- Headers" --filter "- PrivateHeaders" --filter "- Modules" "/tmp/claude-501/-Users-macbookpro--openclaw-workspace-hymn-app/dbef9ccd-547a-4212-8309-0735348d98c1/scratchpad/derivedData/Build/Products/Release-iphonesimulator/XCFrameworkIntermediates/ExpoFont/ExpoFont.framework" "/tmp/claude-501/-Users-macbookpro--openclaw-workspace-hymn-app/dbef9ccd-547a-4212-8309-0735348d98c1/scratchpad/derivedData/Build/Products/Release-iphonesimulator/Odely.app/Frameworks"
+Transfer starting: 5 files
+ExpoFont.framework/
+ExpoFont.framework/ExpoFont
+ExpoFont.framework/Info.plist
+ExpoFont.framework/_CodeSignature/
+ExpoFont.framework/_CodeSignature/CodeResources
+
+sent 400364 bytes  received 98 bytes  129181290 bytes/sec
+total size is 399726  speedup is 1.00
+Code Signing /tmp/claude-501/-Users-macbookpro--openclaw-workspace-hymn-app/dbef9ccd-547a-4212-8309-0735348d98c1/scratchpad/derivedData/Build/Products/Release-iphonesimulator/Odely.app/Frameworks/ExpoFont.framework with Identity Sign to Run Locally
+/usr/bin/codesign --force --sign -  --preserve-metadata=identifier,entitlements '/tmp/claude-501/-Users-macbookpro--openclaw-workspace-hymn-app/dbef9ccd-547a-4212-8309-0735348d98c1/scratchpad/derivedData/Build/Products/Release-iphonesimulator/Odely.app/Frameworks/ExpoFont.framework'
+/tmp/claude-501/-Users-macbookpro--openclaw-workspace-hymn-app/dbef9ccd-547a-4212-8309-0735348d98c1/scratchpad/derivedData/Build/Products/Release-iphonesimulator/Odely.app/Frameworks/ExpoFont.framework: replacing existing signature
+rsync --delete -av --filter P .*.?????? --links --filter "- CVS/" --filter "- .svn/" --filter "- .git/" --filter "- .hg/" --filter "- Headers" --filter "- PrivateHeaders" --filter "- Modules" "/tmp/claude-501/-Users-macbookpro--openclaw-workspace-hymn-app/dbef9ccd-547a-4212-8309-0735348d98c1/scratchpad/derivedData/Build/Products/Release-iphonesimulator/XCFrameworkIntermediates/ExpoModulesCore/ExpoModulesCore.framework" "/tmp/claude-501/-Users-macbookpro--openclaw-workspace-hymn-app/dbef9ccd-547a-4212-8309-0735348d98c1/scratchpad/derivedData/Build/Products/Release-iphonesimulator/Odely.app/Frameworks"
+Transfer starting: 5 files
+ExpoModulesCore.framework/
+ExpoModulesCore.framework/ExpoModulesCore
+ExpoModulesCore.framework/Info.plist
+ExpoModulesCore.framework/_CodeSignature/
+ExpoModulesCore.framework/_CodeSignature/CodeResources
+
+sent 7159493 bytes  received 98 bytes  216301842 bytes/sec
+total size is 7157989  speedup is 1.00
+Code Signing /tmp/claude-501/-Users-macbookpro--openclaw-workspace-hymn-app/dbef9ccd-547a-4212-8309-0735348d98c1/scratchpad/derivedData/Build/Products/Release-iphonesimulator/Odely.app/Frameworks/ExpoModulesCore.framework with Identity Sign to Run Locally
+/usr/bin/codesign --force --sign -  --preserve-metadata=identifier,entitlements '/tmp/claude-501/-Users-macbookpro--openclaw-workspace-hymn-app/dbef9ccd-547a-4212-8309-0735348d98c1/scratchpad/derivedData/Build/Products/Release-iphonesimulator/Odely.app/Frameworks/ExpoModulesCore.framework'
+/tmp/claude-501/-Users-macbookpro--openclaw-workspace-hymn-app/dbef9ccd-547a-4212-8309-0735348d98c1/scratchpad/derivedData/Build/Products/Release-iphonesimulator/Odely.app/Frameworks/ExpoModulesCore.framework: replacing existing signature
+rsync --delete -av --filter P .*.?????? --links --filter "- CVS/" --filter "- .svn/" --filter "- .git/" --filter "- .hg/" --filter "- Headers" --filter "- PrivateHeaders" --filter "- Modules" "/tmp/claude-501/-Users-macbookpro--openclaw-workspace-hymn-app/dbef9ccd-547a-4212-8309-0735348d98c1/scratchpad/derivedData/Build/Products/Release-iphonesimulator/XCFrameworkIntermediates/ExpoModulesJSI/ExpoModulesJSI.framework" "/tmp/claude-501/-Users-macbookpro--openclaw-workspace-hymn-app/dbef9ccd-547a-4212-8309-0735348d98c1/scratchpad/derivedData/Build/Products/Release-iphonesimulator/Odely.app/Frameworks"
+Transfer starting: 5 files
+ExpoModulesJSI.framework/
+ExpoModulesJSI.framework/ExpoModulesJSI
+ExpoModulesJSI.framework/Info.plist
+ExpoModulesJSI.framework/_CodeSignature/
+ExpoModulesJSI.framework/_CodeSignature/CodeResources
+
+sent 2307519 bytes  received 98 bytes  190712148 bytes/sec
+total size is 2306613  speedup is 1.00
+Code Signing /tmp/claude-501/-Users-macbookpro--openclaw-workspace-hymn-app/dbef9ccd-547a-4212-8309-0735348d98c1/scratchpad/derivedData/Build/Products/Release-iphonesimulator/Odely.app/Frameworks/ExpoModulesJSI.framework with Identity Sign to Run Locally
+/usr/bin/codesign --force --sign -  --preserve-metadata=identifier,entitlements '/tmp/claude-501/-Users-macbookpro--openclaw-workspace-hymn-app/dbef9ccd-547a-4212-8309-0735348d98c1/scratchpad/derivedData/Build/Products/Release-iphonesimulator/Odely.app/Frameworks/ExpoModulesJSI.framework'
+/tmp/claude-501/-Users-macbookpro--openclaw-workspace-hymn-app/dbef9ccd-547a-4212-8309-0735348d98c1/scratchpad/derivedData/Build/Products/Release-iphonesimulator/Odely.app/Frameworks/ExpoModulesJSI.framework: replacing existing signature
+rsync --delete -av --filter P .*.?????? --links --filter "- CVS/" --filter "- .svn/" --filter "- .git/" --filter "- .hg/" --filter "- Headers" --filter "- PrivateHeaders" --filter "- Modules" "/tmp/claude-501/-Users-macbookpro--openclaw-workspace-hymn-app/dbef9ccd-547a-4212-8309-0735348d98c1/scratchpad/derivedData/Build/Products/Release-iphonesimulator/XCFrameworkIntermediates/ExpoModulesWorklets/ExpoModulesWorklets.framework" "/tmp/claude-501/-Users-macbookpro--openclaw-workspace-hymn-app/dbef9ccd-547a-4212-8309-0735348d98c1/scratchpad/derivedData/Build/Products/Release-iphonesimulator/Odely.app/Frameworks"
+Transfer starting: 5 files
+ExpoModulesWorklets.framework/
+ExpoModulesWorklets.framework/ExpoModulesWorklets
+ExpoModulesWorklets.framework/Info.plist
+ExpoModulesWorklets.framework/_CodeSignature/
+ExpoModulesWorklets.framework/_CodeSignature/CodeResources
+
+sent 333369 bytes  received 98 bytes  107570000 bytes/sec
+total size is 332673  speedup is 1.00
+Code Signing /tmp/claude-501/-Users-macbookpro--openclaw-workspace-hymn-app/dbef9ccd-547a-4212-8309-0735348d98c1/scratchpad/derivedData/Build/Products/Release-iphonesimulator/Odely.app/Frameworks/ExpoModulesWorklets.framework with Identity Sign to Run Locally
+/usr/bin/codesign --force --sign -  --preserve-metadata=identifier,entitlements '/tmp/claude-501/-Users-macbookpro--openclaw-workspace-hymn-app/dbef9ccd-547a-4212-8309-0735348d98c1/scratchpad/derivedData/Build/Products/Release-iphonesimulator/Odely.app/Frameworks/ExpoModulesWorklets.framework'
+/tmp/claude-501/-Users-macbookpro--openclaw-workspace-hymn-app/dbef9ccd-547a-4212-8309-0735348d98c1/scratchpad/derivedData/Build/Products/Release-iphonesimulator/Odely.app/Frameworks/ExpoModulesWorklets.framework: replacing existing signature
+rsync --delete -av --filter P .*.?????? --links --filter "- CVS/" --filter "- .svn/" --filter "- .git/" --filter "- .hg/" --filter "- Headers" --filter "- PrivateHeaders" --filter "- Modules" "/tmp/claude-501/-Users-macbookpro--openclaw-workspace-hymn-app/dbef9ccd-547a-4212-8309-0735348d98c1/scratchpad/derivedData/Build/Products/Release-iphonesimulator/XCFrameworkIntermediates/React-Core-prebuilt/React.framework" "/tmp/claude-501/-Users-macbookpro--openclaw-workspace-hymn-app/dbef9ccd-547a-4212-8309-0735348d98c1/scratchpad/derivedData/Build/Products/Release-iphonesimulator/Odely.app/Frameworks"
+Transfer starting: 5 files
+React.framework/
+React.framework/Info.plist
+React.framework/React
+React.framework/_CodeSignature/
+React.framework/_CodeSignature/CodeResources
+
+sent 23847682 bytes  received 98 bytes  231307274 bytes/sec
+total size is 23844202  speedup is 1.00
+Code Signing /tmp/claude-501/-Users-macbookpro--openclaw-workspace-hymn-app/dbef9ccd-547a-4212-8309-0735348d98c1/scratchpad/derivedData/Build/Products/Release-iphonesimulator/Odely.app/Frameworks/React.framework with Identity Sign to Run Locally
+/usr/bin/codesign --force --sign -  --preserve-metadata=identifier,entitlements '/tmp/claude-501/-Users-macbookpro--openclaw-workspace-hymn-app/dbef9ccd-547a-4212-8309-0735348d98c1/scratchpad/derivedData/Build/Products/Release-iphonesimulator/Odely.app/Frameworks/React.framework'
+/tmp/claude-501/-Users-macbookpro--openclaw-workspace-hymn-app/dbef9ccd-547a-4212-8309-0735348d98c1/scratchpad/derivedData/Build/Products/Release-iphonesimulator/Odely.app/Frameworks/React.framework: replacing existing signature
+rsync --delete -av --filter P .*.?????? --links --filter "- CVS/" --filter "- .svn/" --filter "- .git/" --filter "- .hg/" --filter "- Headers" --filter "- PrivateHeaders" --filter "- Modules" "/tmp/claude-501/-Users-macbookpro--openclaw-workspace-hymn-app/dbef9ccd-547a-4212-8309-0735348d98c1/scratchpad/derivedData/Build/Products/Release-iphonesimulator/XCFrameworkIntermediates/ReactNativeDependencies/ReactNativeDependencies.framework" "/tmp/claude-501/-Users-macbookpro--openclaw-workspace-hymn-app/dbef9ccd-547a-4212-8309-0735348d98c1/scratchpad/derivedData/Build/Products/Release-iphonesimulator/Odely.app/Frameworks"
+Transfer starting: 32 files
+ReactNativeDependencies.framework/
+ReactNativeDependencies.framework/Info.plist
+ReactNativeDependencies.framework/ReactNativeDependencies
+ReactNativeDependencies.framework/ReactNativeDependencies_boost.bundle/
+ReactNativeDependencies.framework/ReactNativeDependencies_boost.bundle/Info.plist
+ReactNativeDependencies.framework/ReactNativeDependencies_boost.bundle/PrivacyInfo.xcprivacy
+ReactNativeDependencies.framework/ReactNativeDependencies_boost.bundle/_CodeSignature/
+ReactNativeDependencies.framework/ReactNativeDependencies_boost.bundle/_CodeSignature/CodeDirectory
+ReactNativeDependencies.framework/ReactNativeDependencies_boost.bundle/_CodeSignature/CodeRequirements
+ReactNativeDependencies.framework/ReactNativeDependencies_boost.bundle/_CodeSignature/CodeRequirements-1
+ReactNativeDependencies.framework/ReactNativeDependencies_boost.bundle/_CodeSignature/CodeResources
+ReactNativeDependencies.framework/ReactNativeDependencies_boost.bundle/_CodeSignature/CodeSignature
+ReactNativeDependencies.framework/ReactNativeDependencies_folly.bundle/
+ReactNativeDependencies.framework/ReactNativeDependencies_folly.bundle/Info.plist
+ReactNativeDependencies.framework/ReactNativeDependencies_folly.bundle/PrivacyInfo.xcprivacy
+ReactNativeDependencies.framework/ReactNativeDependencies_folly.bundle/_CodeSignature/
+ReactNativeDependencies.framework/ReactNativeDependencies_folly.bundle/_CodeSignature/CodeDirectory
+ReactNativeDependencies.framework/ReactNativeDependencies_folly.bundle/_CodeSignature/CodeRequirements
+ReactNativeDependencies.framework/ReactNativeDependencies_folly.bundle/_CodeSignature/CodeRequirements-1
+ReactNativeDependencies.framework/ReactNativeDependencies_folly.bundle/_CodeSignature/CodeResources
+ReactNativeDependencies.framework/ReactNativeDependencies_folly.bundle/_CodeSignature/CodeSignature
+ReactNativeDependencies.framework/ReactNativeDependencies_glog.bundle/
+ReactNativeDependencies.framework/ReactNativeDependencies_glog.bundle/Info.plist
+ReactNativeDependencies.framework/ReactNativeDependencies_glog.bundle/PrivacyInfo.xcprivacy
+ReactNativeDependencies.framework/ReactNativeDependencies_glog.bundle/_CodeSignature/
+ReactNativeDependencies.framework/ReactNativeDependencies_glog.bundle/_CodeSignature/CodeDirectory
+ReactNativeDependencies.framework/ReactNativeDependencies_glog.bundle/_CodeSignature/CodeRequirements
+ReactNativeDependencies.framework/ReactNativeDependencies_glog.bundle/_CodeSignature/CodeRequirements-1
+ReactNativeDependencies.framework/ReactNativeDependencies_glog.bundle/_CodeSignature/CodeResources
+ReactNativeDependencies.framework/ReactNativeDependencies_glog.bundle/_CodeSignature/CodeSignature
+ReactNativeDependencies.framework/_CodeSignature/
+ReactNativeDependencies.framework/_CodeSignature/CodeResources
+
+sent 2492991 bytes  received 596 bytes  145823801 bytes/sec
+total size is 2487862  speedup is 1.00
+Code Signing /tmp/claude-501/-Users-macbookpro--openclaw-workspace-hymn-app/dbef9ccd-547a-4212-8309-0735348d98c1/scratchpad/derivedData/Build/Products/Release-iphonesimulator/Odely.app/Frameworks/ReactNativeDependencies.framework with Identity Sign to Run Locally
+/usr/bin/codesign --force --sign -  --preserve-metadata=identifier,entitlements '/tmp/claude-501/-Users-macbookpro--openclaw-workspace-hymn-app/dbef9ccd-547a-4212-8309-0735348d98c1/scratchpad/derivedData/Build/Products/Release-iphonesimulator/Odely.app/Frameworks/ReactNativeDependencies.framework'
+/tmp/claude-501/-Users-macbookpro--openclaw-workspace-hymn-app/dbef9ccd-547a-4212-8309-0735348d98c1/scratchpad/derivedData/Build/Products/Release-iphonesimulator/Odely.app/Frameworks/ReactNativeDependencies.framework: replacing existing signature
+rsync --delete -av --filter P .*.?????? --links --filter "- CVS/" --filter "- .svn/" --filter "- .git/" --filter "- .hg/" --filter "- Headers" --filter "- PrivateHeaders" --filter "- Modules" "/tmp/claude-501/-Users-macbookpro--openclaw-workspace-hymn-app/dbef9ccd-547a-4212-8309-0735348d98c1/scratchpad/derivedData/Build/Products/Release-iphonesimulator/XCFrameworkIntermediates/hermes-engine/Pre-built/hermesvm.framework" "/tmp/claude-501/-Users-macbookpro--openclaw-workspace-hymn-app/dbef9ccd-547a-4212-8309-0735348d98c1/scratchpad/derivedData/Build/Products/Release-iphonesimulator/Odely.app/Frameworks"
+Transfer starting: 3 files
+hermesvm.framework/
+hermesvm.framework/Info.plist
+hermesvm.framework/hermesvm
+
+sent 11933106 bytes  received 70 bytes  229043685 bytes/sec
+total size is 11931242  speedup is 1.00
+Code Signing /tmp/claude-501/-Users-macbookpro--openclaw-workspace-hymn-app/dbef9ccd-547a-4212-8309-0735348d98c1/scratchpad/derivedData/Build/Products/Release-iphonesimulator/Odely.app/Frameworks/hermesvm.framework with Identity Sign to Run Locally
+/usr/bin/codesign --force --sign -  --preserve-metadata=identifier,entitlements '/tmp/claude-501/-Users-macbookpro--openclaw-workspace-hymn-app/dbef9ccd-547a-4212-8309-0735348d98c1/scratchpad/derivedData/Build/Products/Release-iphonesimulator/Odely.app/Frameworks/hermesvm.framework'
+/tmp/claude-501/-Users-macbookpro--openclaw-workspace-hymn-app/dbef9ccd-547a-4212-8309-0735348d98c1/scratchpad/derivedData/Build/Products/Release-iphonesimulator/Odely.app/Frameworks/hermesvm.framework: replacing existing signature
+
+CopySwiftLibs /tmp/claude-501/-Users-macbookpro--openclaw-workspace-hymn-app/dbef9ccd-547a-4212-8309-0735348d98c1/scratchpad/derivedData/Build/Products/Release-iphonesimulator/Odely.app (in target 'Odely' from project 'Odely')
+    cd /Users/macbookpro/.openclaw/workspace/hymn-app/frontend/hymn-app/ios
+    builtin-swiftStdLibTool --copy --verbose --sign - --scan-executable /tmp/claude-501/-Users-macbookpro--openclaw-workspace-hymn-app/dbef9ccd-547a-4212-8309-0735348d98c1/scratchpad/derivedData/Build/Products/Release-iphonesimulator/Odely.app/Odely --scan-folder /tmp/claude-501/-Users-macbookpro--openclaw-workspace-hymn-app/dbef9ccd-547a-4212-8309-0735348d98c1/scratchpad/derivedData/Build/Products/Release-iphonesimulator/Odely.app/Frameworks --scan-folder /tmp/claude-501/-Users-macbookpro--openclaw-workspace-hymn-app/dbef9ccd-547a-4212-8309-0735348d98c1/scratchpad/derivedData/Build/Products/Release-iphonesimulator/Odely.app/PlugIns --scan-folder /tmp/claude-501/-Users-macbookpro--openclaw-workspace-hymn-app/dbef9ccd-547a-4212-8309-0735348d98c1/scratchpad/derivedData/Build/Products/Release-iphonesimulator/Odely.app/SystemExtensions --scan-folder /tmp/claude-501/-Users-macbookpro--openclaw-workspace-hymn-app/dbef9ccd-547a-4212-8309-0735348d98c1/scratchpad/derivedData/Build/Products/Release-iphonesimulator/Odely.app/Extensions --platform iphonesimulator --toolchain /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain --destination /tmp/claude-501/-Users-macbookpro--openclaw-workspace-hymn-app/dbef9ccd-547a-4212-8309-0735348d98c1/scratchpad/derivedData/Build/Products/Release-iphonesimulator/Odely.app/Frameworks --strip-bitcode --strip-bitcode-tool /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/bitcode_strip --emit-dependency-info /tmp/claude-501/-Users-macbookpro--openclaw-workspace-hymn-app/dbef9ccd-547a-4212-8309-0735348d98c1/scratchpad/derivedData/Build/Intermediates.noindex/Odely.build/Release-iphonesimulator/Odely.build/SwiftStdLibToolInputDependencies.dep --filter-for-swift-os
+
+ExtractAppIntentsMetadata (in target 'Odely' from project 'Odely')
+    cd /Users/macbookpro/.openclaw/workspace/hymn-app/frontend/hymn-app/ios
+    /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/appintentsmetadataprocessor --toolchain-dir /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain --module-name Odely --sdk-root /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator26.5.sdk --xcode-version 17F42 --platform-family iOS --deployment-target 16.4 --bundle-identifier com.hymnapp.praise --output /tmp/claude-501/-Users-macbookpro--openclaw-workspace-hymn-app/dbef9ccd-547a-4212-8309-0735348d98c1/scratchpad/derivedData/Build/Products/Release-iphonesimulator/Odely.app --target-triple arm64-apple-ios16.4-simulator --target-triple x86_64-apple-ios16.4-simulator --binary-file /tmp/claude-501/-Users-macbookpro--openclaw-workspace-hymn-app/dbef9ccd-547a-4212-8309-0735348d98c1/scratchpad/derivedData/Build/Products/Release-iphonesimulator/Odely.app/Odely --dependency-file /tmp/claude-501/-Users-macbookpro--openclaw-workspace-hymn-app/dbef9ccd-547a-4212-8309-0735348d98c1/scratchpad/derivedData/Build/Intermediates.noindex/Odely.build/Release-iphonesimulator/Odely.build/Objects-normal/arm64/Odely_dependency_info.dat --dependency-file /tmp/claude-501/-Users-macbookpro--openclaw-workspace-hymn-app/dbef9ccd-547a-4212-8309-0735348d98c1/scratchpad/derivedData/Build/Intermediates.noindex/Odely.build/Release-iphonesimulator/Odely.build/Objects-normal/x86_64/Odely_dependency_info.dat --stringsdata-file /tmp/claude-501/-Users-macbookpro--openclaw-workspace-hymn-app/dbef9ccd-547a-4212-8309-0735348d98c1/scratchpad/derivedData/Build/Intermediates.noindex/Odely.build/Release-iphonesimulator/Odely.build/Objects-normal/arm64/ExtractedAppShortcutsMetadata.stringsdata --stringsdata-file /tmp/claude-501/-Users-macbookpro--openclaw-workspace-hymn-app/dbef9ccd-547a-4212-8309-0735348d98c1/scratchpad/derivedData/Build/Intermediates.noindex/Odely.build/Release-iphonesimulator/Odely.build/Objects-normal/x86_64/ExtractedAppShortcutsMetadata.stringsdata --source-file-list /tmp/claude-501/-Users-macbookpro--openclaw-workspace-hymn-app/dbef9ccd-547a-4212-8309-0735348d98c1/scratchpad/derivedData/Build/Intermediates.noindex/Odely.build/Release-iphonesimulator/Odely.build/Objects-normal/arm64/Odely.SwiftFileList --source-file-list /tmp/claude-501/-Users-macbookpro--openclaw-workspace-hymn-app/dbef9ccd-547a-4212-8309-0735348d98c1/scratchpad/derivedData/Build/Intermediates.noindex/Odely.build/Release-iphonesimulator/Odely.build/Objects-normal/x86_64/Odely.SwiftFileList --metadata-file-list /tmp/claude-501/-Users-macbookpro--openclaw-workspace-hymn-app/dbef9ccd-547a-4212-8309-0735348d98c1/scratchpad/derivedData/Build/Intermediates.noindex/Odely.build/Release-iphonesimulator/Odely.build/Odely.DependencyMetadataFileList --static-metadata-file-list /tmp/claude-501/-Users-macbookpro--openclaw-workspace-hymn-app/dbef9ccd-547a-4212-8309-0735348d98c1/scratchpad/derivedData/Build/Intermediates.noindex/Odely.build/Release-iphonesimulator/Odely.build/Odely.DependencyStaticMetadataFileList --swift-const-vals-list /tmp/claude-501/-Users-macbookpro--openclaw-workspace-hymn-app/dbef9ccd-547a-4212-8309-0735348d98c1/scratchpad/derivedData/Build/Intermediates.noindex/Odely.build/Release-iphonesimulator/Odely.build/Objects-normal/arm64/Odely.SwiftConstValuesFileList --swift-const-vals-list /tmp/claude-501/-Users-macbookpro--openclaw-workspace-hymn-app/dbef9ccd-547a-4212-8309-0735348d98c1/scratchpad/derivedData/Build/Intermediates.noindex/Odely.build/Release-iphonesimulator/Odely.build/Objects-normal/x86_64/Odely.SwiftConstValuesFileList --compile-time-extraction --deployment-aware-processing --validate-assistant-intents --no-app-shortcuts-localization
+2026-09-02 15:16:36.663 appintentsmetadataprocessor[88940:8069765] Starting appintentsmetadataprocessor export
+2026-09-02 15:16:36.672 appintentsmetadataprocessor[88940:8069765] warning: Metadata extraction skipped. No AppIntents.framework dependency found.
+
+AppIntentsSSUTraining (in target 'Odely' from project 'Odely')
+    cd /Users/macbookpro/.openclaw/workspace/hymn-app/frontend/hymn-app/ios
+    /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/appintentsnltrainingprocessor --infoplist-path /tmp/claude-501/-Users-macbookpro--openclaw-workspace-hymn-app/dbef9ccd-547a-4212-8309-0735348d98c1/scratchpad/derivedData/Build/Products/Release-iphonesimulator/Odely.app/Info.plist --temp-dir-path /tmp/claude-501/-Users-macbookpro--openclaw-workspace-hymn-app/dbef9ccd-547a-4212-8309-0735348d98c1/scratchpad/derivedData/Build/Intermediates.noindex/Odely.build/Release-iphonesimulator/Odely.build/ssu --bundle-id com.hymnapp.praise --product-path /tmp/claude-501/-Users-macbookpro--openclaw-workspace-hymn-app/dbef9ccd-547a-4212-8309-0735348d98c1/scratchpad/derivedData/Build/Products/Release-iphonesimulator/Odely.app --extracted-metadata-path /tmp/claude-501/-Users-macbookpro--openclaw-workspace-hymn-app/dbef9ccd-547a-4212-8309-0735348d98c1/scratchpad/derivedData/Build/Products/Release-iphonesimulator/Odely.app/Metadata.appintents --metadata-file-list /tmp/claude-501/-Users-macbookpro--openclaw-workspace-hymn-app/dbef9ccd-547a-4212-8309-0735348d98c1/scratchpad/derivedData/Build/Intermediates.noindex/Odely.build/Release-iphonesimulator/Odely.build/Odely.DependencyMetadataFileList --source-file /tmp/claude-501/-Users-macbookpro--openclaw-workspace-hymn-app/dbef9ccd-547a-4212-8309-0735348d98c1/scratchpad/derivedData/Build/Products/Release-iphonesimulator/Odely.app/Info.plist --archive-ssu-assets
+2026-09-02 15:16:36.693 appintentsnltrainingprocessor[88941:8069766] Parsing options for appintentsnltrainingprocessor
+2026-09-02 15:16:36.693 appintentsnltrainingprocessor[88941:8069766] Starting AppIntents SSU YAML Generation
+2026-09-02 15:16:36.696 appintentsnltrainingprocessor[88941:8069766] No AppShortcuts found - Skipping.
+
+CodeSign /tmp/claude-501/-Users-macbookpro--openclaw-workspace-hymn-app/dbef9ccd-547a-4212-8309-0735348d98c1/scratchpad/derivedData/Build/Products/Release-iphonesimulator/Odely.app (in target 'Odely' from project 'Odely')
+    cd /Users/macbookpro/.openclaw/workspace/hymn-app/frontend/hymn-app/ios
+    
+    Signing Identity:     "Sign to Run Locally"
+    
+    /usr/bin/codesign --force --sign - --entitlements /tmp/claude-501/-Users-macbookpro--openclaw-workspace-hymn-app/dbef9ccd-547a-4212-8309-0735348d98c1/scratchpad/derivedData/Build/Intermediates.noindex/Odely.build/Release-iphonesimulator/Odely.build/Odely.app.xcent --timestamp\=none --generate-entitlement-der /tmp/claude-501/-Users-macbookpro--openclaw-workspace-hymn-app/dbef9ccd-547a-4212-8309-0735348d98c1/scratchpad/derivedData/Build/Products/Release-iphonesimulator/Odely.app
+
+RegisterExecutionPolicyException /tmp/claude-501/-Users-macbookpro--openclaw-workspace-hymn-app/dbef9ccd-547a-4212-8309-0735348d98c1/scratchpad/derivedData/Build/Products/Release-iphonesimulator/Odely.app (in target 'Odely' from project 'Odely')
+    cd /Users/macbookpro/.openclaw/workspace/hymn-app/frontend/hymn-app/ios
+    builtin-RegisterExecutionPolicyException /tmp/claude-501/-Users-macbookpro--openclaw-workspace-hymn-app/dbef9ccd-547a-4212-8309-0735348d98c1/scratchpad/derivedData/Build/Products/Release-iphonesimulator/Odely.app
+
+Validate /tmp/claude-501/-Users-macbookpro--openclaw-workspace-hymn-app/dbef9ccd-547a-4212-8309-0735348d98c1/scratchpad/derivedData/Build/Products/Release-iphonesimulator/Odely.app (in target 'Odely' from project 'Odely')
+    cd /Users/macbookpro/.openclaw/workspace/hymn-app/frontend/hymn-app/ios
+    builtin-validationUtility /tmp/claude-501/-Users-macbookpro--openclaw-workspace-hymn-app/dbef9ccd-547a-4212-8309-0735348d98c1/scratchpad/derivedData/Build/Products/Release-iphonesimulator/Odely.app -validate-for-store -shallow-bundle -infoplist-subpath Info.plist
+
+Touch /tmp/claude-501/-Users-macbookpro--openclaw-workspace-hymn-app/dbef9ccd-547a-4212-8309-0735348d98c1/scratchpad/derivedData/Build/Products/Release-iphonesimulator/Odely.app (in target 'Odely' from project 'Odely')
+    cd /Users/macbookpro/.openclaw/workspace/hymn-app/frontend/hymn-app/ios
+    /usr/bin/touch -c /tmp/claude-501/-Users-macbookpro--openclaw-workspace-hymn-app/dbef9ccd-547a-4212-8309-0735348d98c1/scratchpad/derivedData/Build/Products/Release-iphonesimulator/Odely.app
+
+warning: Run script build phase '[CP-User] [Hermes] Replace Hermes for the right configuration, if needed' will be run during every build because it does not specify any outputs. To address this issue, either add output dependencies to the script phase, or configure it to run in every build by unchecking "Based on dependency analysis" in the script phase. (in target 'hermes-engine' from project 'Pods')
+note: Run script build phase '[CP-User] [RNDeps] Replace React Native Dependencies for the right configuration, if needed' will be run during every build because the option to run the script phase "Based on dependency analysis" is unchecked. (in target 'ReactNativeDependencies' from project 'Pods')
+note: Run script build phase '[CP-User] [RN]Check FBReactNativeSpec' will be run during every build because the option to run the script phase "Based on dependency analysis" is unchecked. (in target 'React-RCTFBReactNativeSpec' from project 'Pods')
+note: Run script build phase '[CP-User] [RNCore] Replace React Native Core for the right configuration, if needed' will be run during every build because the option to run the script phase "Based on dependency analysis" is unchecked. (in target 'React-Core-prebuilt' from project 'Pods')
+note: Run script build phase '[CP-User] [Expo] Switch ExpoModulesWorklets XCFramework for build configuration' will be run during every build because the option to run the script phase "Based on dependency analysis" is unchecked. (in target 'ExpoModulesWorklets' from project 'Pods')
+note: Run script build phase '[CP-User] Build ExpoModulesJSI xcframework' will be run during every build because the option to run the script phase "Based on dependency analysis" is unchecked. (in target 'ExpoModulesJSI' from project 'Pods')
+note: Run script build phase '[CP-User] [Expo] Switch ExpoModulesCore XCFramework for build configuration' will be run during every build because the option to run the script phase "Based on dependency analysis" is unchecked. (in target 'ExpoModulesCore' from project 'Pods')
+note: Run script build phase '[CP-User] [Expo] Switch ExpoFont XCFramework for build configuration' will be run during every build because the option to run the script phase "Based on dependency analysis" is unchecked. (in target 'ExpoFont' from project 'Pods')
+note: Run script build phase '[CP-User] [Expo] Switch ExpoFileSystem XCFramework for build configuration' will be run during every build because the option to run the script phase "Based on dependency analysis" is unchecked. (in target 'ExpoFileSystem' from project 'Pods')
+note: Run script build phase '[Expo] Configure project' will be run during every build because the option to run the script phase "Based on dependency analysis" is unchecked. (in target 'Odely' from project 'Odely')
+note: Run script build phase 'Bundle React Native code and images' will be run during every build because the option to run the script phase "Based on dependency analysis" is unchecked. (in target 'Odely' from project 'Odely')
+note: Run script build phase '[CP-User] Generate updates resources for expo-updates' will be run during every build because the option to run the script phase "Based on dependency analysis" is unchecked. (in target 'EXUpdates' from project 'Pods')
+note: Run script build phase '[CP-User] Generate app.config for prebuilt Constants.manifest' will be run during every build because the option to run the script phase "Based on dependency analysis" is unchecked. (in target 'EXConstants' from project 'Pods')
+** BUILD SUCCEEDED **
+
