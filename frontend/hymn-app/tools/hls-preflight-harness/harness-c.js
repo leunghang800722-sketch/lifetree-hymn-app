@@ -4,7 +4,7 @@
 // 喺 new Function 注入 mock 依賴(TrackPlayer/refs/toTrack/logDiag/fetch)跑;
 // preflightHls/isExplicitHttpFailure 係 src/hlsPreflight.js 真 module(babel 載入)。
 //  - NEW helper:App.js 現版 `const preflightAndSwapNext = useCallback(...)` 全段
-//  - NEW insertNext 守衛:`if (plan.insertAt === curIdx + 1) {...}` 全段
+//  - NEW insertNext 守衛:`if (plan.insertAt === plan.newCurIdx + 1) {...}` 全段(73e5b4f 起用 newCurIdx)
 //  - NEW trackChanged call 行:`preflightAndSwapNext(queueRef.current[idx + 1], 'next');`
 //  - OLD:`git show 6ade187:frontend/hymn-app/App.js` 嘅 trackChanged inline 段
 //    (由 `if (Platform.OS === 'ios' && HLS_ENABLED) {` 緊接 `const nextSong = queueRef.current[idx + 1];` 起)
@@ -52,7 +52,8 @@ const hs = newSrc.indexOf('const preflightAndSwapNext = useCallback(');
 const he = newSrc.indexOf('}, []);', hs) + '}, []);'.length;
 const helperSrc = newSrc.slice(hs, he);
 // NEW insertNext 守衛
-const g = braceBlock(newSrc, 'if (plan.insertAt === curIdx + 1) {');
+const g = braceBlock(newSrc, 'if (plan.insertAt === plan.newCurIdx + 1) {');
+const { computeInsertNext } = require(path.join(APP_ROOT, 'src/insertNextCore.js'));
 const guardSrc = newSrc.slice(g.s, g.e);
 // NEW trackChanged call
 const callMark = "preflightAndSwapNext(queueRef.current[idx + 1], 'next');";
@@ -153,7 +154,7 @@ async function withFetch(e, fn) { const o = global.fetch; global.fetch = fetchSt
   {
     const hymn = { id: 9 };
     const e = env({ queueIds: [1, 9, 2], cur: 0 });
-    await withFetch(e, async () => guardRunner(...args(e, { plan: { insertAt: 1 }, curIdx: 0, hymn })));
+    await withFetch(e, async () => guardRunner(...args(e, { plan: { insertAt: 1, newCurIdx: 0 }, curIdx: 0, hymn })));
     check('(2) 預檢一次,ctx=insertNext,url/hymnId 正確', e.pfCalls.length === 1 && e.pfCalls[0].ctx === 'insertNext' && e.pfCalls[0].hymnId === 9 && e.pfCalls[0].url === 'https://api/stream/9.m3u8', e.pfCalls);
     check('(2) 404 → TrackPlayer.remove(1) + add(progressive,1)', JSON.stringify(e.log.filter((x) => Array.isArray(x)).map((x) => x[0] === 'add' ? ['add', x[1].url, x[2]] : x)) === JSON.stringify([['remove', 1], ['add', 'https://api/stream/9', 1]]), e.log);
     check('(2) hlsFallback beacon 帶 via=preflight ctx=insertNext + always', e.diag.length === 1 && e.diag[0].ev === 'hlsFallback' && /^via=preflight ctx=insertNext reason=/.test(e.diag[0].ex.detail) && e.diag[0].op.always === true && e.diag[0].ex.hymnId === 9, e.diag);
@@ -162,27 +163,53 @@ async function withFetch(e, fn) { const o = global.fetch; global.fetch = fetchSt
   { // 200 → 唔熱換
     const e = env({ queueIds: [1, 9, 2] });
     e.status = 200;
-    await withFetch(e, async () => guardRunner(...args(e, { plan: { insertAt: 1 }, curIdx: 0, hymn: { id: 9 } })));
+    await withFetch(e, async () => guardRunner(...args(e, { plan: { insertAt: 1, newCurIdx: 0 }, curIdx: 0, hymn: { id: 9 } })));
     check('(2b) 200 → 預檢一次但冇 remove/add', e.pfCalls.length === 1 && !e.log.some((x) => Array.isArray(x)), e.log);
   }
   console.log('(3) 插 idx+2 → 零預檢');
   {
     const e = env({ queueIds: [1, 2, 9] });
-    await withFetch(e, async () => guardRunner(...args(e, { plan: { insertAt: 2 }, curIdx: 0, hymn: { id: 9 } })));
+    await withFetch(e, async () => guardRunner(...args(e, { plan: { insertAt: 2, newCurIdx: 0 }, curIdx: 0, hymn: { id: 9 } })));
     check('(3) 零預檢、零 TrackPlayer 呼叫', e.pfCalls.length === 0 && e.log.length === 0 && e.diag.length === 0);
+  }
+  console.log('(3b) Opus④ F2:真 computeInsertNext「舊位喺播緊前面」plan → 新守衛預檢、舊守衛會漏');
+  {
+    // queue [9,1,2] 播緊 idx1(=1),Play Next 9:去重刪 idx0 → newCurIdx=0、insertAt=1、newQ=[1,9,2]
+    const cur = [{ id: 9 }, { id: 1 }, { id: 2 }];
+    const plan = computeInsertNext(cur, 1, { id: 9 }, { autoRadioFrom: null, insertBoundary: null, idle: false });
+    check('(3b) plan 形態:removedIdx=0 newCurIdx=0 insertAt=1 newQ=[1,9,2]',
+      plan.removedIdx === 0 && plan.newCurIdx === 0 && plan.insertAt === 1 && JSON.stringify(plan.newQ.map((s) => s.id)) === '[1,9,2]', plan);
+    check('(3b) 負控:舊守衛 plan.insertAt === curIdx + 1 喺呢個 plan 係 false(即舊版會漏預檢)', plan.insertAt !== 1 + 1);
+    const e = env({ queueIds: plan.newQ.map((s) => s.id), cur: plan.newCurIdx });
+    await withFetch(e, async () => guardRunner(...args(e, { plan, curIdx: 1, hymn: { id: 9 } })));
+    check('(3b) 新守衛:預檢一次 ctx=insertNext hymnId=9', e.pfCalls.length === 1 && e.pfCalls[0].ctx === 'insertNext' && e.pfCalls[0].hymnId === 9, e.pfCalls);
+    check('(3b) 404 → remove(1)+add(progressive,1)', JSON.stringify(e.log.filter((x) => Array.isArray(x)).map((x) => x[0] === 'add' ? ['add', x[1].url, x[2]] : x)) === JSON.stringify([['remove', 1], ['add', 'https://api/stream/9', 1]]), e.log);
+  }
+  {
+    // 真 plan、冇移位:queue [1,2,3] 播緊 0,插 9 → newCurIdx=0 insertAt=1(同舊守衛一致)
+    const plan = computeInsertNext([{ id: 1 }, { id: 2 }, { id: 3 }], 0, { id: 9 }, { autoRadioFrom: null, insertBoundary: null, idle: false });
+    const e = env({ queueIds: plan.newQ.map((s) => s.id), cur: plan.newCurIdx });
+    await withFetch(e, async () => guardRunner(...args(e, { plan, curIdx: 0, hymn: { id: 9 } })));
+    check('(3c) 真 plan 冇移位:照預檢一次', plan.insertAt === 1 && plan.newCurIdx === 0 && e.pfCalls.length === 1, e.pfCalls);
+  }
+  {
+    // 守衛對「冇 newCurIdx 嘅 plan」(core 永遠有,理論上唔會)要安全失敗:undefined+1=NaN → false → 零預檢
+    const e = env({ queueIds: [1, 9, 2] });
+    await withFetch(e, async () => guardRunner(...args(e, { plan: { insertAt: 1 }, curIdx: 0, hymn: { id: 9 } })));
+    check('(3d) plan 冇 newCurIdx → 零預檢(安全失敗)', e.pfCalls.length === 0 && e.log.length === 0);
   }
   console.log('(4) 已 downgraded 嘅 id → 唔重複');
   {
     const e = env({ queueIds: [1, 9, 2], downgraded: 9 });
-    await withFetch(e, async () => guardRunner(...args(e, { plan: { insertAt: 1 }, curIdx: 0, hymn: { id: 9 } })));
+    await withFetch(e, async () => guardRunner(...args(e, { plan: { insertAt: 1, newCurIdx: 0 }, curIdx: 0, hymn: { id: 9 } })));
     check('(4) 零預檢', e.pfCalls.length === 0 && e.log.length === 0);
   }
   console.log('(5) hlsPreflightSeenRef 去重');
   {
     const e = env({ queueIds: [1, 9, 2] });
     e.status = 200;
-    await withFetch(e, async () => { guardRunner(...args(e, { plan: { insertAt: 1 }, curIdx: 0, hymn: { id: 9 } })); });
-    await withFetch(e, async () => { guardRunner(...args(e, { plan: { insertAt: 1 }, curIdx: 0, hymn: { id: 9 } })); });
+    await withFetch(e, async () => { guardRunner(...args(e, { plan: { insertAt: 1, newCurIdx: 0 }, curIdx: 0, hymn: { id: 9 } })); });
+    await withFetch(e, async () => { guardRunner(...args(e, { plan: { insertAt: 1, newCurIdx: 0 }, curIdx: 0, hymn: { id: 9 } })); });
     check('(5) 同 id 第二次 → 仍然只有 1 次預檢', e.pfCalls.length === 1, e.pfCalls);
     check('(5) seen 封頂 200:塞 205 個 id 後 size<=200', (() => {
       const e2 = env({ queueIds: [1, 2] }); e2.status = 200;
@@ -194,7 +221,7 @@ async function withFetch(e, fn) { const o = global.fetch; global.fetch = fetchSt
   console.log('(6) 非 iOS / HLS_ENABLED=false → 零預檢');
   for (const o of [{ platform: 'android' }, { hls: false }]) {
     const e = env({ queueIds: [1, 9, 2], ...o });
-    await withFetch(e, async () => guardRunner(...args(e, { plan: { insertAt: 1 }, curIdx: 0, hymn: { id: 9 } })));
+    await withFetch(e, async () => guardRunner(...args(e, { plan: { insertAt: 1, newCurIdx: 0 }, curIdx: 0, hymn: { id: 9 } })));
     check(`(6) ${JSON.stringify(o)} → 零預檢零呼叫`, e.pfCalls.length === 0 && e.log.length === 0);
   }
   console.log('(7) 預檢期間用戶已跳去該歌 (nativeIdx <= curIdxNow) → 唔 swap');
@@ -203,16 +230,16 @@ async function withFetch(e, fn) { const o = global.fetch; global.fetch = fetchSt
     // fetch 期間把 currentQueueIndexRef 推到 1
     const o = global.fetch;
     global.fetch = async () => { e.currentQueueIndexRef.current = 1; return fetchStatus(404)(); };
-    try { guardRunner(...args(e, { plan: { insertAt: 1 }, curIdx: 0, hymn: { id: 9 } })); await sleep(60); } finally { global.fetch = o; }
+    try { guardRunner(...args(e, { plan: { insertAt: 1, newCurIdx: 0 }, curIdx: 0, hymn: { id: 9 } })); await sleep(60); } finally { global.fetch = o; }
     check('(7) 預檢發生咗但冇 remove/add、冇 beacon、ref 不變', e.pfCalls.length === 1 && !e.log.some((x) => Array.isArray(x)) && e.diag.length === 0 && e.hlsDowngradedTrackRef.current === null, e.log);
   }
   console.log('(8) 近尾 15 秒 → 唔 swap');
   {
     const e = env({ queueIds: [1, 9, 2], progress: { position: 186, duration: 200 } });
-    await withFetch(e, async () => guardRunner(...args(e, { plan: { insertAt: 1 }, curIdx: 0, hymn: { id: 9 } })));
+    await withFetch(e, async () => guardRunner(...args(e, { plan: { insertAt: 1, newCurIdx: 0 }, curIdx: 0, hymn: { id: 9 } })));
     check('(8) 位置 186/200(尾 14 秒)→ 冇 remove/add、冇 beacon', e.pfCalls.length === 1 && !e.log.some((x) => Array.isArray(x)) && e.diag.length === 0, e.log);
     const e2 = env({ queueIds: [1, 9, 2], progress: { position: 184, duration: 200 } });
-    await withFetch(e2, async () => guardRunner(...args(e2, { plan: { insertAt: 1 }, curIdx: 0, hymn: { id: 9 } })));
+    await withFetch(e2, async () => guardRunner(...args(e2, { plan: { insertAt: 1, newCurIdx: 0 }, curIdx: 0, hymn: { id: 9 } })));
     check('(8) 正控: 位置 184/200(尾 16 秒)→ 照 swap', e2.log.some((x) => Array.isArray(x) && x[0] === 'remove'));
   }
   console.log(`\nH-C: ${pass} pass / ${fail} fail`);
