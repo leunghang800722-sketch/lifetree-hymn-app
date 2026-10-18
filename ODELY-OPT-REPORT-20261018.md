@@ -135,3 +135,28 @@ usersync-harness: NEW 21/21;負控 OLD fail 9
 
 ### Harness
 (j)(k)(l) 新增。NEW 26/26;OLD(d74c483)負控 fail 13;`PREV_SHA=24e520a` 負控:(j)(k×2)(l) 四項 FAIL,其餘 pass。
+
+---
+## §③ 4a CoverImage / FavHeart 抽離
+
+**新組件**：`src/components/CoverImage.js`（`youtubeId,size=52,iconScale=0.5,style`；含 S6 `useEffect(()=>setFailed(false),[youtubeId])`；fallback `<OdeIcon name="musicNote">`）、`src/components/FavHeart.js`（`hymn,style,size=20`；`useFavorites`、`stopPropagation`、hitSlop 10、`<OdeIcon>`）。
+**合併**：`Cover` ×6（Mine ×2 處、Library、HymnList、PlaylistDetail、SharedPlaylist、AdminAddHymn size={48}；Admin 原 prop 已係 `youtubeId`，非 `videoId`）；`Heart` ×3（Library/HymnList 傳 `styles.heart`、Home 傳 `cardHeart`/`rowHeart`）。順手刪 3 個因而冇用嘅 `useFavorites` import。
+**保留 App.js 播放器版**（App.js 零改動）：`CoverImage`(:309) 用 `getAlbumCoverUrl`、`StyleSheet.flatten(style)` 推 size、無 S6 effect、背景色 `DesignColors.cardLight`／`TEXT_SECONDARY`；`FavHeart`(:367) hitSlop 12、`paddingLeft14+paddingVertical2`、舊色常數 → props／視覺非完全可對齊，按執行單保留。
+**偏離**：(1) HymnList 原 fallback 圖標係 `size*0.42`（其餘 0.5）→ 加 `iconScale` prop 保持逐像素一致；(2) AdminAddHymn 原無 S6 effect，現經共用組件獲得（行為只增 reset，無視覺差）。
+**截圖**（iOS 模擬器 iPhone 17，Release build，`xcodebuild … -derivedDataPath scratch`；訪客；`ops/perf/screens-20261018/before|after/`；比對：去除頂部 160px 狀態列後逐像素 diff 閾值 16）：
+
+| # | 位置 | 結果 |
+|---|---|---|
+| 1 首頁一行歌 Heart | PASS（0 px 差） |
+| 2 詩歌庫列 Cover+Heart | PASS（0 px 差） |
+| 3 HymnList Cover+Heart | PASS（0 px 差） |
+| 4 我的 Cover | PASS（0 px 差） |
+| 5 清單詳情 Cover | 未截（需登入；opus-verify 密碼搵唔到） |
+| 6 分享清單 Cover | 未截（需登入） |
+| 7 admin 加歌 Cover | 未截（需 admin 登入） |
+| 8 播放器封面 | DIFF：只差進度時間／進度條區（bbox y1619–1741，982 px）；封面區 0 差 |
+| 9 播放器清單心心（queue sheet，用 App.js 保留版） | DIFF：隊列歌曲每次 launch 隨機（自動播放），第一行（當前歌+實心心）一致；該版本未改 |
+
+5–7 對應組件同 1–4 共用同一 `CoverImage`，但無實機截圖證據。
+**Harness**：insertnext 66/66、hls-preflight A 14/14、B 26/26、react 5/5 場景過、usersync NEW 26/26（OLD 負控 fail 13）；`@babel/parser` 解析 9 個改動檔 OK。
+**模擬器收尾**：booted=0、idb_companion=0、Simulator=0、hold 檔已刪。
