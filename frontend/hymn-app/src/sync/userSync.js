@@ -11,6 +11,7 @@ import { getStorage } from '../storage';
 import { API_BASE } from '../config';
 import { sendClientLog } from '../clientLog.js';
 import { reportUnauthorized } from '../authSession';
+import { createExternalStore } from '../hooks/externalStore.js';
 
 // 401 = token 過期/失效(2026-09-28 事故:之前靜靜 fail,outbox 越積越多冇人
 // 知)。報俾 AuthContext 叫用戶重新登入;回傳值照舊,queue 原封不動留低。
@@ -38,8 +39,16 @@ function readOutbox() {
   } catch (_) { return []; }
 }
 
+// ODELY-OPT 1b:outbox 長度改 external store(取代 useOutboxLength 每 2 秒輪詢)。
+// 初始值讀一次持久化嘅 outbox;之後只喺 writeOutbox() 寫入後更新(長度冇變
+// 就唔 setState,免無謂 re-render)。MMKV 讀寫失敗時照舊靜靜吞,store 保持舊值。
+export const outboxStore = createExternalStore({ length: readOutbox().length });
+
 function writeOutbox(queue) {
   try { store()?.set(OUTBOX_KEY, JSON.stringify(queue)); } catch (_) {}
+  if (outboxStore.getSnapshot().length !== queue.length) {
+    outboxStore.setState({ length: queue.length });
+  }
 }
 
 export function getOutboxLength() {
@@ -66,6 +75,18 @@ function collapse(queue) {
   const lastIdx = new Map();
   queue.forEach((op, i) => { if (op.op === 'pl_upsert') lastIdx.set(op.playlist.id, i); });
   return queue.filter((op, i) => op.op !== 'pl_upsert' || lastIdx.get(op.playlist.id) === i);
+}
+
+// ODELY-OPT 1a:op 身份 = op.op + ts + key(fav_* → hymn_id;pl_upsert →
+// playlist.id;pl_delete → id)。flush() 成功後靠佢由最新 outbox 剔走剛推完
+// 嗰個 op,唔再用閉包舊快照覆寫(飛行期間 enqueue 嘅新 op 會被蓋走)。
+function opKey(op) {
+  if (op.op === 'pl_upsert') return op.playlist?.id;
+  if (op.op === 'pl_delete') return op.id;
+  return op.hymn_id;
+}
+function sameOp(a, b) {
+  return a.op === b.op && a.ts === b.ts && opKey(a) === opKey(b);
 }
 
 export function enqueue(op) {
@@ -136,11 +157,15 @@ export async function flush() {
       sendClientLog('outboxLong', { detail: String(queue.length) });
     }
     while (queue.length > 0) {
-      const [op, ...rest] = queue;
+      const [op] = queue;
       const ok = await runOp(op);
       if (!ok) break; // fail 即停,queue 原封不動留低
-      queue = rest;
-      writeOutbox(queue);
+      // ODELY-OPT 1a:await 期間 enqueue() 可能已經寫入新 op(或 collapse 取代
+      // 咗本 op),所以成功後重讀最新 outbox,只剔走剛推完嗰個,唔用閉包 rest 覆寫。
+      const latest = collapse(readOutbox());
+      const next = latest.filter((x) => !sameOp(x, op));
+      writeOutbox(next);
+      queue = next;
     }
     drained = queue.length === 0;
   } finally {
