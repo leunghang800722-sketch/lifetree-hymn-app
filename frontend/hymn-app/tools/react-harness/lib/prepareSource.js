@@ -20,6 +20,7 @@ const RULES = [
   // 現行:經 storage.js 共用 instance
   { name: 'storage', from: "import { getStorage } from '../storage';", to: "import { getStorage } from '../../mocks/storageStub.js';" },
   { name: 'perfMarks', from: "import { mark, note } from '../perfMarks';", to: "import { mark, note } from '../../mocks/perfMarksStub.js';" },
+  { name: 'api(fetchWithTimeout)', from: "import { fetchWithTimeout } from '../api';", to: "import { fetchWithTimeout } from '../../mocks/apiStub.js';" },
   { name: 'react-native', from: "import { InteractionManager } from 'react-native';", to: "import { InteractionManager } from '../../mocks/reactNativeStub.js';" },
   // 兩種 config import 寫法(舊版 ../config.js,必有其一)
   { name: 'config', from: "import { API_BASE } from '../config.js';", to: "import { API_BASE } from '../../mocks/configStub.js';", required: true },

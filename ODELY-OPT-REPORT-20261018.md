@@ -89,3 +89,29 @@ react-harness: 結果:全部 5 個場景過
 usersync-harness: NEW 21/21;負控 OLD fail 9
 ```
 側效應：outbox op 多一個 `seq` 欄位（伺服器 push 只用 op 內容欄位，runOp 不送 seq）；L2 未處理（Opus 評為低、只影響顯示）。未部署/OTA/eas/restart，未掂 backend。
+
+## §② 3b hymnsById + 4b fetchWithTimeout 合一 + 4c-i DEVICE_ID + 4c-ii rn config + 3c TODO
+
+**改動**
+- 3b `src/hooks/useCachedHymns.js`：`createExternalStore` 結果包成 `_hymnsStoreBase`，`hymnsStore.setState` 薄包裝：partial 帶 hymns array 就先重建 module-level `hymnsById`（key `String(id)`）再轉交 base.setState。**所有 call site（7 處 setState）一字未動**，次序/內容不變。新 export `getHymnById(id)`（null→undefined）。`App.js` liveHymn（原 :3636）改 `getHymnById(snapshotHymn.id)`；`resyncFromNative` toHymn（原 :1600）只改 lookup 一行為 `getHymnById(t.id)`，`lib.length === 0` 判斷（lib=hymnsRef.current）保留。`hymnsRef` 保留。
+- 4b `fetchWithTimeout` 搬 `src/api.js`（export，邏輯一字不差）；`App.js`（刪本地定義 + `import { fetchWithTimeout } from './src/api'`）、`useCachedHymns.js`（刪本地定義 + `import … from '../api'`）。
+- 4c-i App.js 刪 `let DEVICE_ID`（含孤兒註解）+ 填值 effect；`/api/app-version` effect 保留；`getOrCreateDeviceId` import 仍被 app-version effect 用，保留。
+- 4c-ii `react-native.config.js`：刪 vector-icons dependency 段與 Fonts asset，保留 `./assets/fonts`。
+- 3c `src/perfMarks.js` `PERF_MARKS_ENABLED` 上加 TODO 一行，值仍 true。
+- react-harness：`lib/prepareSource.js` RULES 加 `api(fetchWithTimeout)`（`../api` → `mocks/apiStub.js`）；新增 `mocks/apiStub.js`（fetchWithTimeout 同源實作）；README 維護紀律加 `../api`。場景斷言零改動。sed diff 行號 2,3,4,6,7（= 5 條命中規則，assertion 過）。
+
+**grep 證據（git grep DEVICE_ID\b，排除 md）**：App.js 零命中；餘下只有 backend/routes/presence.js 的 `DEVICE_ID_RE`（另一標識）、src/deviceId.js `DEVICE_ID_KEY`（不同符號）。`fetchWithTimeout` 全 repo 現僅 api.js 定義 + 兩處 import。
+**getHymnById 實測**（patched module 臨時 export store）：set [1,'2'] → getHymnById('1')/(2) 命中、(3) undefined；`setState({loading:false})` 不重建 Map；換 hymns 後舊 id 消失、新 id 命中。
+**parse**：@babel/parser（jsx）App.js / api.js / useCachedHymns.js / perfMarks.js 全 OK。
+
+**四個 harness 尾段**
+```
+insertnext-harness: 66 passed, 0 failed
+H-A: 14 pass / 0 fail
+H-B: 26 pass / 0 fail
+react-harness: 結果:全部 5 個場景過
+usersync-harness: NEW 21/21;負控 OLD fail 9
+```
+
+**§0 紅線核**：gorhom / OdeIcon·odeIcons / designSystem / watchdog 函數與門檻未碰；`resyncFromNative` 只改 lookup 一行；PERF_MARKS 值不變、pollState 未動；未部署/OTA/eas/restart、未掂 backend、git 只 pathspec。
+**側效應**：(1) liveHymn 由 `player.hymns.find` 改查 store 的 Map，兩者同源（hook 讀 hymnsStore），Map 於 setState 前更新，僅比 React render 早一拍；(2) 重複 id 時 Map 取最後一個、舊 find 取第一個（庫內 id 唯一，未見重複）；(3) App.js 現新增對 src/api.js 的 import（api.js 本已被各 screen 使用）。

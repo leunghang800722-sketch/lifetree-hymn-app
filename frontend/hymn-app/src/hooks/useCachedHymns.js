@@ -4,21 +4,7 @@ import { getStorage } from '../storage';
 import { API_BASE } from '../config.js';
 import { createExternalStore } from './externalStore.js';
 import { mark, note } from '../perfMarks'; // PERF-BASELINE-1B-20260902
-
-// BATCH5 O7:改用 AbortController——舊嘅 Promise.race 逾時之後底層 fetch
-// 連線唔會斷,慢網下會同 retry(fetchPrimaryHymnsWithRetry)疊住背景繼續拉多
-// 幾份全量。而家逾時會真 abort 底層 fetch,throw 嘅係 AbortError(唔再
-// 係自製 Error)——呢度全部 caller(fetchAllHymns/fetchVersion)已核實
-// 只 catch 完回 null/空,冇人讀 error message,語義安全。
-async function fetchWithTimeout(url, ms = 8000) {
-  const controller = new AbortController();
-  const t = setTimeout(() => controller.abort(), ms);
-  try {
-    return await fetch(url, { signal: controller.signal });
-  } finally {
-    clearTimeout(t);
-  }
-}
+import { fetchWithTimeout } from '../api'; // ODELY-OPT §②4b:原本本檔+App.js 各一份,合一搬 api.js
 
 // E-1(PERF-STAGE2-2E-20260902,承 PERF-STAGE2-2B-OPUS-20260902.md §2.6
 // 保留②)—— Opus 5 讀 expo/fetch 原生碼(ExpoFetchModule.swift/.kt)實錘:
@@ -240,7 +226,25 @@ async function fetchVersion() {
 // `refreshKicked` 保證成套 MMKV read + network refresh 全 app 生命週期淨係
 // 行一次(第一個掛嘅 hook instance 觸發);之後 mount 嘅 instance 只係加入
 // store 訂閱,唔會重複整套流程。
-const hymnsStore = createExternalStore({ hymns: null, loading: true });
+const _hymnsStoreBase = createExternalStore({ hymns: null, loading: true });
+
+// ODELY-OPT §②3b:id -> hymn 嘅 O(1) 索引。包住 store.setState,每次 setState
+// 帶 `hymns` 就同步重建 Map(先建後 setState,subscriber 醒返時 Map 已齊);
+// 所有 call site 嘅 setState 次序/內容完全不變。key 一律 String(id)。
+let hymnsById = new Map();
+const hymnsStore = {
+  ..._hymnsStoreBase,
+  setState(partial) {
+    if (partial && Array.isArray(partial.hymns)) {
+      hymnsById = new Map(partial.hymns.map((h) => [String(h.id), h]));
+    }
+    return _hymnsStoreBase.setState(partial);
+  },
+};
+export function getHymnById(id) {
+  if (id == null) return undefined;
+  return hymnsById.get(String(id));
+}
 
 let refreshKicked = false;
 

@@ -26,6 +26,7 @@ import { useRef } from 'react';
 // 20260902.md §10 P0)。呢個係恆常上行流量(每次開 app 4 條 beacon +
 // 最多 10 條 perfNav)+ backend client-log 量,效能工程收爐之後應該關
 // 返做 false。
+// TODO: 第一首歌 step 0+1 after 量度收爐後 flip false（ODELY-OPT-SPEC-PLAN-20261018 §3c）
 export const PERF_MARKS_ENABLED = true;
 
 const T0 = Date.now();

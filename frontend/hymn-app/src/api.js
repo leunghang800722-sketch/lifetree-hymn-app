@@ -2,6 +2,18 @@
 import { API_BASE } from './config';
 import { reportUnauthorized } from './authSession';
 
+// BATCH5 O7:AbortController 逾時(逾時會真 abort 底層 fetch,throw AbortError)。
+// ODELY-OPT §②4b:原本 App.js 同 hooks/useCachedHymns.js 各一份,合一放呢度。
+export async function fetchWithTimeout(url, ms = 8000) {
+  const controller = new AbortController();
+  const t = setTimeout(() => controller.abort(), ms);
+  try {
+    return await fetch(url, { signal: controller.signal });
+  } finally {
+    clearTimeout(t);
+  }
+}
+
 // 帶住 token 打嘅 request 食 401 = token 過期/失效。報俾 AuthContext 清
 // session,錯誤訊息轉做人話(之前原字彈「unauthorized」)。
 function throwIfUnauthorized(res, token) {

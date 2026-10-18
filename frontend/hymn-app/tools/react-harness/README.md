@@ -62,7 +62,7 @@ node run.js
   `tools/react-harness/` 底下 commit 一份手抄/過時嘅 copy —— 呢份 harness
   永遠測緊「而家嘅 code」。
 - `lib/prepareSource.js` 用 RULES 表,只准改 import 行(MMKV(舊版)/`../storage`/
-  `../perfMarks`/`react-native`/`../config.js` → `mocks/*Stub.js`)。改完會
+  `../perfMarks`/`../api`/`react-native`/`../config.js` → `mocks/*Stub.js`)。改完會
   diff 返新舊版本,**如果改咗嘅行數唔等於實際命中規則數,
   `prepareUseCachedHymns()` 會 throw**,擋住未來源碼改咗 import 寫法之後
   呢度靜靜哋冇 patch 中。2026-10-18 因 useCachedHymns 改用 storage.js /

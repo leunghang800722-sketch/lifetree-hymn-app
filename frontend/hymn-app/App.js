@@ -1,6 +1,7 @@
 // 詩歌App v211 TrackPlayer — 背景播放 + Ode 主題(ODE-REBRAND-PLAN)
 import { COLORS as DesignColors, TYPOGRAPHY, effects } from './src/theme/designSystem';
-import { useCachedHymns, getLyricsById } from './src/hooks/useCachedHymns';
+import { useCachedHymns, getLyricsById, getHymnById } from './src/hooks/useCachedHymns';
+import { fetchWithTimeout } from './src/api'; // ODELY-OPT §②4b
 import { createExternalStore } from './src/hooks/externalStore';
 import LogoRing from './src/components/LogoRing';
 import React, { useState, useEffect, createContext, useContext, useRef, useCallback } from 'react';
@@ -155,10 +156,6 @@ function getAlbumCoverUrlHi(youtubeId) {
 // ⚠️ HLS-EXEC-AB-20260901 紅線:階段 A/B 只喺 backend/public/app-version.json
 // 手動改成 true 嚟做模擬器實測,呢個檔案出街嗰刻必須係 false。
 let HLS_ENABLED = false;
-// HLS-EXEC-D123-GATE-20260901 P3 — 由下面一個 cross-platform boot effect
-// 填,logDiag() 用嚟俾每條 client-log 帶。填之前一律 null(未生成/未讀到),
-// backend 白名單當空字串處理,唔會 crash。
-let DEVICE_ID = null;
 
 // HLS-EXEC-D-FIXES-20260901 §1.2:第二個參數俾 PlaybackError handler 嘅 D2
 // 降級分支用——`forceProgressive: true` 令呢次 toTrack() 一定跳過 HLS 分支
@@ -389,20 +386,6 @@ function FavHeart({ hymn }) {
 // 三鍵導航列實際係 48dp,所以 tab 掣同 collapsed sheet 都會俾導航列食咗一截。
 function useBottomInset() {
   return useInsets().bottom;
-}
-
-// BATCH5 O7:改用 AbortController——舊嘅 Promise.race 逾時之後底層 fetch
-// 連線唔會斷,慢網下會同 retry 疊住背景繼續拉多幾份全量。而家逾時會真
-// abort 底層 fetch,throw 嘅係 AbortError(唔再係自製 Error)——兩邊全部
-// caller 已核實只 catch 完回 null/空,冇人讀 error message,語義安全。
-async function fetchWithTimeout(url, ms = 8000) {
-  const controller = new AbortController();
-  const t = setTimeout(() => controller.abort(), ms);
-  try {
-    return await fetch(url, { signal: controller.signal });
-  } finally {
-    clearTimeout(t);
-  }
 }
 
 async function safeFetchHymnDetail(id) {
@@ -1597,7 +1580,7 @@ function PlayerProvider({ children }) {
       // 亦只補 current index 前後 2 首(最多 5 個並發),其餘一樣用 minimal。
       const NEAR_RANGE = 2;
       const toHymn = async (t, i) => {
-        const found = lib.find((h) => String(h.id) === String(t.id));
+        const found = getHymnById(t.id);
         if (found) return found;
         if (lib.length === 0) return buildMinimal(t);
         if (Math.abs(i - idx) > NEAR_RANGE) return buildMinimal(t);
@@ -3633,7 +3616,7 @@ function FullScreenPlayerOverlay() {
   // (例如全庫都未載完)先 fallback 用返 snapshot。
   const snapshotHymn = player.currentHymn || { title: '', artist: '', youtube_id: '', id: null, lyrics: '' };
   const liveHymn = snapshotHymn.id != null
-    ? (player.hymns || []).find(h => String(h.id) === String(snapshotHymn.id))
+    ? getHymnById(snapshotHymn.id)
     : null;
   const cur = liveHymn || snapshotHymn;
   // BUG1 P0 — 統一喺呢度轉一次,下面 hasLyrics 判斷同歌詞 Modal 顯示都食呢個
@@ -4486,15 +4469,6 @@ function AppContent() {
   // 第一下撳歌慳 ~0.3-0.5s。fire-and-forget。
   useEffect(() => {
     fetch(`${API_BASE}/api/health`).catch(() => {});
-  }, []);
-
-  // HLS-EXEC-D123-GATE-20260901 P3 —— deviceId 開機讀/生成,cross-platform
-  // (Android 都要,logDiag() 每條 client-log 都帶住佢)。獨立於下面 iOS-only
-  // 嘅 app-version fetch,純粹負責填 module-level `DEVICE_ID`。
-  useEffect(() => {
-    let cancelled = false;
-    getOrCreateDeviceId().then((id) => { if (!cancelled) DEVICE_ID = id; }).catch(() => {});
-    return () => { cancelled = true; };
   }, []);
 
   // HLS-ROOTFIX-PLAN-20260901 §5.1:開機打一次 `/api/app-version`,讀
