@@ -18,8 +18,9 @@ import {
   Image,
 } from 'react-native';
 import OdeIcon from '../icons/OdeIcon';
+import CoverImage from '../components/CoverImage';
+import FavHeart from '../components/FavHeart';
 import { COLORS, TYPOGRAPHY, effects } from '../theme/designSystem';
-import { useFavorites } from '../context/FavoritesContext';
 import { useAddToPlaylist } from '../components/AddToPlaylistSheet';
 import { useAdminEditHymn } from '../components/AdminEditHymnSheet';
 import { useAuth } from '../context/AuthContext';
@@ -30,50 +31,6 @@ import { getDisplayTitle } from '../utils/displayTitle';
 // hymnListModal),要留返呢個高度嘅空間,唔係尾幾行歌會俾佢遮咗。約數
 // (44 封面 + 上下 padding 10*2)已經夠準,唔使逐 px 對正。
 const MINI_PLAYER_H = 64;
-
-// mqdefault = 真 16:9 冇黑邊(hqdefault 係 4:3,黑邊 baked 咗入張圖)
-function Cover({ youtubeId, size = 52 }) {
-  const [failed, setFailed] = useState(false);
-  // youtubeId 變咗要重試新縮圖(舊版 failed 唔會自動清,BATCH5 S6)。
-  useEffect(() => { setFailed(false); }, [youtubeId]);
-  const uri = youtubeId ? `https://img.youtube.com/vi/${youtubeId}/mqdefault.jpg` : null;
-  if (!uri || failed) {
-    return (
-      <View style={[styles.cover, { width: size, height: size, alignItems: 'center', justifyContent: 'center' }]}>
-        <OdeIcon name="musicNote" size={size * 0.42} color={COLORS.textSecondary} />
-      </View>
-    );
-  }
-  return (
-    <Image
-      source={{ uri }}
-      style={[styles.cover, { width: size, height: size }]}
-      onError={() => setFailed(true)}
-    />
-  );
-}
-
-// 同播放清單 / 首頁一致:喺清單度直接加最愛,唔使入返播放頁
-function Heart({ hymn }) {
-  const { isFavorite, toggleFavorite } = useFavorites() || {};
-  if (!hymn?.id || typeof toggleFavorite !== 'function') return null;
-  const on = typeof isFavorite === 'function' ? isFavorite(hymn.id) : false;
-  return (
-    <TouchableOpacity
-      onPress={(e) => { e?.stopPropagation?.(); toggleFavorite(hymn); }}
-      hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-      style={styles.heart}
-      activeOpacity={0.6}
-    >
-      <OdeIcon
-        name="heart"
-        size={20}
-        filled={on}
-        color={on ? COLORS.primary : COLORS.textSecondary}
-      />
-    </TouchableOpacity>
-  );
-}
 
 export default function HymnListScreen({ hymns = [], title, onPlayHymn, hasMiniPlayer = false }) {
   const { open: openAddToPlaylist } = useAddToPlaylist();
@@ -112,7 +69,7 @@ export default function HymnListScreen({ hymns = [], title, onPlayHymn, hasMiniP
             onLongPress={isAdmin ? () => openAdminEdit(item) : undefined}
             activeOpacity={0.7}
           >
-            <Cover youtubeId={item.youtube_id} />
+            <CoverImage youtubeId={item.youtube_id} iconScale={0.42} />
             <View style={styles.rowInfo}>
               <Text style={styles.rowTitle} numberOfLines={2}>{getDisplayTitle(item)}</Text>
               <Text style={styles.rowArtist} numberOfLines={1}>{item.artist || '未知'}</Text>
@@ -126,7 +83,7 @@ export default function HymnListScreen({ hymns = [], title, onPlayHymn, hasMiniP
             >
               <OdeIcon name="addToList" size={22} color={COLORS.textSecondary} />
             </TouchableOpacity>
-            <Heart hymn={item} />
+            <FavHeart hymn={item} style={styles.heart} />
           </TouchableOpacity>
         )}
       />

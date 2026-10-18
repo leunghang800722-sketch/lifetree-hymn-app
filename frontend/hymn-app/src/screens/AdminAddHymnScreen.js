@@ -12,6 +12,7 @@ import {
   ActivityIndicator, KeyboardAvoidingView, Platform,
 } from 'react-native';
 import OdeIcon from '../icons/OdeIcon';
+import CoverImage from '../components/CoverImage';
 import { useInsets } from '../hooks/useInsets';
 import { COLORS, effects } from '../theme/designSystem';
 import { useAuth } from '../context/AuthContext';
@@ -47,20 +48,6 @@ function BigThumb({ videoId }) {
   }
   return <Image source={{ uri }} style={styles.bigThumb} onError={() => setFailed(true)} />;
 }
-
-function Cover({ youtubeId, size = 48 }) {
-  const [failed, setFailed] = useState(false);
-  const uri = youtubeId ? `https://img.youtube.com/vi/${youtubeId}/mqdefault.jpg` : null;
-  if (!uri || failed) {
-    return (
-      <View style={[styles.cover, { width: size, height: size, alignItems: 'center', justifyContent: 'center' }]}>
-        <OdeIcon name="musicNote" size={size * 0.5} color={COLORS.textSecondary} />
-      </View>
-    );
-  }
-  return <Image source={{ uri }} style={[styles.cover, { width: size, height: size }]} onError={() => setFailed(true)} />;
-}
-
 // 細 pill badge(§5.2:fontSize 11、paddingH 8、paddingV 2、borderRadius 8、
 // 1px 邊框),tone 揀顏色,唔好搶咗歌名戲。
 function Badge({ label, tone }) {
@@ -402,7 +389,7 @@ export default function AdminAddHymnScreen({ onClose }) {
             ) : (
               added.map((item) => (
                 <View key={item.hymn ? item.hymn.id : item.acted_at} style={styles.addedRow}>
-                  <Cover youtubeId={item.hymn?.youtube_id} />
+                  <CoverImage youtubeId={item.hymn?.youtube_id} size={48} />
                   <View style={styles.addedRowInfo}>
                     <Text style={styles.addedRowTitle} numberOfLines={1}>{getDisplayTitle(item.hymn)}</Text>
                     <Text style={styles.addedRowArtist} numberOfLines={1}>{item.hymn?.artist || '未知'}</Text>

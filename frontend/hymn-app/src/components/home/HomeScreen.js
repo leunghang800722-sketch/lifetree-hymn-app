@@ -22,6 +22,7 @@
 import React, { useMemo, useState, useCallback, useRef } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Image, Dimensions, ActivityIndicator } from 'react-native';
 import OdeIcon from '../../icons/OdeIcon';
+import FavHeart from '../FavHeart';
 import { COLORS, TYPOGRAPHY, radii, effects } from '../../theme/designSystem';
 import DailyVerseCard from './DailyVerseCard';
 import { getHomeChip, saveHomeChip } from '../../homePrefs';
@@ -32,7 +33,6 @@ import { CHIP_PAGE_SIZE, buildChips, hasAlbum } from '../../utils/homeChips';
 import { isTooLongForAutoplay } from '../../utils/autoplay';
 // W3 —— 「隨心聽」第一首偏向已經落載咗喺機入面嘅歌(iOS;Android 恆 null 自動 no-op)。
 import { getLocalUri } from '../../audioPrefetch';
-import { useFavorites } from '../../context/FavoritesContext';
 import { getDisplayTitle } from '../../utils/displayTitle';
 import { mark, span, now, useRenderCount } from '../../perfMarks'; // PERF-BASELINE-1B-20260902
 
@@ -84,30 +84,6 @@ function PlayBadge() {
   );
 }
 
-// 心心 —— 首頁每首歌都撳得,唔使入播放頁先加到最愛(Eric v233)。
-// stopPropagation:唔好連埋外面張卡/嗰行一齊觸發播歌。
-// hitSlop:20px 嘅 icon 冇撐大觸控範圍好易撳唔中。
-function Heart({ hymn, style }) {
-  const { isFavorite, toggleFavorite } = useFavorites() || {};
-  if (!hymn?.id || typeof toggleFavorite !== 'function') return null;
-  const on = typeof isFavorite === 'function' ? isFavorite(hymn.id) : false;
-  return (
-    <TouchableOpacity
-      onPress={(e) => { e?.stopPropagation?.(); toggleFavorite(hymn); }}
-      hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-      activeOpacity={0.6}
-      style={style}
-    >
-      <OdeIcon
-        name="heart"
-        size={20}
-        filled={on}
-        color={on ? COLORS.primary : COLORS.textSecondary}
-      />
-    </TouchableOpacity>
-  );
-}
-
 // 「今日為你預備」/「最近加入」共用嘅歌卡(樣式統一)
 // 心心擺喺封面左上,同右下角個 play 角標分開,唔會撞。
 //
@@ -128,7 +104,7 @@ const SongCard = React.memo(function SongCard({ hymn, list, onSelect }) {
       <View>
         <Thumb youtubeId={hymn.youtube_id} size={120} radius={10} />
         <PlayBadge />
-        <Heart hymn={hymn} style={styles.cardHeart} />
+        <FavHeart hymn={hymn} style={styles.cardHeart} />
       </View>
       <Text style={styles.cardTitle} numberOfLines={2}>{getDisplayTitle(hymn)}</Text>
       <Text style={styles.cardArtist} numberOfLines={1}>{hymn.artist || '未知'}</Text>
@@ -365,7 +341,7 @@ export default function HomeScreen({ hymns = [], loading = false, onPlayHymn, on
                       <Text style={styles.rowArtist} numberOfLines={1}>{h.artist || '未知'}</Text>
                     </View>
                     <OdeIcon name="play" size={22} color={COLORS.textSecondary} />
-                    <Heart hymn={h} style={styles.rowHeart} />
+                    <FavHeart hymn={h} style={styles.rowHeart} />
                   </TouchableOpacity>
                 ))}
               </View>

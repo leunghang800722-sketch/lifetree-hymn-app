@@ -9,6 +9,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, FlatList, TouchableOpacity, StyleSheet, Image, Alert, ScrollView, ActivityIndicator } from 'react-native';
 import OdeIcon from '../icons/OdeIcon';
+import CoverImage from '../components/CoverImage';
 import { COLORS, TYPOGRAPHY, effects } from '../theme/designSystem';
 import { useInsets } from '../hooks/useInsets';
 import { useFavorites } from '../context/FavoritesContext';
@@ -25,22 +26,6 @@ import { getDisplayTitle } from '../utils/displayTitle';
 import { adminListDelistedHymns, friendsList, friendsAccept, friendsDelete, friendsErrorMessage } from '../api';
 import { useCachedHymns } from '../hooks/useCachedHymns';
 import { mark, span, now, useRenderCount } from '../perfMarks'; // PERF-BASELINE-1B-20260902
-
-function Cover({ youtubeId, size = 52 }) {
-  const [failed, setFailed] = useState(false);
-  // youtubeId 變咗要重試新縮圖(舊版 failed 唔會自動清,BATCH5 S6)。
-  useEffect(() => { setFailed(false); }, [youtubeId]);
-  const uri = youtubeId ? `https://img.youtube.com/vi/${youtubeId}/mqdefault.jpg` : null;
-  if (!uri || failed) {
-    return (
-      <View style={[styles.cover, { width: size, height: size, alignItems: 'center', justifyContent: 'center' }]}>
-        <OdeIcon name="musicNote" size={size * 0.5} color={COLORS.textSecondary} />
-      </View>
-    );
-  }
-  return <Image source={{ uri }} style={[styles.cover, { width: size, height: size }]} onError={() => setFailed(true)} />;
-}
-
 export default function MineScreen({ onPlayHymn, onOpenAuth, onOpenAdminAdd, miniPlayer, hasMiniPlayer }) {
   useRenderCount('Mine'); // PERF-BASELINE-1B-20260902
   useEffect(() => { mark('mineMount'); }, []); // PERF-BASELINE-1B-20260902
@@ -298,7 +283,7 @@ export default function MineScreen({ onPlayHymn, onOpenAuth, onOpenAdminAdd, min
             // 撳最愛入面一首歌 = 喺一個清單畫面度揀歌,同「播全部」/清單詳情頁一致
             // 用 explicit + playlist(唔係散歌插播),照最愛次序接落去。
             <TouchableOpacity style={styles.row} onPress={() => onPlayHymn && onPlayHymn(item, { explicit: true, playlist: favorites })} activeOpacity={0.7}>
-              <Cover youtubeId={item.youtube_id} />
+              <CoverImage youtubeId={item.youtube_id} />
               <View style={styles.rowInfo}>
                 <Text style={styles.rowTitle} numberOfLines={2}>{getDisplayTitle(item)}</Text>
                 <Text style={styles.rowArtist} numberOfLines={1}>{item.artist || '未知'}</Text>
@@ -334,7 +319,7 @@ export default function MineScreen({ onPlayHymn, onOpenAuth, onOpenAdminAdd, min
             renderItem={({ item }) => (
               // 落咗架嘅歌唔俾撳播放(§4.3)——純顯示,唔用 TouchableOpacity。
               <View style={styles.row}>
-                <Cover youtubeId={item.hymn.youtube_id} />
+                <CoverImage youtubeId={item.hymn.youtube_id} />
                 <View style={styles.rowInfo}>
                   <Text style={styles.rowTitle} numberOfLines={2}>{getDisplayTitle(item.hymn)}</Text>
                   <Text style={styles.rowArtist} numberOfLines={1}>{item.hymn.artist || '未知'}</Text>

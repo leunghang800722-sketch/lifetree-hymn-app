@@ -10,28 +10,13 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, FlatList, TouchableOpacity, StyleSheet, Image, Alert, ActivityIndicator } from 'react-native';
 import OdeIcon from '../icons/OdeIcon';
+import CoverImage from '../components/CoverImage';
 import { COLORS, TYPOGRAPHY, effects } from '../theme/designSystem';
 import { useInsets } from '../hooks/useInsets';
 import { usePlaylists } from '../context/PlaylistsContext';
 import { API_BASE } from '../config';
 import { getDisplayTitle } from '../utils/displayTitle';
 import SheetShell from '../components/SheetShell';
-
-// mqdefault = 真 16:9 冇黑邊(同 PlaylistDetailSheet 一致)
-function Cover({ youtubeId, size = 52 }) {
-  const [failed, setFailed] = useState(false);
-  // youtubeId 變咗要重試新縮圖(舊版 failed 唔會自動清,BATCH5 S6)。
-  useEffect(() => { setFailed(false); }, [youtubeId]);
-  const uri = youtubeId ? `https://img.youtube.com/vi/${youtubeId}/mqdefault.jpg` : null;
-  if (!uri || failed) {
-    return (
-      <View style={[styles.cover, { width: size, height: size, alignItems: 'center', justifyContent: 'center' }]}>
-        <OdeIcon name="musicNote" size={size * 0.5} color={COLORS.textSecondary} />
-      </View>
-    );
-  }
-  return <Image source={{ uri }} style={[styles.cover, { width: size, height: size }]} onError={() => setFailed(true)} />;
-}
 
 export default function SharedPlaylistSheet({ token, onClose, onPlayHymn, miniPlayer, hasMiniPlayer = false }) {
   const { importPlaylist } = usePlaylists() || {};
@@ -169,7 +154,7 @@ export default function SharedPlaylistSheet({ token, onClose, onPlayHymn, miniPl
             }
             renderItem={({ item }) => (
               <TouchableOpacity style={styles.row} activeOpacity={0.7} onPress={() => play(item)}>
-                <Cover youtubeId={item.youtube_id} />
+                <CoverImage youtubeId={item.youtube_id} />
                 <View style={styles.rowInfo}>
                   <Text style={styles.rowTitle} numberOfLines={2}>{getDisplayTitle(item)}</Text>
                   <Text style={styles.rowArtist} numberOfLines={1}>{item.artist || '未知'}</Text>

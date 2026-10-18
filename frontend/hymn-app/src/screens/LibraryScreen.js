@@ -9,9 +9,10 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { View, Text, TextInput, FlatList, TouchableOpacity, TouchableWithoutFeedback, StyleSheet, Image, Keyboard, InteractionManager } from 'react-native';
 import OdeIcon from '../icons/OdeIcon';
+import CoverImage from '../components/CoverImage';
+import FavHeart from '../components/FavHeart';
 import { COLORS, TYPOGRAPHY, effects } from '../theme/designSystem';
 import { useInsets } from '../hooks/useInsets';
-import { useFavorites } from '../context/FavoritesContext';
 import { useAddToPlaylist } from '../components/AddToPlaylistSheet';
 import { useAdminEditHymn } from '../components/AdminEditHymnSheet';
 import { useAuth } from '../context/AuthContext';
@@ -45,44 +46,6 @@ const foldHomophone = (s) => s.replace(/[祢袮]/g, '你');
 // 兩種寫法,唔係讀音相同嘅唔同字。原始歌名顯示完全唔郁。
 const VARIANT_MAP = { '倚': '依', '妳': '你', '祢': '你', '袮': '你', '裏': '裡', '着': '著', '惟': '唯', '什': '甚', '么': '麼', '于': '於' };
 const foldVariant = (s) => s.replace(/[倚妳祢袮裏着惟什么于]/g, (c) => VARIANT_MAP[c] || c);
-
-// 同播放清單 / 歌單頁一致:喺清單度直接加最愛,唔使入返播放頁(款式照搬 HymnListScreen)
-function Heart({ hymn }) {
-  const { isFavorite, toggleFavorite } = useFavorites() || {};
-  if (!hymn?.id || typeof toggleFavorite !== 'function') return null;
-  const on = typeof isFavorite === 'function' ? isFavorite(hymn.id) : false;
-  return (
-    <TouchableOpacity
-      onPress={(e) => { e?.stopPropagation?.(); toggleFavorite(hymn); }}
-      hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-      style={styles.heart}
-      activeOpacity={0.6}
-    >
-      <OdeIcon
-        name="heart"
-        size={20}
-        filled={on}
-        color={on ? COLORS.primary : COLORS.textSecondary}
-      />
-    </TouchableOpacity>
-  );
-}
-
-function Cover({ youtubeId, size = 52 }) {
-  const [failed, setFailed] = useState(false);
-  // youtubeId 變咗要重試新縮圖(舊版 failed 唔會自動清,BATCH5 S6)。
-  useEffect(() => { setFailed(false); }, [youtubeId]);
-  const uri = youtubeId ? `https://img.youtube.com/vi/${youtubeId}/mqdefault.jpg` : null;
-  if (!uri || failed) {
-    // §5.4 唔用 Emoji 做 fallback,用向量圖標
-    return (
-      <View style={[styles.cover, { width: size, height: size, alignItems: 'center', justifyContent: 'center' }]}>
-        <OdeIcon name="musicNote" size={size * 0.5} color={COLORS.textSecondary} />
-      </View>
-    );
-  }
-  return <Image source={{ uri }} style={[styles.cover, { width: size, height: size }]} onError={() => setFailed(true)} />;
-}
 
 export default function LibraryScreen({ hymns = [], onPlayHymn, onOpenAuth }) {
   useRenderCount('Library'); // PERF-BASELINE-1B-20260902
@@ -406,7 +369,7 @@ export default function LibraryScreen({ hymns = [], onPlayHymn, onOpenAuth }) {
             onLongPress={isAdmin ? () => { Keyboard.dismiss(); openAdminEdit(item); } : undefined}
             activeOpacity={0.7}
           >
-            <Cover youtubeId={item.youtube_id} />
+            <CoverImage youtubeId={item.youtube_id} />
             <View style={styles.rowInfo}>
               <Text style={styles.rowTitle} numberOfLines={2}>{getDisplayTitle(item)}</Text>
               {/* §4.2:有 performer 就顯示「歌手 · 團體」,冇就「團體 · 真語言」
@@ -427,7 +390,7 @@ export default function LibraryScreen({ hymns = [], onPlayHymn, onOpenAuth }) {
             >
               <OdeIcon name="addToList" size={22} color={COLORS.textSecondary} />
             </TouchableOpacity>
-            <Heart hymn={item} />
+            <FavHeart hymn={item} style={styles.heart} />
           </TouchableOpacity>
         )}
         ListEmptyComponent={
