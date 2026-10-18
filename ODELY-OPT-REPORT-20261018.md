@@ -160,3 +160,15 @@ usersync-harness: NEW 21/21;負控 OLD fail 9
 5–7 對應組件同 1–4 共用同一 `CoverImage`，但無實機截圖證據。
 **Harness**：insertnext 66/66、hls-preflight A 14/14、B 26/26、react 5/5 場景過、usersync NEW 26/26（OLD 負控 fail 13）；`@babel/parser` 解析 9 個改動檔 OK。
 **模擬器收尾**：booted=0、idb_companion=0、Simulator=0、hold 檔已刪。
+
+## §④ insertNextImpl HLS 預檢 helper（commit 1c5297f + harness-c commit）
+- **改動**（App.js，只此一檔；`git diff -U0` 三個 hunk）：
+  - `@@ -555,0 +556,70` 新增 `preflightAndSwapNext = useCallback((nextSong, ctx) => {...}, [])`（:558，緊接 `hlsPreflightSeenRef` 宣告；依賴 `[]`，只讀 refs／module 級 `toTrack/logDiag/preflightHls`，同原 trackChanged 閉包可見性一致）。
+  - `@@ -1134,67 +1204,2` trackChanged：刪 67 行 inline 段（含註解、`const nextSong = queueRef.current[idx + 1];`），換成 1 行註解指引 + 1 行 `preflightAndSwapNext(queueRef.current[idx + 1], 'next');`（:1204–1205）。
+  - `@@ -2703,0 +2709,6` insertNextImpl：`warmIds([hymn.id])` 之後、beacon 之前加 `if (plan.insertAt === curIdx + 1) { try { preflightAndSwapNext(hymn, 'insertNext'); } catch (_) {} }`（:2713；fire-and-forget，`curIdx` 即 insertNextImpl 開頭重讀嗰個）。
+  - 總計 +78 / −67。helper body 同舊 inline 段逐行一致，只有三處差異：去咗 `const nextSong = ...` 行（改參數）、`{ hymnId, ctx: 'next' }`→`{ hymnId, ctx }`、beacon detail `ctx=next`→`ctx=${ctx}`；其餘縮排減 4 格。每條 guard／15 秒門檻／200 封頂／beacon 字段不變。
+- **watchdog 零 diff 證據**：全部 diff 只有上述三個 hunk（行範圍 556–625、1204–1205 原 1134–1200、2709–2714）。`handleStuckTrackEnd/handleMidStreamStall/handleBufferingStuck/sleepPollInterval/pollState/hlsStartupKick/BUFFERED_ADVANCING_CAP_TICKS` 嘅定義與函數體全部喺 hunk 之外（hunk 以外行只因 helper 插入而整體位移 +70/−65，內容無 +/−）。diff 內 grep 到嘅關鍵字只係搬動註解入面嘅文字提及。
+- **harness-c**（`frontend/hymn-app/tools/hls-preflight-harness/harness-c.js`）：用字元級 brace-matching 由 App.js 現版抽 helper 全段、`if (plan.insertAt === curIdx + 1) {...}` 守衛、trackChanged call 行；舊版由 `git show 6ade187:frontend/hymn-app/App.js` 抽 inline 段；babel 轉碼後 `new Function` 注入 mock（TrackPlayer／refs／toTrack／logDiag／fetch），preflightHls／isExplicitHttpFailure 係 `src/hlsPreflight.js` 真 module。新舊逐項對比時 `ms=<耗時>` 抹走（wall-clock 噪音），其餘逐字比。
+  - 結果 **29/29**：(1) 新舊 url/hymnId/ctx='next' 一致（404/403/200/500 ×2 + 7 個邊界：seen／downgraded／近尾／已 current／非 iOS／HLS off／無 idx+1）；(2) 插 idx+1→預檢一次 ctx=insertNext、404→remove(1)+add(progressive,1)、beacon `via=preflight ctx=insertNext`、ref set，200 不換；(3) 插 idx+2 零預檢；(4) downgraded 零預檢；(5) seen 去重＋封頂 200；(6) 非 iOS／HLS off 零預檢；(7) 預檢期間用戶跳去（nativeIdx<=curIdxNow）不 swap；(8) 尾 14 秒不 swap／尾 16 秒正控照 swap。
+- **全部 harness**：insertnext 66/66、hls-preflight A 14/14、B 26/26、C 29/29、usersync NEW 26/26（負控 OLD 13 fail）、react-harness 5 場景全過。`@babel/parser` 解析 App.js OK。
+- **偏離**：無。**側效應**：insertNext 現會對新插嘅 idx+1 歌做一次 HLS 預檢 fetch（iOS＋HLS_ENABLED 才有）；與 trackChanged 共用 `hlsPreflightSeenRef`，若該歌其後成為 idx+1 於 trackChanged 時不會重複預檢。
