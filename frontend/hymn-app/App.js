@@ -2709,7 +2709,9 @@ function PlayerProvider({ children }) {
       // ODELY-OPT §④ —— 插喺 idx+1(即係下一首)先預檢 HLS playlist,同
       // trackChanged 自動接播路徑同一個 helper(ctx='insertNext');fire-and-forget,
       // try/catch 保證唔影響插入成功路徑。
-      if (plan.insertAt === curIdx + 1) {
+      // ODELY-OPT-OPUS4 F1:要用去重刪位之後嘅 newCurIdx(插入嗰首舊位喺播緊嗰首前面
+      // 嗰陣 curIdx 會向前移一格),否則「Play Next 啱啱播完嗰首」呢個最典型用法會漏預檢。
+      if (plan.insertAt === plan.newCurIdx + 1) {
         try { preflightAndSwapNext(hymn, 'insertNext'); } catch (_) {}
       }
       // 12. beacon —— W1 嘅 src/clientLog.js,唔經 logDiag 閘(明文常開)。
