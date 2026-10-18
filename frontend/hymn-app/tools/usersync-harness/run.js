@@ -276,7 +276,7 @@ scenarios.g = async (src, label) => {
   while (g.pending.length) { g.release(0, { ok: false, status: 500 }); await sleep(3); }
   return [
     ['(g) 讀錯後 op2 仍被推(fetch 見 POST 1,POST 2...)', env.fetchCalls.some((c) => c.url.endsWith('/favorites/2')), { calls: env.fetchCalls.map((c) => c.url.split('/favorites/')[1]) }],
-    ['(g) op2 fail 後 outbox = [fav_add:2](冇被 [] 蓋走)', JSON.stringify(outboxOf(env).map(sig)) === '["fav_add:2"]', { outbox: outboxOf(env).map(sig) }],
+    ['(g) op2 fail 後持久化 outbox 仍含 fav_add:2(冇被 [] 蓋走;尾巴-1 後讀錯唔寫,已推 op1 暫留,下次成功重讀剔走)', outboxOf(env).map(sig).includes('fav_add:2'), { outbox: outboxOf(env).map(sig) }],
   ];
 };
 
@@ -334,6 +334,62 @@ scenarios.i = async (src, label) => {
   return [
     ['(i) 舊格式 op 全推 + 飛行中新 op 保留 [1,2,3],outbox 空', JSON.stringify(pushed) === '["1","2","3"]' && outboxOf(env).length === 0, { pushed, outbox: outboxOf(env).map(sig) }],
   ];
+};
+
+// ---- 階段①尾巴(Opus2 發現 1–3)場景 ----
+// (j) flush 重讀 null 時,飛行期間 enqueue 嘅新 op 保留(舊版 writeOutbox(slice(1)) 蓋走)
+scenarios.j = async (src, label) => {
+  const { mod, env } = load(src, label);
+  mod.setAuthToken('t');
+  mod.enqueue({ op: 'fav_add', hymn_id: 1 });
+  const g = manualGate(env);
+  const f = mod.flush();
+  await g.waitPending(1);
+  mod.enqueue({ op: 'fav_add', hymn_id: 9 });      // 飛行期間
+  env.getThrowOnce = true;                         // op1 完成後重讀 throw
+  g.release(0);
+  await f; await sleep(5);
+  while (g.pending.length) { g.release(0); await sleep(3); }
+  return [
+    ['(j) 重讀 null 後飛行期間 op9 仍喺持久化 outbox', outboxOf(env).map(sig).includes('fav_add:9'), { outbox: outboxOf(env).map(sig) }],
+  ];
+};
+
+// (k) enqueue 遇讀錯唔蓋走已有持久化 outbox;之後讀回成功新 op 都併返
+scenarios.k = async (src, label) => {
+  const { mod, env } = load(src, label);
+  mod.setAuthToken('t');
+  mod.enqueue({ op: 'fav_add', hymn_id: 1 });
+  mod.enqueue({ op: 'fav_add', hymn_id: 2 });
+  env.getThrowOnce = true;
+  mod.enqueue({ op: 'fav_add', hymn_id: 3 });      // 讀錯
+  const afterErr = outboxOf(env).map(sig);
+  mod.enqueue({ op: 'fav_add', hymn_id: 4 });      // 讀回成功
+  const afterOk = outboxOf(env).map(sig);
+  return [
+    ['(k) 讀錯嗰下 enqueue 後主隊仍含 [1,2](冇被 [3] 蓋走)', afterErr.includes('fav_add:1') && afterErr.includes('fav_add:2'), { afterErr }],
+    ['(k) 下次成功後主隊 = [1,2,3,4](side buffer 合併,無丟 op)', JSON.stringify(afterOk) === '["fav_add:1","fav_add:2","fav_add:3","fav_add:4"]', { afterOk }],
+    ['(k) outboxReadError 只報一次', env.clientLogs.filter((l) => l.e === 'outboxReadError').length <= 1, { logs: env.clientLogs.map((l) => l.e) }],
+  ];
+};
+
+// (l) outboxLoopGuard detail 含 initialLen/pushed/enqueuedDuring
+//     (用戶狂撳:每推一個 op 飛行期間又 enqueue 一個,推到上限)
+scenarios.l = async (src, label) => {
+  const { mod, env } = load(src, label);
+  mod.setAuthToken('t');
+  mod.enqueue({ op: 'fav_add', hymn_id: 1 });
+  let n = 100;
+  env.gate = () => {
+    if (env.fetchCalls.length > 300) return { ok: false, status: 500 };
+    mod.enqueue({ op: 'fav_add', hymn_id: n++ });
+    return { ok: true, status: 200 };
+  };
+  await mod.flush();
+  const lg = env.clientLogs.find((l) => l.e === 'outboxLoopGuard');
+  let d = null; try { d = JSON.parse(lg && lg.f.detail); } catch (_) {}
+  const ok = d && d.initialLen === 1 && d.pushed === 51 && d.enqueuedDuring === 51;
+  return [['(l) loopGuard detail 有 initialLen=1/pushed=51/enqueuedDuring=51', !!ok, { detail: lg && lg.f.detail }]];
 };
 
 (async () => {

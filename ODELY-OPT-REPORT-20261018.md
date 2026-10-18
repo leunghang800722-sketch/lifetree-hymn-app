@@ -124,3 +124,14 @@ usersync-harness: NEW 21/21;負控 OLD fail 9
 - 頂部均標「v2（2026-10-18）取代 v117（git `0de3b6c`）」+ 舊版雙電梯／Spotify 綠／MaterialIcons 已取代一句。
 - 引用行號（App.js）：gorhom 禁 portal 72–99、SheetTouchable 91–95、BottomSheet 3848、HLS_ENABLED 158、progressStore 405、預檢 ~1137–1200、`BUFFERED_ADVANCING_CAP_TICKS` 1778、pollState ~2480 / 理據 ~1640、sleepPollInterval 2147、NATIVE_WD_V2 4805、前台 10 秒提示 1708。
 - 未寫入任何密鑰／內網 IP／電話／chat id／device id；未改任何 code。
+
+## §①-尾巴(Opus2 發現 1–3)
+
+只改 `frontend/hymn-app/src/sync/userSync.js` + `tools/usersync-harness/run.js`。§0 紅線(`checkAuth`/`reportUnauthorized`/`break`/`_flushing`/`_pendingFlush`)未動。
+
+1. **flush 重讀 null**:只 `queue = queue.slice(1); continue`,**唔寫 MMKV**。持久化保留已推 op,下次成功重讀靠 `done` 剔走。取捨:已推 op 暫留在 MMKV,下次 flush 可能重推一次(op 對 server 冪等:fav_add/remove、pl_upsert PUT、pl_delete)。(g) 斷言因此由「== [2]」放寬為「含 fav_add:2」。
+2. **enqueue 讀錯**:揀 **side buffer**(`sync.outbox.pending.v1`)。理由:冇丟用戶動作、冇覆寫持久化主隊;複雜度可控(一個 reader + 一個 merge helper,enqueue/flush 起手都經 `readOutboxMerged`)。分兩種讀錯:`throw`(getString 本身 throw,暫時性)→ 新 op 入 side buffer,下次主隊讀成功併返並清走;`corrupt`(JSON 壞/非 array,永久性,否則 side buffer 永遠併唔返)→ 原文備份去 `sync.outbox.corrupt-<ts>` 再當空繼續。`outboxReadError`(detail=throw|corrupt)每 session 報一次。`getOutboxLength` 加埋 side buffer 長度。
+3. **outboxLoopGuard detail** 改為 JSON 字串 `{initialLen, pushed, enqueuedDuring}`(`enqueuedDuring`= flush 期間 enqueue 次數)。上限值不變。`enqueuedDuring≈pushed` = 用戶狂撳;`enqueuedDuring≈0` 而 pushed 撞頂 = 真迴圈。⚠️ 下游若原本當 detail 係純數字,要改解析。
+
+### Harness
+(j)(k)(l) 新增。NEW 26/26;OLD(d74c483)負控 fail 13;`PREV_SHA=24e520a` 負控:(j)(k×2)(l) 四項 FAIL,其餘 pass。
