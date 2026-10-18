@@ -6,7 +6,8 @@
 ## 0. 全程紅線（每階段都要喺報告逐條核）
 - 🔴 **唔碰**：`@gorhom/bottom-sheet` inline `<BottomSheet>` 結構（App.js:72–99 設計 + 用法）、`src/icons/OdeIcon.js`/`odeIcons.js`、`src/designSystem.js` 色板、HLS／Native／JS watchdog 嘅計時門檻與保護邏輯（`handleStuckTrackEnd`/`handleMidStreamStall`/`handleBufferingStuck`/`sleepPollInterval`/`pollState`/nudge/rescue/`hlsStartupKick`/16s/10s/5s 門檻/`BUFFERED_ADVANCING_CAP_TICKS`）。
 - 🔴 **唔做**：3a 移除 pollState；3c 關 `PERF_MARKS_ENABLED`（只加一行 TODO 註解）。
-- 🔴 四個 harness 每階段完成都要 **100% pass**（基準 10-18：react-harness 全場景 PASS、insertnext 66/66、hls-preflight A 14/14、B 26/26）；react-harness 跑法 `cd frontend/hymn-app/tools/react-harness && node run.js`。
+- 🔴 四個 harness 每階段完成都要 **100% pass**（基準 10-18：insertnext 66/66、hls-preflight A 14/14、B 26/26）；react-harness 跑法 `cd frontend/hymn-app/tools/react-harness && node run.js`。
+- ⚠️ **react-harness 基準係紅嘅**（10-18 實跑：`prepareSource: 搵唔到預期嘅 MMKV import 行` —— `useCachedHymns.js` 嘅 import 形狀變咗，harness 嘅 sed 規則過時，唔係 app bug）。階段①第一步要先修 `tools/react-harness/lib/prepareSource.js`（只改 sed/定位，**唔准改場景斷言**、唔准改 `useCachedHymns.js` 去遷就 harness），對住基準 `d74c483` 跑到全場景 PASS 先開始 1a/1b；報告記低紅→綠證據。
 - 唔部署、唔 OTA、唔 eas、唔 restart；唔掂 backend；唔讀 secret；共用 worktree 只 pathspec commit；唔 `git add -A`/stash/clean；scratch 唔准放 backend/；唔 kill 非自己起嘅 process；只出證據唔判 PASS/FAIL；完成後回覆一次就夠，唔要重發。
 - 每個 commit 訊息尾加 harness 指定嘅 Co-Authored-By；報告寫入 `ODELY-OPT-REPORT-20261018.md`（每階段一節）。
 
