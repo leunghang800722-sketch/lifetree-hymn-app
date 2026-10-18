@@ -39,7 +39,7 @@
 - **起播預檢＋熱換**：下一首／插播喺 trackChanged 時並行 `preflightHls`（App.js:~1137–1200，`hlsPreflightSeenRef` 去重、`hlsDowngradedTrackRef`），404／5xx 即熱換 progressive 並 `logDiag('hlsFallback')`。
 
 ## 六、Watchdog 三層（紅線，詳見 IRON-RULES §三）
-Native（SwiftAudioEx 經 config plugin 打 patch，iOS build>=15，`NATIVE_WD_V2` App.js:4805，死線 ≈16s）／JS 輪詢 watchdog（`handleStuckTrackEnd`、`handleMidStreamStall`、`handleBufferingStuck`）／iOS HLS 起播 kick（`hlsStartupKick*`）。三條**獨立**嘅 state 讀取路徑互相補位。
+Native（SwiftAudioEx 經 config plugin 打 patch，iOS build>=15，`NATIVE_WD_V2` App.js:4805；前台死線 10s＋5s ≈16s，背景 20s＋8s；plugin `plugins/withSwiftAudioExStallWatchdog.js`）／JS 輪詢 watchdog（`handleStuckTrackEnd`、`handleMidStreamStall`、`handleBufferingStuck`）／iOS HLS 起播 kick（`hlsStartupKick*`）。三條**獨立**嘅 state 讀取路徑互相補位。
 
 ## 七、部署與監察
 - 一切 deploy／OTA／backend restart 只經 `ops/deploy/` 嘅 gate script（`ota-publish.sh`／`backend-restart.sh`／`apk-publish.sh`／`approve.sh`），需 Eric 批准檔；詳見 `DEPLOY-GATE-PLAN.md`、`HANDOFF.md` §2.10。

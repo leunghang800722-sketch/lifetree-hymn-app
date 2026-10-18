@@ -16,16 +16,16 @@
 1. **播放清單 sheet 必須 inline `<BottomSheet>`（App.js:3848），擺喺 overlay container 最後一個 child；禁止換成 `<BottomSheetModal>` 或任何 portal。** 點解（App.js:72–99）：portal 去嘅 hosting container 冇 zIndex，畫喺 `zIndex:999` 不透明 overlay 下面，sheet 開咗但永遠見唔到（v228 誤判、v229 修）。改動：先喺模擬器實測 z-order，Opus 論證＋Eric 批。
 2. **gorhom sheet 入面嘅掣用 `SheetTouchable`（gorhom 嘅 TouchableOpacity），唔用 RN 內置。** 點解：Android 上 pan gesture 搶 touch（App.js:91–95）。
 3. **其餘面板一律用 `src/components/SheetShell.js`（bottom／center／fullscreen），唔准自砌 Modal＋backdrop＋手勢。** 點解：8 個面板各抄一套曾漏手勢（AddToPlaylistSheet 滑唔到收起）。
-4. **Backdrop／overlay 唔用 `absoluteFillObject`（用 flex:1 或 `top/left/right/bottom:0`），手勢用 RNGH，唔用 PanResponder。** 點解：07-29 實證收唔到 touch；New Architecture 收唔到 PanResponder move。
+4. **Backdrop／overlay 唔用 `absoluteFillObject`（用 flex:1 或 `top/left/right/bottom:0`；overlay 高度用 `bottom:0`，唔用 `height:SCREEN_HEIGHT`），手勢用 RNGH，唔用 PanResponder。** 點解：07-29 實證收唔到 touch；New Architecture 收唔到 PanResponder move。
 5. 清單手勢唔准用自製 PanResponder（撞 FlatList scroll）；清單用 `BottomSheetFlatList`。
 
 ## 三、Watchdog／HLS 紅線（🔴 最高危）
-涉及：`handleStuckTrackEnd`、`handleMidStreamStall`（含 `MAX_MID_STALL_NUDGES_PER_TRACK=3`、nudge／giveup）、`handleBufferingStuck`（`BUFFERING_STUCK_NUDGE_TICKS=15`、`BUFFERING_STUCK_SKIP_TICKS=30`）、`BUFFERED_ADVANCING_CAP_TICKS=4`（App.js:1778）、`BACKWARD_SEEK_GRACE_TICKS`、起播 kick（`hlsStartupKick*`、`HLS_STARTUP_KICK_INTERVAL_TICKS=2`，用 `setPlayWhenReady(true)`）、`HLS_ENABLED`／`toTrack` 嘅 `forceProgressive`、HLS 預檢熱換（`hlsPreflightSeenRef`、`hlsDowngradedTrackRef`、近尾 15 秒唔換）、native 16s 死線（`NATIVE_WD_V2`，App.js:4805）、前台 10 秒緩衝提示（App.js:1708）。
+涉及：`handleStuckTrackEnd`、`handleMidStreamStall`（含 `MAX_MID_STALL_NUDGES_PER_TRACK=3`、nudge／giveup）、`handleBufferingStuck`（`BUFFERING_STUCK_NUDGE_TICKS=15`、`BUFFERING_STUCK_SKIP_TICKS=30`）、`BUFFERED_ADVANCING_CAP_TICKS=4`（App.js:1778）、`BACKWARD_SEEK_GRACE_TICKS`、起播 kick（`hlsStartupKick*`、`HLS_STARTUP_KICK_INTERVAL_TICKS=2`，用 `setPlayWhenReady(true)`）、`HLS_ENABLED`／`toTrack` 嘅 `forceProgressive`、HLS 預檢熱換（`hlsPreflightSeenRef`、`hlsDowngradedTrackRef`、近尾 15 秒唔換）、native 死線（前台 10s 偵測＋5s reload ≈16s；背景 20s＋8s；`NATIVE_WD_V2`，App.js:4805）、前台 10 秒緩衝提示（App.js:1708）。
 1. **三條獨立 state 讀取路徑互相補位，唔准當重複而刪：** (a) event（PlaybackState／ActiveTrackChanged）、(b) `pollState()` 2 秒 `getPlaybackState()` poll（App.js:~2480，理據見 App.js:~1640：native 可卡死而唔發 event）、(c) position／duration poll（AVPlayerItem 屬性，state 卡死時仍反映播放頭）。**`pollState` 唔准刪。** `sleepPollInterval`（App.js:2147，Playing／Buffering 1 秒、閒時 2.5 秒分片）亦唔准隨便改。
-2. **JS nudge 同 native 16s 死線唔可以撞：** `BUFFERED_ADVANCING_CAP_TICKS` 由 12 收窄到 4，因為 12 令 nudge ≈ tick 15 fire，同 native 斬歌打交（兩單真機實錘）。任何門檻調整須對照 native 死線留 margin。
+2. **JS nudge 同 native 前台 ≈16s 死線唔可以撞：** `BUFFERED_ADVANCING_CAP_TICKS` 由 12 收窄到 4，因為 12 令 nudge ≈ tick 15 fire，同 native 斬歌打交（兩單真機實錘）。任何門檻調整須對照 native 死線留 margin。
 3. **前台熔斷門檻、背景放寬、nudge 額、giveup 邏輯：唔准單獨調一個數字。** 要改：**先寫 Opus 論證（附真機 log 證據，唔係靜態推理）＋ Fable 批，再獨立 commit，改動前後 `git diff` 逐行標註，harness 全 pass。**
 4. 唔准以拉長 JS 門檻代替修根因（HLS 起播已試過，被真機推翻）。
-5. 唔准掂 native patch（`patches/`、`plugins/withSwiftAudioExStallFix.js`），除非有 Fable 批嘅 build 計劃。
+5. 唔准掂 native patch（`patches/`、`plugins/withSwiftAudioExStallFix.js`、`plugins/withSwiftAudioExStallWatchdog.js`——native 死線正正喺後者），除非有 Fable 批嘅 build 計劃。
 
 ## 四、Store 與資料
 1. 播放進度只寫 `progressStore`（`createExternalStore`），唔准搬返 React state。點解：每秒全 App re-render（O1-B2）。
