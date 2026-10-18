@@ -8,7 +8,7 @@
 //   * 主色紫 #B9A6F2 = 已收藏 / 連結
 //   * 歌名 18pt(§5.3 列表可讀性)、封面縮圖、行尾心心同其他歌單一致
 
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import {
   View,
   FlatList,
@@ -20,7 +20,7 @@ import {
 import OdeIcon from '../icons/OdeIcon';
 import CoverImage from '../components/CoverImage';
 import FavHeart from '../components/FavHeart';
-import { COLORS, TYPOGRAPHY, effects } from '../theme/designSystem';
+import { COLORS, TYPOGRAPHY } from '../theme/designSystem';
 import { useAddToPlaylist } from '../components/AddToPlaylistSheet';
 import { useAdminEditHymn } from '../components/AdminEditHymnSheet';
 import { useAuth } from '../context/AuthContext';
@@ -103,7 +103,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center',
     paddingHorizontal: 16, paddingVertical: 8,
   },
-  cover: { borderRadius: 6, backgroundColor: COLORS.cardLight, ...effects.coverInset },
   rowInfo: { flex: 1, marginLeft: 12 },
   rowTitle: { ...TYPOGRAPHY.songTitle },   // §5.3 列表 18pt
   rowArtist: { ...TYPOGRAPHY.artist, marginTop: 2 },

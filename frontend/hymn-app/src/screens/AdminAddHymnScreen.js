@@ -14,7 +14,7 @@ import {
 import OdeIcon from '../icons/OdeIcon';
 import CoverImage from '../components/CoverImage';
 import { useInsets } from '../hooks/useInsets';
-import { COLORS, effects } from '../theme/designSystem';
+import { COLORS } from '../theme/designSystem';
 import { useAuth } from '../context/AuthContext';
 import { adminPreviewHymn, adminAddHymn, adminListAddedHymns, adminErrorMessage } from '../api';
 import { notifyHymnsChanged } from '../hooks/useCachedHymns';
@@ -479,7 +479,6 @@ const styles = StyleSheet.create({
   addedLoadingWrap: { paddingVertical: 20, alignItems: 'center' },
   addedEmpty: { color: COLORS.textSecondary, fontSize: 13, paddingVertical: 8 },
   addedRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 8 },
-  cover: { borderRadius: 6, backgroundColor: COLORS.cardLight, ...effects.coverInset },
   addedRowInfo: { flex: 1, marginLeft: 12 },
   addedRowTitle: { color: COLORS.textPrimary, fontSize: 15, fontWeight: '600' },
   addedRowArtist: { color: COLORS.textSecondary, fontSize: 13, marginTop: 2 },

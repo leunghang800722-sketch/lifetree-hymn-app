@@ -7,11 +7,11 @@
 // 所以呢度收到咩就顯示咩,唔使前端再過濾一次。
 
 import React, { useState, useMemo, useEffect, useRef } from 'react';
-import { View, Text, TextInput, FlatList, TouchableOpacity, TouchableWithoutFeedback, StyleSheet, Image, Keyboard, InteractionManager } from 'react-native';
+import { View, Text, TextInput, FlatList, TouchableOpacity, TouchableWithoutFeedback, StyleSheet, Keyboard, InteractionManager } from 'react-native';
 import OdeIcon from '../icons/OdeIcon';
 import CoverImage from '../components/CoverImage';
 import FavHeart from '../components/FavHeart';
-import { COLORS, TYPOGRAPHY, effects } from '../theme/designSystem';
+import { COLORS, TYPOGRAPHY } from '../theme/designSystem';
 import { useInsets } from '../hooks/useInsets';
 import { useAddToPlaylist } from '../components/AddToPlaylistSheet';
 import { useAdminEditHymn } from '../components/AdminEditHymnSheet';
@@ -462,7 +462,6 @@ const styles = StyleSheet.create({
   artistChipText: { fontSize: 12, color: COLORS.textSecondary },
   artistChipTextActive: { color: COLORS.primary, fontWeight: '700' },
   row: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 8 },
-  cover: { borderRadius: 6, backgroundColor: COLORS.cardLight, ...effects.coverInset },
   rowInfo: { flex: 1, marginLeft: 12 },
   rowTitle: { ...TYPOGRAPHY.songTitle },   // §5.3 列表 18pt
   rowArtist: { ...TYPOGRAPHY.artist, marginTop: 2 },

@@ -8,10 +8,10 @@
 // 唔使額外 retry 邏輯(用戶自己閂咗再撳 link 一次就係 retry)。
 
 import React, { useEffect, useState } from 'react';
-import { View, Text, FlatList, TouchableOpacity, StyleSheet, Image, Alert, ActivityIndicator } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, StyleSheet, Alert, ActivityIndicator } from 'react-native';
 import OdeIcon from '../icons/OdeIcon';
 import CoverImage from '../components/CoverImage';
-import { COLORS, TYPOGRAPHY, effects } from '../theme/designSystem';
+import { COLORS, TYPOGRAPHY } from '../theme/designSystem';
 import { useInsets } from '../hooks/useInsets';
 import { usePlaylists } from '../context/PlaylistsContext';
 import { API_BASE } from '../config';
@@ -199,7 +199,6 @@ const styles = StyleSheet.create({
   },
   saveBtnText: { color: COLORS.textOnGlow, fontWeight: '700', fontSize: 15, marginLeft: 6 },
   row: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 8 },
-  cover: { borderRadius: 6, backgroundColor: COLORS.cardLight, ...effects.coverInset },
   rowInfo: { flex: 1, marginLeft: 12 },
   rowTitle: { ...TYPOGRAPHY.songTitle },
   rowArtist: { ...TYPOGRAPHY.artist, marginTop: 2 },

@@ -10,7 +10,7 @@
 // 移除單曲**唔使二次確認**(re-add 好易,Spotify 同款);刪成個清單先要確認。
 
 import React, { useEffect, useState } from 'react';
-import { View, Text, FlatList, TouchableOpacity, StyleSheet, Image, Alert, Share } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, StyleSheet, Alert, Share } from 'react-native';
 import OdeIcon from '../icons/OdeIcon';
 import CoverImage from '../components/CoverImage';
 import { COLORS, TYPOGRAPHY, effects } from '../theme/designSystem';
@@ -232,7 +232,6 @@ const styles = StyleSheet.create({
   },
   row: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 8 },
   rowAction: { paddingLeft: 14 },
-  cover: { borderRadius: 6, backgroundColor: COLORS.cardLight, ...effects.coverInset },
   rowInfo: { flex: 1, marginLeft: 12 },
   rowTitle: { ...TYPOGRAPHY.songTitle },
   rowArtist: { ...TYPOGRAPHY.artist, marginTop: 2 },

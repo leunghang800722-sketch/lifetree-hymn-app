@@ -7,7 +7,7 @@
 // 日後有餘力先考慮淺色」,所以而家淨係得帳戶相關。
 
 import React, { useState, useEffect } from 'react';
-import { View, Text, FlatList, TouchableOpacity, StyleSheet, Image, Alert, ScrollView, ActivityIndicator } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, StyleSheet, Alert, ScrollView, ActivityIndicator } from 'react-native';
 import OdeIcon from '../icons/OdeIcon';
 import CoverImage from '../components/CoverImage';
 import { COLORS, TYPOGRAPHY, effects } from '../theme/designSystem';
