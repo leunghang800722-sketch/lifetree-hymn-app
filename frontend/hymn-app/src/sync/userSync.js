@@ -30,19 +30,23 @@ const OWNER_KEY = 'sync.owner.v1';
 let _token = null;
 export function setAuthToken(token) { _token = token || null; }
 
+// ODELY-OPT 1b-修正(M2):回 null = 讀錯(getString throw / JSON 壞),同「真係空」([])
+// 分開。flush 重讀遇 null 要退返記憶體 queue,唔可以當空 outbox 寫 [] 蓋走持久化。
 function readOutbox() {
   try {
     const raw = store()?.getString(OUTBOX_KEY);
     if (!raw) return [];
     const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed : [];
-  } catch (_) { return []; }
+    return Array.isArray(parsed) ? parsed : null;
+  } catch (_) { return null; }
 }
+// 其他 caller:讀錯當空。
+function readOutboxOrEmpty() { return readOutbox() || []; }
 
 // ODELY-OPT 1b:outbox 長度改 external store(取代 useOutboxLength 每 2 秒輪詢)。
 // 初始值讀一次持久化嘅 outbox;之後只喺 writeOutbox() 寫入後更新(長度冇變
 // 就唔 setState,免無謂 re-render)。MMKV 讀寫失敗時照舊靜靜吞,store 保持舊值。
-export const outboxStore = createExternalStore({ length: readOutbox().length });
+export const outboxStore = createExternalStore({ length: readOutboxOrEmpty().length });
 
 function writeOutbox(queue) {
   try { store()?.set(OUTBOX_KEY, JSON.stringify(queue)); } catch (_) {}
@@ -52,7 +56,7 @@ function writeOutbox(queue) {
 }
 
 export function getOutboxLength() {
-  return readOutbox().length;
+  return readOutboxOrEmpty().length;
 }
 
 export function getOwner() {
@@ -85,12 +89,22 @@ function opKey(op) {
   if (op.op === 'pl_delete') return op.id;
   return op.hymn_id;
 }
+// L1:身份再加單調遞增 seq(同毫秒兩個 op 都分得開);舊 outbox 嘅 op 冇 seq
+// → 任一邊冇 seq 就退返 ts 比對(兼容)。
 function sameOp(a, b) {
-  return a.op === b.op && a.ts === b.ts && opKey(a) === opKey(b);
+  if (a.op !== b.op || a.ts !== b.ts || opKey(a) !== opKey(b)) return false;
+  if (a.seq != null && b.seq != null) return a.seq === b.seq;
+  return true;
 }
 
+// module-level 計數器;重啟後 enqueue 時由 outbox 現有 max seq 之後起。
+let _seq = 0;
+
 export function enqueue(op) {
-  writeOutbox(collapse([...readOutbox(), { ...op, ts: Date.now() }]));
+  const cur = readOutboxOrEmpty();
+  for (const x of cur) if (typeof x.seq === 'number' && x.seq > _seq) _seq = x.seq;
+  _seq += 1;
+  writeOutbox(collapse([...cur, { ...op, ts: Date.now(), seq: _seq }]));
 }
 
 // PlaylistsContext 註冊,俾 pl_upsert 收到 stale:true 時用 server 版覆蓋本地。
@@ -151,19 +165,30 @@ export async function flush() {
   _flushing = true;
   let drained = false;
   try {
-    let queue = collapse(readOutbox());
+    let queue = collapse(readOutboxOrEmpty());
     if (!_outboxLongReported && queue.length >= 50) {
       _outboxLongReported = true;
       sendClientLog('outboxLong', { detail: String(queue.length) });
     }
+    // M1:本輪已推 op 清單 + 硬上限(第二道保險),MMKV set 持續 throw 時唔會無限重推。
+    const done = [];
+    const pushLimit = queue.length + 50;
     while (queue.length > 0) {
+      if (done.length >= pushLimit) {
+        sendClientLog('outboxLoopGuard', { detail: String(done.length) });
+        break;
+      }
       const [op] = queue;
       const ok = await runOp(op);
       if (!ok) break; // fail 即停,queue 原封不動留低
+      done.push(op);
       // ODELY-OPT 1a:await 期間 enqueue() 可能已經寫入新 op(或 collapse 取代
       // 咗本 op),所以成功後重讀最新 outbox,只剔走剛推完嗰個,唔用閉包 rest 覆寫。
-      const latest = collapse(readOutbox());
-      const next = latest.filter((x) => !sameOp(x, op));
+      const raw = readOutbox();
+      // M2:讀錯(null)退返舊版行為 queue.slice(1),唔寫 [] 蓋走持久化。
+      const next = raw === null
+        ? queue.slice(1)
+        : collapse(raw).filter((x) => !done.some((d) => sameOp(x, d)));
       writeOutbox(next);
       queue = next;
     }
