@@ -7,10 +7,25 @@ const HARNESS_ROOT = join(__dirname, '..');
 const DEFAULT_SOURCE_DIR = join(HARNESS_ROOT, '..', '..', 'src', 'hooks');
 const TMP_DIR = join(HARNESS_ROOT, '.tmp', 'hooks');
 
-const MMKV_IMPORT_FROM = "import { MMKV } from 'react-native-mmkv';";
-const MMKV_IMPORT_TO = "import { MMKV } from '../../mocks/mmkvMock.js';";
-const CONFIG_IMPORT_FROM = "import { API_BASE } from '../config.js';";
-const CONFIG_IMPORT_TO = "import { API_BASE } from '../../mocks/configStub.js';";
+// sed 規則表。每條 { from, to, required }:required=true 搵唔到即 throw;
+// required=false(例如舊版 c9bd715 先有嘅 MMKV import、或新版先有嘅 storage /
+// perfMarks / react-native import)搵到先 patch。最後 diff 行數必須等於「實際
+// 命中規則數」,否則 throw(維護紀律)。
+// 2026-10-18:useCachedHymns.js 已由直接 `new MMKV()` 改為經 ../storage 嘅
+// getStorage()(BATCH5 O10),另加 perfMarks / react-native import,所以 MMKV
+// 規則降為舊版專用,新版 import 形狀加三條 stub 規則。
+const RULES = [
+  // 舊版(c9bd715 一類)直接 import MMKV
+  { name: 'mmkv(legacy)', from: "import { MMKV } from 'react-native-mmkv';", to: "import { MMKV } from '../../mocks/mmkvMock.js';" },
+  // 現行:經 storage.js 共用 instance
+  { name: 'storage', from: "import { getStorage } from '../storage';", to: "import { getStorage } from '../../mocks/storageStub.js';" },
+  { name: 'perfMarks', from: "import { mark, note } from '../perfMarks';", to: "import { mark, note } from '../../mocks/perfMarksStub.js';" },
+  { name: 'react-native', from: "import { InteractionManager } from 'react-native';", to: "import { InteractionManager } from '../../mocks/reactNativeStub.js';" },
+  // 兩種 config import 寫法(舊版 ../config.js,必有其一)
+  { name: 'config', from: "import { API_BASE } from '../config.js';", to: "import { API_BASE } from '../../mocks/configStub.js';", required: true },
+];
+// MMKV 來源必有其一(舊版 MMKV 直 import,或新版 storage import)。
+const MMKV_SOURCE_RULES = ['mmkv(legacy)', 'storage'];
 
 function diffLineNumbers(a, b) {
   const la = a.split('\n');
@@ -36,19 +51,22 @@ export function prepareUseCachedHymns(sourceDir = process.env.HARNESS_SOURCE_DIR
   const srcPath = join(sourceDir, 'useCachedHymns.js');
   const original = readFileSync(srcPath, 'utf8');
 
-  if (!original.includes(MMKV_IMPORT_FROM)) {
-    throw new Error(`prepareSource: 搵唔到預期嘅 MMKV import 行,sed 冇得做。source=${srcPath}`);
+  const hit = RULES.filter((r) => original.includes(r.from));
+  const hitNames = hit.map((r) => r.name);
+  if (!hit.some((r) => MMKV_SOURCE_RULES.includes(r.name))) {
+    throw new Error(`prepareSource: 搵唔到預期嘅 MMKV/storage import 行,sed 冇得做。source=${srcPath}`);
   }
-  if (!original.includes(CONFIG_IMPORT_FROM)) {
-    throw new Error(`prepareSource: 搵唔到預期嘅 config import 行,sed 冇得做。source=${srcPath}`);
+  for (const r of RULES) {
+    if (r.required && !hitNames.includes(r.name)) {
+      throw new Error(`prepareSource: 搵唔到預期嘅 ${r.name} import 行,sed 冇得做。source=${srcPath}`);
+    }
   }
 
-  const patched = original
-    .replace(MMKV_IMPORT_FROM, MMKV_IMPORT_TO)
-    .replace(CONFIG_IMPORT_FROM, CONFIG_IMPORT_TO);
+  let patched = original;
+  for (const r of hit) patched = patched.replace(r.from, r.to);
 
   const changedLines = diffLineNumbers(original, patched);
-  const expectedChangedCount = 2; // MMKV import 行 + config import 行,可以係同一行都得但呢度必定分開兩行
+  const expectedChangedCount = hit.length; // 每條命中規則恰好改一行
   if (changedLines.length !== expectedChangedCount) {
     throw new Error(
       `prepareSource: sed 前後 diff 應該淨係 ${expectedChangedCount} 行,實際 ${changedLines.length} 行` +
@@ -70,5 +88,5 @@ export function prepareUseCachedHymns(sourceDir = process.env.HARNESS_SOURCE_DIR
     writeFileSync(join(TMP_DIR, 'externalStore.js'), esContent, 'utf8');
   }
 
-  return { outPath, srcPath, changedLines };
+  return { outPath, srcPath, changedLines, patchedRules: hitNames };
 }

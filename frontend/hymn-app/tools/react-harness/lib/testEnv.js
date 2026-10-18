@@ -36,9 +36,12 @@ export function makeFetchMock(routes) {
         return {
           ok: true,
           json: async () => body,
+          // 2026-10-18:現行 useCachedHymns 讀 body 用 r.text()(E-1 two-stage),
+          // mock 補 text(),回傳同一份 body 嘅 JSON 字串。
+          text: async () => JSON.stringify(body),
         };
       }
     }
-    return { ok: false, json: async () => ({}) };
+    return { ok: false, json: async () => ({}), text: async () => '{}' };
   };
 }

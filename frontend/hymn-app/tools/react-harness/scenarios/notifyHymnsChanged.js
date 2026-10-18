@@ -20,14 +20,14 @@ let hymnsCallCount = 0;
 global.fetch = async (url) => {
   const u = String(url);
   if (u.startsWith('http://harness.invalid/api/version')) {
-    return { ok: true, json: async () => ({ dataVersion: 'v1' }) };
+    return { ok: true, json: async () => ({ dataVersion: 'v1' }), text: async () => JSON.stringify({ dataVersion: 'v1' }) };
   }
   if (u.startsWith('http://harness.invalid/api/hymns')) {
     hymnsCallCount += 1;
     const body = hymnsCallCount === 1
       ? { data: HYMNS_A, dataVersion: 'v1' }
       : { data: HYMNS_B, dataVersion: 'v2' };
-    return { ok: true, json: async () => body };
+    return { ok: true, json: async () => body, text: async () => JSON.stringify(body) }; // 2026-10-18 mock 補 text()(現行 hook 用 r.text())
   }
   return { ok: false, json: async () => ({}) };
 };
