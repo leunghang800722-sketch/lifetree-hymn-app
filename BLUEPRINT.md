@@ -1,62 +1,54 @@
-# 詩歌App — 播放器核心架構鐵律 (Master Blueprint)
+# Odely — 架構總覽（Master Blueprint）
 
-> 本文件記載 v117 達到完美境界後的終極佈局與物理動畫規範。
-> **最高優先級**：未經恒恒明確允許，任何版本更新都不可違反下列條款。
+> **v2（2026-10-18）—— 取代 v117（2026-06-01，原文見 git `0de3b6c`）。**
+> 舊版「雙電梯／Spotify 綠／MaterialIcons」已於 2026-07 REDESIGN-PLAN 同 Ode 品牌化取代。
+> 本文件 = 架構總覽（點砌）；「唔准掂」嘅清單同改動程序喺 `HYMN-APP-IRON-RULES.md`。
+> 行號以 `frontend/hymn-app/App.js` 2026-10-18 為準，會漂移，以函數／常數名為主。
 
----
+## 目錄
+一、播放器佔位結構　二、Sheet 層　三、Icon 與設計系統　四、資料流與 store　五、播放路徑（HLS／progressive）　六、Watchdog 三層　七、部署與監察　八、仍然有效嘅舊規
 
-## 一、終極排版與物理動畫鐵律
+## 一、播放器佔位結構
+- 全螢幕播放器係 `olStyles.overlay`（`position:absolute` + 不透明底色 + `zIndex:999`），所有播放器 UI 都喺佢個 container 入面。
+- 垂直次序：影片 → 封面／歌名／功能列 → 控制列 → 播放清單 sheet（最後一個 child，見二）。**雙電梯（Handle／Controls 差速平移）已廢**，由 gorhom 手勢引擎取代（REDESIGN-PLAN §3.4 拍板）。
+- 「黃金差速」嘅效果保留（彈出時封面＋控制列成組上移），但由 sheet 手勢帶動，唔再有手寫 `CONTROLS_LIFT` 數值規範。
 
-### 1. 嚴禁動態計算（防死機）
-- ❌ 絕對禁止使用 `onLayout`、`useMemo` 或動態測量來驅動 Native Driver 動畫
-- ✅ 所有的平移距離 (`translateY`) 必須是寫死的固定數值
+## 二、Sheet 層（兩套，唔好混）
+1. **播放清單 sheet = inline gorhom `<BottomSheet>`**（App.js:3848，兩個 snap point：collapsed 常駐＋88%）。
+   - 必須 inline、擺喺 overlay container 最後一個 child。原因（App.js:72–99 註解）：`<BottomSheetModal>` 會 portal 去 `<BottomSheetModalProvider>` 嘅 hosting container，嗰個係 absoluteFill 但**冇 zIndex**，而成個 App 連 `zIndex:999` overlay 都喺 `{children}` 入面 → sheet 其實 present 咗，但畫喺不透明 overlay **下面**，用家見唔到。v228 誤判成 reanimated 版本問題；真因係 z-order。
+   - sheet 入面嘅掣用 gorhom 嘅 `TouchableOpacity`（`SheetTouchable`，App.js:91–95），RN 內置嗰個喺 Android 會被 pan gesture 搶 touch。
+   - 清單用 `BottomSheetFlatList`；唔用 `enablePanDownToClose`（sheet 常駐，向下滑 = 收返 collapsed）。
+2. **其餘 8 個面板 = `src/components/SheetShell.js` 統一殼**（SHEETSHELL-EXEC-20260906）：variant `bottom`（RNGH `Gesture.Pan` 下滑收起＋flex:1 backdrop）／`center`（上下兩嚿 flex:1 backdrop 企正中）／`fullscreen`（只供 Modal＋GestureHandlerRootView，唔畫 chrome）。起因係每個面板抄一套 Modal＋手勢、抄漏手勢（AddToPlaylistSheet 滑唔到收起）。新面板一律用 SheetShell，唔准再自砌 Modal。
+- 兩套都唔用 `absoluteFillObject` 做 backdrop（收唔到 touch，07-29 實證）；亦唔用 PanResponder（New Architecture 下收唔到 move 事件）。
 
-### 2. 絕對的 Y 軸 DOM 順序
-```
-[影片] -> [flex:1 上半彈簧] -> [控制區 (zIndex: 99)] -> [flex:1 下半彈簧] -> [拖拽把手 (Handle)]
-```
-- 絕對不准調亂這個順序
-- 控制區必須靠 `zIndex: 99` 防追撞
+## 三、Icon 與設計系統
+- **OdeIcon 單一來源**：`src/icons/OdeIcon.js`（讀 `odeIcons.js` 嘅 `ODE_ICONS`，24×24、stroke 1.75）。全 App 只用呢個出 icon；禁 Emoji／文字符號當 icon，禁混用 `@expo/vector-icons`（ODE-REBRAND-PLAN §7 驗收）。
+- **`src/theme/designSystem.js`**：全 App 只准用 `COLORS`（不寫死 hex）。語義：暖光 `COLORS.glow`／`glowSoft` = 播放／進度條／主 CTA／選中 tab；主色 `COLORS.primary` = 已收藏／選中 chip／連結；`textOnGlow` 用喺暖光底上嘅字；另有 `danger`、`surface`／`surface2`／`surfaceRaised`、`border`、`textMuted`／`textDim`。其他匯出：`TYPOGRAPHY`、`radii`、`effects`、`iconState`（icon 狀態色）。綠色退場、冇金色；舊 key（`accent`／`gold`／`card`…）係過渡 alias。數值唯一來源係該檔，**呢度唔抄**。品牌／色板背景見 `docs/design-ode/ODE-HANDOFF.md`。
 
-### 3. 黃金差速與居中
-- **收起時**：靠上下兩個 `flex: 1` 彈簧讓控制區自然居中
-- **展開時**：
-  - 把手升 `SHEET_HEIGHT`
-  - 控制區升一個「較小且固定的數值」(`CONTROLS_LIFT = 295`)，確保播放鍵剛好頂住影片底部
+## 四、資料流與 store
+- `src/hooks/externalStore.js` 嘅 `createExternalStore`（`useSyncExternalStore`）= 高頻狀態隔離層，令更新唔觸發全 App re-render：
+  - `progressStore`（App.js:405，`{currentTime, duration}`）：播放進度只住呢度，**唔再係 React state**（O1-B2）；寫入點 App.js:~2199／2210。
+  - `hymnsStore`（`useCachedHymns.js`）：詩歌庫；`hymnsById` Map 隨 `setState` 重建，讀用 `getHymnById(id)`。
+  - `outboxStore`（`src/sync/userSync.js`）：用戶資料同步 outbox 長度（`useOutboxLength`）。
+- 新加高頻共享狀態 → 用 `createExternalStore`，唔好塞 `useState`／Context。
 
-### 4. 終極防走光與 Android 觸控邊界
-- 歌單 (Sheet) 必須與把手容器作為「兄弟節點 (Sibling)」獨立存在，以防止 Android 裁切觸控事件（導致無法滑動）
-- 歌單的初始位置寫死為 `bottom: -SHEET_HEIGHT + 50`，展開時與把手同步拉升，無縫銜接
-- 收起時，必須將歌單容器的 `opacity` 強制設為 0，確保底部 100% 不走光
+## 五、播放路徑
+- 播放核心：react-native-track-player 一次交晒隊列俾 native，native 自己處理 next／repeat／背景自動前進（PHASE1-PLAYER-REBUILD §3.2 `playQueue`）。
+- **progressive**（Android 全部＋iOS 預設）：`/api/stream/:id`。
+- **HLS**（純 iOS）：`HLS_ENABLED`（App.js:158）由開機 `/api/app-version` 決定，預設 false；回退槓桿喺 backend manifest，唔寫死 JS。`toTrack(song, {forceProgressive})` 可強制降級。本地檔命中永遠贏過 HLS。
+- **起播預檢＋熱換**：下一首／插播喺 trackChanged 時並行 `preflightHls`（App.js:~1137–1200，`hlsPreflightSeenRef` 去重、`hlsDowngradedTrackRef`），404／5xx 即熱換 progressive 並 `logDiag('hlsFallback')`。
 
----
+## 六、Watchdog 三層（紅線，詳見 IRON-RULES §三）
+Native（SwiftAudioEx 經 config plugin 打 patch，iOS build>=15，`NATIVE_WD_V2` App.js:4805，死線 ≈16s）／JS 輪詢 watchdog（`handleStuckTrackEnd`、`handleMidStreamStall`、`handleBufferingStuck`）／iOS HLS 起播 kick（`hlsStartupKick*`）。三條**獨立**嘅 state 讀取路徑互相補位。
 
-## 二、終極 UI 與圖標鐵律
+## 七、部署與監察
+- 一切 deploy／OTA／backend restart 只經 `ops/deploy/` 嘅 gate script（`ota-publish.sh`／`backend-restart.sh`／`apk-publish.sh`／`approve.sh`），需 Eric 批准檔；詳見 `DEPLOY-GATE-PLAN.md`、`HANDOFF.md` §2.10。
+- 串流健康有 `ops/stream/` 監察（偵測＋警報＋selfheal）。**出口 IP 係成個 App 嘅命脈**（`HANDOFF.md` §2.2）。
+- 模擬器收尾見 `CLAUDE.md`。
 
-### 1. 播放鍵 (Play/Pause)
-- `width: 64, height: 64` 的實心純白圓形背景 (`#FFFFFF`)
-- 配搭純黑色 (`#000000`) 的圖標
+## 八、仍然有效嘅舊規
+- 禁 `onLayout`／`useMemo`／動態測量驅動 Native Driver 動畫；translateY outputRange 用硬編碼常數。
+- 禁 Emoji 做 icon（現為 OdeIcon）。
+- Build APK 指令見 `HYMN-APP-IRON-RULES.md` §五。
 
-### 2. 控制列分佈
-- `flexDirection: 'row', justifyContent: 'space-evenly'`
-- 撐滿螢幕寬度
-
-### 3. 圖標規範（禁用 Emoji）
-- ❌ 絕對禁止使用系統 Emoji
-- ✅ 必須使用向量圖標庫（如 `@expo/vector-icons/MaterialIcons`）
-
-### 4. 狀態顏色
-- **Inactive**：灰白色
-- **Active**：Spotify 綠 (`#1ED760`)，並且底部帶有一個小綠點
-
-### 5. 循環三態 (Repeat)
-| 狀態 | 數值 | 圖標 | 顏色 | 綠點 |
-|------|------|------|------|------|
-| Off | 0 | `repeat` | 灰白 | ❌ |
-| Repeat All | 1 | `repeat` | `#1ED760` | ✅ |
-| Repeat One | 2 | `repeat-one` | `#1ED760` | ✅ |
-
----
-
-> **最後更新：v117（2026-06-01）**
-> 任何企圖修改上述規範的改動，必須先獲得恒恒的書面批准。
+> v2 · 2026-10-18。改動鐵律須先過 Eric（見 IRON-RULES）。

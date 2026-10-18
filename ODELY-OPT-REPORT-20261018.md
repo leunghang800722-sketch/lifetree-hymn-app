@@ -115,3 +115,12 @@ usersync-harness: NEW 21/21;負控 OLD fail 9
 
 **§0 紅線核**：gorhom / OdeIcon·odeIcons / designSystem / watchdog 函數與門檻未碰；`resyncFromNative` 只改 lookup 一行；PERF_MARKS 值不變、pollState 未動；未部署/OTA/eas/restart、未掂 backend、git 只 pathspec。
 **側效應**：(1) liveHymn 由 `player.hymns.find` 改查 store 的 Map，兩者同源（hook 讀 hymnsStore），Map 於 setState 前更新，僅比 React render 早一拍；(2) 重複 id 時 Map 取最後一個、舊 find 取第一個（庫內 id 唯一，未見重複）；(3) App.js 現新增對 src/api.js 的 import（api.js 本已被各 screen 使用）。
+
+---
+## §⑤ 重寫 BLUEPRINT.md + HYMN-APP-IRON-RULES.md（v2，純文件）
+
+- `BLUEPRINT.md` 目錄：一播放器佔位結構／二 Sheet 層／三 Icon 與設計系統／四 資料流與 store／五 播放路徑／六 Watchdog 三層／七 部署與監察／八 仍然有效舊規（共約 60 行）。
+- `HYMN-APP-IRON-RULES.md` 目錄：一 UI 與動畫／二 Sheet／三 Watchdog／HLS 紅線／四 Store 與資料／五 Build／部署／六 環境與私隱（每條：乜嘢／點解／改動程序）。
+- 頂部均標「v2（2026-10-18）取代 v117（git `0de3b6c`）」+ 舊版雙電梯／Spotify 綠／MaterialIcons 已取代一句。
+- 引用行號（App.js）：gorhom 禁 portal 72–99、SheetTouchable 91–95、BottomSheet 3848、HLS_ENABLED 158、progressStore 405、預檢 ~1137–1200、`BUFFERED_ADVANCING_CAP_TICKS` 1778、pollState ~2480 / 理據 ~1640、sleepPollInterval 2147、NATIVE_WD_V2 4805、前台 10 秒提示 1708。
+- 未寫入任何密鑰／內網 IP／電話／chat id／device id；未改任何 code。
