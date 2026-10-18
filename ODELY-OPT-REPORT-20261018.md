@@ -172,3 +172,19 @@ usersync-harness: NEW 21/21;負控 OLD fail 9
   - 結果 **29/29**：(1) 新舊 url/hymnId/ctx='next' 一致（404/403/200/500 ×2 + 7 個邊界：seen／downgraded／近尾／已 current／非 iOS／HLS off／無 idx+1）；(2) 插 idx+1→預檢一次 ctx=insertNext、404→remove(1)+add(progressive,1)、beacon `via=preflight ctx=insertNext`、ref set，200 不換；(3) 插 idx+2 零預檢；(4) downgraded 零預檢；(5) seen 去重＋封頂 200；(6) 非 iOS／HLS off 零預檢；(7) 預檢期間用戶跳去（nativeIdx<=curIdxNow）不 swap；(8) 尾 14 秒不 swap／尾 16 秒正控照 swap。
 - **全部 harness**：insertnext 66/66、hls-preflight A 14/14、B 26/26、C 29/29、usersync NEW 26/26（負控 OLD 13 fail）、react-harness 5 場景全過。`@babel/parser` 解析 App.js OK。
 - **偏離**：無。**側效應**：insertNext 現會對新插嘅 idx+1 歌做一次 HLS 預檢 fetch（iOS＋HLS_ENABLED 才有）；與 trackChanged 共用 `hlsPreflightSeenRef`，若該歌其後成為 idx+1 於 trackChanged 時不會重複預檢。
+
+## §修正（Opus ④ F1/F2 + Opus3 M-1/M-2/D-1/L-6/L-8）
+| 來源 | 修正 | commit |
+|---|---|---|
+| Opus④ F1 | insertNext 守衛 `plan.insertAt === curIdx + 1` → `plan.newCurIdx + 1`（去重刪位喺播緊前面時 curIdx 前移一格，舊守衛漏 35/91 plan，含「Play Next 啱啱播完嗰首」最典型用法） | `73e5b4f` |
+| Opus④ F2 | harness-c (3b) 用真 `computeInsertNext` 移位 plan 做正控（新守衛預檢一次＋404 熱換）＋負控（舊守衛表達式喺該 plan 係 false）＋(3c) 冇移位真 plan＋(3d) 冇 newCurIdx 安全失敗；marker 跟新守衛（73e5b4f 嗰下 harness-c 其實 crash，tail -1 睇漏，fdd88db 修返） | `fdd88db` |
+| Opus3 M-1 | `clearOutbox()` 連 side buffer `sync.outbox.pending.v1` 一齊 delete（登出後下一個帳戶唔會用自己 token 推上一個人嘅 op） | `c13808d` |
+| Opus3 M-2 | corrupt 備份後即刻 `set(OUTBOX_KEY,'[]')`（否則每次 flush 增生一條 corrupt-<ts>） | `c13808d` |
+| Opus3 L-6 | 5 個 `styles.cover`、4 個 `Image` import、HymnList `useState/useEffect`、4 個已無用 `effects` import 清走（Mine 嘅 cover 仍被 plCover 用，保留） | `cb30332` |
+| Opus3 D-1 / L-8 | IRON-RULES §三.5 補 `plugins/withSwiftAudioExStallWatchdog.js`；native 死線註明前台 10s＋5s ≈16s／背景 20s＋8s（IRON-RULES ×2、BLUEPRINT ×1）；§一.4 補「overlay 用 bottom:0 唔用 height:SCREEN_HEIGHT」 | `8c05437` |
+
+**唔修（記錄）**：L-1（全 store throw 時 pending 被覆寫只剩最後一個 op，兩種做法都 lossy）、L-2（pl_upsert 重推 stale → applyServerPlaylist 可能令本地已刪清單短暫復活，直到下次 pull）、L-3（合併半失敗次序倒轉，極罕）、L-4（舊有）、L-5（UI 長度唔計 pending，只影響顯示）、L-7（App.js 播放器版 Cover/Heart 撞名，保留理由成立）。
+
+**Harness（全部喺 8c05437 worktree）**：insertnext 66/66、hls-preflight A 14/14、B 26/26、C **35/35**、usersync NEW **30/30**（負控 OLD fail 15；`PREV_SHA=9589f60` 恰好 fail 新加嘅 (m)(n) 4 條 = M-1/M-2 修正有效嘅負控）、react 5/5。`@babel/parser` 解析 8 個改動檔 OK。
+
+**另：** Opus3 指出 memory 入面有 opus-verify 明文密碼——已由兩個 memory 檔清走，只留「密碼喺 repo `.claude/settings.local.json`」pointer（grep `Verify` 0 命中）。
