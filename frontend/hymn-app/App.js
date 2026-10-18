@@ -553,6 +553,76 @@ function PlayerProvider({ children }) {
   // 封頂 200 entries(FIFO 踢舊嗰個),純去重唔係正確性依賴,大隊列都唔會
   // 無限脹大。
   const hlsPreflightSeenRef = useRef(new Map()); // id(string) -> true
+  // ODELY-OPT §④ —— 由 PlaybackActiveTrackChanged 抽出(byte-level 等價,唯一差異:
+  // nextSong 由參數入、ctx 參數化),令 insertNextImpl 都可以重用同一套預檢+熱換。
+  const preflightAndSwapNext = useCallback((nextSong, ctx) => {
+    // HLS-PREFLIGHT-EXEC-20260907 §1.3 —— 自動接播路徑:換歌嗰刻順手對
+    // 「下一首」(idx+1)做 HLS playlist 預檢,唔阻塞(fire-and-forget,
+    // 唔 await)。攞唔到就趁而家仲未到自己出場,提早換成 progressive
+    // URL——唔使等到真係播到嗰首先撞 PlaybackError/handleStuckTrackEnd
+    // 先降級(§1.2 呢兩條分支原封不動,呢度純粹係「早一步」嘅獨立路)。
+    // 同一 id 同一 session 淨係預檢一次(hlsPreflightSeenRef,封頂 200)。
+    if (Platform.OS === 'ios' && HLS_ENABLED) {
+      if (nextSong && nextSong.id != null && hlsDowngradedTrackRef.current !== nextSong.id) {
+        const seenKey = String(nextSong.id);
+        const seenMap = hlsPreflightSeenRef.current;
+        if (!seenMap.has(seenKey)) {
+          seenMap.set(seenKey, true);
+          if (seenMap.size > 200) {
+            const oldestKey = seenMap.keys().next().value;
+            if (oldestKey !== undefined) seenMap.delete(oldestKey);
+          }
+          const candidateTrack = toTrack(nextSong);
+          if (/\.m3u8(\?|$)/.test(String(candidateTrack.url))) {
+            (async () => {
+              try {
+                const pre = await preflightHls(candidateTrack.url, { hymnId: nextSong.id, ctx });
+                // HLS-PREFLIGHT-FIX-20260907 #1(Opus 驗收)—— 同 §1.2
+                // 一致:淨係明確 HTTP status(4xx/5xx)先算「值得降級」。
+                if (!isExplicitHttpFailure(pre)) return;
+                if (hlsDowngradedTrackRef.current === nextSong.id) return; // 已經俾第二條路降級咗
+                // PLAYNEXT-EXEC-20260906 §1.1-10 同款做法 —— 用 track id
+                // 對返 native queue 嘅真實位置,唔信呢個開頭攞落嚟嘅快照
+                // (預檢等緊期間隊列可能郁咗:insertNext 插咗歌 / 用戶
+                // 自己撳咗跳去下一首)。
+                const nativeQueue = await TrackPlayer.getQueue();
+                const nativeIdx = nativeQueue.findIndex((t) => String(t.id) === String(nextSong.id));
+                if (nativeIdx < 0) return; // 搵唔返(冧咗/搬咗位)寧願唔換好過換錯
+                // race guard(§1.3 第三點):如果呢一刻佢已經係 current(或
+                // 之前)—— 已經開始播緊/播完,唔准 swap,留返 PlaybackError/
+                // handleStuckTrackEnd 兩條現有分支兜底。
+                const curIdxNow = currentQueueIndexRef.current ?? -1;
+                if (nativeIdx <= curIdxNow) return;
+                // HLS-PREFLIGHT-FIX-20260907 #7(Opus 驗收)—— 照抄
+                // onPrefetchComplete 熱換(App.js ~668)嗰個「近尾唔換」
+                // guard:淨係換緊 idx+1(即係 native 就快 auto-advance
+                // 過去嗰首)先要驗,避開就快跳去下一首(尾 15 秒內)嗰陣
+                // remove+add 中間嘅窗口撞正 native auto-advance race。
+                if (nativeIdx === curIdxNow + 1) {
+                  let prog = null;
+                  try { prog = await TrackPlayer.getProgress(); } catch (_) {}
+                  if (prog && prog.duration > 0 && prog.position > prog.duration - 15) return;
+                }
+                const freshTrack = toTrack(nextSong, { forceProgressive: true });
+                logDiag('hlsFallback', {
+                  appState: appStateRef.current,
+                  hymnId: nextSong.id,
+                  detail: `via=preflight ctx=${ctx} reason=${pre.reason || ''} status=${pre.status != null ? pre.status : '-'} ms=${pre.ms}`,
+                }, { always: true });
+                await TrackPlayer.remove(nativeIdx);
+                await TrackPlayer.add(freshTrack, nativeIdx);
+                // HLS-PREFLIGHT-FIX-20260907 #5(Opus 驗收)—— 同 §1.2 一致:
+                // 改喺 remove+add 成功之後先 set「已經降級過」支旗,失敗
+                // (跌落下面 catch)就唔准閂死 PlaybackError/handleStuckTrackEnd
+                // 兩條現有 HLS 降級分支。
+                hlsDowngradedTrackRef.current = nextSong.id;
+              } catch (_) { /* 預檢/熱換失敗就算數,原本 URL 照行,等現有 PlaybackError/handleStuckTrackEnd 分支兜底 */ }
+            })();
+          }
+        }
+      }
+    }
+  }, []);
   // IOS-ANDROID-PARITY-PLAN Phase 1 —— 轉歌感知延遲真機量度。t0 喺「轉歌動作」
   // 嗰刻 set(用戶撳掣優先;native auto-advance 就用 PlaybackActiveTrackChanged
   // 嗰刻),t1 = 之後第一次 state=Playing。t1 必須「見過 trackChanged」先算數
@@ -1131,73 +1201,8 @@ function PlayerProvider({ children }) {
           lastWarmedKeyRef.current = nextIdsKey;
           warmIds(nextIds);
         }
-        // HLS-PREFLIGHT-EXEC-20260907 §1.3 —— 自動接播路徑:換歌嗰刻順手對
-        // 「下一首」(idx+1)做 HLS playlist 預檢,唔阻塞(fire-and-forget,
-        // 唔 await)。攞唔到就趁而家仲未到自己出場,提早換成 progressive
-        // URL——唔使等到真係播到嗰首先撞 PlaybackError/handleStuckTrackEnd
-        // 先降級(§1.2 呢兩條分支原封不動,呢度純粹係「早一步」嘅獨立路)。
-        // 同一 id 同一 session 淨係預檢一次(hlsPreflightSeenRef,封頂 200)。
-        if (Platform.OS === 'ios' && HLS_ENABLED) {
-          const nextSong = queueRef.current[idx + 1];
-          if (nextSong && nextSong.id != null && hlsDowngradedTrackRef.current !== nextSong.id) {
-            const seenKey = String(nextSong.id);
-            const seenMap = hlsPreflightSeenRef.current;
-            if (!seenMap.has(seenKey)) {
-              seenMap.set(seenKey, true);
-              if (seenMap.size > 200) {
-                const oldestKey = seenMap.keys().next().value;
-                if (oldestKey !== undefined) seenMap.delete(oldestKey);
-              }
-              const candidateTrack = toTrack(nextSong);
-              if (/\.m3u8(\?|$)/.test(String(candidateTrack.url))) {
-                (async () => {
-                  try {
-                    const pre = await preflightHls(candidateTrack.url, { hymnId: nextSong.id, ctx: 'next' });
-                    // HLS-PREFLIGHT-FIX-20260907 #1(Opus 驗收)—— 同 §1.2
-                    // 一致:淨係明確 HTTP status(4xx/5xx)先算「值得降級」。
-                    if (!isExplicitHttpFailure(pre)) return;
-                    if (hlsDowngradedTrackRef.current === nextSong.id) return; // 已經俾第二條路降級咗
-                    // PLAYNEXT-EXEC-20260906 §1.1-10 同款做法 —— 用 track id
-                    // 對返 native queue 嘅真實位置,唔信呢個開頭攞落嚟嘅快照
-                    // (預檢等緊期間隊列可能郁咗:insertNext 插咗歌 / 用戶
-                    // 自己撳咗跳去下一首)。
-                    const nativeQueue = await TrackPlayer.getQueue();
-                    const nativeIdx = nativeQueue.findIndex((t) => String(t.id) === String(nextSong.id));
-                    if (nativeIdx < 0) return; // 搵唔返(冧咗/搬咗位)寧願唔換好過換錯
-                    // race guard(§1.3 第三點):如果呢一刻佢已經係 current(或
-                    // 之前)—— 已經開始播緊/播完,唔准 swap,留返 PlaybackError/
-                    // handleStuckTrackEnd 兩條現有分支兜底。
-                    const curIdxNow = currentQueueIndexRef.current ?? -1;
-                    if (nativeIdx <= curIdxNow) return;
-                    // HLS-PREFLIGHT-FIX-20260907 #7(Opus 驗收)—— 照抄
-                    // onPrefetchComplete 熱換(App.js ~668)嗰個「近尾唔換」
-                    // guard:淨係換緊 idx+1(即係 native 就快 auto-advance
-                    // 過去嗰首)先要驗,避開就快跳去下一首(尾 15 秒內)嗰陣
-                    // remove+add 中間嘅窗口撞正 native auto-advance race。
-                    if (nativeIdx === curIdxNow + 1) {
-                      let prog = null;
-                      try { prog = await TrackPlayer.getProgress(); } catch (_) {}
-                      if (prog && prog.duration > 0 && prog.position > prog.duration - 15) return;
-                    }
-                    const freshTrack = toTrack(nextSong, { forceProgressive: true });
-                    logDiag('hlsFallback', {
-                      appState: appStateRef.current,
-                      hymnId: nextSong.id,
-                      detail: `via=preflight ctx=next reason=${pre.reason || ''} status=${pre.status != null ? pre.status : '-'} ms=${pre.ms}`,
-                    }, { always: true });
-                    await TrackPlayer.remove(nativeIdx);
-                    await TrackPlayer.add(freshTrack, nativeIdx);
-                    // HLS-PREFLIGHT-FIX-20260907 #5(Opus 驗收)—— 同 §1.2 一致:
-                    // 改喺 remove+add 成功之後先 set「已經降級過」支旗,失敗
-                    // (跌落下面 catch)就唔准閂死 PlaybackError/handleStuckTrackEnd
-                    // 兩條現有 HLS 降級分支。
-                    hlsDowngradedTrackRef.current = nextSong.id;
-                  } catch (_) { /* 預檢/熱換失敗就算數,原本 URL 照行,等現有 PlaybackError/handleStuckTrackEnd 分支兜底 */ }
-                })();
-              }
-            }
-          }
-        }
+        // HLS-PREFLIGHT-EXEC-20260907 §1.3 —— 見 preflightAndSwapNext(ODELY-OPT §④ 抽出)。
+        preflightAndSwapNext(queueRef.current[idx + 1], 'next');
         // IOS-ANDROID-PARITY-PLAN §5 Phase 2 — 落載下 2 首去本地(iOS only,
         // no-op on Android)。audioPrefetch 自己序列化(module-level 1 條
         // 落載嘅 queue/lock),呢度連續 call 兩次就得,唔使等第一個先。
@@ -2701,6 +2706,12 @@ function PlayerProvider({ children }) {
       // rolling warm 同一機制,`POST /api/stream/warm`),唔落本地音訊副本、
       // 唔碰 prefetchAudio,唔違反「唔擴大本地音訊副本」嗰條紅線。
       warmIds([hymn.id]);
+      // ODELY-OPT §④ —— 插喺 idx+1(即係下一首)先預檢 HLS playlist,同
+      // trackChanged 自動接播路徑同一個 helper(ctx='insertNext');fire-and-forget,
+      // try/catch 保證唔影響插入成功路徑。
+      if (plan.insertAt === curIdx + 1) {
+        try { preflightAndSwapNext(hymn, 'insertNext'); } catch (_) {}
+      }
       // 12. beacon —— W1 嘅 src/clientLog.js,唔經 logDiag 閘(明文常開)。
       sendClientLog('playNext', {
         hymnId: hymn.id,
