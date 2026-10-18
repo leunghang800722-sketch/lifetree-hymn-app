@@ -36,11 +36,16 @@ function load(src, label) {
     reportUnauthorized: [],
     clientLogs: [],
     gate: null,            // (call) => Promise<{status, ok}>,測試控制延遲/結果
+    setThrows: false,      // true → MMKV set 持續 throw(f)
+    getThrowOnce: false,   // true → 下一次 getString throw 一次(g)
   };
   const mocks = {
     '../storage': { getStorage: () => ({
-      getString: (k) => (env.mmkv.has(k) ? env.mmkv.get(k) : undefined),
-      set: (k, v) => { env.mmkv.set(k, String(v)); },
+      getString: (k) => {
+        if (env.getThrowOnce) { env.getThrowOnce = false; throw new Error('mmkv read'); }
+        return env.mmkv.has(k) ? env.mmkv.get(k) : undefined;
+      },
+      set: (k, v) => { if (env.setThrows) throw new Error('mmkv write'); env.mmkv.set(k, String(v)); },
       delete: (k) => { env.mmkv.delete(k); },
     }) },
     '../config': { API_BASE: 'http://harness.invalid' },
@@ -236,6 +241,101 @@ scenarios.e = async (src, label) => {
   ];
 };
 
+// ---- 階段①修正(M1/M2/L1)場景 ----
+// (f) MMKV set 持續 throw + 2 個 op:推 <= 上限、唔死循環、outbox 保留
+scenarios.f = async (src, label) => {
+  const { mod, env } = load(src, label);
+  mod.setAuthToken('t');
+  mod.enqueue({ op: 'fav_add', hymn_id: 1 });
+  mod.enqueue({ op: 'fav_add', hymn_id: 2 });
+  env.setThrows = true;
+  // 安全閘:舊寫法會無限重推 → 超過 300 次 call 即令 fetch fail 強制收工(計為 FAIL)
+  env.gate = () => (env.fetchCalls.length > 300 ? { ok: false, status: 500 } : { ok: true, status: 200 });
+  await mod.flush();
+  const n = env.fetchCalls.length;
+  return [
+    ['(f) set 持續 throw:推 <= 上限(2+50)且冇死循環', n <= 52, { fetchCalls: n }],
+    ['(f) 持久化 outbox 保留 [1,2](set 失敗冇改到)', JSON.stringify(outboxOf(env).map(sig)) === '["fav_add:1","fav_add:2"]', { outbox: outboxOf(env).map(sig) }],
+  ];
+};
+
+// (g) 飛行中 getString throw 一次:未推 op 保留(唔被 [] 蓋走)
+scenarios.g = async (src, label) => {
+  const { mod, env } = load(src, label);
+  mod.setAuthToken('t');
+  mod.enqueue({ op: 'fav_add', hymn_id: 1 });
+  mod.enqueue({ op: 'fav_add', hymn_id: 2 });
+  const g = manualGate(env);
+  const f = mod.flush();
+  await g.waitPending(1);
+  env.getThrowOnce = true;                         // op1 完成後重讀會 throw
+  g.release(0);
+  await g.waitPending(1);                          // op2 應仍被推(記憶體 queue)
+  g.release(0, { ok: false, status: 500 });        // op2 fail → break
+  await f; await sleep(5);
+  while (g.pending.length) { g.release(0, { ok: false, status: 500 }); await sleep(3); }
+  return [
+    ['(g) 讀錯後 op2 仍被推(fetch 見 POST 1,POST 2...)', env.fetchCalls.some((c) => c.url.endsWith('/favorites/2')), { calls: env.fetchCalls.map((c) => c.url.split('/favorites/')[1]) }],
+    ['(g) op2 fail 後 outbox = [fav_add:2](冇被 [] 蓋走)', JSON.stringify(outboxOf(env).map(sig)) === '["fav_add:2"]', { outbox: outboxOf(env).map(sig) }],
+  ];
+};
+
+// (h) 同毫秒:pl_upsert 同 id 兩個;fav add→remove→add
+scenarios.h = async (src, label) => {
+  const realNow = Date.now; Date.now = () => 5000;
+  try {
+    const A = load(src, label); A.mod.setAuthToken('t');
+    A.mod.enqueue({ op: 'pl_upsert', playlist: { id: 'P1', name: 'v1' } });
+    const gA = manualGate(A.env);
+    const fA = A.mod.flush();
+    await gA.waitPending(1);
+    A.mod.enqueue({ op: 'pl_upsert', playlist: { id: 'P1', name: 'v2' } });   // 同毫秒
+    gA.release(0);
+    for (let i = 0; i < 6; i++) { await gA.waitPending(1); if (gA.pending.length) gA.release(0); await sleep(2); }
+    await fA; await sleep(5);
+    while (gA.pending.length) { gA.release(0); await sleep(2); }
+    const puts = A.env.fetchCalls.length;
+
+    const B = load(src, label); B.mod.setAuthToken('t');
+    B.mod.enqueue({ op: 'fav_add', hymn_id: 1 });
+    const gB = manualGate(B.env);
+    const fB = B.mod.flush();
+    await gB.waitPending(1);
+    B.mod.enqueue({ op: 'fav_remove', hymn_id: 1 });
+    B.mod.enqueue({ op: 'fav_add', hymn_id: 1 });                             // 同毫秒同 key 同 op
+    gB.release(0);
+    for (let i = 0; i < 8; i++) { await gB.waitPending(1); if (gB.pending.length) gB.release(0); await sleep(2); }
+    await fB; await sleep(5);
+    while (gB.pending.length) { gB.release(0); await sleep(2); }
+    const pushed = B.env.fetchCalls.map((c) => `${c.method}:${c.url.split('/favorites/')[1]}`);
+    return [
+      ['(h) 同毫秒同 id pl_upsert:v2 保留並推(共 2 次 PUT)+ outbox 空', puts === 2 && outboxOf(A.env).length === 0, { puts, outbox: outboxOf(A.env).map(sig) }],
+      ['(h) 同毫秒 fav add→remove→add:全保留次序 [POST:1,DELETE:1,POST:1]', JSON.stringify(pushed) === '["POST:1","DELETE:1","POST:1"]' && outboxOf(B.env).length === 0, { pushed, outbox: outboxOf(B.env).map(sig) }],
+    ];
+  } finally { Date.now = realNow; }
+};
+
+// (i) 舊格式(冇 seq)outbox op 照推;飛行中新 op(有 seq)亦保留
+scenarios.i = async (src, label) => {
+  const { mod, env } = load(src, label);
+  mod.setAuthToken('t');
+  env.mmkv.set('sync.outbox.v1', JSON.stringify([
+    { op: 'fav_add', hymn_id: 1, ts: 100 },
+    { op: 'fav_add', hymn_id: 2, ts: 101 },
+  ]));
+  const g = manualGate(env);
+  const f = mod.flush();
+  await g.waitPending(1);
+  mod.enqueue({ op: 'fav_add', hymn_id: 3 });
+  for (let i = 0; i < 8; i++) { g.release(0); await g.waitPending(1).catch(() => {}); await sleep(2); if (!g.pending.length) break; }
+  await f; await sleep(5);
+  while (g.pending.length) { g.release(0); await sleep(2); }
+  const pushed = env.fetchCalls.map((c) => c.url.split('/favorites/')[1]);
+  return [
+    ['(i) 舊格式 op 全推 + 飛行中新 op 保留 [1,2,3],outbox 空', JSON.stringify(pushed) === '["1","2","3"]' && outboxOf(env).length === 0, { pushed, outbox: outboxOf(env).map(sig) }],
+  ];
+};
+
 (async () => {
   let newFail = 0;
   const report = [];
@@ -255,6 +355,11 @@ scenarios.e = async (src, label) => {
   }
   const nw = await runAll(NEW_SRC, 'NEW (working tree userSync.js)');
   const old = await runAll(OLD_SRC, 'OLD (d74c483 userSync.js) — 負控');
+  if (process.env.PREV_SHA) {
+    const prevSrc = execFileSync('git', ['show', `${process.env.PREV_SHA}:frontend/hymn-app/src/sync/userSync.js`],
+      { cwd: REPO_ROOT, encoding: 'utf8', maxBuffer: 1 << 24 });
+    await runAll(prevSrc, `PREV (${process.env.PREV_SHA}) — 額外負控(只供參考)`);
+  }
   console.log(`\n結果: NEW ${nw.p}/${nw.p + nw.f};負控 OLD fail ${old.f}(必須 > 0 先算負控成立)`);
   if (nw.f > 0 || old.f === 0) process.exit(1);
   process.exit(0);

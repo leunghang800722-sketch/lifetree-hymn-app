@@ -61,3 +61,31 @@ usersync-harness: NEW 14/14;負控 OLD fail 6
 - 偏離：react-harness 除 prepareSource.js 外亦改 testEnv.js mock 同 notifyHymnsChanged.js 場景內嘅 fetch mock（只補 `text()`，斷言不變）；新增 3 個 mocks stub。
 - 側效應：`useOutboxLength` 不再輪詢；`userSync` 新增對 `hooks/externalStore.js` 嘅 import（純依賴 react）。flush 成功後 loop 會喺同一次 flush 內直接推飛行期間新加嘅 op（`_pendingFlush` 補跑隨後見空 outbox）。
 - 未做：useOutboxLength hook 嘅 React render 層測試（store 層已測，hook 僅一行 `useStore()`）；真機/模擬器未驗。
+
+## §①-修正（Opus 驗收 M1/M2/L1 補修）
+
+只改 `frontend/hymn-app/src/sync/userSync.js`（+34/-9）；`checkAuth`/`reportUnauthorized`/`break`/`_flushing`/`_pendingFlush` 一字未改。
+- **M1**：flush 維持本輪 `done` 清單，重讀後 `collapse(raw).filter(x => !done.some(d => sameOp(x,d)))`；另加硬上限 `initialLen + 50`，超過 `break` + `sendClientLog('outboxLoopGuard', …)`。
+- **M2**：`readOutbox()` 讀錯（getString throw / JSON 壞 / 非 array）回 `null`；flush 重讀遇 `null` → `queue.slice(1)`（舊版行為），不寫 `[]`。其他 caller（`getOutboxLength`、`enqueue`、store 初始值、flush 起手）經 `readOutboxOrEmpty()` 當 `[]`。
+- **L1**：`enqueue` 加 module-level 單調 `seq`（每次 enqueue 先由現有 outbox max seq 校正再 +1，重啟後延續）；`sameOp` = op + key + ts + seq，任一邊冇 seq（舊格式）退返 ts 比對。
+
+新增 harness 場景（`tools/usersync-harness/run.js`，+ mock 加 `setThrows`/`getThrowOnce`、`PREV_SHA` 額外負控）：
+
+| 場景 | NEW | OLD d74c483 | PREV 0c4fab4（修前） |
+|---|---|---|---|
+| (f) set 持續 throw + 2 op：推 ≤ 52、outbox 保留 | PASS（fetch=2） | PASS | FAIL（fetch=301 被安全閘截停＝無限重推） |
+| (g) 飛行中 getString throw 一次：op2 仍推、fail 後 outbox=[fav_add:2] | PASS 2 項 | PASS | FAIL（op2 被 `[]` 蓋走，從未推） |
+| (h) 同毫秒同 id pl_upsert 兩個／fav add→remove→add 全保留次序 | PASS 2 項 | FAIL 2 項 | FAIL 2 項 |
+| (i) 舊格式（冇 seq）op 照推＋飛行中新 op 保留 | PASS | FAIL | PASS |
+
+NEW 21/21；OLD 11 pass / 9 fail（負控成立）；PREV 16 pass / 4 fail。
+
+四個 harness 尾段：
+```
+insertnext-harness: 66 passed, 0 failed
+H-A: 14 pass / 0 fail
+H-B: 26 pass / 0 fail
+react-harness: 結果:全部 5 個場景過
+usersync-harness: NEW 21/21;負控 OLD fail 9
+```
+側效應：outbox op 多一個 `seq` 欄位（伺服器 push 只用 op 內容欄位，runOp 不送 seq）；L2 未處理（Opus 評為低、只影響顯示）。未部署/OTA/eas/restart，未掂 backend。
