@@ -392,6 +392,38 @@ scenarios.l = async (src, label) => {
   return [['(l) loopGuard detail 有 initialLen=1/pushed=51/enqueuedDuring=51', !!ok, { detail: lg && lg.f.detail }]];
 };
 
+// ---- Opus3(①尾巴)M-1/M-2 ----
+// (m) 主隊讀錯 → op 入 side buffer;clearOutbox(登出)之後 side buffer 必須清走,
+//     下一個 token flush 零 call(唔可以用 B 嘅 token 推 A 嘅 op)
+scenarios.m = async (src, label) => {
+  const { mod, env } = load(src, label);
+  mod.setAuthToken('userA');
+  env.getThrowOnce = true;
+  mod.enqueue({ op: 'fav_add', hymn_id: 42 });
+  mod.clearOutbox();
+  const pendingLeft = env.mmkv.has('sync.outbox.pending.v1');
+  const lenAfter = mod.getOutboxLength();
+  mod.setAuthToken('userB');
+  await mod.flush();
+  return [
+    ['(m) clearOutbox 之後 side buffer 已清、長度 0', !pendingLeft && lenAfter === 0, { pendingLeft, lenAfter }],
+    ['(m) 換 token 之後 flush 零 fetch(冇跨帳戶推 op)', env.fetchCalls.length === 0, { calls: env.fetchCalls }],
+  ];
+};
+// (n) 主隊 corrupt + 連續 5 次 flush(冇 enqueue):只備份一次,主隊已自癒為 []
+scenarios.n = async (src, label) => {
+  const { mod, env } = load(src, label);
+  mod.setAuthToken('t');
+  env.mmkv.set('sync.outbox.v1', '{bad');
+  for (let i = 0; i < 5; i++) { await mod.flush(); await sleep(2); }
+  const corruptKeys = [...env.mmkv.keys()].filter((k) => k.startsWith('sync.outbox.corrupt-')).length;
+  const main = env.mmkv.get('sync.outbox.v1');
+  return [
+    ['(n) corrupt 備份只有 1 條(唔隨 flush 增生)', corruptKeys === 1, { corruptKeys }],
+    ['(n) 主隊已寫返 []', main === '[]', { main }],
+  ];
+};
+
 (async () => {
   let newFail = 0;
   const report = [];

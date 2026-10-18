@@ -70,6 +70,9 @@ function readOutboxMerged() {
   if (r.kind === 'corrupt') {
     reportReadError('corrupt');
     try { store()?.set(`sync.outbox.corrupt-${Date.now()}`, r.raw); } catch (_) {}
+    // Opus3 M-2:備份完即刻寫返空主隊,否則每次 flush(例如每次 onActive)都再備份
+    // 一條 corrupt-<ts>,直到用戶下一個收藏/清單動作先停。
+    try { store()?.set(OUTBOX_KEY, '[]'); } catch (_) {}
     r = { q: [], kind: null };
   } else if (r.kind === 'throw') {
     reportReadError('throw');
@@ -113,6 +116,9 @@ export function setOwner(userId) {
 
 export function clearOutbox() {
   writeOutbox([]);
+  // Opus3 M-1:登出/換帳戶要連 side buffer 一齊清,否則下一個登入嘅人會用自己個
+  // token 將上一個人嘅 op 推上 server(跨帳戶寫資料)。
+  try { store()?.delete(PENDING_KEY); } catch (_) {}
 }
 
 // 同一清單連續多個 pl_upsert collapse 淨最後一個(§2.1 順手優化)。
