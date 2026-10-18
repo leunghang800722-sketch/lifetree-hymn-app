@@ -15,7 +15,6 @@ import {
   TouchableOpacity,
   Text,
   StyleSheet,
-  Image,
 } from 'react-native';
 import OdeIcon from '../icons/OdeIcon';
 import CoverImage from '../components/CoverImage';
