@@ -32,13 +32,54 @@ export function setAuthToken(token) { _token = token || null; }
 
 // ODELY-OPT 1b-修正(M2):回 null = 讀錯(getString throw / JSON 壞),同「真係空」([])
 // 分開。flush 重讀遇 null 要退返記憶體 queue,唔可以當空 outbox 寫 [] 蓋走持久化。
-function readOutbox() {
+function readOutbox() { return readOutboxEx().q; }
+
+// 尾巴-2:讀錯分兩種——'throw'(getString 本身 throw,原文讀唔到,多數暫時性)
+// 同 'corrupt'(原文讀到但 JSON 壞/唔係 array,永久性,附 raw 俾備份)。
+function readOutboxEx() {
+  let raw;
+  try { raw = store()?.getString(OUTBOX_KEY); } catch (_) { return { q: null, kind: 'throw' }; }
+  if (!raw) return { q: [], kind: null };
   try {
-    const raw = store()?.getString(OUTBOX_KEY);
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? { q: parsed, kind: null } : { q: null, kind: 'corrupt', raw };
+  } catch (_) { return { q: null, kind: 'corrupt', raw }; }
+}
+
+// 尾巴-2 side buffer:主 outbox 讀唔到(throw)時,新 op 寫去獨立 key,等下次
+// 主隊讀成功先合併返,唔蓋走持久化嘅主隊。
+const PENDING_KEY = 'sync.outbox.pending.v1';
+function readPending() {
+  try {
+    const raw = store()?.getString(PENDING_KEY);
     if (!raw) return [];
     const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed : null;
-  } catch (_) { return null; }
+    return Array.isArray(parsed) ? parsed : [];
+  } catch (_) { return []; }
+}
+let _readErrReported = false;
+function reportReadError(kind) {
+  if (_readErrReported) return;
+  _readErrReported = true;
+  sendClientLog('outboxReadError', { detail: kind });
+}
+// 讀主隊(含自癒):corrupt → 原文備份去 outbox.corrupt-<ts> 再當空(否則 side
+// buffer 永遠合併唔返);成功 → 合併 side buffer 並清走。throw → q:null。
+function readOutboxMerged() {
+  let r = readOutboxEx();
+  if (r.kind === 'corrupt') {
+    reportReadError('corrupt');
+    try { store()?.set(`sync.outbox.corrupt-${Date.now()}`, r.raw); } catch (_) {}
+    r = { q: [], kind: null };
+  } else if (r.kind === 'throw') {
+    reportReadError('throw');
+    return { q: null, merged: false };
+  }
+  const pending = readPending();
+  if (pending.length === 0) return { q: r.q, merged: false };
+  const q = [...r.q, ...pending];
+  try { store()?.set(OUTBOX_KEY, JSON.stringify(q)); store()?.delete(PENDING_KEY); } catch (_) { return { q: r.q, merged: false }; }
+  return { q, merged: true };
 }
 // 其他 caller:讀錯當空。
 function readOutboxOrEmpty() { return readOutbox() || []; }
@@ -56,7 +97,7 @@ function writeOutbox(queue) {
 }
 
 export function getOutboxLength() {
-  return readOutboxOrEmpty().length;
+  return readOutboxOrEmpty().length + readPending().length;
 }
 
 export function getOwner() {
@@ -100,8 +141,19 @@ function sameOp(a, b) {
 // module-level 計數器;重啟後 enqueue 時由 outbox 現有 max seq 之後起。
 let _seq = 0;
 
+let _enqCount = 0; // 尾巴-3:累計 enqueue 次數,flush 前後相減 = 飛行期間用戶動作數
 export function enqueue(op) {
-  const cur = readOutboxOrEmpty();
+  _enqCount += 1;
+  const m = readOutboxMerged();
+  const cur = m.q;
+  if (cur === null) {
+    // 主隊讀唔到:唔蓋走,新 op 入 side buffer(下次讀成功合併)。
+    const pend = readPending();
+    for (const x of pend) if (typeof x.seq === 'number' && x.seq > _seq) _seq = x.seq;
+    _seq += 1;
+    try { store()?.set(PENDING_KEY, JSON.stringify([...pend, { ...op, ts: Date.now(), seq: _seq }])); } catch (_) {}
+    return;
+  }
   for (const x of cur) if (typeof x.seq === 'number' && x.seq > _seq) _seq = x.seq;
   _seq += 1;
   writeOutbox(collapse([...cur, { ...op, ts: Date.now(), seq: _seq }]));
@@ -165,7 +217,9 @@ export async function flush() {
   _flushing = true;
   let drained = false;
   try {
-    let queue = collapse(readOutboxOrEmpty());
+    const enq0 = _enqCount;
+    let queue = collapse(readOutboxMerged().q || []);
+    const initialLen = queue.length;
     if (!_outboxLongReported && queue.length >= 50) {
       _outboxLongReported = true;
       sendClientLog('outboxLong', { detail: String(queue.length) });
@@ -175,7 +229,7 @@ export async function flush() {
     const pushLimit = queue.length + 50;
     while (queue.length > 0) {
       if (done.length >= pushLimit) {
-        sendClientLog('outboxLoopGuard', { detail: String(done.length) });
+        sendClientLog('outboxLoopGuard', { detail: JSON.stringify({ initialLen, pushed: done.length, enqueuedDuring: _enqCount - enq0 }) });
         break;
       }
       const [op] = queue;
@@ -185,10 +239,10 @@ export async function flush() {
       // ODELY-OPT 1a:await 期間 enqueue() 可能已經寫入新 op(或 collapse 取代
       // 咗本 op),所以成功後重讀最新 outbox,只剔走剛推完嗰個,唔用閉包 rest 覆寫。
       const raw = readOutbox();
-      // M2:讀錯(null)退返舊版行為 queue.slice(1),唔寫 [] 蓋走持久化。
-      const next = raw === null
-        ? queue.slice(1)
-        : collapse(raw).filter((x) => !done.some((d) => sameOp(x, d)));
+      // 尾巴-1:讀錯(null)只推進記憶體 queue,唔寫 MMKV(寫會蓋走飛行期間新
+      // enqueue 嘅 op);持久化保留已推 op,下次成功重讀靠 done 剔走。
+      if (raw === null) { queue = queue.slice(1); continue; }
+      const next = collapse(raw).filter((x) => !done.some((d) => sameOp(x, d)));
       writeOutbox(next);
       queue = next;
     }
